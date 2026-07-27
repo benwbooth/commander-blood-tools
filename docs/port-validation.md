@@ -1754,8 +1754,29 @@ LOADER, not the interpreter — its references are `int 21h` AH=`0x3D` (open,
 `0x750A`), plus a `0xFFFF` not-found store @`0x74FE`. It fetches a record; whoever
 WALKS that record's command bytes is a different routine, and that is the search.
 
-**What would settle it.** The game's own consumer of the DESCRIPT cue field: find
-the routine that reads a cue's tick and compare it against the timer it drives
+**CONSUMER FOUND (audit-fixes #567).** `0x7CF4` walks the list the loader emits:
+
+```text
+  0x7CF4  mov si, [0xf18]        the cursor 0x7409 resets to DS:0xF1A
+  0x7CF8  lodsw                  the CUE TICK (a word)
+  0x7CF9  or ax,ax / js          negative -> done
+  0x7CFD  cmp ax, [0x131c]       the tick is compared against THIS clock
+  0x7D01  jg                     not yet due -> stop
+  0x7D0C  lodsb ... / or al,al   then the NUL-terminated TEXT
+```
+
+Word tick then NUL string, exactly the `0x0D` record `descript.rs` parses. So the
+cue clock is `DS:0x131C`, reset to 0 @`0x7B65` in `montage_frame_setup`.
+
+**AND ITS RATE IS NOT OBVIOUSLY TIME.** `[0x131c]` is incremented at exactly two
+sites — `0xA18B` and `0xA3F0` — and both are inside RESOURCE routines:
+`resource_load_sequence` (`0xA15F`) and `ems_resource_flush` (`0xA1B4`), each
+incrementing it beside `[0xd60]`/`[0xd62]`. If those run once per playback frame the
+port's 10 Hz may be right; if they run per resource load, a cue tick is not a time
+unit at all and `/10.0` is meaningless rather than merely wrong.
+
+**What would settle it.** Determine how often `resource_load_sequence` /
+`ems_resource_flush` run during a montage — from their callers, not from a capture.
 (`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
 clock and worth knowing about; 25 Hz would mean the divisor is wrong by 2.5x).
 

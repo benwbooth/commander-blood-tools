@@ -18815,3 +18815,43 @@ direct-compare hypothesis, this removes the loader — but it is not a decode, a
 places.
 
 726 tests, 0 failures.
+
+## #567 — the cue consumer found, and the clock may not be a clock
+
+Following #566's lead ("what consumes the list at `DS:0xF1A`") landed the routine
+three entries of searching were after. `0x7CF4`:
+
+```text
+  mov si, [0xf18]        the cursor 0x7409 leaves at DS:0xF1A
+  lodsw                  a WORD -- the cue tick
+  or ax,ax / js          negative ends the list
+  cmp ax, [0x131c]       compared against this
+  jg                     not yet due
+  lodsb ... or al,al     then the NUL-terminated text
+```
+
+Word tick, then string: exactly the `0x0D` record `descript.rs` parses. The cue
+clock is `DS:0x131C`, zeroed in `montage_frame_setup` @`0x7B65`.
+
+THEN THE RESULT TURNED AWKWARD, which is why it is worth an entry rather than a
+settled row. `[0x131c]` is incremented at exactly two sites, `0xA18B` and `0xA3F0`,
+and the `ALREADY KNOWN` banner names both routines: `resource_load_sequence` and
+`ems_resource_flush`. Neither is a frame loop by its name.
+
+So the clock a subtitle cue waits on is ticked by RESOURCE LOADING. Either those
+routines run once per playback frame — in which case #550's 10 Hz assumption is
+about a real frame rate and may be right — or they run per resource load, in which
+case a cue "tick" is not a time unit and dividing by 10.0 is not merely wrong but
+meaningless.
+
+I cannot tell from the increments alone, and I am not going to guess which, because
+the two answers differ in KIND and the port currently commits to one of them in five
+places. The matrix row now names the remaining question precisely: how often do
+those two routines run during a montage, established from their callers rather than
+from watching a video.
+
+Three entries of elimination (#551, #566) plus this one have moved the search from
+"find a command dispatch" to "count the calls to two named routines". That is the
+shape progress takes when the answer is not where the obvious search looks.
+
+726 tests, 0 failures.
