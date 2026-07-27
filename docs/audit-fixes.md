@@ -15402,3 +15402,37 @@ reading the neighbourhood rather than the single instruction a row names.
 
 2229 items, 1142 confirmed (51.2%), 1087 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #470 — twelve more, and an address that is two addresses
+
+Twelve `CELL?` rows in `engine.rs`. Six ride on earlier work — `OPTION_BOX_LABEL`
+`0x0D594` (#385's `C,A,N,C,E,L,0`), `console_menu_click` `0x8614` (#386),
+`load_scene_hnm` `0x1FA7` (#450), `load_bas_menus` `0x6772` (#455),
+`render_alien_view` `cs:0x16A2` (#401) and `0x7FFF` (#468), `load_dialogue`
+`0x108E` (#462's profile compare).
+
+The rest verify at labelled routines: `0x954A` is `mov byte ptr [0x5b55], 1`, the
+screen-dirty flag #382 met in `resource_palette_blocks_apply`; `0x0FFB` is
+`mov word ptr [0xb2d], 8` in the main loop; `0x2AD3` opens `resource_load...`;
+`0x604E` and `0x721A` open `active_object_list_build` and `nav_chart_list_build`,
+which is what `NavChartObject` claims.
+
+ONE CITATION IS TWO ADDRESSES. `current_voice` cites `0xCFB`, and `0xCFB` is:
+
+    a CODE address   0x0CFB  int 0x33            (inside the mouse routine)
+    a DS CELL        gs:[0xcfb]  written 1 @0x66AF, 0 @0x94CF
+
+Both are real and they have nothing to do with each other. Disassembling `0xCFB`
+to "check the citation" lands on an `int 33h` that has no connection to voice
+playback, and would read as the citation being wrong. The row means the CELL, and
+the two writes settle it.
+
+This project already separates five address spaces in `re/CLAUDE.md` (file, `DS:`,
+`XDB:`, `DRV:`, `SCRIPT<N>:`) precisely because a bare number is ambiguous. This is
+the same hazard INSIDE one binary: a DS offset and a code offset can collide, and
+`0xCFB` is small enough to be plausible as either.
+
+Provisional queue: 164, from 246 at the session's start.
+
+2229 items, 1154 confirmed (51.8%), 1075 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
