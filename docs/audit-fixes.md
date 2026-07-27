@@ -17945,3 +17945,45 @@ doc says it is carried "during populate", which is elsewhere. Not inferred from 
 neighbours (#509).
 
 723 tests, 0 failures.
+
+## #540 — the duplicate finder could not see constants, which is all three duplicates
+
+Three cross-file duplicates in three entries — `bridge.rs`/`ship3d.rs` porting
+`0x8614..0x868D` twice (#538), `entity.rs`/`ship3d.rs` naming the `0x6212` flag word
+twice (#539), `engine.rs`/`ship3d.rs` naming `DS:0x0174` twice (#526) — and
+`check_duplicate_rules.py` found none of them. Its row filter is:
+
+```python
+if r["kind"] == "fn" and not r["file"].startswith(...)
+```
+
+CONSTANTS WERE EXCLUDED, and every one of the three was a set of constants. The
+tool built to find duplicated decodes was structurally blind to the form the
+duplicates actually took. I found all three by hand, one per entry, which is the
+failure mode the tool exists to remove.
+
+Now clustered too. Constants sharing an address is NORMAL — a routine's whole seed
+set cites the same entry — so the signal is a shared address ACROSS FILES: two
+subsystems that have independently named one thing. **50 such clusters**, and they
+are a REFERENCE rather than a defect list; the tool's other two sections flag risk,
+this one maps shared vocabulary.
+
+The map immediately pays for itself on cells this session already found the hard
+way:
+
+```text
+  0x0ADA  bloodprg SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET
+          ship3d   NAVIGATION_INTERPOLATION_DURATION, NAV_CHOICE_INTERPOLATION_DURATION
+```
+
+— the two-writers-one-reader cell #533 wrote a paragraph about, now visible as one
+line. Likewise `0x0AC6`'s layout centre named in three files and `0x0A32`'s
+presentation mode in three.
+
+The general lesson is about tool scope, not this tool: a checker's FILTER is a
+claim about where the problem can occur, and that claim silently expires when the
+codebase's shape changes. This one was written when duplicated decodes meant
+duplicated FUNCTIONS. The port has since moved most of its decoded knowledge into
+constants, and the filter stayed.
+
+723 tests, 0 failures.

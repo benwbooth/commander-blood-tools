@@ -176,6 +176,45 @@ def main():
             for a, b in unlinked:
                 print(f"        no call edge: {a} <-> {b}")
 
+    # CONSTANTS TOO (audit-fixes #540). This tool clustered only `kind == "fn"`
+    # rows, so three cross-file duplicates found by hand in three entries were
+    # invisible to it: bridge.rs and ship3d.rs both porting 0x8614..0x868D (#538),
+    # entity.rs and ship3d.rs both naming the 0x6212 record's flag word (#539),
+    # engine.rs and ship3d.rs both naming DS:0x0174 (#526). Each was a set of
+    # CONSTANTS, and constants were excluded.
+    #
+    # Constants sharing an address is normal -- a routine's whole seed set cites
+    # it. The signal is a shared address ACROSS FILES, which means two subsystems
+    # have independently named the same thing.
+    const_rows = [
+        r
+        for r in csv.DictReader(open(LEDGER), delimiter="\t")
+        if r["kind"] == "const" and not r["file"].startswith(os.path.join("src", "recomp"))
+    ]
+    by_addr_const = collections.defaultdict(list)
+    for r in const_rows:
+        m = re.search(
+            r"(?:(XDB:[A-Za-z0-9_]+):)?(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"]
+        )
+        if m:
+            by_addr_const[(m.group(1) or "IMG", int(m.group(2), 16))].append(
+                (r["file"], r["item"])
+            )
+    cross = {
+        a: v
+        for a, v in by_addr_const.items()
+        if len({f for f, _ in v}) > 1
+    }
+    if cross:
+        print(f"\nCROSS-FILE CONSTANT clusters ({len(cross)}) — two files naming one address:")
+        for addr, items in sorted(cross.items()):
+            files = collections.defaultdict(list)
+            for f, i in items:
+                files[f].append(i)
+            print(f"  {show(addr)}")
+            for f, names in sorted(files.items()):
+                print(f"      {f:<24} {', '.join(sorted(names)[:4])}")
+
     if same_name:
         print("\nDUPLICATE NAMES — one name implemented twice for one address:")
         for addr, name, files in sorted(same_name):
