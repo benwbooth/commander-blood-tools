@@ -87,6 +87,17 @@ pub const CONSOLE_REST_FRAME: usize = 55;
 /// target of the search, never the source of the number.
 pub const CONSOLE_BAND_FRAME: usize = 90;
 /// The band's screen origin and height (rows 140..200).
+///
+/// `CONSOLE_BAND_HEIGHT` is DATA: the harvested `console_band.idx` is 19200 bytes
+/// and the panorama is 320 wide, so `19200 / 320 = 60` rows exactly, with no
+/// remainder (audit-fixes #564).
+///
+/// `CONSOLE_BAND_TOP` follows ONLY IF the band is bottom-aligned: `200 - 60 = 140`.
+/// That alignment is NOT established here — no routine has been found that places
+/// the band, and "rows 140..200" restates the constant rather than sourcing it.
+/// The arithmetic is consistent with a capture and equally consistent with the
+/// band being placed anywhere else, so this one is left labelled rather than
+/// settled: the value may well be right, and nothing in this file shows it.
 pub const CONSOLE_BAND_TOP: usize = 140;
 pub const CONSOLE_BAND_HEIGHT: usize = 60;
 

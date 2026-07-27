@@ -18720,3 +18720,30 @@ Rewritten with each instruction at its own address: `xchg bh,bl` @`0x9B27`,
 `shl di,6` @`0x9B29`, `add di,bx` @`0x9B2C`.
 
 726 tests, 0 failures.
+
+## #564 — one of a pair is data, the other is arithmetic that fits a capture
+
+`CONSOLE_BAND_TOP = 140` and `CONSOLE_BAND_HEIGHT = 60` sat under one comment
+reading "The band's screen origin and height (rows 140..200)" — which restates the
+constants rather than sourcing them.
+
+They are not the same kind of value.
+
+`HEIGHT` is DATA and cleanly so: the harvested `console_band.idx` is 19200 bytes,
+the panorama is 320 wide, and `19200 / 320 = 60` with NO remainder. Settled.
+
+`TOP` follows only if the band is BOTTOM-ALIGNED — `200 - 60 = 140`. That alignment
+is not established anywhere: no routine has been found that places the band, and the
+comment's "rows 140..200" is the claim, not evidence for it. The arithmetic is
+consistent with a capture of the real screen and EQUALLY consistent with the band
+being drawn anywhere else; the subtraction only works because someone already knew
+where it goes.
+
+Left UNVERIFIED with that written at the constant. This file's neighbour shows the
+standard being applied properly: `CONSOLE_BAND_FRAME`'s doc explains it is DATA
+because exactly one of 180 frames reproduces the band — "the capture is the target
+of the search, never the source of the number". `TOP` has no such search behind it,
+and the honest move is to say so rather than let a plausible subtraction inherit its
+neighbour's rigour.
+
+726 tests, 0 failures.
