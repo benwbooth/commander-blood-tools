@@ -16891,3 +16891,37 @@ and is a loop in the game.
 `ship3d.rs`: 21 uncited constants -> 15.
 
 620 tests, 0 failures.
+
+## #509 — two record types in a VM chain, and an asymmetry I did not smooth over
+
+`SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE` (`0xC3`) and
+`SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE` (`0xC4`) are named as ship-3D navigation
+constants and live in `ship3d.rs`, but they are VM RECORD TYPES, tested in the
+post-update dispatch chain:
+
+```text
+  0x5D37  cmp ax, 0xc3 / jne 0x5D8F      -> falls through to ...
+  0x5D8F  cmp ax, 0xc4 / jne 0x5E22      -> ... and then to the 0xC6 branch
+  0x5E13  mov word ptr [di], 0xc4        the 0xC4 handler STAMPS 0xC4 into a record
+```
+
+The `0x5E13` write is the better citation for `DEFERRED_RECORD_TYPE`, because the
+port's use is `effect.deferred_record_type = Some(...)` — a WRITE. The handler marks
+a record deferred by stamping its own opcode into the field selector `0x13` resolves.
+
+`0xC3` HAS NO SUCH WRITE that I could find, and I am recording that as an asymmetry
+rather than resolving it. The port sets it as a `deferred_record_type` too, but only
+its read side is evidenced. What I explicitly did NOT do is conclude the port is
+wrong: #502 established that this binary builds values with shifts and adds often
+enough (320, 287, 32, `0x100000`) that "no immediate-form write exists" is close to
+no evidence. The honest position is that the read is verified, the write is not
+found, and the doc comment says exactly that.
+
+This is the same discipline as #500's declined inference, and #501 showed why it
+matters — there the tidy story was wrong. Here I do not yet know whether the port's
+`0xC3` write is right, and pretending the citation covers it would hide a real open
+question behind a real address.
+
+`ship3d.rs`: 15 uncited constants -> 13.
+
+620 tests, 0 failures.

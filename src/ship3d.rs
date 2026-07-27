@@ -189,6 +189,16 @@ pub const SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION: u8 = 10;
 /// `mov ax,4` @`0x86E9`, the argument to `lcall 0xb1b:0x11d` @`0x86EC`
 /// (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_SELECT_SOUND: u16 = 4;
+/// VM record type `0xC3`, TESTED at `cmp ax,0xc3` @`0x5D37` (the head of the
+/// post-update chain, falling through to the `0xC4` test @`0x5D8F`) and again
+/// @`0x6F21` (audit-fixes #509).
+///
+/// NOTE THE ASYMMETRY with [`SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE`]: that one
+/// is also WRITTEN into a record (`mov word ptr [di],0xc4` @`0x5E13`), while no
+/// immediate-form write of `0xC3` was found. That is NOT a claim that none exists
+/// — #502 established that this binary builds values with shifts and adds often
+/// enough that an immediate scan proves little — but the port sets this as a
+/// `deferred_record_type`, and only the read side is evidenced here.
 pub const SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE: u16 = 0x00c3;
 pub const SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG: u8 = 0x04;
 /// `test byte [0x2565],2` @`0x889C` — phase bit 1 of the same cell whose bit 0 is
@@ -218,6 +228,11 @@ pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 2;
 /// 10 (#494) and `ship_3d_interpolation_gate` divides by @`0x1E63`. The navigation
 /// box therefore opens FASTER than the nav-choice box (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_INTERPOLATION_DURATION: u8 = 6;
+/// VM record type `0xC4`, both TESTED (`cmp ax,0xc4` @`0x5D8F`) and WRITTEN
+/// (`mov word ptr [di],0xc4` @`0x5E13`, into the field selector `0x13` resolves
+/// @`0x5E0B`). The write is what the port's `deferred_record_type` models — the
+/// handler marks a record deferred by stamping its own opcode into it
+/// (audit-fixes #509).
 pub const SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE: u16 = 0x00c4;
 pub const SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE: u16 = 2;
 pub const SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG: u8 = 0x01;
