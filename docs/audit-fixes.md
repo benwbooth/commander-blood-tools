@@ -14442,3 +14442,30 @@ backing them. The table stays a literal until the runtime slot list is modelled.
 
 2229 items, 1116 confirmed (50.1%), 1113 open. 762 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #440 — the APPROX row the prime rule requires
+
+`CLAUDE.md` is specific about literals like `PHONE_CONTACTS`: a stand-in "may
+stand in temporarily ONLY if the row in docs/port-validation.md explicitly labels
+it APPROX with the binary routine that must replace it". That row did not exist.
+The table has been a transcription through #326, #327, #328, #437, #438 and #439
+— six entries — and the matrix graded its screen `DATA+ORACLE` with no mention of
+the literal at all.
+
+Written now, with what #439 decoded as the replacement: `nav_choice_handler_2`
+(`0x87BD`) walks the runtime slot list at `DS:0x6D3E` — zero = empty slot,
+`0xFFFF` terminates — and `add ax, 4` @`0x87D5` turns each entry into its object's
+INLINE NAME, the `+4` field verified for 630/640 objects in #418. That is not a
+vague "should come from data"; it is the routine, the list, and the field.
+
+The row also records what is still unaccounted for: `Migrax` and `Hanz` appear in
+no `.VAR`, so two of the nine entries have no object behind them.
+
+Settled the ledger row ASM — its CITATIONS are now verified end to end — while the
+CONTENT defect is tracked where the prime rule says it belongs. Those are two
+different axes, and conflating them is how a transcription survives six entries of
+scrutiny: every pass checked whether the addresses were right, and none asked
+whether the table should exist.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

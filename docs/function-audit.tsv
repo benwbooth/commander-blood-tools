@@ -524,7 +524,7 @@ load_ending	src/engine.rs	3002	fn		DATA?	"/// Load the game-ending finale cutsce
 start_ending	src/engine.rs	3008	fn		TESTED	/// Start the ending finale from its first frame (call when the game is completed).
 ending_finished	src/engine.rs	3014	fn		TESTED	/// Whether the ending finale has played through all its frames.
 render_ending	src/engine.rs	3022	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
-PHONE_CONTACTS	src/engine.rs	3087	const	0x09EB,0x2737,0x893C,0x2760,0x2765,0x2769,0xA88,0x462F	ASM?	"/// PROVENANCE (audit-fixes #326): the display names are TRANSCRIBED AND /// TRANSFORMED. `DESCRIPT.DES` holds `Bob_Morlock` at `0x09EB`; this table /// carries `""BOB MORLOCK""` — upper-cased with the "
+PHONE_CONTACTS	src/engine.rs	3087	const	0x09EB,0x2737,0x893C,0x2760,0x2765,0x2769,0xA88,0x462F	ASM	"/// PROVENANCE (audit-fixes #326): the display names are TRANSCRIBED AND /// TRANSFORMED. `DESCRIPT.DES` holds `Bob_Morlock` at `0x09EB`; this table /// carries `""BOB MORLOCK""` — upper-cased with the "
 load_telephone	src/engine.rs	3107	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
 phone_contact_labels	src/engine.rs	3126	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
 phone_contact_count	src/engine.rs	3130	fn		TESTED	
