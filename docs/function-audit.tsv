@@ -247,7 +247,7 @@ text_speed_labels	src/bloodprg.rs	1001	fn	0x259D	DATA	/// The OPTION menu's TEXT
 location_status_headers	src/bloodprg.rs	1009	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
 list_widget_cancel_label	src/bloodprg.rs	1022	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
 music_on_label	src/bloodprg.rs	1028	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	1033	fn	0xFFFF	CELL?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
+ds_pointer_list_strings	src/bloodprg.rs	1033	fn	0xFFFF	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers.
 resource_name	src/bloodprg.rs	1050	fn		UNVERIFIED	
 file_to_known_segoff	src/bloodprg.rs	1063	fn		UNVERIFIED	
 u16_at	src/bloodprg.rs	1074	fn		UNVERIFIED	

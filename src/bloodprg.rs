@@ -1030,6 +1030,18 @@ impl BloodPrg {
     }
 
     /// Walk a `0xFFFF`-terminated list of DS string pointers.
+    ///
+    /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is:
+    ///
+    /// ```text
+    ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF
+    ///   ->     TEXT   MUSIC_OFF SAVE  LOAD  QUIT
+    /// ```
+    ///
+    /// and `DS:0x2578` is `MUSIC_ON`, which ends at `0x2580` — immediately before
+    /// `MUSIC_OFF` at `0x2581`. The two faces of the toggle are adjacent strings
+    /// and the list points at only one of them, which is why `music_on_label`
+    /// needs its own address rather than an index into this list.
     fn ds_pointer_list_strings(&self, list_ds: u16) -> Vec<String> {
         let mut out = Vec::new();
         let mut at = self.ds_to_file(list_ds);

@@ -15171,3 +15171,31 @@ quoted; one without is a habit wearing a hex value.
 
 2229 items, 1122 confirmed (50.3%), 1107 open. 797 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #463 — the toggle's two faces are adjacent strings
+
+`ds_pointer_list_strings` walks a `0xFFFF`-terminated list of DS string pointers.
+Read `DS:0x2567` out of the shipped image:
+
+    0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF
+    TEXT   MUSIC_OFF SAVE  LOAD  QUIT
+
+Five entries and the terminator, exactly as documented, and every string resolves.
+
+THE INTERESTING PART is the one that is NOT in the list. `DS:0x2578` is
+`MUSIC_ON`, eight characters plus a NUL, so it ends at `0x2580` — immediately
+before `MUSIC_OFF` at `0x2581`. The two faces of the music toggle are adjacent
+strings, and the pointer list names only the OFF one.
+
+That explains a shape the port already had without a reason: `music_on_label`
+carries its own hard address instead of indexing this list, and the doc called it
+"the alternate face ... which the pointer list does not name". Now it is clear WHY
+the list cannot name it — a menu row has one pointer, and a toggle needs two
+labels, so the second lives beside the first and is reached by address.
+
+Settled DATA. Both the list and the label are read out of the image rather than
+transcribed, which is the shape the prime rule asks for and the reason this row
+was cheap: there was nothing to disassemble, only bytes to look at.
+
+2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
