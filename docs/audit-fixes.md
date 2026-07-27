@@ -14843,3 +14843,31 @@ resting entirely on it.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #452 — the divisor is written as two halves, which is why it needed a citation
+
+Opened the `CELL?` queue (103 rows, untouched until now). `pit_divisor_to_hz`
+claimed the beep handler at `0x06C0` writes divisor `0x2E9C` for ~100 Hz. It does,
+and the way it does is the reason the claim was worth checking:
+
+    0x06C4  mov al, 0xb6 / out 0x43, al   control word: channel 2, mode 3
+                                           (square wave), lo-then-hi byte
+    0x06C8  mov al, 0x9c / out 0x42, al   divisor LOW  byte
+    0x06CC  mov al, 0x2e / out 0x42, al   divisor HIGH byte  -> 0x2E9C
+
+`0x2E9C` appears NOWHERE in the instruction stream — it is assembled from two
+byte writes to the same port, in the order the `0xB6` control word demands. A
+search for the immediate would find nothing, and a reader checking "does the game
+write 0x2E9C" by grepping would conclude the doc was wrong.
+
+Two things fall out. `1193182 / 11932` is 99.998 Hz, so "~100 Hz" is the
+hardware's answer rather than a rounded intention. And `0xB6` independently
+confirms CHANNEL 2 and SQUARE WAVE — the function's doc asserted both from its
+name, and now from the control word.
+
+103 CELL? rows remain. They cite DS cells rather than instructions, which is a
+different verification: the question is whether the cell is real and the claim
+about it holds, not whether an opcode matches.
+
+2229 items, 1118 confirmed (50.2%), 1111 open. 785 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

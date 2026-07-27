@@ -19,7 +19,7 @@ start_inner	src/audio.rs	187	fn		UNVERIFIED	// Fixed-point (16.16) source-positi
 stop	src/audio.rs	199	fn		INFRA	
 drop	src/audio.rs	208	fn		INFRA	
 PIT_CLOCK_HZ	src/audio.rs	215	const		UNVERIFIED	/// The 8253/8254 PIT input clock (Hz) — the base frequency the PC-speaker channel-2 /// square wave is divided down from.
-pit_divisor_to_hz	src/audio.rs	220	fn	0x6c0,0x2e9c	CELL?	/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker /// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's /// beep handler (`cmd_ha
+pit_divisor_to_hz	src/audio.rs	220	fn	0x6c0,0x2e9c	ASM	/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker /// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's /// beep handler (`cmd_ha
 square_wave_pcm	src/audio.rs	231	fn		UNVERIFIED	/// Synthesize the PC-speaker beep as `secs` of unsigned-8-bit mono square wave at `hz` /// (sampled at `rate`) — the waveform the speaker gate produces. Returns the PCM buffer, /// playable through [
 beep	src/audio.rs	252	fn		UNVERIFIED	/// Play the decoded PC-speaker beep (PIT `divisor`) for `secs` on the default device, /// returning a play-once player (or `None` if no device). Convenience wrapper tying the /// decoded divisor→freq
 MENU_BLOCK_END	src/bas_vm.rs	23	const		UNVERIFIED	/// The `0xAC` opcode terminates a menu's response block (verified via BASSTEP trace).

@@ -215,8 +215,23 @@ impl Drop for MusicPlayer {
 pub const PIT_CLOCK_HZ: f32 = 1_193_182.0;
 
 /// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker
-/// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's
-/// beep handler (`cmd_handler_pc_speaker_beep` 0x6c0) writes divisor `0x2e9c` → ~100 Hz.
+/// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`.
+///
+/// The game's beep handler `cmd_handler_pc_speaker_beep` (`0x06C0`) programs it in
+/// five instructions, and the divisor is written as two halves rather than as a
+/// word — which is why the constant is `0x2E9C` and not something the disassembly
+/// shows directly:
+///
+/// ```text
+///   0x06C4  mov al, 0xb6 / out 0x43, al   control word: channel 2, mode 3
+///                                          (square wave), lo-then-hi byte
+///   0x06C8  mov al, 0x9c / out 0x42, al   divisor LOW  byte
+///   0x06CC  mov al, 0x2e / out 0x42, al   divisor HIGH byte  -> 0x2E9C = 11932
+/// ```
+///
+/// `1193182 / 11932` = 99.998 Hz, so "~100 Hz" is the hardware's answer and not a
+/// rounded intention. `0xB6` also confirms CHANNEL 2 and SQUARE WAVE independently
+/// of this function's name.
 pub fn pit_divisor_to_hz(divisor: u16) -> f32 {
     if divisor == 0 {
         return 0.0;
