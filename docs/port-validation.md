@@ -2140,9 +2140,15 @@ describes does not run.
   `func_d4a`, ...) are verified against the oracle and registered only in their own
   test table; the runtime does not call them. Wiring them is the task.
 
-**Not settled by listing.** Each needs the pair read. The list is the queue, and the
-numbers to watch are these: 38 now, and it should fall as things get wired or
-consciously marked as reference implementations.
+**A third shape, added in #622:** functions that exist ON PURPOSE as reference
+implementations — `mode_x_offset` and `mode_x_to_linear` state the game's addressing
+so a test can prove the port's linear framebuffer is equivalent to it, and are not
+meant to run. Marked `REFERENCE-ONLY` in their docs, which the tool honours. That is
+not a licence to silence findings: it says the function is a PROOF, and a wrong one
+still fails its test.
+
+**Not settled by listing.** Each needs the pair read. The list is the queue: 38 at
+#611, 36 now, and it should fall as things get wired or consciously marked.
 
 **Tool limits, stated so the count is not over-trusted.** It counts bare names in
 live code (so dispatch-table registrations count as uses) with doc comments stripped

@@ -91,8 +91,18 @@ def main():
             while j >= 0 and (lines[j].lstrip().startswith("///") or lines[j].lstrip().startswith("#[")):
                 doc.append(lines[j])
                 j -= 1
-            if not ADDR.search("\n".join(doc)):
+            doc_text = "\n".join(doc)
+            if not ADDR.search(doc_text):
                 continue  # no citation: a different queue
+            # A THIRD CATEGORY the first version conflated with the other two:
+            # functions that exist ON PURPOSE as reference implementations, to
+            # document or cross-check a rule rather than to run. `mode_x_offset`
+            # says so outright -- "Provided to document + verify that the engine's
+            # linear framebuffer is address-equivalent to the game's mode-X". Those
+            # are not a queue item, and leaving them in makes the count read as more
+            # outstanding work than there is. Marked with REFERENCE-ONLY in the doc.
+            if "REFERENCE-ONLY" in doc_text:
+                continue
             # Count call sites OUTSIDE test blocks ACROSS THE WHOLE TREE, excluding
             # the definition itself. The first version searched only the defining
             # file's live text, so anything called from another module -- e.g.

@@ -20706,3 +20706,30 @@ NOT reach past the rect, with a note pointing at the choice-box test, which make
 structure point with real game data loaded.
 
 738 tests, 0 failures.
+
+## #622 — a third category, and a marker that must not become a mute button
+
+#611's list mixed three things, not two. Beside "duplicate of something wired" and
+"decode never connected" sit functions that exist ON PURPOSE and are not meant to run:
+`mode_x_offset` and `mode_x_to_linear` state the game's mode-X addressing so a test
+can prove the port's linear framebuffer is equivalent to it. Their own doc said as
+much — "Provided to document + verify" — and the tool counted them as outstanding work
+anyway.
+
+`REFERENCE-ONLY` in the doc now excludes them. 38 becomes 36.
+
+THE RISK IS OBVIOUS AND WORTH NAMING: a marker that removes a finding is a marker
+someone will reach for when a finding is inconvenient. The rule that keeps it honest
+is that REFERENCE-ONLY says the function is a PROOF, not that it is exempt — a wrong
+reference implementation still fails the test that consumes it, which is the whole
+reason it exists. Anything that is merely unwired does NOT qualify, however plausible
+its reason.
+
+MY MARKER LANDED ON THE WRONG FUNCTION FIRST. I anchored the edit on "Invert
+[`mode_x_offset`] back to the linear framebuffer index", which appears twice in
+`engine.rs` — the second is a different function's doc. The count went 38 -> 37
+instead of 36, which is the only reason I noticed. A one-off edit that silently
+annotates the wrong item is exactly what the marker makes dangerous, and it happened
+on the first attempt.
+
+738 tests, 0 failures.

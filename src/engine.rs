@@ -5859,6 +5859,10 @@ impl EngineState {
     }
 }
 
+/// REFERENCE-ONLY: nothing calls this at runtime and nothing should. It exists to
+/// state the game's addressing and to let a test prove the port's linear framebuffer
+/// is equivalent to it (audit-fixes #622).
+///
 /// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where
 /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex`
 /// (`0x299:0x498` = file `0x3428`) computes it:
@@ -5908,6 +5912,9 @@ fn signed_i16_engine(v: u16) -> i32 {
 /// `offset*4 + plane`. It works for the whole framebuffer, not just within a row,
 /// because the plane stride is 80 and `80 * 4 = 320` — the row base scales into
 /// place along with the column.
+///
+/// REFERENCE-ONLY, like [`mode_x_offset`] — the proof, not a code path
+/// (audit-fixes #622).
 ///
 /// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
