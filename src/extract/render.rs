@@ -1041,9 +1041,23 @@ pub(super) const SCENE_BOTTOM: usize = 0xA5; // 165
 // loop, so every line is left-aligned at the same X — the block advances in Y
 // only, by the same 8 as GAME_FONT_LINE_HEIGHT.
 pub(super) const SUBTITLE_X: usize = 10;
+// `mov word ptr [0x5e5e],8` @`0x7C60` — the cell the reveal draw passes as DX
+// (`mov dx,[0x5e5e]` @`0x94EA`, then `lcall 0x299,0x6a0` @`0x94EE`).
+//
+// IT IS A CELL, NOT A CONSTANT (audit-fixes #541): the same word is written 1 at
+// `0x7A08`, on a different path. This port models the 8 case; a subtitle drawn
+// after the other path would sit seven rows higher and nothing here would say so.
 pub(super) const SUBTITLE_Y: usize = 8;
+// 8 — one byte per glyph row, which is what makes the glyph 8 pixels wide. The
+// row table is `glyphs * height` BYTES (pinned by
+// `game_font_row_table_is_one_byte_per_row`), and the bold console font indexes
+// its bitmaps with `shl ax,3` @`0x3691` for the same reason (audit-fixes #536).
 pub(super) const GAME_FONT_WIDTH: usize = 8;
+// 8 rows per glyph — the `height` of that same `glyphs * height` row table
+// (audit-fixes #536).
 pub(super) const GAME_FONT_HEIGHT: usize = 8;
+// 8 — the subtitle block advances in Y only, by exactly the glyph height, since
+// BX is not reloaded inside the loop (see the note above).
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;
 pub(super) const SUBTITLE_COLOR_REVEALED: u8 = 0xFD;
 pub(super) const SUBTITLE_COLOR_REVEAL_EDGE: u8 = 0xFE;

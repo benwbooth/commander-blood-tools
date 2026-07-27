@@ -17987,3 +17987,40 @@ duplicated FUNCTIONS. The port has since moved most of its decoded knowledge int
 constants, and the filter stayed.
 
 723 tests, 0 failures.
+
+## #541 — SUBTITLE_Y is a CELL with two values, and the port models one
+
+The subtitle reveal takes its position from cells, not immediates:
+
+```text
+  0x94E6  mov bx, word ptr [0x5e5c]      x
+  0x94EA  mov dx, word ptr [0x5e5e]      y
+  0x94EE  lcall 0x299, 0x6a0             the reveal draw (#490)
+```
+
+`[0x5e5e]` is written `8` @`0x7C60` — which is the port's `SUBTITLE_Y` — and also
+written **`1`** @`0x7A08`, on a different path. So the port has hardcoded one of two
+values the game uses for the same cell. A subtitle drawn after the other path sits
+seven rows higher, and nothing in `render.rs` says the value can change.
+
+Recorded rather than fixed: which path leads to which write is not yet decoded, and
+guessing would be worse than the current state — the 8 is a real value from a real
+instruction, just not the only one. The doc now says so at the constant.
+
+`[0x5e5c]` (SUBTITLE_X) has NO immediate write at all; it is loaded from a register
+elsewhere, so its `10` stays UNVERIFIED rather than being attributed to a neighbour
+(#509's discipline).
+
+The three font-metric 8s are the same 8 seen three ways, and now say so: the row
+table is `glyphs * height` bytes with one byte per row (which is what makes the
+glyph eight pixels WIDE), and the bold console font scales its index by `shl ax,3`
+@`0x3691` for the identical reason (#536). Three constants, one fact.
+
+A DECODE NOTE, because it cost a step: disassembling from `0x7C5A` — two bytes
+before the address the byte-scan reported — produced `add dh,al / push es / jmp`,
+plausible garbage. Decoding from `0x7C60` itself gives the real
+`mov word ptr [0x5e5e],8`. x86 self-synchronises, so an arbitrary start is a
+phantom generator; #515 made this point about the GS prefix and it applies to any
+address not already known to be an instruction boundary.
+
+723 tests, 0 failures.

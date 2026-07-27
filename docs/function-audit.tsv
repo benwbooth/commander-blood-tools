@@ -1805,14 +1805,14 @@ game_font_advance	src/extract/render.rs	1019	fn		UNVERIFIED
 SCENE_TOP	src/extract/render.rs	1027	const	0x5239,0x523B,0x2793	CELL?	// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the // framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The // letterbox mode (gs:0x2793 & 8) uses rows 
 SCENE_BOTTOM	src/extract/render.rs	1028	const		UNVERIFIED	
 SUBTITLE_X	src/extract/render.rs	1043	const	0x94E6,0x9508,0x5e5c,0x94EA,0x5e5e,0x94EE,0x6a0,0x94F8,0x950	ASM	// BLOODPRG.EXE's reveal renderer, read end to end at 0x94E6..0x9508: // //   0x94E6  mov bx, word ptr [0x5e5c]     X, loaded ONCE before the loop //   0x94EA  mov dx, word ptr [0x5e5e]     Y //   0x9
-SUBTITLE_Y	src/extract/render.rs	1044	const		UNVERIFIED	
-GAME_FONT_WIDTH	src/extract/render.rs	1045	const		UNVERIFIED	
-GAME_FONT_HEIGHT	src/extract/render.rs	1046	const		UNVERIFIED	
-GAME_FONT_LINE_HEIGHT	src/extract/render.rs	1047	const		UNVERIFIED	
-SUBTITLE_COLOR_REVEALED	src/extract/render.rs	1048	const		UNVERIFIED	
-SUBTITLE_COLOR_REVEAL_EDGE	src/extract/render.rs	1049	const		UNVERIFIED	
-SUBTITLE_RGB	src/extract/render.rs	1058	const		DATA?	"// The subtitle reveal draws with palette indices 0xFD (revealed) / 0xFE (edge) // — see REVERSE.md ""0xFD for already-revealed glyphs and 0xFE"" for the edge. // These are RESERVED high-palette entries"
-apply_reserved_subtitle_palette	src/extract/render.rs	1064	fn		DATA?	/// Set the reserved subtitle-reveal palette entries (0xFD/0xFE) to the game's /// subtitle colour. Call on any scene palette before rendering subtitles through /// it, so the reveal is visible regard
+SUBTITLE_Y	src/extract/render.rs	1050	const	0x5e5e,0x7C60,0x94EA,0x6a0,0x94EE,0x7A08	ASM	// `mov word ptr [0x5e5e],8` @`0x7C60` — the cell the reveal draw passes as DX // (`mov dx,[0x5e5e]` @`0x94EA`, then `lcall 0x299,0x6a0` @`0x94EE`). // // IT IS A CELL, NOT A CONSTANT (audit-fixes #54
+GAME_FONT_WIDTH	src/extract/render.rs	1055	const	0x3691	ASM	// 8 — one byte per glyph row, which is what makes the glyph 8 pixels wide. The // row table is `glyphs * height` BYTES (pinned by // `game_font_row_table_is_one_byte_per_row`), and the bold console f
+GAME_FONT_HEIGHT	src/extract/render.rs	1058	const		UNVERIFIED	// 8 rows per glyph — the `height` of that same `glyphs * height` row table // (audit-fixes #536).
+GAME_FONT_LINE_HEIGHT	src/extract/render.rs	1061	const		UNVERIFIED	// 8 — the subtitle block advances in Y only, by exactly the glyph height, since // BX is not reloaded inside the loop (see the note above).
+SUBTITLE_COLOR_REVEALED	src/extract/render.rs	1062	const		UNVERIFIED	
+SUBTITLE_COLOR_REVEAL_EDGE	src/extract/render.rs	1063	const		UNVERIFIED	
+SUBTITLE_RGB	src/extract/render.rs	1072	const		DATA?	"// The subtitle reveal draws with palette indices 0xFD (revealed) / 0xFE (edge) // — see REVERSE.md ""0xFD for already-revealed glyphs and 0xFE"" for the edge. // These are RESERVED high-palette entries"
+apply_reserved_subtitle_palette	src/extract/render.rs	1078	fn		DATA?	/// Set the reserved subtitle-reveal palette entries (0xFD/0xFE) to the game's /// subtitle colour. Call on any scene palette before rendering subtitles through /// it, so the reveal is visible regard
 ScriptTextCall	src/extract/script.rs	26	struct	0x660C,0x6724,0x1FAB,0x6788	CELL?	"/// A decoded `0xA6` TEXT token from a `SCRIPT*.COD` stream. /// /// Token layout recovered by reverse-engineering the VM TEXT handler at /// `BLOODPRG.EXE` file 0x660C (see `re/REVERSE.md` ""0xA6 TEXT"
 RuntimeBackground	src/extract/script.rs	40	struct		DATA?	/// A dialogue line's background resolved from the *runtime* scene state computed /// by the bounded interpreter (`vm::interpret_line_states`), keyed by the line's /// COD offset. Only lines whose run
 resolve_runtime_backgrounds	src/extract/script.rs	49	fn		DATA?	/// Execute the script (bounded interpreter) and resolve each `0xA6` line's /// runtime location (`state[actor+24]`) to a DESCRIPT background. Returns a map /// from line COD offset to the resolved ba
