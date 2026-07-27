@@ -3584,6 +3584,28 @@ fn derive_ship_3d_position_runtime(
     }
 }
 
+/// `0xC1`'s kind-`0x10` ship-3D redirect: for raw operand 1 or 2, decide which
+/// record the state compare should actually be applied to.
+///
+/// PIECES CITED, COMPOSITION NOT. Each step below names its routine, and the
+/// function that strings them together in the original has NOT been identified —
+/// this doc says so rather than picking a plausible address:
+///
+/// * the distance is `ship_3d_position_distance` @`0x60DD` (its own decode);
+/// * the redirect follows field selector `0x11`
+///   ([`ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK`]) through
+///   `vm_field_offset` @`0x6023`, the `bsf`-indexed matrix at `DS:0x6D60`;
+/// * the target must be a kind-`0x10` record
+///   ([`ship3d::SHIP_3D_C1_KIND10_RECORD_KIND`]) or there is no redirect.
+///
+/// NOT `0x6B8B`, which is the neighbour it would be easy to cite. That is
+/// `ship_3d_c1_mode1_resolved_compare`, also reached for raw operand 1/2, but it
+/// resolves selector `0x11` and then selector `0x13` and compares — no distance, and
+/// its zero-check is on the `0x13` result. Different rule, adjacent trigger
+/// (audit-fixes #597).
+///
+/// The row stays UNVERIFIED until the composing routine is found; the pieces being
+/// individually sourced is not the same claim.
 fn resolve_c1_record_state_ship3d_target(
     state: &[u8],
     runtime: &Ship3dC1RuntimeContext,

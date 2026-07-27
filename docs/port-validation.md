@@ -1995,3 +1995,22 @@ pixel rule is undecided: `0x66DB` builds a CR-separated buffer for some consumer
 and `0x72A8` walks a word-pointer array bounded by `gs:[0x27D3]`. Finding each
 one's callers is the next task, and wiring the pixel layout into every subtitle
 before knowing that would replace one wrong rule with another.
+
+## UNVERIFIED — `resolve_c1_record_state_ship3d_target`'s composing routine (#597)
+
+**Cited pieces, uncited whole.** The port's `0xC1` kind-`0x10` redirect is built from
+three sourced parts — `ship_3d_position_distance` @`0x60DD`, field selector `0x11`
+through `vm_field_offset` @`0x6023`, and the kind-`0x10` record test. The routine
+that COMBINES them has not been found.
+
+**The near-miss worth naming.** `0x6B8B` (`ship_3d_c1_mode1_resolved_compare`) is
+reached from the same trigger — `0xC1` mode 1 with raw operand 1 or 2 — and resolves
+selector `0x11`. It is NOT this rule: it then resolves selector `0x13`, compares, and
+does no distance calculation, and its `or ax,ax / je` zero-check is on the `0x13`
+result rather than the `0x11` one. Citing it because it is adjacent and plausible is
+exactly the error #583 made with `0x72A8`.
+
+**What would settle it.** A routine that calls `0x60DD` and then walks selector `0x11`
+on a non-zero distance. `re/tools/find_callers.py` on `0x60DD` is the next step; the
+`0x5B38` family (`record_c1_ship3d_action`, kinds `0x10`/`0x200`, gated on
+`gs:0x6752`/`0x27DF`) is the obvious place to look first, and obvious is not decoded.
