@@ -18149,3 +18149,35 @@ scaffolding, and the two sit adjacent in the source looking identical. Only the
 citation distinguishes them.
 
 724 tests, 0 failures.
+
+## #546 — the alien engine's four values, and 0x8000 turning out to be 1.0
+
+Four `croolis.rs` constants, all from `croolis.xdb`:
+
+```text
+  0x0385/0x038D/0x0395  mov dword [si+0x12/0x22/0x32], 0x8000   TRANSFORM_NEUTRAL
+  0x099F/0x09A2         mov di,0x4000 / mov bp,0x7fff           WRAP + MASK
+  0x16C9/0x16CE/0x16D3  state=1, timer=0x32, accumulator=0      TIMER_RELOAD
+  0x16DC                add bx,0xfa                             ANIM_STEP
+```
+
+`ALIEN_TRANSFORM_NEUTRAL = 0x8000` IS 1.0. `ship3d::SHIP_3D_MATRIX_FIXED_SHIFT` is
+15 (`sar e_x,0xf`, #499), so `0x8000 >> 15 == 1` — the alien initializer's "neutral
+transform" and the projection's fixed-point format are the same fact reached from
+two subsystems that share no code. #499 predicted this ("which is exactly why
+`ALIEN_TRANSFORM_NEUTRAL` is `0x8000`"); the citation now closes the loop from the
+other end.
+
+Two are worth reading as SEQUENCES rather than values. The wrap loads its mask and
+its half-extent two instructions apart (`0x99F`/`0x9A2`), so `0x4000` and `0x7FFF`
+are one setup, not two constants that happen to be related. And the timer reload sits
+between the state flag and the accumulator clear (`0x16C9`..`0x16D3`): choosing a
+state, arming the timer and zeroing the accumulator is ONE sequence, so a port doing
+any of the three alone produces a state the game never holds.
+
+`ALIEN_ANIM_STEP`'s citation restates what #400 established and the constant never
+carried: the `add bx,0xfa` @`0x16DC` advances the SHARED counter `cs:[0x16A2]`, not
+a per-object field. That was the bug #401 fixed; the constant now says so where
+someone editing it will read it.
+
+724 tests, 0 failures.

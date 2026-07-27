@@ -127,6 +127,13 @@ pub struct AlienObject {
 }
 
 /// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
+/// `0x8000`, written by the initializer at `XDB:croolis:0x385`, `0x38D` and
+/// `0x395` — three `mov dword ptr [si+0x12/0x22/0x32], 0x8000` stores, one per
+/// component (audit-fixes #546).
+///
+/// It is 1.0 in the matrix format: `ship3d::SHIP_3D_MATRIX_FIXED_SHIFT` is 15
+/// (`sar e_x,0xf`, #499), so `0x8000 >> 15 == 1`. The neutral transform and the
+/// projection's fixed-point scale are the same fact in two subsystems.
 pub const ALIEN_TRANSFORM_NEUTRAL: i32 = 0x8000;
 
 /// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into
@@ -135,11 +142,21 @@ pub const ALIEN_POSITION_WRAP: i16 = 16384;
 
 /// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so
 /// hexadecimal is the natural form).
+/// `mov bp,0x7fff` @`XDB:croolis:0x9A2`, loaded beside `mov di,0x4000` @`0x99F`
+/// ([`ALIEN_POSITION_WRAP`]) at the head of the toroidal wrap — the mask and the
+/// half-extent are set up together, two instructions apart (audit-fixes #546).
 const POSITION_WRAP_MASK: u16 = 0x7fff;
 
 /// Timer reload (in frames) when a new animation state is chosen.
+/// `mov word ptr [di+0x38],0x32` @`XDB:croolis:0x16CE` — 50, stored in the same
+/// run as the state flag `[di+0x36] = 1` @`0x16C9` and the cleared `[di+0x3a]`
+/// @`0x16D3`. Choosing a state, arming the timer and clearing the accumulator are
+/// ONE sequence (audit-fixes #546).
 pub const ALIEN_STATE_TIMER_RELOAD: u16 = 50;
 /// Animation-accumulator step added per state change.
+/// `add bx,0xfa` @`XDB:croolis:0x16DC` — 250 added to the SHARED counter
+/// `cs:[0x16A2]` (stored back @`0x16E0`), not to anything per-object. See
+/// [`AlienStreams`] (audit-fixes #400, #546).
 pub const ALIEN_ANIM_STEP: u16 = 250;
 
 /// Vertical bias subtracted from the timer-indexed animation offset when testing
