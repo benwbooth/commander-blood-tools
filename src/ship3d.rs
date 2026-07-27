@@ -20,18 +20,36 @@ pub const SHIP_3D_TRANSITION_CLOSE_STEP: u8 = 8;
 pub const SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD: u16 = 120;
 /// `dl = 0x50` @`0xB721`, the row stride the band copy multiplies by.
 pub const SHIP_3D_PLANE_ROW_BYTES: usize = 80;
+/// `mov ax,0x1f40` @`0xB728` — 8000 bytes, one unchained-VGA plane page
+/// (80 bytes/row x 100 rows), used again as the destination stride @`0xB742`.
 pub const SHIP_3D_PLANE_PAGE_BYTES: usize = 8000;
 /// `add ax,0x23` @`0xB71E` — 35 rows added to the depth offset before the
 /// multiply, so a zero depth still copies 35 rows.
 pub const SHIP_3D_PLANE_BASE_ROWS: usize = 35;
 /// `mov si,0xc000` @`0xB718` — the source page the copy reads from.
 pub const SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET: usize = 0xc000;
+/// `mov si,0xdf40` @`0xB746` — the SECOND source page. The band copy is two
+/// `rep movsb` passes (@`0xB73D` and @`0xB750`), one per page, with the
+/// destination advanced a whole page between them by `add di,0x1f40` @`0xB742`.
 pub const SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET: usize = 0xdf40;
+/// The destination spans BOTH pages, because the routine writes at `di` and then
+/// again at `di + 0x1F40` (@`0xB742`) — derived from the copy's shape rather than
+/// being an immediate of its own.
 pub const SHIP_3D_PLANE_DEST_BYTES: usize = SHIP_3D_PLANE_PAGE_BYTES * 2;
+/// `cmp word [0x524d],0xa / je 0xB70B` @`0xB6F0` — mode 10 HOLDS the scroll: the
+/// `je` jumps past `mov [0x524f],ax` @`0xB708`, so the band still copies but the
+/// scroll value is left where it was. Hence the port's `!=` gate on the update
+/// rather than on the copy.
 pub const SHIP_3D_SCROLL_MODE_HOLD: u16 = 10;
 pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 4;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 6;
+/// Four, and there is NO loop counter to read it from: `ship_3d_interpolation_gate`
+/// @`0x1E5D` is UNROLLED, one block per word — `[di]` @`0x1E72`, `[di+2]`
+/// @`0x1E80`, `[di+4]` @`0x1E8F`, `[di+6]` @`0x1E9E`, then `pop bx` @`0x1EAC`.
+/// The count IS the number of blocks, which is also why the layout rect it
+/// interpolates is four words wide (`[si]`..`[si+6]`, stored @`0x84A4`-`0x84C3`
+/// and copied by the `movsd / movsd` pair @`0x8892`).
 pub const SHIP_3D_INTERPOLATION_WORDS: usize = 4;
 /// The list widget's layout seeds, all from `list_widget_layout_unified`
 /// @`0x8428` (audit-fixes #489). The two widths are ALTERNATIVES, not a base and
