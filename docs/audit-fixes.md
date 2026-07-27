@@ -16417,3 +16417,45 @@ says what is checked and what is not; the row stays provisional.
 `ship3d.rs`: 79 uncited constants -> 74.
 
 619 tests, 0 failures.
+
+## #497 — the auto-turn's tail closes both of #496's gaps, and 1440 has two jobs
+
+Seven more constants from the tail of `0x9733..0x980B`, and the tail answers the two
+questions #496 deliberately left open rather than guess at.
+
+**A frame IS half a degree-count.** The routine accumulates in DEGREES, wrapping at
+`0x168`, and then:
+
+```text
+  0x97E1  shr bx, 1
+  0x97E3  mov word ptr [0x2795], bx     the panorama FRAME cell
+```
+
+So `run_ship_3d_procedural_update` modelling frames and doubling (`angle * 2`) is
+not a plausible-looking mapping, it is the exact inverse of an instruction. #496
+recorded that as unestablished; it is established now, and the doc comment says so
+instead of still hedging.
+
+**The two step sizes have names.** `TARGET_LIST_STEP` is the `0x28` @`0x977C` and
+`AUTO_ROTATE_STEP` the `0x1E` @`0x97C4` — the target-list branch turns faster than
+the plain one, which is the whole reason the `[0x2793]` bit-2 test @`0x975A`
+selects between two otherwise identical wrap paths.
+
+**1440 is one value doing two jobs**, which is why the port has two constants for
+it and neither is redundant: `add cx,0x5a0` @`0x979D` is the ring ORIGIN added to
+`angle * 4`, while `add bx,0x5a0` @`0x9807` and `cmp bx,0x5a0` @`0x980B` are the
+ring MODULUS wrapping a delta. The new test asserts they are equal AND cites both
+sites, so the coincidence is documented rather than looking like duplication.
+
+THE TEST CAUGHT ME ON THE `83 /N ib` FORM AGAIN. I asserted the align mask by
+reading a WORD at `0x97F9`; `and word ptr [0xa2a],0xfff8` encodes as
+`83 26 2a 0a f8`, where the immediate is a single SIGN-EXTENDED byte at `0x97FA`.
+The word read returns `0xF80A` — the mask's byte plus the following opcode. This is
+the same encoding family my own notes list as the recurring blind spot, and it has
+now cost a test failure in three separate sessions. The assertion is rewritten to
+check the `83 /4` opcode pair explicitly and then sign-extend the byte, so the next
+reader sees the form rather than a bare offset.
+
+`ship3d.rs`: 74 uncited constants -> 67.
+
+620 tests, 0 failures.

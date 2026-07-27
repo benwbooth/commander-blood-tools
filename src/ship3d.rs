@@ -252,12 +252,28 @@ pub const SHIP_3D_PROCEDURAL_FULL_TURN: u16 = 360;
 /// the pointer rides a ring four units per degree, offset by a full 360*4 so the
 /// ring never runs negative (audit-fixes #496).
 pub const SHIP_3D_PROCEDURAL_MOUSE_RING: u16 = 1440;
+/// The same 1440 as [`SHIP_3D_PROCEDURAL_MOUSE_RING`] in its SECOND role: the ring
+/// MODULUS, `add bx,0x5a0` @`0x9807` when a delta goes negative and `cmp bx,0x5a0`
+/// @`0x980B`. One value, two jobs — origin and wrap (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_MOUSE_CENTER_X: u16 = 1440;
+/// `and word [0xa2a],0xfff8` @`0x97F6` — the cursor x is snapped to a multiple of
+/// 8 after every auto-turn step, so the ring advances in whole 8-unit notches
+/// (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK: u16 = 0xfff8;
+/// `cmp ax,0x1f / jle 0x97FC` @`0x9752` — within 31 of the target the routine
+/// stops turning (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD: u16 = 31;
+/// `cmp ax,0x28 / jl 0x97FC` @`0x9762` — the wider 40 threshold used only on the
+/// target-list branch, i.e. when `[0x2793]` bit 2 is set (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD: u16 = 40;
+/// `add bp,0x28` @`0x977C` / `sub bp,0x28` @`0x978B` — the target-list branch
+/// turns 40 at a time (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_TARGET_LIST_STEP: u16 = 40;
+/// `sub bx,0x1e` @`0x97C4` / `add bx,0x1e` @`0x97D4` — the plain auto-rotate
+/// branch turns 30 at a time, the SLOWER of the two (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP: u16 = 30;
+/// `sub ax,0xa0` @`0x97F0`, applied after `shl ax,3` @`0x97ED`, so the cursor
+/// target is `frame * 8 - 160` (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS: u16 = 0x00a0;
 pub const SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET: u16 = 0x4f45;
 /// Touched by the game at `mov di, word ptr [0x2f71]` @`0x098D1`, found by decoding forward
@@ -2128,13 +2144,16 @@ pub fn run_ship_3d_navigation_sequence_update(
 /// @`0x975A`, and the cursor ring `shl bp,2 / add cx,0x5a0 / int 0x33` AX=4
 /// @`0x9794`.
 ///
-/// WHAT IS NOT ESTABLISHED, stated so the row stays honest: the binary works in
-/// DEGREES and wraps at `0x168` (360), while this models the angle in panorama
-/// FRAMES and doubles it (`angle * 2`) — 180 frames of 2 degrees. That mapping is
-/// consistent with the frame cell `[0x2795]` (#493) but has not been checked
-/// against every wrap site here, and the two step sizes the branch selects
-/// (`0x28` @`0x977C` and `0x1E` @`0x97C4`) are not yet tied to named constants.
-/// The ledger row stays provisional until they are.
+/// BOTH GAPS #496 LEFT OPEN ARE NOW CLOSED (audit-fixes #497). The frame/degree
+/// mapping is not an inference: the routine works in DEGREES, wrapping at `0x168`,
+/// and stores `shr bx,1` @`0x97E1` into the frame cell `[0x2795]`. So a frame IS
+/// half a degree-count, and this function's `angle * 2` is exactly that inverse.
+/// The two branch step sizes are named too — [`SHIP_3D_PROCEDURAL_TARGET_LIST_STEP`]
+/// (`0x28` @`0x977C`) and [`SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP`] (`0x1E` @`0x97C4`).
+///
+/// Still NOT a whole-function transcription claim: every constant and the angle
+/// mapping are checked, the statement-by-statement equivalence of the branch
+/// bookkeeping is not.
 pub fn run_ship_3d_procedural_update(
     state: &mut Ship3dProceduralUpdateState,
 ) -> Ship3dProceduralUpdateEffect {
@@ -9646,5 +9665,56 @@ mod tests {
         }
         // The table begins immediately after the dispatcher's `ret` @0x8708.
         assert_eq!(exe[0x8708], 0xC3);
+    }
+
+    /// The panorama auto-turn's constants, pinned to the image rather than
+    /// restated (audit-fixes #497). The last assertion is the important one: it
+    /// encodes WHY the port may model frames while the binary counts degrees.
+    #[test]
+    fn panorama_auto_turn_immediates_match_the_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let word = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]);
+
+        // `cmp ax,0xb4` @0x9748 then `sub ax,0x168` @0x974D -- the shortest-distance fold.
+        assert_eq!(word(0x9749), super::SHIP_3D_PROCEDURAL_HALF_TURN);
+        assert_eq!(word(0x974E), super::SHIP_3D_PROCEDURAL_FULL_TURN);
+        // thresholds and steps
+        assert_eq!(exe[0x9754] as u16, super::SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD);
+        assert_eq!(exe[0x9764] as u16, super::SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD);
+        assert_eq!(exe[0x977E] as u16, super::SHIP_3D_PROCEDURAL_TARGET_LIST_STEP);
+        assert_eq!(exe[0x97C6] as u16, super::SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP);
+        // the cursor ring: `add cx,0x5a0` @0x979D, wrap `add bx,0x5a0` @0x9807
+        assert_eq!(word(0x979F), super::SHIP_3D_PROCEDURAL_MOUSE_RING);
+        assert_eq!(word(0x9809), super::SHIP_3D_PROCEDURAL_MOUSE_CENTER_X);
+        assert_eq!(
+            super::SHIP_3D_PROCEDURAL_MOUSE_RING,
+            super::SHIP_3D_PROCEDURAL_MOUSE_CENTER_X,
+            "one value in two roles: ring origin and ring modulus"
+        );
+        // `sub ax,0xa0` @0x97F0 and `and word [0xa2a],0xfff8` @0x97F6
+        assert_eq!(word(0x97F1), super::SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS);
+        // `and word ptr [0xa2a], 0xfff8` is `83 26 2a 0a f8` -- the `83 /N ib`
+        // form, whose immediate is ONE BYTE, SIGN-EXTENDED. Reading a word here
+        // yields 0xF80A, which is the next instruction's bytes, not a mask.
+        assert_eq!(&exe[0x97F6..0x97F8], &[0x83, 0x26], "83 /4: and r/m16, imm8");
+        assert_eq!(
+            exe[0x97FA] as i8 as i16 as u16,
+            super::SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK
+        );
+
+        // THE FRAME IS HALF A DEGREE-COUNT: `shr bx,1` (d1 eb) @0x97E1 immediately
+        // before `mov [0x2795],bx` (89 1e 95 27) @0x97E3. This is what licenses the
+        // port's `angle * 2` when it hands frames to degree-space arithmetic.
+        assert_eq!(&exe[0x97E1..0x97E3], &[0xD1, 0xEB], "shr bx,1");
+        assert_eq!(&exe[0x97E3..0x97E7], &[0x89, 0x1E, 0x95, 0x27], "mov [0x2795],bx");
+        // and the panorama really is 180 frames of 2 degrees
+        assert_eq!(
+            super::SHIP_3D_PROCEDURAL_FULL_TURN / 2,
+            super::SHIP_3D_PROCEDURAL_HALF_TURN
+        );
     }
 }
