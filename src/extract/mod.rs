@@ -41,12 +41,12 @@ const SILENT_SUBTITLE_SR: u32 = 11025;
 // `obj+0x3A`, the TALK field of the field-offset matrix at `DS:0x6D60` — the
 // same value `vm::field_offset` documents for `bsf(2)=1` and the same one
 // `vm::TALK_FIELD` holds. Two files, one matrix column (audit-fixes #548).
-const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
+const SCRIPT_OBJECT_TALK_FIELD: u16 = commander_blood_tools::vm::TALK_FIELD;
 // `obj+0x18` = 24, the universal character LOCATION field of the matrix at
 // `DS:0x6D60` (resolved by `vm_field_offset` @`0x6023`),
 // and the same value as `vm::LOCATION_FIELD` — which is pinned to the image by
 // `field_matrix_entries_match_the_constants` (audit-fixes #548).
-const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
+const SCRIPT_OBJECT_LOCATION_FIELD: usize = commander_blood_tools::vm::LOCATION_FIELD as usize;
 
 // The fixed leading entries of BLOODPRG.EXE's boot cutscene path table
 // (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`).

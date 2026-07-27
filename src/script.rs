@@ -13,7 +13,7 @@ use crate::vm::{self, VmToken};
 /// at `DS:0x6D60`, resolved by `vm_field_offset` @`0x6023`. The same value as
 /// `vm::LOCATION_FIELD` and `extract::SCRIPT_OBJECT_LOCATION_FIELD`: three files,
 /// one matrix column (audit-fixes #548, #560).
-pub const OBJECT_LOCATION_FIELD: usize = 24;
+pub const OBJECT_LOCATION_FIELD: usize = vm::LOCATION_FIELD as usize;
 
 /// A subtitle line is wrapped once its length reaches this many characters (the game's
 /// on-screen dialogue is broken into ~35-column lines).
@@ -23,7 +23,7 @@ pub const SUBTITLE_WRAP_COLUMN: usize = 35;
 /// `extract::SCRIPT_OBJECT_TALK_FIELD`. Note this file spells it in DECIMAL where
 /// the others use hex, which is part of why the duplication went unnoticed
 /// (audit-fixes #560).
-pub const OBJECT_TALK_FIELD: u16 = 58;
+pub const OBJECT_TALK_FIELD: u16 = vm::TALK_FIELD;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DebSymbol {

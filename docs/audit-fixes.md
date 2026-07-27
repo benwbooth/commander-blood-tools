@@ -18620,3 +18620,38 @@ until the wrapping routine is found. That the value may well be right does not m
 the reasoning admissible.
 
 726 tests, 0 failures.
+
+## #561 — five copies of two values, reduced to one definition each
+
+#526, #538, #539, #548 and #560 each found the same shape: one game fact with two
+or more homes in the port. For the field-matrix columns I stopped documenting it and
+fixed it.
+
+`vm::LOCATION_FIELD` and `vm::TALK_FIELD` are now `pub`, and the other three copies
+DERIVE from them:
+
+```rust
+  script::OBJECT_LOCATION_FIELD   = vm::LOCATION_FIELD as usize
+  script::OBJECT_TALK_FIELD       = vm::TALK_FIELD
+  extract::SCRIPT_OBJECT_LOCATION_FIELD = vm::LOCATION_FIELD as usize
+  extract::SCRIPT_OBJECT_TALK_FIELD     = vm::TALK_FIELD
+```
+
+Four literal definitions gone. The values cannot now disagree, and the citation
+lives once — on the definition that `field_matrix_entries_match_the_constants`
+already pins to the image.
+
+WHY THIS ONE AND NOT THE OTHERS. #538's bridge/ship3d pair models one routine twice
+in two subsystems' vocabularies and the two implementations agree; merging them
+would mean deciding which subsystem's naming wins, which is a design question.
+#539's entity/ship3d flag word is the same — "active" versus "visible" are both
+right for their own file. These four were different: same VALUE, same MEANING, same
+matrix column, three files, and one of them spelled it in decimal so nobody could
+grep it. There was nothing to decide.
+
+The principle is `vm.rs`'s own, written on `field_offset` long before this session:
+"ONE resolver, not two … two implementations of one table lookup can drift, and only
+one of them was swept against the lifted `func_6023`." That argument applies to
+constants exactly as it does to functions.
+
+726 tests, 0 failures.

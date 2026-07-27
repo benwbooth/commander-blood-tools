@@ -1499,7 +1499,7 @@ const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 /// the kind here, so it hardcodes the column instead of resolving it.
 ///
 /// Pinned to the image by `field_matrix_entries_match_the_constants`.
-const TALK_FIELD: u16 = 0x3A;
+pub const TALK_FIELD: u16 = 0x3A;
 /// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**.
 ///
 /// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`):
@@ -1522,7 +1522,7 @@ const TALK_FIELD: u16 = 0x3A;
 /// `[9][8]`) at `DS:0x6D60`, read through `vm_field_offset` (`0x6023`).
 ///
 /// Pinned to the image by `field_matrix_entries_match_the_constants`.
-const LOCATION_FIELD: u16 = 24;
+pub const LOCATION_FIELD: u16 = 24;
 /// `mov cx,0x10` @`0x5FFB` — the loop bound for the special-object slot array at
 /// `mov bp,0x6d3e` @`0x5FF8`, and it drives BOTH loops in the routine
 /// (`loop 0x5FFE` @`0x6006` and `loop 0x600E` @`0x6017`). So 16 is the array's
