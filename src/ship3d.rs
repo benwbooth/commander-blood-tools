@@ -5900,6 +5900,58 @@ mod tests {
     }
     use super::*;
 
+    /// TWO PORTS OF ONE HIT TEST. `0x8614`..`0x868D` is implemented twice: here as
+    /// [`hit_test_ship_3d_nav_choice`] (decoded, and NOT wired to anything) and in
+    /// `bridge::BridgeView::menu_row_under_cursor` (the one the running port uses).
+    /// Same constants, same instructions, written independently — and nothing
+    /// compared them until audit-fixes #610.
+    #[test]
+    fn the_two_menu_hit_tests_agree() {
+        use crate::bridge::{BridgeView, MENU_FRAME_MAX, MENU_FRAME_MIN};
+        let mut agreed_hits = 0usize;
+        for frame in (MENU_FRAME_MIN - 2)..=(MENU_FRAME_MAX + 2) {
+            // THE RING IS 1440 PIXELS (180 frames x 8), not 360 degrees — a 0..360
+            // sweep never reaches the menu's 177..287 screen band at all, which is
+            // what the anti-vacuity assert caught on the first run.
+            for ring_x in (0..1440).step_by(11) {
+                for mouse_y in (0..200).step_by(3) {
+                    let mut view = BridgeView::default();
+                    view.frame = frame;
+                    view.ring_mouse_x = ring_x;
+                    view.mouse_y = mouse_y;
+                    let theirs = view.menu_row_under_cursor();
+
+                    // Feed the OTHER implementation the same screen-space mouse the
+                    // bridge just computed, so only the hit maths differ.
+                    let mx = view.mouse_screen_x();
+                    let ours = if (MENU_FRAME_MIN..=MENU_FRAME_MAX).contains(&frame)
+                        && mx >= 0
+                        && mouse_y >= 0
+                    {
+                        match hit_test_ship_3d_nav_choice(frame, mx as u16, mouse_y as u16) {
+                            Some(Some(row)) => Some(row as usize),
+                            _ => None,
+                        }
+                    } else {
+                        // The frame-range gate is the bridge's; 0x8617/0x861E test it
+                        // before the hit maths, so outside it neither can hit.
+                        None
+                    };
+                    assert_eq!(
+                        theirs, ours,
+                        "frame {frame} ring_x {ring_x} y {mouse_y}: bridge {theirs:?} vs ship3d {ours:?}"
+                    );
+                    if theirs.is_some() {
+                        agreed_hits += 1;
+                    }
+                }
+            }
+        }
+        // NOT VACUOUS: the sweep must actually land inside the menu sometimes, or
+        // this compared None to None a few thousand times.
+        assert!(agreed_hits > 100, "only {agreed_hits} hits in the sweep");
+    }
+
     #[test]
     fn projection_matches_the_decoded_native_routines() {
         // The native perspective projection (0x9aa4/0x9ad9, decoded sess 007):

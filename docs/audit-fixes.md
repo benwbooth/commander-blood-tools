@@ -20332,3 +20332,34 @@ already selected, and the routine jumps to the ACTIVATION path at `0x86F1` inste
 hit-testing. Click-to-select and click-to-activate are the same entry point.
 
 734 tests, 0 failures.
+
+## #610 — the menu hit test is ported TWICE; only one copy is wired
+
+Chasing #609's wiring found something larger. `update_ship_3d_nav_choice_dispatch`
+has NO caller outside tests — and neither does `hit_test_ship_3d_nav_choice`. The
+running port does this work in `bridge::BridgeView::menu_row_under_cursor`, a SECOND
+implementation of the same `0x8614`..`0x868D`.
+
+Same constants in both, independently written: `45`, `0xE8 + 0x37`, `0x6E`, `0x48`,
+`0x12`, five rows, eight pixels per frame. `bridge.rs` even spells 287 as the sum,
+matching #608's note about it not being an immediate.
+
+Nothing compared them. `the_two_menu_hit_tests_agree` now sweeps frames `0x26`..`0x3E`
+against the full mouse ring and asserts the two answer identically, feeding the ship3d
+version the bridge's own computed screen-space x so only the hit maths differ. They
+agree everywhere.
+
+THE ANTI-VACUITY ASSERT EARNED ITSELF ON THE FIRST RUN. Every sample matched — and
+ZERO were hits. My sweep ran `ring_mouse_x` over `0..360`, but the panorama ring is
+1440 PIXELS (180 frames x 8), so `mouse_screen_x` never landed in the menu's 177..287
+band. Without that check I would have committed a test that compared `None` to `None`
+about fourteen thousand times and called the two implementations verified. Sweep
+corrected to `0..1440`.
+
+This is the fifth duplicated rule this campaign (#575 nav box, #577 CRTC compositing,
+#589 DESCRIPT parsers, #590 subtitle wrap, #593 PRNG) and the second where the
+duplicate was DEAD CODE with the live copy elsewhere. Worth stating as a pattern: a
+decoded-but-unwired implementation is not harmless, because the next person to wire
+it up will find it plausible and will not know a wired one exists.
+
+734 tests, 0 failures.
