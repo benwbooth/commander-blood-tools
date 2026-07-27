@@ -20363,3 +20363,39 @@ decoded-but-unwired implementation is not harmless, because the next person to w
 it up will find it plausible and will not know a wired one exists.
 
 734 tests, 0 failures.
+
+## #611 — a guard for #610's pattern, and three ways I miscounted it
+
+`tools/check_unwired_decodes.py` finds functions that cite a binary address and that
+nothing outside tests calls — the shape #610 hit (the menu hit test ported twice, one
+copy dead) and #608 hit (nav-choice gates with no producer).
+
+THE COUNT MOVED FOUR TIMES, each a real defect in the tool:
+
+1. 76 — I built a whole-tree corpus and then searched the DEFINING FILE only, so
+   anything called from another module came back unwired. `game_font_drawn_width` is
+   called from `vm.rs`; the tool said it was dead.
+2. 40 — call-shaped matches only (`name(`), which misses dispatch-table
+   registrations: `("func_92a3", super::auto::func_92a3)` is a real use with no
+   parentheses. Every lifted routine looked unwired.
+3. 16 — counting bare names then let intra-doc links count as uses, and
+   `[`update_ship_3d_nav_choice_dispatch`]` appears in four doc comments. The tool
+   hid the exact function it was written for.
+4. 38 — bare names in live code with doc comments stripped. Credible.
+
+The lesson is the one from #592: a number that moves this much under scrutiny was
+never a measurement. Recording all four so the current one is read as "best so far"
+rather than "the answer".
+
+WHAT THE 38 ARE. Two shapes the tool cannot distinguish: duplicates of something
+already wired (`hit_test_ship_3d_nav_choice` and the five nav-choice handlers, beside
+the live `bridge::menu_row_under_cursor`) and decodes never connected
+(`recomp/io_lift.rs`'s lifted routines, verified against the oracle and registered
+only in their own test table). Checked one by hand — `func_cc0`'s single non-doc
+reference is inside a test module — so this is not an artefact.
+
+Why it matters for the ledger specifically: a settled row with a citation reads as
+"this behaviour is in the port". For these 38 it is in the tree. New matrix row; the
+count is the queue.
+
+734 tests, 0 failures.

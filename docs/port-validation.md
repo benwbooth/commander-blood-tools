@@ -2119,3 +2119,33 @@ above it has not been read.
 **Not guessed.** Wiring six booleans to plausible flags would produce a port that
 blocks in the wrong states rather than one that never blocks, and the second is at
 least honestly wrong.
+
+## UNVERIFIED — 38 decoded functions have no caller outside tests (#611)
+
+`tools/check_unwired_decodes.py` lists functions whose doc cites a binary address and
+whose only references are inside `#[cfg(test)]`. Thirty-eight of them.
+
+**This is a ledger-honesty problem, not only a coverage one.** Such a row reads as
+"decoded and in the port". It is decoded and in the TREE. The behaviour the citation
+describes does not run.
+
+**Two shapes, and the tool cannot tell them apart:**
+
+- A DUPLICATE of something already wired. `ship3d::hit_test_ship_3d_nav_choice` and
+  the whole `run_ship_3d_nav_choice_handler_0..4` family sit beside
+  `bridge::menu_row_under_cursor`, which is live (#610). The fix is a differential
+  test plus a note saying which copy is live — not deletion, since the decode is
+  real.
+- A decode never CONNECTED. `recomp/io_lift.rs`'s lifted routines (`func_cc0`,
+  `func_d4a`, ...) are verified against the oracle and registered only in their own
+  test table; the runtime does not call them. Wiring them is the task.
+
+**Not settled by listing.** Each needs the pair read. The list is the queue, and the
+numbers to watch are these: 38 now, and it should fall as things get wired or
+consciously marked as reference implementations.
+
+**Tool limits, stated so the count is not over-trusted.** It counts bare names in
+live code (so dispatch-table registrations count as uses) with doc comments stripped
+(so intra-doc links do not). It cannot see calls through function pointers built
+dynamically, and it says nothing about whether a WIRED function is called on a path
+that actually runs.
