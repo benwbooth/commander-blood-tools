@@ -20,6 +20,11 @@ pub const BLOODPRG_FILE_SIZE: usize = 86_680;
 /// a test, which is more code than the risk justifies.
 pub const BLOODPRG_SHA256: &str =
     "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823";
+/// The VM's code segment, `0x04DA` — file base `0x600 + 0x4DA * 16 = 0x53A0`.
+/// VALIDATED, not assumed: the dispatch table at `DS:0x6EB0` holds NEAR offsets,
+/// and resolving them against this base lands `0xA0`/`0xA6`/`0xB7`/`0xB8` exactly
+/// on `0x6559`/`0x660C`/`0x6AA7`/`0x6B06`, four handlers decoded independently
+/// (audit-fixes #517; `re/tools/vm_dispatch.py` re-checks it on every run).
 pub const VM_CODE_SEGMENT: u16 = 0x04da;
 pub const FS_SEGMENT: u16 = 0x0bbf;
 pub const DATA_SEGMENT: u16 = 0x0ce2;
@@ -268,9 +273,12 @@ pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;
 /// Touched by the game at `mov word ptr [0x2795], 0xb3` @`0x0B0B1`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET: u16 = 0x2795;
+/// `0x279B` — `mov word ptr [0x279b],0x5a` @`0x86BB` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET: u16 = 10139;
 /// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
 pub const SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET: u16 = 0x2565;
+/// `mov word ptr [0x253f],ax` @`0x86D1`, the row-multiplied target y
+/// (`(bl-1) * 18 + 80`) — audit-fixes #491.
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET: u16 = 0x253f;
 /// `mov byte ptr [0x2736],1` @`0x892C`, inside nav-choice handler 4 (`0x886C`, dispatch-table entry 4).
 pub const SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET: u16 = 0x2736;
@@ -280,15 +288,24 @@ pub const SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET: u16 = 0x2737;
 pub const SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET: u16 = 0x259b;
 /// `mov byte ptr [0xb13],2` @`0x8947` — note the value is 2, not 1, unlike the motion gates beside it.
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET: u16 = 0x0b13;
+/// `0xADA` — written `mov byte ptr [0xada],0xa` @`0x86E4` by the nav choice and
+/// `,6` @`0xB3CD` by the navigation box, then READ as the divisor by
+/// `ship_3d_interpolation_gate` (`mov bl,[0xada]` @`0x1E63`). Two writers, one
+/// reader (audit-fixes #494, #495).
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 2778;
 /// Reset on handler entry — `mov byte ptr [0xadb],0` @`0x8741`, `0x87E4` and `0x887B`.
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
+/// `0x0174` — `mov si,0x174` @`0x85B3`, the list widget's shared trailing row.
+/// The SAME string `engine::OPTION_BOX_LABEL_DS_OFFSET` names (#526)
+/// — audit-fixes #492.
 pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
 /// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
 pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
 /// Touched by the game at `mov si, word ptr [0xac8]` @`0x084D8`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
+/// `0xADC` — `mov byte ptr [0xadc],1` @`0x86D4`, set by the nav choice just
+/// before it configures the widget (audit-fixes #491).
 pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 2780;
 /// Touched by the game at `mov byte ptr [0xadd], 1` @`0x0B0DC`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -317,6 +334,9 @@ pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
 /// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
 pub const SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET: u16 = 10931;
+/// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND
+/// setup clears (audit-fixes #484), and the cell the transition threshold
+/// `cmp word [0xb3b],0x78` @`0xB699` tests.
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 2875;
 /// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;

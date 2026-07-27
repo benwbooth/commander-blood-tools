@@ -17684,3 +17684,42 @@ waiting on the runtime slot list, and `'Commander Blood'` is the X11 `WM_NAME` �
 the port's own window title, which matches READ.ME by nature rather than by copying.
 
 723 tests, 0 failures.
+
+## #533 — seven offsets already decoded, sitting uncited in another file
+
+`bloodprg.rs` holds the port's DS-offset constants, and seven of them name cells
+this session had already decoded — in `ship3d.rs`, in `vm.rs`, in the fix log —
+without the citation ever reaching the file that declares them:
+
+```text
+  0x279B  nav-choice hold timer     `mov word [0x279b],0x5a` @0x86BB   (#491)
+  0x253F  nav-choice target y       `mov word [0x253f],ax`   @0x86D1   (#491)
+  0x0ADA  interpolation duration    two writers, one reader            (#494/#495)
+  0x0174  list widget's extra row   `mov si,0x174`           @0x85B3   (#492)
+  0x0ADC  preserve-widths flag      `mov byte [0xadc],1`     @0x86D4   (#491)
+  0x0B3B  presentation hold timer   `mov word [0xb3b],0`     @0xB644   (#484)
+  0x04DA  the VM code segment       validated against 4 handlers       (#517)
+```
+
+`0x0ADA` is the one worth reading twice: TWO WRITERS, ONE READER. The nav choice
+sets it to 10 (`@0x86E4`) and the navigation box to 6 (`@0xB3CD`), and
+`ship_3d_interpolation_gate` divides by whatever is there (`@0x1E63`). A port
+treating it as a per-widget constant instead of a shared cell would animate both
+boxes at whichever speed it picked.
+
+`VM_CODE_SEGMENT` now records that it was VALIDATED rather than assumed — the
+dispatch table's near offsets resolve against it onto four independently decoded
+handlers, and `vm_dispatch.py` re-checks that on every run (#518).
+
+A NOTE ON SPELLING, left alone: five of these were written in DECIMAL (`10139`,
+`2778`, `2780`, `10931`, `2875`) among hex neighbours, which is why they read as
+values rather than addresses and stayed uncited longest. I have not renumbered
+them — a cosmetic edit to a constant is a chance to fat-finger one — but each doc
+now leads with the hex, so the next reader sees `0x279B` before the decimal.
+
+That is the shape of this entry generally: nothing here was undiscovered, and all
+of it was unrecorded WHERE IT WOULD BE READ. A decode that lives only in the fix
+log is one refactor from being deleted as unsourced (#491 made that point; this is
+seven more instances of it).
+
+723 tests, 0 failures.
