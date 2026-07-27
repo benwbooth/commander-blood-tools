@@ -1927,8 +1927,29 @@ mod tests {
             (0x100, false), // remove it again: absent
             (0x300, true),
         ];
+        // FILL the list, then overflow it. `0x600E`'s free-slot scan running out and
+        // falling to `0x6019 clc` — the only way insert can fail — had never run
+        // (audit-fixes #581). After the six steps above two slots are taken, so
+        // fourteen more fill it exactly.
+        let script: Vec<(u16, bool)> = script
+            .into_iter()
+            .chain((0..14u16).map(|i| (0x400 + i * 0x10, true)))
+            .chain([
+                (0x9999, true),  // FULL: CF clear, list untouched
+                (0x0000, true),  // `cmp ax,[bp]` matches a zero slot -> "present"
+                (0x400, false),  // free one
+                (0x9999, true),  // now it fits
+                (0x9999, false), // and comes back out
+            ])
+            .collect();
+        let mut saw_full = false;
         for (value, insert) in script {
             let lift_cf = run(&mut lifted, value, insert);
+            // ANTI-VACUITY: if the fourteen filler inserts had collided or failed,
+            // the list would never be full and `0x6019` would still be unreached
+            // while the test happily passed. Insert is the only operation that can
+            // report CF clear, and only by exhausting the free-slot scan.
+            saw_full |= insert && !lift_cf;
             let native_flag = if insert {
                 native.special_slot_insert_pub(value)
             } else {
@@ -1952,7 +1973,11 @@ mod tests {
             let v = 0x1000 + i * 2;
             assert!(run(&mut lifted, v, true));
             assert!(native.special_slot_insert_pub(v));
-        }
+            assert!(
+            saw_full,
+            "the fill never reached a full list, so 0x6019 (insert fails) never ran"
+        );
+    }
         assert!(!run(&mut lifted, 0xBEEF, true), "a full list must clear CF");
         assert!(!native.special_slot_insert_pub(0xBEEF), "and so must the port");
         assert_eq!(lifted.to_vec(), native.ship_slots_pub().to_vec());

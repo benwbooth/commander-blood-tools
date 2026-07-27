@@ -19268,3 +19268,26 @@ Left behind by the refactor: six `const`s in the now-empty test body, caught as
 dead_code by the build rather than by me.
 
 726 tests, 0 failures.
+
+## #581 — the special-slot pair: insert could never fail
+
+Fourth sweep audited. `func_5ff6` (insert) has two loops: `0x5FFE` scans for the
+value, `0x600E` scans for a free slot. Exhausting the SECOND drops to `0x6019 clc` —
+the only way insert reports failure, and the sweep's six-step script never filled the
+16-word list, so that path had never run.
+
+Added fourteen fillers to occupy every slot, then an overflow insert (CF clear, list
+untouched), a free, a re-insert that now fits, and a remove.
+
+ALSO PINNED, a quirk that reads like a bug and is not: inserting `0` returns SUCCESS
+and stores nothing. `0x5FFE` is `cmp ax,[bp]`, so a zero value matches the first
+EMPTY slot and takes the already-present exit at `0x601F` with `stc`. Zero is the
+list's empty marker, so it can never be a member; the port agrees, which is the sort
+of edge that gets "fixed" into a divergence by someone tidying up later.
+
+ANTI-VACUITY, because this test could have passed while proving nothing: if the
+fourteen fillers had collided or failed, the list would not be full, the overflow
+insert would have succeeded, and `0x6019` would still be unreached. Insert is the
+only operation that can report CF clear, so the test now asserts it saw one.
+
+726 tests, 0 failures.
