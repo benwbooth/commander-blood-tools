@@ -16652,3 +16652,45 @@ the pre-divide scale on both axes.
 `ship3d.rs`: 51 uncited constants -> 45.
 
 620 tests, 0 failures.
+
+## #503 — the object pass: a copy wider than its own record
+
+Seven constants from the per-object pass at `0x9B9A`. The descriptor address is one
+expression spread over four instructions, and no part of it is a stored constant:
+
+```text
+  0x9BD1  mov ax, [0x2f77]     the loop index
+  0x9BD4  add ax, 0x15         + 21     INDEX_BIAS
+  0x9BD7  shl ax, 5            * 32     STRIDE, as a SHIFT
+  0x9BDA  add ax, 0x6212       + base   DESCRIPTOR_BASE
+  0x9BE1  test ax, 0x80        VISIBLE_FLAG gates the body
+```
+
+`(index + 21) * 32 + 0x6212`. The bias is the part a name cannot carry: anchor 0
+addresses descriptor TWENTY-ONE, so the anchor table indexes into the middle of a
+larger descriptor array. And `STRIDE = 32` is a `shl`, so — as in #502 — an
+immediate scan for 32 finds nothing.
+
+**THE COPY IS WIDER THAN THE RECORD.** Anchors are 6 bytes (`add bx,6` @`0x9CF5`),
+but the loop copies them with two dword moves:
+
+```text
+  0x9BC2  mov eax, [bx]     / mov [di], eax
+  0x9BC8  mov eax, [bx+4]   / mov [di+4], eax     EIGHT bytes
+```
+
+Each record's copy runs two bytes into the next one. It is harmless in the game
+because only three words are then used (`sub` on `[di]`, `[di+2]`, `[di+4]`), so the
+trailing word is never read — this is the compiler taking two aligned dword moves
+over three word moves. But it is exactly the kind of detail that misleads: a reader
+inferring the record size FROM THE COPY would get 8, and a port with an 8-byte
+stride would silently visit every other anchor and drop the rest. The stride is the
+`add bx,6`, not the copy width.
+
+One more shared-cell note: `ANCHOR_COUNT` is written to `[0x2f77]` @`0x9BB4`, the
+same loop-counter cell `POINT_CLOUD_COUNT` loads with 1000 (#500). One counter
+reused per pass, so 11 and 1000 are never live at the same time.
+
+`ship3d.rs`: 45 uncited constants -> 38.
+
+620 tests, 0 failures.

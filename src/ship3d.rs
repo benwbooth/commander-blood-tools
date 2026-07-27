@@ -385,12 +385,36 @@ pub const SHIP_3D_PROJECTION_SHADE_SHIFT: u8 = 12;
 /// `0xEF - (depth >> 12)`, so points DARKEN with distance down from 239. A base
 /// plus a subtraction, not a palette index chosen by eye (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_SHADE_BASE: u8 = 239;
+/// `mov bx,0x4f09` @`0x9BA5`, the anchor table the object pass walks
+/// (audit-fixes #503).
 pub const SHIP_3D_OBJECT_ANCHOR_OFFSET: u16 = 0x4f09;
+/// `mov word ptr [0x2f77],0xb` @`0x9BB4` — 11, written into the SAME loop-counter
+/// cell the point projector loads with 1000 (#500). One counter, reused per pass,
+/// so the two counts are not simultaneous state (audit-fixes #503).
 pub const SHIP_3D_OBJECT_ANCHOR_COUNT: usize = 11;
+/// `add bx,6` @`0x9CF5` — 6 bytes per anchor, three words.
+///
+/// The COPY IS WIDER THAN THE RECORD: `mov eax,[bx]` / `mov eax,[bx+4]`
+/// @`0x9BC2`-`0x9BCC` move EIGHT bytes into the work vector, two dword moves
+/// instead of three word moves, so each record's copy runs two bytes into the
+/// next. Only three words are then used (`sub` on `[di]`, `[di+2]`, `[di+4]`
+/// @`0x9BEB`-`0x9BF6`), which is why the over-read is harmless — but a port that
+/// copies 8 bytes per 8-byte stride would silently skip every other anchor
+/// (audit-fixes #503).
 pub const SHIP_3D_OBJECT_ANCHOR_STRIDE: u16 = 6;
+/// `add ax,0x6212` @`0x9BDA`, the last step of the descriptor address
+/// computation (audit-fixes #503).
 pub const SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET: u16 = 0x6212;
+/// `shl ax,5` @`0x9BD7` — 32 bytes per descriptor, expressed as a SHIFT, so an
+/// immediate scan for 32 would never find it (audit-fixes #503).
 pub const SHIP_3D_OBJECT_DESCRIPTOR_STRIDE: u16 = 32;
+/// `add ax,0x15` @`0x9BD4` — the loop index is biased by 21 BEFORE the stride
+/// multiply, so anchor 0 addresses descriptor 21, not descriptor 0. The full
+/// address is `(index + 21) * 32 + 0x6212` (audit-fixes #503).
 pub const SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS: u16 = 21;
+/// `test ax,0x80 / je 0x9CF4` @`0x9BE1` — bit 7 of the descriptor's first word
+/// gates the whole per-object body; a clear bit skips straight to the loop foot
+/// (audit-fixes #503).
 pub const SHIP_3D_OBJECT_VISIBLE_FLAG: u16 = 0x0080;
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG: u16 = 0x0001;
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_MASK: u16 = 0x0081;
