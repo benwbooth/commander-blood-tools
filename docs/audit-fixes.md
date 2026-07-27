@@ -16297,3 +16297,44 @@ constants sourced is worth less than knowing the arithmetic around them agrees.
 `ship3d.rs`: 93 uncited constants -> 90.
 
 618 tests, 0 failures.
+
+## #494 — the nav-choice DISPATCH TABLE, found by solving for a segment
+
+`call word ptr cs:[bx+0xf29]` @`0x8700` is where the five nav choices become five
+routines, and it could not be read directly: `cs:0x0F29` needs `cs`, the routine is
+entered by a NEAR call, and no far pointer anywhere in the image names its segment
+(the far-pointer scan over `0x85F0..0x8720` returns nothing).
+
+So solve for it. `docs/audit-fixes.md` records handler 4 at file `0x886C`. For a
+paragraph-aligned base `B`, the table would sit at `B + 0x0F29` and must CONTAIN
+`0x886C - B`. Scanning all 4096 candidates gives two, and only one is coherent:
+
+```text
+  cs = 0x071E  (cs:0 = file 0x077E0),  table @ file 0x8709
+  entries: 0x0f33 0x0f4c 0x0fdd 0x1068 0x108c
+        -> 0x8713 0x872C 0x87BD 0x8848 0x886C
+```
+
+Five ascending, contiguous routines beginning immediately after the table, the
+table itself immediately after the dispatcher's `ret` @`0x8708`, handler 4 landing
+exactly on the known address, and the count matching the `cmp al,5 / jge` @`0x868D`
+that #491 had already sourced as `NAV_CHOICE_COUNT`. The rejected candidate
+(`cs=0x04FF`) scatters its entries across `0x609A..0xCBE1` with no such structure.
+
+THE TEST CAUGHT MY OWN OVER-CONSTRAINT. I asserted each handler opens with
+`test byte [0x2565],1` at byte 0, allowing one leading `push es`. Handler `0x872C`
+does `push es / mov es,[0x6726] / mov si,0x2b13` first, so the assertion failed on a
+CORRECT decode. Relaxed to "tests the phase cell within its opening 24 bytes",
+which is the claim actually being made. Worth recording because the failure looked
+at first like the segment solution was wrong, and the tempting move was to doubt
+the decode rather than the assertion.
+
+Five constants settled alongside it, two of which link subsystems already decoded:
+`mov byte [0xada],0xa` @`0x86E4` sets the very cell `ship_3d_interpolation_gate`
+divides by @`0x1E63` (#490's four-word gate), so the nav box animates over 10 ticks;
+and `mov word [0xac6],0x64` @`0x86D9` writes the centring cell the layout pass reads
+@`0x84AF` (#489). The nav choice configures the widget and then opens it.
+
+`ship3d.rs`: 90 uncited constants -> 85.
+
+619 tests, 0 failures.

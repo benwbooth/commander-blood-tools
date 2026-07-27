@@ -178,13 +178,28 @@ pub const SHIP_3D_NAV_CHOICE_TARGET_Y_BASE: u16 = 80;
 /// `mov cl,0x12 / mul cl` @`0x86CA` — the row pitch, applied to `bl - 1`
 /// (`dec al` @`0x86C8`), so row 1 lands exactly on the base (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_STEP: u16 = 18;
+/// `mov word [0xac6],0x64` @`0x86D9` — the centring cell the layout pass reads as
+/// `sub dx,[0xac6]` @`0x84AF`, so the nav choice re-centres the widget on x=100
+/// before it opens (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X: u16 = 100;
+/// `mov byte [0xada],0xa` @`0x86E4` — and `[0xada]` is exactly the DURATION
+/// `ship_3d_interpolation_gate` divides by (`mov bl,[0xada]` @`0x1E63`), so the
+/// nav choice's box animates over 10 ticks (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION: u8 = 10;
+/// `mov ax,4` @`0x86E9`, the argument to `lcall 0xb1b:0x11d` @`0x86EC`
+/// (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_SELECT_SOUND: u16 = 4;
 pub const SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE: u16 = 0x00c3;
 pub const SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG: u8 = 0x04;
+/// `test byte [0x2565],2` @`0x889C` — phase bit 1 of the same cell whose bit 0 is
+/// [`SHIP_3D_NAV_CHOICE_HANDLER_PHASE`]; bit 1 means the box is mid-interpolation,
+/// and the handler runs the gate `lcall 0x8b:0xfad` @`0x88AA` while it is set
+/// (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING: u8 = 2;
 pub const SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET: u16 = 0x0d16;
+/// `mov si,0x2567` @`0x8871`, the word list handler 4 hands to the layout widget
+/// (audit-fixes #494). Handler 4 is the FIFTH entry of the dispatch table at
+/// `cs:0x0F29` (file `0x8709`) — see [`SHIP_3D_NAV_CHOICE_COUNT`].
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET: u16 = 0x2567;
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET: u16 = 0x2578;
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581;
@@ -9536,5 +9551,55 @@ mod tests {
         );
         // Not a degenerate all-zero fill.
         assert!(points.iter().any(|p| p.x != 0 || p.y != 0 || p.z != 0));
+    }
+
+    /// The nav-choice dispatch table decoded in audit-fixes #494: five near
+    /// pointers at `cs:0x0F29` (file `0x8709`), one per choice, sitting directly
+    /// after the `ret` of the routine that calls through them.
+    ///
+    /// The segment had to be SOLVED — the routine is reached by a near call, so
+    /// no far pointer anywhere names its `cs`. Pinning the table to the image
+    /// keeps that solution honest: if `cs` were wrong, these five words would not
+    /// be five contiguous routine entries.
+    #[test]
+    fn nav_choice_handler_table_holds_five_contiguous_handlers() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const CS_BASE: usize = 0x077E0; // file address of cs:0 for cs = 0x071E
+        assert_eq!(CS_BASE, 0x600 + 0x071E * 16);
+        let table = CS_BASE + 0x0F29;
+        assert_eq!(table, 0x8709);
+
+        let entries: Vec<usize> = (0..5)
+            .map(|i| {
+                let at = table + i * 2;
+                CS_BASE + u16::from_le_bytes([exe[at], exe[at + 1]]) as usize
+            })
+            .collect();
+        assert_eq!(entries, vec![0x8713, 0x872C, 0x87BD, 0x8848, 0x886C]);
+
+        // One entry per choice, and the count is bounded by `cmp al,5 / jge`.
+        assert_eq!(entries.len(), super::SHIP_3D_NAV_CHOICE_COUNT as usize);
+        // Ascending and non-overlapping: these are five separate routines.
+        assert!(entries.windows(2).all(|w| w[0] < w[1]));
+        // Every handler tests the phase cell `[0x2565]` early on
+        // (`test byte [0x2565],1` = f6 06 65 25 01). NOT at a fixed offset: the
+        // handler at 0x872C does `push es / mov es,[0x6726] / mov si,0x2b13`
+        // first, so requiring it at byte 0 or 1 fails on a correct decode -- the
+        // first version of this test asserted exactly that and was wrong.
+        let phase_test = [0xF6, 0x06, 0x65, 0x25, 0x01];
+        for e in &entries {
+            assert!(
+                exe[*e..*e + 24]
+                    .windows(phase_test.len())
+                    .any(|w| w == phase_test),
+                "handler at {e:#07x} tests the phase cell in its opening"
+            );
+        }
+        // The table begins immediately after the dispatcher's `ret` @0x8708.
+        assert_eq!(exe[0x8708], 0xC3);
     }
 }
