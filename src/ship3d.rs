@@ -2737,9 +2737,32 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 ///
 /// So the projection writes THROUGH that far pointer and need never mention
 /// `0x6212` at all — which is why enumerating immediate loads of `0x6212` cannot
-/// find it. All 19 are now accounted for (17 flag accessors + these 2 readers),
-/// and that search is exhausted rather than merely unfinished. The next approach
-/// is to find who WRITES `[0x6212+4]`, then what fills the block it points at.
+/// find it. All 19 are now accounted for (17 flag accessors + these 2 readers).
+///
+/// WHO WRITES THE POINTER (audit-fixes #446): `entity_object_populate` @`0x40D0`,
+/// and what it points AT is not projection output:
+///
+/// ```text
+///   0x40D7  mov di, 0x6212 / shl ax,5 / add di,ax   record = 0x6212 + i*32
+///   0x40EF  mov ax, [si] / and ax,4 / or al,0x83    the SPRITE bank dispatch
+///   0x40F6  mov word ptr gs:[di], ax                 ...into record+0
+///   0x40F9  add si, 4                                skip the directory header
+///   0x40FF  mov ebp, dword ptr ds:[bp + si]          a PACKED DWORD entry
+///   0x4105  and ax, 0xf / add si, ax                 low nibble advances si
+///   0x410A  shr ebp, 4                               the rest is the payload
+///   0x4114  mov word ptr gs:[di + 6], ax             record+6 = segment (ds)
+///   0x4118  mov word ptr gs:[di + 4], si             record+4 = offset
+/// ```
+///
+/// `si` walks a RESOURCE SUBOBJECT DIRECTORY (the label at `0x40F9`), so the
+/// record's far pointer aims into LOADED RESOURCE DATA. That undercuts the premise
+/// this TODO was written on: the coordinates behind these records may be AUTHORED
+/// data the resource supplies, not the output of a projection routine — which
+/// would also explain the `or al, 0x83` sprite dispatch sitting right beside it,
+/// and why "single-routine estimates kept being wrong".
+///
+/// Before hunting further for a projection, establish whether one exists: decode
+/// the packed dword at `0x40FF` and see what the block behind `record+4` holds.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],

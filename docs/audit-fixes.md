@@ -14648,3 +14648,41 @@ time has been eliminating a search rather than announcing a routine.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 766 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #446 — the record points at resource data, so the premise may be wrong
+
+#445 left one step: find who writes `[0x6212+4]`. It is `entity_object_populate`
+@`0x40D0`, and what it writes changes the question.
+
+    0x40D7  mov di, 0x6212 / shl ax,5 / add di,ax   record = 0x6212 + i*32
+    0x40EF  mov ax, [si] / and ax,4 / or al,0x83    the SPRITE bank dispatch
+    0x40F6  mov word ptr gs:[di], ax                 ...into record+0
+    0x40F9  add si, 4                                skip the directory header
+    0x40FF  mov ebp, dword ptr ds:[bp + si]          a PACKED DWORD entry
+    0x4105  and ax, 0xf / add si, ax                 low nibble advances si
+    0x410A  shr ebp, 4                               the rest is the payload
+    0x4114  mov word ptr gs:[di + 6], ax             record+6 = segment (ds)
+    0x4118  mov word ptr gs:[di + 4], si             record+4 = offset
+
+`si` is walking a RESOURCE SUBOBJECT DIRECTORY — that is the label already on
+`0x40F9` — so the record's far pointer aims into LOADED RESOURCE DATA.
+
+THAT UNDERCUTS THE TODO'S PREMISE. It was written as "find the routine that
+projects the `0x5491` verts into the `0x6212` display-list records", assuming a
+projection exists and is merely unlocated. But if the block behind `record+4` is
+authored resource data, there may be no such routine: the coordinates would be
+SHIPPED, and the pyramids drawn as sprites at them — which is exactly what the
+`or al, 0x83` dispatch two instructions earlier says, and what that same doc had
+already guessed ("very likely SPRITES drawn at projected positions") without
+following the pointer.
+
+So the next step is not a better search for a projection. It is to decode the
+packed dword at `0x40FF` and read what `record+4` points at, and only then ask
+whether anything projects anything.
+
+Four entries on this item, and this is the first that changed the QUESTION rather
+than narrowing the answer. Ruling out searches (#444, #445) was worth doing, but
+the reason they kept failing is that the thing being searched for may not exist.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 775 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
