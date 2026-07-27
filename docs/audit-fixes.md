@@ -14720,3 +14720,39 @@ expected and followed the pointer the code actually writes.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #448 — the resource is a sprite bank, and the five-entry question was misposed
+
+#447 left a data question: read what `record+4` points at. The decoded directory
+shape — `{flags, count}` then `count` packed 20-bit offsets — is exactly the
+shipped `.SPR` layout:
+
+    CARTE.SPR     1463 bytes  flags=0x0004  count=7
+                  -> 0x01C 0x069 0x10B 0x15F 0x233 0x358 0x40D
+                     ascending, every one inside the file
+    CROOLIS1.SPR  4873 bytes  flags=0x0004  count=1  -> 0x004
+
+`flags = 4` is why the dispatch computes `(4 & 4) | 0x83` = `0x87`. So
+`record+4:+6` is a pointer to a SPRITE FRAME and `record+0xC` is that frame's
+first word.
+
+THE QUESTION IS ANSWERED, and it was the wrong question. There is no routine
+projecting the `0x5491` verts into the `0x6212` records, because those records do
+not hold projected coordinates — they hold sprite-frame pointers into a shipped
+bank. `SHIP_3D_HUD_PYRAMID_VERTICES`'s TODO asked for a projection on the strength
+of a sentence written before the `0x6212` builder was read; the SAME doc later
+guessed "the HUD pyramids are very likely SPRITES drawn at projected positions"
+and that guess was right, but the earlier sentence was never withdrawn, so five
+audit entries (#443-#447) searched for a routine that does not exist.
+
+What remains is genuinely open and much smaller: where the POSITIONS come from.
+That is a different question from the one the TODO posed.
+
+The lesson is about stale premises rather than about this subsystem. #444 and #445
+each eliminated a search and reported that as progress; they were eliminating
+searches for something that was never there. The check that would have caught it
+earlier is the one #446 finally applied — follow the pointer the code writes,
+instead of hunting for the routine the doc predicts.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

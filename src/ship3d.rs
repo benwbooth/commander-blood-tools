@@ -2780,11 +2780,27 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 /// far pointer to that subobject's data, and `record+0xC` is the first word found
 /// there.
 ///
-/// That settles the shape: these records point at SHIPPED RESOURCE DATA reached by
-/// a shipped offset table. Nothing here computes a coordinate. What remains is to
-/// read a subobject's block and see whether it holds coordinates at all — but the
-/// "missing projection routine" this TODO was built around is now unlikely to
-/// exist in the form it assumed.
+/// AND THE RESOURCE IS A SPRITE BANK (audit-fixes #448). The decoded header shape
+/// — `{flags, count}` then `count` packed offsets — is exactly what the shipped
+/// `.SPR` files hold:
+///
+/// ```text
+///   CARTE.SPR     1463 bytes  flags=0x0004 count=7
+///                 entries -> 0x01C 0x069 0x10B 0x15F 0x233 0x358 0x40D
+///                 (ascending, every one inside the file)
+///   CROOLIS1.SPR  4873 bytes  flags=0x0004 count=1  -> 0x004
+/// ```
+///
+/// `flags = 4` is why the dispatch is `(4 & 4) | 0x83` = `0x87`. So `record+4:+6`
+/// points at a SPRITE FRAME and `record+0xC` is that frame's first word.
+///
+/// THE TODO ABOVE IS ANSWERED: there is no routine projecting `0x5491` verts into
+/// these records, because the records do not hold projected coordinates — they
+/// hold sprite-frame pointers into a shipped bank. The doc's own late guess ("very
+/// likely SPRITES drawn at projected positions") was right, and five audit entries
+/// were spent searching for a projection because the earlier sentence assuming one
+/// was never revisited. What is still unlocated is where the POSITIONS come from,
+/// which is a different question from the one that was asked.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
