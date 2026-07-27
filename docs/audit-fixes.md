@@ -18181,3 +18181,33 @@ a per-object field. That was the bug #401 fixed; the constant now says so where
 someone editing it will read it.
 
 724 tests, 0 failures.
+
+## #547 — I labelled an address that was already labelled, and the checker caught it
+
+`check_labels.py` reported `DUPLICATE ADDRESS 0x08709 has 2 rows:
+nav_choice_subdispatch_table (line 213), nav_choice_handler_table (line 789)`. The
+second is mine, added in #494 when I "discovered" the nav-choice dispatch table.
+
+`nav_choice_subdispatch_table` was already there, and its comment already read "THE
+PER-ROW HANDLER TABLE for the bridge console / nav choice. Five u16 near offsets
+0f33, …" — the same five entries I re-derived. This is #534 for the second time:
+#534 found `bloodprg.rs` already DECLARED the constants I solved for; this finds
+`labels.csv` already NAMED the table I labelled. Both times the existing knowledge
+was one grep away and I did not run it.
+
+The rows are merged, my segment-solve comment folded into the existing label, and
+the duplicate is gone (505 code labels, 0 duplicates).
+
+WHAT ACTUALLY GOES WRONG when this is not caught: two names for one address means
+a later reader greps for one, finds it, and never learns the other exists — which
+is exactly the state that produced #538's bridge/ship3d duplicate and #539's
+entity/ship3d duplicate. The duplicate-label check is cheap and I should be running
+`check_labels.py` BEFORE adding a label, not after a session's worth of them.
+
+Worth noting the checkers as a set are now catching my mistakes faster than I make
+them: #536's offset guard caught a doc expression, #543's palette guard needed
+fixing before it could see its own case, #537's settle guard now blocks a red-tree
+claim, and this one caught a duplicate label. That is the intended direction — the
+tools are the memory, and I keep proving why they need to be.
+
+724 tests, 0 failures.
