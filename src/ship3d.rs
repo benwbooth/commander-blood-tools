@@ -355,11 +355,35 @@ pub const SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET: u16 = 0x5239;
 /// Touched by the game at `mov word ptr [0x523b], 0xa5` @`0x0B1A1`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET: u16 = 0x523b;
+/// `add ax,0xa0` @`0x9AAD` — applied to the projected x AFTER the perspective
+/// divide, so the stored value is already screen-relative (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_SCREEN_CENTER_X: u16 = 160;
+/// `add ax,0x64` @`0x9AE2`, the same treatment for y (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_SCREEN_CENTER_Y: u16 = 100;
+/// 320, and like #491's 287 it is NEVER AN IMMEDIATE — the plot routine builds
+/// the row stride out of two shifts (audit-fixes #502):
+///
+/// ```text
+///   0x9B25  mov di, bx      di = y
+///   0x9B27  xchg bh, bl     bx = y * 256   (bh was zero)
+///   0x9B29  shl di, 6       di = y * 64
+///   0x9B2C  add di, bx      di = y * 320
+///   0x9B2E  add di, ax      + x
+/// ```
+///
+/// So searching the image for `0x140` to source this would return nothing, and
+/// the stride is a fact about two instructions rather than a stored constant.
 pub const SHIP_3D_PROJECTION_SCREEN_WIDTH: usize = 320;
+/// `sar eax,7` @`0x9AA4` and again @`0x9AD9` — the pre-divide scale applied to
+/// both axes before `idiv ecx` (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_AXIS_SHIFT: u8 = 7;
+/// `shr ax,0xc` @`0x9B3A`, applied to the DEPTH read back from `[bp+0x28]`
+/// @`0x9B37` — the cell #501 sourced as `SHIP_3D_PROJECTED_DEPTH_OFFSET`
+/// (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_SHADE_SHIFT: u8 = 12;
+/// `neg al` @`0x9B3D` then `add al,0xef` @`0x9B3F`: the plotted colour is
+/// `0xEF - (depth >> 12)`, so points DARKEN with distance down from 239. A base
+/// plus a subtraction, not a palette index chosen by eye (audit-fixes #502).
 pub const SHIP_3D_PROJECTION_SHADE_BASE: u8 = 239;
 pub const SHIP_3D_OBJECT_ANCHOR_OFFSET: u16 = 0x4f09;
 pub const SHIP_3D_OBJECT_ANCHOR_COUNT: usize = 11;

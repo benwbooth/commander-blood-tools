@@ -16617,3 +16617,38 @@ passing: `dec word [0x2f77] / jne 0x9A34` @`0x9AEE` closes the loop on the cell
 `ship3d.rs`: 54 uncited constants -> 51.
 
 620 tests, 0 failures.
+
+## #502 — the star plot: 320 is two shifts, and the shade is a depth cue
+
+Six constants from the plot routine `0x9B04` and the projector's tail, and two of
+them are only meaningful as arithmetic.
+
+**320 IS NEVER AN IMMEDIATE.** The row stride is built from two shifts:
+
+```text
+  0x9B25  mov di, bx      di = y
+  0x9B27  xchg bh, bl     bx = y * 256   (bh was zero)
+  0x9B29  shl di, 6       di = y * 64
+  0x9B2C  add di, bx      di = y * 320
+```
+
+`64 + 256`. Searching the image for `0x140` to source `SCREEN_WIDTH` would return
+nothing at all — the same shape as #491's 287 (`232 + 55`) and #484's computed
+descriptor. Three instances now, and the pattern is worth stating plainly: THIS
+COMPILER PREFERS SHIFTS AND ADDS TO IMMEDIATES, so a constant's absence from an
+immediate scan is close to no evidence at all in this binary.
+
+**The shade is a depth cue, not a palette pick.** `mov ax,[bp+0x28]` @`0x9B37`
+reads back the depth #501 sourced, then `shr ax,0xc` @`0x9B3A`, `neg al` @`0x9B3D`,
+`add al,0xef` @`0x9B3F`. The plotted colour is `0xEF - (depth >> 12)`: points darken
+with distance from 239 downward. `SHADE_BASE = 239` documented as a bare palette
+index would invite someone to "correct" it against a palette dump; documented as the
+top of a ramp it cannot be misread.
+
+The other four are direct: `add ax,0xa0` @`0x9AAD` and `add ax,0x64` @`0x9AE2` are
+the screen centres applied AFTER the divide, and `sar eax,7` @`0x9AA4`/`0x9AD9` is
+the pre-divide scale on both axes.
+
+`ship3d.rs`: 51 uncited constants -> 45.
+
+620 tests, 0 failures.
