@@ -2074,3 +2074,28 @@ half.
 **Not changed on a partial read.** The chaining itself is decoded and cited (#603);
 only the persistence is in question, and swapping it out on suspicion would trade a
 possibly-wrong model for a differently-wrong one.
+
+## UNVERIFIED — `Ship3dNavChoiceGates` is never built outside tests (#608)
+
+**The type is decoded shape with no producer.** `blocks_nav_choice` ORs six gates —
+`c2_presentation_gate`, `left_motion_gate`, `right_motion_gate`, `menu_gate`,
+`sound_gate`, `presentation_active` — and a search of `src/` finds the struct
+constructed only in `ship3d.rs`'s own tests. Nothing in the running port supplies
+real values, so every live dispatch sees `Default::default()`: all gates clear, never
+blocking.
+
+**Why that is a defect and not merely incomplete.** The dispatcher is gated on
+`[0x2793] & 8` (`0x86F1`), and the game raises those bits from several places
+(`or byte [0x2793],0xc` at `0x86B6` is one). A port that always answers "not blocked"
+will accept a nav choice during a presentation, a motion, or a menu — precisely the
+states the gates exist to exclude.
+
+**What settles it.** Find the six tests. `[0x2793]`'s bits are already partly
+decoded (`UI_FLAG_CE_BRANCH` bit 0, `UI_FLAG_BUSY` bit 2, bit 3 = station seek), and
+`0x2565` and `0x279B` are written beside the dispatcher at `0x86BB`/`0x86C1`. The
+gate chain is upstream of `0x8642`, which is where the hit test begins; the entry
+above it has not been read.
+
+**Not guessed.** Wiring six booleans to plausible flags would produce a port that
+blocks in the wrong states rather than one that never blocks, and the second is at
+least honestly wrong.

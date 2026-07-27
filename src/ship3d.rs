@@ -4994,8 +4994,27 @@ impl Ship3dNavChoiceGates {
     }
 }
 
-/// The nav-choice list's row hit test, `0x8674`..`0x868F` — a list whose geometry
-/// MOVES with the ship's axis, which is why nothing here is a constant box:
+/// The nav-choice list's hit test, `0x8642`..`0x868F` — a list whose geometry MOVES
+/// with the ship's axis, which is why nothing here is a constant box.
+///
+/// The X half first:
+///
+/// ```text
+/// 0x8642  sub ax,0x2d                    relative axis (AXIS_BIAS = 45)
+/// 0x864b  shl ax,3 / neg ax              -(relative<<3)
+/// 0x8650  add ax,0xe8 / add ax,0x37      ...+287, built as 0xE8 + 0x37
+/// 0x8656  cmp bx,ax / jg 0x8705          mouse x right of the list -> miss
+/// 0x865c  sub ax,0x6e                    left edge (X_WIDTH = 110)
+/// 0x865f  js 0x8705                      the list ran off screen -> miss
+/// 0x8663  cmp bx,ax / jl 0x8705          mouse x left of the list -> miss
+/// 0x866b  or ax,ax / jns / neg ax        abs(relative axis) for the Y maths
+/// ```
+///
+/// `287` IS NOT IN THE IMAGE as an immediate — `add ax,0xe8` then `add ax,0x37` — the
+/// same shifts-and-adds habit that hides 320 and the mode-X row stride (#574). A
+/// census for `0x11F` finds nothing.
+///
+/// Then the Y half:
 ///
 /// ```text
 /// 0x8674  mov bx,0x48 / add bx,ax        y origin = 0x48 + axis
@@ -5008,7 +5027,7 @@ impl Ship3dNavChoiceGates {
 /// 0x868d  cmp al,5 / jge 0x8705          only FIVE rows -> miss
 /// ```
 ///
-/// The list gets TALLER and its rows SHORTER as the axis grows — `bx` gains
+/// The list moves DOWN and its rows get SHORTER as the axis grows — `bx` gains
 /// `axis + axis>>2` while `cl` loses `(axis>>2)>>1`. A fixed row height would drift
 /// out of alignment with the drawn rows as the ship turns.
 ///

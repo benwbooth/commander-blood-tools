@@ -20261,3 +20261,39 @@ trapped. Named on the function, since two nested `Option`s otherwise read as
 incidental.
 
 734 tests, 0 failures.
+
+## #608 — the nav-choice X half, 287 again, and six gates with no producer
+
+Extended #607's citation to the X half of the hit test, `0x8642`..`0x866B`:
+
+    0x8642  sub ax,0x2d                    relative axis (AXIS_BIAS = 45)
+    0x864b  shl ax,3 / neg ax              -(relative<<3)
+    0x8650  add ax,0xe8 / add ax,0x37      ...+287, built as 0xE8 + 0x37
+    0x8656  cmp bx,ax / jg 0x8705          right of the list -> miss
+    0x865c  sub ax,0x6e                    left edge (X_WIDTH = 110)
+    0x865f  js 0x8705                      the list ran off screen -> miss
+    0x8663  cmp bx,ax / jl 0x8705          left of the list -> miss
+    0x866b  or ax,ax / jns / neg ax        abs(relative axis) for the Y maths
+
+All six geometry constants match the instructions exactly: 45, 287, 110, 72, 18, 5.
+
+287 IS NOT AN IMMEDIATE. `add ax,0xe8` then `add ax,0x37` — the same habit that hides
+320 and the mode-X row stride (#574), and a census for `0x11F` finds nothing. This is
+the instance the standing conclusion was drawn from, now cited where the constant
+lives.
+
+THE GATES HAVE NO PRODUCER, which the reading turned up as a side effect.
+`Ship3dNavChoiceGates` is constructed only in `ship3d.rs`'s own tests; the running
+port always passes `Default::default()`, so `blocks_nav_choice` never blocks. The
+dispatcher is gated on `[0x2793] & 8` and the game raises those bits from several
+places, so a port that always answers "not blocked" accepts a nav choice during a
+presentation, a motion, or a menu. New matrix row.
+
+NOT WIRED ON A GUESS. Six booleans attached to plausible-looking flags would give a
+port that blocks in the WRONG states; never blocking is at least honestly wrong, and
+the row names what to read (the entry above `0x8642`).
+
+The instruction guard caught `0x8669 or ax,ax` — that address is the `mov`, the `or`
+is at `0x866B`.
+
+734 tests, 0 failures.
