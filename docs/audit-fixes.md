@@ -16089,3 +16089,38 @@ Settled ASM: the three constants, plus `gpu.rs`'s `new`/`present` as INFRA (X11 
 wgpu presentation, genuinely no binary counterpart).
 
 617 tests, 0 failures.
+
+## #489 — the list widget's six layout seeds, and a name that reads as arithmetic
+
+304 ledger rows are UNVERIFIED CONSTANTS — 126 in `ship3d.rs` alone — and they sit
+interleaved with cited ones, so the file looks evidenced at a glance. Six of them
+belong to one routine, `list_widget_layout_unified` @`0x8428`, and they came out
+together:
+
+```text
+  0x8436  xor bp, bp      /  0x8438  mov dx, 0x64    seeds 0 and 100
+  0x843B  test byte [0xadd], 1 / je 0x8448
+  0x8442  mov bp, 0xa     /  0x8445  mov dx, 0x37    seeds 10 and 55
+  0x847A  add bp, 0xb                                11 per row
+  0x84A1  add dx, 0x14    /  0x84A7  add bp, 8       padding before centring
+```
+
+THE NAMES INVITE A WRONG READING. `DEFAULT_MAX_WIDTH = 100` beside
+`EXTRA_WIDTH = 55` reads as "100, plus 55 when there is an extra entry" — 155. It
+is nothing of the sort: `test byte [0xadd],1` selects ONE PAIR OR THE OTHER, and
+the flag that adds a row picks the SMALLER width seed, not a larger one. The port's
+code was already right (`if has_extra_entry { EXTRA_WIDTH } else { DEFAULT_MAX_WIDTH }`),
+so this is a documentation defect rather than a behavioural one — but an uncited
+constant whose name implies the opposite of its use is exactly how a later edit
+"fixes" the addition that was never there.
+
+Why the smaller seed goes with the extra row is now recorded too, because it makes
+the design legible: `dx` is a running MAXIMUM (`cmp ax,dx / jb / mov dx,ax`
+@`0x8472`), so these are FLOORS that the widest measured label can only raise. A
+list with the extra row starts from a lower floor and lets its labels set the width.
+
+Settled ASM: all six. The remaining 298 uncited constants stay on the queue, and
+this is the shape the work takes — find the routine, read the seeds out of it in
+one pass, and cite them together rather than one number at a time.
+
+617 tests, 0 failures.

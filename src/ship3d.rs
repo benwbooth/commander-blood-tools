@@ -33,11 +33,33 @@ pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 4;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 6;
 pub const SHIP_3D_INTERPOLATION_WORDS: usize = 4;
+/// The list widget's layout seeds, all from `list_widget_layout_unified`
+/// @`0x8428` (audit-fixes #489). The two widths are ALTERNATIVES, not a base and
+/// an addend — `test byte [0xadd],1 / je 0x8448` picks one pair or the other:
+///
+/// ```text
+///   0x8436  xor bp, bp        height seed 0 ...
+///   0x8438  mov dx, 0x64      ... and width seed 100   (flag CLEAR)
+///   0x843B  test byte [0xadd], 1 / je 0x8448
+///   0x8442  mov bp, 0xa       height seed 10 ...
+///   0x8445  mov dx, 0x37      ... and width seed 55    (flag SET)
+/// ```
+///
+/// `dx` is then a running MAXIMUM (`cmp ax,dx / jb / mov dx,ax` @`0x8472`), so
+/// these are floors the widest label can only raise — which is why the smaller
+/// seed goes with the flag that adds an extra row.
 pub const SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH: u16 = 100;
+/// The width seed when `[0xadd]` bit 0 is SET — `mov dx,0x37` @`0x8445`. The same
+/// 55 is stored again @`0x8486` as the appended row's own width.
 pub const SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH: u16 = 55;
+/// `add dx,0x14` @`0x84A1` — widened by 20 before the box is centred.
 pub const SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING: u16 = 20;
+/// `add bp,0xb` @`0x847A` — 11 rows of height per list entry.
 pub const SHIP_3D_TARGET_LAYOUT_ROW_STEP: u16 = 11;
+/// The height seed when `[0xadd]` bit 0 is SET — `mov bp,0xa` @`0x8442`, against
+/// `xor bp,bp` @`0x8436` when it is clear.
 pub const SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT: u16 = 10;
+/// `add bp,8` @`0x84A7` — heightened by 8 before the box is centred.
 pub const SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING: u16 = 8;
 /// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in.
 pub const SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT: u16 = 200;
