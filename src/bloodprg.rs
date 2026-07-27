@@ -31,6 +31,17 @@ pub const BLOODPRG_SHA256: &str =
 pub const VM_CODE_SEGMENT: u16 = 0x04da;
 pub const FS_SEGMENT: u16 = 0x0bbf;
 pub const DATA_SEGMENT: u16 = 0x0ce2;
+/// The `DS:0xNNNN` address space's base as a FILE offset: `0xD420`.
+///
+/// DERIVED, not written down. It is `MZ_HEADER_SIZE + DATA_SEGMENT*16`, and both of
+/// those come from BLOODPRG.EXE's own MZ header (`e_cparhdr` = `0x60` paragraphs,
+/// `e_ss` = `0x0CE2`) — see [`MzHeader`]. Two files had `0xD420` as a local literal
+/// before audit-fixes #587; one definition, spelled as the arithmetic that forces
+/// it, cannot drift from the header it describes.
+pub const DS_BASE: usize = MZ_HEADER_SIZE + DATA_SEGMENT as usize * 16;
+/// `e_cparhdr` * 16 — the `0x600` that separates a FILE offset from an IMAGE offset
+/// throughout `re/labels.csv` and the tools.
+pub const MZ_HEADER_SIZE: usize = 0x600;
 pub const OPCODE_HANDLER_TABLE_FILE_OFFSET: usize = 0x142d0;
 pub const OPCODE_LENGTH_TABLE_FILE_OFFSET: usize = 0x14338;
 pub const RESOURCE_NAME_TABLE_FS_OFFSET: u16 = 0x0c04;
@@ -420,6 +431,33 @@ const DS_STRING_SCAN_MAX: usize = 64;
 const RENDER_FAR_CALL_SEGMENT_BYTES: [u8; 2] =
     [(RENDER_SEGMENT & 0x00ff) as u8, (RENDER_SEGMENT >> 8) as u8];
 
+/// BLOODPRG.EXE's DOS MZ header, field for field, as the file actually contains it:
+///
+/// ```text
+/// e_cblp    0x0098   e_cp      0x00aa   e_crlc    0x016f  (367 relocations)
+/// e_cparhdr 0x0060   e_minalloc 0x0000  e_maxalloc 0xffff
+/// e_ss      0x0ce2   e_sp      0x7e78   e_ip      0x0000  e_cs 0x0000
+/// e_lfarlc  0x001e
+/// ```
+///
+/// TWO PROJECT-WIDE CONVENTIONS ARE THIS HEADER, not choices made about it:
+///
+/// - `e_cparhdr` = `0x60` paragraphs = `0x600` bytes, so `image = file − 0x600`.
+///   Every file offset in `re/labels.csv` is relative to that number because the
+///   header says so.
+/// - `e_ss` = `0x0CE2`, so the startup data segment begins at
+///   `0x600 + 0x0CE2*16` = `0xD420` — the `DS:` base the whole `DS:0xNNNN` address
+///   space is measured from.
+///
+/// `e_ip`/`e_cs` are both zero, which is why the entry point is the first byte
+/// after the header (`0x600`), and `image_total` equals the file size exactly, so
+/// there are no trailing bytes appended after the image.
+///
+/// `image_total`'s `e_cblp == 0` branch is the standard MZ rule (a zero remainder
+/// means the last page is FULL, not empty) and is unreachable for this file, whose
+/// `e_cblp` is `0x98`. Kept because it is the format's rule, not this file's.
+///
+/// Pinned by `parses_mz_header_and_address_conversions` (audit-fixes #587).
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct MzHeader {
     pub e_cblp: u16,
@@ -3751,6 +3789,23 @@ mod tests {
         assert_eq!(summary.load_size, 0x14c98);
         assert_eq!(summary.entry_file_offset, 0x600);
         assert_eq!(summary.trailing_bytes, 0);
+        // THE TWO CONVENTIONS, derived rather than asserted as bare constants.
+        // `image = file - 0x600` is `e_cparhdr` paragraphs, and the `DS:` base is
+        // `e_ss` paragraphs past the header — so if either header field were read
+        // from the wrong offset, every address in labels.csv would be wrong and
+        // these are the assertions that would say so (audit-fixes #587).
+        assert_eq!(
+            summary.header.e_cparhdr as usize * 16,
+            0x600,
+            "e_cparhdr IS the 0x600 in `image = file - 0x600`"
+        );
+        assert_eq!(
+            0x600 + summary.header.e_ss as usize * 16,
+            DS_BASE,
+            "e_ss IS the DS: base 0xD420"
+        );
+        assert_eq!(summary.header.e_ip, 0, "entry ip");
+        assert_eq!(summary.header.e_cs, 0, "entry cs");
         assert_eq!(
             binary.fs_to_file(RESOURCE_NAME_TABLE_FS_OFFSET),
             RESOURCE_NAME_TABLE_FILE_OFFSET

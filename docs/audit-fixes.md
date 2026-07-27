@@ -19470,3 +19470,40 @@ Also settled `engine::ds_text` and `vm::execute_trace_with_context` as INFRA —
 a map lookup and a two-line delegation, neither carrying a decoded rule.
 
 729 tests, 0 failures.
+
+## #587 — the two address conventions ARE the MZ header, and now say so
+
+`MzHeader` had no doc comment: eleven bare `u16` fields parsing BLOODPRG.EXE's DOS
+header. Reading the header out of the file settles more than the struct.
+
+    e_cblp 0x0098   e_cp 0x00aa   e_crlc 0x016f (367 relocations)
+    e_cparhdr 0x0060   e_ss 0x0ce2   e_sp 0x7e78   e_ip 0x0000   e_cs 0x0000
+
+TWO NUMBERS THE WHOLE PROJECT IS BUILT ON ARE IN THERE:
+
+- `e_cparhdr` = `0x60` paragraphs = `0x600` bytes. That is the `0x600` in
+  "image = file − 0x600" — every offset in `re/labels.csv` is relative to it because
+  the header says so, not by convention.
+- `e_ss` = `0x0CE2`, so the data segment starts at `0x600 + 0x0CE2*16` = `0xD420` —
+  the base the entire `DS:0xNNNN` address space is measured from.
+
+Both were free-floating constants. `0xD420` appeared as a LOCAL literal in two
+files while `DATA_SEGMENT = 0x0ce2` sat public in a third. Now one public
+`DS_BASE = MZ_HEADER_SIZE + DATA_SEGMENT*16`, spelled as the arithmetic that forces
+it, so it cannot drift from the header it describes.
+
+The existing test asserted `header_size == 0x600` as a bare constant. It now asserts
+the DERIVATION — `e_cparhdr * 16 == 0x600` and `0x600 + e_ss*16 == DS_BASE` — so
+reading either header field from the wrong offset fails here instead of silently
+shifting every address in the label file.
+
+Also recorded, since it looks like dead code: `image_total`'s `e_cblp == 0` branch is
+unreachable for this file (`e_cblp` is `0x98`). It is the format's rule — a zero
+remainder means the last page is FULL — and is kept for that reason, not because
+anything here needs it.
+
+`e_ip` and `e_cs` are both zero, which is why the entry point is the first byte after
+the header, and `image_total` equals the file size exactly, so nothing is appended
+past the image.
+
+729 tests, 0 failures.

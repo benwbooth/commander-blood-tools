@@ -2218,7 +2218,8 @@ impl EngineState {
         // `bloodprg::KNOWN_CODE_SEGMENTS` satisfies (#553). Not a remembered
         // number: `bloodprg::DATA_SEGMENT` is 0x0CE2 and the arithmetic is forced
         // (audit-fixes #571).
-        const DS_BASE: usize = 0xD420;
+        // One definition, derived from the MZ header (audit-fixes #587).
+        use crate::bloodprg::DS_BASE;
         for off in Self::UI_STRING_OFFSETS {
             let start = DS_BASE + off as usize;
             let Some(len) = exe.get(start..).and_then(|t| t.iter().position(|&b| b == 0))
