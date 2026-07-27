@@ -18493,3 +18493,36 @@ filter differences rather than the only one, which makes "the port models a seco
 filter elsewhere" a weaker explanation than it looked yesterday.
 
 726 tests, 0 failures.
+
+## #557 — a missing widget write, and why I did not just add it
+
+#556 found `0xB079` setting the list centre to `0x50` (80) where the nav choice sets
+the same cell to `0x64` (100). Following that into the port:
+`state.target_layout_center_x` HAS EXACTLY ONE WRITER — `ship3d.rs:1942`, the
+nav-choice path, with 100. No navigation path writes it at all.
+
+So a navigation list laid out after a nav choice inherits 100 where the game asks
+for 80. That is a real difference with a visible consequence: the whole list sits 20
+pixels off.
+
+THE OBVIOUS FIX IS THE WRONG MOVE, and it took a minute to see why. Adding
+`state.target_layout_center_x = 80` to `run_ship_3d_navigation_trigger_prelude`
+assumes that function models `0xB079`. Its own constants say otherwise: the prelude
+sets `interpolation_duration_ticks` to `SHIP_3D_NAVIGATION_INTERPOLATION_DURATION`
+= 6, which #495 cited to `mov byte [0xada],6` @`0xB3CD` — a DIFFERENT routine.
+`0xB079` sets that cell to 10.
+
+So the port has one function whose duration matches routine A, whose candidate-list
+behaviour matches routine B, and whose missing centre write belongs to B. Writing
+B's value into it because B is where I happened to be reading is #501 exactly —
+right value, wrong routine, tidy story — and this time the tidy story would have
+been mine.
+
+Recorded as an UNVERIFIED matrix row naming what would settle it: match `0xB079`'s
+FULL effect set (two walker calls, four widget writes, the `[0x2795]=0xB3` panorama
+frame @`0xB0B1`, `or [0x2793],8` @`0xB0B7`) against port functions as a whole,
+rather than pairing constants one at a time. Three entries running (#554, #555,
+#556) have now shown that one-condition matching is what produces false confidence
+here.
+
+726 tests, 0 failures.

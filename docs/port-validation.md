@@ -1807,3 +1807,36 @@ of 80, NOT the nav choice's 100 from #494), `[0xadc]`/`[0xadd]` set @`0xB0D7`/`0
 against `0xB079` WHOLE — specifically what it does with the returned list at `[0x250B]` and
 `[0x251B]` — and compare against `run_ship_3d_navigation_trigger_prelude` as a
 whole rather than one condition at a time.
+
+## UNVERIFIED — two navigation-list open paths; the port models one, partially (#557)
+
+**Two routines open a target list with different widget setup.**
+
+```text
+  0xB079  [0xac6]=0x50 @0xB0D1   [0xadc]=1 @0xB0D7   [0xadd]=1 @0xB0DC   [0xada]=10 @0xB0E1
+  0xB3CD                                                                  [0xada]=6  @0xB3CD
+```
+
+`0xB079` centres the list on **x=80** and sets preserve-widths and extra-entry
+before calling the DEB candidate walker twice (#556). `0xB3CD` is the routine #495
+decoded, and its duration of 6 is what
+`ship3d::SHIP_3D_NAVIGATION_INTERPOLATION_DURATION` holds — so the port's
+`run_ship_3d_navigation_trigger_prelude` models `0xB3CD`'s path, not this one.
+
+**What the port does not model.** `state.target_layout_center_x` has exactly ONE
+writer in the whole port (`ship3d.rs:1942`, the NAV-CHOICE path, x=100). Neither
+navigation path writes it, so a navigation list laid out after a nav choice inherits
+100 where `0xB079` asks for 80 — and if nothing set it, whatever the default is.
+`target_layout_preserve_widths` and `target_layout_extra_entry` are likewise written
+only on the nav-choice path.
+
+**NOT a fix applied.** Which port function corresponds to `0xB079` is unresolved:
+its duration (10) matches the NAV CHOICE's constant, its walker calls match the
+prelude's candidate list, and its centre (80) matches neither. Writing 80 into the
+prelude would be attributing this routine to a function whose other constants say it
+models a different one — #501's error with a new coat.
+
+**What would settle it.** Identify which port function (if any) models `0xB079`,
+by comparing its full effect set — two walker calls, four widget writes, the
+`[0x2795] = 0xB3` panorama frame @`0xB0B1` and `or [0x2793],8` @`0xB0B7` — rather
+than matching constants one at a time.
