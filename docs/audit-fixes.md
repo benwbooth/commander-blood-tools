@@ -17205,3 +17205,34 @@ count. Whatever it refers to (a mode, a field width) is not established, and I h
 not renamed it on a guess — the doc records that the number is not the size.
 
 621 tests, 0 failures.
+
+## #518 — a tool for the dispatch table, and what the 0xD3 entry does NOT prove
+
+#517 resolved the opcode dispatch table by hand. `re/tools/vm_dispatch.py` makes it
+repeatable: it reads `DS:0x6EB0` (file `0x142D0`), resolves each near offset against
+the segment base (file `0x53A0`, seg `0x4DA`), and prints the map grouped by handler.
+
+The base check is FATAL, not advisory. If `0xA0`/`0xA6`/`0xB7`/`0xB8` stop landing
+on `0x6559`/`0x660C`/`0x6AA7`/`0x6B06`, the tool exits rather than printing a map,
+because every number it would print is derived from that base. A tool that degrades
+quietly when its assumption breaks is worse than no tool — it produces citable-looking
+addresses that disassemble into plausible nonsense, which is the exact failure #499
+hit by entering the right-looking routine.
+
+The full map: **52 opcodes, 37 distinct handlers, four shared groups.** Three are
+`ASSIGN_7`/`BITMASK_5`/`ASSIGN_5` from #517. The fourth is `0xB8 0xB9 0xBD -> 0x6B06`
+— and I went looking for a gap there, because `vm.rs`'s handler doc names only
+`0xB8`. There is none: the port matches `0xB8 | 0xB9 | 0xBD` in one arm and already
+documents it as "a true family". Worth the check; not worth a change.
+
+WHAT THE `0xD3` ENTRY DOES NOT PROVE. Its offset is `0x0000`, and I nearly wrote
+that this confirms the existing OP_MAX decode (dispatch ends at `0xD2`, tokens run
+to `0xFF`). Disassembling `0x53A0` shows a REAL PROLOGUE — `push bx / push cx /
+push dx / push es / push di` — so offset zero lands on the segment's first routine
+by layout, not on a null. The `0xD3` slot therefore looks like a live handler if you
+read only the offset. The OP_MAX conclusion still stands on its own evidence (the
+table is 104 bytes and `vm_token_advance` indexes a different, larger table), but
+this entry is NOT additional support for it, and recording it as such would have
+been a fabricated corroboration of a correct conclusion.
+
+621 tests, 0 failures.
