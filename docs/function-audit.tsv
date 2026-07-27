@@ -281,44 +281,44 @@ HEADER_SIZE	src/bloodsav.rs	158	const	0x1C3F,0x1C60,0x1C6A,0x1C75,0x6ADE,0x6ade,
 parse	src/bloodsav.rs	166	fn	0x1C3F,0x1C60,0x1C6A,0x1C75	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
 to_bytes	src/bloodsav.rs	189	fn	0x1C3F	ASM	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim. /// Re-seriali
 flag_bit	src/bloodsav.rs	223	fn	0x6ADE,0x6ade,0x008A4,0x01C6D,0x01D0F,0x053F6	ASM	/// Whether a progression flag bit is set in the 512-byte flag block. /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the /// game's `[0x6ADE]` region; the entity-progressio
-RING_PX_PER_FRAME	src/bridge.rs	28	const		UNVERIFIED	/// Ring pixels per panorama frame (8 px = 2° of the 1440-px ring).
-HALF_SCREEN	src/bridge.rs	31	const		UNVERIFIED	/// Ring x of the view centre at frame f is `f * 8`; the screen shows /// `ring_of_view - 160 .. + 160`.
-ARC_PER_REVOLUTION	src/bridge.rs	35	const		UNVERIFIED	"/// The ""arc"" scale the original steering math runs in: quarter-ring units /// (`ring / 4`, 360 per revolution — 2 arc units per frame)."
-STEER_DEAD_ZONE_ARC	src/bridge.rs	37	const	0x9752	ASM	/// Steering dead zone in arc units (`0x9752`: distances <= 0x1F don't move).
-STEER_TRAIL_ARC	src/bridge.rs	40	const	0x97C4,0x97D4	ASM	/// When steering, the view lands 0x1E arc units (15 frames) short of the mouse /// (`0x97C4`/`0x97D4`) — the view trails the pushed cursor.
-MENU_CLAMP_ARC	src/bridge.rs	43	const	0x2793,0x9762	ASM	/// While a menu item is engaged (`DS:0x2793` bit 2), the cursor is dragged back /// toward the view once it strays this many arc units (`0x9762`: 0x28).
-MENU_FRAME_MIN	src/bridge.rs	47	const	0x8614,0x868D	ASM	/// Golden console menu: hit box and row metrics from `0x8614..0x868D`. /// The menu is baked into panorama frames 40..=60 and is only clickable there.
-MENU_FRAME_MAX	src/bridge.rs	48	const		UNVERIFIED	
-MENU_REST_FRAME	src/bridge.rs	51	const	0x8642,0x279B	ASM	/// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to /// `[0x279B] = 0x5A` = arc 90 = frame 45).
-MENU_RIGHT_AT_REST	src/bridge.rs	55	const	0x8650,0x8663	ASM	/// At the rest frame the menu box spans screen x `177..=287` (`0x8650..0x8663`: /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the /// panorama at -8 px per frame of delta
-MENU_WIDTH	src/bridge.rs	56	const		UNVERIFIED	
-MENU_TOP_AT_REST	src/bridge.rs	59	const	0x8671,0x868B	ASM	/// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch /// = 0x12 - |δ| / 8, five rows.
-MENU_ROW_PITCH_AT_REST	src/bridge.rs	60	const		UNVERIFIED	
-MENU_ROW_COUNT	src/bridge.rs	61	const		UNVERIFIED	
-MENU_ROW_DAC_BASE	src/bridge.rs	67	const	0x8697	ASM	/// The five menu rows' glyphs in the panorama frames are painted with one /// dedicated palette index per row, starting here (`0x8697`: DAC index /// 0x7B + row). Re-programming these five DAC entrie
-MENU_ROW_IDLE_DAC	src/bridge.rs	70	const	0x8636,0x863F	ASM	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
-MENU_ROW_HOVER_DAC	src/bridge.rs	72	const	0x869D,0x86A3	ASM	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
-StationRecord	src/bridge.rs	79	struct	0x2A1B	ASM	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
-STATION_REST_FRAMES	src/bridge.rs	112	const	0x2A1B,0xFE3B,0x7DAB,0x6D4,0x9642,0x985F,0xFFFFFF,0xFE45,0xF	DATA	/// Station rest frames, read from the STATIC station-record table in the image — /// not from a probe dump, which is what this used to cite. /// /// `DS:0x2A1B` (file `0xFE3B`) is an array of SIX 24-
-STATION_RECORD_TABLE_FILE_OFFSET	src/bridge.rs	115	const	0x2A1B,0xD420	DATA	/// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).
-STATION_RECORD_COUNT	src/bridge.rs	117	const	0x7DA8	DATA	/// Six records (`mov cx,6` @`0x7DA8`).
-STATION_RECORD_STRIDE	src/bridge.rs	119	const	0x7E0E	DATA	/// 24 bytes each (`add bp,0x18` @`0x7E0E`).
-STATION_RECORD_REST_ANGLE_OFFSET	src/bridge.rs	121	const		DATA	/// Rest angle in degrees at `+0xA`; the panorama frame is half of it.
-BridgeView	src/bridge.rs	126	struct	0x2795,0x0A2A,0x0A2C,0x2793,0x279B,0x279D,0x2A19,0x2A1B	ORACLE?	/// The decompiled bridge view state — the DS globals the steering, seek, and /// menu code touch, as one struct. /// The console row whose surface (choice box / engaged state) is open — its /// label
-default	src/bridge.rs	156	fn		UNVERIFIED	// Live table at the console: the menu (1) and nav (2) station records // are the active/clickable ones.
-wrap	src/bridge.rs	180	fn		UNVERIFIED	
-ring_delta	src/bridge.rs	185	fn		UNVERIFIED	/// Shortest signed distance from `from` to `to` on a ring of `modulus`.
-mouse_screen_x	src/bridge.rs	196	fn	0x97FC	ASM	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
-move_mouse	src/bridge.rs	205	fn		UNVERIFIED	/// Feed relative mouse motion (the port's stand-in for the original's /// warped hardware cursor: motion accumulates in ring space).
-update_view	src/bridge.rs	220	fn	0x9656,0x97E3,0x97F6,0xa2a,0xfff8	ASM	/// One tick of the view state machine (`0x9656..0x97E3`). Returns true if /// the frame changed (the original's carry flag, telling the caller to /// redraw the panorama). /// /// Every path through 
-update_view_steer	src/bridge.rs	227	fn	0x9667,0x96F5,0x279b,0x2793,0x9671,0x279d,0x9676,0x1095,0x96	ASM	// Station seek (`0x9667..0x96F5`): ease toward the target half the // remaining distance per tick, shortest way around the 180-ring. // `mov dx,[0x279b] / shr dx,1` @`0x9667` is the target arc halved
-set_frame_orb_box	src/bridge.rs	314	fn	0x9860,0x9889	ASM	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
-menu_row_under_cursor	src/bridge.rs	326	fn	0x8614,0x868D	ASM	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8614..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
-click	src/bridge.rs	353	fn	0x86A4,0x86F1,0x7DC8,0x7DE6	ASM	/// A mouse-button press on the bridge (`0x86A4..0x86F1` menu path, /// `0x7DC8..0x7DE6` orb path). Returns the newly selected menu item /// (1..=5) if a menu row was clicked.
-clear_menu_selection	src/bridge.rs	411	fn	0x87B0,0x883B,0x2a19,0x2793,0x2A19,0x591C,0x8956,0x59BF,0x5E	ASM	/// Clear the console SELECTION only, leaving the cursor clamp alone — the /// shared epilogue of `nav_choice_handler_1` (`0x87B0`) and /// `nav_choice_handler_2` (`0x883B`). Both end with exactly: //
-release_menu	src/bridge.rs	417	fn		UNVERIFIED	/// Release the engaged menu item (the selected screen was closed): clears /// the selection and the cursor clamp.
-view_quadrant	src/bridge.rs	447	fn	0x2793,0x951D,0x9520,0x2795,0x9524,0x9529,0x952F,0x9531,0x95	ASM	/// The bridge VIEW QUADRANT as the game computes it — the one-hot value that /// occupies the high nibble of `gs:0x2793` and gates every nav actor /// (audit-fixes #364/#365). /// /// ```text ///   0
-apply_menu_palette	src/bridge.rs	465	fn	0x862B,0x86A3	ASM	/// Program the five menu-row DAC entries (game palette indices /// 0x7B..0x7F): all idle, then the hovered row bright — the per-tick DAC /// writes of `0x862B..0x86A3`. Only touches the palette while
+RING_PX_PER_FRAME	src/bridge.rs	31	const	0x864B	ASM	/// Ring pixels per panorama frame (8 px = 2° of the 1440-px ring). /// 8 px per frame — `shl ax,3` @`0x864B`, which turns a frame delta into ring /// pixels. `ship3d::SHIP_3D_NAV_CHOICE_*` models the
+HALF_SCREEN	src/bridge.rs	37	const	0x97F0	ASM	/// Ring x of the view centre at frame f is `f * 8`; the screen shows /// `ring_of_view - 160 .. + 160`. /// 160 — the `0xA0` of `sub ax,0xa0` @`0x97F0`, the same half-width the panorama /// auto-turn
+ARC_PER_REVOLUTION	src/bridge.rs	43	const	0x9748,0x97DD	ASM	"/// The ""arc"" scale the original steering math runs in: quarter-ring units /// (`ring / 4`, 360 per revolution — 2 arc units per frame). /// 360 arc units — the `0x168` the panorama wraps on throughou"
+STEER_DEAD_ZONE_ARC	src/bridge.rs	45	const	0x9752	ASM	/// Steering dead zone in arc units (`0x9752`: distances <= 0x1F don't move).
+STEER_TRAIL_ARC	src/bridge.rs	48	const	0x97C4,0x97D4	ASM	/// When steering, the view lands 0x1E arc units (15 frames) short of the mouse /// (`0x97C4`/`0x97D4`) — the view trails the pushed cursor.
+MENU_CLAMP_ARC	src/bridge.rs	51	const	0x2793,0x9762	ASM	/// While a menu item is engaged (`DS:0x2793` bit 2), the cursor is dragged back /// toward the view once it strays this many arc units (`0x9762`: 0x28).
+MENU_FRAME_MIN	src/bridge.rs	55	const	0x8614,0x868D	ASM	/// Golden console menu: hit box and row metrics from `0x8614..0x868D`. /// The menu is baked into panorama frames 40..=60 and is only clickable there.
+MENU_FRAME_MAX	src/bridge.rs	58	const	0x8617,0x2795	ASM	/// `cmp ax,0x3c / jg` @`0x8617` against the panorama frame `[0x2795]` /// (audit-fixes #493, #538).
+MENU_REST_FRAME	src/bridge.rs	61	const	0x8642,0x279B	ASM	/// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to /// `[0x279B] = 0x5A` = arc 90 = frame 45).
+MENU_RIGHT_AT_REST	src/bridge.rs	65	const	0x8650,0x8663	ASM	/// At the rest frame the menu box spans screen x `177..=287` (`0x8650..0x8663`: /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the /// panorama at -8 px per frame of delta
+MENU_WIDTH	src/bridge.rs	67	const	0x865C	ASM	/// `sub ax,0x6e` @`0x865C` (audit-fixes #491, #538).
+MENU_TOP_AT_REST	src/bridge.rs	70	const	0x8671,0x868B	ASM	/// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch /// = 0x12 - |δ| / 8, five rows.
+MENU_ROW_PITCH_AT_REST	src/bridge.rs	73	const	0x8679,0x8680	ASM	/// `mov cl,0x12` @`0x8679`, reduced by `shr al,1 / sub cl,al` @`0x8680` /// (audit-fixes #491, #538).
+MENU_ROW_COUNT	src/bridge.rs	87	const	0x868D,0x8614	ASM	/// `cmp al,5 / jge` @`0x868D` (audit-fixes #491). /// /// THIS FILE AND `ship3d.rs` MODEL THE SAME ROUTINE. `0x8614..0x868D` is ported /// twice — here as the bridge's golden console menu, there as /
+MENU_ROW_DAC_BASE	src/bridge.rs	93	const	0x8697	ASM	/// The five menu rows' glyphs in the panorama frames are painted with one /// dedicated palette index per row, starting here (`0x8697`: DAC index /// 0x7B + row). Re-programming these five DAC entrie
+MENU_ROW_IDLE_DAC	src/bridge.rs	96	const	0x8636,0x863F	ASM	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
+MENU_ROW_HOVER_DAC	src/bridge.rs	98	const	0x869D,0x86A3	ASM	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
+StationRecord	src/bridge.rs	105	struct	0x2A1B	ASM	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
+STATION_REST_FRAMES	src/bridge.rs	138	const	0x2A1B,0xFE3B,0x7DAB,0x6D4,0x9642,0x985F,0xFFFFFF,0xFE45,0xF	DATA	/// Station rest frames, read from the STATIC station-record table in the image — /// not from a probe dump, which is what this used to cite. /// /// `DS:0x2A1B` (file `0xFE3B`) is an array of SIX 24-
+STATION_RECORD_TABLE_FILE_OFFSET	src/bridge.rs	141	const	0x2A1B,0xD420	DATA	/// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).
+STATION_RECORD_COUNT	src/bridge.rs	143	const	0x7DA8	DATA	/// Six records (`mov cx,6` @`0x7DA8`).
+STATION_RECORD_STRIDE	src/bridge.rs	145	const	0x7E0E	DATA	/// 24 bytes each (`add bp,0x18` @`0x7E0E`).
+STATION_RECORD_REST_ANGLE_OFFSET	src/bridge.rs	147	const		DATA	/// Rest angle in degrees at `+0xA`; the panorama frame is half of it.
+BridgeView	src/bridge.rs	152	struct	0x2795,0x0A2A,0x0A2C,0x2793,0x279B,0x279D,0x2A19,0x2A1B	ORACLE?	/// The decompiled bridge view state — the DS globals the steering, seek, and /// menu code touch, as one struct. /// The console row whose surface (choice box / engaged state) is open — its /// label
+default	src/bridge.rs	182	fn		UNVERIFIED	// Live table at the console: the menu (1) and nav (2) station records // are the active/clickable ones.
+wrap	src/bridge.rs	206	fn		UNVERIFIED	
+ring_delta	src/bridge.rs	211	fn		UNVERIFIED	/// Shortest signed distance from `from` to `to` on a ring of `modulus`.
+mouse_screen_x	src/bridge.rs	222	fn	0x97FC	ASM	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
+move_mouse	src/bridge.rs	231	fn		UNVERIFIED	/// Feed relative mouse motion (the port's stand-in for the original's /// warped hardware cursor: motion accumulates in ring space).
+update_view	src/bridge.rs	246	fn	0x9656,0x97E3,0x97F6,0xa2a,0xfff8	ASM	/// One tick of the view state machine (`0x9656..0x97E3`). Returns true if /// the frame changed (the original's carry flag, telling the caller to /// redraw the panorama). /// /// Every path through 
+update_view_steer	src/bridge.rs	253	fn	0x9667,0x96F5,0x279b,0x2793,0x9671,0x279d,0x9676,0x1095,0x96	ASM	// Station seek (`0x9667..0x96F5`): ease toward the target half the // remaining distance per tick, shortest way around the 180-ring. // `mov dx,[0x279b] / shr dx,1` @`0x9667` is the target arc halved
+set_frame_orb_box	src/bridge.rs	340	fn	0x9860,0x9889	ASM	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
+menu_row_under_cursor	src/bridge.rs	352	fn	0x8614,0x868D	ASM	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8614..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
+click	src/bridge.rs	379	fn	0x86A4,0x86F1,0x7DC8,0x7DE6	ASM	/// A mouse-button press on the bridge (`0x86A4..0x86F1` menu path, /// `0x7DC8..0x7DE6` orb path). Returns the newly selected menu item /// (1..=5) if a menu row was clicked.
+clear_menu_selection	src/bridge.rs	437	fn	0x87B0,0x883B,0x2a19,0x2793,0x2A19,0x591C,0x8956,0x59BF,0x5E	ASM	/// Clear the console SELECTION only, leaving the cursor clamp alone — the /// shared epilogue of `nav_choice_handler_1` (`0x87B0`) and /// `nav_choice_handler_2` (`0x883B`). Both end with exactly: //
+release_menu	src/bridge.rs	443	fn		UNVERIFIED	/// Release the engaged menu item (the selected screen was closed): clears /// the selection and the cursor clamp.
+view_quadrant	src/bridge.rs	473	fn	0x2793,0x951D,0x9520,0x2795,0x9524,0x9529,0x952F,0x9531,0x95	ASM	/// The bridge VIEW QUADRANT as the game computes it — the one-hot value that /// occupies the high nibble of `gs:0x2793` and gates every nav actor /// (audit-fixes #364/#365). /// /// ```text ///   0
+apply_menu_palette	src/bridge.rs	491	fn	0x862B,0x86A3	ASM	/// Program the five menu-row DAC entries (game palette indices /// 0x7B..0x7F): all idle, then the hovered row bright — the per-tick DAC /// writes of `0x862B..0x86A3`. Only touches the palette while
 ConceptMenu	src/concept_menu.rs	24	struct		UNVERIFIED	/// One decoded concept menu: the byte offset of its `0xA3` opcode in the `.BAS` /// image, and the ordered topic labels (as stored — lowercase; the square-caps /// menu font renders them uppercase). 
 parse_dic	src/concept_menu.rs	32	fn		INFRA	/// Parse a `SCRIPTn.DIC` into {byte offset -> word}. Words are NUL-terminated.
 is_concept_label	src/concept_menu.rs	38	fn		UNVERIFIED	/// A dictionary word is a valid CONCEPT label if it is a single token (no spaces /// — sentence fragments in the script are multi-word) of a menu-plausible length.
@@ -663,8 +663,8 @@ GAME_FONT_WIDTHS	src/font.rs	156	const		DATA
 GAME_FONT_GLYPHS	src/font.rs	166	const		DATA	
 draw_text_indexed	src/font.rs	257	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
 BoldConsoleFont	src/font.rs	507	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
-GLYPH_MAP_FILE_OFFSET	src/font.rs	519	const	0x70FA,0xD420,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (= file `0xD420 + 0x70FA`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to se
-GLYPHS_FILE_OFFSET	src/font.rs	523	const	0x71AA,0xD420,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (= file `0xD420 + 0x71AA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
+GLYPH_MAP_FILE_OFFSET	src/font.rs	519	const	0x70FA,0x1451A,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to search. A NE
+GLYPHS_FILE_OFFSET	src/font.rs	523	const	0x71AA,0x145CA,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
 ADVANCE	src/font.rs	527	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
 load_from_exe	src/font.rs	530	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
 draw	src/font.rs	549	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).

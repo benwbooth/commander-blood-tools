@@ -17867,3 +17867,43 @@ The cost is ~5 seconds per settle. The thing it prevents is a ledger row that sa
 "verified" about a tree where nothing was.
 
 723 tests, 0 failures.
+
+## #538 — the same routine is ported TWICE, in two files, and they agree
+
+`bridge.rs`'s golden console menu and `ship3d.rs`'s `hit_test_ship_3d_nav_choice`
+are two independent ports of ONE routine, `0x8614..0x868D`. Eight constants are
+duplicated between them:
+
+```text
+  bridge.rs                        ship3d.rs
+  MENU_FRAME_MIN       0x28        NAV_CHOICE_MIN_GATE   40
+  MENU_FRAME_MAX       0x3C        MAX_GATE              60
+  MENU_REST_FRAME      45          AXIS_BIAS             45
+  MENU_RIGHT_AT_REST   0xE8+0x37   RIGHT_BASE            287
+  MENU_WIDTH           0x6E        X_WIDTH               110
+  MENU_TOP_AT_REST     0x48        Y_BASE                72
+  MENU_ROW_PITCH_AT_REST 0x12      ROW_HEIGHT_BASE       18
+  MENU_ROW_COUNT       5           COUNT                 5
+```
+
+Note `MENU_RIGHT_AT_REST` is written `0xE8 + 0x37` — this file kept the value in
+its COMPUTED form, which is the thing #491 spent a search rediscovering after
+concluding 287 might be fabricated because no immediate exists. The answer was in
+`bridge.rs` the whole time, spelled the way the instructions spell it.
+
+THEY AGREE, and I checked rather than assumed (#486a's lesson): this file's
+`0x48 + |d| * 1.25` is `ship3d`'s `72 + |d| + (|d| >> 2)`, and its
+`0x12 - |d| / 8` is `18 - ((|d| >> 2) >> 1)`. Two people-hours apart, two spellings,
+same arithmetic. That is a genuinely good outcome — and exactly the configuration
+#486a found broken in `manu3`, where two models of one method disagreed by a frame
+for as long as both existed.
+
+`check_duplicate_rules.py` could not have caught this pair: it keys on the ledger's
+`origin` column, and `bridge.rs`'s constants were UNCITED, so they had no address to
+cluster on. Now that they cite `0x8614`..`0x868D`, the checker can see them — the
+uncited state was hiding a duplicate from the tool built to find duplicates.
+
+The cross-reference is recorded on both sides so a change to either is known to
+require the other.
+
+723 tests, 0 failures.

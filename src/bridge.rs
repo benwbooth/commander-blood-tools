@@ -25,13 +25,21 @@
 use crate::tbbig::{ANGLE_UNITS_PER_REVOLUTION, PANORAMA_FRAME_COUNT};
 
 /// Ring pixels per panorama frame (8 px = 2° of the 1440-px ring).
+/// 8 px per frame — `shl ax,3` @`0x864B`, which turns a frame delta into ring
+/// pixels. `ship3d::SHIP_3D_NAV_CHOICE_*` models the SAME routine from the other
+/// side; see the note on [`MENU_ROW_COUNT`] (audit-fixes #538).
 pub const RING_PX_PER_FRAME: i32 = 8;
 /// Ring x of the view centre at frame f is `f * 8`; the screen shows
 /// `ring_of_view - 160 .. + 160`.
+/// 160 — the `0xA0` of `sub ax,0xa0` @`0x97F0`, the same half-width the panorama
+/// auto-turn subtracts when it converts a frame to a cursor x
+/// (`ship3d::SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS`, #497) — audit-fixes #538.
 pub const HALF_SCREEN: i32 = 160;
 
 /// The "arc" scale the original steering math runs in: quarter-ring units
 /// (`ring / 4`, 360 per revolution — 2 arc units per frame).
+/// 360 arc units — the `0x168` the panorama wraps on throughout `0x9748`..`0x97DD`
+/// (`ship3d::SHIP_3D_PROCEDURAL_FULL_TURN`, #496) — audit-fixes #538.
 const ARC_PER_REVOLUTION: i32 = 360;
 /// Steering dead zone in arc units (`0x9752`: distances <= 0x1F don't move).
 const STEER_DEAD_ZONE_ARC: i32 = 0x1F;
@@ -45,6 +53,8 @@ const MENU_CLAMP_ARC: i32 = 0x28;
 /// Golden console menu: hit box and row metrics from `0x8614..0x868D`.
 /// The menu is baked into panorama frames 40..=60 and is only clickable there.
 pub const MENU_FRAME_MIN: u16 = 0x28;
+/// `cmp ax,0x3c / jg` @`0x8617` against the panorama frame `[0x2795]`
+/// (audit-fixes #493, #538).
 pub const MENU_FRAME_MAX: u16 = 0x3C;
 /// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to
 /// `[0x279B] = 0x5A` = arc 90 = frame 45).
@@ -53,11 +63,27 @@ pub const MENU_REST_FRAME: u16 = 45;
 /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the
 /// panorama at -8 px per frame of delta.
 const MENU_RIGHT_AT_REST: i32 = 0xE8 + 0x37;
+/// `sub ax,0x6e` @`0x865C` (audit-fixes #491, #538).
 const MENU_WIDTH: i32 = 0x6E;
 /// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch
 /// = 0x12 - |δ| / 8, five rows.
 const MENU_TOP_AT_REST: i32 = 0x48;
+/// `mov cl,0x12` @`0x8679`, reduced by `shr al,1 / sub cl,al` @`0x8680`
+/// (audit-fixes #491, #538).
 const MENU_ROW_PITCH_AT_REST: i32 = 0x12;
+/// `cmp al,5 / jge` @`0x868D` (audit-fixes #491).
+///
+/// THIS FILE AND `ship3d.rs` MODEL THE SAME ROUTINE. `0x8614..0x868D` is ported
+/// twice — here as the bridge's golden console menu, there as
+/// `hit_test_ship_3d_nav_choice` — and EIGHT constants are duplicated between
+/// them: the 0x28/0x3C frame gates, the 45 bias, the computed 287 right edge,
+/// 0x6E width, 0x48 top, 0x12 pitch and this 5.
+///
+/// The two AGREE, checked rather than assumed (audit-fixes #538): this file's
+/// `0x48 + |d| * 1.25` is `ship3d`'s `72 + |d| + (|d| >> 2)`, and its
+/// `0x12 - |d| / 8` is `18 - ((|d| >> 2) >> 1)`. Neither was derived from the
+/// other, which is why the agreement is worth recording — and why a change to
+/// either must be made to both.
 pub const MENU_ROW_COUNT: usize = 5;
 
 /// The five menu rows' glyphs in the panorama frames are painted with one
