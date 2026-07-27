@@ -10,7 +10,11 @@ use std::process::{Command, Stdio};
 const ISO_URL: &str =
     "https://archive.org/download/Commander_Blood_-_MS-DOS_Game_-_MindscapeEng/CMDR_BLOOD.iso";
 
+// 320 — never an immediate; the game builds its row stride from two shifts,
+// `xchg bh,bl` + `shl ...,6` @`0x9B25`..`0x9B2C` (audit-fixes #502, #525).
 const VIEWPORT_W: usize = 320;
+// 200 — `mov word ptr [0x523b],0xc8` @`0xB41D`, the clip bottom the navigation
+// routine restores (audit-fixes #495, #525).
 const VIEWPORT_H: usize = 200;
 const OUTPUT_SCALE: usize = 3;
 const OUTPUT_W: usize = VIEWPORT_W * OUTPUT_SCALE;
@@ -34,7 +38,14 @@ const DEFAULT_SUBTITLE_TEXT_SPEED_STEP: u16 =
 // voiced clip to inherit a rate from (any rate works for silence; this just
 // keeps the concatenated u8 PCM track well-formed).
 const SILENT_SUBTITLE_SR: u32 = 11025;
+// `obj+0x3A`, the TALK field of the field-offset matrix at `DS:0x6D60` — the
+// same value `vm::field_offset` documents for `bsf(2)=1` and the same one
+// `vm::TALK_FIELD` holds. Two files, one matrix column (audit-fixes #548).
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
+// `obj+0x18` = 24, the universal character LOCATION field of the matrix at
+// `DS:0x6D60` (resolved by `vm_field_offset` @`0x6023`),
+// and the same value as `vm::LOCATION_FIELD` — which is pinned to the image by
+// `field_matrix_entries_match_the_constants` (audit-fixes #548).
 const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
 
 // The fixed leading entries of BLOODPRG.EXE's boot cutscene path table

@@ -18211,3 +18211,34 @@ claim, and this one caught a duplicate label. That is the intended direction —
 tools are the memory, and I keep proving why they need to be.
 
 724 tests, 0 failures.
+
+## #548 — a fourth cross-file duplicate, and three constants that are honestly the port's
+
+`extract/mod.rs`'s nine uncited constants split three ways, and the split is the
+useful part — they had been sitting in one block looking alike.
+
+**Two are the game's, duplicated from `vm.rs`.** `SCRIPT_OBJECT_TALK_FIELD = 0x3A`
+and `SCRIPT_OBJECT_LOCATION_FIELD = 24` are the TALK and LOCATION columns of the
+field-offset matrix at `DS:0x6D60` — the same two values `vm::LOCATION_FIELD` holds
+and `vm::field_offset`'s doc spells out ("character location = obj+0x18 / talk =
+obj+0x3A"). That is the FOURTH cross-file duplicate this session, after
+bridge/ship3d (#538), entity/ship3d (#539) and engine/ship3d (#526). The pattern is
+now unmistakable: the port's subsystems were decoded separately and each named what
+it needed, so shared game facts have two or three homes and no cross-links until
+someone cites them.
+
+**Two are the game's, already decoded elsewhere.** `VIEWPORT_W`/`VIEWPORT_H` are the
+320 built from two shifts (#502) and the 200 restored as a clip bottom (#495) —
+`engine::ENGINE_SCREEN_*` all over again (#525), in a third file.
+
+**Four are honestly the port's**, settled INFRA rather than left in a queue that
+implies undone decoding: `ISO_URL` (where to download the disc image),
+`OUTPUT_SCALE`/`OUTPUT_W`/`OUTPUT_H` (the export's 3x upscale, a rendering choice
+for MP4s the game never produced).
+
+`HNM_FPS = 15` is NOT settled. It could be the port's encoder choice or the HNM
+format's own rate, and I have not read the format's header to find out. Guessing
+either way would put a wrong label on a row that currently says "unknown", which is
+at least true.
+
+724 tests, 0 failures.

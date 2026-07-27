@@ -1721,36 +1721,36 @@ Lbm	src/extract/lbm.rs	9	struct		DATA?	/// A decoded LBM image: dimensions, pale
 be_u16	src/extract/lbm.rs	16	fn		UNVERIFIED	
 be_u32	src/extract/lbm.rs	19	fn		UNVERIFIED	
 decode_lbm	src/extract/lbm.rs	24	fn		DATA?	/// Decode an IFF PBM `.LBM`. Returns `None` if the data isn't a PBM FORM. // chunks are padded to an even byte boundary // PBM rows are width bytes, padded to an even byte count per row. // ByteRun1 
-ISO_URL	src/extract/mod.rs	10	const		UNVERIFIED	
-VIEWPORT_W	src/extract/mod.rs	13	const		UNVERIFIED	
-VIEWPORT_H	src/extract/mod.rs	14	const		UNVERIFIED	
-OUTPUT_SCALE	src/extract/mod.rs	15	const		UNVERIFIED	
-OUTPUT_W	src/extract/mod.rs	16	const		UNVERIFIED	
-OUTPUT_H	src/extract/mod.rs	17	const		UNVERIFIED	
-HNM_FPS	src/extract/mod.rs	18	const		UNVERIFIED	
-DEFAULT_SUBTITLE_TEXT_SPEED_STEP	src/extract/mod.rs	26	const	0x0ACA,0x0DEEA,0x1B29,0x1B3D	CELL?	"// The text-speed step the GAME SHIPS: `DS:0x0ACA` holds 2 in the image (file // 0x0DEEA), which is what the OPTION menu's FAST entry selects. This was 5 -- // ""the default/mid step observed in the bi"
-SILENT_SUBTITLE_SR	src/extract/mod.rs	36	const		DATA?	"// A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md // ""voice clip-index"") is rendered "
-SCRIPT_OBJECT_TALK_FIELD	src/extract/mod.rs	37	const		UNVERIFIED	
-SCRIPT_OBJECT_LOCATION_FIELD	src/extract/mod.rs	38	const		UNVERIFIED	
-INTRO_SEQUENCE	src/extract/mod.rs	44	const	0x5C90	CELL?	// The fixed leading entries of BLOODPRG.EXE's boot cutscene path table // (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`). // These play at startup before the main loop; 
-subtitle_reveal_chars_per_second	src/extract/mod.rs	46	fn		UNVERIFIED	
-default_subtitle_reveal_chars_per_second	src/extract/mod.rs	53	fn		UNVERIFIED	
-run	src/extract/mod.rs	57	fn		UNVERIFIED	// --spr direct mode: decode sprite banks to grayscale index-preview PGMs. // The `.spr` banks are palette-indexed and use the runtime scene palette, so // these previews visualise the decoded index d
-write_bloodprg_snd_call_sites_manifest	src/extract/mod.rs	1130	fn		UNVERIFIED	
-write_bloodprg_render_call_sites_manifest	src/extract/mod.rs	1162	fn		UNVERIFIED	
-write_bloodprg_sprite_blitter_manifest	src/extract/mod.rs	1196	fn		UNVERIFIED	
-SpriteFrameTableManifestRow	src/extract/mod.rs	1220	struct		UNVERIFIED	
-write_sprite_bank_preview_pgm	src/extract/mod.rs	1239	fn		UNVERIFIED	/// Write decoded `.spr` frames as a horizontal grayscale montage in binary PGM /// (P5) format — each pixel's palette index shown as a gray level. No ffmpeg or /// palette needed; this is an index-vi
-parse_sprite_frame_tables_manifest	src/extract/mod.rs	1266	fn		TESTED	
-parse_sprite_frame_header	src/extract/mod.rs	1344	fn		UNVERIFIED	
-write_sprite_frame_tables_manifest	src/extract/mod.rs	1357	fn		TESTED	
-format_u16_hex	src/extract/mod.rs	1388	fn		UNVERIFIED	
-format_usize_hex	src/extract/mod.rs	1394	fn		UNVERIFIED	
-format_u16_dec	src/extract/mod.rs	1400	fn		UNVERIFIED	
-format_u8_dec	src/extract/mod.rs	1404	fn		UNVERIFIED	
-format_usize_dec	src/extract/mod.rs	1408	fn		UNVERIFIED	
-format_i16_dec	src/extract/mod.rs	1412	fn		UNVERIFIED	
-script_background_music	src/extract/mod.rs	1434	fn		DATA?	/// The background-music stem for a `SCRIPTn`'s first scene, resolved via the same /// script-context + DESCRIPT location→music path the video pipeline uses (the music map /// is keyed by scene/locati
+ISO_URL	src/extract/mod.rs	10	const		INFRA	
+VIEWPORT_W	src/extract/mod.rs	15	const	0x9B25,0x9B2C	ASM	// 320 — never an immediate; the game builds its row stride from two shifts, // `xchg bh,bl` + `shl ...,6` @`0x9B25`..`0x9B2C` (audit-fixes #502, #525).
+VIEWPORT_H	src/extract/mod.rs	18	const	0x523b,0xB41D	ASM	// 200 — `mov word ptr [0x523b],0xc8` @`0xB41D`, the clip bottom the navigation // routine restores (audit-fixes #495, #525).
+OUTPUT_SCALE	src/extract/mod.rs	19	const		INFRA	
+OUTPUT_W	src/extract/mod.rs	20	const		INFRA	
+OUTPUT_H	src/extract/mod.rs	21	const		INFRA	
+HNM_FPS	src/extract/mod.rs	22	const		UNVERIFIED	
+DEFAULT_SUBTITLE_TEXT_SPEED_STEP	src/extract/mod.rs	30	const	0x0ACA,0x0DEEA,0x1B29,0x1B3D	CELL?	"// The text-speed step the GAME SHIPS: `DS:0x0ACA` holds 2 in the image (file // 0x0DEEA), which is what the OPTION menu's FAST entry selects. This was 5 -- // ""the default/mid step observed in the bi"
+SILENT_SUBTITLE_SR	src/extract/mod.rs	40	const		DATA?	"// A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md // ""voice clip-index"") is rendered "
+SCRIPT_OBJECT_TALK_FIELD	src/extract/mod.rs	44	const	0x6D60	ASM	// `obj+0x3A`, the TALK field of the field-offset matrix at `DS:0x6D60` — the // same value `vm::field_offset` documents for `bsf(2)=1` and the same one // `vm::TALK_FIELD` holds. Two files, one matri
+SCRIPT_OBJECT_LOCATION_FIELD	src/extract/mod.rs	49	const	0x6D60,0x6023	ASM	// `obj+0x18` = 24, the universal character LOCATION field of the matrix at // `DS:0x6D60` (resolved by `vm_field_offset` @`0x6023`), // and the same value as `vm::LOCATION_FIELD` — which is pinned to
+INTRO_SEQUENCE	src/extract/mod.rs	55	const	0x5C90	CELL?	// The fixed leading entries of BLOODPRG.EXE's boot cutscene path table // (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`). // These play at startup before the main loop; 
+subtitle_reveal_chars_per_second	src/extract/mod.rs	57	fn		UNVERIFIED	
+default_subtitle_reveal_chars_per_second	src/extract/mod.rs	64	fn		UNVERIFIED	
+run	src/extract/mod.rs	68	fn		UNVERIFIED	// --spr direct mode: decode sprite banks to grayscale index-preview PGMs. // The `.spr` banks are palette-indexed and use the runtime scene palette, so // these previews visualise the decoded index d
+write_bloodprg_snd_call_sites_manifest	src/extract/mod.rs	1141	fn		UNVERIFIED	
+write_bloodprg_render_call_sites_manifest	src/extract/mod.rs	1173	fn		UNVERIFIED	
+write_bloodprg_sprite_blitter_manifest	src/extract/mod.rs	1207	fn		UNVERIFIED	
+SpriteFrameTableManifestRow	src/extract/mod.rs	1231	struct		UNVERIFIED	
+write_sprite_bank_preview_pgm	src/extract/mod.rs	1250	fn		UNVERIFIED	/// Write decoded `.spr` frames as a horizontal grayscale montage in binary PGM /// (P5) format — each pixel's palette index shown as a gray level. No ffmpeg or /// palette needed; this is an index-vi
+parse_sprite_frame_tables_manifest	src/extract/mod.rs	1277	fn		TESTED	
+parse_sprite_frame_header	src/extract/mod.rs	1355	fn		UNVERIFIED	
+write_sprite_frame_tables_manifest	src/extract/mod.rs	1368	fn		TESTED	
+format_u16_hex	src/extract/mod.rs	1399	fn		UNVERIFIED	
+format_usize_hex	src/extract/mod.rs	1405	fn		UNVERIFIED	
+format_u16_dec	src/extract/mod.rs	1411	fn		UNVERIFIED	
+format_u8_dec	src/extract/mod.rs	1415	fn		UNVERIFIED	
+format_usize_dec	src/extract/mod.rs	1419	fn		UNVERIFIED	
+format_i16_dec	src/extract/mod.rs	1423	fn		UNVERIFIED	
+script_background_music	src/extract/mod.rs	1445	fn		DATA?	/// The background-music stem for a `SCRIPTn`'s first scene, resolved via the same /// script-context + DESCRIPT location→music path the video pipeline uses (the music map /// is keyed by scene/locati
 fb_to_rgb	src/extract/render.rs	15	fn		UNVERIFIED	
 fill_rect_indexed_clipped	src/extract/render.rs	24	fn		UNVERIFIED	
 fill_band_indexed	src/extract/render.rs	54	fn		UNVERIFIED	
