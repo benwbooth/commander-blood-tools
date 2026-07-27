@@ -15859,3 +15859,43 @@ runtime — an overlay's code, most likely, which is where the search goes next.
 So the scanners stay for now, and this is why: the mechanism is decoded but the
 slot-to-callsite mapping is not, and wiring a template table to the wrong caller
 would be worse than a scan that reaches the right file. Recorded as the task.
+
+## #483 — three dead trackers left behind by two REFUTED audio models
+
+`cargo` reported "value assigned to `voice_line` is never read" three times. Traced,
+`voice_line` had four writes and NO reads. So did `voice` — and `voice` was never
+assigned `Some` ANYWHERE, so the stream it names was always empty. `chatter_done_line`
+was the same: declared, cleared twice, never set and never read.
+
+They are the residue of two models this project already refuted IN COMMENTS SITTING
+DIRECTLY ABOVE THEM:
+
+- A per-line voice clip, refuted at `main.rs` @0x66AF/0xB898/0xB8AB/0x94CF: "There is
+  no per-line or per-speaker clip selection anywhere in the executable." The old code
+  selected `b3 - 1` bounded by `talk_hnms.len()` — an AUDIO index bounded by a count
+  of talk VIDEOS — and was removed. `voice`/`voice_line` outlived it.
+- A single end-of-line blip, refuted by the @0xB898 decode of the CONTINUOUS burble:
+  "This is the continuous honk-burble under the text, not a single end-of-line blip."
+  `chatter_done_line` was that blip's edge detector.
+
+What kept them compiling is worth naming, because it is a pattern to watch for:
+`let _ = &voice;` and `let _ = &chatter_done_line;` — statements that read as
+keep-alives but only silence the unused warning. The first even carried the comment
+"keep the stream alive while the line plays", describing a stream that is always
+`None`. A pin like that converts a compiler diagnostic into a false reassurance.
+
+`let _ = &chatter;` is NOT the same and stays: `chatter` IS assigned a live
+`MusicPlayer` @0xB898, and dropping it would cut the burble. Same syntax, real
+purpose — which is exactly why the two needed telling apart rather than a blanket sweep.
+
+Also removed: the declaration comment claiming the game "plays sn/tb.snd clip 0 once
+per fully-revealed subtitle line (@0x94BA)". That is the refuted model stated as fact
+at the top of the file while the loop 2000 lines below implements the correct one.
+A stale comment outranks a dead variable as a hazard — the variable does nothing,
+but the comment actively misinforms the next reader about a decoded behaviour.
+
+Deleted: 3 declarations, 6 assignments, 2 pins, 1 wrong comment. The remaining
+warnings in this sweep are cosmetic and stay: `mx`/`my` @`bin/blood.rs:99` are the
+VERIFYSCRIPT harness's scripted mouse (INFRA, not game state).
+
+616 tests, 0 failures.

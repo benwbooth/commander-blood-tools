@@ -607,20 +607,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     }
     let mut music = Music(None);
 
-    // Per-line voice: when the dialogue line changes, play the speaker's SND clip
-    // for that line (bank from the speaker's DESCRIPT record, clip index from the
-    // A6 voice selector via the decoded one-based mapping). One voice at a time.
-    let mut voice: Option<commander_blood_tools::audio::MusicPlayer> = None;
-    let mut voice_line: Option<usize> = None;
-
-    // Subtitle chatter: the game plays sn/tb.snd clip 0 once per fully-revealed
-    // subtitle line (@0x94BA). Track the reveal edge and fire it.
+    // Subtitle chatter: while a line is REVEALING the game plays a random burble
+    // from sn/tb.snd every 4 ticks (decoded @0xB898 — see the dialogue loop below).
+    // There is NO per-line voice clip (refuted @0x66AF/0xB898/0xB8AB/0x94CF) and no
+    // single end-of-line blip, so the `voice`/`voice_line`/`chatter_done_line`
+    // trackers those two models needed are gone with them (audit-fixes #483).
     let tb_snd = commander_blood_tools::snd::SndBank::read(
         std::path::Path::new(&format!("{assets}/sn/tb.snd")),
     )
     .ok();
     let mut chatter: Option<commander_blood_tools::audio::MusicPlayer> = None;
-    let mut chatter_done_line: Option<usize> = None;
     // Chatter burble state (decoded @0xB898): 4-tick throttle ([0xB2F]), last random pick
     // ([0xC4D], never repeated back-to-back), and the game's OWN PRNG for the roll — the
     // handler draws via `lcall 0x1CE:0x0B02` (the BloodPrng), not a libc-style LCG. Seeded
@@ -2534,9 +2530,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // scene like the game; otherwise return to the nav view.
             match engine.pending_next_scene() {
                 Some(profile) => {
-                    voice = None;
-                    voice_line = None;
-                    chatter_done_line = None;
                     load_script(&mut engine, &mut music, u32::from(profile) + 1);
                 }
                 None if !ending_started && engine.progress.all_visited() => {
@@ -2555,8 +2548,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // locations visited" so the ending stays reachable in play.
                     // Credits music is the binary's own `mu\credits.voc` (string at file 0xE16B).
                     ending_started = true;
-                    voice = None;
-                    voice_line = None;
                     current_script.set(0);
                     engine.start_ending();
                     music.play(&format!("{assets}/mu/credits.voc"));
@@ -2564,8 +2555,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 None => {
                     engine.on_ship = true;
                     music.stop();
-                    voice = None;
-                    voice_line = None;
                     current_script.set(0); // back on the nav — no active location
                 }
             }
@@ -2615,7 +2604,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // audio index bounded by a count of talk VIDEOS — and then paced the LINE to that
         // clip's duration. Both are gone: line duration is governed by the reveal, which is
         // what clears the flag at 0x94CF, not by a clip length.
-        let _ = &voice; // keep the stream alive while the line plays
         // Subtitle CHATTER (decoded @0xB898): while a line is REVEALING (the chatter flag
         // [0xCFB] is set until the reveal completes @0x94CF), every 4 ticks the game plays a
         // RANDOM burble clip — index 7 + random(0..9) of the talk-burble bank tb.snd (17 clips;
@@ -2655,7 +2643,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         let _ = &chatter;
-        let _ = &chatter_done_line;
         if let (Some(g), true) = (gpu.as_mut(), win_visible) {
             // GPU path: background quad + the exported hand triangles at window
             // resolution. Falls back to software on surface errors (e.g. lost swapchain).
