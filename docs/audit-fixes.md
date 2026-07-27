@@ -17584,3 +17584,30 @@ command `CLAUDE.md` names as the one that must stay green. They pass under
 rot unnoticed.
 
 623 lib tests + 100 bin tests, 0 failures.
+
+## #530 — a hundred tests that were never being run
+
+#529 noticed in passing that `src/extract/` belongs to the BINARY crate, not the
+library. `CLAUDE.md` names `cargo test --release --lib` as the command that must
+stay green, and `--lib` does not compile the binary — so the export/QA pipeline's
+**100 tests had been invisible to the project's own definition of green.**
+
+They pass. That is the good outcome and also the reason it went unnoticed: nothing
+ever failed, because nothing ever ran. A hundred assertions covering sprite blits,
+scene-band fills, character scenes and the render recompilation were sitting in the
+tree accruing the appearance of coverage.
+
+The command is now `cargo test --release --lib --bins`, with the reason recorded
+beside it in `CLAUDE.md` so it does not get "simplified" back. 623 lib + 100 bin =
+**723 tests**, all green.
+
+Worth being precise about what this was NOT: not a bug, not a regression, nothing
+broken. It is a MEASUREMENT error — the number I have been reporting after every
+entry ("623 tests, 0 failures") was describing a smaller suite than the repository
+contains. Every such report in this session was accurate about what it ran and
+understated what exists.
+
+`re/tools/reverify_lifts.sh` keeps its narrower `--lib recomp`; that one is a
+deliberate targeted run, not a definition of green.
+
+723 tests, 0 failures.

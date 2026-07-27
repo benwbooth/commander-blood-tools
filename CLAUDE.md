@@ -45,8 +45,12 @@ Concretely:
   Python via `nix develop --command env PYTHONSAFEPATH=1 python3`.
 - Validation ledger: docs/port-validation.md — every module row cites its
   binary evidence; APPROX/UNVERIFIED rows are the work queue.
-- Tests: `nix develop --command cargo test --release --lib` must stay green;
+- Tests: `nix develop --command cargo test --release --lib --bins` must stay green;
   every decoded behavior gets a regression test encoding the REAL behavior.
+  `--bins` is not optional: `src/extract/` is a module of the BINARY, not the
+  library, so ~100 tests (the whole export/QA pipeline) are invisible to `--lib`
+  alone and were going unrun for as long as that was the documented command
+  (audit-fixes #529/#530).
 - Never declare the port finished; report status against the validation matrix.
 - **KEEP GOING.** Reporting "N open, not finished" is a status line, NOT a stopping
   point. While any row of the matrix (or `docs/audit-fixes.md`) is open, keep
