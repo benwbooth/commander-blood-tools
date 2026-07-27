@@ -15306,3 +15306,36 @@ precisely because the tool had been saying the opposite for its whole existence.
 
 2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #467 — three bridge rows, settled on work already done
+
+Back to the ledger after five tooling entries. Three `CELL?` rows verify against
+decodes this session already established, which is the cheap half of an audit and
+worth taking:
+
+  * `croolis::from_vtable_offset` cites `0x103A` — #406 read both dispatch sites
+    (`mov bx, fs:[di+0x34]` / `call word ptr fs:[bx+0x103a]`) and confirmed the
+    table is runtime-filled, which is why a static dump of it is all zeros.
+  * `bridge::click` cites `0x86A4` (`test byte [0xa3e], 1`, the mouse-present flag
+    #384 and #388 both turned on), `0x86F1` (`test byte [0x2793], 8`, the
+    SEEK_ACTIVE gate from #386) and `0x7DC8` (`call 0x8269`, the orb hit test
+    #388 verified field by field).
+  * `bridge::apply_menu_palette` cites `0x862B..0x86A3`, which I had not read.
+
+The palette one is exact where it counts:
+
+    0x862B  mov dx, 0x3c8    the DAC INDEX port
+    0x862E  mov al, 0x7b     first menu-row entry
+    0x8630  out dx, al
+    0x8631  inc dl           -> 0x3c9, the DATA port
+    0x8633  mov cx, 5        FIVE rows
+    0x8636  mov al, 0x10     R = 16
+    0x8639  mov al, 0x0c     G = 12
+
+so "the five menu-row DAC entries (0x7B..0x7F)" and the dark-gold idle colour
+`(16, 12, 0)` are both read off the instructions rather than off a screenshot —
+which for a PALETTE claim is the distinction that matters, since a capture would
+give the same numbers and no provenance.
+
+2229 items, 1126 confirmed (50.5%), 1103 open. 797 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
