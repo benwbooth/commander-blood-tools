@@ -16502,3 +16502,40 @@ offset, all named in `ship3d.rs` and previously uncited.
 `ship3d.rs`: 67 uncited constants -> 64.
 
 620 tests, 0 failures.
+
+## #499 — using refs_in_routine properly means FINDING THE ENTRY first
+
+The matrix/projection constants are DS cells, and `re/tools/refs_in_routine.py`
+exists precisely for them: it decodes forward from a VERIFIED entry and reports
+every displacement, so each hit is at a real instruction boundary. Its value
+depends entirely on the entry being right, which took two tries.
+
+`0x981B` is a genuine entry — the `retf` @`0x981A` that ends the auto-turn (#497)
+puts a prologue immediately after it — but it is the WRONG routine: `int 0x21` with
+`ah=0x3f` and `ax=0x4200`, a file read. Its cells are file-handle scratch, and had I
+been matching cells to names by proximity I would have attributed them to the
+matrix. The matrix routine is the NEXT one, `0x98B9`, after the `ret` @`0x98B8`.
+
+From that entry the tool gives the four cleanly:
+
+```text
+  0x98CB  mov bp, 0x4f45     ANGLE_TABLE   (indexed by the three angle cells)
+  0x98CE  mov si, 0x2f7d     TEMP scratch  (read back as [si]..[si+0x14])
+  0x992D  mov di, 0x2f95     PROJECTION_MATRIX, nine stosd'd dwords
+  0x9941  sar ebx, 0xf       FIXED_SHIFT
+```
+
+`FIXED_SHIFT = 15` is worth stating as a format rather than a number: every product
+in the compose is an `imul` followed by `sar e_x,0xf` (`0x9941`, `0x996D`, `0x9982`,
+`0x9999`, `0x99A5`, ...), so the cells are 1.15 fixed point — which is exactly why
+`ALIEN_TRANSFORM_NEUTRAL` is `0x8000` over in `croolis.rs`. The same format links
+two subsystems that otherwise share no code.
+
+The lesson is small and repeatable: a tool that decodes from an entry is only as
+good as the entry, and "the routine before the cells I want" is not the same as "the
+routine that uses them". Both entries here were verified by the `retf`/`ret`
+criterion; only one was the right routine.
+
+`ship3d.rs`: 64 uncited constants -> 60.
+
+620 tests, 0 failures.

@@ -284,6 +284,9 @@ pub const SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP: u16 = 30;
 /// `sub ax,0xa0` @`0x97F0`, applied after `shl ax,3` @`0x97ED`, so the cursor
 /// target is `frame * 8 - 160` (audit-fixes #497).
 pub const SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS: u16 = 0x00a0;
+/// `mov bp,0x4f45` @`0x98CB`, the trig table the matrix build indexes with the
+/// three angle cells read immediately after it (`[0x2f71]` @`0x98D1`, `[0x2f6d]`
+/// @`0x98EF`, `[0x2f6f]` @`0x990C`) — audit-fixes #499.
 pub const SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET: u16 = 0x4f45;
 /// Touched by the game at `mov di, word ptr [0x2f71]` @`0x098D1`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -294,8 +297,16 @@ pub const SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET: u16 = 0x2f6d;
 /// Touched by the game at `mov di, word ptr [0x2f6f]` @`0x0990C`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_MATRIX_ANGLE_C_OFFSET: u16 = 0x2f6f;
+/// `mov si,0x2f7d` @`0x98CE` — the scratch the angle terms are written to before
+/// the 3x3 compose reads them back as `[si]`..`[si+0x14]` (audit-fixes #499).
 pub const SHIP_3D_MATRIX_TEMP_OFFSET: u16 = 0x2f7d;
+/// `mov di,0x2f95` @`0x992D` — the destination the composed cells are `stosd`'d
+/// into, nine dwords (audit-fixes #499).
 pub const SHIP_3D_PROJECTION_MATRIX_OFFSET: u16 = 0x2f95;
+/// Q15: every product in the compose is `imul` followed by `sar e_x,0xf` — first
+/// at `0x9941`, then throughout (`0x996D`, `0x9982`, `0x9999`, `0x99A5`, ...).
+/// The shift is 15, so the cells are 1.15 fixed point, which is what makes the
+/// neutral value `0x8000` (audit-fixes #499).
 pub const SHIP_3D_MATRIX_FIXED_SHIFT: u8 = 0x0f;
 pub const SHIP_3D_PROJECTION_CAMERA_X_OFFSET: u16 = 0x2f65;
 pub const SHIP_3D_PROJECTION_CAMERA_Y_OFFSET: u16 = 0x2f67;
