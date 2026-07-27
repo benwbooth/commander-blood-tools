@@ -1586,10 +1586,25 @@ pub const STATUS_STRING_TABLE: [(u16, usize); 4] = [
 /// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is
 /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
 pub const LOCATION_PANEL_X: i32 = 0x6E;
+/// `mov dx,0x19` @`0x915E` — DX is the row cursor for the whole panel, advanced
+/// by [`LOCATION_PANEL_ROW_PITCH`] between draws (audit-fixes #514).
 pub const LOCATION_PANEL_Y: i32 = 0x19;
+/// `add dx,0xa` @`0x91A5` and again @`0x91AD` — the row cursor steps 10 between
+/// each `lcall 0x299,0x202` (RENDER_STRING, #490) — audit-fixes #514.
 pub const LOCATION_PANEL_ROW_PITCH: i32 = 0x0A;
+/// `add bx,6` @`0x918C`, applied AFTER `add bx,[0x27cd]` @`0x9188` — the x cursor
+/// advances by the measured header width and then a fixed 6, so this is a GAP
+/// between two strings, not a column position (audit-fixes #514).
 pub const LOCATION_PANEL_NAME_GAP: i32 = 6;
+/// `mov al,0xee` @`0x9181` — the ONLY occurrence of that immediate in the entire
+/// image, immediately before the header's `lcall 0x299,0x202` @`0x9183`
+/// (audit-fixes #514).
 pub const LOCATION_PANEL_HEADER_COLOR: u8 = 0xEE;
+/// `mov ax,0xfe` @`0x91C0`, at the head of the source-list draw loop
+/// (`vm_source_list_draw_loop`). NOT the `0xFE` at `0x8595` — that one is the
+/// ship-3D target row's active colour (#492). Two routines, same byte, different
+/// meanings, which is why #513 declined to adopt the nearer site
+/// (audit-fixes #514).
 pub const LOCATION_PANEL_ROW_COLOR: u8 = 0xFE;
 /// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a
 /// whole-image search for every store form to `0x2780` finds no writer, and the

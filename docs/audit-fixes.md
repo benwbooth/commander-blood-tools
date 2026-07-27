@@ -17050,3 +17050,43 @@ the #501 mistake exactly: same value, wrong routine, plausible story. They stay
 UNVERIFIED until the panel's own draw is found.
 
 620 tests, 0 failures.
+
+## #514 — the panel draw found, and #513's refusal vindicated
+
+#513 left the five `LOCATION_PANEL_*` constants UNVERIFIED rather than adopt the
+`mov al,0xFE` sites sitting a few hundred bytes from the header selector. Found the
+real routine, and the refusal was right.
+
+`mov al,0xEE` occurs EXACTLY ONCE in the whole image, at `0x9181`, immediately
+before the header's `lcall 0x299,0x202` (RENDER_STRING, #490). That anchors the
+panel at `0x9140..0x91D9`:
+
+```text
+  0x915B  mov bx, 0x6e        x cursor = 110
+  0x915E  mov dx, 0x19        y cursor            PANEL_Y
+  0x9181  mov al, 0xee        HEADER_COLOR
+  0x9183  lcall 0x299, 0x202  draw the header
+  0x9188  add bx, [0x27cd]    advance by the MEASURED header width ...
+  0x918C  add bx, 6           ... then a fixed gap    NAME_GAP
+  0x91A5  add dx, 0xa         next row               ROW_PITCH
+  0x91C0  mov ax, 0xfe        ROW_COLOR
+```
+
+**`ROW_COLOR` is `0x91C0`, not `0x8595`.** The `0xFE` at `0x8595` is the ship-3D
+target row's active colour (#492) — a different routine, a different subsystem, the
+same byte. Had #513 taken the nearer site because the value matched, this constant
+would now carry a citation into the list widget, and anyone changing the widget's
+hover ladder would have been told they were changing the location panel.
+
+`NAME_GAP` also reads differently once its neighbour is visible: `add bx,[0x27cd]`
+@`0x9188` advances the x cursor by the MEASURED width of the header just drawn, and
+only then does `add bx,6` apply. So 6 is a GAP BETWEEN TWO STRINGS, not a column —
+a port treating it as an x offset would misplace every name whose header differs in
+width from the one it was tuned against.
+
+One structural note: the header selector (`0x137`/`0x13E` with `test ...,0x100`)
+appears TWICE — at `0x8369`, which assembles the strings into a buffer with `0x0D`
+separators, and again at `0x9170` inside this draw. Two copies of the same choice in
+the game, which is worth knowing before "deduplicating" the port's.
+
+620 tests, 0 failures.
