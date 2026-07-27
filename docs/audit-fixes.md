@@ -15240,3 +15240,35 @@ replacement decided first.
 
 2229 items, 1123 confirmed (50.4%), 1106 open. 800 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #465 — a content literal hiding in a comparison, and it was dead
+
+#464 spotted `engine.rs` comparing `console_box` against the inline literal
+`["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"]` — the same five names #385
+deleted as `CONSOLE_MENU` — and said `check_dead_pub_consts.py` misses it because
+that tool only looks at declarations.
+
+TRUE BUT INCOMPLETE, and the correction matters: `check_ui_literals.py` HAS been
+flagging it all along, as "IN-DATA ... PIN IT". The literal was not unguarded, it
+was reported and unaddressed. Two checkers, one blind to it by design and one
+naming it every run, and I described only the blind one.
+
+Then the literal turned out to be DEAD. Nothing in the library ever assigns those
+five names to `console_box` — grepping `"HONK"` finds this comparison and four
+sites in `runtime_boot.rs`, a diagnostic probe binary. So `is_baked_menu` was
+ALWAYS FALSE, the `if !is_baked_menu` guard always taken, and the comparison
+existed only to be false. #385 deleting `CONSOLE_MENU` without breaking the build
+was the evidence, a hundred entries earlier: if anything had assigned that list,
+the const would have had a caller.
+
+Removed both the guard and the binding; the body now runs unconditionally, which
+is what it already did. 614 lib tests pass, the workspace is clean, and the
+library no longer contains those five names.
+
+Worth noting how it survived #385. That entry deleted a `pub const` after checking
+for references TO IT, which is the right check for a dead declaration and blind to
+a second copy written out longhand somewhere else. The same content, in the same
+file, in a different syntactic position.
+
+2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

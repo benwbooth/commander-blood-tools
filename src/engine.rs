@@ -1628,50 +1628,54 @@ impl EngineState {
             // hub screen at 95%, gold menu window included; hover = palette swaps
             // 0x7B..0x7F via apply_menu_palette). Only CONTEXTUAL boxes (contacts,
             // confirmations...) are live-drawn gold boxes.
-            let is_baked_menu = self.console_box
-                == ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
-            if !is_baked_menu {
-                if self.console_box_kind == 3 {
-                    // The IN-WINDOW concept list = THE SAME unified widget (0x8428)
-                    // with the right-side anchor 0xE1=225 (mov [0xAC6],0xE1 @0x89A6):
-                    // x0 = 225 - w/2 (w = widest+0x14), top = (200-h)/2 + 4 with
-                    // h = rows*11+8 — DERIVING the previously measured x~175 and the
-                    // y=39/83 split (11 rows -> 39, 3 rows -> 83, both exact).
-                    // Labels left-aligned at x0+4; the ENGAGED topic renders WHITE.
-                    self.scene_palette[0xE8] = [150, 150, 150];
-                    self.scene_palette[0xEF] = [255, 255, 255];
-                    let labels = self.console_box.clone();
-                    let rows = labels.len();
-                    let widest = labels
-                        .iter()
-                        .map(|l| crate::font::square_caps_text_width(l))
-                        .max()
-                        .unwrap_or(0);
-                    let w = widest + 0x14;
-                    let x0 = 225usize.saturating_sub(w / 2);
-                    let top = Self::choice_box_top_y(rows);
-                    for (i, label) in labels.iter().enumerate() {
-                        let color =
-                            if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
-                        // Each label is CENTERED in the box (0x855C/0x8555:
-                        // label_x = x0 + 10 + (widest - width)/2), not left-aligned
-                        // at x0+4; short labels indent to center on the anchor.
-                        let width = crate::font::square_caps_text_width(label);
-                        let lx = x0 + 10 + widest.saturating_sub(width) / 2;
-                        crate::font::draw_square_caps(
-                            &mut self.framebuffer,
-                            ENGINE_SCREEN_WIDTH,
-                            ENGINE_SCREEN_HEIGHT,
-                            label,
-                            lx,
-                            top + i * 11,
-                            color,
-                        );
-                    }
-                } else {
-                    let labels = self.console_box.clone();
-                    self.draw_choice_box(&labels, None);
+            // The TOP-LEVEL console menu is BAKED INTO the panorama frames, so it
+            // is never a live-drawn gold box. This used to be guarded by
+            // `if !is_baked_menu`, comparing `console_box` against the literal
+            // ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"] -- a content
+            // literal of the same kind #385 deleted as CONSOLE_MENU, and DEAD:
+            // nothing in the library ever assigns those names to `console_box`,
+            // so the guard was always true and the comparison never matched
+            // (audit-fixes #465).
+            if self.console_box_kind == 3 {
+                // The IN-WINDOW concept list = THE SAME unified widget (0x8428)
+                // with the right-side anchor 0xE1=225 (mov [0xAC6],0xE1 @0x89A6):
+                // x0 = 225 - w/2 (w = widest+0x14), top = (200-h)/2 + 4 with
+                // h = rows*11+8 — DERIVING the previously measured x~175 and the
+                // y=39/83 split (11 rows -> 39, 3 rows -> 83, both exact).
+                // Labels left-aligned at x0+4; the ENGAGED topic renders WHITE.
+                self.scene_palette[0xE8] = [150, 150, 150];
+                self.scene_palette[0xEF] = [255, 255, 255];
+                let labels = self.console_box.clone();
+                let rows = labels.len();
+                let widest = labels
+                    .iter()
+                    .map(|l| crate::font::square_caps_text_width(l))
+                    .max()
+                    .unwrap_or(0);
+                let w = widest + 0x14;
+                let x0 = 225usize.saturating_sub(w / 2);
+                let top = Self::choice_box_top_y(rows);
+                for (i, label) in labels.iter().enumerate() {
+                    let color =
+                        if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
+                    // Each label is CENTERED in the box (0x855C/0x8555:
+                    // label_x = x0 + 10 + (widest - width)/2), not left-aligned
+                    // at x0+4; short labels indent to center on the anchor.
+                    let width = crate::font::square_caps_text_width(label);
+                    let lx = x0 + 10 + widest.saturating_sub(width) / 2;
+                    crate::font::draw_square_caps(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        label,
+                        lx,
+                        top + i * 11,
+                        color,
+                    );
                 }
+            } else {
+                let labels = self.console_box.clone();
+                self.draw_choice_box(&labels, None);
             }
         }
         // NOTE: an earlier capture reading claimed the engaged CRYOBOX row
