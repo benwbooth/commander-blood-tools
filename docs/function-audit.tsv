@@ -1242,18 +1242,18 @@ ANGLE_UNITS_PER_FRAME	src/tbbig.rs	64	const	0x0A2A,0x9807	DATA	/// View-angle un
 ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	68	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
 CONSOLE_REST_FRAME	src/tbbig.rs	73	const		ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
 CONSOLE_BAND_FRAME	src/tbbig.rs	88	const	0x7AC3	DATA	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
-CONSOLE_BAND_TOP	src/tbbig.rs	101	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200). /// /// `CONSOLE_BAND_HEIGHT` is DATA: the harvested `console_band.idx` is 19200 bytes /// and the panorama is 320 wide, so `19200 / 320 = 60` 
-CONSOLE_BAND_HEIGHT	src/tbbig.rs	102	const		DATA	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaDirEntry	src/tbbig.rs	107	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaFrameHeader	src/tbbig.rs	129	struct	0x8269,0x8274,0xA2A,0x8278,0xA2C,0xa3e,0x826A,0x981B,0x2A1B,	ASM	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
-BridgePanorama	src/tbbig.rs	142	struct		TESTED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
-parse	src/tbbig.rs	153	fn	0x981B	ASM	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
-frame_count	src/tbbig.rs	177	fn		TESTED	
-chunk	src/tbbig.rs	182	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
-frame_header	src/tbbig.rs	200	fn	0x8274,0xA2A,0x8278,0xA2C,0x987A	ASM	/// Read a frame chunk's 10-byte header into [`PanoramaFrameHeader`]. /// /// The field ORDER is not a guess and not a layout inferred from the data — /// it is the game's own hit test, verified in au
-unpack_frame_over	src/tbbig.rs	224	fn	0x2D50,0x5B57	ASM	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
-frame_pixels	src/tbbig.rs	274	fn		TESTED	/// Convenience: decode a frame standalone onto black (opaque variant).
-panorama_frame_for_angle	src/tbbig.rs	283	fn	0x0A2A,0x97E7	ASM	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
+CONSOLE_BAND_TOP	src/tbbig.rs	110	const	0x7AC3,0x7AD1,0x7AD6,0x7AD9,0x7ADE,0xcdc	ASM	/// The band's screen origin and height (rows 140..200). /// /// `CONSOLE_BAND_HEIGHT` is DATA: the harvested `console_band.idx` is 19200 bytes /// and the panorama is 320 wide, so `19200 / 320 = 60` 
+CONSOLE_BAND_HEIGHT	src/tbbig.rs	111	const		DATA	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaDirEntry	src/tbbig.rs	116	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaFrameHeader	src/tbbig.rs	138	struct	0x8269,0x8274,0xA2A,0x8278,0xA2C,0xa3e,0x826A,0x981B,0x2A1B,	ASM	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
+BridgePanorama	src/tbbig.rs	151	struct		TESTED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
+parse	src/tbbig.rs	162	fn	0x981B	ASM	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
+frame_count	src/tbbig.rs	186	fn		TESTED	
+chunk	src/tbbig.rs	191	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
+frame_header	src/tbbig.rs	209	fn	0x8274,0xA2A,0x8278,0xA2C,0x987A	ASM	/// Read a frame chunk's 10-byte header into [`PanoramaFrameHeader`]. /// /// The field ORDER is not a guess and not a layout inferred from the data — /// it is the game's own hit test, verified in au
+unpack_frame_over	src/tbbig.rs	233	fn	0x2D50,0x5B57	ASM	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
+frame_pixels	src/tbbig.rs	283	fn		TESTED	/// Convenience: decode a frame standalone onto black (opaque variant).
+panorama_frame_for_angle	src/tbbig.rs	292	fn	0x0A2A,0x97E7	ASM	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
 media_stem	src/util.rs	1	fn		UNVERIFIED	
 safe_file_stem	src/util.rs	14	fn		UNVERIFIED	
 OPCODE_DESC	src/vm.rs	47	const	0x14338,0x6F18,0x62B6,0x2F60	DATA	/// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where /// `byte1` is either `len_mode1` or a mode

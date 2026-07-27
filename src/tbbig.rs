@@ -92,12 +92,21 @@ pub const CONSOLE_BAND_FRAME: usize = 90;
 /// and the panorama is 320 wide, so `19200 / 320 = 60` rows exactly, with no
 /// remainder (audit-fixes #564).
 ///
-/// `CONSOLE_BAND_TOP` follows ONLY IF the band is bottom-aligned: `200 - 60 = 140`.
-/// That alignment is NOT established here — no routine has been found that places
-/// the band, and "rows 140..200" restates the constant rather than sourcing it.
-/// The arithmetic is consistent with a capture and equally consistent with the
-/// band being placed anywhere else, so this one is left labelled rather than
-/// settled: the value may well be right, and nothing in this file shows it.
+/// `CONSOLE_BAND_TOP` IS in the code, found after #564 said it was not
+/// (audit-fixes #565). `montage_frame_setup` @`0x7AC3` sets up two draws:
+///
+/// ```text
+///   0x7AC3  mov bx,0 / mov cx,bx / mov dx,0x140 / mov bp,0xc8
+///   0x7AD1  lcall 0x299,0x40e     remap the FULL 320x200 screen
+///   0x7AD6  mov ax,0
+///   0x7AD9  mov bp, 0x8c          ... then a height of 140 ...
+///   0x7ADE  lcall 0x299,0xcdc     ... RECT FILL at (0,0), 320 x 140
+/// ```
+///
+/// `dx` is not reloaded, so the fill is 320 wide. It covers rows `0..140` and
+/// leaves `140..200` — exactly [`CONSOLE_BAND_HEIGHT`] — for the band. So the
+/// origin is not an inference from bottom-alignment; it is the height of the
+/// region the game paints ABOVE it.
 pub const CONSOLE_BAND_TOP: usize = 140;
 pub const CONSOLE_BAND_HEIGHT: usize = 60;
 

@@ -18747,3 +18747,38 @@ and the honest move is to say so rather than let a plausible subtraction inherit
 neighbour's rigour.
 
 726 tests, 0 failures.
+
+## #565 — "no routine has been found" lasted one entry
+
+#564 left `CONSOLE_BAND_TOP` UNVERIFIED and wrote that its bottom-alignment "is NOT
+established here — no routine has been found that places the band". That was true
+of what I had looked at and false of the binary. The very next search found it.
+
+`montage_frame_setup` @`0x7AC3` — the routine #564 CITED as the band's remap, so I
+had the address in hand while writing that nothing was known:
+
+```text
+  0x7AC3  mov bx,0 / mov cx,bx / mov dx,0x140 / mov bp,0xc8
+  0x7AD1  lcall 0x299,0x40e     remap the FULL 320x200 screen
+  0x7AD9  mov bp, 0x8c          then a height of 140 ...
+  0x7ADE  lcall 0x299,0xcdc     ... RECT FILL at (0,0), 320 x 140
+```
+
+`dx` is not reloaded between the calls, so the fill is 320 wide. It paints rows
+`0..140` and leaves `140..200` — exactly `CONSOLE_BAND_HEIGHT` — for the band. The
+origin is not an inference from bottom-alignment; it is the height of what the game
+draws ABOVE it, and `0x8C` is a literal in the instruction stream.
+
+TWO THINGS MADE THE DIFFERENCE, and neither was insight. `refs_in_routine.py`
+printed `ALREADY KNOWN: montage_frame_setup` — #559's banner, working on the first
+routine I pointed it at afterwards. And running it at all was prompted by having
+written a specific claim ("no routine places the band") that could be checked, rather
+than a vague one.
+
+The lesson I want to keep is not "search harder before writing UNVERIFIED" — #564's
+caution was correct and I would make the same call again with what I knew. It is
+that A PRECISELY STATED GAP IS A SEARCH QUERY. "No routine has been found that
+places the band" names the routine to look for; "provenance unclear" would have
+named nothing and this row would still be open.
+
+726 tests, 0 failures.
