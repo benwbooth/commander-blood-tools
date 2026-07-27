@@ -1731,7 +1731,14 @@ pub struct LocationPanelRow {
     pub color: u8,
     pub text: String,
 }
+/// `mov word ptr gs:[0x6788],0x27` @`0x5D00`, on the C2 kind-2 branch, right
+/// after `mov byte ptr gs:[0x1fb2],0` @`0x5CFA` clears the presentation gate
+/// (audit-fixes #515). Also written at `0x195E` and `0x6EBA`.
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
+/// `mov word ptr gs:[0x6788],0x2b` @`0x5D26`, on the branch `cmp bx,0x400`
+/// @`0x5D09` selects — the one that first calls `vm_c2_descript_lookup`
+/// (`call 0x7409` @`0x5D19`). Also written at `0x1922`, `0x5FC0`, `0x6A9D`,
+/// `0x6EE0` (audit-fixes #515).
 const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
 /// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -1791,6 +1798,9 @@ const C2_PRESENTATION_GATE: u16 = 0x1FB2;
 /// Touched by the game at `and byte ptr [0x67aa], 0xfc` @`0x0B54D`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C2_PRESENTATION_FLAGS: u16 = 0x67AA;
+/// `or byte ptr gs:[0x67aa],2` @`0x5D2D` — set only on the kind-0x400 path, AFTER
+/// the descript.des helper returns, which is what makes it a completion signal
+/// rather than an entry flag (audit-fixes #515).
 const C2_PRESENTATION_BUSY_FLAG: u8 = 0x02;
 /// Touched by the game at `mov word ptr [0x6788], ax` @`0x0B00F`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).

@@ -17090,3 +17090,39 @@ separators, and again at `0x9170` inside this draw. Two copies of the same choic
 the game, which is worth knowing before "deduplicating" the port's.
 
 620 tests, 0 failures.
+
+## #515 — the gs: prefix moves the address, and #505 taught me to check
+
+Three C2 constants from the post-update region, and the process detail is the part
+worth recording.
+
+A byte-pattern search for `mov word [0x6788],0x27` reported `0x5D01`. The
+INSTRUCTION is at `0x5D00`: the store carries a `65` GS SEGMENT PREFIX, and the
+pattern I searched for begins one byte inside it. Citing `0x5D01` would have been
+wrong by exactly the margin #505's citation guard caught last time — and it would
+have passed unnoticed by any reader, because `0x5D01` looks like a perfectly
+ordinary address. I disassembled from the candidate before writing the citation,
+which is now the habit: a byte-search offset is a LEAD, not an address.
+
+With the true addresses, the branch structure explains the names:
+
+```text
+  0x5CFA  mov byte gs:[0x1fb2], 0        clear the presentation gate
+  0x5D00  mov word gs:[0x6788], 0x27     KIND2 active line
+  0x5D09  cmp bx, 0x400 / jne            the other kind ...
+  0x5D19  call 0x7409                    ... calls vm_c2_descript_lookup ...
+  0x5D26  mov word gs:[0x6788], 0x2b     ... then KIND400 active line ...
+  0x5D2D  or byte gs:[0x67aa], 2         ... then sets the BUSY flag
+```
+
+`C2_PRESENTATION_BUSY_FLAG` is set ONLY on the kind-0x400 path and only AFTER the
+descript.des helper returns, which makes it a COMPLETION signal, not an entry
+marker. A port raising it on entry would report the presentation busy during a
+lookup that may not succeed.
+
+Both active-line values are written at several sites (`0x27` also at `0x195E` and
+`0x6EBA`; `0x2B` at `0x1922`, `0x5FC0`, `0x6A9D`, `0x6EE0`), so these are shared
+line IDs rather than constants private to the C2 handler — the doc lists them so a
+future change is known to touch five places, not one.
+
+620 tests, 0 failures.
