@@ -14756,3 +14756,31 @@ instead of hunting for the routine the doc predicts.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #449 — removing the sentence, not annotating it
+
+#448 established there is no projection filling the `0x6212` records. The doc that
+sent five entries looking for one still said, in its own words, "the actual
+vertex→screen PROJECTION for the pyramids is still unlocated ... TODO: find the
+routine that projects the 0x5491 verts into the 0x6212 display-list records (that
+IS the missing projection)".
+
+Removed it. The temptation was to leave it with a note attached — the paragraph
+records real work (it correctly withdrew an earlier claim that `0x22E0` was the
+perspective transform, and correctly identified it as a nearest-point search). But
+a doc that states both "find the projection" and "there is no projection" is worse
+than either, and the next reader would weigh the two sentences rather than the
+evidence. The withdrawal says what it used to say and why it is wrong, which
+preserves the history without preserving the instruction.
+
+Swept for the same shape: the codebase now has ONE `TODO:` and two "still
+unlocated" mentions, both of which are this entry's own withdrawal text and the
+question that genuinely remains (where the POSITIONS come from). No other stale
+premise of this kind is sitting in a doc waiting to misdirect a future pass.
+
+That is the cheapest possible sweep — one grep — and it was worth running only
+because #448 showed what a stale premise costs: five entries, three of which
+reported "eliminated a search" as progress.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

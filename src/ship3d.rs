@@ -2694,11 +2694,21 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 /// CORRECTION (was wrong before): `0x1CE:0`/`0x22E0` is NOT the perspective transform.
 /// Full decode shows it computes squared distances `Σ(a_i-b_i)²` over records and
 /// tracks the minimum — a NEAREST-POINT / hit-test search (which pyramid the cursor is
-/// closest to), not a projection. So the actual vertex→screen PROJECTION for the
-/// pyramids is still unlocated — it runs before `0x299:0x1467` fills the 0x6212 records
-/// with already-projected coords. TODO (next session): find the routine that projects
-/// the 0x5491 verts into the 0x6212 display-list records (that IS the missing
-/// projection), plus the compass→matrix-angle map; then reimplement + diff vs oracle.
+/// closest to), not a projection.
+///
+/// WITHDRAWN (audit-fixes #448). This paragraph used to continue: "the actual
+/// vertex→screen PROJECTION for the pyramids is still unlocated ... TODO: find the
+/// routine that projects the 0x5491 verts into the 0x6212 display-list records
+/// (that IS the missing projection)". There is no such routine. The `0x6212`
+/// records hold SPRITE-FRAME POINTERS, not projected coordinates — see the
+/// `entity_object_populate` trace below, which follows the pointer the builder
+/// actually writes and lands in a shipped `.SPR` bank.
+///
+/// The sentence stayed for five audit entries (#443–#447) and sent each of them
+/// hunting a routine that does not exist. It is removed rather than annotated,
+/// because a doc that states both "find the projection" and "there is no
+/// projection" is worse than either. What IS still open: where the pyramid
+/// POSITIONS come from, and the compass→matrix-angle map.
 ///
 /// FURTHER (sess 005): the 0x6212-record builder @0x40D0 (seg 0x299) writes
 /// `((flags & 4) | 0x83)` into each record — that is the SPRITE bank dispatch (same
