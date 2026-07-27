@@ -17723,3 +17723,40 @@ log is one refactor from being deleted as unsourced (#491 made that point; this 
 seven more instances of it).
 
 723 tests, 0 failures.
+
+## #534 — the constants I "discovered" in #494 were already declared in bloodprg.rs
+
+#494 solved for the nav-choice dispatch table's segment by scanning 4096
+paragraph-aligned bases, and reported it as a decode. `bloodprg.rs` already held:
+
+```rust
+pub const NAV_CODE_SEGMENT: u16 = 0x071e;
+pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
+pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
+```
+
+The same segment, the same table address, the same count — UNCITED, which is why
+`audit_settle.py` had them in the UNVERIFIED queue and why I never saw them while
+working in `ship3d.rs`. The relationship is the right one in the end: the file
+asserted the numbers, #494 proved them. But the search was avoidable, and the cost
+of a decode living in the fix log rather than beside the constant it explains is
+now measured in duplicated work rather than hypothesised (#491, #533).
+
+The pair also turns out to be a PAIR. `bloodprg.rs` declares a second table —
+`NAV_ACTOR_SUBDISPATCH` at `0x7EB4` with 6 entries — and it is the same mechanism:
+
+```text
+  0x7E09  call word ptr cs:[bx+0x6d4]      actor:  6 entries at cs:0x06D4
+  0x8700  call word ptr cs:[bx+0xf29]      choice: 5 entries at cs:0x0F29
+```
+
+Both tables sit immediately before their own handlers. The actor table's second
+entry resolves to `0x7EC0` = `0x7EB4 + 12`, the byte right after its twelve bytes —
+so each table's length is bounded by where its code begins, which is what makes
+"6 entries" and "5 entries" checkable rather than asserted.
+
+`NAV_CODE_SEGMENT` is now confirmed three independent ways: the constraint solve
+(#494), the direct `lcall 0x71e,0xc48` (#495), and both tables resolving onto real
+routines within it.
+
+723 tests, 0 failures.

@@ -204,10 +204,28 @@ pub const RENDER_SPRITE_BLIT_NOOP_6_OFFSET: u16 = 0x210b;
 pub const RENDER_SPRITE_BLIT_NOOP_7_OFFSET: u16 = 0x210c;
 /// Render-driver entry `0x299:0x210d`, far-called from 3 site(s) — e.g. `0x0787f`, `0x08ea0`, `0x0b1d8` (audit-fixes #490).
 pub const RENDER_DIRTY_RECTS_COPY_OFFSET: u16 = 0x210d;
+/// `0x071E` — file base `0x600 + 0x71E * 16 = 0x77E0`. Confirmed THREE ways:
+/// solved as the only base placing nav-choice handler 4 in a table at `cs:0x0F29`
+/// (#494), named directly by `lcall 0x71e,0xc48` @`0xB3DA` which resolves to the
+/// list widget `0x8428` (#495), and now by both subdispatch tables below
+/// resolving onto real routines in it (audit-fixes #534).
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
+/// `cs:0x06D4`, reached by `call word ptr cs:[bx+0x6d4]` @`0x7E09`
+/// (audit-fixes #534).
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
+/// Six near pointers, and the table is 12 bytes: its SECOND entry (`0x06E0`)
+/// resolves to file `0x7EC0`, which is `0x7EB4 + 12` — the byte immediately after
+/// the table. The handlers follow their own table, so its length is bounded by
+/// where the code starts (audit-fixes #534).
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
+/// `cs:0x0F29`, reached by `call word ptr cs:[bx+0xf29]` @`0x8700` with
+/// `bx = (choice - 1) * 2` — the same dispatch idiom as the actor table above
+/// (audit-fixes #494, #534).
 pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
+/// Five, matching the `cmp al,5 / jge` bound @`0x868D` that
+/// `ship3d::SHIP_3D_NAV_CHOICE_COUNT` cites (#491). Entries resolve to
+/// `0x8713`/`0x872C`/`0x87BD`/`0x8848`/`0x886C` — five contiguous routines
+/// beginning right after the table (audit-fixes #494).
 pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
 pub const SHIP_3D_INTERPOLATION_GATE_SEGMENT: u16 = 0x008b;
 pub const SHIP_3D_INTERPOLATION_GATE_OFFSET: u16 = 0x0fad;
