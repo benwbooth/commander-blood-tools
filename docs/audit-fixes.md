@@ -15644,3 +15644,36 @@ Provisional queue: 121.
 
 2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #477 — pacing on the decode, and a 15% timing error it exposed
+
+#476 found the frame loop pacing on a FRAMERATE probe (46 ms) while the game has a
+programmed cadence. Implemented the replacement:
+
+    const PIT_HZ: f32 = 1_193_182.0 / 5958.0;   // 0x1746 divisor, #411
+    const FRAME_TICKS: f32 = 8.0;               // [0xB2D] budget, 0x0FFB
+    const GAME_TICK_SECS: f32 = FRAME_TICKS / PIT_HZ;   // 39.95 ms
+
+Both numbers are decoded — the divisor verified in #411, the budget read at
+`0x0FFB` in #476 — so the tick is no longer a measurement at all.
+
+THE INTERESTING PART IS WHAT IT EXPOSED. The state-countdown beat was
+`countdown_accum += 8.011 * 0.046`: the true beat rate (200.27/25 = 8.011 Hz,
+`[0xB27]` reload verified in #411) multiplied by the MEASURED frame time. Rederived
+from the decode it is `(PIT_HZ / 25) * (8 / PIT_HZ)` = **8/25 = 0.32 exactly** —
+the PIT frequency CANCELS, because frames and beats are both counted in the same
+PIT ticks: 8 per frame, 25 per beat.
+
+So the correct value is a ratio of two integers the game states, and the old one
+was 0.36851 — running scripted countdowns **15% fast**. Those countdowns release
+GUARD `state[i]==0` blocks (the comment names SCRIPT2's Scruter interception), so
+timed script events were firing early.
+
+That is the argument for the prime rule in one line. Mixing a decoded rate with a
+measured one produced a float that looked plausible and was wrong by 15%; using
+only decoded quantities produced an exact rational and fixed it. The error was
+invisible to every test because nothing measured against the game — and a capture
+would have AGREED with the wrong value, since 46 ms is what the game achieves.
+
+2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

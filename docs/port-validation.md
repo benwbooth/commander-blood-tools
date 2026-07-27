@@ -1667,9 +1667,12 @@ The PIT is programmed to `0x1746` = 5958 (`func_79c`, verified in #411), i.e.
 is the game's TARGET cadence and the measured 21.6 fps is achieved throughput —
 frames that overrun the budget.
 
-REPLACEMENT: pace on the 8-tick budget (a ~40 ms floor per frame, with slow frames
-simply taking longer), rather than a fixed 46 ms that bakes the average overrun
-into every frame.
+DONE (audit-fixes #477): the loop now paces on `FRAME_TICKS / PIT_HZ` = 39.95 ms,
+both derived from the decode rather than measured. The state-countdown beat, which
+had been `8.011 * 0.046`, is now `(PIT_HZ / 25) * GAME_TICK_SECS` = EXACTLY 8/25 —
+frames and beats are both counted in PIT ticks (8 per frame, 25 per beat), so the
+frequency cancels and the ratio is rational. The old form ran the countdown 15%
+fast (0.36851 vs 0.32000).
 
 OPEN, and worth stating: NOTHING IN THE IMAGE DECREMENTS `[0xB2D]`. Its
 little-endian bytes appear exactly twice in `BLOODPRG.EXE` — the write at `0x0FFB`

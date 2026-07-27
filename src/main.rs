@@ -1074,6 +1074,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // 200Hz PIT chain by 25 ([0xB27] reload 0x19) -> ~8.01 beats/s, ticking the
     // state array only while no presentation is active ([0x675A]==0).
     let mut countdown_accum: f32 = 0.0;
+    // THE GAME'S PROGRAMMED FRAME CADENCE (audit-fixes #476), replacing a
+    // measured 46 ms: `mov word ptr [0xb2d], 8` @0x0FFB sets a frame budget of
+    // EIGHT PIT ticks, and `cmp word ptr [0xb2d], 0` / `jne` @0x12C9 spins until
+    // it drains before the page flip at 0x12D1/0x12D4. The PIT runs at
+    // 1193182/0x1746 = 200.26 Hz (func_79c, verified #411), so eight ticks is
+    // 39.95 ms -- a 25.0 fps TARGET. The old 46 ms came from a FRAMERATE probe
+    // measuring 21.6 fps, which is the rate the game ACHIEVES once frames
+    // overrun; pacing on it baked the average overrun into every frame.
+    const PIT_HZ: f32 = 1_193_182.0 / 5958.0; // 0x1746 divisor, #411
+    const FRAME_TICKS: f32 = 8.0; // [0xB2D] budget, 0x0FFB
+    const GAME_TICK_SECS: f32 = FRAME_TICKS / PIT_HZ; // 39.95 ms
     let mut last_tick = std::time::Instant::now();
     // A fully-transparent 1x1 cursor (core protocol, no extension): set as the window cursor
     // while locked so the pinned OS pointer is invisible and only our drawn cursor shows.
@@ -2303,11 +2314,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // (geometry follows the mouse at 60fps+; sim + tweens stay game-rate).
         // MEASURED game rate: 21.6 fps at the hub (FRAMERATE probe: VGA page flips
         // per PIT-timed second in the interpreter) -> 46 ms per tick.
-        let tick_due = last_tick.elapsed() >= Duration::from_millis(46);
+        let tick_due = last_tick.elapsed().as_secs_f32() >= GAME_TICK_SECS;
         if !tick_due {
             if let (Some(g), true) = (gpu.as_mut(), win_visible) {
                 let alpha =
-                    (last_tick.elapsed().as_secs_f32() / 0.046).clamp(0.0, 1.0);
+                    (last_tick.elapsed().as_secs_f32() / GAME_TICK_SECS).clamp(0.0, 1.0);
                 engine.refresh_gpu_hand(mx, my, alpha);
                 let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
                     .gpu_hand
@@ -2373,12 +2384,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // STATE-COUNTDOWN BEAT (0x8AA): tick state[0..0x1E) at the game's divided
         // rate while idle — expiring countdowns release GUARD state[i]==0 blocks
         // (SCRIPT2 @2744 queues the Scruter interception this way).
-        // 8.011 Hz decrement (200.27 Hz PIT / 25, file 0x8AA/0x8BA). This line runs
-        // once per 46 ms game tick (~21.739/s), so the per-tick increment is
-        // 8.011 * 0.046, NOT /70 — the old /70 assumed a 70 Hz caller and fired the
-        // beat at 2.49 Hz, ~3.2x too slow (scripted GUARD state[i]==0 releases, e.g.
-        // the Scruter interception, arrived ~3x late).
-        countdown_accum += 8.011 * 0.046;
+        // 8.011 Hz decrement (200.27 Hz PIT / 25, file 0x8AA/0x8BA). NOT /70 —
+        // that assumed a 70 Hz caller and fired the beat ~3.2x too slow (scripted
+        // GUARD state[i]==0 releases, e.g. the Scruter interception, arrived ~3x
+        // late).
+        //
+        // THE INCREMENT IS EXACTLY 8/25 (audit-fixes #477). Both quantities are
+        // counted in PIT ticks — 8 per frame (`[0xB2D]`, 0x0FFB) and 25 per beat
+        // (`[0xB27]`, 0x07D5, verified #411) — so beats-per-frame is the RATIO
+        // 8/25 = 0.32, and the PIT frequency cancels. The previous
+        // `8.011 * 0.046` multiplied the true beat rate by the MEASURED frame
+        // time and gave 0.36851, running the countdown ~15% fast.
+        countdown_accum += (PIT_HZ / 25.0) * GAME_TICK_SECS;
         if countdown_accum >= 1.0 {
             countdown_accum -= 1.0;
             if engine.dialogue_finished() && !engine.intro_active() {
