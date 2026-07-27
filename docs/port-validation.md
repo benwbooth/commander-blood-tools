@@ -1712,3 +1712,30 @@ port then composes `prefix + name` per slot exactly as the game does, and the
 **Also settled by #482, and NOT a candidate replacement:** the `FS:0x0C04` resource
 table (95 names) contains ZERO `.hnm` entries, so it cannot resolve talk-HNMs. That
 was the specific hypothesis #481 raised and it is now closed.
+
+## UNVERIFIED — the DESCRIPT subtitle-cue tick unit (audit-fixes #550)
+
+**The claim in the code.** Five sites in `extract/` convert `SubtitleCue.tick` to
+seconds as `tick as f64 / 10.0` (`render.rs` x4, `descript.rs`, `subtitle_sfx.rs`),
+and one site writes ticks back as `(duration * 10.0)`. So the port assumes DESCRIPT
+cue ticks run at **10 Hz**.
+
+**The evidence for it.** None found. `SubtitleCue` is `{ tick: u16, text: String }`
+with no unit recorded; the divisor appears in no `audit-fixes` entry and no row of
+this file; and no routine that CONSUMES these ticks in the binary has been
+identified.
+
+**Why it matters and why the tests cannot help.** The read and write paths use the
+same constant, so the conversion is self-consistent and every round-trip test passes
+regardless of whether 10 is right. That is precisely the configuration that let
+#549's 1.67x hold-duration error survive two tests — both computed the same wrong
+way as the code they checked.
+
+**What would settle it.** The game's own consumer of the DESCRIPT cue field: find
+the routine that reads a cue's tick and compare it against the timer it drives
+(`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
+clock and worth knowing about; 25 Hz would mean the divisor is wrong by 2.5x).
+
+**NOT a claim that the port is wrong.** 10 may well be right — DESCRIPT is authored
+data and tenths of a second is a plausible authoring unit. The defect is that
+nothing establishes it, in a place where being wrong is invisible.

@@ -18279,3 +18279,31 @@ third time this session a guard has caught me and the first time it prevented a
 false claim rather than merely reporting one.
 
 725 tests, 0 failures.
+
+## #550 — the same shape as #549, found by looking for it rather than tripping over it
+
+#549 was a tick count divided by the wrong rate, hidden because the tests were
+computed the same way as the code. Having found one, I looked for others: every
+tick-to-seconds conversion in the port.
+
+`extract/` converts `SubtitleCue.tick` as `tick / 10.0` at FIVE sites and writes it
+back as `duration * 10.0` at one. The unit is nowhere recorded — `SubtitleCue` is
+`{ tick, text }` — the divisor appears in no fix entry and no matrix row, and no
+binary routine consuming the field has been identified.
+
+I have NOT shown it is wrong, and want to be exact about that: DESCRIPT is authored
+data and tenths of a second is an entirely plausible authoring unit. What I have
+shown is that nothing establishes it, and that the read/write symmetry makes it
+UNFALSIFIABLE BY THE PORT'S OWN TESTS — the same structural blindness that let
+#549 stand.
+
+Recorded as an UNVERIFIED row in `docs/port-validation.md` with what would settle
+it: find the routine that consumes a cue tick and compare it against the timer it
+drives. `GAME_TICK_SECS` is ~25 Hz, so if cues share that clock the divisor is out
+by 2.5x; if they are a separate authoring clock, 10 is right and the row closes.
+
+The general point: a self-consistent conversion is a claim no test can refute, so
+it needs an EXTERNAL anchor or an explicit "unverified" label. Two of these existed
+in one file and one of them was a real bug.
+
+725 tests, 0 failures.
