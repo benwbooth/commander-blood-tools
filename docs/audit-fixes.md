@@ -16221,3 +16221,36 @@ found in the decoded stretch, and after 287 I am not willing to call them absent
 a failed scan. They stay UNVERIFIED until the routine's head is read.
 
 618 tests, 0 failures.
+
+## #492 — the target-row draw loop, and what its constant NAMES were hiding
+
+Nine more `ship3d.rs` constants, all from the widget's draw pass `0x84E1..0x85B6`,
+and three of them mean something different from what their names suggest.
+
+**The three text colours are a LADDER, not three states.** `mov al,0xe8` @`0x8565`
+is what every row starts as. `dec byte gs:[0x27c7]` @`0x8584` counts down to the
+hovered row, and only when it hits zero does `mov al,0xef` @`0x858B` run; only then
+is `[0xa3e]` bit 0 tested @`0x858D` to reach `mov al,0xfe` @`0x8595`. So ACTIVE is
+not "the active row" — it is "the hovered row, while the button is down", and a row
+can never be active without first being hovered. Three flat `pub const`s give no
+hint of that nesting.
+
+**The exit sentinel has a sibling.** `0xFFFF` ends the list (`cmp ax,-1 / je`
+@`0x8456`, `cmp si,-1 / je` @`0x856E`), but so does a ZERO entry (`or ax,ax / je`
+@`0x8452`) — two terminators, only one of which the port names. Both compares are
+SIGNED against -1, which is the detail that makes `0xFFFF` the right spelling.
+
+**The alias is a substitution, not an offset.** `ALIAS_LABEL_OFFSET` is loaded only
+when the entry equals `[0x2734]` (`cmp si,[0x2734] / jne` @`0x8573`), swapping one
+particular label for another — and the layout pass does the same swap @`0x8467`, so
+the box is measured with the substituted text rather than the original.
+
+Two cross-confirmations fell out. `lcall 0x299,0x176` @`0x8597` is the draw call,
+and `0x176` is `RENDER_UI_TEXT_OFFSET` — one of the six call sites #490's census
+attributed to it, reached here independently. And `mov si,0x174` @`0x85B3` sits
+under `test byte [0xadd],1`, the SAME extra-entry flag whose two layout seeds #489
+sourced; the flag that narrows the box is the flag that adds this label.
+
+`ship3d.rs` is down from 115 uncited constants to 93.
+
+618 tests, 0 failures.

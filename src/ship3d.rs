@@ -41,6 +41,10 @@ pub const SHIP_3D_PLANE_DEST_BYTES: usize = SHIP_3D_PLANE_PAGE_BYTES * 2;
 /// scroll value is left where it was. Hence the port's `!=` gate on the update
 /// rather than on the copy.
 pub const SHIP_3D_SCROLL_MODE_HOLD: u16 = 10;
+/// `0xFFFF` terminates the widget's word list, tested as `cmp ax,-1 / je` @`0x8456`
+/// in the layout pass and again as `cmp si,-1 / je` @`0x856E` in the draw pass — a
+/// SIGNED -1 compare in both (audit-fixes #492). A zero entry ends the list too
+/// (`or ax,ax / je` @`0x8452`), so the two terminators are not interchangeable.
 pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 4;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 6;
@@ -91,13 +95,32 @@ pub const SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET: u16 = 8;
 /// `cmp word [0xa34],6` @`0x850F` — the HOVER presentation mode the hit-test
 /// requests when the cursor is over a row.
 pub const SHIP_3D_TARGET_HOVER_PRESENTATION_MODE: u16 = 6;
+/// `mov word [0xa32],7` @`0x8529`, reached only when `[0xa3e]` bit 0 is set
+/// @`0x8522` — the clicked state, one above hover (audit-fixes #492).
 pub const SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE: u16 = 7;
+/// `mov word [0xa32],1` @`0x8548`, the cursor-outside-the-box branch, guarded by
+/// `cmp [0xa34],1 / je` @`0x853B` so it is written once per entry (audit-fixes #492).
 pub const SHIP_3D_TARGET_IDLE_PRESENTATION_MODE: u16 = 1;
+/// `add cx,0xa` @`0x855C` — the text origin sits 10 right of the box's left edge
+/// `[0x2aab]` (audit-fixes #492).
 pub const SHIP_3D_TARGET_DRAW_X_INSET: u16 = 10;
+/// `mov al,0xe8` @`0x8565`, the colour every row starts with before the hover and
+/// active tests below can raise it (audit-fixes #492).
 pub const SHIP_3D_TARGET_DEFAULT_TEXT_COLOR: u8 = 0xe8;
+/// `mov al,0xef` @`0x858B`, selected when `dec byte gs:[0x27c7]` @`0x8584` reaches
+/// zero — i.e. THIS row is the one under the cursor (audit-fixes #492).
 pub const SHIP_3D_TARGET_HOVER_TEXT_COLOR: u8 = 0xef;
+/// `mov al,0xfe` @`0x8595` — the hovered row when `[0xa3e]` bit 0 is also set
+/// @`0x858D`. The three colours are a LADDER, not three independent states:
+/// 0xE8 default, 0xEF hovered, 0xFE hovered-and-active (audit-fixes #492).
 pub const SHIP_3D_TARGET_ACTIVE_TEXT_COLOR: u8 = 0xfe;
+/// `mov si,0x174` @`0x85B3`, drawn only when `[0xadd]` bit 0 is set @`0x85AC` —
+/// the same extra-entry flag that picks the narrower layout seeds in #489
+/// (audit-fixes #492).
 pub const SHIP_3D_TARGET_EXTRA_LABEL_OFFSET: u16 = 0x0174;
+/// `mov si,0x273b` @`0x8579`, substituted when the entry equals `[0x2734]`
+/// (`cmp si,[0x2734] / jne` @`0x8573`) — an ALIAS for one particular label, done
+/// in the draw pass and again in the layout pass @`0x8467` (audit-fixes #492).
 pub const SHIP_3D_TARGET_ALIAS_LABEL_OFFSET: u16 = 0x273b;
 pub const SHIP_3D_NAV_CHOICE_MIN_GATE: u16 = 40;
 pub const SHIP_3D_NAV_CHOICE_MAX_GATE: u16 = 60;
