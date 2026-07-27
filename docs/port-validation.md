@@ -1787,10 +1787,24 @@ so a DESCRIPT cue tick is a FRAME COUNT. If that update runs at the game tick
 (`GAME_TICK_SECS`, ~25 Hz, #549), the port's `/10.0` is wrong by 2.5x — the same
 class of error #549 fixed, in the same file.
 
-**What would still settle it.** Walk the call chain from `0x9E73`'s enclosing
-routine up to the main loop and establish its rate. The enclosing entry is NOT
-`0x9CF7` (`project_tail_9bba`, a 12-instruction tail that `check_label_alignment`
-already flags as misaligned) — the backward-scan heuristic lands there falsely.
+**ENCLOSING ROUTINE IDENTIFIED (audit-fixes #569).** `re/tools/find_entry.py`
+resolves `0x9E73` to entry `0x9D10` — `dlg_line_id_scene_dispatch`, labelled
+"Consumer of the active line id `gs:0x6788` (called from `0x1EDD` with
+`ax=[0x6788]`)". It is called from 8 sites.
+
+So the chain is: an ACTIVE LINE CHANGE dispatches a scene (`0x9D10`), which calls
+`resource_load_sequence` @`0x9E73`, which increments `[0x131c]` @`0xA18B`.
+
+**THE CLOCK IS AN EVENT COUNTER, NOT A RATE.** It advances when a line dispatch
+performs a resource load — not per frame and not per unit time. So a DESCRIPT cue
+tick is a count of those events, and the port's `tick / 10.0` treats it as tenths of
+a second. That is wrong in KIND rather than by a factor, which is what #567 warned
+the two possible answers differed by.
+
+**What remains.** Whether the montage path (`montage_frame_setup` zeroes `[0x131c]`
+@`0x7B65`) drives the same counter at a steady rate during playback — in which case
+"ticks" may be effectively periodic even though the mechanism is not a timer. That
+is the question to answer before changing five call sites.
 (`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
 clock and worth knowing about; 25 Hz would mean the divisor is wrong by 2.5x).
 

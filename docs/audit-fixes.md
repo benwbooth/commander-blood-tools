@@ -18889,3 +18889,41 @@ byte and cannot tell that from a real entry. Two tools disagreed and the checker
 right; the enclosing routine is still unidentified.
 
 726 tests, 0 failures.
+
+## #569 — a tool that finds entries by CALL TARGET, and the answer #568 could not get
+
+#568 could not identify the routine containing `0x9E73` because the backward
+entry-scan lands on `project_tail_9bba`, a tail `check_label_alignment.py` already
+flags as misaligned. The heuristic looks for a `ret` followed by a prologue-looking
+byte, and that pattern occurs constantly INSIDE routines.
+
+`re/tools/find_entry.py` does it properly: collect every call target in the image —
+near (`E8 rel16`) and far (`9A off16 seg16`) — and report the greatest at or below
+the address, with its call sites and the DISTANCE. It validates on cases I had
+confirmed by hand: `0xB0E4 -> 0xB079` (#558's `ship_3d_hud_init`) and
+`0x7284 -> 0x7259` (#556's `entity_candidate_list`).
+
+It also prints a warning past `0x400` bytes, because a routine reached only through
+a jump table — the nav subdispatch families of #494/#534 — has no call site at all
+and will report the previous CALLED routine instead. The tool cannot know that;
+distance is the signal to distrust it.
+
+THE ANSWER: `0x9E73` belongs to `0x9D10`, `dlg_line_id_scene_dispatch` — "Consumer
+of the active line id `gs:0x6788`". Already labelled, and #559's banner said so the
+moment the right entry was passed to it.
+
+So the DESCRIPT cue clock's chain is: ACTIVE LINE CHANGES -> scene dispatch
+(`0x9D10`) -> `resource_load_sequence` (`0x9E73`) -> `inc [0x131c]` (`0xA18B`).
+
+**`[0x131c]` IS AN EVENT COUNTER, NOT A RATE.** It advances on a resource load
+during a line dispatch — not per frame, not per unit time. The port divides cue
+ticks by `10.0` as if they were tenths of a second, which #567 identified as the
+worse of the two possibilities: wrong in KIND, not by a factor.
+
+I am still not changing the five call sites. What is established is what the clock
+IS; what is not established is whether the montage path drives it steadily enough
+that treating ticks as periodic is a reasonable approximation of the real behaviour.
+That is a question about playback, and it decides between "fix the divisor" and
+"replace the model".
+
+726 tests, 0 failures.
