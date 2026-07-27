@@ -19558,3 +19558,40 @@ below `0xA0` indexes BACKWARDS out of the table; dispatch ZERO-extends (`xor bh,
 and always runs forward. Same bias, two different out-of-range behaviours.
 
 730 tests, 0 failures.
+
+## #589 — DESCRIPT.DES is parsed twice in this tree, and nothing compared them
+
+`src/descript.rs` and `src/extract/descript.rs` each carry a complete DESCRIPT.DES
+reader: same 18-byte directory stride, same command tags (`0x03`, `0x05`..`0x0E`,
+`0x10`..`0x12`, `0x04`, and `0x00`/`0x02`/`0xFF` to stop), maintained independently.
+Two readers of one format is how the RUNTIME and the QA EXPORT come to disagree about
+what the game contains, and the disagreement would surface as a wrong screen rather
+than as a failing test.
+
+They agree today. That is now checked rather than assumed:
+`both_descript_parsers_agree_on_the_shipped_file` parses the real file with both and
+compares record names and every subtitle cue (tick and text — the richest per-record
+payload, so a divergence in the command walk shows there first).
+
+THE FORMAT, measured from the shipped file rather than from either parser:
+
+    2-byte record count = 145
+    145 x 18-byte directory entries: 16-byte NUL-PADDED name + u16 offset
+    directory ends at 2 + 145*18 = 0xA34, one byte before the first record at 0xA35
+    at a record's offset: u16 LENGTH (`present` = 0x60 = 96), kind in the byte BEFORE
+    then tagged commands until 0x00/0x02/0xFF
+
+The directory wall is asserted from the BYTES, not through either reader, so a shared
+mistake about the stride cannot pass by agreeing with itself.
+
+`0x0D` IS OVERLOADED and worth knowing before touching either parser: normally a
+`u16` decisecond tick plus a NUL string, but location records write a bare `0d 00`
+before their final HNM. The parsers separate the two by looking at whether the byte
+after the `00` is another opcode — a LOOKAHEAD, so a record ending exactly on that
+boundary is the fragile case.
+
+MY THRESHOLD WAS THE ONLY FAILURE. I guessed "more than 50 cues" for the
+anti-vacuity check and the file has 48. Replaced with the measured count, asserted
+exactly, so it documents the file instead of loosely bounding it.
+
+731 tests, 0 failures.

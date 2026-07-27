@@ -362,28 +362,28 @@ new	src/decompress.rs	80	fn		UNVERIFIED
 get_bit	src/decompress.rs	89	fn		UNVERIFIED	
 get_byte	src/decompress.rs	99	fn		UNVERIFIED	
 decompress_rle_173	src/decompress.rs	106	fn		UNVERIFIED	// Decompress codebook // Decode RLE raster
-SubtitleCue	src/descript.rs	11	struct		UNVERIFIED	
-RecordKind	src/descript.rs	18	enum		TESTED	
-from_byte	src/descript.rs	27	fn		UNVERIFIED	
-as_byte	src/descript.rs	37	fn		UNVERIFIED	
-SlottedMedia	src/descript.rs	49	struct		UNVERIFIED	
-DescriptCommand	src/descript.rs	55	enum		UNVERIFIED	
-DescriptRecord	src/descript.rs	75	struct		UNVERIFIED	
-DescriptDb	src/descript.rs	91	struct		TESTED	
-CharacterScene	src/descript.rs	96	struct		UNVERIFIED	
-VideoScene	src/descript.rs	104	struct		UNVERIFIED	
-parse_file	src/descript.rs	113	fn		TESTED	
-parse	src/descript.rs	120	fn		DATA	// DESCRIPT lengths are measured to the next record's length // field. The byte immediately before that field is the next // record kind, not part of this record's command payload.
-record	src/descript.rs	297	fn		TESTED	
-character_names	src/descript.rs	303	fn		UNVERIFIED	
-character_scenes_for_snd	src/descript.rs	311	fn		UNVERIFIED	
-hnm_music_map	src/descript.rs	331	fn		UNVERIFIED	
-video_scenes	src/descript.rs	361	fn		UNVERIFIED	
-decode_text	src/descript.rs	397	fn		DATA	// CP437 like every other game string. This is a NO-OP on the shipped // DESCRIPT.DES (measured: 1227 text runs, none with high bytes), but it removes // the latent bug class rather than leaving one d
-read_cstr	src/descript.rs	407	fn		UNVERIFIED	
-read_media	src/descript.rs	419	fn		UNVERIFIED	
-read_two	src/descript.rs	435	fn		UNVERIFIED	
-is_opcode	src/descript.rs	442	fn		UNVERIFIED	
+SubtitleCue	src/descript.rs	29	struct		DATA	"/// One `0x0D` command in a DESCRIPT.DES record: a little-endian `u16` tick followed /// by a NUL-terminated string. From the shipped file's `present` record: /// /// ```text /// 0d 01 00  ""CRYO Inter"
+RecordKind	src/descript.rs	36	enum		TESTED	
+from_byte	src/descript.rs	45	fn		UNVERIFIED	
+as_byte	src/descript.rs	55	fn		UNVERIFIED	
+SlottedMedia	src/descript.rs	71	struct		DATA	/// An HNM named by a command that carries a SLOT byte before the filename — the /// `0x0B` idle and `0x09`/`0x0A` talk commands. The slot is the character's /// animation channel, so one record can n
+DescriptCommand	src/descript.rs	77	enum		UNVERIFIED	
+DescriptRecord	src/descript.rs	121	struct	0xA34,0xA35	DATA	/// One record of DESCRIPT.DES, as the file lays it out. /// /// The file is a 2-byte record count (145) followed by that many 18-byte directory /// entries — a 16-byte NUL-PADDED name and a `u16` off
+DescriptDb	src/descript.rs	137	struct		TESTED	
+CharacterScene	src/descript.rs	142	struct		UNVERIFIED	
+VideoScene	src/descript.rs	150	struct		UNVERIFIED	
+parse_file	src/descript.rs	159	fn		TESTED	
+parse	src/descript.rs	166	fn		DATA	// DESCRIPT lengths are measured to the next record's length // field. The byte immediately before that field is the next // record kind, not part of this record's command payload.
+record	src/descript.rs	343	fn		TESTED	
+character_names	src/descript.rs	349	fn		UNVERIFIED	
+character_scenes_for_snd	src/descript.rs	357	fn		UNVERIFIED	
+hnm_music_map	src/descript.rs	377	fn		UNVERIFIED	
+video_scenes	src/descript.rs	407	fn		UNVERIFIED	
+decode_text	src/descript.rs	443	fn		DATA	// CP437 like every other game string. This is a NO-OP on the shipped // DESCRIPT.DES (measured: 1227 text runs, none with high bytes), but it removes // the latent bug class rather than leaving one d
+read_cstr	src/descript.rs	453	fn		UNVERIFIED	
+read_media	src/descript.rs	465	fn		UNVERIFIED	
+read_two	src/descript.rs	481	fn		UNVERIFIED	
+is_opcode	src/descript.rs	488	fn		UNVERIFIED	
 MouseInput	src/engine.rs	19	struct	0x70E,0xA2A,0xA2C,0xA2E	ASM	/// Live mouse input for one frame. Mirrors the engine globals written by the poll /// at `0:0x70E`: `gs:[0xA2A]`=x, `gs:[0xA2C]`=y, `gs:[0xA2E]`=buttons.
 left_down	src/engine.rs	35	fn		UNVERIFIED	
 right_down	src/engine.rs	38	fn		UNVERIFIED	
@@ -1693,7 +1693,7 @@ write_descript_manifest	src/extract/descript.rs	558	fn		UNVERIFIED
 write_verified_video_manifest	src/extract/descript.rs	591	fn		UNVERIFIED	
 write_character_manifest	src/extract/descript.rs	637	fn		UNVERIFIED	
 format_srt_time	src/extract/descript.rs	706	fn		UNVERIFIED	
-descript_hnm_path	src/extract/descript.rs	786	fn		DATA?	"// DESCRIPT.DES' New Year advert drops the ""b""; BLOOD.DAT only has the // matching Venusia advert asset as sq/pubven1.hnm."
+descript_hnm_path	src/extract/descript.rs	851	fn		DATA?	"// DESCRIPT.DES' New Year advert drops the ""b""; BLOOD.DAT only has the // matching Venusia advert asset as sq/pubven1.hnm."
 run_ffmpeg	src/extract/helpers.rs	7	fn		INFRA	
 scaled_video_filter	src/extract/helpers.rs	17	fn		UNVERIFIED	
 find_file_recursive	src/extract/helpers.rs	25	fn		UNVERIFIED	

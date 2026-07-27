@@ -7,6 +7,24 @@ use serde::Serialize;
 
 use crate::util::media_stem;
 
+/// One `0x0D` command in a DESCRIPT.DES record: a little-endian `u16` tick followed
+/// by a NUL-terminated string. From the shipped file's `present` record:
+///
+/// ```text
+/// 0d 01 00  "CRYO Interactive Entertainment 1995"    tick 1
+/// 0d 1e 00  "Commander BLOOD  V 1.0"                 tick 30
+/// ```
+///
+/// `0x0D` IS OVERLOADED: location records write `0d 00` immediately before their
+/// final HNM command, with no string. The parser separates the two by looking at
+/// whether the byte after the `00` is another opcode — a lookahead, not a flag, so
+/// a record ending exactly on that boundary is the case to be careful with.
+///
+/// The tick's unit is DECISECONDS, not the game tick — see [`crate::GAME_TICK_SECS`],
+/// which they differ from by a factor these two were once conflated over.
+///
+/// 48 cues exist across all 145 records, pinned by
+/// `both_descript_parsers_agree_on_the_shipped_file` (audit-fixes #589).
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SubtitleCue {
     pub tick: u16,
@@ -45,6 +63,10 @@ impl RecordKind {
     }
 }
 
+/// An HNM named by a command that carries a SLOT byte before the filename — the
+/// `0x0B` idle and `0x09`/`0x0A` talk commands. The slot is the character's
+/// animation channel, so one record can name several idles and several talk clips
+/// and the consumer picks by slot rather than by position.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SlottedMedia {
     pub slot: u8,
@@ -71,6 +93,30 @@ pub enum DescriptCommand {
     Unknown(u8),
 }
 
+/// One record of DESCRIPT.DES, as the file lays it out.
+///
+/// The file is a 2-byte record count (145) followed by that many 18-byte directory
+/// entries — a 16-byte NUL-PADDED name and a `u16` offset. The directory therefore
+/// ends at `2 + 145*18 = 0xA34`, exactly one byte before the first record's data at
+/// `0xA35`, which is the wall that fixes the stride.
+///
+/// At a record's offset: a `u16` LENGTH (`present` is `0x60` = 96 bytes), and the
+/// record's KIND in the byte BEFORE the offset. Then a stream of tagged commands,
+/// each a tag byte plus its payload, which is where every `Vec` field below comes
+/// from:
+///
+/// ```text
+/// 0x05 label        0x09/0x0A talk HNM (slot+name)   0x0B idle HNM (slot+name)
+/// 0x0C sequence HNM 0x0D subtitle cue (tick+text)    0x0E sprite
+/// 0x10 full HNM     0x11 snd                         0x12 music (.voc)
+/// 0x04 skip 2       0x00/0x02/0xFF end
+/// ```
+///
+/// THE FILE IS PARSED TWICE IN THIS TREE — here and in `extract::descript`, with the
+/// same stride and the same tag set. `both_descript_parsers_agree_on_the_shipped_file`
+/// now holds them to the same answer on the real file, because two readers of one
+/// format is how the runtime and the QA export come to disagree about what the game
+/// contains (audit-fixes #589).
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DescriptRecord {
     pub name: String,

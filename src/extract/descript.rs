@@ -716,6 +716,71 @@ pub(super) fn format_srt_time(seconds: f64) -> String {
 mod tests {
     use super::*;
 
+    /// THE SAME FILE, PARSED TWICE. `src/descript.rs` and this module each carry a
+    /// full DESCRIPT.DES reader — same 18-byte directory stride, same command tags
+    /// (`0x03`, `0x05`..`0x0E`, `0x10`..`0x12`, `0x04`, and `0x00`/`0x02`/`0xFF` to
+    /// stop). Two parsers for one format is how the runtime and the QA export come
+    /// to disagree about what the game contains, and nothing was comparing them
+    /// (audit-fixes #589).
+    ///
+    /// The format facts this pins, measured from the shipped file:
+    /// 145 records; directory `2 + 145*18 = 0xA34`, ending exactly one byte before
+    /// the first record at `0xA35`; each entry a 16-byte NUL-padded name plus a
+    /// `u16` offset; the record's own first word is its LENGTH (`present` = `0x60`),
+    /// with its kind in the byte BEFORE the offset.
+    #[test]
+    fn both_descript_parsers_agree_on_the_shipped_file() {
+        let path = std::path::Path::new("output/_tmp_iso/DESCRIPT.DES");
+        if !path.exists() {
+            eprintln!("skipping: DESCRIPT.DES not extracted");
+            return;
+        }
+        let raw = std::fs::read(path).expect("read DESCRIPT.DES");
+
+        // The directory wall, from the bytes rather than from either parser.
+        let count = u16::from_le_bytes([raw[0], raw[1]]) as usize;
+        let dir_end = 2 + count * 18;
+        let first = u16::from_le_bytes([raw[dir_end - 2], raw[dir_end - 1]]) as usize;
+        assert_eq!(count, 145, "record count");
+        assert_eq!(dir_end, 0xA34, "2 + 145*18");
+        assert!(
+            first >= dir_end,
+            "the last directory entry must point past the directory"
+        );
+
+        let ours = parse_descript(path).expect("extract parser");
+        let theirs = commander_blood_tools::descript::DescriptDb::parse(&raw)
+            .expect("runtime parser");
+
+        let our_names: Vec<&str> = ours.record_names().collect();
+        let their_names: Vec<&str> = theirs.records.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(our_names, their_names, "the two parsers disagree on the records");
+        assert_eq!(our_names.len(), count, "every directory entry became a record");
+
+        // Subtitle cues are the richest per-record payload (tick + text), so they
+        // are where a divergence in the command walk would actually show.
+        for name in &our_names {
+            let a = ours.record(name).expect("extract record");
+            let b = theirs.record(name).expect("runtime record");
+            let a_cues: Vec<(u16, &str)> =
+                a.subtitles.iter().map(|c| (c.tick, c.text.as_str())).collect();
+            let b_cues: Vec<(u16, &str)> =
+                b.subtitles.iter().map(|c| (c.tick, c.text.as_str())).collect();
+            assert_eq!(a_cues, b_cues, "{name}: subtitle cues diverge");
+        }
+
+        // NOT VACUOUS: some record must actually have cues, or the loop above
+        // compared 145 empty lists.
+        let total: usize = our_names
+            .iter()
+            .map(|n| ours.record(n).map_or(0, |r| r.subtitles.len()))
+            .sum();
+        assert_eq!(
+            total, 48,
+            "the shipped DESCRIPT.DES carries 48 subtitle cues across all 145 records"
+        );
+    }
+
     fn character_record(name: &str) -> DescriptRecord {
         DescriptRecord {
             name: name.to_string(),
