@@ -17506,3 +17506,40 @@ skip its output, which is the exact failure #466 introduced the pin logic to avo
 `check_ui_literals.py`: 39 display literals in the image, **0 unpinned** (was 1).
 
 623 tests, 0 failures.
+
+## #528 — a `.DIC` is a word list, so half the literal warnings were coincidence
+
+With the in-image literals at zero (#527), the checker's remaining output was 42
+unpinned matches in shipped data. Sampling them showed two unrelated kinds reported
+identically:
+
+```text
+  src/engine.rs:4360: 'FRONT' in SCRIPT1.DIC        <- a port-side view label
+  src/engine.rs:3281: 'IZWALITO' in SCRIPT2.DIC     <- a character name
+```
+
+`'FRONT'` is a match arm producing a caption for the port's own debug view; it
+"appears in SCRIPT1.DIC" because **a `.DIC` IS THE GAME'S WORD DICTIONARY** — the
+table subtitles are assembled from — and therefore contains most ordinary English
+words. `CLICK`, `QUICK`, `RIGHT`, `COURSE`, `REACH`, `WAITING` are all flagged for
+the same non-reason. That is the identical failure mode as a four-letter string
+matching any binary, which the tool ALREADY guards against with its
+`MIN_ATTRIBUTABLE` rule; the dictionary case had simply not been noticed.
+
+Split them: matches in RECORD files (`.DES`, `.DEB`, `READ.ME`) name specific
+things and are real evidence; `.DIC` matches are advisory and now listed only under
+`--dict`. **20 real candidates, down from 42.**
+
+This is the third time in three entries that a checker's own noise was the problem
+(#526's tautological assertion, #527's owner walk, now this). A tool that reports
+mostly-noise is not neutral — it trains its reader to skip the real finding sitting
+in the middle of it, which is what #466 introduced pinning to prevent.
+
+WHAT THE 20 ACTUALLY ARE, recorded rather than fixed here: character and location
+names in `DESCRIPT.DES` (`Izwalito`, `Beauregard`, `Sinox`, `PTERRA`, `USINE`),
+mostly in `src/extract/`. Those are content-bearing literals under the prime rule
+and the next task in this line. `PHONE_CONTACTS` is among the flagged and is NOT
+new work — it is a documented APPROX row (#440) with its own matrix entry, waiting
+on the runtime slot list.
+
+623 tests, 0 failures.

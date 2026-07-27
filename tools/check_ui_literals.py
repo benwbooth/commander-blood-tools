@@ -169,10 +169,26 @@ def main():
 
     unpinned_image = [r for r in in_image if not r[4]]
     unpinned_data = [r for r in in_data if not r[4]]
+    # A `.DIC` IS A WORD DICTIONARY (audit-fixes #528). The game builds subtitles
+    # from it, so it contains most ordinary English words -- and a port literal
+    # like "FRONT", "RIGHT" or "CLICK" therefore "appears in SCRIPT1.DIC" by pure
+    # coincidence, exactly as a 4-letter string matches any binary. Reporting those
+    # beside a real find (a character name in DESCRIPT.DES) buries the real one:
+    # 42 entries of mostly-noise train the reader to skip the tool, which is the
+    # failure #466 added the pin logic to prevent and #527 hit again.
+    #
+    # So DIC matches are reported SEPARATELY and are advisory. Record files
+    # (.DES/.DEB/READ.ME) name specific things and a match there is real evidence.
+    dict_hit = lambda where: str(where).upper().endswith(".DIC")
+    unpinned_record = [r for r in unpinned_data if not dict_hit(r[3])]
+    unpinned_dict = [r for r in unpinned_data if dict_hit(r[3])]
     for path, line, s, at, _ in sorted(unpinned_image):
         print(f"IN-IMAGE {path}:{line}: {s!r} at BLOODPRG.EXE {at:#07x} — PIN IT")
-    for path, line, s, where, _ in sorted(unpinned_data):
+    for path, line, s, where, _ in sorted(unpinned_record):
         print(f"IN-DATA  {path}:{line}: {s!r} in {where} — PIN IT")
+    if "--dict" in sys.argv:
+        for path, line, s, where, _ in sorted(unpinned_dict):
+            print(f"IN-DICT  {path}:{line}: {s!r} in {where} (a word list — likely coincidence)")
     if "--absent" in sys.argv:
         for path, line, s in sorted(absent):
             print(f"ABSENT   {path}:{line}: {s!r}")
@@ -180,7 +196,8 @@ def main():
     print(
         f"{len(in_image) + len(in_data) + len(absent)} display literal(s): "
         f"{len(in_image)} in the image ({len(unpinned_image)} unpinned), "
-        f"{len(in_data)} in shipped data ({len(unpinned_data)} unpinned), "
+        f"{len(in_data)} in shipped data ({len(unpinned_record)} unpinned in RECORD "
+        f"files, {len(unpinned_dict)} in .DIC word lists — --dict to list), "
         f"{len(absent)} in neither (--absent to list); "
         f"{len(too_short)} under {MIN_ATTRIBUTABLE} chars and NOT searched, "
         "because a short string matches any binary by chance"
