@@ -778,37 +778,37 @@ step	src/manu3.rs	239	fn		TESTED	/// Process all tweens for one frame: for each,
 DS	src/manu3_hand.rs	79	const	XDB:manu3:0x270,XDB:manu3:0x3DE,XDB:manu3:0x03DE,0x2274,0x23	ASM?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded XDB:manu3:0x270/XDB:manu3:0x3DE): ///   +0x00 par
 SEG2	src/manu3_hand.rs	82	const	0xB18	ASM	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
 STATE_BASE	src/manu3_hand.rs	94	const	0x2274,0x2974	ASM	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
-STATE_LEN	src/manu3_hand.rs	95	const		UNVERIFIED	
-WRIST	src/manu3_hand.rs	96	const		UNVERIFIED	
-TEX	src/manu3_hand.rs	104	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
-TEX_W	src/manu3_hand.rs	105	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
-TRIG	src/manu3_hand.rs	114	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
-TRIG_XDB_OFFSET	src/manu3_hand.rs	116	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
-hand_texture	src/manu3_hand.rs	119	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
-rd_parent	src/manu3_hand.rs	124	fn		UNVERIFIED	
-tcos	src/manu3_hand.rs	129	fn		UNVERIFIED	
-tsin	src/manu3_hand.rs	134	fn		UNVERIFIED	
-build_matrix	src/manu3_hand.rs	143	fn	XDB:manu3:0x270,XDB:manu3:0x3DE	CELL?	/// EXACT transcription of the manu3 matrix build (xdb XDB:manu3:0x270..XDB:manu3:0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum ide
-HandMesh	src/manu3_hand.rs	166	struct	XDB:manu3:0x181,0xFFFF,0x2274,0x2974	ASM	/// Current pose selector + its running player (selector -> sequence index, /// per the XDB:manu3:0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden
-load	src/manu3_hand.rs	183	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
-st16	src/manu3_hand.rs	218	fn		UNVERIFIED	
-st32	src/manu3_hand.rs	223	fn		UNVERIFIED	
-compose	src/manu3_hand.rs	237	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
-draw	src/manu3_hand.rs	306	fn	XDB:manu3:0x549	ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified XDB:manu3:0x549 /// projection. No screen-space fix
-snapshot_state	src/manu3_hand.rs	383	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
-triangles_lerp	src/manu3_hand.rs	392	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
-triangles	src/manu3_hand.rs	432	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
-debug_project	src/manu3_hand.rs	461	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
-face_depth	src/manu3_hand.rs	503	fn		UNVERIFIED	
-fill_triangle_tex	src/manu3_hand.rs	509	fn		UNVERIFIED	
-fill_triangle	src/manu3_hand.rs	570	fn		UNVERIFIED	
-PosePlayer	src/manu3_hand.rs	602	struct	XDB:manu3:0x181,XDB:manu3:0x1DF,XDB:manu3:0x19B,0x2394	ASM	/// The phased tween pose player (exact transcription of XDB:manu3:0x181/XDB:manu3:0x1DF/XDB:manu3:0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells addre
-new	src/manu3_hand.rs	615	fn	XDB:manu3:0x181,0x2306,0x2974	ASM	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (XDB:manu3:0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; group
-step	src/manu3_hand.rs	634	fn	XDB:manu3:0x1DF,XDB:manu3:0x19B	ASM	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as XDB:manu3:0x1DF/XDB:manu3:0x19B do.
-done	src/manu3_hand.rs	674	fn		UNVERIFIED	
-set_pose	src/manu3_hand.rs	681	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
-tick_pose	src/manu3_hand.rs	689	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
-animate	src/manu3_hand.rs	702	fn	0x2274,0x2974	ASM	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
+STATE_LEN	src/manu3_hand.rs	99	const	0x2974,0x2274,0x700	DATA	/// `0x2974 - 0x2274` = `0x700`, the block's own stated extent. Like /// [`STATE_BASE`] this is a DATA-LAYOUT fact, not a code citation — no overlay /// instruction names it, because the block is reac
+WRIST	src/manu3_hand.rs	103	const		DATA	/// `STATE_BASE + 0x120` — a node offset INSIDE the state block, so it inherits /// [`STATE_BASE`]'s provenance exactly: a data-layout fact reached by base /// register, with no `mov` to cite (audit-f
+TEX	src/manu3_hand.rs	111	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
+TEX_W	src/manu3_hand.rs	115	const		DATA	/// 256, and the shipped blob proves it: `manu3_seg4_1c94.bin` is 65536 bytes, /// which is 256 rows of 256 with NO remainder. A 64KB segment dump divides that /// way only for a 256-wide texture (aud
+TRIG	src/manu3_hand.rs	124	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
+TRIG_XDB_OFFSET	src/manu3_hand.rs	126	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
+hand_texture	src/manu3_hand.rs	129	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
+rd_parent	src/manu3_hand.rs	134	fn		UNVERIFIED	
+tcos	src/manu3_hand.rs	139	fn		UNVERIFIED	
+tsin	src/manu3_hand.rs	144	fn		UNVERIFIED	
+build_matrix	src/manu3_hand.rs	153	fn	XDB:manu3:0x270,XDB:manu3:0x3DE	CELL?	/// EXACT transcription of the manu3 matrix build (xdb XDB:manu3:0x270..XDB:manu3:0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum ide
+HandMesh	src/manu3_hand.rs	176	struct	XDB:manu3:0x181,0xFFFF,0x2274,0x2974	ASM	/// Current pose selector + its running player (selector -> sequence index, /// per the XDB:manu3:0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden
+load	src/manu3_hand.rs	193	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
+st16	src/manu3_hand.rs	228	fn		UNVERIFIED	
+st32	src/manu3_hand.rs	233	fn		UNVERIFIED	
+compose	src/manu3_hand.rs	247	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
+draw	src/manu3_hand.rs	316	fn	XDB:manu3:0x549	ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified XDB:manu3:0x549 /// projection. No screen-space fix
+snapshot_state	src/manu3_hand.rs	393	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
+triangles_lerp	src/manu3_hand.rs	402	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
+triangles	src/manu3_hand.rs	442	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
+debug_project	src/manu3_hand.rs	471	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
+face_depth	src/manu3_hand.rs	513	fn		UNVERIFIED	
+fill_triangle_tex	src/manu3_hand.rs	519	fn		UNVERIFIED	
+fill_triangle	src/manu3_hand.rs	580	fn		UNVERIFIED	
+PosePlayer	src/manu3_hand.rs	612	struct	XDB:manu3:0x181,XDB:manu3:0x1DF,XDB:manu3:0x19B,0x2394	ASM	/// The phased tween pose player (exact transcription of XDB:manu3:0x181/XDB:manu3:0x1DF/XDB:manu3:0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells addre
+new	src/manu3_hand.rs	625	fn	XDB:manu3:0x181,0x2306,0x2974	ASM	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (XDB:manu3:0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; group
+step	src/manu3_hand.rs	644	fn	XDB:manu3:0x1DF,XDB:manu3:0x19B	ASM	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as XDB:manu3:0x1DF/XDB:manu3:0x19B do.
+done	src/manu3_hand.rs	684	fn		UNVERIFIED	
+set_pose	src/manu3_hand.rs	691	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
+tick_pose	src/manu3_hand.rs	699	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
+animate	src/manu3_hand.rs	712	fn	0x2274,0x2974	ASM	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x12F78,0x5B58	DATA	/// Raw 6-bit VGA DAC palette (256 * RGB, channels 0..=63). /// /// PROVENANCE IS SPLIT, and the old comment (`Provenance: BLOODPRG.EXE file 0x12F78`) /// was only half true — measured 2026-07-24: ///
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23

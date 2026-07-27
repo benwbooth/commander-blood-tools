@@ -18655,3 +18655,34 @@ one of them was swept against the lifted `func_6023`." That argument applies to
 constants exactly as it does to functions.
 
 726 tests, 0 failures.
+
+## #562 — three layout facts that correctly have no code citation
+
+`manu3_hand.rs`'s `STATE_BASE` carries the best provenance note in the port:
+
+> no manu3.xdb instruction names `0x2274`. Searched for it as an immediate AND as a
+> memory displacement across the whole overlay … zero confirmed hits. It is an
+> offset into the loaded DATA SEGMENT … reached through a base register rather than
+> a literal, so the block's position is a data-layout fact and not a code citation.
+> Recorded so the next reader does not go looking for the `mov` that is not there.
+
+Its three neighbours were uncited, and they belong to the same category:
+
+* `STATE_LEN = 0x700` is `0x2974 - 0x2274`, the block's own stated extent.
+* `WRIST = 0x2394` is `STATE_BASE + 0x120`, a node offset INSIDE that block, so it
+  inherits the base's provenance exactly.
+* `TEX_W = 256` is proved by the blob: `manu3_seg4_1c94.bin` is 65536 bytes = 256
+  rows of 256 with NO remainder.
+
+All three settled DATA, not ASM. Which is the point worth recording: this campaign
+has spent most of its effort finding instructions, and a row whose evidence is a
+shipped file's SIZE or a block's EXTENT is not a lesser row — #544 made the same
+call for the save-slot geometry, where `blood.sav` being exactly 320 bytes was the
+only authority for 10 x 32.
+
+The failure mode this avoids is the one `STATE_BASE`'s note names outright: a reader
+who assumes every constant must have a `mov` behind it goes looking for one, does
+not find it, and either invents a citation or files the row as unverifiable. Both
+are worse than "the data says so, here is the arithmetic".
+
+726 tests, 0 failures.

@@ -92,7 +92,14 @@ const SEG2: &[u8] = include_bytes!("../accuracy/manu3/manu3_seg2_1b76.bin");
 /// citation. Recorded so the next reader does not go looking for the `mov` that
 /// is not there.
 const STATE_BASE: usize = 0x2274;
+/// `0x2974 - 0x2274` = `0x700`, the block's own stated extent. Like
+/// [`STATE_BASE`] this is a DATA-LAYOUT fact, not a code citation — no overlay
+/// instruction names it, because the block is reached through a base register
+/// (audit-fixes #562).
 const STATE_LEN: usize = 0x700;
+/// `STATE_BASE + 0x120` — a node offset INSIDE the state block, so it inherits
+/// [`STATE_BASE`]'s provenance exactly: a data-layout fact reached by base
+/// register, with no `mov` to cite (audit-fixes #562).
 const WRIST: usize = 0x2394;
 /// The hand's 256-wide texture (palette-index rows) lifted from the live data segment.
 // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the
@@ -102,6 +109,9 @@ const WRIST: usize = 0x2394;
 // smooth skin. (The old hand_tex.bin bank came from ds:0x6400 — a different buffer;
 // rows past 41 there are unrelated scratch, which forced a row clamp + palm banding.)
 const TEX: &[u8] = include_bytes!("../accuracy/manu3/manu3_seg4_1c94.bin");
+/// 256, and the shipped blob proves it: `manu3_seg4_1c94.bin` is 65536 bytes,
+/// which is 256 rows of 256 with NO remainder. A 64KB segment dump divides that
+/// way only for a 256-wide texture (audit-fixes #562).
 const TEX_W: usize = 256;
 /// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
 ///
