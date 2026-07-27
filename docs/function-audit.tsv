@@ -263,7 +263,7 @@ sprite_blitter_name	src/bloodprg.rs	1492	fn		UNVERIFIED
 sprite_blitter_note	src/bloodprg.rs	1506	fn		UNVERIFIED	
 KNOWN_SYMBOLS	src/bloodprg.rs	1534	const		TESTED	
 PRESENTATION_3D_MARKERS	src/bloodprg.rs	2599	const		TESTED	
-BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0x6ADE,0x6CDE,0x6724,0xABC	CELL?	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
+BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0x6ADE,0x6CDE,0x6724,0xABC	ASM	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory record, and the record count.
 SLOT_NAME_LEN	src/bloodsav.rs	82	const		UNVERIFIED	

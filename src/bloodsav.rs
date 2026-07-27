@@ -47,6 +47,13 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodSave {
     /// Current script profile index (`[0x6780]`); `0xFFFF` = none.
+    ///
+    /// The sentinel is the game's, not a convention (audit-fixes #462): a census
+    /// of `0x6780` gives six sites, and two of them WRITE it —
+    /// `mov word ptr [0x6780], 0xffff` @`0x10D3` and @`0x1CFA` — while
+    /// `cmp word ptr [0x6780], -1` @`0x108E` is the "is a profile loaded" test.
+    /// The other three are `mov ax,[0x6780]` reads (`0x10C5`, `0x1CF2`) and one
+    /// `mov [0x6780], ax` (`0x64BB`).
     pub profile: u16,
     /// The 512-byte global flag/progression block (`[0x6ADE]`).
     pub flags: Vec<u8>,

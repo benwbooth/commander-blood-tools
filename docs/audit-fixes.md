@@ -15149,3 +15149,25 @@ pattern is rare.
 
 2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #462 — the sentinel is the game's
+
+`BloodSave::profile` documents `[0x6780]` with "`0xFFFF` = none". A sentinel is
+the kind of claim that is usually a convention someone adopted, so it is worth
+knowing which. This one is the game's: of six sites, TWO write the sentinel —
+`mov word ptr [0x6780], 0xffff` @`0x10D3` and @`0x1CFA` — and
+`cmp word ptr [0x6780], -1` @`0x108E` is the test that reads it back. The
+remaining three are two reads and one computed write.
+
+So the port's `0xFFFF` is not a chosen "no value" marker that happens to fit a
+`u16`; it is the constant the game stores and compares.
+
+Small, and the reason to record it is the shape rather than the fact. Three
+entries this session turned on a description implying the wrong thing — #453's
+"divisor" for a dividend, #455's "stack" for a pair, #456's positional read of a
+`min_labels` argument — and all three were cheap to check the moment someone
+asked "says who?". A sentinel with two writes and a compare behind it can be
+quoted; one without is a habit wearing a hex value.
+
+2229 items, 1122 confirmed (50.3%), 1107 open. 797 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
