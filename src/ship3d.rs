@@ -46,6 +46,19 @@ pub const SHIP_3D_SCROLL_MODE_HOLD: u16 = 10;
 /// SIGNED -1 compare in both (audit-fixes #492). A zero entry ends the list too
 /// (`or ax,ax / je` @`0x8452`), so the two terminators are not interchangeable.
 pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
+/// `add ax,4` @`0x7292` in the DEB candidate walker (`0x7259`): the record's
+/// offset plus four is what gets stored into the output list
+/// (`mov word ptr [bp],ax` @`0x7295`), which is why the port adds the same 4
+/// to reach a candidate's handler record (audit-fixes #554).
+///
+/// The walker's shape, for the two constants that are NOT settled here: it
+/// filters on `test byte ptr es:[di+2],2` @`0x7284` and on
+/// `cmp di,gs:[0x6752]` @`0x728B` (the current target), and terminates its
+/// output with `mov word ptr [bp],0xffff` @`0x729D`. Those map plausibly onto
+/// `SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG` and the selector return,
+/// and PLAUSIBLY IS NOT ENOUGH — the port uses them in a different routine's
+/// logic, so they stay UNVERIFIED until that routine is the one being read
+/// (#509's rule).
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 4;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 6;
 /// Four, and there is NO loop counter to read it from: `ship_3d_interpolation_gate`

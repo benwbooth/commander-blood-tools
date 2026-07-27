@@ -18391,3 +18391,31 @@ the artefact every address in the file is relative to, which is exactly why it
 belongs beside them.
 
 726 tests, 0 failures.
+
+## #554 — one constant settled, two refused from the same eight instructions
+
+The DEB candidate walker (`0x7259`, the routine `engine::NAV_DEST_*`'s doc names as
+the game's real destination source) yields `SHIP_3D_TARGET_RECORD_HEADER_BYTES`
+cleanly: `add ax,4` @`0x7292`, whose result is stored into the output list
+@`0x7295`. The port adds the same 4 to reach a candidate's handler record, so the
+constant and its use match instruction for instruction.
+
+TWO MORE WERE RIGHT THERE AND I DID NOT TAKE THEM. The same eight instructions
+contain `test byte ptr es:[di+2],2` @`0x7284` and
+`mov word ptr [bp],0xffff` @`0x729D`, which map plausibly onto
+`SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG` (`0x02`) and
+`SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN` (`0xFFFF`).
+
+Plausibly is not enough. The port uses both in a DIFFERENT routine's logic — the
+navigation trigger prelude, not this walker — so citing them here would attach a
+real address to a claim about code that is not this code. That is #501's mistake
+exactly (right value, wrong routine, tidy story) and #509's rule (a citation must
+cover the port's actual use). They stay UNVERIFIED.
+
+What I did instead is write the walker's shape into the settled constant's doc: the
+filter, the current-target compare, the `0xFFFF` terminator, with addresses. So the
+next attempt at those two starts with the evidence already in hand and only has to
+answer the question that matters — does the prelude reach this walker, or does it
+have its own copy of the same test?
+
+726 tests, 0 failures.
