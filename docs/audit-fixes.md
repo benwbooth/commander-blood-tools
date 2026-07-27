@@ -14901,3 +14901,37 @@ habit is what #450 was about.
 
 2229 items, 1119 confirmed (50.2%), 1110 open. 788 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #454 — the wrong word did not become a wrong implementation
+
+#453 corrected `TEXT_SPEED_STEP_DS`'s description from "divisor" to "dividend".
+That raised a question worth answering rather than assuming: did the loose word
+produce a loose implementation?
+
+No. `vm::reveal_frames_per_char` is `(step >> 2).max(1)`, which is `shr ax, 2`
+@`0x94AE` exactly, and its doc carries the three instructions plus a justification
+for the `.max(1)` from the loop's own structure (`mov ax,[0xb31] / or ax,ax / jne`
+@`0x94A4` skips the reveal while the countdown is nonzero, so a stored zero still
+costs the frame that runs the check). #298 had already corrected that citation
+once.
+
+The third reader models correctly too. `record_end_hold_ticks` claims
+`b35 = [0x27CF] * ([0x0ACA] >> 1) + 6`, and `0x737C` is:
+
+    0x737C  mov dx, word ptr gs:[0xaca]
+    0x7381  shr dx, 1
+    0x7383  mul dx
+    0x7385  add ax, 6
+    0x7388  mov word ptr gs:[0xb35], ax
+
+So the same cell is shifted RIGHT BY 2 for the per-character rate and RIGHT BY 1
+for the end-of-record hold — two different derivations from one setting, both
+implemented, both cited.
+
+The description that was wrong lived in `bloodprg.rs`, where the CONSTANT is
+declared; the implementations live in `vm.rs` with the instructions beside them.
+That is the useful shape of the finding: a constant's home is where a vague
+description is least likely to be caught, because nothing there computes anything.
+
+2229 items, 1119 confirmed (50.2%), 1110 open. 788 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
