@@ -18361,3 +18361,33 @@ what it matches. #519 made the same point from the other side — a citation nam
 only the constant's instruction can be right while the call around it is wrong.
 
 725 tests, 0 failures.
+
+## #553 — a segment table that checks itself, and four independent confirmations in it
+
+`KNOWN_CODE_SEGMENTS` is the table every file-offset-to-`SEG:OFF` conversion in the
+port goes through, and it was uncited — a list of eight `(segment, base)` pairs that
+a reader had to take on trust.
+
+It checks itself. EVERY entry satisfies `base == 0x600 + segment * 16`, the MZ
+image-to-file identity this project's conventions are built on, so the table cannot
+drift without contradicting arithmetic. `known_code_segments_satisfy_the_mz_identity`
+now asserts that, plus the ascending order the resolver's `take_while` depends on.
+
+Better: FOUR of the eight were established independently this session and agree.
+`0x0299` is the render driver whose 41 entries #490 sourced by call-site census;
+`0x04DA` is the VM code segment #517 validated against four handlers; `0x071E` is
+the nav segment #494 solved for and #495 then found named outright by a far call;
+`0x0A9A` is the temp-SND path from #484. Each arrived from a different direction and
+landed on a row that was already sitting here.
+
+The test asserts those four are present BY NAME, so removing one — the sort of
+tidying that looks safe on a table of magic pairs — fails with a message saying it
+was decoded independently.
+
+Also settled: the two font metrics as the factors of one span (`0x14D28..0x14FD8` =
+86 x 8, #536), `RESOURCE_NAME_ENTRY_LEN` as DATA from #482's parse of the 16-byte
+slots, and `BLOODPRG_SHA256` as DATA — it is not a decoded value but the IDENTITY of
+the artefact every address in the file is relative to, which is exactly why it
+belongs beside them.
+
+726 tests, 0 failures.

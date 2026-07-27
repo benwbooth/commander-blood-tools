@@ -18,6 +18,9 @@ pub const BLOODPRG_FILE_SIZE: usize = 86_680;
 /// almost certainly fail those. Adding `sha2` purely to close this gap has not
 /// seemed worth a dependency; the alternative would be a hand-rolled SHA-256 in
 /// a test, which is more code than the risk justifies.
+/// The SHA-256 of the `BLOODPRG.EXE` every address in this file is relative to.
+/// Not a decoded value — the IDENTITY of the artefact being decoded, so that a
+/// different build cannot silently inherit these offsets (audit-fixes #553).
 pub const BLOODPRG_SHA256: &str =
     "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823";
 /// The VM's code segment, `0x04DA` — file base `0x600 + 0x4DA * 16 = 0x53A0`.
@@ -32,6 +35,8 @@ pub const OPCODE_HANDLER_TABLE_FILE_OFFSET: usize = 0x142d0;
 pub const OPCODE_LENGTH_TABLE_FILE_OFFSET: usize = 0x14338;
 pub const RESOURCE_NAME_TABLE_FS_OFFSET: u16 = 0x0c04;
 pub const RESOURCE_NAME_TABLE_FILE_OFFSET: usize = 0x0cdf4;
+/// 16 — the table at file `0x0CDF4` is 16-byte NUL-PADDED slots, measured by
+/// parsing it: 95 names, none longer than the slot (audit-fixes #482).
 pub const RESOURCE_NAME_ENTRY_LEN: usize = 16;
 pub const SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET: u16 = 0x11f4;
 pub const SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET: usize = 0x0d3e4;
@@ -48,6 +53,9 @@ pub const DIALOGUE_FONT_GLYPHS_FILE_OFFSET: usize = 0x14d28;
 /// dropped every accented character the game can draw -- the same defect that was
 /// fixed in `font.rs` earlier in the campaign and left standing here.
 pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 176;
+/// 86 — the row table at file `0x14D28` runs to `0x14FD8`, and
+/// `86 * DIALOGUE_FONT_GLYPH_HEIGHT = 0x2B0` is exactly that span. Asserted by
+/// `game_font_row_table_is_one_byte_per_row` (audit-fixes #553).
 pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
 
 /// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
@@ -98,6 +106,9 @@ pub const TEXT_SPEED_STEP_DS: u16 = 0x0ACA;
 // note gave DIALOGUE_FONT_GLYPH_HEIGHT an origin of 0x1B29/0x1B3D -- text-speed
 // addresses attributed to a font constant.)
 
+/// 8 rows, one byte each — the other factor of that same `0x14D28..0x14FD8`
+/// span, and the `shl ax,3` the bold console font indexes with @`0x3691`
+/// (audit-fixes #536, #553).
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
@@ -1342,6 +1353,16 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
     }
 }
 
+/// `(segment, file base)` for every code segment the port resolves through.
+///
+/// EVERY ENTRY SATISFIES `base == 0x600 + segment * 16` — the MZ image-to-file
+/// identity — which is what makes the table checkable rather than a list of
+/// remembered pairs; `known_code_segments_satisfy_the_mz_identity` asserts it.
+///
+/// Four were established independently this session and agree here: `0x0299` is
+/// the render driver (#490), `0x04DA` the VM code segment validated against four
+/// handlers (#517), `0x071E` the nav segment solved and then confirmed by a far
+/// call (#494/#495), and `0x0A9A` the temp-SND path (#484) — audit-fixes #553.
 const KNOWN_CODE_SEGMENTS: &[(u16, usize)] = &[
     (0x0000, 0x000600),
     (0x008b, 0x000eb0),
@@ -4932,5 +4953,28 @@ mod tests {
             super::RENDER_SPRITE_BLIT_NOOP_7_OFFSET + 1,
             "the next far-called routine starts where the noop rets end"
         );
+    }
+
+    /// Every code segment must satisfy the MZ image-to-file identity
+    /// `base == 0x600 + segment * 16` (audit-fixes #553). A table of remembered
+    /// pairs would drift; this one cannot without failing here.
+    #[test]
+    fn known_code_segments_satisfy_the_mz_identity() {
+        for (seg, base) in super::KNOWN_CODE_SEGMENTS {
+            assert_eq!(
+                *base,
+                0x600 + *seg as usize * 16,
+                "segment {seg:#06x} -> file {base:#07x}"
+            );
+        }
+        // Ascending, so the `take_while` that resolves a file offset is valid.
+        assert!(super::KNOWN_CODE_SEGMENTS.windows(2).all(|w| w[0].1 < w[1].1));
+        // The four verified independently this session are present.
+        for seg in [0x0299u16, 0x04DA, 0x071E, 0x0A9A] {
+            assert!(
+                super::KNOWN_CODE_SEGMENTS.iter().any(|(s, _)| *s == seg),
+                "{seg:#06x} was decoded independently and must be here"
+            );
+        }
     }
 }

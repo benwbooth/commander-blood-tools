@@ -46,223 +46,223 @@ pop	src/bas_vm.rs	244	fn		TESTED	/// Back out of the current menu (pop). Never e
 is_back_topic	src/bas_vm.rs	254	fn		TESTED	/// Whether a topic label backs out of the menu (pops) rather than descending.
 depth	src/bas_vm.rs	259	fn		TESTED	/// Current stack depth (1 = at the entry menu).
 BLOODPRG_FILE_SIZE	src/bloodprg.rs	9	const		DATA	
-BLOODPRG_SHA256	src/bloodprg.rs	21	const		UNVERIFIED	/// NOT VERIFIED BY ANY TEST, and stated so. The port has no hashing dependency, /// so nothing here confirms the shipped image is this one — the constant is a /// DECLARATION OF WHICH BINARY every ad
-VM_CODE_SEGMENT	src/bloodprg.rs	28	const	0x600,0x53A0,0x6EB0,0x6559,0x660C,0x6AA7,0x6B06	ASM	/// The VM's code segment, `0x04DA` — file base `0x600 + 0x4DA * 16 = 0x53A0`. /// VALIDATED, not assumed: the dispatch table at `DS:0x6EB0` holds NEAR offsets, /// and resolving them against this bas
-FS_SEGMENT	src/bloodprg.rs	29	const		DATA	
-DATA_SEGMENT	src/bloodprg.rs	30	const		DATA	
-OPCODE_HANDLER_TABLE_FILE_OFFSET	src/bloodprg.rs	31	const		DATA	
-OPCODE_LENGTH_TABLE_FILE_OFFSET	src/bloodprg.rs	32	const		DATA	
-RESOURCE_NAME_TABLE_FS_OFFSET	src/bloodprg.rs	33	const		DATA	
-RESOURCE_NAME_TABLE_FILE_OFFSET	src/bloodprg.rs	34	const		DATA	
-RESOURCE_NAME_ENTRY_LEN	src/bloodprg.rs	35	const		UNVERIFIED	
-SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET	src/bloodprg.rs	36	const		DATA	
-SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET	src/bloodprg.rs	37	const		DATA	
-SCRIPT_RESOURCE_PROFILE_COUNT	src/bloodprg.rs	38	const		DATA	
-SCRIPT_RESOURCE_PROFILE_SLOT_COUNT	src/bloodprg.rs	39	const		DATA	
-SCRIPT_RESOURCE_PROFILE_STRIDE	src/bloodprg.rs	40	const		DATA	
-DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET	src/bloodprg.rs	41	const		DATA	
-DIALOGUE_FONT_ADVANCES_FILE_OFFSET	src/bloodprg.rs	42	const		DATA	
-DIALOGUE_FONT_GLYPHS_FILE_OFFSET	src/bloodprg.rs	43	const		DATA	
-DIALOGUE_FONT_ASCII_MAP_LEN	src/bloodprg.rs	50	const	0x14C22,0x14CD2	ASM	/// 176 (`0xB0`), NOT 128. The map runs from `0x14C22` to the advance table at /// `0x14CD2`, and the 48 entries past 128 are REAL: 14 of them are live glyph /// indices (`0x82`->`é`, `0x84`->`ä`, `0x
-DIALOGUE_FONT_GLYPH_COUNT	src/bloodprg.rs	51	const		UNVERIFIED	
-OPTION_MENU_POINTER_LIST_DS	src/bloodprg.rs	54	const	0x2567,0x8871	DATA	/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
-LIST_WIDGET_CANCEL_LABEL_DS	src/bloodprg.rs	56	const		DATA	/// The list widget's shared trailing entry, `ship_3d_target_extra_label`.
-MUSIC_ON_LABEL_DS	src/bloodprg.rs	58	const		DATA	/// `MUSIC_ON`, the toggle face the pointer list omits.
-STATUS_HEADER_PLANET_DS	src/bloodprg.rs	60	const	0x8369	ASM	"/// `mov si,0x12E` @`0x8369` — ""PLANET: ""."
-STATUS_HEADER_SHIP_DS	src/bloodprg.rs	62	const	0x836C	ASM	"/// `mov si,0x137` @`0x836C`'s branch — ""SHIP: ""."
-STATUS_HEADER_BLACK_HOLE_DS	src/bloodprg.rs	64	const	0x8376	ASM	"/// `mov si,0x13E` @`0x8376`'s branch — ""BLACK HOLE: ""."
-STATUS_LIFE_SUPPORT_DS	src/bloodprg.rs	66	const	0x839F	ASM	"/// `mov si,0x14B` @`0x839F` — ""LIFE SUPPORT:""."
-TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	68	const		DATA	/// The TEXT-SPEED submenu's pointer list.
-TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	75	const	0x0ACA,0x0DEEA	DATA	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`. /// /// A DATA value, not an immediate: t
-TEXT_SPEED_STEP_DS	src/bloodprg.rs	88	const	0x0ACA,0xaca,0x94AB,0x94AE,0xb31,0x94B1,0xB31,0x1B3D,0x735E,	ASM	"/// `DS:0x0ACA` — the text-speed step the dialogue updater DIVIDES to get its /// reveal rate. /// /// NOT ""the divisor"" (audit-fixes #453), which this said. The cell is the /// DIVIDEND: `mov ax, wor"
-DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	101	const		UNVERIFIED	
-SND_ENTRY_SEGMENT	src/bloodprg.rs	102	const		DATA	
-SND_ENTRY_OFFSET	src/bloodprg.rs	103	const		DATA	
-SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	104	const		DATA	
-SND_BANK_LOAD_OFFSET	src/bloodprg.rs	105	const		DATA	
-RENDER_SEGMENT	src/bloodprg.rs	106	const		DATA	
-RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	108	const	0x016b0,0x0179a	ASM	/// Render-driver entry `0x299:0x0000`, far-called from 2 site(s) — e.g. `0x016b0`, `0x0179a` (audit-fixes #490).
-RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	110	const	0x00c5a,0x01f34	ASM	/// Render-driver entry `0x299:0x0016`, far-called from 2 site(s) — e.g. `0x00c5a`, `0x01f34` (audit-fixes #490).
-RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	112	const	0x016c9,0x07d53	ASM	/// Render-driver entry `0x299:0x00d6`, far-called from 2 site(s) — e.g. `0x016c9`, `0x07d53` (audit-fixes #490).
-RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	114	const	0x07329,0x0846c,0x08fcd	ASM	/// Render-driver entry `0x299:0x013d`, far-called from 3 site(s) — e.g. `0x07329`, `0x0846c`, `0x08fcd` (audit-fixes #490).
-RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	116	const	0x01507,0x01515,0x01520	ASM	/// Render-driver entry `0x299:0x0176`, far-called from 6 site(s) — e.g. `0x01507`, `0x01515`, `0x01520` (audit-fixes #490).
-RENDER_STRING_OFFSET	src/bloodprg.rs	118	const	0x08feb,0x09183,0x09199	ASM	/// Render-driver entry `0x299:0x0202`, far-called from 5 site(s) — e.g. `0x08feb`, `0x09183`, `0x09199` (audit-fixes #490).
-RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	120	const	0x01eb1,0x078c4,0x07a84	ASM	/// Render-driver entry `0x299:0x040e`, far-called from 7 site(s) — e.g. `0x01eb1`, `0x078c4`, `0x07a84` (audit-fixes #490).
-RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	122	const	0x01ac6	ASM	/// Render-driver entry `0x299:0x0498`, far-called from 1 site(s) — e.g. `0x01ac6` (audit-fixes #490).
-RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	124	const	0x072f6	ASM	/// Render-driver entry `0x299:0x05de`, far-called from 1 site(s) — e.g. `0x072f6` (audit-fixes #490).
-RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	126	const	0x06a0,0x094ee	ASM	/// Render-driver entry `0x299:0x06a0`, far-called from 1 site(s) — e.g. `0x094ee` (audit-fixes #490).
-RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	128	const	0x075a,0x00da8,0x00dd1,0x00ddb	ASM	/// Render-driver entry `0x299:0x075a`, far-called from 8 site(s) — e.g. `0x00da8`, `0x00dd1`, `0x00ddb` (audit-fixes #490).
-RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	130	const	0x0a2b,0x0946d	ASM	/// Render-driver entry `0x299:0x0a2b`, far-called from 1 site(s) — e.g. `0x0946d` (audit-fixes #490).
-RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	132	const	0x0b23,0x09474	ASM	/// Render-driver entry `0x299:0x0b23`, far-called from 1 site(s) — e.g. `0x09474` (audit-fixes #490).
-RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	135	const	0xbb5,0x0B8FF	ASM	/// Touched by the game at `mov ax, word ptr [0xbb5]` @`0x0B8FF`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	137	const	0x0bf5,0x07a94,0x07b18	ASM	/// Render-driver entry `0x299:0x0bf5`, far-called from 2 site(s) — e.g. `0x07a94`, `0x07b18` (audit-fixes #490).
-RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	139	const	0x0cdc,0x00e8e,0x014f2,0x01e42	ASM	/// Render-driver entry `0x299:0x0cdc`, far-called from 7 site(s) — e.g. `0x00e8e`, `0x014f2`, `0x01e42` (audit-fixes #490).
-RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	141	const	0x0deb,0x016b7,0x01ec3,0x01f39	ASM	/// Render-driver entry `0x299:0x0deb`, far-called from 10 site(s) — e.g. `0x016b7`, `0x01ec3`, `0x01f39` (audit-fixes #490).
-RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	143	const	0x0e2f,0x0190d,0x01eca,0x01f40	ASM	/// Render-driver entry `0x299:0x0e2f`, far-called from 5 site(s) — e.g. `0x0190d`, `0x01eca`, `0x01f40` (audit-fixes #490).
-RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	145	const	0x0eb6,0x018e4,0x0a492,0x0a4aa	ASM	/// Render-driver entry `0x299:0x0eb6`, far-called from 4 site(s) — e.g. `0x018e4`, `0x0a492`, `0x0a4aa` (audit-fixes #490).
-RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	147	const	0x0ecb,0x0b140	ASM	/// Render-driver entry `0x299:0x0ecb`, far-called from 1 site(s) — e.g. `0x0b140` (audit-fixes #490).
-RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	149	const	0x0ee0,0x08d14	ASM	/// Render-driver entry `0x299:0x0ee0`, far-called from 1 site(s) — e.g. `0x08d14` (audit-fixes #490).
-RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	151	const	0x0f3e,0x012b2,0x016e3,0x01807	ASM	/// Render-driver entry `0x299:0x0f3e`, far-called from 6 site(s) — e.g. `0x012b2`, `0x016e3`, `0x01807` (audit-fixes #490).
-RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	153	const	0x1037,0x00fb9,0x0597f,0x070cd	ASM	/// Render-driver entry `0x299:0x1037`, far-called from 4 site(s) — e.g. `0x00fb9`, `0x0597f`, `0x070cd` (audit-fixes #490).
-RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	155	const	0x11be,0x05990,0x070dd,0x07e7d	ASM	/// Render-driver entry `0x299:0x11be`, far-called from 4 site(s) — e.g. `0x05990`, `0x070dd`, `0x07e7d` (audit-fixes #490).
-RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	157	const	0x1241,0x0186f,0x01877,0x059dc	ASM	/// Render-driver entry `0x299:0x1241`, far-called from 33 site(s) — e.g. `0x0186f`, `0x01877`, `0x059dc` (audit-fixes #490).
-RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	159	const	0x1140,0x08d76,0x08d96,0x08df5	ASM	/// Render-driver entry `0x299:0x1140`, far-called from 4 site(s) — e.g. `0x08d76`, `0x08d96`, `0x08df5` (audit-fixes #490).
-RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	161	const	0x127d,0x0929c,0x09cef	ASM	/// Render-driver entry `0x299:0x127d`, far-called from 2 site(s) — e.g. `0x0929c`, `0x09cef` (audit-fixes #490).
-RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	163	const	0x12b0,0x08ad4	ASM	/// Render-driver entry `0x299:0x12b0`, far-called from 1 site(s) — e.g. `0x08ad4` (audit-fixes #490).
-RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	165	const	0x133d,0x0926d,0x09cd6	ASM	/// Render-driver entry `0x299:0x133d`, far-called from 2 site(s) — e.g. `0x0926d`, `0x09cd6` (audit-fixes #490).
-RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	167	const	0x1467,0x07849,0x09575,0x0b1d0	ASM	/// Render-driver entry `0x299:0x1467`, far-called from 3 site(s) — e.g. `0x07849`, `0x09575`, `0x0b1d0` (audit-fixes #490).
-RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	169	const	0x14e1,0x0786e,0x0789a,0x08da0	ASM	/// Render-driver entry `0x299:0x14e1`, far-called from 7 site(s) — e.g. `0x0786e`, `0x0789a`, `0x08da0` (audit-fixes #490).
-RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	172	const	0x1592,0x04522	ASM	/// The sprite BLITTER TABLE at `0x299:0x1592` (file `0x04522`) — eight near pointers, NOT far-called (audit-fixes #490). Its /// entries are the eight `RENDER_SPRITE_BLIT_*` constants below, in order
-RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	177	const	0x600,0x1592,0x4522	ASM	/// The same table as a FILE offset, so a reader can go straight to the bytes: /// `0x600 + 0x299 * 16 + 0x1592 = 0x4522` (audit-fixes #490). Held separately /// because the segment arithmetic is the 
-RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	186	const	0x44B3,0x1592,0x4522,0x2F90	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	188	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
-RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	190	const	0x1592,0x15a6	ASM	/// Blitter-table entry 0 — the word at `0x299:0x1592`+0 is `0x15a6`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	192	const	0x1592,0x172c	ASM	/// Blitter-table entry 1 — the word at `0x299:0x1592`+2 is `0x172c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	194	const	0x1592,0x1c18	ASM	/// Blitter-table entry 2 — the word at `0x299:0x1592`+4 is `0x1c18`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	196	const	0x1592,0x1d46	ASM	/// Blitter-table entry 3 — the word at `0x299:0x1592`+6 is `0x1d46`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	198	const	0x1592,0x1fd2	ASM	/// Blitter-table entry 4 — the word at `0x299:0x1592`+8 is `0x1fd2`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	200	const	0x1592,0x210a	ASM	/// Blitter-table entry 5 — the word at `0x299:0x1592`+10 is `0x210a`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	202	const	0x1592,0x210b	ASM	/// Blitter-table entry 6 — the word at `0x299:0x1592`+12 is `0x210b`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	204	const	0x1592,0x210c	ASM	/// Blitter-table entry 7 — the word at `0x299:0x1592`+14 is `0x210c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
-RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	206	const	0x210d,0x0787f,0x08ea0,0x0b1d8	ASM	/// Render-driver entry `0x299:0x210d`, far-called from 3 site(s) — e.g. `0x0787f`, `0x08ea0`, `0x0b1d8` (audit-fixes #490).
-NAV_CODE_SEGMENT	src/bloodprg.rs	212	const	0x071E,0x600,0x71E,0x77E0,0x0F29,0x71e,0xc48,0xB3DA,0x8428	ASM	/// `0x071E` — file base `0x600 + 0x71E * 16 = 0x77E0`. Confirmed THREE ways: /// solved as the only base placing nav-choice handler 4 in a table at `cs:0x0F29` /// (#494), named directly by `lcall 0x
-NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	215	const	0x06D4,0x6d4,0x7E09	ASM	/// `cs:0x06D4`, reached by `call word ptr cs:[bx+0x6d4]` @`0x7E09` /// (audit-fixes #534).
-NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	220	const	0x06E0,0x7EC0,0x7EB4	ASM	/// Six near pointers, and the table is 12 bytes: its SECOND entry (`0x06E0`) /// resolves to file `0x7EC0`, which is `0x7EB4 + 12` — the byte immediately after /// the table. The handlers follow thei
-NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	224	const	0x0F29,0xf29,0x8700	ASM	/// `cs:0x0F29`, reached by `call word ptr cs:[bx+0xf29]` @`0x8700` with /// `bx = (choice - 1) * 2` — the same dispatch idiom as the actor table above /// (audit-fixes #494, #534).
-NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	229	const	0x868D,0x8713,0x872C,0x87BD,0x8848,0x886C	ASM	/// Five, matching the `cmp al,5 / jge` bound @`0x868D` that /// `ship3d::SHIP_3D_NAV_CHOICE_COUNT` cites (#491). Entries resolve to /// `0x8713`/`0x872C`/`0x87BD`/`0x8848`/`0x886C` — five contiguous 
-SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	230	const		TESTED	
-SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	231	const		TESTED	
-SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	232	const		TESTED	
-SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	233	const		TESTED	
-SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	241	const	0x600,0x0A9A,0xAFA0,0xB2BB,0x06f2,0xB692	ASM	/// THE SHIP-3D CODE SEGMENT, and the base every offset below is relative to: /// `file = 0x600 + 0x0A9A*16 = 0xAFA0`. The offsets are not free-floating /// numbers — each resolves to a routine this c
-SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	242	const		ASM	
-SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	243	const		ASM	
-SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	244	const		ASM	
-SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	245	const		ASM	
-SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	246	const		ASM	
-SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	247	const		ASM	
-SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	248	const		ASM	
-SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	249	const		ASM	
-SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	250	const		ASM	
-SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	251	const		ASM	
-SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	252	const		ASM	
-SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	260	const	0x250b,0xB2C3	ASM	/// THE SHIP-3D DS STATE BYTES. Each of these is an ADDRESS, and its evidence is /// the instruction that touches it; the RULES they take part in are decoded in /// `ship3d.rs` and `vm.rs`, which is w
-SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	262	const	0x251b,0xB21A	ASM	/// The presented target; a repeat of it is not re-committed — `cmp ax,[0x251b]` @`0xB21A`.
-SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	264	const	0x252a,0xB657,0xB29A	ASM	/// `test byte [0x252a],1` @`0xB657`, and cleared by the HUD init at `0xB29A`.
-SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	266	const	0xb2fd,0x252b,0xB2DC	ASM	/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`.
-SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	268	const	0x252c,0xB2BE	ASM	/// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`.
-SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	270	const	0x2793,0x86F1	ASM	/// The dispatcher's own gate — `test byte [0x2793],8` @`0x86F1`, the first instruction of `nav_choice_dispatch`.
-SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	272	const	0x2527,0xB6EC,0xB765	ASM	/// `mov bx,word ptr [0x2527]` @`0xB6EC`, the band copy's source depth; also read by the scroll step at `0xB765`.
-SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	274	const	0x252e,0xB6E5,0xB129,0xB65E	ASM	/// `test byte [0x252e],1` @`0xB6E5` gates the plane-band copy; set at `0xB129`, cleared at `0xB65E`.
-SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	276	const	0x252f,0xB6A5	ASM	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
-SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	278	const	0x2530,0xB6BD	ASM	/// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`.
-SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	280	const	0xb6b8,0xb336,0x2531,0xB6A0	ASM	/// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (`0xb336`) — `mov byte [0x2531],4` @`0xB6A0`.
-SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	282	const	0x2532,0xB288	ASM	/// Set before the world-view teardown, which the opening flag then gates — `mov byte [0x2532],1` @`0xB288`.
-SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	284	const	0xb692,0x2533,0xB6AA	ASM	/// The armed latch the updater tests first (`0xb692`) — `mov byte [0x2533],1` @`0xB6AA`.
-SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	286	const	0x2537,0xB2D4	ASM	/// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
-SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	288	const	0x27d8,0x9EBB,0x5C8A	ASM	/// Armed by the presentation teardown — `mov byte [0x27d8],1` @`0x9EBB` (`travel_activate_a`), and cleared at `0x5C8A`.
-SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	290	const	0x2a19,0x87B0,0x883B,0x8956	ASM	/// Cleared by every handler that finishes — `mov word ptr [0x2a19],0` @`0x87B0`, `0x883B` and `0x8956`.
-SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	293	const	0x2795,0x0B0B1	ASM	/// Touched by the game at `mov word ptr [0x2795], 0xb3` @`0x0B0B1`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	295	const	0x279B,0x279b,0x86BB	ASM	/// `0x279B` — `mov word ptr [0x279b],0x5a` @`0x86BB` (audit-fixes #491).
-SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	297	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848	ASM	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
-SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	300	const	0x253f,0x86D1	ASM	/// `mov word ptr [0x253f],ax` @`0x86D1`, the row-multiplied target y /// (`(bl-1) * 18 + 80`) — audit-fixes #491.
-SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	302	const	0x2736,0x892C,0x886C	ASM	/// `mov byte ptr [0x2736],1` @`0x892C`, inside nav-choice handler 4 (`0x886C`, dispatch-table entry 4).
-SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	304	const	0x2737,0x893C	ASM	/// `mov byte ptr [0x2737],1` @`0x893C`, the right-motion twin of the left gate ten instructions earlier.
-SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	306	const	0x259b,0x88C7	ASM	/// `mov byte ptr [0x259b],1` @`0x88C7`, also in handler 4.
-SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	308	const	0xb13,0x8947	ASM	/// `mov byte ptr [0xb13],2` @`0x8947` — note the value is 2, not 1, unlike the motion gates beside it.
-SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	313	const	0xADA,0xada,0x86E4,0xB3CD,0x1E63	ASM	/// `0xADA` — written `mov byte ptr [0xada],0xa` @`0x86E4` by the nav choice and /// `,6` @`0xB3CD` by the navigation box, then READ as the divisor by /// `ship_3d_interpolation_gate` (`mov bl,[0xada]
-SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	315	const	0xadb,0x8741,0x87E4,0x887B	ASM	/// Reset on handler entry — `mov byte ptr [0xadb],0` @`0x8741`, `0x87E4` and `0x887B`.
-SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	319	const	0x85B3	ASM	/// `0x0174` — `mov si,0x174` @`0x85B3`, the list widget's shared trailing row. /// The SAME string `engine::OPTION_BOX_LABEL_DS_OFFSET` names (#526) /// — audit-fixes #492.
-SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	321	const	0xac6,0x84AD	ASM	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
-SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	324	const	0xac8,0x084D8	ASM	/// Touched by the game at `mov si, word ptr [0xac8]` @`0x084D8`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	327	const	0xADC,0xadc,0x86D4	ASM	/// `0xADC` — `mov byte ptr [0xadc],1` @`0x86D4`, set by the nav choice just /// before it configures the widget (audit-fixes #491).
-SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	330	const	0xadd,0x0B0DC	ASM	/// Touched by the game at `mov byte ptr [0xadd], 1` @`0x0B0DC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	333	const	0xa2a,0x0B5A5	ASM	/// Touched by the game at `push word ptr [0xa2a]` @`0x0B5A5`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	336	const	0xa2c,0x0B5A9	ASM	/// Touched by the game at `push word ptr [0xa2c]` @`0x0B5A9`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	339	const	0xa32,0x0B0BC	ASM	/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	342	const	0xa34,0x0850F	ASM	/// Touched by the game at `cmp word ptr [0xa34], 6` @`0x0850F`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	344	const	0xa3e,0x858D	ASM	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
-SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	346	const	0x27c7,0x850C	ASM	/// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`.
-SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	348	const	0x27e6,0xB2E3,0xB2ED	ASM	/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
-SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	351	const	0x27e7,0x08430	ASM	/// Touched by the game at `mov byte ptr [0x27e7], 0` @`0x08430`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	353	const	0x2aab,0xB305	ASM	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	359	const	0x2AB3,0x2ab3,0x844E,0x8493,0x854E	ASM	/// `0x2AB3` — the list widget's own WIDTH SCRATCH, written `mov di,0x2ab3` /// @`0x844E` and read @`0x8493`/`0x854E`. Its only three references are inside /// the widget, which is what identified it:
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	363	const	0xB3B,0xb3b,0xB644,0xB699	ASM	/// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND /// setup clears (audit-fixes #484), and the cell the transition threshold /// `cmp word [0xb3b],0x78` @`0xB699` tests.
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	365	const	0xae4,0xB592	ASM	/// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	367	const	0xae5,0xB5B0	ASM	/// Which of the three callbacks to run — `mov al,byte ptr [0xae5]` @`0xB5B0`.
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	369	const	0x5219,0xB712	ASM	/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	371	const	0x524d,0xB6F0,0xB175	ASM	/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	373	const	0x524f,0xB708,0xB16F	ASM	/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	378	const		INFRA	/// The 5-byte encoding of `lcall SND_ENTRY_SEGMENT:SND_ENTRY_OFFSET`, COMPOSED /// from constants cited above rather than being a value of its own — a search /// pattern, not a decode (audit-fixes #5
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	388	const	0xB5DC,0xB610,0x8866	INFRA	/// Likewise for the bank loader; the call sites it finds are the ones #506 cites /// (`sn\\3D.snd` @`0xB5DC`, `sn\\tb.snd` @`0xB610`, `sn\\radio.snd` @`0x8866`) /// — audit-fixes #552.
-FAR_CALL_OPCODE	src/bloodprg.rs	399	const		INFRA	/// `0x9A` is x86 `CALL far ptr16:16` — five bytes, `9A off16 seg16`. Not a game /// value but an ISA fact, and one this port leans on: #490's census found 143 /// render-driver call sites with exactl
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	403	const		INFRA	/// How far BACK the scanner looks for the instruction that loaded a register /// before a call. A port heuristic with no binary counterpart — 32 bytes is a /// window, not a decoded distance (audit-f
-DS_STRING_SCAN_MAX	src/bloodprg.rs	406	const		INFRA	/// The longest DS string the scanner will read. A port limit, not the format's: /// nothing in the game caps a NUL-terminated string at 64 (audit-fixes #552).
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	409	const		INFRA	/// `RENDER_SEGMENT` little-endian, for matching the segment half of a far call. /// Composed, like the two patterns above (audit-fixes #552).
-MzHeader	src/bloodprg.rs	413	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	428	fn		TESTED	
-image_total	src/bloodprg.rs	432	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	440	fn		TESTED	
-MzSummary	src/bloodprg.rs	446	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	457	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	468	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	475	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	482	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	497	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	507	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	514	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	523	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	530	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	538	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	557	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	571	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	592	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	607	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	613	fn		UNVERIFIED	
-parse	src/bloodprg.rs	619	fn		UNVERIFIED	
-summary	src/bloodprg.rs	649	fn		TESTED	
-image_bytes	src/bloodprg.rs	664	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	668	fn		TESTED	
-ds_to_file	src/bloodprg.rs	672	fn		TESTED	
-fs_to_file	src/bloodprg.rs	676	fn		TESTED	
-opcode_handlers	src/bloodprg.rs	680	fn		TESTED	
-opcode_descriptors	src/bloodprg.rs	700	fn		TESTED	
-vm_opcode_specs	src/bloodprg.rs	717	fn		TESTED	
-script_resource_profiles	src/bloodprg.rs	754	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	788	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	826	fn		TESTED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	834	fn		TESTED	
-snd_entry_call_sites	src/bloodprg.rs	842	fn		TESTED	
-snd_bank_load_call_sites	src/bloodprg.rs	868	fn		TESTED	
-render_call_sites	src/bloodprg.rs	907	fn		TESTED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	941	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	963	fn		TESTED	
-subdispatch_entries	src/bloodprg.rs	983	fn		UNVERIFIED	
-slice	src/bloodprg.rs	1004	fn		TESTED	
-find_ax_source_before	src/bloodprg.rs	1013	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	1045	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	1073	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	1100	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-text_speed_labels	src/bloodprg.rs	1106	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
-location_status_headers	src/bloodprg.rs	1114	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
-list_widget_cancel_label	src/bloodprg.rs	1127	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	1133	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	1150	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
-resource_name	src/bloodprg.rs	1167	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	1180	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	1191	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	1199	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	1206	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1345	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1356	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1372	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1381	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1394	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1432	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1609	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1623	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1651	const		TESTED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2716	const		TESTED	
+BLOODPRG_SHA256	src/bloodprg.rs	24	const		DATA	/// NOT VERIFIED BY ANY TEST, and stated so. The port has no hashing dependency, /// so nothing here confirms the shipped image is this one — the constant is a /// DECLARATION OF WHICH BINARY every ad
+VM_CODE_SEGMENT	src/bloodprg.rs	31	const	0x600,0x53A0,0x6EB0,0x6559,0x660C,0x6AA7,0x6B06	ASM	/// The VM's code segment, `0x04DA` — file base `0x600 + 0x4DA * 16 = 0x53A0`. /// VALIDATED, not assumed: the dispatch table at `DS:0x6EB0` holds NEAR offsets, /// and resolving them against this bas
+FS_SEGMENT	src/bloodprg.rs	32	const		DATA	
+DATA_SEGMENT	src/bloodprg.rs	33	const		DATA	
+OPCODE_HANDLER_TABLE_FILE_OFFSET	src/bloodprg.rs	34	const		DATA	
+OPCODE_LENGTH_TABLE_FILE_OFFSET	src/bloodprg.rs	35	const		DATA	
+RESOURCE_NAME_TABLE_FS_OFFSET	src/bloodprg.rs	36	const		DATA	
+RESOURCE_NAME_TABLE_FILE_OFFSET	src/bloodprg.rs	37	const		DATA	
+RESOURCE_NAME_ENTRY_LEN	src/bloodprg.rs	40	const	0x0CDF4	DATA	/// 16 — the table at file `0x0CDF4` is 16-byte NUL-PADDED slots, measured by /// parsing it: 95 names, none longer than the slot (audit-fixes #482).
+SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET	src/bloodprg.rs	41	const		DATA	
+SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET	src/bloodprg.rs	42	const		DATA	
+SCRIPT_RESOURCE_PROFILE_COUNT	src/bloodprg.rs	43	const		DATA	
+SCRIPT_RESOURCE_PROFILE_SLOT_COUNT	src/bloodprg.rs	44	const		DATA	
+SCRIPT_RESOURCE_PROFILE_STRIDE	src/bloodprg.rs	45	const		DATA	
+DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET	src/bloodprg.rs	46	const		DATA	
+DIALOGUE_FONT_ADVANCES_FILE_OFFSET	src/bloodprg.rs	47	const		DATA	
+DIALOGUE_FONT_GLYPHS_FILE_OFFSET	src/bloodprg.rs	48	const		DATA	
+DIALOGUE_FONT_ASCII_MAP_LEN	src/bloodprg.rs	55	const	0x14C22,0x14CD2	ASM	/// 176 (`0xB0`), NOT 128. The map runs from `0x14C22` to the advance table at /// `0x14CD2`, and the 48 entries past 128 are REAL: 14 of them are live glyph /// indices (`0x82`->`é`, `0x84`->`ä`, `0x
+DIALOGUE_FONT_GLYPH_COUNT	src/bloodprg.rs	59	const	0x14D28,0x14FD8	ASM	/// 86 — the row table at file `0x14D28` runs to `0x14FD8`, and /// `86 * DIALOGUE_FONT_GLYPH_HEIGHT = 0x2B0` is exactly that span. Asserted by /// `game_font_row_table_is_one_byte_per_row` (audit-fix
+OPTION_MENU_POINTER_LIST_DS	src/bloodprg.rs	62	const	0x2567,0x8871	DATA	/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
+LIST_WIDGET_CANCEL_LABEL_DS	src/bloodprg.rs	64	const		DATA	/// The list widget's shared trailing entry, `ship_3d_target_extra_label`.
+MUSIC_ON_LABEL_DS	src/bloodprg.rs	66	const		DATA	/// `MUSIC_ON`, the toggle face the pointer list omits.
+STATUS_HEADER_PLANET_DS	src/bloodprg.rs	68	const	0x8369	ASM	"/// `mov si,0x12E` @`0x8369` — ""PLANET: ""."
+STATUS_HEADER_SHIP_DS	src/bloodprg.rs	70	const	0x836C	ASM	"/// `mov si,0x137` @`0x836C`'s branch — ""SHIP: ""."
+STATUS_HEADER_BLACK_HOLE_DS	src/bloodprg.rs	72	const	0x8376	ASM	"/// `mov si,0x13E` @`0x8376`'s branch — ""BLACK HOLE: ""."
+STATUS_LIFE_SUPPORT_DS	src/bloodprg.rs	74	const	0x839F	ASM	"/// `mov si,0x14B` @`0x839F` — ""LIFE SUPPORT:""."
+TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	76	const		DATA	/// The TEXT-SPEED submenu's pointer list.
+TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	83	const	0x0ACA,0x0DEEA	DATA	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`. /// /// A DATA value, not an immediate: t
+TEXT_SPEED_STEP_DS	src/bloodprg.rs	96	const	0x0ACA,0xaca,0x94AB,0x94AE,0xb31,0x94B1,0xB31,0x1B3D,0x735E,	ASM	"/// `DS:0x0ACA` — the text-speed step the dialogue updater DIVIDES to get its /// reveal rate. /// /// NOT ""the divisor"" (audit-fixes #453), which this said. The cell is the /// DIVIDEND: `mov ax, wor"
+DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	112	const	0x14D28,0x14FD8,0x3691	ASM	/// 8 rows, one byte each — the other factor of that same `0x14D28..0x14FD8` /// span, and the `shl ax,3` the bold console font indexes with @`0x3691` /// (audit-fixes #536, #553).
+SND_ENTRY_SEGMENT	src/bloodprg.rs	113	const		DATA	
+SND_ENTRY_OFFSET	src/bloodprg.rs	114	const		DATA	
+SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	115	const		DATA	
+SND_BANK_LOAD_OFFSET	src/bloodprg.rs	116	const		DATA	
+RENDER_SEGMENT	src/bloodprg.rs	117	const		DATA	
+RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	119	const	0x016b0,0x0179a	ASM	/// Render-driver entry `0x299:0x0000`, far-called from 2 site(s) — e.g. `0x016b0`, `0x0179a` (audit-fixes #490).
+RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	121	const	0x00c5a,0x01f34	ASM	/// Render-driver entry `0x299:0x0016`, far-called from 2 site(s) — e.g. `0x00c5a`, `0x01f34` (audit-fixes #490).
+RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	123	const	0x016c9,0x07d53	ASM	/// Render-driver entry `0x299:0x00d6`, far-called from 2 site(s) — e.g. `0x016c9`, `0x07d53` (audit-fixes #490).
+RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	125	const	0x07329,0x0846c,0x08fcd	ASM	/// Render-driver entry `0x299:0x013d`, far-called from 3 site(s) — e.g. `0x07329`, `0x0846c`, `0x08fcd` (audit-fixes #490).
+RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	127	const	0x01507,0x01515,0x01520	ASM	/// Render-driver entry `0x299:0x0176`, far-called from 6 site(s) — e.g. `0x01507`, `0x01515`, `0x01520` (audit-fixes #490).
+RENDER_STRING_OFFSET	src/bloodprg.rs	129	const	0x08feb,0x09183,0x09199	ASM	/// Render-driver entry `0x299:0x0202`, far-called from 5 site(s) — e.g. `0x08feb`, `0x09183`, `0x09199` (audit-fixes #490).
+RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	131	const	0x01eb1,0x078c4,0x07a84	ASM	/// Render-driver entry `0x299:0x040e`, far-called from 7 site(s) — e.g. `0x01eb1`, `0x078c4`, `0x07a84` (audit-fixes #490).
+RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	133	const	0x01ac6	ASM	/// Render-driver entry `0x299:0x0498`, far-called from 1 site(s) — e.g. `0x01ac6` (audit-fixes #490).
+RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	135	const	0x072f6	ASM	/// Render-driver entry `0x299:0x05de`, far-called from 1 site(s) — e.g. `0x072f6` (audit-fixes #490).
+RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	137	const	0x06a0,0x094ee	ASM	/// Render-driver entry `0x299:0x06a0`, far-called from 1 site(s) — e.g. `0x094ee` (audit-fixes #490).
+RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	139	const	0x075a,0x00da8,0x00dd1,0x00ddb	ASM	/// Render-driver entry `0x299:0x075a`, far-called from 8 site(s) — e.g. `0x00da8`, `0x00dd1`, `0x00ddb` (audit-fixes #490).
+RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	141	const	0x0a2b,0x0946d	ASM	/// Render-driver entry `0x299:0x0a2b`, far-called from 1 site(s) — e.g. `0x0946d` (audit-fixes #490).
+RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	143	const	0x0b23,0x09474	ASM	/// Render-driver entry `0x299:0x0b23`, far-called from 1 site(s) — e.g. `0x09474` (audit-fixes #490).
+RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	146	const	0xbb5,0x0B8FF	ASM	/// Touched by the game at `mov ax, word ptr [0xbb5]` @`0x0B8FF`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	148	const	0x0bf5,0x07a94,0x07b18	ASM	/// Render-driver entry `0x299:0x0bf5`, far-called from 2 site(s) — e.g. `0x07a94`, `0x07b18` (audit-fixes #490).
+RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	150	const	0x0cdc,0x00e8e,0x014f2,0x01e42	ASM	/// Render-driver entry `0x299:0x0cdc`, far-called from 7 site(s) — e.g. `0x00e8e`, `0x014f2`, `0x01e42` (audit-fixes #490).
+RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	152	const	0x0deb,0x016b7,0x01ec3,0x01f39	ASM	/// Render-driver entry `0x299:0x0deb`, far-called from 10 site(s) — e.g. `0x016b7`, `0x01ec3`, `0x01f39` (audit-fixes #490).
+RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	154	const	0x0e2f,0x0190d,0x01eca,0x01f40	ASM	/// Render-driver entry `0x299:0x0e2f`, far-called from 5 site(s) — e.g. `0x0190d`, `0x01eca`, `0x01f40` (audit-fixes #490).
+RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	156	const	0x0eb6,0x018e4,0x0a492,0x0a4aa	ASM	/// Render-driver entry `0x299:0x0eb6`, far-called from 4 site(s) — e.g. `0x018e4`, `0x0a492`, `0x0a4aa` (audit-fixes #490).
+RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	158	const	0x0ecb,0x0b140	ASM	/// Render-driver entry `0x299:0x0ecb`, far-called from 1 site(s) — e.g. `0x0b140` (audit-fixes #490).
+RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	160	const	0x0ee0,0x08d14	ASM	/// Render-driver entry `0x299:0x0ee0`, far-called from 1 site(s) — e.g. `0x08d14` (audit-fixes #490).
+RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	162	const	0x0f3e,0x012b2,0x016e3,0x01807	ASM	/// Render-driver entry `0x299:0x0f3e`, far-called from 6 site(s) — e.g. `0x012b2`, `0x016e3`, `0x01807` (audit-fixes #490).
+RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	164	const	0x1037,0x00fb9,0x0597f,0x070cd	ASM	/// Render-driver entry `0x299:0x1037`, far-called from 4 site(s) — e.g. `0x00fb9`, `0x0597f`, `0x070cd` (audit-fixes #490).
+RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	166	const	0x11be,0x05990,0x070dd,0x07e7d	ASM	/// Render-driver entry `0x299:0x11be`, far-called from 4 site(s) — e.g. `0x05990`, `0x070dd`, `0x07e7d` (audit-fixes #490).
+RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	168	const	0x1241,0x0186f,0x01877,0x059dc	ASM	/// Render-driver entry `0x299:0x1241`, far-called from 33 site(s) — e.g. `0x0186f`, `0x01877`, `0x059dc` (audit-fixes #490).
+RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	170	const	0x1140,0x08d76,0x08d96,0x08df5	ASM	/// Render-driver entry `0x299:0x1140`, far-called from 4 site(s) — e.g. `0x08d76`, `0x08d96`, `0x08df5` (audit-fixes #490).
+RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	172	const	0x127d,0x0929c,0x09cef	ASM	/// Render-driver entry `0x299:0x127d`, far-called from 2 site(s) — e.g. `0x0929c`, `0x09cef` (audit-fixes #490).
+RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	174	const	0x12b0,0x08ad4	ASM	/// Render-driver entry `0x299:0x12b0`, far-called from 1 site(s) — e.g. `0x08ad4` (audit-fixes #490).
+RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	176	const	0x133d,0x0926d,0x09cd6	ASM	/// Render-driver entry `0x299:0x133d`, far-called from 2 site(s) — e.g. `0x0926d`, `0x09cd6` (audit-fixes #490).
+RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	178	const	0x1467,0x07849,0x09575,0x0b1d0	ASM	/// Render-driver entry `0x299:0x1467`, far-called from 3 site(s) — e.g. `0x07849`, `0x09575`, `0x0b1d0` (audit-fixes #490).
+RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	180	const	0x14e1,0x0786e,0x0789a,0x08da0	ASM	/// Render-driver entry `0x299:0x14e1`, far-called from 7 site(s) — e.g. `0x0786e`, `0x0789a`, `0x08da0` (audit-fixes #490).
+RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	183	const	0x1592,0x04522	ASM	/// The sprite BLITTER TABLE at `0x299:0x1592` (file `0x04522`) — eight near pointers, NOT far-called (audit-fixes #490). Its /// entries are the eight `RENDER_SPRITE_BLIT_*` constants below, in order
+RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	188	const	0x600,0x1592,0x4522	ASM	/// The same table as a FILE offset, so a reader can go straight to the bytes: /// `0x600 + 0x299 * 16 + 0x1592 = 0x4522` (audit-fixes #490). Held separately /// because the segment arithmetic is the 
+RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	197	const	0x44B3,0x1592,0x4522,0x2F90	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	199	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
+RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	201	const	0x1592,0x15a6	ASM	/// Blitter-table entry 0 — the word at `0x299:0x1592`+0 is `0x15a6`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	203	const	0x1592,0x172c	ASM	/// Blitter-table entry 1 — the word at `0x299:0x1592`+2 is `0x172c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	205	const	0x1592,0x1c18	ASM	/// Blitter-table entry 2 — the word at `0x299:0x1592`+4 is `0x1c18`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	207	const	0x1592,0x1d46	ASM	/// Blitter-table entry 3 — the word at `0x299:0x1592`+6 is `0x1d46`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	209	const	0x1592,0x1fd2	ASM	/// Blitter-table entry 4 — the word at `0x299:0x1592`+8 is `0x1fd2`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	211	const	0x1592,0x210a	ASM	/// Blitter-table entry 5 — the word at `0x299:0x1592`+10 is `0x210a`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	213	const	0x1592,0x210b	ASM	/// Blitter-table entry 6 — the word at `0x299:0x1592`+12 is `0x210b`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	215	const	0x1592,0x210c	ASM	/// Blitter-table entry 7 — the word at `0x299:0x1592`+14 is `0x210c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
+RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	217	const	0x210d,0x0787f,0x08ea0,0x0b1d8	ASM	/// Render-driver entry `0x299:0x210d`, far-called from 3 site(s) — e.g. `0x0787f`, `0x08ea0`, `0x0b1d8` (audit-fixes #490).
+NAV_CODE_SEGMENT	src/bloodprg.rs	223	const	0x071E,0x600,0x71E,0x77E0,0x0F29,0x71e,0xc48,0xB3DA,0x8428	ASM	/// `0x071E` — file base `0x600 + 0x71E * 16 = 0x77E0`. Confirmed THREE ways: /// solved as the only base placing nav-choice handler 4 in a table at `cs:0x0F29` /// (#494), named directly by `lcall 0x
+NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	226	const	0x06D4,0x6d4,0x7E09	ASM	/// `cs:0x06D4`, reached by `call word ptr cs:[bx+0x6d4]` @`0x7E09` /// (audit-fixes #534).
+NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	231	const	0x06E0,0x7EC0,0x7EB4	ASM	/// Six near pointers, and the table is 12 bytes: its SECOND entry (`0x06E0`) /// resolves to file `0x7EC0`, which is `0x7EB4 + 12` — the byte immediately after /// the table. The handlers follow thei
+NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	235	const	0x0F29,0xf29,0x8700	ASM	/// `cs:0x0F29`, reached by `call word ptr cs:[bx+0xf29]` @`0x8700` with /// `bx = (choice - 1) * 2` — the same dispatch idiom as the actor table above /// (audit-fixes #494, #534).
+NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	240	const	0x868D,0x8713,0x872C,0x87BD,0x8848,0x886C	ASM	/// Five, matching the `cmp al,5 / jge` bound @`0x868D` that /// `ship3d::SHIP_3D_NAV_CHOICE_COUNT` cites (#491). Entries resolve to /// `0x8713`/`0x872C`/`0x87BD`/`0x8848`/`0x886C` — five contiguous 
+SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	241	const		TESTED	
+SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	242	const		TESTED	
+SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	243	const		TESTED	
+SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	244	const		TESTED	
+SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	252	const	0x600,0x0A9A,0xAFA0,0xB2BB,0x06f2,0xB692	ASM	/// THE SHIP-3D CODE SEGMENT, and the base every offset below is relative to: /// `file = 0x600 + 0x0A9A*16 = 0xAFA0`. The offsets are not free-floating /// numbers — each resolves to a routine this c
+SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	253	const		ASM	
+SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	254	const		ASM	
+SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	255	const		ASM	
+SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	256	const		ASM	
+SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	257	const		ASM	
+SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	258	const		ASM	
+SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	259	const		ASM	
+SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	260	const		ASM	
+SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	261	const		ASM	
+SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	262	const		ASM	
+SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	263	const		ASM	
+SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	271	const	0x250b,0xB2C3	ASM	/// THE SHIP-3D DS STATE BYTES. Each of these is an ADDRESS, and its evidence is /// the instruction that touches it; the RULES they take part in are decoded in /// `ship3d.rs` and `vm.rs`, which is w
+SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	273	const	0x251b,0xB21A	ASM	/// The presented target; a repeat of it is not re-committed — `cmp ax,[0x251b]` @`0xB21A`.
+SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	275	const	0x252a,0xB657,0xB29A	ASM	/// `test byte [0x252a],1` @`0xB657`, and cleared by the HUD init at `0xB29A`.
+SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	277	const	0xb2fd,0x252b,0xB2DC	ASM	/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`.
+SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	279	const	0x252c,0xB2BE	ASM	/// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`.
+SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	281	const	0x2793,0x86F1	ASM	/// The dispatcher's own gate — `test byte [0x2793],8` @`0x86F1`, the first instruction of `nav_choice_dispatch`.
+SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	283	const	0x2527,0xB6EC,0xB765	ASM	/// `mov bx,word ptr [0x2527]` @`0xB6EC`, the band copy's source depth; also read by the scroll step at `0xB765`.
+SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	285	const	0x252e,0xB6E5,0xB129,0xB65E	ASM	/// `test byte [0x252e],1` @`0xB6E5` gates the plane-band copy; set at `0xB129`, cleared at `0xB65E`.
+SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	287	const	0x252f,0xB6A5	ASM	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
+SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	289	const	0x2530,0xB6BD	ASM	/// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`.
+SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	291	const	0xb6b8,0xb336,0x2531,0xB6A0	ASM	/// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (`0xb336`) — `mov byte [0x2531],4` @`0xB6A0`.
+SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	293	const	0x2532,0xB288	ASM	/// Set before the world-view teardown, which the opening flag then gates — `mov byte [0x2532],1` @`0xB288`.
+SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	295	const	0xb692,0x2533,0xB6AA	ASM	/// The armed latch the updater tests first (`0xb692`) — `mov byte [0x2533],1` @`0xB6AA`.
+SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	297	const	0x2537,0xB2D4	ASM	/// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
+SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	299	const	0x27d8,0x9EBB,0x5C8A	ASM	/// Armed by the presentation teardown — `mov byte [0x27d8],1` @`0x9EBB` (`travel_activate_a`), and cleared at `0x5C8A`.
+SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	301	const	0x2a19,0x87B0,0x883B,0x8956	ASM	/// Cleared by every handler that finishes — `mov word ptr [0x2a19],0` @`0x87B0`, `0x883B` and `0x8956`.
+SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	304	const	0x2795,0x0B0B1	ASM	/// Touched by the game at `mov word ptr [0x2795], 0xb3` @`0x0B0B1`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	306	const	0x279B,0x279b,0x86BB	ASM	/// `0x279B` — `mov word ptr [0x279b],0x5a` @`0x86BB` (audit-fixes #491).
+SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	308	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848	ASM	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
+SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	311	const	0x253f,0x86D1	ASM	/// `mov word ptr [0x253f],ax` @`0x86D1`, the row-multiplied target y /// (`(bl-1) * 18 + 80`) — audit-fixes #491.
+SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	313	const	0x2736,0x892C,0x886C	ASM	/// `mov byte ptr [0x2736],1` @`0x892C`, inside nav-choice handler 4 (`0x886C`, dispatch-table entry 4).
+SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	315	const	0x2737,0x893C	ASM	/// `mov byte ptr [0x2737],1` @`0x893C`, the right-motion twin of the left gate ten instructions earlier.
+SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	317	const	0x259b,0x88C7	ASM	/// `mov byte ptr [0x259b],1` @`0x88C7`, also in handler 4.
+SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	319	const	0xb13,0x8947	ASM	/// `mov byte ptr [0xb13],2` @`0x8947` — note the value is 2, not 1, unlike the motion gates beside it.
+SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	324	const	0xADA,0xada,0x86E4,0xB3CD,0x1E63	ASM	/// `0xADA` — written `mov byte ptr [0xada],0xa` @`0x86E4` by the nav choice and /// `,6` @`0xB3CD` by the navigation box, then READ as the divisor by /// `ship_3d_interpolation_gate` (`mov bl,[0xada]
+SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	326	const	0xadb,0x8741,0x87E4,0x887B	ASM	/// Reset on handler entry — `mov byte ptr [0xadb],0` @`0x8741`, `0x87E4` and `0x887B`.
+SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	330	const	0x85B3	ASM	/// `0x0174` — `mov si,0x174` @`0x85B3`, the list widget's shared trailing row. /// The SAME string `engine::OPTION_BOX_LABEL_DS_OFFSET` names (#526) /// — audit-fixes #492.
+SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	332	const	0xac6,0x84AD	ASM	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
+SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	335	const	0xac8,0x084D8	ASM	/// Touched by the game at `mov si, word ptr [0xac8]` @`0x084D8`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	338	const	0xADC,0xadc,0x86D4	ASM	/// `0xADC` — `mov byte ptr [0xadc],1` @`0x86D4`, set by the nav choice just /// before it configures the widget (audit-fixes #491).
+SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	341	const	0xadd,0x0B0DC	ASM	/// Touched by the game at `mov byte ptr [0xadd], 1` @`0x0B0DC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	344	const	0xa2a,0x0B5A5	ASM	/// Touched by the game at `push word ptr [0xa2a]` @`0x0B5A5`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	347	const	0xa2c,0x0B5A9	ASM	/// Touched by the game at `push word ptr [0xa2c]` @`0x0B5A9`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	350	const	0xa32,0x0B0BC	ASM	/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	353	const	0xa34,0x0850F	ASM	/// Touched by the game at `cmp word ptr [0xa34], 6` @`0x0850F`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	355	const	0xa3e,0x858D	ASM	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
+SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	357	const	0x27c7,0x850C	ASM	/// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`.
+SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	359	const	0x27e6,0xB2E3,0xB2ED	ASM	/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
+SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	362	const	0x27e7,0x08430	ASM	/// Touched by the game at `mov byte ptr [0x27e7], 0` @`0x08430`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	364	const	0x2aab,0xB305	ASM	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	370	const	0x2AB3,0x2ab3,0x844E,0x8493,0x854E	ASM	/// `0x2AB3` — the list widget's own WIDTH SCRATCH, written `mov di,0x2ab3` /// @`0x844E` and read @`0x8493`/`0x854E`. Its only three references are inside /// the widget, which is what identified it:
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	374	const	0xB3B,0xb3b,0xB644,0xB699	ASM	/// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND /// setup clears (audit-fixes #484), and the cell the transition threshold /// `cmp word [0xb3b],0x78` @`0xB699` tests.
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	376	const	0xae4,0xB592	ASM	/// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	378	const	0xae5,0xB5B0	ASM	/// Which of the three callbacks to run — `mov al,byte ptr [0xae5]` @`0xB5B0`.
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	380	const	0x5219,0xB712	ASM	/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	382	const	0x524d,0xB6F0,0xB175	ASM	/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	384	const	0x524f,0xB708,0xB16F	ASM	/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	389	const		INFRA	/// The 5-byte encoding of `lcall SND_ENTRY_SEGMENT:SND_ENTRY_OFFSET`, COMPOSED /// from constants cited above rather than being a value of its own — a search /// pattern, not a decode (audit-fixes #5
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	399	const	0xB5DC,0xB610,0x8866	INFRA	/// Likewise for the bank loader; the call sites it finds are the ones #506 cites /// (`sn\\3D.snd` @`0xB5DC`, `sn\\tb.snd` @`0xB610`, `sn\\radio.snd` @`0x8866`) /// — audit-fixes #552.
+FAR_CALL_OPCODE	src/bloodprg.rs	410	const		INFRA	/// `0x9A` is x86 `CALL far ptr16:16` — five bytes, `9A off16 seg16`. Not a game /// value but an ISA fact, and one this port leans on: #490's census found 143 /// render-driver call sites with exactl
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	414	const		INFRA	/// How far BACK the scanner looks for the instruction that loaded a register /// before a call. A port heuristic with no binary counterpart — 32 bytes is a /// window, not a decoded distance (audit-f
+DS_STRING_SCAN_MAX	src/bloodprg.rs	417	const		INFRA	/// The longest DS string the scanner will read. A port limit, not the format's: /// nothing in the game caps a NUL-terminated string at 64 (audit-fixes #552).
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	420	const		INFRA	/// `RENDER_SEGMENT` little-endian, for matching the segment half of a far call. /// Composed, like the two patterns above (audit-fixes #552).
+MzHeader	src/bloodprg.rs	424	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	439	fn		TESTED	
+image_total	src/bloodprg.rs	443	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	451	fn		TESTED	
+MzSummary	src/bloodprg.rs	457	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	468	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	479	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	486	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	493	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	508	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	518	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	525	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	534	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	541	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	549	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	568	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	582	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	603	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	618	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	624	fn		UNVERIFIED	
+parse	src/bloodprg.rs	630	fn		UNVERIFIED	
+summary	src/bloodprg.rs	660	fn		TESTED	
+image_bytes	src/bloodprg.rs	675	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	679	fn		TESTED	
+ds_to_file	src/bloodprg.rs	683	fn		TESTED	
+fs_to_file	src/bloodprg.rs	687	fn		TESTED	
+opcode_handlers	src/bloodprg.rs	691	fn		TESTED	
+opcode_descriptors	src/bloodprg.rs	711	fn		TESTED	
+vm_opcode_specs	src/bloodprg.rs	728	fn		TESTED	
+script_resource_profiles	src/bloodprg.rs	765	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	799	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	837	fn		TESTED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	845	fn		TESTED	
+snd_entry_call_sites	src/bloodprg.rs	853	fn		TESTED	
+snd_bank_load_call_sites	src/bloodprg.rs	879	fn		TESTED	
+render_call_sites	src/bloodprg.rs	918	fn		TESTED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	952	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	974	fn		TESTED	
+subdispatch_entries	src/bloodprg.rs	994	fn		UNVERIFIED	
+slice	src/bloodprg.rs	1015	fn		TESTED	
+find_ax_source_before	src/bloodprg.rs	1024	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	1056	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	1084	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	1111	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	1117	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+location_status_headers	src/bloodprg.rs	1125	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
+list_widget_cancel_label	src/bloodprg.rs	1138	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	1144	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	1161	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
+resource_name	src/bloodprg.rs	1178	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	1191	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	1202	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	1210	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	1217	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1366	const	0x600,0x071E,0x0A9A	ASM	/// `(segment, file base)` for every code segment the port resolves through. /// /// EVERY ENTRY SATISFIES `base == 0x600 + segment * 16` — the MZ image-to-file /// identity — which is what makes the 
+snd_entry_call_note	src/bloodprg.rs	1377	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1393	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1402	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1415	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1453	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1630	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1644	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1672	const		TESTED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2737	const		TESTED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0xffff,0x10D3,0x1CFA,0x108E,0x10C5,0x1CF2,0x64	ASM	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	80	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	98	const	0x1BB7,0x1BBD,0x273B	DATA	/// Bytes per directory record, and the record count. /// /// `SLOT_NAME_LEN` is from the CODE: the rename copies the name with /// `mov cx,4 / rep movsd` @`0x1BB7`-`0x1BBD` — four dwords, sixteen byt
