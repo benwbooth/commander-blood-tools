@@ -3087,6 +3087,14 @@ impl EngineState {
     /// `0x5F`. So nothing in the game can special-case an underscore, whatever
     /// renders the caption.
     ///
+    /// RE-VERIFIED ACROSS ENCODINGS (audit-fixes #451), because a NEGATIVE claim
+    /// is only as strong as the forms it searched, and this one justified a port
+    /// change. Checking every compare-with-`0x5F` encoding — `cmp al,i8` (`3C`),
+    /// `cmp ax,i16` (`3D`), `cmp r/m8,i8` (`80 /7`), `cmp r/m16,i8`
+    /// sign-extended (`83 /7`) and `cmp r/m16,i16` (`81 /7`) — finds ZERO sites.
+    /// The original claim was made before #450 showed a one-family enumeration
+    /// reading as exhaustive; it survives the wider search.
+    ///
     /// SETTLED FROM THE DATA (audit-fixes #437). #328 left the spelling open
     /// because the caption RENDERER is unfound — but the renderer is not the only
     /// evidence available. Searching all 261 shipped files: `Bob Morlock` in any

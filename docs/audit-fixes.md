@@ -14815,3 +14815,31 @@ register writes were visible at all.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #451 — auditing the exhaustiveness claims, including one I had relied on
+
+#450 was the fifth instance of a one-encoding enumeration reading as exhaustive.
+Swept for others.
+
+POSITIVE claims: three docs assert a complete writer set. Two are the `0x5B8D`
+"sole runtime writer" claim, which #390 had already re-verified across the `80`,
+`81` and `83` families after #376/#378 got it wrong once; the third is about
+record types, not an address census. Nothing new.
+
+NEGATIVE claims are the riskier kind — a missed encoding turns "nothing does X"
+from a finding into an artefact — and #437 CHANGED THE PORT on one: "NO
+instruction anywhere in the image compares against `0x5F`", which is what let
+`BOB MORLOCK` become `BOB_MORLOCK` without finding the caption renderer.
+
+Re-ran it across every compare-with-`0x5F` form: `cmp al,i8` (`3C`), `cmp ax,i16`
+(`3D`), `cmp r/m8,i8` (`80 /7`), `cmp r/m16,i8` sign-extended (`83 /7`),
+`cmp r/m16,i16` (`81 /7`). **Zero sites.** The claim holds, and the change it
+justified stands.
+
+That is the outcome I wanted and not the one I expected: after five entries of
+finding enumerations too narrow, the one that mattered most was wide enough. Worth
+checking anyway — the cost was one scan, and #437 is a shipped behaviour change
+resting entirely on it.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
