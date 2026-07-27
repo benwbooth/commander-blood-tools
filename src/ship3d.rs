@@ -3402,6 +3402,20 @@ pub fn render_ship_3d_pyramid_hud(buffer: &mut [u8], grid_color: u8, orb_color: 
 /// buffer. Returns `None` only if `angles` index outside the trig table (they
 /// are `% 180` in the engine, so any in-range angle succeeds). This is the whole
 /// background layer — the sprite slots and HUD compose over it separately.
+///
+/// NO SINGLE ROUTINE IN THE BINARY DOES THIS. The game randomizes the cloud ONCE,
+/// at boot: `ship_3d_point_cloud_randomize` (`0x9B67`) has exactly one call site,
+/// `lcall 0x71e,0x2387` at `0x0FD3` — between `mov [0x27d9],1` and `back_buffer_init`,
+/// before the main loop at `0x0FFB` ever runs. The matrix builder (`0x98B9`) is
+/// called from elsewhere entirely (`0x8B9D`, `0x9564`).
+///
+/// So this composition is a PORT CONVENIENCE, and it is only equivalent because the
+/// engine seeds `BloodPrng::seeded_from_rtc_seconds(self.starfield_seed)` from a
+/// FIXED `starfield_seed` (17, never reassigned) on every frame: re-deriving the
+/// same cloud each time is indistinguishable from keeping the one built at boot.
+/// Seed this from the real clock, as the constructor's name invites, and the stars
+/// would reshuffle every frame. `the_starfield_is_stable_only_because_the_seed_is`
+/// pins that (audit-fixes #584).
 pub fn render_ship_3d_starfield(
     prng: &mut BloodPrng,
     angles: Ship3dMatrixAngles,
@@ -9616,6 +9630,34 @@ mod tests {
     }
 
     #[test]
+    /// The invariant the per-frame call depends on: same seed -> same cloud.
+    ///
+    /// The game randomizes ONCE at `0x0FD3` (boot). `EngineState` calls
+    /// `render_ship_3d_starfield` every frame instead, which re-randomizes — safe
+    /// only while the seed is constant. If that ever becomes a real RTC read the
+    /// stars start boiling, and nothing else in the tree would notice.
+    #[test]
+    fn the_starfield_is_stable_only_because_the_seed_is() {
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: 11,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
+        let viewport = Ship3dProjectionViewport { left: 0, right: 320, top: 0, bottom: 200 };
+        let shot = |seed: u8| {
+            let mut prng = BloodPrng::seeded_from_rtc_seconds(seed);
+            render_ship_3d_starfield(&mut prng, angles, origin, viewport)
+                .expect("in-range angles")
+                .buffer
+        };
+        // Two frames at the engine's fixed seed are the SAME field.
+        assert_eq!(shot(17), shot(17), "same seed must give the same cloud");
+        // NOT VACUOUS: a different seed really does move the stars, so the equality
+        // above is a property of the seed and not of a renderer that ignores it.
+        assert_ne!(shot(17), shot(42), "a different seed must give a different cloud");
+    }
+
     fn render_ship_3d_starfield_uses_real_table_and_plots_points() {
         // Full faithful path: PRNG -> randomized cloud -> recovered angle table
         // -> camera matrix -> depth-shaded buffer. The point cloud spans the

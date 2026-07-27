@@ -19364,3 +19364,33 @@ attaches) are correct; only the SURFACE was misattributed. `SUBTITLE_WRAP_COLUMN
 citation to `cmp al,0x23` @`0x672C` is independent of the error and stands.
 
 726 tests, 0 failures.
+
+## #584 — the starfield is stable by accident, and now by contract
+
+`render_ship_3d_starfield` randomizes the point cloud, builds the matrix, and
+renders — and NO ROUTINE IN THE BINARY DOES THAT. `ship_3d_point_cloud_randomize`
+(`0x9B67`) has exactly ONE call site, `lcall 0x71e,0x2387` at `0x0FD3`, sitting
+between `mov [0x27d9],1` and `back_buffer_init`, before the main loop at `0x0FFB`
+starts. The cloud is built once at boot. The matrix builder (`0x98B9`) is called from
+two unrelated places.
+
+The engine calls the composed wrapper EVERY FRAME, so it re-randomizes every frame.
+That is indistinguishable from the original only because
+`BloodPrng::seeded_from_rtc_seconds(self.starfield_seed)` is fed a constant —
+`starfield_seed: 17`, assigned at construction and never written again. Same seed,
+same cloud, stable stars.
+
+It is a real invariant resting on a coincidence of naming: the constructor is
+`seeded_from_rtc_seconds`, and the game DOES seed from the RTC. Anyone wiring that
+up would move a boot-time randomize into a per-frame one and the stars would boil,
+with no test in the tree objecting.
+
+So it is now a contract: same seed gives the same field, and — so the first assert
+cannot pass vacuously on a renderer that ignores the seed — a different seed gives a
+different one.
+
+Settled INFRA rather than ASM. The three constituents are each cited to their own
+routines; the WRAPPER is a port-side convenience, and citing it to `0x0FD3` would
+claim the binary composes them, which is exactly what it does not do.
+
+727 tests, 0 failures.
