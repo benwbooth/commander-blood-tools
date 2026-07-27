@@ -20548,3 +20548,32 @@ way — which is why #611's unwired-decode list exists.
 time, reached by the running port.
 
 736 tests, 0 failures.
+
+## #617 — correcting #616: one decode IS missing, and it is the source rect
+
+#616 concluded "no decode is outstanding" for the console-menu animation. That was
+wrong, and the error is worth more than the conclusion was.
+
+`0x1E71` is `lodsw / sub ax,[di]`. The interpolation gate takes its source and
+destination as POINTERS in `si`/`di`, supplied by whoever calls it — they are not
+fixed cells. The DESTINATION for this widget is the `0x2AAB` layout rect, which is
+decoded. The SOURCE is whatever that caller puts in `si`, and the caller for the
+console-menu path has not been found.
+
+I had the answer sitting next to me and it was the wrong one. `0x90FF` seeds
+`gs:0x2AAB = {mouse x, mouse y, 4, 4}` before interpolating — a 4x4 box at the cursor
+growing into the panel, which is exactly the animation one would expect here too. But
+that is the INFO PANEL's caller on a different path, and the console click path
+(`0x86D1`..`0x86E9`) seeds nothing: `[0x253F]`, `[0xADC]`, `[0xAC6]`, `[0xADD]`,
+`[0xADA]`, then the UI sound. Borrowing the seed would have been #583 (`0x72A8`) and
+#597 (`0x6B8B`) a third time, and this time I had already written the claim down.
+
+A SEARCH THAT RETURNED ZERO, correctly diagnosed for once: no absolute write to
+`0x2AAB` exists in the image. That is not evidence the rect is never written — the
+layout routine keeps it in `si` and writes `[si]`, `[si+4]`, `[si+6]`. "A census of 0
+means the wrong question" applied to my own search before I drew a conclusion from it.
+
+So the row is: DELAY wired and correct (#615), DESTINATION decoded, SOURCE unknown,
+and the draw call blocked on the source. Narrower than #612, wider than #616 claimed.
+
+736 tests, 0 failures.

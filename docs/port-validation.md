@@ -2157,8 +2157,8 @@ Connected. `EngineState::begin_console_open` arms the gate on a menu click and
 cryobox, submenu and option box arrive TEN FRAMES after the click instead of on it.
 `the_console_menu_opens_after_the_decoded_ten_frames` holds that end to end.
 
-REMAINING, and now fully specified (#616): the port animates the DELAY, not the
-widget's travelling rectangle. The four words the gate interpolates are
+REMAINING, and NOT fully specified after all — #617 corrects #616 on this point.
+The port animates the DELAY, not the widget's travelling rectangle. The four words the gate interpolates are
 `DS:0x2AAB` — `ship_3d_target_layout_rect`, "four-word centered target-list rectangle
 x/y/w/h" — and the original DRAWS each interpolated rect rather than storing it (the
 `0x90FF` decode says so of the same gate on the info-panel path). So the missing work
@@ -2169,7 +2169,21 @@ the interpolated rect each tick instead of discarding it.
 `[0xADC]` and `[0xADD]`, written beside the duration at `0x86D4`/`0x86DF`, are the
 prepass's two switches and are already ported as `target_layout_preserve_widths` and
 `target_layout_extra_entry` (`0x847F` appends `0x37`; `0x848A` skips the `rep stosw`
-pad). No decode is missing here either — this remains plumbing plus a draw call.
+pad). ONE DECODE IS MISSING, and #616 said otherwise. `0x1E71` is `lodsw / sub ax,[di]`:
+the gate takes its source and destination as POINTERS in `si`/`di`, supplied by the
+caller. The destination for this widget is the `0x2AAB` rect, but the caller that
+supplies BOTH for the console-menu path has not been found, so the SOURCE rect is
+unknown.
+
+Do not borrow the info panel's. `0x90FF` seeds `gs:0x2AAB = {mouse x, mouse y, 4, 4}`
+before its interpolation, but that is a DIFFERENT caller on a different path, and the
+console click path (`0x86D1`..`0x86E9`) writes no such seed — it sets `[0x253F]`,
+`[0xADC]`, `[0xAC6]`, `[0xADD]`, `[0xADA]` and nothing else. Assuming the 4x4-at-cursor
+seed here would be the same borrowed-neighbour error as #583 and #597.
+
+A byte search for absolute writes to `0x2AAB` returns ZERO, which is the wrong
+question rather than an answer: the layout routine holds the rect in `si` and writes
+`[si]`, `[si+4]`, `[si+6]`.
 
 The five `run_ship_3d_nav_choice_handler_*` routines also remain unwired; the phase
 machine's TIMING is now reproduced, its per-row record work is not.
