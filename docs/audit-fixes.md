@@ -14288,3 +14288,31 @@ by machine instead of by eye.
 
 2229 items, 1115 confirmed (50.0%), 1114 open. 756 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #435 — I nearly reported a correct doc as wrong, from my own truncated output
+
+`Runtime::run`'s subtitle-persistence comment claims the game's reveal draw is
+gated on `gs:[0x27e2]&2`, and that "the one-shot present (0xbe29) sets 27e2=2 then
+clears it". Checking it: `0xBE11` is `mov byte ptr gs:[0xba0], 1` exactly as
+documented, and `0x93FA` is `test byte ptr [0x27e2], 2` — the gate.
+
+Then `0xBE29` disassembled as `mov word ptr [0x5e58], ax`, not a `0x27E2` write.
+I ran a census of `0x27E2`, printed it, saw writes of 1 and 0 but none of 2, and
+had "the doc claims a write the game never makes" half-composed.
+
+I HAD PRINTED `[:6]` OF AN 8-ELEMENT LIST. The last two entries are
+`mov byte ptr [0x27e2], 2` @`0xBE32` and `mov byte ptr [0x27e2], 0` @`0xBE5C` —
+precisely the set-then-clear the doc describes, inside the routine it names.
+
+This is #308 exactly: reasoning from a truncated view of a tool's output. That
+entry drew the conclusion "run the tool, paste the number, do not predict it" for
+counts; the same discipline applies to LISTS, and slicing one for readability
+while treating it as complete is the same error wearing different clothes. #319
+and #335 are the same family. The only reason it did not ship this time is that
+"a flag tested but never set" was implausible enough to check once more.
+
+The doc was right. Enriched it with the two write addresses and the gate test so
+the next reader does not re-derive them, and settled the row.
+
+2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

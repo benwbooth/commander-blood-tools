@@ -2180,35 +2180,35 @@ set_mouse_pos	src/recomp/runtime.rs	807	fn		UNVERIFIED	/// Move the virtual mous
 move_mouse_rel	src/recomp/runtime.rs	836	fn	0x9722,0x97FC,0x27A7,0xa2a,0x97FD,0x27a7,0x9801,0x0A2A,0x2A2	ASM	/// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion /// reaches the game. /// /// Why this exists: the bridge accumulates cursor motion in RING space by /// warping the hardw
 mouse_press	src/recomp/runtime.rs	846	fn		UNVERIFIED	/// Press a mouse button (0 = left, 1 = right) at the current position: bumps the /// int33 ax=5 press counter and flags the press event.
 mouse_release	src/recomp/runtime.rs	856	fn		UNVERIFIED	/// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release /// counter and flags the release event.
-run	src/recomp/runtime.rs	864	fn	0x93f8,0x12bd,0x27e2,0xbe29,0xba0,0xbe11	ASM?	// Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd) // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set. // The one-shot present (0xbe2
-lockstep_capture	src/recomp/runtime.rs	1040	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
-snap	src/recomp/runtime.rs	1041	fn		UNVERIFIED	
-port_in	src/recomp/runtime.rs	1243	fn		UNVERIFIED	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
-port_out	src/recomp/runtime.rs	1329	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
-ivt_hooked	src/recomp/runtime.rs	1461	fn		UNVERIFIED	
-log_int	src/recomp/runtime.rs	1467	fn		UNVERIFIED	
-native_int	src/recomp/runtime.rs	1480	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
-int10	src/recomp/runtime.rs	1569	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
-int16	src/recomp/runtime.rs	1637	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
-int33	src/recomp/runtime.rs	1670	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
-mouse_event	src/recomp/runtime.rs	1755	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
-ticks	src/recomp/runtime.rs	1783	fn		INFRA	
-crtc_reg	src/recomp/runtime.rs	1787	fn		UNVERIFIED	
-int67	src/recomp/runtime.rs	1791	fn		UNVERIFIED	
-sb_dsp_write	src/recomp/runtime.rs	1880	fn		UNVERIFIED	/// DSP command byte stream at 0x22C.
-sb_dsp_exec	src/recomp/runtime.rs	1903	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
-sb_start_playback	src/recomp/runtime.rs	1945	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
-tick_sb_playback	src/recomp/runtime.rs	1960	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
-ems_unmap	src/recomp/runtime.rs	1981	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
-int21	src/recomp/runtime.rs	1989	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
-find_next_into_dta	src/recomp/runtime.rs	2437	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
-screenshot_rgb	src/recomp/runtime.rs	2468	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
-screen_indices	src/recomp/runtime.rs	2496	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
-write_ppm	src/recomp/runtime.rs	2519	fn		UNVERIFIED	
-text_screen	src/recomp/runtime.rs	2526	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
-debug_state	src/recomp/runtime.rs	2544	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
-console_output	src/recomp/runtime.rs	2577	fn		INFRA	
-key_event	src/recomp/runtime.rs	2582	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
+run	src/recomp/runtime.rs	864	fn	0x93f8,0x12bd,0x27e2,0x93fa,0xbe32,0xbe5c,0x27E2,0xba0,0xbe1	ASM	// Subtitle persistence: the game's per-frame reveal draw (`dlg_reveal_pump` // @0x93f8, reached from the main loop at 0x12bd) only redraws the subtitle // when its gate flag is set — `test byte ptr [
+lockstep_capture	src/recomp/runtime.rs	1045	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
+snap	src/recomp/runtime.rs	1046	fn		UNVERIFIED	
+port_in	src/recomp/runtime.rs	1248	fn		UNVERIFIED	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
+port_out	src/recomp/runtime.rs	1334	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
+ivt_hooked	src/recomp/runtime.rs	1466	fn		UNVERIFIED	
+log_int	src/recomp/runtime.rs	1472	fn		UNVERIFIED	
+native_int	src/recomp/runtime.rs	1485	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
+int10	src/recomp/runtime.rs	1574	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
+int16	src/recomp/runtime.rs	1642	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
+int33	src/recomp/runtime.rs	1675	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
+mouse_event	src/recomp/runtime.rs	1760	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
+ticks	src/recomp/runtime.rs	1788	fn		INFRA	
+crtc_reg	src/recomp/runtime.rs	1792	fn		UNVERIFIED	
+int67	src/recomp/runtime.rs	1796	fn		UNVERIFIED	
+sb_dsp_write	src/recomp/runtime.rs	1885	fn		UNVERIFIED	/// DSP command byte stream at 0x22C.
+sb_dsp_exec	src/recomp/runtime.rs	1908	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
+sb_start_playback	src/recomp/runtime.rs	1950	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
+tick_sb_playback	src/recomp/runtime.rs	1965	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
+ems_unmap	src/recomp/runtime.rs	1986	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
+int21	src/recomp/runtime.rs	1994	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
+find_next_into_dta	src/recomp/runtime.rs	2442	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
+screenshot_rgb	src/recomp/runtime.rs	2473	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
+screen_indices	src/recomp/runtime.rs	2501	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+write_ppm	src/recomp/runtime.rs	2524	fn		UNVERIFIED	
+text_screen	src/recomp/runtime.rs	2531	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
+debug_state	src/recomp/runtime.rs	2549	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
+console_output	src/recomp/runtime.rs	2582	fn		INFRA	
+key_event	src/recomp/runtime.rs	2587	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
 TICK	src/bin/blood.rs	20	const		UNVERIFIED	
 make_runtime	src/bin/blood.rs	22	fn		UNVERIFIED	
 run_tick	src/bin/blood.rs	35	fn		INFRA	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.

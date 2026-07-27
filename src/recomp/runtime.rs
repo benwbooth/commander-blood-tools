@@ -869,9 +869,14 @@ impl Runtime {
             if self.cpu.steps >= max_steps {
                 return RunEnd::StepBudget;
             }
-            // Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd)
-            // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set.
-            // The one-shot present (0xbe29) sets 27e2=2 then clears it, so on a triple-buffered
+            // Subtitle persistence: the game's per-frame reveal draw (`dlg_reveal_pump`
+            // @0x93f8, reached from the main loop at 0x12bd) only redraws the subtitle
+            // when its gate flag is set — `test byte ptr [0x27e2], 2` @0x93fa.
+            //
+            // The one-shot present sets and clears that gate: `mov byte ptr [0x27e2], 2`
+            // @0xbe32 and `mov byte ptr [0x27e2], 0` @0xbe5c. (A census of 0x27E2 finds
+            // exactly eight sites; those two are the only writes of 2 and its clear.)
+            // So on a triple-buffered
             // display the glyphs (drawn once to one page) get overwritten when the scene re-blits
             // that page. Refresh the gate each frame WHILE a subtitle is active — the game's own
             // "subtitle active" flag gs:[0xba0]&1 (set at 0xbe11, cleared when the line ends) —
