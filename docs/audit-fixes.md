@@ -17331,3 +17331,36 @@ subsystems — the opposite shape to the two above, and the reason its name shou
 be read as "shared state".
 
 621 tests, 0 failures.
+
+## #522 — the idle-gate array IS an instruction sequence, order included
+
+`MAIN_PENDING_PROFILE_IDLE_GATES` lists ten cells the main loop consults before
+letting a pending script profile load. An array of ten already-defined constants is
+the shape of a port-side collection — a set someone assembled by noticing which
+gates mattered. It is not. It is one instruction sequence:
+
+```text
+  0x109C  mov al, byte ptr [0x67ac]     ACTIVE
+  0x109F  or  al, byte ptr [0x24f3]     INPUT_GATE_A
+  ...                                    (stride 4)
+  0x10BF  or  al, byte ptr [0x2792]     INPUT_GATE_H
+```
+
+A load and nine ORs at a fixed four-byte stride, and THE ARRAY'S ORDER IS THE
+INSTRUCTION ORDER, element for element. That is a stronger result than "these ten
+cells are the gates": it means the port's first element is the game's LOAD and the
+rest are its ORs, so the array is a transcription rather than a set.
+
+It also makes the set demonstrably CLOSED. An eleventh gate would require an
+eleventh instruction, so `idle_gates_are_the_main_loop_or_chain` asserts the bytes
+after the last `or` are NOT another `or` — the array cannot be quietly extended to
+fix a symptom without the test noticing the game disagrees.
+
+Found via `refs_in_routine.py` on the main-loop routine at `0x1095`, which reports
+195 instructions touching 40-odd cells; the ten gates were the first ten it listed,
+consecutively. The tool built for #499's DS-cell problem answered a question about
+an ARRAY's provenance, which is not what I built it for.
+
+`vm.rs` is now at 3 uncited constants, from 37.
+
+622 tests, 0 failures.

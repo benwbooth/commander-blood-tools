@@ -1991,6 +1991,26 @@ const VM_BRANCH_B: u16 = 0x6784;
 /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PC_SAVED: u16 = 0x6776;
 
+/// The ten cells the main loop ORs together to decide whether a pending script
+/// profile may load — and the ARRAY ORDER IS THE INSTRUCTION ORDER
+/// (audit-fixes #522):
+///
+/// ```text
+///   0x109C  mov al, byte ptr [0x67ac]     ACTIVE
+///   0x109F  or  al, byte ptr [0x24f3]     INPUT_GATE_A
+///   0x10A3  or  al, byte ptr [0x2751]     INPUT_GATE_B
+///   0x10A7  or  al, byte ptr [0x67b0]     DEFER_A
+///   0x10AB  or  al, byte ptr [0x5e64]     INPUT_GATE_C
+///   0x10AF  or  al, byte ptr [0x2565]     INPUT_GATE_D
+///   0x10B3  or  al, byte ptr [0x2736]     INPUT_GATE_E
+///   0x10B7  or  al, byte ptr [0x2737]     INPUT_GATE_F
+///   0x10BB  or  al, byte ptr [0x27da]     INPUT_GATE_G
+///   0x10BF  or  al, byte ptr [0x2792]     INPUT_GATE_H
+/// ```
+///
+/// One load and nine ORs at a fixed 4-byte stride, so the set is CLOSED: any
+/// eleventh gate would need an instruction here. Pinned to the image by
+/// `idle_gates_are_the_main_loop_or_chain`.
 const MAIN_PENDING_PROFILE_IDLE_GATES: [u16; 10] = [
     VM_PRESENTATION_ACTIVE,
     VM_PRESENTATION_INPUT_GATE_A,
@@ -16352,5 +16372,40 @@ mod tests {
         seen.sort_unstable();
         seen.dedup();
         assert_eq!(seen.len(), 3);
+    }
+
+    /// `MAIN_PENDING_PROFILE_IDLE_GATES` is the main loop's OR-chain, in its
+    /// order (audit-fixes #522). Read from the image so a reordered or extended
+    /// array fails rather than drifting from the game.
+    #[test]
+    fn idle_gates_are_the_main_loop_or_chain() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let gates = super::MAIN_PENDING_PROFILE_IDLE_GATES;
+        assert_eq!(gates.len(), 10);
+
+        // `mov al, byte ptr [imm16]` = A0 lo hi
+        assert_eq!(exe[0x109C], 0xA0, "load, not an or");
+        assert_eq!(
+            u16::from_le_bytes([exe[0x109D], exe[0x109E]]),
+            gates[0],
+            "first gate is the LOAD"
+        );
+        // then nine `or al, byte ptr [imm16]` = 0A 06 lo hi, stride 4
+        for (i, gate) in gates.iter().enumerate().skip(1) {
+            let at = 0x109F + (i - 1) * 4;
+            assert_eq!(&exe[at..at + 2], &[0x0A, 0x06], "or al,[imm16] at {at:#07x}");
+            assert_eq!(
+                u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
+                *gate,
+                "gate {i} at {at:#07x}"
+            );
+        }
+        // The chain is CLOSED: the instruction after the last or is not another or.
+        let after = 0x109F + (gates.len() - 1) * 4;
+        assert_ne!(&exe[after..after + 2], &[0x0A, 0x06], "no eleventh gate");
     }
 }
