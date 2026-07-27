@@ -16954,3 +16954,34 @@ began. The remainder are the target-record and navigation-record flags, which ne
 their own routines found rather than another pass over ones already read.
 
 620 tests, 0 failures.
+
+## #511 — into vm.rs: the TEXT flags, and bit 7 that is never `0x80`
+
+First tranche of `vm.rs`'s 37 uncited constants, from the `0xA6` TEXT handler
+(`vm_op_a6_text` @`0x660C`) and two hold computations.
+
+`TEXT_ACTIVE_DISPLAY_FLAG` is the interesting one: the port names `0x80` and the
+handler never contains it. Bit 7 is tested with a SIGN BRANCH (`jns 0x67A0`
+@`0x6649`) and cleared with a COMPLEMENT MASK (`and byte ptr [si+1],0x7f`
+@`0x6698`). This is now the third distinct disguise for bit 7 in this binary —
+croolis's y-floor `js` (#488), the dirty-rect sign terminator (#506), and now this
+— which is worth stating as a rule: IN THIS BINARY, A BIT-7 FLAG IS USUALLY A SIGN
+TEST, so its mask will not be in the code and its absence means nothing.
+
+The other three are direct: `test cl,8` @`0x661E` arms the skip counter
+(`DS:0x67AB`), `test cl,0x10` @`0x6630` sets the loop target (`DS:0x6778`) — both
+matching labels.csv's existing `b4&0x08` / `b4&0x10` notes, which had never been
+carried into the port's constants — and `test word ptr es:[di+2],0x8000` @`0x665A`,
+a WORD test where the others are byte tests.
+
+`ACTIVE_LINE_ID_BIAS = 9` sits between two instructions that give it meaning:
+`mov ax,[0x1fab]` @`0x11F2` reads the b3 selector the TEXT handler stored, `add ax,9`
+@`0x11F5`, `mov [0x6788],ax` @`0x11F8`. The active line ID is the SELECTOR PLUS NINE
+— so the two are different numbering spaces, and code comparing a raw selector
+against an active line ID is off by nine.
+
+`CHATTER_HOLD_EXTRA_TICKS = 6` is the constant term of
+`gs:[0x27cf] * (gs:[0xaca] >> 1) + 6` @`0x7385` — a FLOOR, so even a zero text speed
+still holds six ticks.
+
+620 tests, 0 failures.

@@ -359,13 +359,31 @@ impl QuerySetMode {
 }
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
+/// `add ax,9` @`0x11F5`, between `mov ax,[0x1fab]` @`0x11F2` (the b3 selector the
+/// TEXT handler stored) and `mov [0x6788],ax` @`0x11F8` — so the ACTIVE LINE ID is
+/// the selector plus nine, not the selector (audit-fixes #511).
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
+/// `add ax,6` @`0x7385`, the constant term of the record-end hold:
+/// `gs:[0x27cf] * (gs:[0xaca] >> 1) + 6` @`0x7378`-`0x7388`, stored to `[0xb35]`.
+/// A FLOOR on the hold, so even a zero text-speed still holds six ticks
+/// (audit-fixes #511).
 pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
 pub const TEXT_PRESERVE_ACTIVE_FLAG: u8 = 0x01;
 pub const TEXT_EXTRA_CONTROL_WORD_FLAG: u8 = 0x04;
+/// `test cl,8` @`0x661E` in `vm_op_a6_text` (`0x660C`) — b4 bit 3 arms the
+/// skip-N-tokens counter `DS:0x67AB` (audit-fixes #511).
 pub const TEXT_CONDITIONAL_SKIP_FLAG: u8 = 0x08;
+/// `test cl,0x10` @`0x6630` — b4 bit 4 sets the loop target `DS:0x6778`
+/// (audit-fixes #511).
 pub const TEXT_LOOP_TARGET_FLAG: u8 = 0x10;
+/// Bit 7, and it NEVER APPEARS AS `0x80`: the handler tests it with a SIGN
+/// branch (`jns 0x67A0` @`0x6649`) and clears it with a complement mask
+/// (`and byte ptr [si+1],0x7f` @`0x6698`). Searching for the immediate `0x80`
+/// finds nothing here — the same shape as croolis's y-floor `js` (#488) and the
+/// dirty-rect sign terminator (#506) — audit-fixes #511.
 pub const TEXT_ACTIVE_DISPLAY_FLAG: u8 = 0x80;
+/// `test word ptr es:[di+2],0x8000` @`0x665A` — a WORD test on the line record,
+/// unlike the byte flags above (audit-fixes #511).
 pub const TEXT_LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
 
 /// Port the TEXT handler's `b3` selector bridge:
