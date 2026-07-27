@@ -13,6 +13,9 @@
 /// `game_font_row_table_is_one_byte_per_row` checks that extent against the image.
 pub const GAME_FONT_WIDTH: usize = 8;
 pub const GAME_FONT_HEIGHT: usize = 8;
+/// 8 — the glyph height, and the subtitle block's only Y advance: BX is not
+/// reloaded between the `lcall 0x299,0x6a0` draws @`0x94EE` (audit-fixes #536,
+/// #563). Same 8 as the row table at file `0x14D28`.
 pub const GAME_FONT_LINE_HEIGHT: usize = 8;
 pub const GAME_FONT_SPACE_ADVANCE: usize = 6;
 

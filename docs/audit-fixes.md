@@ -18686,3 +18686,37 @@ not find it, and either invents a citation or files the row as unverifiable. Bot
 are worse than "the data says so, here is the arithmetic".
 
 726 tests, 0 failures.
+
+## #563 — an abbreviated citation put the wrong mnemonic on an address
+
+Four constants cited from work already done — `VIEWPORT_W`/`VIEWPORT_H` in `lib.rs`
+(the third and fourth homes of 320/200 after `engine` and `extract`),
+`PANORAMA_FRAME_COUNT` (180, the auto-turn's fold value from #496, where a frame is
+half a degree-count per #497's `shr bx,1`), and `GAME_FONT_LINE_HEIGHT`.
+
+THE CITATION GUARD CAUGHT ONE. I compressed #502's four-instruction sequence into
+"`xchg bh,bl` + `shl ...,6` @`0x9B25`..`0x9B2C`", and
+`quoted_instructions_match_the_disassembly` reported:
+
+```text
+  doc says 0x09b25 is `shl`, disassembly says `mov` -- `shl` is at 0x09b29
+```
+
+`0x9B25` is `mov di,bx`. My range notation put a mnemonic beside an address that
+does not hold it — and the ORIGINAL #502 citation was correct, listing each
+instruction with its own address. The compression introduced the error.
+
+That is the second time a guard has caught my ABBREVIATION rather than my decode:
+#536 wrote a file offset as arithmetic (`file 0xD420 + 0x70FA`) and the offset guard
+read `0xD420` as the claim. Both times the underlying fact was right and the
+shorthand was wrong, which is precisely the class a human reviewer waves through —
+the sentence reads fluently and the address is real.
+
+The settle guard (#537) also refused while the suite was red, so no row was recorded
+against the broken tree. Two independent guards, one mistake, caught before it
+landed.
+
+Rewritten with each instruction at its own address: `xchg bh,bl` @`0x9B27`,
+`shl di,6` @`0x9B29`, `add di,bx` @`0x9B2C`.
+
+726 tests, 0 failures.

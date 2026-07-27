@@ -54,7 +54,12 @@ pub mod tbbig;
 pub mod util;
 pub mod vm;
 
+/// 320 — the row stride the game BUILDS rather than stores: `xchg bh,bl`
+/// @`0x9B27` (y*256) plus `shl di,6` @`0x9B29` (y*64), summed by `add di,bx`
+/// @`0x9B2C`. Never an immediate anywhere (audit-fixes #502, #563).
 pub const VIEWPORT_W: usize = 320;
+/// 200 — `mov word ptr [0x523b],0xc8` @`0xB41D`, the clip bottom the navigation
+/// routine restores (audit-fixes #495, #563).
 pub const VIEWPORT_H: usize = 200;
 /// The export's video frame rate — a PORT CHOICE, not the game's (audit-fixes
 /// #549). The HNM header carries NO frame-rate field (it is header size, palette

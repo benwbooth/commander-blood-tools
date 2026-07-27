@@ -47,6 +47,10 @@
 pub const PANORAMA_FRAME_PIXELS: usize = 320 * 200;
 
 /// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table).
+/// 180 frames — the panorama's modulus, and the same 180 the auto-turn folds on
+/// (`cmp ax,0xb4 / jl` @`0x9748`, #496). A frame is HALF a degree-count:
+/// `shr bx,1` @`0x97E1` stores `[0x2795]` from a 0..0x168 accumulator (#497), so
+/// 180 frames cover 360 degrees at 2 degrees each (audit-fixes #563).
 pub const PANORAMA_FRAME_COUNT: usize = 180;
 
 /// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames.

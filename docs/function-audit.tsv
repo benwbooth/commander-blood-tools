@@ -648,34 +648,34 @@ objects	src/ext.rs	119	fn		UNVERIFIED	/// Parse the object records (10-byte `[id
 parse_ext	src/ext.rs	153	fn		UNVERIFIED	/// Parse the framing of an `.ext` world body. Returns `None` if it isn't a world file. /// The first-section record count is body byte 8; records are 3 bytes each and the /// section is expected to e
 GAME_FONT_WIDTH	src/font.rs	14	const	0x14D28,0x14FD8	DATA	/// Glyph width in pixels — 8, because a glyph ROW IS ONE BYTE. /// /// Not an immediate anywhere; it is the row table's layout. The rows start at /// `0x14D28` and run `DIALOGUE_FONT_GLYPH_COUNT * GA
 GAME_FONT_HEIGHT	src/font.rs	15	const		TESTED	
-GAME_FONT_LINE_HEIGHT	src/font.rs	16	const		UNVERIFIED	
-GAME_FONT_SPACE_ADVANCE	src/font.rs	17	const		UNVERIFIED	
-GameFontGlyph	src/font.rs	20	struct		DATA	
-subtitle_draw_glyph	src/font.rs	31	fn	0x31D7	DATA	/// The glyph to blit for a subtitle character. Unknown glyphs fall back to '?' /// so garbage is visible, BUT a space (' ') draws NOTHING (returns None) — the /// game's `render_string` (BLOODPRG.EXE
-cp437_byte	src/font.rs	47	fn		UNVERIFIED	/// CP437 code for `ch`, restricted to the range the font table covers (`0x00..0xAF`). /// /// The game's strings are CP437 bytes, and `GAME_FONT_CHAR_MAP` is indexed by that /// BYTE. A Unicode scala
-cp437_string	src/font.rs	59	fn		TESTED	/// Decode game data (CP437) to a `String`. `String::from_utf8_lossy` is WRONG for /// these bytes: `0x82` is `é` in CP437 but an invalid UTF-8 lead byte, so it becomes /// U+FFFD and the character is
-cp437_char	src/font.rs	66	fn		UNVERIFIED	/// CP437 byte -> Unicode scalar. ASCII is identity; `0x80..0xAF` is the span the /// font has glyphs for; above that the game has no glyph, so it maps to U+FFFD and /// stays visible rather than sile
-game_font_glyph	src/font.rs	81	fn		DATA	
-game_font_advance	src/font.rs	94	fn	0x31ce	DATA	// Unmapped -> advance 0 (the char is skipped, no pen movement), not a '?' or // space width — matches render_string's `js 0x31ce` skip.
-game_font_drawn_width	src/font.rs	117	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7,0x31CE,0x31DE,0x91	ORACLE	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
-GAME_FONT_CHAR_MAP	src/font.rs	141	const	0x14c22,0x14cd2,0x14d27,0x14d28,0x7802,0x14C22,0x31C8,0x31DE	DATA	// Extracted from BLOODPRG.EXE: // - ASCII to glyph index map: file offset 0x14c22 // - glyph advances: file offsets 0x14cd2..0x14d27 // - 8-byte glyph rows: file offset 0x14d28 /// ASCII/CP437 -> gly
-GAME_FONT_WIDTHS	src/font.rs	156	const		DATA	
-GAME_FONT_GLYPHS	src/font.rs	166	const		DATA	
-draw_text_indexed	src/font.rs	257	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
-BoldConsoleFont	src/font.rs	507	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
-GLYPH_MAP_FILE_OFFSET	src/font.rs	519	const	0x70FA,0x1451A,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to search. A NE
-GLYPHS_FILE_OFFSET	src/font.rs	523	const	0x71AA,0x145CA,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
-ADVANCE	src/font.rs	527	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
-load_from_exe	src/font.rs	530	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
-draw	src/font.rs	549	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
-SQUARE_CAPS_GLYPHS	src/font.rs	605	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
-SQUARE_CAPS_WIDTHS	src/font.rs	662	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
-SQUARE_CAPS_CHAR_MAP	src/font.rs	667	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
-square_caps_glyph_index	src/font.rs	687	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
-square_caps_glyph	src/font.rs	695	fn		UNVERIFIED	
-square_caps_advance	src/font.rs	701	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
-square_caps_text_width	src/font.rs	723	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
-draw_square_caps	src/font.rs	735	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
+GAME_FONT_LINE_HEIGHT	src/font.rs	19	const	0x6a0,0x94EE,0x14D28	ASM	/// 8 — the glyph height, and the subtitle block's only Y advance: BX is not /// reloaded between the `lcall 0x299,0x6a0` draws @`0x94EE` (audit-fixes #536, /// #563). Same 8 as the row table at file 
+GAME_FONT_SPACE_ADVANCE	src/font.rs	20	const		UNVERIFIED	
+GameFontGlyph	src/font.rs	23	struct		DATA	
+subtitle_draw_glyph	src/font.rs	34	fn	0x31D7	DATA	/// The glyph to blit for a subtitle character. Unknown glyphs fall back to '?' /// so garbage is visible, BUT a space (' ') draws NOTHING (returns None) — the /// game's `render_string` (BLOODPRG.EXE
+cp437_byte	src/font.rs	50	fn		UNVERIFIED	/// CP437 code for `ch`, restricted to the range the font table covers (`0x00..0xAF`). /// /// The game's strings are CP437 bytes, and `GAME_FONT_CHAR_MAP` is indexed by that /// BYTE. A Unicode scala
+cp437_string	src/font.rs	62	fn		TESTED	/// Decode game data (CP437) to a `String`. `String::from_utf8_lossy` is WRONG for /// these bytes: `0x82` is `é` in CP437 but an invalid UTF-8 lead byte, so it becomes /// U+FFFD and the character is
+cp437_char	src/font.rs	69	fn		UNVERIFIED	/// CP437 byte -> Unicode scalar. ASCII is identity; `0x80..0xAF` is the span the /// font has glyphs for; above that the game has no glyph, so it maps to U+FFFD and /// stays visible rather than sile
+game_font_glyph	src/font.rs	84	fn		DATA	
+game_font_advance	src/font.rs	97	fn	0x31ce	DATA	// Unmapped -> advance 0 (the char is skipped, no pen movement), not a '?' or // space width — matches render_string's `js 0x31ce` skip.
+game_font_drawn_width	src/font.rs	120	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7,0x31CE,0x31DE,0x91	ORACLE	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
+GAME_FONT_CHAR_MAP	src/font.rs	144	const	0x14c22,0x14cd2,0x14d27,0x14d28,0x7802,0x14C22,0x31C8,0x31DE	DATA	// Extracted from BLOODPRG.EXE: // - ASCII to glyph index map: file offset 0x14c22 // - glyph advances: file offsets 0x14cd2..0x14d27 // - 8-byte glyph rows: file offset 0x14d28 /// ASCII/CP437 -> gly
+GAME_FONT_WIDTHS	src/font.rs	159	const		DATA	
+GAME_FONT_GLYPHS	src/font.rs	169	const		DATA	
+draw_text_indexed	src/font.rs	260	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
+BoldConsoleFont	src/font.rs	510	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
+GLYPH_MAP_FILE_OFFSET	src/font.rs	522	const	0x70FA,0x1451A,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to search. A NE
+GLYPHS_FILE_OFFSET	src/font.rs	526	const	0x71AA,0x145CA,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
+ADVANCE	src/font.rs	530	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
+load_from_exe	src/font.rs	533	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
+draw	src/font.rs	552	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
+SQUARE_CAPS_GLYPHS	src/font.rs	608	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
+SQUARE_CAPS_WIDTHS	src/font.rs	665	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
+SQUARE_CAPS_CHAR_MAP	src/font.rs	670	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
+square_caps_glyph_index	src/font.rs	690	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
+square_caps_glyph	src/font.rs	698	fn		UNVERIFIED	
+square_caps_advance	src/font.rs	704	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
+square_caps_text_width	src/font.rs	726	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
+draw_square_caps	src/font.rs	738	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
 new	src/gpu.rs	105	fn		INFRA	/// Create over an existing X11 (xcb) window. /// /// # Safety /// `xcb_conn` must be a live xcb_connection_t pointer outliving the presenter.
@@ -738,10 +738,10 @@ WORLD_ART_TABLE_FILE_OFFSET	src/levels.rs	438	const	0x2BC7,0xD420	ASM	/// File o
 WORLD_ART_DIRECTORY	src/levels.rs	450	const	0x9098,0x90B6,0x8000,0x90B8,0x90C3	DATA	/// The game's own object-name -> artwork lookup, read by the info panel's first /// zoom frame: it walks these records comparing each name against the selected /// object's inline name (`0x9098..0x90
 world_art_resource_id	src/levels.rs	498	fn	0x5486	ASM	/// The artwork resource id for an object's inline NAME, matched the way the /// engine matches it (`0x1CE:0x2C4` is case-insensitive, like the built-in /// object-name scan at `0x5486`).
 parse_world_art_table	src/levels.rs	508	fn	0x90A7	ASM	/// Parse the table straight out of a `BLOODPRG.EXE` image, so a checkout with /// the binary never has to trust the transcription above. Stops at the first /// record whose name byte is zero (`cmp by
-VIEWPORT_W	src/lib.rs	57	const		UNVERIFIED	
-VIEWPORT_H	src/lib.rs	58	const		UNVERIFIED	
-HNM_FPS	src/lib.rs	66	const		INFRA	/// The export's video frame rate — a PORT CHOICE, not the game's (audit-fixes /// #549). The HNM header carries NO frame-rate field (it is header size, palette /// block, frame offsets — see `hnm::Hn
-GAME_TICK_SECS	src/lib.rs	77	const	0x1746,0xB2D,0x0FFB	ASM	/// One game tick in seconds — `8 / (1193182 / 5958)` = 39.95 ms, i.e. ~25 Hz. /// /// The PIT divisor is `0x1746` (audit-fixes #411) and a frame's budget is the 8 /// of `[0xB2D]` (`0x0FFB`, #477). A
+VIEWPORT_W	src/lib.rs	59	const	0x9B25,0x9B2C	ASM	/// 320 — the row stride the game builds from two shifts, `xchg bh,bl` + /// `shl ...,6` @`0x9B25`..`0x9B2C`; never an immediate (audit-fixes #502, #563).
+VIEWPORT_H	src/lib.rs	62	const	0x523b,0xB41D	ASM	/// 200 — `mov word ptr [0x523b],0xc8` @`0xB41D`, the clip bottom the navigation /// routine restores (audit-fixes #495, #563).
+HNM_FPS	src/lib.rs	70	const		INFRA	/// The export's video frame rate — a PORT CHOICE, not the game's (audit-fixes /// #549). The HNM header carries NO frame-rate field (it is header size, palette /// block, frame offsets — see `hnm::Hn
+GAME_TICK_SECS	src/lib.rs	81	const	0x1746,0xB2D,0x0FFB	ASM	/// One game tick in seconds — `8 / (1193182 / 5958)` = 39.95 ms, i.e. ~25 Hz. /// /// The PIT divisor is `0x1746` (audit-fixes #411) and a frame's budget is the 8 /// of `[0xB2D]` (`0x0FFB`, #477). A
 menu_dish_lines	src/main.rs	6	fn		ORACLE?	"/// The cook's daily-fare lines (the MENU row's presentation — oracle: white /// subtitle text, e.g. ""Jellied URTIKAN with MURFFALO bone marrow""): the SCRIPT1 /// dish block around offset 0x100."
 commit_world_destination	src/main.rs	44	fn	0xB0DC,0xB0EA,0x6752,0xB0FB,0xB20C,0x5B38	ASM	/// Run the game's own destination COMMIT when the port enters a world. /// /// `ship_click_commit` (`0xB0DC`) roots the candidate chain at `arche` /// (`0xB0EA mov di,[0x6752]`), picks the first cand
 main	src/main.rs	62	fn		INFRA	
@@ -1237,23 +1237,23 @@ remap_rect_indexed_clipped	src/sprite.rs	249	fn	0x33A6,0x33F4,0x33AC,0x33B4,0x52
 blit_sprite_frame_at	src/sprite.rs	317	fn		UNVERIFIED	/// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred /// at `(cx, cy)`, skipping transparent index 0. /// Blit a frame using its authored draw offset: the frame's top-lef
 blit_sprite_frame_centered	src/sprite.rs	340	fn		UNVERIFIED	
 PANORAMA_FRAME_PIXELS	src/tbbig.rs	47	const	0x2D50,0xFA00	ASM	/// Width * height of one panorama frame — the unpacker at `0x2D50` decodes /// exactly this many pixels (`ebp` starts at 0xFA00) regardless of content.
-PANORAMA_FRAME_COUNT	src/tbbig.rs	50	const		UNVERIFIED	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table).
-ANGLE_UNITS_PER_FRAME	src/tbbig.rs	60	const	0x0A2A,0x9807	DATA	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames. /// View-angle units per panorama frame — DERIVED, not an immediate anywhere: /// `ANGLE_UNITS_PER_REVOLUTION / PANORAMA_
-ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	64	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
-CONSOLE_REST_FRAME	src/tbbig.rs	69	const		ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
-CONSOLE_BAND_FRAME	src/tbbig.rs	84	const	0x7AC3	DATA	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
-CONSOLE_BAND_TOP	src/tbbig.rs	86	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200).
-CONSOLE_BAND_HEIGHT	src/tbbig.rs	87	const		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaDirEntry	src/tbbig.rs	92	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaFrameHeader	src/tbbig.rs	114	struct	0x8269,0x8274,0xA2A,0x8278,0xA2C,0xa3e,0x826A,0x981B,0x2A1B,	ASM	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
-BridgePanorama	src/tbbig.rs	127	struct		TESTED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
-parse	src/tbbig.rs	138	fn	0x981B	ASM	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
-frame_count	src/tbbig.rs	162	fn		TESTED	
-chunk	src/tbbig.rs	167	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
-frame_header	src/tbbig.rs	185	fn	0x8274,0xA2A,0x8278,0xA2C,0x987A	ASM	/// Read a frame chunk's 10-byte header into [`PanoramaFrameHeader`]. /// /// The field ORDER is not a guess and not a layout inferred from the data — /// it is the game's own hit test, verified in au
-unpack_frame_over	src/tbbig.rs	209	fn	0x2D50,0x5B57	ASM	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
-frame_pixels	src/tbbig.rs	259	fn		TESTED	/// Convenience: decode a frame standalone onto black (opaque variant).
-panorama_frame_for_angle	src/tbbig.rs	268	fn	0x0A2A,0x97E7	ASM	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
+PANORAMA_FRAME_COUNT	src/tbbig.rs	54	const	0x9748,0x97E1,0x2795	ASM	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table). /// 180 frames — the panorama's modulus, and the same 180 the auto-turn folds on /// (`cmp ax,0xb4 / jl` @`0x9748`, 
+ANGLE_UNITS_PER_FRAME	src/tbbig.rs	64	const	0x0A2A,0x9807	DATA	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames. /// View-angle units per panorama frame — DERIVED, not an immediate anywhere: /// `ANGLE_UNITS_PER_REVOLUTION / PANORAMA_
+ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	68	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
+CONSOLE_REST_FRAME	src/tbbig.rs	73	const		ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
+CONSOLE_BAND_FRAME	src/tbbig.rs	88	const	0x7AC3	DATA	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
+CONSOLE_BAND_TOP	src/tbbig.rs	90	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200).
+CONSOLE_BAND_HEIGHT	src/tbbig.rs	91	const		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaDirEntry	src/tbbig.rs	96	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaFrameHeader	src/tbbig.rs	118	struct	0x8269,0x8274,0xA2A,0x8278,0xA2C,0xa3e,0x826A,0x981B,0x2A1B,	ASM	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
+BridgePanorama	src/tbbig.rs	131	struct		TESTED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
+parse	src/tbbig.rs	142	fn	0x981B	ASM	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
+frame_count	src/tbbig.rs	166	fn		TESTED	
+chunk	src/tbbig.rs	171	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
+frame_header	src/tbbig.rs	189	fn	0x8274,0xA2A,0x8278,0xA2C,0x987A	ASM	/// Read a frame chunk's 10-byte header into [`PanoramaFrameHeader`]. /// /// The field ORDER is not a guess and not a layout inferred from the data — /// it is the game's own hit test, verified in au
+unpack_frame_over	src/tbbig.rs	213	fn	0x2D50,0x5B57	ASM	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
+frame_pixels	src/tbbig.rs	263	fn		TESTED	/// Convenience: decode a frame standalone onto black (opaque variant).
+panorama_frame_for_angle	src/tbbig.rs	272	fn	0x0A2A,0x97E7	ASM	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
 media_stem	src/util.rs	1	fn		UNVERIFIED	
 safe_file_stem	src/util.rs	14	fn		UNVERIFIED	
 OPCODE_DESC	src/vm.rs	47	const	0x14338,0x6F18,0x62B6,0x2F60	DATA	/// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where /// `byte1` is either `len_mode1` or a mode
