@@ -46,6 +46,11 @@ MIN_ATTRIBUTABLE = 5
 LITERAL = re.compile(r'"([A-Za-z0-9][A-Za-z0-9 \'.!?:-]{2,23})"')
 # Words that mark a string as the port talking to a developer, not the player.
 FILENAME = re.compile(r"^[A-Za-z0-9_]+\.[A-Za-z]{2,4}$")
+# `pub const NAME`, `const NAME`, `pub fn name`, `pub struct Name` -- the item a
+# literal belongs to, used to ask whether a test names it.
+DECL = re.compile(
+    r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:const|static|fn|struct|enum)\s+([A-Za-z_][A-Za-z0-9_]*)"
+)
 NOISE = re.compile(
     r"(?i)\b(unwrap|expect|panic|todo|fixme|debug|trace|test|assert|err|error|"
     r"warn|failed|missing|invalid|usage|skip)\b"
@@ -84,6 +89,13 @@ def main():
             # Everything from `mod tests` on is exempt.
             cut = text.find("#[cfg(test)]")
             body = text[:cut] if cut > 0 else text
+            # The file's TEST section, kept so an already-pinned literal is not
+            # reported as needing pinning (audit-fixes #466). "PIN IT" was appended
+            # unconditionally, so WORLD_ART_DIRECTORY's 42 names -- held to the
+            # image byte-for-byte by world_art_directory_matches_the_ds2bc7_table --
+            # were flagged every run alongside genuinely loose ones. A checker whose
+            # advice is mostly already taken teaches its reader to skip it.
+            tests = text[cut:] if cut > 0 else ""
             # STRIP COMMENTS FIRST. A doc comment QUOTING on-screen text -- `///
             # The comms "Hate TV" screen` -- is documentation, not a literal, and
             # the first run of this tool reported four of them as suspect content.
@@ -116,8 +128,21 @@ def main():
                     too_short.append((path, line, s))
                     continue
                 raw = s.encode("ascii", "ignore")
+                # PINNED = the file's tests name the ENCLOSING ITEM, not the
+                # string. Checking for the literal itself missed
+                # WORLD_ART_DIRECTORY entirely: its test reads the image and
+                # compares programmatically, so "Kortex" never appears in it.
+                # A pinning test is precisely the kind that does NOT repeat the
+                # value it pins (audit-fixes #466).
+                owner = None
+                for prev in range(line - 1, max(0, line - 400), -1):
+                    m2 = DECL.match(body.splitlines()[prev - 1]) if prev - 1 < len(body.splitlines()) else None
+                    if m2:
+                        owner = m2.group(1)
+                        break
+                pinned = (s in tests) or bool(owner and re.search(rf"\b{re.escape(owner)}\b", tests))
                 if raw and raw in exe:
-                    in_image.append((path, line, s, exe.find(raw)))
+                    in_image.append((path, line, s, exe.find(raw), pinned))
                     continue
                 where = next(
                     (n for n, b in blobs if raw and raw in b and not n.upper().endswith(".EXE")),
@@ -132,13 +157,15 @@ def main():
                         None,
                     )
                 if where:
-                    in_data.append((path, line, s, where))
+                    in_data.append((path, line, s, where, pinned))
                 else:
                     absent.append((path, line, s))
 
-    for path, line, s, at in sorted(in_image):
+    unpinned_image = [r for r in in_image if not r[4]]
+    unpinned_data = [r for r in in_data if not r[4]]
+    for path, line, s, at, _ in sorted(unpinned_image):
         print(f"IN-IMAGE {path}:{line}: {s!r} at BLOODPRG.EXE {at:#07x} — PIN IT")
-    for path, line, s, where in sorted(in_data):
+    for path, line, s, where, _ in sorted(unpinned_data):
         print(f"IN-DATA  {path}:{line}: {s!r} in {where} — PIN IT")
     if "--absent" in sys.argv:
         for path, line, s in sorted(absent):
@@ -146,7 +173,8 @@ def main():
 
     print(
         f"{len(in_image) + len(in_data) + len(absent)} display literal(s): "
-        f"{len(in_image)} in the image, {len(in_data)} in shipped data, "
+        f"{len(in_image)} in the image ({len(unpinned_image)} unpinned), "
+        f"{len(in_data)} in shipped data ({len(unpinned_data)} unpinned), "
         f"{len(absent)} in neither (--absent to list); "
         f"{len(too_short)} under {MIN_ATTRIBUTABLE} chars and NOT searched, "
         "because a short string matches any binary by chance"

@@ -15272,3 +15272,37 @@ file, in a different syntactic position.
 
 2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #466 — a checker whose advice was mostly already taken
+
+#465 noted `check_ui_literals.py` had been flagging a literal "every run" without
+anyone acting. Looked at what else it flags, and the answer reframes the tool: 84
+literals marked "PIN IT", and the advice was ALREADY TAKEN for nearly all of them.
+`WORLD_ART_DIRECTORY`'s 42 world names are held to the image byte-for-byte by
+`world_art_directory_matches_the_ds2bc7_table`; `CANCEL` by
+`option_box_label_is_the_games_own_string`; `LOADING`/`PAUSE` by
+`ui_string_literals_match_the_image_block`. All three tests exist and pass.
+
+The tool appended "PIN IT" unconditionally, so a reader saw 84 demands of which
+~80 were satisfied. That is worse than silence: it trains you to skip the output,
+which is exactly what had happened.
+
+Taught it to detect a pin. The first attempt asked whether the literal STRING
+appears in the file's tests, and caught 5 of 41 — because a pinning test is
+precisely the kind that does NOT repeat the value it pins. `world_art_...` reads
+the image and compares programmatically; "Kortex" never appears in it. The second
+attempt asks whether the tests name the literal's ENCLOSING ITEM, which is how the
+relationship is actually expressed.
+
+    before   41 in the image (all "PIN IT"),  43 in shipped data
+    after    41 in the image (1 unpinned),    43 in shipped data (42 unpinned)
+
+The one remaining image literal is `EMMXXXX0`, the EMS driver signature — a DOS
+constant, not game text. The 42 data ones are almost all in `src/bin/*`,
+diagnostic probes rather than the port's runtime.
+
+So the library's display strings are, in fact, pinned. That is worth knowing
+precisely because the tool had been saying the opposite for its whole existence.
+
+2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
