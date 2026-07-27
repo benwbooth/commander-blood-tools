@@ -4347,6 +4347,25 @@ pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
     }
 }
 
+/// `ship_3d_object_table_bit_test_full` @`0x6210` — is this object's bit set in the
+/// selector-5/kind-2 bitset?
+///
+/// ```text
+/// 0x6216  les di,gs:[0x672c]              the 20-byte directory
+/// 0x621d  cmp ax,es:[di+0x10] / je 0x6229 match on the object offset...
+/// 0x6223  add di,0x14 / inc cx / jmp      ...counting the DIRECTORY INDEX in cx
+/// 0x6229  mov ax,5 / mov bx,2             selector 5, kind 2 -- BOTH FIXED
+/// 0x622f  call 0x6023 / add si,ax         the bitset field
+/// 0x6234  mov ax,cx                       then index>>3 selects the byte
+/// ```
+///
+/// THE SELECTOR AND KIND ARE LITERALS (`mov ax,5` / `mov bx,2`), not derived from the
+/// object being tested — so an object of any kind is looked up in the kind-2 column.
+/// That is why the port passes constants here rather than the record's own kind.
+///
+/// THE SCAN HAS NO TERMINATION CHECK. `0x621D`..`0x6227` loops until it finds a
+/// match; an object not in the directory walks off the end of the table. The port's
+/// `.position()?` returns `None` instead — a guard, not a decode (audit-fixes #605).
 pub fn ship_3d_object_table_bit_is_set(
     object_table_records: &[u16],
     bitset_base: &[u8],
@@ -4773,6 +4792,22 @@ fn circular_delta(first: u16, second: u16, modulus: u16) -> u16 {
     }
 }
 
+/// ONE conditional correction, not a modulo — the shape the angle code uses
+/// everywhere, three times in `0x97AF`..`0x97DB` alone:
+///
+/// ```text
+/// 0x97af  add dx,ax / cmp dx,0x168 / jl 0x97bb / sub dx,0x168   overflow: subtract once
+/// 0x97c4  sub bx,0x1e / jns 0x97e1 / add bx,0x168               underflow: add once
+/// 0x97d4  add bx,0x1e / cmp bx,0x168 / jl 0x97e1                overflow again
+/// ```
+///
+/// `jl` and `jns` are the SIGNED forms, which is why this takes an `i32` and tests
+/// `< 0` rather than relying on `u16` wraparound.
+///
+/// A SINGLE correction only works while the step is smaller than the modulus, and
+/// the game relies on that: the steps here are `0x1E` and `0x28` against a `0x168`
+/// ring. Feed it a larger delta and it lands outside the ring — `rem_euclid` would
+/// not, which is exactly why this is not `rem_euclid` (audit-fixes #605).
 fn wrap_ring_once(value: i32, modulus: u16) -> u16 {
     if value < 0 {
         value.wrapping_add(modulus as i32) as u16

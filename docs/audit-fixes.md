@@ -20170,3 +20170,34 @@ ALSO: the table has FIVE real entries. Index 5 is zeros and 6+ is unrelated byte
 a profile index above 4 reads garbage.
 
 734 tests, 0 failures.
+
+## #605 — two ship-3D primitives, and two places the port guards what the game does not
+
+`ship_3d_object_table_bit_is_set` is `ship_3d_object_table_bit_test_full` @`0x6210`.
+Two things the code alone does not say:
+
+- `0x6229` is `mov ax,5 / mov bx,2` — the selector AND the kind are LITERALS, so an
+  object of any kind is looked up in the kind-2 column. That is why the port passes
+  constants rather than the record's own kind, which reads like an oversight.
+- `0x621D`..`0x6227` scans the directory with NO TERMINATION CHECK. An object that is
+  not in the table walks off the end. The port's `.position()?` returns `None` — a
+  guard, not a decode, and now labelled as one.
+
+`wrap_ring_once` is ONE CONDITIONAL CORRECTION, not a modulo, and the angle code uses
+that shape three times in thirty bytes:
+
+    0x97af  add dx,ax / cmp dx,0x168 / jl 0x97bb / sub dx,0x168   overflow: subtract once
+    0x97c4  sub bx,0x1e / jns 0x97e1 / add bx,0x168               underflow: add once
+    0x97d4  add bx,0x1e / cmp bx,0x168 / jl 0x97e1                overflow again
+
+WHY IT IS NOT `rem_euclid`, which is the tidy-up waiting to happen: a single
+correction only lands inside the ring while the step is SMALLER than the modulus, and
+the game relies on that — the steps are `0x1E` and `0x28` against a `0x168` ring.
+`rem_euclid` would be correct for any input and therefore different for inputs the
+game cannot produce. Keeping the original's shape is the point; `bridge::wrap` really
+is `rem_euclid` and is a different routine.
+
+`jl`/`jns` are the signed forms, which is why this takes `i32` and tests `< 0` rather
+than leaning on `u16` wraparound.
+
+734 tests, 0 failures.
