@@ -1523,6 +1523,10 @@ const TALK_FIELD: u16 = 0x3A;
 ///
 /// Pinned to the image by `field_matrix_entries_match_the_constants`.
 const LOCATION_FIELD: u16 = 24;
+/// `mov cx,0x10` @`0x5FFB` — the loop bound for the special-object slot array at
+/// `mov bp,0x6d3e` @`0x5FF8`, and it drives BOTH loops in the routine
+/// (`loop 0x5FFE` @`0x6006` and `loop 0x600E` @`0x6017`). So 16 is the array's
+/// real size, not a port-chosen capacity (audit-fixes #520).
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 /// `mov ax,2` @`0x5895`, immediately before `call 0x6023` (`vm_field_offset`)
 /// @`0x5898`, inside the `0x5816` post-update handoff (audit-fixes #519).
@@ -1829,6 +1833,20 @@ const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 /// Touched by the game at `mov byte ptr [0x2531], 6` @`0x0B336`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
+/// `0xFFFF`, and it is NEVER WRITTEN AS AN IMMEDIATE — the C4 handler produces
+/// it with `not ax` (audit-fixes #520):
+///
+/// ```text
+///   0x5D96  mov ax, ds:[bp+4]     the field must be ...
+///   0x5D9A  or ax, ax / jne       ... ZERO to get here
+///   0x5DAA  not ax                so ax is now 0xFFFF
+///   0x5DAC  mov ds:[bp+4], ax     stamped into the record
+/// ```
+///
+/// The `not` is only equivalent to storing `0xFFFF` BECAUSE the guard above
+/// proved the field zero — the same guard the port spells as
+/// `state_u16(record + 4) != 0 -> return None`. Searching the image for a
+/// `0xFFFF` store into this field finds nothing.
 const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
 /// `DS:0x6780`. The setter is a single instruction ending the routine —
 /// `mov word ptr gs:[0x6780],ax` @`0x64BB` then `ret` @`0x64BF` — and the cell is

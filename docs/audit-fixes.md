@@ -17264,3 +17264,37 @@ of the decode as the helper's address. A citation that names only the constant's
 instruction can be right while the surrounding call is wrong.
 
 621 tests, 0 failures.
+
+## #520 — `0xFFFF` produced by `not ax`, and why the guard is part of the constant
+
+Two `vm.rs` constants, and the second is the clearest example yet of a value that
+exists only as arithmetic.
+
+`SPECIAL_OBJECT_SLOT_COUNT = 16` is `mov cx,0x10` @`0x5FFB`, the bound for the slot
+array at `mov bp,0x6d3e` @`0x5FF8` — and it drives BOTH loops in the routine
+(`loop 0x5FFE` @`0x6006`, `loop 0x600E` @`0x6017`). So 16 is the array's real size,
+not a capacity the port picked.
+
+`C4_POST_UPDATE_SENTINEL = 0xFFFF` is never written as an immediate anywhere:
+
+```text
+  0x5D96  mov ax, ds:[bp+4]     the field ...
+  0x5D9A  or ax, ax / jne       ... must be ZERO to reach here
+  0x5DAA  not ax                so ax is 0xFFFF
+  0x5DAC  mov ds:[bp+4], ax     stamped into the record
+```
+
+THE GUARD IS PART OF THE CONSTANT. `not ax` only equals "store `0xFFFF`" because the
+branch four instructions earlier proved `ax` was zero. Lift the store without the
+guard and it writes the complement of whatever the field held. The port already has
+the guard — `state_u16(record + 4) != 0 -> return None` — so this is evidence for
+code that was already right, but the doc now says WHY the two lines belong together,
+which is what stops a later simplification from separating them.
+
+This is the fifth constant this session that is computed rather than stored (#484's
+descriptor, #491's 287, #502's 320, #504's `0x100000`, now this). The pattern has
+earned a standing conclusion: IN THIS BINARY, "the value is not in the image" is the
+normal case, not a red flag — and the interesting question is always which
+instructions produce it and what they assume.
+
+621 tests, 0 failures.
