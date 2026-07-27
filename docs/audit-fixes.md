@@ -20488,3 +20488,32 @@ writers of `[0x0ADA]` exist in the image and one of them is in the click path; t
 search took one command.
 
 735 tests, 0 failures.
+
+## #615 — wired: the console menu animates instead of snapping open
+
+#612 found it, #613 specified it, #614 sourced the length. This connects it.
+
+`EngineState::begin_console_open(row)` arms `Ship3dInterpolationGate` with the ten
+ticks `0x86E4` writes in the click path, and `step()` applies the destination only
+when the gate reports `Complete`. `main.rs`'s click arms the animation instead of
+setting `phone_active` directly. The telephone, cryobox, submenu and option box now
+arrive ten frames after the click.
+
+THE SELECTION CLEAR STAYED ON THE CLICK, deliberately. `0x87B0`/`0x883B` clear
+`[0x2A19]` as part of dispatch, and a stale selection blocks the whole eye-orb scan —
+deferring the clear to the completion frame would leave the bridge orbs dead for the
+duration of every open.
+
+THE BOUNDARY IS ELEVEN FRAMES, NOT TEN, and the test found that rather than my
+assuming it. `0x1E67` is `cmp bl,[0xadb] / je` and the `inc` is at `0x1E6D`, so the
+gate tests BEFORE advancing: ten `Active` ticks, then `Complete` on the eleventh call.
+My first version stepped ten times and asserted the screen was open; it was not. The
+comment now says why, since "duration 10" reads as "ten calls".
+
+WHAT IS STILL NOT DONE, stated so the row is not read as finished: the port animates
+the DELAY, not the travelling rectangle. The gate returns interpolated words every
+tick and the engine discards them. And the five `run_ship_3d_nav_choice_handler_*`
+routines remain unwired — the phase machine's TIMING is reproduced, its per-row record
+work is not.
+
+736 tests, 0 failures.

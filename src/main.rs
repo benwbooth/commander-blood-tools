@@ -1994,16 +1994,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 // eye-orb/station scan (bridge.rs), so leaving it
                                 // set after the phone or cryobox opens would keep
                                 // the bridge orbs unclickable on return.
+                                // ARM the ten-frame open (0x86E4) instead of setting
+                                // the screen flag now; `EngineState::step` applies the
+                                // destination when the gate completes (audit-fixes
+                                // #615). The selection clear stays HERE, on the click,
+                                // because 0x87B0/0x883B clear [0x2A19] as part of
+                                // dispatch and a stale selection blocks the orb scan
+                                // for the whole animation otherwise.
                                 1 => {
-                                    engine.phone_active = true;
+                                    engine.begin_console_open(1);
                                     engine.bridge.clear_menu_selection();
                                 }
                                 2 => {
-                                    engine.cryobox_active = true;
+                                    engine.begin_console_open(2);
                                     engine.bridge.clear_menu_selection();
                                 }
-                                3 => engine.menu_submenu_active = true, // {EXPLANATIONS, GAME}
-                                4 => engine.option_box_active = true,   // choice box (real)
+                                3 => engine.begin_console_open(3), // {EXPLANATIONS, GAME}
+                                4 => engine.begin_console_open(4), // choice box (real)
                                 _ => {}
                             }
                         }

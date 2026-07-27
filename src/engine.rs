@@ -615,6 +615,16 @@ pub struct EngineState {
     phone_connected: bool,
     /// Whether the video-phone screen is the active view.
     pub phone_active: bool,
+    /// The console-menu OPEN ANIMATION, `0x86E4`'s ten-tick interpolation.
+    ///
+    /// A menu click arms `[0x0ADA] = 0x0A` in the same breath as `[0x2A19]` and the
+    /// seek (`0x86AB`..`0x86E9`), and the row's handler holds its INTERPOLATING
+    /// phase until that gate completes (`0x876A`). So the telephone/cryobox/submenu
+    /// do not appear on the click frame — they arrive ten frames later.
+    ///
+    /// `None` when no open is in flight. `Some((row, gate))` while it animates; the
+    /// screen's own flag is set when the gate reports `Complete` (audit-fixes #615).
+    pub console_open: Option<(usize, crate::ship3d::Ship3dInterpolationGate)>,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -840,6 +850,7 @@ impl EngineState {
             phone_contact: 0,
             phone_connected: false,
             phone_active: false,
+            console_open: None,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_is_speech: Vec::new(),
@@ -5555,7 +5566,56 @@ impl EngineState {
     /// on-ship gate → countdown. Rendering and VM/script stepping wire in on top of
     /// this faithful control-flow skeleton; for now it advances input + bookkeeping
     /// so the loop is drivable and testable headlessly.
+    /// Arm the console-menu open animation for `row` (0-based, as
+    /// `menu_row_under_cursor` returns it).
+    ///
+    /// `0x86E4` writes the interpolation duration in the click path itself, so the
+    /// ten ticks are the CLICK's doing and not the destination screen's — every row
+    /// arms the same gate (audit-fixes #615).
+    pub fn begin_console_open(&mut self, row: usize) {
+        self.console_open = Some((
+            row,
+            crate::ship3d::Ship3dInterpolationGate {
+                duration_ticks: crate::ship3d::SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION,
+                current_tick: 0,
+            },
+        ));
+    }
+
+    /// Advance an in-flight console open; returns the row when it COMPLETES.
+    ///
+    /// Driven by the real gate (`step_ship_3d_interpolation_gate`, `0x1E5D`), so the
+    /// frame count is the game's rather than a chosen delay. The interpolated words
+    /// are discarded here — this port animates the DELAY, not yet the widget's
+    /// travelling rectangle, which is the remaining half of #612.
+    fn advance_console_open(&mut self) -> Option<usize> {
+        let (row, mut gate) = self.console_open.take()?;
+        // The source/dest rects are the widget's; only the gate's completion is
+        // consumed at present, so any pair with the same duration steps identically.
+        let step = crate::ship3d::step_ship_3d_interpolation_gate(&mut gate, [0; 4], [0; 4]);
+        match step {
+            Some(crate::ship3d::Ship3dInterpolationStep::Complete) => Some(row),
+            Some(crate::ship3d::Ship3dInterpolationStep::Active(_)) => {
+                self.console_open = Some((row, gate));
+                None
+            }
+            // The gate trapped (a zero duration); do not strand the open.
+            None => Some(row),
+        }
+    }
+
     pub fn step(&mut self, input: MouseInput) {
+        // The console-menu open animates over ten frames (0x86E4); apply the
+        // destination only when the gate completes.
+        if let Some(row) = self.advance_console_open() {
+            match row {
+                1 => self.phone_active = true,
+                2 => self.cryobox_active = true,
+                3 => self.menu_submenu_active = true,
+                4 => self.option_box_active = true,
+                _ => {}
+            }
+        }
 
         // Ship-3D nav view: drive the transition/depth state machine (0xB692 +
         // 0xB75C). Previously this ported, verified subsystem never ran.
@@ -5808,6 +5868,36 @@ mod tests {
         assert_eq!(fourth, 16, "the word after the origin is not what was decoded");
     }
     use super::*;
+
+    /// The console menu must NOT open on the click frame. `0x86E4` arms a ten-tick
+    /// interpolation in the click path and the row handler holds its INTERPOLATING
+    /// phase until the gate completes (`0x876A`), so the telephone arrives ten frames
+    /// later (audit-fixes #615).
+    #[test]
+    fn the_console_menu_opens_after_the_decoded_ten_frames() {
+        let mut e = EngineState::new();
+        e.begin_console_open(1);
+        assert!(!e.phone_active, "the click frame itself must not open it");
+
+        // TEN ACTIVE TICKS, then the gate reports Complete on the NEXT call —
+        // `0x1E67 cmp bl,[0xadb] / je` tests BEFORE the `inc` at `0x1E6D`, so the
+        // completing frame is the eleventh. Asserting ten here fails, which is how
+        // this test found the boundary rather than assuming it.
+        for frame in 0..crate::ship3d::SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION {
+            assert!(
+                !e.phone_active,
+                "opened early, on frame {frame} of the interpolation"
+            );
+            e.step(MouseInput::default());
+        }
+        assert!(!e.phone_active, "still animating after the tenth tick");
+        e.step(MouseInput::default());
+        assert!(
+            e.phone_active,
+            "the telephone must be open once the ten-tick gate completes"
+        );
+        assert!(e.console_open.is_none(), "the animation must not stay armed");
+    }
 
     /// End-to-end faithfulness check for the bridge: the engine's full render of
     /// the console (panorama frame 55 + starfield windows + menu palette rows)

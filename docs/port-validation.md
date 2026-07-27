@@ -2150,6 +2150,19 @@ live code (so dispatch-table registrations count as uses) with doc comments stri
 dynamically, and it says nothing about whether a WIRED function is called on a path
 that actually runs.
 
+## WIRED (#615) — the console menu now animates for ten frames
+
+Connected. `EngineState::begin_console_open` arms the gate on a menu click and
+`step()` applies the destination only when it reports `Complete`, so the telephone,
+cryobox, submenu and option box arrive TEN FRAMES after the click instead of on it.
+`the_console_menu_opens_after_the_decoded_ten_frames` holds that end to end.
+
+REMAINING, and narrower than before: the port animates the DELAY, not the widget's
+travelling rectangle. `step_ship_3d_interpolation_gate` returns interpolated words
+each tick and the engine currently discards them — drawing the box as it moves is the
+rest of #612. The five `run_ship_3d_nav_choice_handler_*` routines also remain
+unwired; the phase machine's TIMING is now reproduced, its per-row record work is not.
+
 ## SPECIFIED (#613, #614) — ten frames, and the spec is now a test
 
 The wiring target is fully determined, so connecting it is mechanical:
