@@ -15608,3 +15608,39 @@ Provisional queue: 121.
 
 2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #476 — the port paces on a measurement; the game has a programmed cadence
+
+#475 established the game never reads a clock, which made every wall-clock use in
+the port worth checking. Most are extraction nonces. One is the frame loop:
+`Duration::from_millis(46)`, sourced in its own comment as "MEASURED game rate:
+21.6 fps at the hub (FRAMERATE probe: VGA page flips per PIT-timed second)".
+
+An oracle measurement standing in for a decoded value — and the decoded value is
+right there:
+
+    0x00FFB  mov word ptr [0xb2d], 8      the frame budget, in PIT ticks
+    0x012C9  cmp word ptr [0xb2d], 0      the main loop SPINS...
+    0x012CE  jne 0x12c9                   ...until it reaches zero
+    0x012D1  call 0x17af / 0x178b         then flips the page
+
+#411 verified the PIT divisor `0x1746` = 5958, so the tick is 1193182/5958 =
+200.26 Hz and EIGHT of them is 39.95 ms = **25.0 fps**. That is the programmed
+cadence; 21.6 fps is what the game ACHIEVES when frames overrun it. The port's 46
+ms bakes the average overrun into every frame, which is why it reads as authentic
+in a capture and is not what the game asks for.
+
+Given an APPROX row naming the replacement: pace on the 8-tick budget with a
+~40 ms floor, letting slow frames take longer, exactly as the spin-wait does.
+
+AND ONE GENUINE PUZZLE. Nothing in the image decrements `[0xB2D]`. Its
+little-endian bytes occur exactly TWICE in `BLOODPRG.EXE` — the write and the
+compare — so the loop's exit condition comes from the INT 08h handler `func_79c`
+installs at `cs:0x213`, reaching the cell by a route that is neither a direct
+address nor an immediate. A spin-wait whose variable nothing visibly changes is a
+good reminder that "no sites found" bounds the SEARCH, not the program.
+
+Provisional queue: 121.
+
+2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

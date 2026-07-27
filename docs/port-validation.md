@@ -1646,3 +1646,34 @@ REPLACEMENT: undecoded. Whatever reaches these records — a script flag, a menu
 selection, or nothing at all (they may be unused content) — has not been found.
 The date rule stays only because it surfaces real shipped material; it is a port
 invention and may not be cited as decoded behaviour.
+
+## APPROX — the 46 ms game tick is MEASURED, and a programmed cadence exists (#476)
+
+`main.rs` paces the game loop with `Duration::from_millis(46)`, sourced in its own
+comment as "MEASURED game rate: 21.6 fps at the hub (FRAMERATE probe: VGA page
+flips per PIT-timed second)". That is an ORACLE measurement standing in for a
+decoded value, which under `CLAUDE.md` needs this row.
+
+THE GAME HAS A PROGRAMMED CADENCE, and it is not 46 ms:
+
+    0x00FFB  mov word ptr [0xb2d], 8      the frame budget, in PIT ticks
+    0x012C9  cmp word ptr [0xb2d], 0      the main loop SPINS...
+    0x012CE  jne 0x12c9                   ...until it reaches zero
+    0x012D1  call 0x17af                  then page_offset_helper
+    0x012D4  call 0x178b                  and render_present_if_dirty
+
+The PIT is programmed to `0x1746` = 5958 (`func_79c`, verified in #411), i.e.
+1193182/5958 = 200.26 Hz. Eight of those ticks is **39.95 ms = 25.0 fps**, so 25
+is the game's TARGET cadence and the measured 21.6 fps is achieved throughput —
+frames that overrun the budget.
+
+REPLACEMENT: pace on the 8-tick budget (a ~40 ms floor per frame, with slow frames
+simply taking longer), rather than a fixed 46 ms that bakes the average overrun
+into every frame.
+
+OPEN, and worth stating: NOTHING IN THE IMAGE DECREMENTS `[0xB2D]`. Its
+little-endian bytes appear exactly twice in `BLOODPRG.EXE` — the write at `0x0FFB`
+and the compare at `0x12C9` — so the spin-wait's exit condition is produced by the
+installed timer ISR (`func_79c` points INT 08h at `cs:0x213`) reaching the cell by
+some route not visible as a direct address or an immediate. Finding that access is
+the remaining work.
