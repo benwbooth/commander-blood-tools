@@ -19019,3 +19019,37 @@ of an inadmissible source. The row says so explicitly, because the correction re
 like verification and is not.
 
 726 tests, 0 failures.
+
+## #574 — the mode-X row stride is a pair of shifts, not the number 80
+
+`engine::mode_x_offset` cited `graphics_plot_modex` as `0x299:0x498` and nothing
+more, so the claim "byte offset = y*80 + x/4, plane = x&3" rested on a label's prose.
+Reading the routine confirms it instruction for instruction, and the arithmetic is
+worth quoting into the port rather than paraphrasing:
+
+    0x003455  mov ax, dx     ; ax = y
+    0x003457  shl ax, 4      ; y*16
+    0x00345a  shl dx, 6      ; y*64
+    0x00345d  add ax, dx     ; y*80
+    0x00345f  mov cl, bl
+    0x003461  and cl, 3      ; plane = x & 3
+    0x003464  shr bx, 2      ; x/4
+    0x003467  add ax, bx     ; y*80 + x/4
+
+The stride 80 IS NOT IN THE IMAGE. It is `(y<<4)+(y<<6)`, so a census for `0x50` as a
+row multiplier returns nothing and would read as "the port invented the stride". That
+is the same shifts-not-immediates habit already found hiding 320 (`xchg bh,bl` +
+`shl 6`), 287 (`0xE8 + 0x37`), and 32 (`shl 5`) — now with a fourth instance, in the
+single most-called drawing primitive in the game.
+
+A MISTAKE WORTH RECORDING: I first disassembled `0x2E28` and got an integer-sqrt
+helper, then briefly suspected the citation. `0x2E28` is the IMAGE offset; the file
+offset is `0x600` higher, `0x3428` — I dropped the header while adding. The five
+address spaces in `re/CLAUDE.md` exist because this is easy, and the failure mode is
+not a crash but a plausible-looking wrong routine that invites retracting a correct
+citation. `labels.csv` already had `0x003428`, which is what settled it.
+
+Also settled `export_screens::dump` as INFRA — a PPM writer for headless visual QA,
+with no counterpart in the binary to cite.
+
+726 tests, 0 failures.

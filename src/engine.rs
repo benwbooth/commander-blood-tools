@@ -5721,7 +5721,21 @@ impl EngineState {
 
 /// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where
 /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex`
-/// (`0x299:0x498`) computes it. Provided to document + verify that the engine's linear
+/// (`0x299:0x498` = file `0x3428`) computes it:
+///
+/// ```text
+/// 0x003455: 8bc2      mov ax, dx      ; ax = y
+/// 0x003457: c1e004    shl ax, 4       ; y*16
+/// 0x00345a: c1e206    shl dx, 6       ; y*64
+/// 0x00345d: 03c2      add ax, dx      ; y*80  <-- NOT an imul by 80
+/// 0x00345f: 8acb      mov cl, bl
+/// 0x003461: 80e103    and cl, 3       ; plane = x & 3
+/// 0x003464: c1eb02    shr bx, 2       ; x/4
+/// 0x003467: 03c3      add ax, bx      ; y*80 + x/4
+/// ```
+///
+/// The row stride is never in the image as `80`/`0x50`: it is `(y<<4)+(y<<6)`, the same
+/// shifts-not-immediates habit that hides 320, 287, and 32 elsewhere (audit-fixes #574). Provided to document + verify that the engine's linear
 /// `y*ENGINE_SCREEN_WIDTH + x` framebuffer is address-equivalent to the game's mode-X:
 /// `byte_offset*4 + plane == y*320 + x` (see [`mode_x_to_linear`]).
 pub fn mode_x_offset(x: usize, y: usize) -> (usize, usize) {
