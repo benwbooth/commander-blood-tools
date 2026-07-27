@@ -16820,3 +16820,38 @@ the star plot. Two independent routines, one arithmetic trick, and neither conta
 `ship3d.rs`: 30 uncited constants -> 24.
 
 620 tests, 0 failures.
+
+## #507 — the intro flyby ACCELERATES, and the constant that says so is one indirection away
+
+Five constants from the intro camera approach, `0x8A76..0x8AFE`, a four-phase state
+machine on the counter `[0x27DF]` (`inc byte [0x27df]` @`0x8AAC`/`0x8AD9`).
+
+`SHIP_INTRO_Z_ACCEL_STEP` is the one that would be easy to get wrong, because the
+100 is not applied to the thing it appears to move:
+
+```text
+  0x8ABF  add ax, [0x2f6b]          Z gains the VELOCITY ...
+  0x8AC3  add word [0x2f6b], 0x64   ... and the velocity gains 100
+  0x8AC8  mov [0x2f69], ax
+```
+
+The step feeds a velocity cell, so the approach ACCELERATES. A port adding 100 to Z
+each frame would produce a constant glide — same endpoints, wrong motion, and
+nothing in the constant's name or value distinguishes the two.
+
+`SHIP_INTRO_YAW_WRAP` similarly hides a direction: `dec ax / jns` @`0x8A8B` with
+`mov ax,0xb4` @`0x8A8E` means the yaw counts DOWN and reloads at 180. The routine
+also contains an increment-and-wrap-to-zero path @`0x8A9E` against the same 180, so
+"wrap" alone does not say which way the ship spins.
+
+Four cross-confirmations arrived free, all from constants sourced in earlier
+entries: the routine reads `[0x2f65]` and `[0x2f69]` (camera X/Z, #500) and
+`[0x2f71]` (matrix angle, #499), and calls `lcall 0x299,0x12b0` @`0x8AD4` and
+`lcall 0x299,0x1241` @`0x8AED` — the sprite range-dirty and slot-state entries #490
+found by census and #505 disassembled. The intro, the projector, the matrix and the
+sprite driver are now demonstrably the same subsystem rather than four separately
+named groups of constants.
+
+`ship3d.rs`: 26 uncited constants -> 21.
+
+620 tests, 0 failures.

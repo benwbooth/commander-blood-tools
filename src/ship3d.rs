@@ -3857,10 +3857,25 @@ pub fn run_ship_3d_navigation_final_reset(
 /// [`SHIP_INTRO_Z_CRUISE`], gaining [`SHIP_INTRO_Z_ACCEL_STEP`] each frame; phase 3 resets to the
 /// cruise pose ([`SHIP_INTRO_X_RESET`]); phase 4 settles Z at [`SHIP_INTRO_Z_FINAL`].
 const SHIP_INTRO_X_END: u16 = 9000;
+/// `sub ax,0x64` @`0x8A82` — X is pulled DOWN toward `SHIP_INTRO_X_END` by 100 a
+/// frame while `cmp ax,0x2328 / jl` @`0x8A7D` holds the phase (audit-fixes #507).
 const SHIP_INTRO_X_STEP: u16 = 100;
+/// `mov ax,0xb4` @`0x8A8E` — the yaw cell `[0x2f71]` is DECREMENTED and reloaded
+/// with 180 when `dec ax / jns` @`0x8A8B` goes negative, so the spin runs
+/// 179..0 downward. (The alternate path @`0x8A9E` increments and wraps to 0 at
+/// the same 180.) — audit-fixes #507
 const SHIP_INTRO_YAW_WRAP: u16 = 180;
+/// `cmp ax,0x4e20 / ja` @`0x8ABA` — the phase-2 ceiling on the camera Z cell
+/// `[0x2f69]`, tested UNSIGNED (audit-fixes #507).
 const SHIP_INTRO_Z_CRUISE: u16 = 20000;
+/// `add word ptr [0x2f6b],0x64` @`0x8AC3` — 100 is added to the VELOCITY cell,
+/// not to Z. Z gains that velocity (`add ax,[0x2f6b]` @`0x8ABF`), so the approach
+/// ACCELERATES; adding 100 to Z directly would give a constant glide
+/// (audit-fixes #507).
 const SHIP_INTRO_Z_ACCEL_STEP: u16 = 100;
+/// `mov word ptr [0x2f65],0x2710` @`0x8AFE` — phase 3 snaps X back to 10000
+/// alongside `[0x2f69] = 0x4e20` @`0x8AF2` and a zeroed yaw @`0x8AF8`
+/// (audit-fixes #507).
 const SHIP_INTRO_X_RESET: u16 = 10000;
 const SHIP_INTRO_Z_FINAL: u16 = 30000;
 
