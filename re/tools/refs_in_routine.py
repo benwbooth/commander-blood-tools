@@ -78,6 +78,32 @@ def walk(md, data, entry, limit):
     return out
 
 
+def known_labels(addr):
+    """labels.csv rows naming this exact address, for the banner above."""
+    import csv as _csv
+    import os as _os
+
+    path = _os.path.join(_os.path.dirname(__file__), "..", "labels.csv")
+    out = []
+    try:
+        with open(path, newline="", encoding="utf-8", errors="replace") as fh:
+            for row in _csv.reader(fh):
+                if len(row) < 2 or not row[0].startswith("0x"):
+                    continue
+                try:
+                    if int(row[0], 16) != addr:
+                        continue
+                except ValueError:
+                    continue
+                note = (row[2][:96] + "...") if len(row) > 2 and len(row[2]) > 96 else (
+                    row[2] if len(row) > 2 else ""
+                )
+                out.append(f"{row[1]} — {note}")
+    except OSError:
+        pass
+    return out
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     limit = 4096
@@ -95,6 +121,15 @@ def main():
         entry = int(arg, 16)
         insns = walk(md, data, entry, limit)
         print(f"\n=== {entry:#07x} ({len(insns)} instructions to ret) ===")
+        # IS THIS ROUTINE ALREADY IDENTIFIED? (audit-fixes #559)
+        #
+        # `whatis.py` exists for this and was written after the same mistake
+        # (#128). It still has to be REMEMBERED, and in #555-#558 I decoded a
+        # routine across four entries as a "navigation-list opener" when
+        # labels.csv had named it `ship_3d_hud_init` all along. One command would
+        # have said so; the fix is to not need the command.
+        for row in known_labels(entry):
+            print(f"  ALREADY KNOWN: {row}")
         seen, imms = {}, {}
         for addr, mnem, ops, disp, imm in insns:
             if disp is not None:

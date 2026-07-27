@@ -18560,3 +18560,38 @@ is. Four entries of navigation-prelude reasoning rested on a routine identificat
 I never checked, and one grep of its own distinctive constant settled it.
 
 726 tests, 0 failures.
+
+## #559 — every routine in #554–#558 was already named, and now the tool says so
+
+#558 concluded that arriving at a routine from its callee tells you what it uses,
+never what it is. Wiring `labels.csv` lookup into `refs_in_routine.py` — the tool I
+actually run when decoding — turned that conclusion into a measurement, and the
+measurement is worse than the conclusion:
+
+```text
+  0x7259  ALREADY KNOWN: entity_candidate_list
+  0xB2BB  ALREADY KNOWN: ship_3d_target_record_select
+  0xB079  ALREADY KNOWN: ship_3d_hud_init
+```
+
+ALL THREE routines I decoded across #554–#558 were already named. Not one was a
+discovery. `whatis.py` exists precisely for this, was written after the same class
+of mistake (#128), and its own docstring says "searching the BINARY before searching
+the SOURCE is backwards, and one command fixes it". I did not run it once in four
+entries.
+
+So `refs_in_routine.py` now prints the label banner itself, on every entry it walks.
+The fix is not "remember to run whatis" — that was already the fix in #128 and it
+did not hold. It is to put the answer in front of the tool I reach for anyway.
+
+WHAT THE FOUR ENTRIES WERE STILL WORTH, stated without inflating it: the candidate
+walker's three filters (#556), the two-root call structure, the `[0xac6]` centre
+conflict, and the retraction in #558 are all real and none were in the labels. What
+was wasted is the identification work — four entries of reasoning about "which
+routine is this" that a one-line lookup answers.
+
+The general form, which I expect to keep meeting: A TOOL THAT MUST BE REMEMBERED IS
+A TOOL THAT WILL BE FORGOTTEN. #537 reached the same shape from the other side by
+making `audit_settle.py` refuse rather than trusting me to run tests first.
+
+726 tests, 0 failures.
