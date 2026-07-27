@@ -2720,9 +2720,26 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 /// colours 192..255 genuinely are the same storage.
 ///
 /// `0x6212` has 19 immediate loads, all but two clustered in `0x40D0..0x44A2` —
-/// the entity-flag accessor family — plus `0x90D9` and `0x9241`. Those two, in the
-/// entity-draw region, are where a projection writing display-list records would
-/// have to be, and are the next place to look.
+/// the entity-flag accessor family — plus `0x90D9` and `0x9241`.
+///
+/// THOSE TWO ARE READERS, NOT THE WRITER, and reading them changes the search.
+/// Both open identically:
+///
+/// ```text
+///   0x90D9  mov si, 0x6212 / les di, ptr [si + 4] / mov ax, word ptr es:[di]
+///   0x9241  mov si, 0x6212 / les di, ptr [si + 4] / mov ax, word ptr es:[di]
+/// ```
+///
+/// `[0x6212 + 4]` IS A FAR POINTER, and the record DATA lives behind it — these
+/// routines only follow it and scale what they find (`mul 0xE` / `shr 5` at
+/// `0x90E4`; `3 * [0x2789]` at `0x924B`, the same scale cell the location-info
+/// panel uses at `0x90FF`).
+///
+/// So the projection writes THROUGH that far pointer and need never mention
+/// `0x6212` at all — which is why enumerating immediate loads of `0x6212` cannot
+/// find it. All 19 are now accounted for (17 flag accessors + these 2 readers),
+/// and that search is exhausted rather than merely unfinished. The next approach
+/// is to find who WRITES `[0x6212+4]`, then what fills the block it points at.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],

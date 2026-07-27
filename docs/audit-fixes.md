@@ -14617,3 +14617,34 @@ addresses to read.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 764 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #445 — the search was wrong, not merely unfinished
+
+#444 left two candidates for the HUD pyramid projection: `0x90D9` and `0x9241`,
+the only two `0x6212` immediate loads outside the entity-flag accessor family.
+Read both. Neither is it, and WHY they are not reframes the problem:
+
+    0x90D9  mov si, 0x6212 / les di, ptr [si + 4] / mov ax, word ptr es:[di]
+    0x9241  mov si, 0x6212 / les di, ptr [si + 4] / mov ax, word ptr es:[di]
+
+They open identically and both READ. `[0x6212 + 4]` IS A FAR POINTER; the record
+data lives behind it, and these two only follow it and scale what they find
+(`mul 0xE` then `shr 5` at `0x90E4`; `3 * [0x2789]` at `0x924B` — the same scale
+cell the location-info panel uses at `0x90FF`, which #387 corrected).
+
+So a projection filling those records writes THROUGH the far pointer and need
+never name `0x6212`. Enumerating immediate loads of `0x6212` could not have found
+it at any point. All 19 are now accounted for — 17 flag accessors, 2 readers — so
+that avenue is EXHAUSTED rather than unfinished, which is a different and more
+useful thing to record than "still looking".
+
+The next approach follows from it: find who writes `[0x6212+4]`, then what fills
+the block it points at.
+
+Three entries on this item (#443 corrected a wrong replacement claim, #444 ruled
+out the `0x5491` sites, this one rules out the `0x6212` sites) and it is still
+open. That is what the doc meant by "genuinely multi-session", and the value each
+time has been eliminating a search rather than announcing a routine.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 766 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
