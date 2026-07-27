@@ -1095,6 +1095,19 @@ impl EngineState {
     pub fn load_tv_programs(&mut self, db: &crate::descript::DescriptDb, assets: &Path) {
         let sq = assets.join("sq");
         // The ad channel's seasonal variant, by today's (UTC) civil date.
+        //
+        // THE CONTENT IS REAL; THE TRIGGER IS INVENTED (audit-fixes #475).
+        // `christmas` and `year` are genuine DESCRIPT.DES records (at 0x26 and
+        // 0x38 in the name table), so the assets exist. But the GAME CANNOT KNOW
+        // THE DATE: a scan of BLOODPRG.EXE finds ZERO sites for `mov ah,0x2A`
+        // (DOS get-date), ZERO for `mov ah,0x2C` (get time) and ZERO for
+        // `mov ah,0x2B` — it never asks the system for a clock at all.
+        //
+        // So selecting these by the host's calendar is this port's own rule, and
+        // whatever the game uses to reach them (a script flag, a menu, or nothing
+        // — they may be unused content) is undecoded. Left in place because it
+        // surfaces real shipped material, but it is NOT a decoded behaviour and
+        // must not be cited as one.
         let seasonal = {
             let days = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

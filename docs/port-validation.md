@@ -1631,3 +1631,18 @@ comments, which would record the claim instead of checking it.
 | `vm.rs VM_FIELD_OFFSET_TABLE` | 0x150 bytes transcribed from file `0x14180..0x142CF` — the per-kind field matrix `gs:0x6D60` that helper `0x6023` indexes as `selector*16 + bsf(kind)`. | **Already pinned, not drifting**: `native_field_offset_matches_the_lifted_resolver` loads the matrix STRAIGHT FROM THE IMAGE and checks the native resolver against the lifted one, so a divergence fails a test. The remaining work is to read it from the file rather than hold a copy. |
 | `palette.rs GAME_SCREEN_PALETTE_DAC` upper bank | colours 128..191 are a savestate capture, absent from every shipped file, and read all-zero live (audit-fixes #420). | The per-scene HNM palette: `hnm::parse_palette_block` (`resource_palette_blocks_apply` `0xA0C3..0xA116`, #382) already parses these; the fix is for the default to come from the loaded scene instead of this constant. Colours 0..127 ARE the baked DAC at file `0x12F78` and are pinned by `palette_lower_half_matches_the_baked_dac_in_the_image`. |
 | `ship3d.rs SHIP_3D_HUD_PYRAMID_VERTICES` | the HUD pyramid geometry. The VERTEX BYTES are data-backed (they alias the palette bank 192..255 — the conflict resolved in commit bd930b8); what is missing is the routine that PROJECTS them. | **ROW CORRECTED (audit-fixes #443).** #442 named `0x9BBA` here. That is the STAR-MAP projection (#273), a different surface: this item's own doc states the HUD pyramid projection "is still unlocated — it runs before `0x299:0x1467` fills the 0x6212 records with already-projected coords", and that the `0x6212` builder `@0x40D0` writes `((flags & 4) | 0x83)`, the SPRITE bank dispatch, so the pyramids are likely sprites drawn at projected positions rather than a wireframe. The replacement is therefore NOT YET KNOWN, and the open task is the one that doc names: find the routine projecting the `0x5491` verts into the `0x6212` display-list records, plus the compass→matrix-angle map. |
+
+## APPROX — the TV ad channel's seasonal variant (audit-fixes #475)
+
+`engine.rs load_tv_programs` selects a `christmas` / `year` ad variant from the
+HOST'S CALENDAR (`SystemTime::now()` -> civil date -> month/day match).
+
+The CONTENT is real: both are DESCRIPT.DES records (name table `0x26`, `0x38`).
+The TRIGGER is not. `BLOODPRG.EXE` contains **zero** `mov ah,0x2A` (DOS get-date),
+**zero** `mov ah,0x2C` (get time) and **zero** `mov ah,0x2B` — the game never asks
+the system for a clock, so it cannot branch on the date by any route.
+
+REPLACEMENT: undecoded. Whatever reaches these records — a script flag, a menu
+selection, or nothing at all (they may be unused content) — has not been found.
+The date rule stays only because it surfaces real shipped material; it is a port
+invention and may not be cited as decoded behaviour.

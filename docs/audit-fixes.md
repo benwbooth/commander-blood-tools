@@ -15571,3 +15571,40 @@ Provisional queue: 123, from 246.
 
 2229 items, 1195 confirmed (53.6%), 1034 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #475 — the game has no clock
+
+Opened the `DATA?` queue (47 rows, all with EMPTY origins — they are data-parsing
+functions, verified against shipped files rather than instructions).
+`descript::parse` and `decode_text` settle immediately: four tests parse the real
+`DESCRIPT.DES` and assert 145 records with non-empty names, and every one of those
+names passes through `decode_text`.
+
+Then `load_tv_programs` picks "the ad channel's seasonal variant, by today's (UTC)
+civil date" — `SystemTime::now()`, month/day, `(12,25) => christmas`,
+`(1,1) => year`.
+
+THE GAME CANNOT DO THIS. Scanning BLOODPRG.EXE:
+
+    mov ah,0x2A (DOS get DATE)   0 sites
+    mov ah,0x2C (get TIME)       0 sites
+    mov ah,0x2B (set date)       0 sites
+
+It never asks the system for a clock, by any of the three routes, so it cannot
+branch on the calendar at all.
+
+THE CONTENT IS REAL THOUGH, which is what makes this worth care rather than
+deletion: `christmas` and `year` are genuine DESCRIPT.DES records, at `0x26` and
+`0x38` in the name table. So this is not an invented SURFACE like #385's console
+menu or #426's star-map renderer — it is real shipped material reached by an
+invented RULE.
+
+Left in place, labelled, and given an APPROX row in `port-validation.md` naming
+what is undecoded: whatever the game uses to reach those records. That is the
+distinction #427 drew for `NAV_DEST_X` — delete a fabricated surface, keep and
+mark a real one behind a port-side affordance.
+
+Provisional queue: 121.
+
+2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
