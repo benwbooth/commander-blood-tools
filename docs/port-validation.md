@@ -2157,11 +2157,22 @@ Connected. `EngineState::begin_console_open` arms the gate on a menu click and
 cryobox, submenu and option box arrive TEN FRAMES after the click instead of on it.
 `the_console_menu_opens_after_the_decoded_ten_frames` holds that end to end.
 
-REMAINING, and narrower than before: the port animates the DELAY, not the widget's
-travelling rectangle. `step_ship_3d_interpolation_gate` returns interpolated words
-each tick and the engine currently discards them — drawing the box as it moves is the
-rest of #612. The five `run_ship_3d_nav_choice_handler_*` routines also remain
-unwired; the phase machine's TIMING is now reproduced, its per-row record work is not.
+REMAINING, and now fully specified (#616): the port animates the DELAY, not the
+widget's travelling rectangle. The four words the gate interpolates are
+`DS:0x2AAB` — `ship_3d_target_layout_rect`, "four-word centered target-list rectangle
+x/y/w/h" — and the original DRAWS each interpolated rect rather than storing it (the
+`0x90FF` decode says so of the same gate on the info-panel path). So the missing work
+is: keep the source rect from the click, take the destination from the layout prepass
+at `0x8428`/`0x84A1` (which already writes `[si+4]`/`[si+6]` off `0x2AAB`), and draw
+the interpolated rect each tick instead of discarding it.
+
+`[0xADC]` and `[0xADD]`, written beside the duration at `0x86D4`/`0x86DF`, are the
+prepass's two switches and are already ported as `target_layout_preserve_widths` and
+`target_layout_extra_entry` (`0x847F` appends `0x37`; `0x848A` skips the `rep stosw`
+pad). No decode is missing here either — this remains plumbing plus a draw call.
+
+The five `run_ship_3d_nav_choice_handler_*` routines also remain unwired; the phase
+machine's TIMING is now reproduced, its per-row record work is not.
 
 ## SPECIFIED (#613, #614) — ten frames, and the spec is now a test
 

@@ -20517,3 +20517,34 @@ routines remain unwired — the phase machine's TIMING is reproduced, its per-ro
 work is not.
 
 736 tests, 0 failures.
+
+## #616 — the travelling rectangle is `DS:0x2AAB`, and nothing else is missing
+
+Finishing the specification #615 left half-open. The four words
+`step_ship_3d_interpolation_gate` returns are not anonymous: `DS:0x2AAB` is
+`ship_3d_target_layout_rect`, "four-word centered target-list rectangle x/y/w/h",
+already in `labels.csv`. And the `0x90FF` decode says of the same gate on the
+info-panel path that it DRAWS the interpolated rect rather than storing it.
+
+So the remaining work on the console-menu open is: keep the click's source rect, take
+the destination from the layout prepass at `0x8428`/`0x84A1` (which already writes
+`[si+4]`/`[si+6]` off `0x2AAB`), and DRAW each interpolated rect instead of discarding
+it. No decode is outstanding.
+
+`[0xADC]` and `[0xADD]` — written beside the duration at `0x86D4`/`0x86DF`, which is
+what made them worth chasing — turn out to be the prepass's two switches, and both are
+already ported: `0x847F` appends an extra `0x37` entry
+(`target_layout_extra_entry`), `0x848A` skips the `rep stosw` pad
+(`target_layout_preserve_widths`). Three flags set in one breath at the click, and all
+three were already understood; only the wiring was absent.
+
+That is the shape of this whole thread. #612 read as "the port is missing the
+animation"; it is really "the animation is decoded three times over and never
+called". The ledger cannot show that difference — a cited row looks the same either
+way — which is why #611's unwired-decode list exists.
+
+`begin_console_open` and `advance_console_open` settle ASM against `0x86E4` and
+`0x1E5D`. `step_ship_3d_interpolation_gate` was already ASM and is now, for the first
+time, reached by the running port.
+
+736 tests, 0 failures.
