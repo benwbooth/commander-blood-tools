@@ -14991,3 +14991,34 @@ the same and always cheap: open the thing.
 
 2229 items, 1119 confirmed (50.2%), 1110 open. 791 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #457 — a row that was already right, including the awkward part
+
+`HEADER_SIZE` (= `PROFILE_SIZE + FLAGS_SIZE + STATE_SIZE`) claims each component
+is the `mov cx,imm` of one of `vm_state_save`'s three `int 21h` AH=0x40 writes.
+All five citations are exact:
+
+    0x1C60  mov cx, 2        the profile
+    0x1C6A  mov cx, 0x200    the flag block...
+    0x1C6D  mov dx, 0x6ade   ...and its source
+    0x1C72  mov dx, 0x6cde   the state source comes FIRST here
+    0x1C75  mov cx, 0x60     then its size
+
+Including the awkward part. The doc warns that "the operand order FLIPS here —
+`mov dx, 0x6cde` @`0x1C72` comes FIRST — which is why the immediate is not where
+the earlier spacing would put it", and that is exactly what the bytes show. A
+reader scanning for `mov cx` at a fixed stride past `0x1C6A` would land on the
+wrong instruction, and the doc says so before they do.
+
+`the_header_sizes_are_the_writers_own_immediates` also reads all three back out of
+the image, so the constants are pinned rather than transcribed — #329 had already
+noticed they carried no address of their own and fixed that.
+
+Settled. Three entries in a row now (#453, #455, this) where the CELL? queue's
+docs were substantially right and only the wording or the enumeration needed work;
+this one needed neither. That is worth recording alongside the corrections, since
+an audit that only reports what it changed gives a false impression of the
+codebase it is auditing.
+
+2229 items, 1120 confirmed (50.2%), 1109 open. 791 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
