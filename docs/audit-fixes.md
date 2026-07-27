@@ -20433,3 +20433,35 @@ real here, but the shape was the opposite of what I expected. Not dead code besi
 live twin — a complete decode beside an incomplete stand-in.
 
 734 tests, 0 failures.
+
+## #613 — a specification for #612's wiring, and what writing it taught me
+
+#612 established that the console menu opens in one frame where `0x872C` runs a phase
+machine. Wiring that live is a phone-flow change I could not finish and verify in one
+pass, and #612 itself warned that a half-wire turns an instant open into a stuck one.
+So the deliverable is the SPECIFICATION the wiring must meet, as a test:
+
+    phase 1 -> prepass runs, phase advances, screen NOT open
+    phase 2 -> BLOCKED every frame while interpolation is incomplete
+    then    -> phase cleared, and only then is the handler done
+
+`the_contact_handler_holds_until_interpolation_completes` asserts that sequence,
+including that a blocked frame does not mutate the state — so a wiring that spins the
+phase machine while waiting fails here rather than in a capture.
+
+THE TEST FAILED FIRST, AND THE PORT WAS RIGHT. I seeded `handler_phase` with
+`PHASE | INTERPOLATING`, reading the two constants (`1` and `2`) as independent
+flags. They are consecutive values of ONE COUNTER: `0x8766` is `inc byte [0x2565]`,
+so phase 1 becomes phase 2. Seeding `3` makes the increment produce `4`, and `4 & 2`
+is zero — the interpolating test never runs and nothing blocks.
+
+Two constants named `..._PHASE` and `..._PHASE_INTERPOLATING`, one `u8` field, and
+bitwise `&` in the code all invite the flags reading. It is a counter that is TESTED
+bitwise, which works only because 1 and 2 are adjacent powers of two. Recorded on the
+test, because the next person to construct this state will reach for `|` exactly as I
+did.
+
+That is the value of writing the spec before the wiring: it cost one wrong assumption
+here instead of one wrong animation in the engine.
+
+735 tests, 0 failures.

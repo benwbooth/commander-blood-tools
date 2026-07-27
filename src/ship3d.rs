@@ -5900,6 +5900,77 @@ mod tests {
     }
     use super::*;
 
+    /// THE SPECIFICATION THE WIRING MUST SATISFY (docs/port-validation.md #612).
+    ///
+    /// `main.rs` opens the telephone in ONE frame; `0x872C` runs a phase machine and
+    /// holds the interpolating phase until it completes. This pins the sequence, so
+    /// whoever connects it has a target rather than a paraphrase:
+    ///
+    ///   phase 1 -> prepass runs, phase advances, screen NOT yet open
+    ///   phase 2 -> BLOCKED every frame while interpolation is incomplete
+    ///   then    -> phase cleared, and only now is the handler done
+    #[test]
+    fn the_contact_handler_holds_until_interpolation_completes() {
+        let mut targets = [SHIP_3D_TARGET_EXIT_SENTINEL; 4];
+        // Phase 1 ONLY. `0x8766 inc byte [0x2565]` advances 1 -> 2, and 2 IS the
+        // interpolating bit — so the two phases are consecutive values of one
+        // counter, not independent flags. Seeding `1|2` skips the interpolating
+        // test entirely (`3 + 1 = 4`, and `4 & 2 == 0`), which is how this test
+        // failed on its first run.
+        let mut state = Ship3dNavChoiceState {
+            handler_phase: SHIP_3D_NAV_CHOICE_HANDLER_PHASE,
+            ..Default::default()
+        };
+
+        // Frame 1: the prepass half runs and the phase ADVANCES.
+        let first = run_ship_3d_nav_choice_handler_1(
+            &mut state,
+            &mut targets,
+            false,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        )
+        .expect("handler runs");
+        assert!(first.ran_layout_prepass, "0x875E: the layout prepass");
+        assert!(first.adjusted_target_records, "0x8748: the add ax,4 walk");
+        assert!(first.reset_interpolation_tick, "0x8741: [0xADB] = 0");
+        assert!(
+            first.phase_gate_blocked,
+            "0x876A: the interpolating phase must BLOCK while incomplete"
+        );
+        assert!(!first.cleared_handler_phase, "not done yet");
+
+        // Frames 2..N: still blocked, and the state does not drift.
+        for frame in 0..8 {
+            let before = state;
+            let e = run_ship_3d_nav_choice_handler_1(
+                &mut state,
+                &mut targets,
+                false,
+                SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+            )
+            .expect("handler runs");
+            assert!(e.phase_gate_blocked, "frame {frame} must still block");
+            assert!(!e.cleared_handler_phase, "frame {frame} must not finish");
+            assert_eq!(state, before, "a blocked frame must not advance the state");
+        }
+
+        // The frame interpolation reports COMPLETE: the phase clears and the caller
+        // may finally open the screen.
+        let done = run_ship_3d_nav_choice_handler_1(
+            &mut state,
+            &mut targets,
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        )
+        .expect("handler runs");
+        assert!(done.cleared_handler_phase, "0x8770: the phase clears");
+        assert!(!done.phase_gate_blocked);
+        assert_eq!(state.handler_phase, 0);
+
+        // SO THE OPEN IS NOT INSTANT: at least ten frames elapsed above before the
+        // handler said it was finished. `main.rs` opens on frame one.
+    }
+
     /// TWO PORTS OF ONE HIT TEST. `0x8614`..`0x868D` is implemented twice: here as
     /// [`hit_test_ship_3d_nav_choice`] (decoded, and NOT wired to anything) and in
     /// `bridge::BridgeView::menu_row_under_cursor` (the one the running port uses).
