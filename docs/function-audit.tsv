@@ -2202,20 +2202,20 @@ mouse_event	src/recomp/runtime.rs	1768	fn		UNVERIFIED	/// Feed a mouse state cha
 ticks	src/recomp/runtime.rs	1796	fn		INFRA	
 crtc_reg	src/recomp/runtime.rs	1800	fn		UNVERIFIED	
 int67	src/recomp/runtime.rs	1804	fn		UNVERIFIED	
-sb_dsp_write	src/recomp/runtime.rs	1893	fn		UNVERIFIED	/// DSP command byte stream at 0x22C.
+sb_dsp_write	src/recomp/runtime.rs	1893	fn		INFRA	/// DSP command byte stream at 0x22C.
 sb_dsp_exec	src/recomp/runtime.rs	1916	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
 sb_start_playback	src/recomp/runtime.rs	1958	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
 tick_sb_playback	src/recomp/runtime.rs	1973	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
 ems_unmap	src/recomp/runtime.rs	1994	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
 int21	src/recomp/runtime.rs	2002	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
 find_next_into_dta	src/recomp/runtime.rs	2450	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
-screenshot_rgb	src/recomp/runtime.rs	2481	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
-screen_indices	src/recomp/runtime.rs	2509	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
-write_ppm	src/recomp/runtime.rs	2532	fn		UNVERIFIED	
-text_screen	src/recomp/runtime.rs	2539	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
-debug_state	src/recomp/runtime.rs	2557	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
-console_output	src/recomp/runtime.rs	2590	fn		INFRA	
-key_event	src/recomp/runtime.rs	2595	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
+screen_indices	src/recomp/runtime.rs	2492	fn	0x3428	INFRA	/// 320x200 palette-INDEX screenshot — the CRT's view of the emulated VGA. /// /// Composites the planes as the hardware would: chain-4 (stock mode 13h) puts /// pixel `i` in plane `i&3` at `i>>2`; un
+screenshot_rgb	src/recomp/runtime.rs	2517	fn		INFRA	/// 320x200 RGB screenshot: [`Runtime::screen_indices`] through the DAC, with the /// 6-bit values scaled to 8 the same way the asset decoders do (`v<<2 | v>>4`, /// which maps 63 to 255 rather than 2
+write_ppm	src/recomp/runtime.rs	2529	fn		UNVERIFIED	
+text_screen	src/recomp/runtime.rs	2536	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
+debug_state	src/recomp/runtime.rs	2554	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
+console_output	src/recomp/runtime.rs	2587	fn		INFRA	
+key_event	src/recomp/runtime.rs	2592	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
 TICK	src/bin/blood.rs	20	const		UNVERIFIED	
 make_runtime	src/bin/blood.rs	22	fn		UNVERIFIED	
 run_tick	src/bin/blood.rs	35	fn		INFRA	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.

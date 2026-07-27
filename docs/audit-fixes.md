@@ -19132,3 +19132,27 @@ not "`0x836C`'s branch", and `mov si,0x13E` at `0x837E`. The instruction guard c
 not check a prose reference to a branch, which is why they survived.
 
 726 tests, 0 failures.
+
+## #577 — the screenshot pair was two copies of the CRTC addressing
+
+`screenshot_rgb` and `screen_indices` each carried the full VGA compositing —
+chain-4 vs unchained, the CRTC start address (`0x0C`/`0x0D`), the doubled offset
+register (`0x13`) with its 80-byte default — and differed only in the final DAC
+lookup. Byte-for-byte identical addressing in two functions.
+
+#575 had just been caused by exactly this: one rule written twice, and the copies
+answering differently once an input reached the part where they diverged. Here they
+had not yet drifted, which is the only reason this is a cleanup and not a bug.
+`screenshot_rgb` is now `screen_indices` through the DAC.
+
+WORTH KEEPING STRAIGHT: this is the EMULATOR's side of mode-X — how the runtime
+reads back planes the game wrote. The GAME's side is `graphics_plot_modex` @`0x3428`
+(#574), `y*80 + x/4` with `plane = x&3`. A pixel-identity diff is only meaningful
+because both describe the same layout from opposite ends, so the doc comment now says
+which is which; they are easy to mistake for one fact.
+
+All three runtime rows settle INFRA. `sb_dsp_write` likewise — a Sound Blaster DSP
+command stream at port `0x22C` is hardware behaviour the game DRIVES, not behaviour
+decoded from the game. Citing a BLOODPRG address for it would be the wrong claim.
+
+726 tests, 0 failures.

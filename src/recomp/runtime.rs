@@ -2475,37 +2475,20 @@ impl Runtime {
 
     // ---------------- introspection ----------------
 
-    /// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the
-    /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing
-    /// with the CRTC start address + row offset (page flipping honoured).
-    pub fn screenshot_rgb(&self) -> Vec<u8> {
-        let vga = self.m.vga.as_deref().expect("runtime always has vga");
-        let start = ((self.crtc[0x0c] as usize) << 8) | self.crtc[0x0d] as usize;
-        let stride = {
-            let s = self.crtc[0x13] as usize * 2;
-            if s == 0 { 80 } else { s }
-        };
-        let mut out = Vec::with_capacity(320 * 200 * 3);
-        for y in 0..200 {
-            for x in 0..320 {
-                let px = if vga.chain4 {
-                    let i = y * 320 + x;
-                    vga.planes[(i & 3) * 0x10000 + (i >> 2)] as usize
-                } else {
-                    let cell = (start + y * stride + (x >> 2)) & 0xffff;
-                    vga.planes[(x & 3) * 0x10000 + cell] as usize
-                };
-                for c in 0..3 {
-                    let v = self.dac[px * 3 + c];
-                    out.push((v << 2) | (v >> 4));
-                }
-            }
-        }
-        out
-    }
-
-    /// 320x200 palette-INDEX screenshot (same CRTC compositing as
-    /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+    /// 320x200 palette-INDEX screenshot — the CRT's view of the emulated VGA.
+    ///
+    /// Composites the planes as the hardware would: chain-4 (stock mode 13h) puts
+    /// pixel `i` in plane `i&3` at `i>>2`; unchained Mode-X addresses `plane = x&3`
+    /// at `start + y*stride + x/4`, honouring the CRTC start address (`0x0C`/`0x0D`,
+    /// so page flipping is visible) and the offset register (`0x13`, doubled, which
+    /// is why a stride of 0 means the 80-byte default rather than a zero-width row).
+    ///
+    /// THE ONLY COPY of this addressing. `screenshot_rgb` used to repeat all of it
+    /// and differ only in the final DAC lookup — two copies of one rule, which is
+    /// precisely the shape that let the nav hit box drift from its own hit test
+    /// (audit-fixes #575, #577). Note this is the EMULATOR's side of mode-X; the
+    /// GAME's own `y*80 + x/4` write path is `graphics_plot_modex` @`0x3428` (#574),
+    /// and the two agreeing is what makes a pixel-identity diff meaningful.
     pub fn screen_indices(&self) -> Vec<u8> {
         let vga = self.m.vga.as_deref().expect("runtime always has vga");
         let start = ((self.crtc[0x0c] as usize) << 8) | self.crtc[0x0d] as usize;
@@ -2516,14 +2499,28 @@ impl Runtime {
         let mut out = Vec::with_capacity(320 * 200);
         for y in 0..200 {
             for x in 0..320 {
-                let px = if vga.chain4 {
+                out.push(if vga.chain4 {
                     let i = y * 320 + x;
                     vga.planes[(i & 3) * 0x10000 + (i >> 2)]
                 } else {
                     let cell = (start + y * stride + (x >> 2)) & 0xffff;
                     vga.planes[(x & 3) * 0x10000 + cell]
-                };
-                out.push(px);
+                });
+            }
+        }
+        out
+    }
+
+    /// 320x200 RGB screenshot: [`Runtime::screen_indices`] through the DAC, with the
+    /// 6-bit values scaled to 8 the same way the asset decoders do (`v<<2 | v>>4`,
+    /// which maps 63 to 255 rather than 252).
+    pub fn screenshot_rgb(&self) -> Vec<u8> {
+        let indices = self.screen_indices();
+        let mut out = Vec::with_capacity(320 * 200 * 3);
+        for px in indices {
+            for c in 0..3 {
+                let v = self.dac[px as usize * 3 + c];
+                out.push((v << 2) | (v >> 4));
             }
         }
         out
