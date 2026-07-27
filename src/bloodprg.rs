@@ -372,6 +372,9 @@ pub const SHIP_3D_SCROLL_MODE_DS_OFFSET: u16 = 0x524d;
 /// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
 pub const SHIP_3D_SCROLL_VALUE_DS_OFFSET: u16 = 0x524f;
 
+/// The 5-byte encoding of `lcall SND_ENTRY_SEGMENT:SND_ENTRY_OFFSET`, COMPOSED
+/// from constants cited above rather than being a value of its own — a search
+/// pattern, not a decode (audit-fixes #552).
 const SND_ENTRY_FAR_CALL: [u8; 5] = [
     0x9a,
     SND_ENTRY_OFFSET as u8,
@@ -379,6 +382,9 @@ const SND_ENTRY_FAR_CALL: [u8; 5] = [
     SND_ENTRY_SEGMENT as u8,
     (SND_ENTRY_SEGMENT >> 8) as u8,
 ];
+/// Likewise for the bank loader; the call sites it finds are the ones #506 cites
+/// (`sn\\3D.snd` @`0xB5DC`, `sn\\tb.snd` @`0xB610`, `sn\\radio.snd` @`0x8866`)
+/// — audit-fixes #552.
 const SND_BANK_LOAD_FAR_CALL: [u8; 5] = [
     0x9a,
     SND_BANK_LOAD_OFFSET as u8,
@@ -386,9 +392,20 @@ const SND_BANK_LOAD_FAR_CALL: [u8; 5] = [
     SND_BANK_LOAD_SEGMENT as u8,
     (SND_BANK_LOAD_SEGMENT >> 8) as u8,
 ];
+/// `0x9A` is x86 `CALL far ptr16:16` — five bytes, `9A off16 seg16`. Not a game
+/// value but an ISA fact, and one this port leans on: #490's census found 143
+/// render-driver call sites with exactly this encoding, and #534's segment work
+/// resolved two dispatch tables through it (audit-fixes #552).
 const FAR_CALL_OPCODE: u8 = 0x9a;
+/// How far BACK the scanner looks for the instruction that loaded a register
+/// before a call. A port heuristic with no binary counterpart — 32 bytes is a
+/// window, not a decoded distance (audit-fixes #552).
 const REGISTER_SOURCE_SCAN_BACK: usize = 32;
+/// The longest DS string the scanner will read. A port limit, not the format's:
+/// nothing in the game caps a NUL-terminated string at 64 (audit-fixes #552).
 const DS_STRING_SCAN_MAX: usize = 64;
+/// `RENDER_SEGMENT` little-endian, for matching the segment half of a far call.
+/// Composed, like the two patterns above (audit-fixes #552).
 const RENDER_FAR_CALL_SEGMENT_BYTES: [u8; 2] =
     [(RENDER_SEGMENT & 0x00ff) as u8, (RENDER_SEGMENT >> 8) as u8];
 

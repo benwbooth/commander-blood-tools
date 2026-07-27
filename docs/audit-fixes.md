@@ -18332,3 +18332,32 @@ positive one and saves exactly as much time.
 Status unchanged: #550 remains UNVERIFIED, honestly.
 
 725 tests, 0 failures.
+
+## #552 — six scanner constants, and an address that was not the constant's own
+
+`bloodprg.rs`'s far-call scanner constants are not decoded game values, and sorting
+out WHICH kind of not-decoded they are took a correction.
+
+`FAR_CALL_OPCODE = 0x9A` is `CALL far ptr16:16` — an ISA fact, not a game fact.
+`SND_ENTRY_FAR_CALL`, `SND_BANK_LOAD_FAR_CALL` and `RENDER_FAR_CALL_SEGMENT_BYTES`
+are 5-byte and 2-byte SEARCH PATTERNS composed from constants cited elsewhere.
+`REGISTER_SOURCE_SCAN_BACK` (32) and `DS_STRING_SCAN_MAX` (64) are window sizes the
+scanner picked; nothing in the game caps a NUL-terminated string at 64.
+
+All six are INFRA. `audit_settle.py` refused ASM on three of them for want of a
+cited address, correctly.
+
+IT DID NOT REFUSE THE FOURTH, AND THAT WAS MY DOING. I had written
+`SND_BANK_LOAD_FAR_CALL`'s doc mentioning `0xB5DC`, `0xB610` and `0x8866` — the call
+sites the pattern FINDS — and the tool accepted those as its citation. They are not
+its provenance: the pattern is composed from `SND_BANK_LOAD_OFFSET`/`_SEGMENT`, and
+the addresses are its OUTPUT. A constant whose doc names the things it discovers
+will pass an address check while being uncited in every sense that matters.
+
+Reverted it to `UNVERIFIED` (via `--no-verify`, the undo path #537 kept for exactly
+this) and settled all four INFRA together. The lesson is narrow and worth keeping:
+THE ADDRESS IN A DOC MUST BE WHERE THE VALUE COMES FROM, not where it is used or
+what it matches. #519 made the same point from the other side — a citation naming
+only the constant's instruction can be right while the call around it is wrong.
+
+725 tests, 0 failures.

@@ -193,76 +193,76 @@ SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	367	const	0xae5,0xB5B0	ASM	/// 
 SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	369	const	0x5219,0xB712	ASM	/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
 SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	371	const	0x524d,0xB6F0,0xB175	ASM	/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
 SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	373	const	0x524f,0xB708,0xB16F	ASM	/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	375	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	382	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	389	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	390	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	391	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	392	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	396	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	411	fn		TESTED	
-image_total	src/bloodprg.rs	415	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	423	fn		TESTED	
-MzSummary	src/bloodprg.rs	429	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	440	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	451	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	458	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	465	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	480	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	490	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	497	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	506	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	513	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	521	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	540	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	554	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	575	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	590	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	596	fn		UNVERIFIED	
-parse	src/bloodprg.rs	602	fn		UNVERIFIED	
-summary	src/bloodprg.rs	632	fn		TESTED	
-image_bytes	src/bloodprg.rs	647	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	651	fn		TESTED	
-ds_to_file	src/bloodprg.rs	655	fn		TESTED	
-fs_to_file	src/bloodprg.rs	659	fn		TESTED	
-opcode_handlers	src/bloodprg.rs	663	fn		TESTED	
-opcode_descriptors	src/bloodprg.rs	683	fn		TESTED	
-vm_opcode_specs	src/bloodprg.rs	700	fn		TESTED	
-script_resource_profiles	src/bloodprg.rs	737	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	771	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	809	fn		TESTED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	817	fn		TESTED	
-snd_entry_call_sites	src/bloodprg.rs	825	fn		TESTED	
-snd_bank_load_call_sites	src/bloodprg.rs	851	fn		TESTED	
-render_call_sites	src/bloodprg.rs	890	fn		TESTED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	924	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	946	fn		TESTED	
-subdispatch_entries	src/bloodprg.rs	966	fn		UNVERIFIED	
-slice	src/bloodprg.rs	987	fn		TESTED	
-find_ax_source_before	src/bloodprg.rs	996	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	1028	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	1056	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	1083	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-text_speed_labels	src/bloodprg.rs	1089	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
-location_status_headers	src/bloodprg.rs	1097	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
-list_widget_cancel_label	src/bloodprg.rs	1110	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	1116	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	1133	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
-resource_name	src/bloodprg.rs	1150	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	1163	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	1174	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	1182	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	1189	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1328	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1339	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1355	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1364	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1377	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1415	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1592	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1606	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1634	const		TESTED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2699	const		TESTED	
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	378	const		INFRA	/// The 5-byte encoding of `lcall SND_ENTRY_SEGMENT:SND_ENTRY_OFFSET`, COMPOSED /// from constants cited above rather than being a value of its own — a search /// pattern, not a decode (audit-fixes #5
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	388	const	0xB5DC,0xB610,0x8866	INFRA	/// Likewise for the bank loader; the call sites it finds are the ones #506 cites /// (`sn\\3D.snd` @`0xB5DC`, `sn\\tb.snd` @`0xB610`, `sn\\radio.snd` @`0x8866`) /// — audit-fixes #552.
+FAR_CALL_OPCODE	src/bloodprg.rs	399	const		INFRA	/// `0x9A` is x86 `CALL far ptr16:16` — five bytes, `9A off16 seg16`. Not a game /// value but an ISA fact, and one this port leans on: #490's census found 143 /// render-driver call sites with exactl
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	403	const		INFRA	/// How far BACK the scanner looks for the instruction that loaded a register /// before a call. A port heuristic with no binary counterpart — 32 bytes is a /// window, not a decoded distance (audit-f
+DS_STRING_SCAN_MAX	src/bloodprg.rs	406	const		INFRA	/// The longest DS string the scanner will read. A port limit, not the format's: /// nothing in the game caps a NUL-terminated string at 64 (audit-fixes #552).
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	409	const		INFRA	/// `RENDER_SEGMENT` little-endian, for matching the segment half of a far call. /// Composed, like the two patterns above (audit-fixes #552).
+MzHeader	src/bloodprg.rs	413	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	428	fn		TESTED	
+image_total	src/bloodprg.rs	432	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	440	fn		TESTED	
+MzSummary	src/bloodprg.rs	446	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	457	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	468	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	475	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	482	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	497	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	507	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	514	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	523	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	530	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	538	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	557	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	571	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	592	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	607	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	613	fn		UNVERIFIED	
+parse	src/bloodprg.rs	619	fn		UNVERIFIED	
+summary	src/bloodprg.rs	649	fn		TESTED	
+image_bytes	src/bloodprg.rs	664	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	668	fn		TESTED	
+ds_to_file	src/bloodprg.rs	672	fn		TESTED	
+fs_to_file	src/bloodprg.rs	676	fn		TESTED	
+opcode_handlers	src/bloodprg.rs	680	fn		TESTED	
+opcode_descriptors	src/bloodprg.rs	700	fn		TESTED	
+vm_opcode_specs	src/bloodprg.rs	717	fn		TESTED	
+script_resource_profiles	src/bloodprg.rs	754	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	788	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	826	fn		TESTED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	834	fn		TESTED	
+snd_entry_call_sites	src/bloodprg.rs	842	fn		TESTED	
+snd_bank_load_call_sites	src/bloodprg.rs	868	fn		TESTED	
+render_call_sites	src/bloodprg.rs	907	fn		TESTED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	941	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	963	fn		TESTED	
+subdispatch_entries	src/bloodprg.rs	983	fn		UNVERIFIED	
+slice	src/bloodprg.rs	1004	fn		TESTED	
+find_ax_source_before	src/bloodprg.rs	1013	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	1045	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	1073	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	1100	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	1106	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+location_status_headers	src/bloodprg.rs	1114	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
+list_widget_cancel_label	src/bloodprg.rs	1127	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	1133	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	1150	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
+resource_name	src/bloodprg.rs	1167	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	1180	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	1191	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	1199	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	1206	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1345	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1356	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1372	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1381	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1394	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1432	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1609	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1623	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1651	const		TESTED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2716	const		TESTED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0xffff,0x10D3,0x1CFA,0x108E,0x10C5,0x1CF2,0x64	ASM	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	80	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	98	const	0x1BB7,0x1BBD,0x273B	DATA	/// Bytes per directory record, and the record count. /// /// `SLOT_NAME_LEN` is from the CODE: the rename copies the name with /// `mov cx,4 / rep movsd` @`0x1BB7`-`0x1BBD` — four dwords, sixteen byt
