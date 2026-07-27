@@ -287,6 +287,20 @@ impl AlienObject {
     /// Port of the object initializer (`0x36A`): reset the behaviour state — zero the
     /// state flag + animation accumulator, reload the timer, and set the transform
     /// components to the neutral `0x8000` — putting the object in its start pose.
+    ///
+    /// Verified at `XDB:croolis:0x036A` (audit-fixes #468). It writes through
+    /// `mov si, word ptr [di + 0x16]` — the CHILD record, like every other method
+    /// in this overlay (#402) — and the neutral value is explicit:
+    /// `mov dword ptr [si + 0x12], 0x8000` @`0x0385`, `[si + 0x22]` @`0x038D`,
+    /// `[si + 0x32]` @`0x0395`.
+    ///
+    /// AN ODDITY, recorded because a rewrite would silently "fix" it:
+    /// `mov dword ptr [si + 0x3a], 0` appears TWICE, at `0x0375` and `0x037D`,
+    /// byte-for-byte identical (`66 c7 44 3a 00 00 00 00`). The natural reading is
+    /// that the second was meant to be `+0x3e` and the field one slot along is
+    /// never initialised. Neither offset is modelled here, so the port is not
+    /// currently affected either way — but if `+0x3a`/`+0x3e` are ever added, the
+    /// game zeroes the first twice and the second never.
     pub fn reset(&mut self) {
         self.state_flag = 0;
         self.anim = 0;

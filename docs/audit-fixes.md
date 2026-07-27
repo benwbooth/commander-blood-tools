@@ -15339,3 +15339,33 @@ give the same numbers and no provenance.
 
 2229 items, 1126 confirmed (50.5%), 1103 open. 797 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #468 — five croolis rows, and a duplicated write in the game
+
+Five `CELL?` rows settle together, all verified in the overlay:
+
+  * `update_position` / `0x999` — opens `mov si, [di+0x16]` / `mov cx, [di+0x1a]`,
+    the child array and count from #403, then `mov di, 0x4000` and
+    `mov bp, 0x7fff`. So `ALIEN_POSITION_WRAP` (16384) and `POSITION_WRAP_MASK`
+    (0x7FFF) are immediates, not chosen bounds.
+  * `x` / `0x22EC` — `mov ax, [0x22ec]` / `mov bx, [0x22f0]` / `mov dx, [0x22f4]`
+    at `0x09A8`, the three camera HIGH WORDS exactly as `AlienCamera` documents.
+  * `reset` / `0x36A` — `mov dword ptr [si + 0x12], 0x8000` @`0x0385`, `[si+0x22]`
+    @`0x038D`, `[si+0x32]` @`0x0395`.
+  * `AlienObject` / `0x105C` and `step` / `0xB72` — both read in #400 and #403.
+
+A DUPLICATED WRITE in the initializer, recorded because a rewrite would tidy it
+away: `mov dword ptr [si + 0x3a], 0` appears TWICE, at `0x0375` and `0x037D`,
+byte-for-byte identical (`66 c7 44 3a 00 00 00 00`). The natural reading is that
+the second was meant to be `+0x3e`, so that field is never initialised. Neither
+offset is modelled in the port, so nothing is wrong today — but if `+0x3a`/`+0x3e`
+are ever added, the game zeroes the first twice and the second never, and a
+faithful port has to do the same.
+
+That is the second such artefact in this overlay, after #425's `adc eax, 0` on
+only the Y axis. Both are the kind of asymmetry that looks like a mistake and must
+be reproduced anyway: the question a port answers is what the game DOES, not what
+it meant.
+
+2229 items, 1131 confirmed (50.7%), 1098 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

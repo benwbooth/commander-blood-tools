@@ -329,7 +329,7 @@ AlienMethod	src/croolis.rs	42	enum	0x103A,0x1D27,0x16A4,0x12DE,0x999,0xA30	ASM	/
 from_vtable_offset	src/croolis.rs	55	fn	0x103A	ASM	/// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A` /// table entries.
 AlienStreams	src/croolis.rs	79	struct	0x16B4,0x105c,0x16BE,0x16C2,0x16a2,0x16DC,0x16E0	ASM	/// The overlay's SHARED behaviour cells — the two counters every object in a /// colony draws from, rather than owning (audit-fixes #400, #401): /// /// ```text ///   0x16B4  mov ax, word ptr fs:[0x1
 new	src/croolis.rs	88	fn		UNVERIFIED	/// Seed both shared cells.
-AlienObject	src/croolis.rs	97	struct	0x105C	CELL?	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
+AlienObject	src/croolis.rs	97	struct	0x105C	ASM	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
 ALIEN_TRANSFORM_NEUTRAL	src/croolis.rs	130	const		UNVERIFIED	/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
 ALIEN_POSITION_WRAP	src/croolis.rs	134	const	0x4000,0x999	ASM	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
 POSITION_WRAP_MASK	src/croolis.rs	138	const		UNVERIFIED	/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so /// hexadecimal is the natural form).
@@ -340,19 +340,19 @@ VISIBLE_SCREEN_Y_MAX	src/croolis.rs	148	const		UNVERIFIED	/// Top of the on-scre
 VISIBLE_WORLD_X_HALF	src/croolis.rs	150	const		INFRA?	/// Half-width of the world-x window (centered on the camera) an object must fall within.
 AlienCamera	src/croolis.rs	176	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
 axis	src/croolis.rs	187	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
-x	src/croolis.rs	197	fn	0x22EC	CELL?	/// `[0x22EC]`, X's high word.
+x	src/croolis.rs	197	fn	0x22EC	ASM	/// `[0x22EC]`, X's high word.
 y	src/croolis.rs	202	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
 z	src/croolis.rs	209	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
 new	src/croolis.rs	217	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
 proximity_visible	src/croolis.rs	260	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
-reset	src/croolis.rs	290	fn	0x8000	CELL?	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
-update_position	src/croolis.rs	301	fn	0x999	CELL?	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
+reset	src/croolis.rs	290	fn	0x8000	ASM	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
+update_position	src/croolis.rs	301	fn	0x999	ASM	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
 dispatch	src/croolis.rs	316	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
 step	src/croolis.rs	387	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
 AlienColony	src/croolis.rs	423	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
 ALIEN_COLONY_FRAME_GATE	src/croolis.rs	445	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
 new	src/croolis.rs	455	fn	0x105C,0x9E3B	CELL?	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
-step	src/croolis.rs	466	fn	0xB72	CELL?	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
+step	src/croolis.rs	466	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		UNVERIFIED	// NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair — // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl / // inter_sh, whose byte-4 values var
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
 new	src/decompress.rs	80	fn		UNVERIFIED	
