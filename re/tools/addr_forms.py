@@ -218,3 +218,25 @@ if __name__ == "__main__":
     for imm in sorted(by, key=lambda v: (v is None, v)):
         label = "(no immediate)" if imm is None else f"{imm:#06x}"
         print(f"  {label:>14}: {dict(by[imm])}")
+
+
+def show_census(data, addr, limit=None):
+    """Print a census with its TOTAL first, and say so when it truncates.
+
+    Four entries (#308, #319, #335, #435) reasoned from a sliced view of a tool's
+    output and drew a wrong conclusion; #435 nearly published "the game never
+    writes this flag" from `[:6]` of an eight-element list whose last two entries
+    were the writes in question. #373 fixed the same failure for COUNTS by making
+    the status line generated rather than typed. This is that fix for LISTS: the
+    count is printed before any rows, and an omitted tail is stated, so a slice
+    can never look like the whole.
+    """
+    hits = census(data, addr)
+    rows = sorted(hits.items())
+    shown = rows if limit is None else rows[:limit]
+    print(f"{len(rows)} site(s) for {addr:#06x}")
+    for site, (name, kind, imm) in shown:
+        print(f"  {site:#07x}  {name:<22} {kind:<5} imm={imm}")
+    if len(shown) < len(rows):
+        print(f"  ... {len(rows) - len(shown)} MORE NOT SHOWN")
+    return hits
