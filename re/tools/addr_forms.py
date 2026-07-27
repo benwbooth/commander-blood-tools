@@ -232,6 +232,28 @@ def show_census(data, addr, limit=None):
     can never look like the whole.
     """
     hits = census(data, addr)
+    if not hits:
+        # A ZERO CENSUS IS USUALLY THE WRONG QUESTION, not an absent address.
+        # Three times in one session (audit-fixes #388 0x2A1B, #434 0x6D60/0x6724,
+        # #458 0x6ADE) a census of 0 was read as "nothing there" when the address
+        # was reached another way. Rather than leave that to the caller's memory,
+        # say so here and check the commonest alternative -- `mov reg, imm16`.
+        regs = ("ax", "cx", "dx", "bx", "sp", "bp", "si", "di")
+        lo, hi = addr & 0xFF, (addr >> 8) & 0xFF
+        imms = [
+            (i, regs[data[i] - 0xB8])
+            for i in range(len(data) - 3)
+            if 0xB8 <= data[i] <= 0xBF and data[i + 1] == lo and data[i + 2] == hi
+        ]
+        print(f"0 direct-address site(s) for {addr:#06x} -- THIS IS NOT 'unused'")
+        if imms:
+            print(f"  but {len(imms)} `mov reg16, {addr:#06x}` IMMEDIATE load(s):")
+            for i, r in imms:
+                print(f"    {i:#07x}  mov {r}, {addr:#06x}")
+        else:
+            print("  and no `mov reg16, imm` either; try modrm matching "
+                  "(mod=10 reg+disp16, mod=00/rm=110 direct) before concluding")
+        return hits
     rows = sorted(hits.items())
     shown = rows if limit is None else rows[:limit]
     print(f"{len(rows)} site(s) for {addr:#06x}")

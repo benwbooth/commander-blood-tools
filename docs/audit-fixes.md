@@ -15055,3 +15055,34 @@ before concluding anything.
 
 2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #459 — making the zero explain itself
+
+#458 was the third time a census of 0 was read as "nothing there" when the address
+was simply reached another way (#388 `0x2A1B`, #434 `0x6D60`/`0x6724`, #458
+`0x6ADE`). Each time the fix was a habit — remember to scan `B8+r imm16` next.
+Three repeats is enough evidence that the habit does not hold.
+
+`show_census` now answers for itself. On an empty result it prints
+
+    0 direct-address site(s) for 0x6ade -- THIS IS NOT 'unused'
+      but 4 `mov reg16, 0x6ade` IMMEDIATE load(s):
+        0x008a4  mov si, 0x6ade
+        0x01c6d  mov dx, 0x6ade
+        ...
+
+and when there is no immediate either, it names the remaining possibilities
+(modrm `mod=10` reg+disp16, `mod=00/rm=110` direct) rather than leaving a bare 0.
+
+Checked against both addresses that caused the problem: `0x6ADE` reports its four
+immediates, `0x5491` its two. Neither can now be mistaken for an unused cell.
+
+This is the same move as #373 (the status line became generated after four typed
+counts were wrong) and #436 (`show_census` printing totals after four truncated
+lists). The pattern in all three: a discipline I kept failing to apply became a
+line of code that applies it. What I cannot claim is that this one will be reached
+for — ad-hoc probes call `census` directly, and only `show_census` was taught to
+explain. That gap is real and stated rather than papered over.
+
+2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
