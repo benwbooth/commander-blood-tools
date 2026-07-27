@@ -19954,3 +19954,38 @@ ax,0x10`, but `0x6C04` is the `mov ax,es:[di]` and the `cmp` is at `0x6C07` — 
 instructions compressed onto one address. It reported the real offset, five bytes off.
 
 733 tests, 0 failures.
+
+## #599 — the post-VM scan, and a clear that is outside the loop
+
+`post_update_execution_state` is `presentation_scan` @`0x5816`, the walk run once
+after every VM pass:
+
+    0x5817  mov byte gs:[0x67b6],0     clear the pair-write disable, ONCE, up front
+    0x581d  lds si,gs:[0x6724]         the record arena
+    0x5822  les di,gs:[0x672c]         the 20-byte directory
+    0x582f  mov si,es:[di+0x10]        the entry's object offset
+    0x5833  test byte [si+2],1 / je    INACTIVE objects skipped entirely
+    0x583b  mov bx,[si]                the owner's KIND
+    0x583d  mov ax,0x13 / call 0x6023  vm_field_offset(selector 0x13, kind)
+    0x5843  add ax,si / mov bp,ax      the record this owner's work happens on
+    0x5847  cmp bx,2 / jne 0x58be      then split by kind
+
+`0x5817` IS OUTSIDE THE LOOP, and that placement is load-bearing: `[0x67B6]` is
+cleared once BEFORE the walk, not per object, so one owner disabling pair writes
+affects every owner scanned after it in the same pass. The port clears it before the
+`for` and not inside — correct, and now stated, because "clear the flag for each
+object" is the natural thing to write and would silently change which owners get
+paired.
+
+SELECTOR `0x13` AGAIN, different kind. This is the same matrix column the `0xC1`
+write resolves at `0x6C48` (#598), reached with a different kind. The matrix at
+`DS:0x6D60` is indexed by BOTH selector and kind (`bsf` on the kind at `0x6023`), so
+one selector is many fields — worth saying where the same number turns up twice
+meaning two different offsets.
+
+`append_post_update_trace` takes `.last()` of the pass's handoffs, and that is the
+scan's behaviour rather than a preference: every kind-2 owner writes the SAME
+presentation cell, so the final write is what survives the pass. `.first()` would
+report a target already replaced.
+
+733 tests, 0 failures.

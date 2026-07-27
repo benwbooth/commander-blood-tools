@@ -3173,6 +3173,8 @@ fn post_update_actor_record_pair(
     Some((related_field, counter_bump))
 }
 
+/// [`post_update_execution_state`] (`presentation_scan` @`0x5816`) reduced to just
+/// its actor-record pairs, for callers that want the pairing and not the trace.
 fn post_update_actor_records_for_active_objects(
     state: &mut [u8],
     context: &ExecutionContext,
@@ -3184,6 +3186,33 @@ fn post_update_actor_records_for_active_objects(
         .collect()
 }
 
+/// `presentation_scan` @`0x5816` — the post-VM walk over the object directory, run
+/// once after every VM pass:
+///
+/// ```text
+/// 0x5817  mov byte gs:[0x67b6],0     clear the pair-write disable, ONCE, up front
+/// 0x581d  lds si,gs:[0x6724]         the record arena
+/// 0x5822  les di,gs:[0x672c]         the 20-byte directory
+/// 0x582f  mov si,es:[di+0x10]        the entry's object offset
+/// 0x5833  test byte [si+2],1 / je    INACTIVE objects are skipped entirely
+/// 0x583b  mov bx,[si]                the owner's KIND
+/// 0x583d  mov ax,0x13 / call 0x6023  vm_field_offset(selector 0x13, kind)
+/// 0x5843  add ax,si / mov bp,ax      the record this owner's work happens on
+/// 0x5847  cmp bx,2 / jne 0x58be      then split by kind
+/// ```
+///
+/// The kind split is the shape of everything below: kind 2 is character-display
+/// maintenance (the presentation handoff), kind 1 is the PRESENTATION START, and the
+/// actor-record pairing runs for every active owner regardless.
+///
+/// `0x5817` IS OUTSIDE THE LOOP. `[0x67B6]` is cleared once before the walk, not per
+/// object, so one owner disabling pair writes affects every owner scanned after it
+/// in the same pass — which is why the port clears it before the `for` and not
+/// inside (audit-fixes #599).
+///
+/// Selector `0x13` here is the same matrix column the `0xC1` write resolves
+/// (`0x6C48`), reached with a different kind — the matrix is indexed by BOTH
+/// (`bsf` on the kind at `0x6023`), so one selector is many fields.
 fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> PostUpdateTrace {
     let mut post_update = PostUpdateTrace::default();
     state_set_u8(state, VM_PRESENTATION_PAIR_WRITE_DISABLED, 0);
@@ -3236,6 +3265,14 @@ fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> 
     post_update
 }
 
+/// Merge one pass's [`PostUpdateTrace`] into the running one and report the pass's
+/// handoff target.
+///
+/// THE LAST HANDOFF WINS, and that is the scan's behaviour rather than a choice
+/// here: `presentation_scan` @`0x5816` walks the directory in order and each kind-2
+/// owner writes the SAME presentation cell, so the final write is what the pass
+/// leaves behind. Taking `.last()` reproduces that; taking `.first()` would report a
+/// target the pass had already replaced (audit-fixes #599).
 fn append_post_update_trace(
     post_update: &mut PostUpdateTrace,
     mut pass_update: PostUpdateTrace,
