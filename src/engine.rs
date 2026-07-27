@@ -886,7 +886,22 @@ impl EngineState {
     ///   mov word ptr [0x1fa7], 0xa    @0x7B5F            a THIRD case, 10
     /// ```
     ///
-    /// The port models the first two. THE `0xA` CASE IS NOT MODELLED: `0x7B5F`
+    /// THE CASE LIST ABOVE IS NOT THE WHOLE CENSUS (audit-fixes #450). A full
+    /// enumeration of `0x1FA7` finds TEN sites, and only six are immediates:
+    ///
+    /// ```text
+    ///   0x018BE  =35   0x01A37  =0    0x07B5F  =10   0x07C45  =0   0x0B3FA  =35
+    ///   0x09DC7  READ (mov ax,[m])
+    ///   0x01F1E  0x05C94  0x0B12E  0x0B526   mov [m], ax  -- COMPUTED writes
+    /// ```
+    ///
+    /// So four sites write a value held in `ax`, and the base is not limited to
+    /// {0, 10, 35}. "The writers give the cases" was true of the writers the
+    /// earlier pass enumerated — the immediate forms — which is the same
+    /// one-encoding-family blind spot as #335/#359/#403/#434, here in a DOC rather
+    /// than a tool. What those four compute is undecoded.
+    ///
+    /// The port models the first two immediate cases. THE `0xA` CASE IS NOT MODELLED: `0x7B5F`
     /// sets the base to 10 and `[0x131C]` to 0 before jumping to `0x7B80`, so
     /// there is a third letterbox origin — a ten-row offset — that this function
     /// cannot produce. What selects it is undecoded, which is why the row stays

@@ -14784,3 +14784,34 @@ reported "eliminated a search" as progress.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #450 — the doc enumerated one encoding family too
+
+`present_scene_buffer`'s citations all verify: `add bx, word ptr gs:[0x1fa7]`
+@`0xA464` and @`0xAB6E` read the blit base, `mov word ptr [0x1fa7], 0x23` @`0x18BE`
+sets the band top, `mov word ptr [0x1fa7], 0xa` @`0x7B5F` is the third case the
+port does not model. The doc's acknowledged gap is real and correctly stated.
+
+BUT ITS CASE LIST IS NOT THE CENSUS. Running the full enumeration finds TEN sites,
+of which six are immediates:
+
+    0x018BE =35   0x01A37 =0    0x07B5F =10   0x07C45 =0   0x0B3FA =35
+    0x09DC7 READ
+    0x01F1E  0x05C94  0x0B12E  0x0B526   mov [m], ax  -- COMPUTED
+
+Four sites write a value held in `ax`, so the blit base is NOT limited to
+{0, 10, 35}. "The writers give the cases" was true of the writers that pass
+enumerated — the immediate forms — and the sentence reads as exhaustive.
+
+That is the fifth appearance of one blind spot: #335 (an immediate scan
+under-reporting), #359 (which built `addr_forms.py` to fix it), #403 (a modrm
+family missed), #434 (two more encoding gaps in `addr_forms` itself), and now a
+DOC making the same mistake in prose. The tools have been patched three times; the
+habit of writing "the writers are X" after looking at one form has not.
+
+Used #436's `show_census` for this, which prints the total before the rows — the
+helper written two entries ago for exactly this failure. It is the reason the four
+register writes were visible at all.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
