@@ -2149,3 +2149,40 @@ live code (so dispatch-table registrations count as uses) with doc comments stri
 (so intra-doc links do not). It cannot see calls through function pointers built
 dynamically, and it says nothing about whether a WIRED function is called on a path
 that actually runs.
+
+## UNVERIFIED — the console menu opens instantly; the game animates it (#612)
+
+**Two different things, not two copies.** #611 listed
+`ship3d::run_ship_3d_nav_choice_handler_0..4` as decoded-but-unwired. Reading them
+against the live path shows they are not a duplicate of anything — they are RICHER
+than what runs.
+
+`run_ship_3d_nav_choice_handler_1` models `0x872C`'s phase machine:
+
+    0x8735  test byte [0x2565],1 / je      the handler PHASE bit
+    0x8741  mov byte [0xADB],0             reset the interpolation STEP
+    0x8748  walk the target words, add ax,4 per entry to the 0xFFFF terminator
+    0x8758  mov byte [0x27E6],1            arm the query-only flag
+    0x875E  call 0x8428                    the layout prepass
+    0x8766  inc byte [0x2565]              advance the phase
+    0x876A  test byte [0x2565],2 / je      the INTERPOLATING phase, gated on completion
+
+The live path is `main.rs`'s `match row`: `1 => { engine.phone_active = true;
+engine.bridge.clear_menu_selection(); }`. One frame, no phases, no interpolation, no
+layout prepass.
+
+**What the player sees.** The game advances a phase per frame and holds the
+interpolating phase until it completes, so the telephone/cryobox/submenu ANIMATE
+open. The port shows them immediately. Every screen in that family opens wrong, and
+no test notices because the decoded handlers are only exercised by their own unit
+tests.
+
+**Why the stand-in is still defensible today.** It reaches the right screen with the
+right selection semantics (rows 1 and 2 clear `[0x2A19]`, matching `0x87B0`/`0x883B`,
+which matters because a stale selection blocks the eye-orb scan). It is the ANIMATION
+that is missing, not the destination.
+
+**What settles it.** Drive `run_ship_3d_nav_choice_handler_0..4` from the engine's
+frame loop with real `Ship3dNavChoiceState`, and feed `interpolation_complete` from
+the interpolation gate (`step_ship_3d_interpolation_gate`, itself on #611's unwired
+list). Both halves are already decoded; this is wiring, and the wiring is the task.

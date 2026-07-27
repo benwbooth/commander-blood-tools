@@ -20399,3 +20399,37 @@ Why it matters for the ledger specifically: a settled row with a citation reads 
 count is the queue.
 
 734 tests, 0 failures.
+
+## #612 — not a duplicate: the decoded handlers do MORE than the live path
+
+Working #611's queue. `run_ship_3d_nav_choice_handler_0..4` looked like the nav-choice
+family's dead copies beside the live `bridge`/`main` path. They are not duplicates —
+they are the FULL routines, and what runs is a stand-in.
+
+`run_ship_3d_nav_choice_handler_1` models `0x872C`'s phase machine: reset the
+interpolation step, walk the target words, arm `[0x27E6]`, run the layout prepass at
+`0x8428`, advance `[0x2565]`, then hold the INTERPOLATING phase until it completes.
+
+The live path is one line in `main.rs`: `1 => { engine.phone_active = true; ... }`.
+
+SO THE CONSOLE MENU OPENS INSTANTLY WHERE THE GAME ANIMATES IT. The phase byte
+advances per frame and the interpolating phase is gated on completion; the telephone,
+cryobox and submenu are supposed to animate open. Every screen in that family opens
+wrong, and nothing notices, because the decoded handlers are exercised only by their
+own unit tests.
+
+The stand-in is not worthless — it reaches the right screen, and it clears `[0x2A19]`
+for rows 1 and 2 exactly as `0x87B0`/`0x883B` do, which matters because a stale
+selection blocks the eye-orb scan. The DESTINATION is right; the animation is absent.
+
+RECORDED, NOT WIRED. Driving the handlers needs a real `Ship3dNavChoiceState` on the
+engine's frame loop plus `interpolation_complete` from `step_ship_3d_interpolation_
+gate` — which is itself on #611's unwired list. Both halves are decoded; connecting
+them is a change to the live frame path, and doing it half-way (handlers driven, gate
+still stubbed) would replace an instant open with a stuck one.
+
+This sharpens what #611's list is worth: "no caller outside tests" found something
+real here, but the shape was the opposite of what I expected. Not dead code beside a
+live twin — a complete decode beside an incomplete stand-in.
+
+734 tests, 0 failures.
