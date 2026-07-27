@@ -19846,3 +19846,33 @@ not match a record holding `"bobby"`. That half of the condition is easy to read
 redundant and is not.
 
 733 tests, 0 failures.
+
+## #596 — the record-state query, and an `Option` that is not a third outcome
+
+`record_state_condition` is the QUERY half of the record-state opcodes, read off
+`0xC2`'s handler at `0x6E56`..`0x6E76`:
+
+    0x6e56  test byte es:[di+2],1 / je 0x6e72     the OWNING object must be active
+    0x6e5d  cmp ax, es:[bp+2]     / jne 0x6e72    the record's +2 must equal op2
+    0x6e63  mov ax,es:[bp] / cmp ax,0xc2 / jne    the record TYPE must be the opcode
+    0x6e6c  or dl,dl / jne 0x6ee9                 matched: inverted -> branch
+    0x6e72  or dl,dl / je  0x6ee9                 failed:  plain    -> branch
+
+`dl` is the `0xA1` prefix flag from `0x6E42 inc dl`. The two exits mirror each other,
+so the branch is taken exactly when `matched XOR inverted` is FALSE. The live
+`step()` arm spells that as `if pass == flipped { self.branch() }` — the same
+condition, which I checked rather than assumed after writing it down.
+
+THE `None` IS NOT A THIRD GAME OUTCOME, and the doc now says so. It appears only in
+the STATIC walker, where `Option<bool>` means "undetermined from the initial VAR
+image". A record whose type and operand are both zero is unpopulated, and abstaining
+is honest where guessing `false` would report a branch the trace never established.
+The live path has no such case: an unpopulated record fails the type compare and
+branches. Worth stating because an `Option` beside a boolean condition reads like a
+missing case, and "simplifying" it to `false` would make the walker claim branches
+it has not shown.
+
+The owner-active test is `0xC2`-specific; the rest of the family reaches the same
+comparison without it, which is what the `opcode == 0xC2` guard reproduces.
+
+733 tests, 0 failures.

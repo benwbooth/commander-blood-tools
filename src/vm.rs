@@ -3312,6 +3312,32 @@ fn write_record_link_mode0(
     Some(true)
 }
 
+/// The QUERY half of the record-state opcodes, read off `0xC2`'s handler
+/// (`0x6E56`..`0x6E76`) — three tests, then the `0xA1` inversion:
+///
+/// ```text
+/// 0x6e56  test byte es:[di+2],1 / je 0x6e72     the OWNING object must be active
+/// 0x6e5d  cmp ax, es:[bp+2]     / jne 0x6e72    the record's +2 must equal op2
+/// 0x6e63  mov ax,es:[bp] / cmp ax,0xc2 / jne    the record TYPE must be the opcode
+/// 0x6e6c  or dl,dl / jne 0x6ee9                 matched:  invert -> branch
+/// 0x6e72  or dl,dl / je  0x6ee9                 failed:   plain  -> branch
+/// 0x6ee9  call 0x6462                           vm_branch
+/// ```
+///
+/// `dl` is the `0xA1` prefix flag (`0x6E42 inc dl`). The two exits mirror each
+/// other, so the branch is taken exactly when `matched XOR inverted` is FALSE — which
+/// is why this returns the condition's value and the caller owns the branch.
+///
+/// The owner-active test is `0xC2`-specific here; the other record opcodes in the
+/// family reach the same comparison without it, which is what the `opcode == 0xC2`
+/// guard reproduces.
+///
+/// `None` FOR AN EMPTY RECORD IS NOT A THIRD OUTCOME IN THE GAME. This runs in the
+/// static walker, where `Option<bool>` means "undetermined from the initial VAR
+/// image": a record whose type and operand are both zero is simply unpopulated, and
+/// abstaining is honest where guessing `false` would report a branch the trace never
+/// established. The live `step()` has no such case — there, an unpopulated record
+/// fails the type compare and branches (audit-fixes #596).
 fn record_state_condition(
     state: &[u8],
     context: &ExecutionContext,
