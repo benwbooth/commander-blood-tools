@@ -201,8 +201,17 @@ pub const SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET: u16 = 0x0d16;
 /// (audit-fixes #494). Handler 4 is the FIFTH entry of the dispatch table at
 /// `cs:0x0F29` (file `0x8709`) — see [`SHIP_3D_NAV_CHOICE_COUNT`].
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET: u16 = 0x2567;
+/// `mov ax,0x2578 / mov [0x2569],ax` @`0x88F0` — the label installed when the
+/// music is switched OFF, i.e. `MUSIC_ON`, the row that now offers to turn it back
+/// on. The list at `DS:0x2567` is SELF-MODIFYING: slot 1 is patched in place
+/// rather than there being two rows (audit-fixes #464, wired in #498).
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET: u16 = 0x2578;
+/// `mov ax,0x2581 / mov [0x2569],ax` @`0x8907` — the `MUSIC_OFF` face, installed
+/// when music is switched ON, and the one the SHIPPED list already carries
+/// (audit-fixes #498).
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581;
+/// `mov si,0xd3d` @`0x8914` — `mu	ablo2.voc`, played on the switch-ON branch
+/// only, after `test byte [0xade],1` @`0x890D` (audit-fixes #498).
 pub const SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET: u16 = 0x0d3d;
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 2;
 /// `mov byte [0xada],6` @`0xB3CD` — the same duration cell the nav choice sets to

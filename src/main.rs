@@ -432,7 +432,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // @0x8871, the console row-4 handler) into NUL-terminated strings, plus the
     // list widget's shared trailing CANCEL at DS:0x0174. Read once here rather
     // than written into this file -- see bloodprg::option_menu_labels.
-    let option_menu_labels: Vec<String> = [
+    let binary_for_menu = [
         format!("{iso}/BLOODPRG.EXE"),
         format!("{assets}/BLOODPRG.EXE"),
         "re/bin/BLOODPRG.EXE".to_string(),
@@ -440,13 +440,35 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     .iter()
     .find_map(|path| {
         commander_blood_tools::bloodprg::BloodPrg::parse_file(path).ok()
-    })
-    .map(|binary| {
-        let mut labels = binary.option_menu_labels();
-        labels.extend(binary.list_widget_cancel_label());
-        labels
-    })
-    .unwrap_or_default();
+    });
+    let mut option_menu_labels: Vec<String> = binary_for_menu
+        .as_ref()
+        .map(|binary| {
+            let mut labels = binary.option_menu_labels();
+            labels.extend(binary.list_widget_cancel_label());
+            labels
+        })
+        .unwrap_or_default();
+    // The toggle's OTHER face, which the pointer list never names (#463/#464):
+    // `MUSIC_ON` at DS:0x2578, installed into slot 1 by `mov ax,0x2578 / mov
+    // [0x2569],ax` @0x88F0. Held here so the row can be swapped in place, exactly
+    // as the game patches its own list.
+    let music_on_label = binary_for_menu
+        .as_ref()
+        .and_then(|binary| binary.music_on_label());
+    // `[0xBA3]`, the music-enabled latch (`mov byte [0xba3],0/1` @0x88EB/0x8902).
+    // It starts SET because the SHIPPED list at DS:0x2567 carries MUSIC_OFF in
+    // slot 1 (#463) -- the row offering to turn music OFF is the row you see when
+    // it is already on.
+    let mut music_enabled = true;
+    // Slot 1 of the list widget's rows, the slot the game patches at DS:0x2569.
+    const MUSIC_ROW: usize = 1;
+    // The face the SHIPPED list carries there (`MUSIC_OFF`, DS:0x2581), kept so the
+    // toggle can put it back rather than re-reading the image each time.
+    let music_off_label = option_menu_labels
+        .get(MUSIC_ROW)
+        .cloned()
+        .unwrap_or_default();
 
     // Boot straight into the intro logos + cutscene, exactly as the real game does
     // (MINDSCAPE → Microfolie's → intro cutscene → CRYO credit → crew showcase) — NOT a
@@ -1526,7 +1548,37 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     // fix is to hold the [0xBA3] flag, swap the row's
                                     // label from it, and start rather than stop when
                                     // it is clear.
-                                    1 => music.stop(), // MUSIC_OFF (see above)
+                                    1 => {
+                                        // The row TOGGLES (audit-fixes #498).
+                                        // @0x88DF `test byte [0xba3],1` picks the
+                                        // branch; each side patches slot 1 of the
+                                        // list at DS:0x2569 to the OTHER face and
+                                        // flips the latch.
+                                        if music_enabled {
+                                            // @0x88EB clear, @0x88F0 install MUSIC_ON
+                                            music_enabled = false;
+                                            music.stop();
+                                            if let (Some(row), Some(on)) = (
+                                                option_menu_labels.get_mut(MUSIC_ROW),
+                                                music_on_label.as_ref(),
+                                            ) {
+                                                *row = on.clone();
+                                            }
+                                        } else {
+                                            // @0x8902 set, @0x8907 install MUSIC_OFF,
+                                            // then @0x8914 `mov si,0xd3d` plays
+                                            // `mu\tablo2.voc`.
+                                            music_enabled = true;
+                                            if let Some(row) =
+                                                option_menu_labels.get_mut(MUSIC_ROW)
+                                            {
+                                                *row = music_off_label.clone();
+                                            }
+                                            music.play(&format!(
+                                                "{assets}/mu/tablo2.voc"
+                                            ));
+                                        }
+                                    }
                                     2 => {
                                         // SAVE: the slot list with the edit
                                         // buffer swapped into the renamed row
@@ -2563,7 +2615,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // `mu\tablo2.voc` on when the destination list opens and off when it closes (labels
         // DS:0x2578/0x2581 select the list pointer on tablo2 stop/start; DS:0x0BA3 is the active
         // latch). Mirror it: play tablo2 while the nav view is the active screen, stop on leave.
-        let nav_music_should_play = engine.nav_view_active()
+        let nav_music_should_play = music_enabled
+            && engine.nav_view_active()
             && !engine.intro_active()
             && !engine.ending_active
             && !engine.title_active();

@@ -16459,3 +16459,46 @@ reader sees the form rather than a bare offset.
 `ship3d.rs`: 74 uncited constants -> 67.
 
 620 tests, 0 failures.
+
+## #498 — the music row TOGGLES; the port only ever stopped it
+
+#464 decoded the mechanism and stated the fix in a comment, then left it: "This port
+stops music and never starts it, and `bloodprg::music_on_label` has no caller." That
+comment has been sitting above `1 => music.stop()` ever since. Wiring it now.
+
+The game has ONE music row whose LABEL is patched in place — the pointer list at
+`DS:0x2567` is self-modifying:
+
+```text
+  0x88DF  test byte [0xba3], 1 / je 0x88F8   which way are we going?
+  ; latch SET -> switch OFF:
+  0x88EB  mov byte [0xba3], 0
+  0x88F0  mov ax, 0x2578 / mov [0x2569], ax   slot 1 := MUSIC_ON
+  ; latch CLEAR -> switch ON:
+  0x8902  mov byte [0xba3], 1
+  0x8907  mov ax, 0x2581 / mov [0x2569], ax   slot 1 := MUSIC_OFF
+  0x8914  mov si, 0xd3d                       mu\tablo2.voc, this branch ONLY
+```
+
+The port now holds the `[0xBA3]` latch, swaps slot 1 between the two faces, and
+starts `tablo2.voc` on the ON branch instead of only stopping.
+
+THE INITIAL STATE IS NOT A GUESS. `[0xBA3]` starts SET, because the SHIPPED list
+carries `MUSIC_OFF` in slot 1 (#463) — the row that offers to turn music off is the
+row you see when it is already on. The data settles it, so the port does not have to
+pick a default.
+
+I ALSO CHECKED HOW FAR THE LATCH REACHES before gating anything on it, rather than
+assuming a menu flag only drives a menu. It is tested at four sites: the toggle
+itself and three in the audio subsystem, where `test byte [0xba3],1 / je 0xbc49`
+@`0xBBC4` skips the entire music path. So it is a GLOBAL music enable, and gating
+the port's nav-view `tablo2` loop on it is faithful rather than an extrapolation —
+without that, switching music off in the OPTION menu would have been undone by the
+next return to the nav view.
+
+Three constants settled with it: the two label faces and the `mu\tablo2.voc` path
+offset, all named in `ship3d.rs` and previously uncited.
+
+`ship3d.rs`: 67 uncited constants -> 64.
+
+620 tests, 0 failures.
