@@ -218,6 +218,19 @@ pub struct AlienCamera {
 
 impl AlienCamera {
     /// An axis's INTEGER part — the high word the overlay `movsx`es.
+    ///
+    /// All three, consecutively, at `XDB:croolis:0x0BFA`:
+    ///
+    /// ```text
+    /// 0x0bfa  660fbf06ec22  movsx eax, word ptr [0x22ec]
+    /// 0x0c00  660fbf1ef022  movsx ebx, word ptr [0x22f0]
+    /// 0x0c06  660fbf0ef422  movsx ecx, word ptr [0x22f4]
+    /// ```
+    ///
+    /// Each address is the accumulator's base + 2 — the HIGH half of the 32-bit
+    /// cell — so `fixed >> 16` is the same read. The three run back to back and
+    /// are identical in shape, which is what settles #269/#270's asymmetry: it
+    /// came from decoding one axis, not from the axes differing.
     pub fn axis(&self, index: usize) -> i16 {
         let fixed = match index {
             0 => self.x_fixed,

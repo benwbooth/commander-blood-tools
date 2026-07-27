@@ -4806,6 +4806,32 @@ fn scale_ship_3d_object_dimension(dimension: u16, depth_scale: u16) -> u16 {
     (u32::from(dimension).wrapping_mul(u32::from(depth_scale)) >> SHIP_3D_OBJECT_SCALE_SHIFT) as u16
 }
 
+/// The slot-vs-dirty-rect overlap test inside `sprite_slot_dirty_range_render`,
+/// `0x44F2`..`0x4504` — four REJECTIONS, so the accept is their conjunction:
+///
+/// ```text
+/// 0x044d8  mov ax, [di+8]        slot left
+/// 0x044db  mov bx, [di+0xa]      slot top
+/// 0x044de  mov dx, ax
+/// 0x044e0  add dx, [di+0xc]      slot right  = left + extent_width
+/// 0x044e3  mov bp, bx
+/// 0x044e5  add bp, [di+0xe]      slot bottom = top + extent_height
+/// 0x044f2  cmp ax, [di+0x1a] / jge 0x450b    left   >= dirty right  -> skip
+/// 0x044f7  cmp bx, [di+0x1e] / jge 0x450b    top    >= dirty bottom -> skip
+/// 0x044fc  cmp dx, [di+0x18] / jle 0x450b    right  <= dirty left   -> skip
+/// 0x04501  cmp bp, [di+0x1c] / jle 0x450b    bottom <= dirty top    -> skip
+/// 0x04506  call word ptr cs:[0x15a2]         draw
+/// ```
+///
+/// `jge`/`jle` are the SIGNED forms, which is the whole reason this reads its
+/// coordinates through [`signed_i16`]: a slot projected off the left edge has a
+/// negative `draw_x`, and an unsigned compare would place it at ~65000 and call it
+/// far to the RIGHT of every dirty rect — never drawn instead of always clipped.
+///
+/// Note the dirty rect's field order in the record: `+0x18` left, `+0x1A` right,
+/// `+0x1C` top, `+0x1E` bottom. Left/RIGHT/top/bottom, not left/top/right/bottom —
+/// the pairs are per-axis, and reading it the conventional way swaps two of the
+/// four bounds while still type-checking (audit-fixes #585).
 fn ship_3d_rects_intersect(
     slot_rect: Ship3dProjectionViewport,
     dirty_rect: Ship3dProjectionViewport,
@@ -9637,6 +9663,37 @@ mod tests {
     /// only while the seed is constant. If that ever becomes a real RTC read the
     /// stars start boiling, and nothing else in the tree would notice.
     #[test]
+    /// `0x44F2`'s `jge`/`jle` are SIGNED, and a slot hanging off the left edge is
+    /// the case that tells the two readings apart.
+    #[test]
+    fn a_slot_off_the_left_edge_still_intersects() {
+        let rect = |left: u16, top: u16, right: u16, bottom: u16| Ship3dProjectionViewport {
+            left,
+            right,
+            top,
+            bottom,
+        };
+        // draw_x = -16, so the slot spans x in [-16, 16) and overlaps a dirty rect
+        // at x in [0, 32). Read unsigned, `left` is 65520 and this misses entirely.
+        let slot = rect(0xFFF0, 0, 16, 32);
+        let dirty = rect(0, 0, 32, 32);
+        assert!(
+            ship_3d_rects_intersect(slot, dirty),
+            "a negative draw_x must compare as negative (0x44F2 jge is signed)"
+        );
+        // The port must not simply answer `true`: genuinely disjoint stays disjoint,
+        // with the same negative coordinate in play.
+        assert!(
+            !ship_3d_rects_intersect(rect(0xFFF0, 0, 0xFFF8, 32), dirty),
+            "a slot entirely left of the dirty rect must not intersect"
+        );
+        // And the bounds are STRICT — touching edges do not overlap (`jle`/`jge`).
+        assert!(
+            !ship_3d_rects_intersect(rect(32, 0, 64, 32), dirty),
+            "slot.left == dirty.right must not intersect"
+        );
+    }
+
     fn the_starfield_is_stable_only_because_the_seed_is() {
         let angles = Ship3dMatrixAngles {
             angle_2f71: 0,

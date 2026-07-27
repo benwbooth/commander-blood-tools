@@ -19394,3 +19394,39 @@ routines; the WRAPPER is a port-side convenience, and citing it to `0x0FD3` woul
 claim the binary composes them, which is exactly what it does not do.
 
 727 tests, 0 failures.
+
+## #585 — the dirty-rect overlap test, and why it reads its coordinates signed
+
+`ship_3d_rects_intersect` had no doc comment at all — four strict inequalities with
+`signed_i16` conversions and nothing saying where they came from. They are
+`0x44F2`..`0x4504` inside `sprite_slot_dirty_range_render`, expressed as four
+REJECTIONS so the port's accept is their conjugate:
+
+    0x044f2  cmp ax, [di+0x1a] / jge 0x450b    left   >= dirty right  -> skip
+    0x044f7  cmp bx, [di+0x1e] / jge 0x450b    top    >= dirty bottom -> skip
+    0x044fc  cmp dx, [di+0x18] / jle 0x450b    right  <= dirty left   -> skip
+    0x04501  cmp bp, [di+0x1c] / jle 0x450b    bottom <= dirty top    -> skip
+    0x04506  call word ptr cs:[0x15a2]         draw
+
+`jge`/`jle` are the SIGNED forms, and that is the reason for the `signed_i16` calls:
+a slot projected off the left edge has a negative `draw_x`, which an unsigned compare
+reads as ~65000 — placing it to the RIGHT of every dirty rect, so it is never drawn
+rather than correctly clipped. The port was already right; nothing recorded WHY, and
+"why is this converted to i16" is exactly the question that gets answered by deleting
+the conversion.
+
+Now pinned by a test with a slot at `draw_x = -16`, which an unsigned reading misses,
+plus a genuinely-disjoint negative case so the assert cannot pass on a function that
+returns `true`, plus a touching-edge case for the strictness of `jle`/`jge`.
+
+ONE MORE TRAP RECORDED: the dirty rect's fields are `+0x18` left, `+0x1A` RIGHT,
+`+0x1C` top, `+0x1E` bottom — per-axis pairs, not the conventional
+left/top/right/bottom. Reading it the usual way swaps two of the four bounds and
+still type-checks, since all four are `u16`.
+
+Also settled: `Ship3dDirtyRectList` and `AlienStreams::new` as INFRA (shape types
+carrying no rule), and `AlienCamera::axis` as ASM — three consecutive `movsx` on the
+accumulator high words at `XDB:croolis:0x0BFA`/`0x0C00`/`0x0C06`, identical in shape,
+which is what settles the #269/#270 asymmetry: it came from decoding one axis.
+
+729 tests, 0 failures.

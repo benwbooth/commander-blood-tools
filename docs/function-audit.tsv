@@ -328,7 +328,7 @@ alien_anim_prng_next	src/croolis.rs	28	fn	XDB:croolis:0x16A4,0xffff,0x16AA,0x16B
 AlienMethod	src/croolis.rs	42	enum	0x103A,0x1D27,0x16A4,0x12DE,0x999,0xA30	ASM	/// The overlay's per-object behaviour method, selected via the vtable at `fs:0x103A` /// (near-ptr entries indexed by `bx = [di+0x34]`). The decoded entries are: /// `0x1D27` (null/`ret`), `0x16A4` (
 from_vtable_offset	src/croolis.rs	55	fn	0x103A	ASM	/// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A` /// table entries.
 AlienStreams	src/croolis.rs	79	struct	0x16B4,0x105c,0x16BE,0x16C2,0x16a2,0x16DC,0x16E0	ASM	/// The overlay's SHARED behaviour cells — the two counters every object in a /// colony draws from, rather than owning (audit-fixes #400, #401): /// /// ```text ///   0x16B4  mov ax, word ptr fs:[0x1
-new	src/croolis.rs	88	fn		UNVERIFIED	/// Seed both shared cells.
+new	src/croolis.rs	88	fn		INFRA	/// Seed both shared cells.
 AlienObject	src/croolis.rs	97	struct	0x105C	ASM	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
 ALIEN_TRANSFORM_NEUTRAL	src/croolis.rs	137	const	XDB:croolis:0x385,0x8000	ASM	/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`. /// `0x8000`, written by the initializer at `XDB:croolis:0x385`, `0x38D` and /// `0x395` — three `mov dword ptr [si+0
 ALIEN_POSITION_WRAP	src/croolis.rs	141	const	0x4000,0x999	ASM	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
@@ -339,20 +339,20 @@ VISIBLE_ANIM_Y_BIAS	src/croolis.rs	168	const	0xA5C,0xFFC,0xA47,0xA4C,0x22F0	ASM	
 VISIBLE_SCREEN_Y_MAX	src/croolis.rs	176	const	0xA68,0xA30,0xAA0,0xA66	ASM	/// Top of the on-screen band an object's screen y must fall within to be drawn — /// `cmp ax,0x80 / jg` at croolis.xdb `0xA68`, inside the `0xA30` gate /// (audit-fixes #488). /// /// The lower bound
 VISIBLE_WORLD_X_HALF	src/croolis.rs	184	const	0xA74,0xff00,0xA79,0xFF00,0xA85,0xA8A	ASM	/// Half-width of the world-x window (centered on the camera) an object must fall /// within — croolis.xdb `0xA74` `cmp ax,0xff00 / jl` and `0xA79` `cmp ax,0x100 / /// jg` (audit-fixes #488). /// /// 
 AlienCamera	src/croolis.rs	210	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
-axis	src/croolis.rs	221	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
-x	src/croolis.rs	231	fn	0x22EC	ASM	/// `[0x22EC]`, X's high word.
-y	src/croolis.rs	236	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
-z	src/croolis.rs	243	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
-new	src/croolis.rs	251	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
-proximity_visible	src/croolis.rs	294	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
-reset	src/croolis.rs	338	fn	XDB:croolis:0x036A,0x8000	ASM	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
-update_position	src/croolis.rs	349	fn	0x999	ASM	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
-dispatch	src/croolis.rs	364	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
-step	src/croolis.rs	435	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
-AlienColony	src/croolis.rs	471	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
-ALIEN_COLONY_FRAME_GATE	src/croolis.rs	493	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
-new	src/croolis.rs	503	fn	0x105C,0x9E3B	ASM	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
-step	src/croolis.rs	514	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
+axis	src/croolis.rs	234	fn	XDB:croolis:0x0BFA,0x0bfa,0x22ec,0x0c00,0x22f0,0x0c06,0x22f4	ASM	/// An axis's INTEGER part — the high word the overlay `movsx`es. /// /// All three, consecutively, at `XDB:croolis:0x0BFA`: /// /// ```text /// 0x0bfa  660fbf06ec22  movsx eax, word ptr [0x22ec] /// 
+x	src/croolis.rs	244	fn	0x22EC	ASM	/// `[0x22EC]`, X's high word.
+y	src/croolis.rs	249	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
+z	src/croolis.rs	256	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
+new	src/croolis.rs	264	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
+proximity_visible	src/croolis.rs	307	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
+reset	src/croolis.rs	351	fn	XDB:croolis:0x036A,0x8000	ASM	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
+update_position	src/croolis.rs	362	fn	0x999	ASM	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
+dispatch	src/croolis.rs	377	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
+step	src/croolis.rs	448	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
+AlienColony	src/croolis.rs	484	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
+ALIEN_COLONY_FRAME_GATE	src/croolis.rs	506	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
+new	src/croolis.rs	516	fn	0x105C,0x9E3B	ASM	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
+step	src/croolis.rs	527	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		UNVERIFIED	// NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair — // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl / // inter_sh, whose byte-4 values var
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
 new	src/decompress.rs	80	fn		UNVERIFIED	
@@ -1066,7 +1066,7 @@ ship_3d_nav_entity_for_slot	src/ship3d.rs	1173	fn	0x6612	ASM	/// The entity id a
 Ship3dObjectSpriteDescriptor	src/ship3d.rs	1182	struct	0x6212,0x65F2	ASM	/// The entity id this slot writes into (`0x6212 + (id << 5)`), so a slot can /// be addressed the way the rest of the engine addresses entities — the /// hover status panel, for one, reads ENTITY `0x
 Ship3dObjectSpriteProjection	src/ship3d.rs	1208	struct		TESTED	/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the func
 Ship3dSpriteSlotUpdateEffect	src/ship3d.rs	1224	struct		TESTED	/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the func
-Ship3dDirtyRectList	src/ship3d.rs	1240	struct		UNVERIFIED	/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the func
+Ship3dDirtyRectList	src/ship3d.rs	1240	struct		INFRA	/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the func
 default	src/ship3d.rs	1246	fn		TESTED	
 Ship3dDirtyRectSnapshotEffect	src/ship3d.rs	1261	struct		UNVERIFIED	/// Parameter/result shape for [`commit_ship_3d_global_clip_snapshot`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on 
 Ship3dSpriteSlotRenderCommand	src/ship3d.rs	1275	struct		UNVERIFIED	/// Parameter/result shape for [`collect_ship_3d_dirty_sprite_slot_render_commands`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary cita
@@ -1166,25 +1166,25 @@ projection_component	src/ship3d.rs	4763	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// O
 projection_dot	src/ship3d.rs	4772	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
 project_ship_3d_axis	src/ship3d.rs	4795	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
 scale_ship_3d_object_dimension	src/ship3d.rs	4805	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
-ship_3d_rects_intersect	src/ship3d.rs	4809	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	4824	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
-checked_u16_div_u8_to_u8	src/ship3d.rs	4832	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	4844	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
-target_list_draw_x	src/ship3d.rs	4848	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	4853	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	4863	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	4904	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	4918	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	4936	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	4945	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	4978	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	4988	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	4998	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	5005	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	5029	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	5039	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	5048	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
-next_target_list_draw_color	src/ship3d.rs	5057	fn		UNVERIFIED	
+ship_3d_rects_intersect	src/ship3d.rs	4835	fn	0x44F2,0x4504,0x044d8,0x044db,0x044de,0x044e0,0x044e3,0x044e	ASM	/// The slot-vs-dirty-rect overlap test inside `sprite_slot_dirty_range_render`, /// `0x44F2`..`0x4504` — four REJECTIONS, so the accept is their conjunction: /// /// ```text /// 0x044d8  mov ax, [di+
+checked_i16_div_i8_to_i8	src/ship3d.rs	4850	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
+checked_u16_div_u8_to_u8	src/ship3d.rs	4858	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	4870	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
+target_list_draw_x	src/ship3d.rs	4874	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	4879	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	4889	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	4930	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	4944	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	4962	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	4971	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	5004	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	5014	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	5024	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	5031	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	5055	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	5065	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	5074	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
+next_target_list_draw_color	src/ship3d.rs	5083	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
