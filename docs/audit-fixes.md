@@ -19595,3 +19595,50 @@ anti-vacuity check and the file has 48. Replaced with the measured count, assert
 exactly, so it documents the file instead of loosely bounding it.
 
 731 tests, 0 failures.
+
+## #590 — the subtitle wrap existed FOUR times; two were wrong
+
+Reading `extract::script`'s `assemble_dialogue` while documenting its neighbours
+turned up a bare `0x23` where the named constant should be — and behind the literal,
+the wrong comparison.
+
+`0x66DB`..`0x6735`, read properly this time:
+
+    0x66ef  lodsb / stosb / inc dl        copy the word; dl = LINE length
+    0x6701  call strlen_b                 al = the NEXT word's length
+    0x6704  mov ah,es:[di]                its first character
+    0x6708..0x6720  cmp ah,2e/2c/3f/21/3a   . , ? ! : -> attaches, no space, no wrap
+    0x6722  mov ah,0x20 / stosb / inc dl    else write the space and COUNT it
+    0x672a  add al,dl / cmp al,0x23 / jb    line + space + NEXT >= 35 -> break
+    0x6730  xor dl,dl / mov al,0x0d / stosb
+
+THE FOUR COPIES AND THEIR STATE:
+
+- `script::assemble_dialogue_from_offsets` — correct (fixed by #313).
+- `engine.rs:161` — correct.
+- `extract::assemble_dialogue` — `line_len >= 0x23`, REACTIVE. Breaks one word LATE.
+- `engine.rs:1272` — `> SUBTITLE_WRAP_COLUMN`, so 35 fitted and it wrapped at 36.
+
+#313 fixed one copy and called it "the SECOND copy of the rule". There were four.
+The reactive one is the same defect that fix was about, still present in a third
+place, with its doc comment describing the WRONG behaviour as the game's.
+
+THE TEST THAT LET IT SURVIVE. `wraps_at_35_chars` fed eight 8-character words and
+asserted only that a newline existed and no line exceeded 40 characters. Predictive
+puts THREE words on a line (27 chars), reactive FOUR (36) — both pass that assertion.
+It now asserts the exact string, and I checked it fails on the reactive form before
+keeping it:
+
+    left:  "abcdefgh abcdefgh abcdefgh abcdefgh \n..."   reactive
+    right: "abcdefgh abcdefgh abcdefgh \n..."            predictive
+
+Two of the four copies take a word list, so those are now ONE function,
+`script::assemble_words`, carrying the disassembly. `engine`'s TV-cue wrapper works
+on a different shape and is corrected in place.
+
+WORTH KEEPING: the trailing space before each break is the original's, because
+`0x6722` writes the space and `0x6728` counts it BEFORE `0x672A` decides to break.
+A "tidier" implementation that breaks first and omits the space produces different
+strings, and the exact-output assertion now pins that too.
+
+731 tests, 0 failures.

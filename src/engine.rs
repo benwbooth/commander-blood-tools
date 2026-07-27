@@ -1269,7 +1269,11 @@ impl EngineState {
                 let mut lines: Vec<String> = Vec::new();
                 let mut cur = String::new();
                 for word in text.split_whitespace() {
-                    if !cur.is_empty() && cur.len() + 1 + word.len() > crate::script::SUBTITLE_WRAP_COLUMN
+                    // `>=`, not `>`: `0x672C` is `cmp al,0x23 / jb`, so 35 itself
+                    // breaks. `>` kept a 35-character line and wrapped only at 36
+                    // (audit-fixes #590).
+                    if !cur.is_empty()
+                        && cur.len() + 1 + word.len() >= crate::script::SUBTITLE_WRAP_COLUMN
                     {
                         lines.push(std::mem::take(&mut cur));
                     }

@@ -377,6 +377,33 @@ fn assemble_dialogue_from_offsets(
         return None;
     }
 
+    Some(assemble_words(&words))
+}
+
+/// The `0xA6` handler's word assembly, `0x66DB`..`0x6735` — THE ONLY COPY.
+///
+/// ```text
+/// 0x66ef  lodsb / stosb / inc dl      copy the word, dl = line length
+/// 0x6701  call strlen_b               al = the NEXT word's length
+/// 0x6704  mov ah,es:[di]              its first character...
+/// 0x6708..0x6720  cmp ah, 2e/2c/3f/21/3a   ...if . , ? ! : it ATTACHES, no space
+/// 0x6722  mov ah,0x20 / stosb / inc dl     otherwise write the space and count it
+/// 0x672a  add al,dl / cmp al,0x23 / jb     PREDICTIVE: line + space + next >= 35
+/// 0x6730  xor dl,dl / mov al,0x0d / stosb  break
+/// ```
+///
+/// Two things this encodes that a paraphrase loses. The wrap is PREDICTIVE — `al`
+/// holds the NEXT word, so the break lands before the word that would overflow, not
+/// after it. And the SPACE IS WRITTEN AND COUNTED FIRST (`0x6722`, `0x6728`), so a
+/// broken line keeps its trailing space and the comparison includes it.
+///
+/// Long single words are never split: the wrap test only runs on the space path.
+///
+/// This rule existed in FOUR places (audit-fixes #313, #590). Two of them carried
+/// the reactive comparison and one an off-by-one `>`. The two that take a word list
+/// now share this function; `engine`'s TV-cue wrapper works on a different shape and
+/// is corrected in place.
+pub fn assemble_words(words: &[&str]) -> String {
     let mut out = String::new();
     let mut line_len = 0usize;
     for (idx, word) in words.iter().enumerate() {
@@ -392,11 +419,6 @@ fn assemble_dialogue_from_offsets(
         if !attaches {
             out.push(' ');
             line_len += 1;
-            // PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes
-            // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's
-            // length (strlen_b @0x6701) before comparing, so the break comes
-            // BEFORE the word that would overflow. This is the SECOND copy of
-            // the rule and carried the same reactive comparison.
             let next_len = words[idx + 1].chars().count();
             if line_len + next_len >= SUBTITLE_WRAP_COLUMN {
                 out.push('\n');
@@ -404,7 +426,7 @@ fn assemble_dialogue_from_offsets(
             }
         }
     }
-    Some(out)
+    out
 }
 
 pub fn parse_script_bundle(

@@ -2230,31 +2230,24 @@ pub(super) fn push_raw_disassembly(
 /// Assemble a dialogue line's words into the on-screen string exactly as the
 /// game's 0xA6 handler does (BLOODPRG.EXE 0x66CD–0x6739, see re/REVERSE.md):
 /// a space between words, except no space before a word that starts with
-/// `, . ? ! :`; and a line break once the current line reaches 0x23 (35) chars
-/// (wrap only happens on the space path; long single words are not split).
+/// `, . ? ! :`; and a PREDICTIVE line break — `0x672A` is `add al,dl / cmp al,0x23 /
+/// jb`, where `dl` is the line length so far (incremented per character at `0x66F5`
+/// and again for the space at `0x6728`) and `al` is the NEXT word's length from
+/// `strlen_b` (`0x6701`). So the break comes BEFORE the word that would overflow,
+/// not after it.
+///
+/// This copy compared `line_len >= 0x23` — REACTIVE, breaking one word late. #313
+/// fixed exactly that in `script::assemble_words` and called it "the SECOND copy of
+/// the rule"; this was the third and kept the bug (audit-fixes #590).
+///
+/// Wrap only happens on the space path; long single words are not split.
 pub(super) fn assemble_dialogue(words: &[String]) -> String {
-    let parts: Vec<&String> = words.iter().filter(|w| !w.is_empty()).collect();
-    let mut out = String::new();
-    let mut line_len: usize = 0;
-    for (i, w) in parts.iter().enumerate() {
-        out.push_str(w);
-        line_len += w.chars().count();
-        if i + 1 < parts.len() {
-            let attaches = matches!(
-                parts[i + 1].chars().next(),
-                Some(',' | '.' | '?' | '!' | ':')
-            );
-            if !attaches {
-                out.push(' ');
-                line_len += 1;
-                if line_len >= 0x23 {
-                    out.push('\n');
-                    line_len = 0;
-                }
-            }
-        }
-    }
-    out
+    let parts: Vec<&str> = words
+        .iter()
+        .filter(|w| !w.is_empty())
+        .map(String::as_str)
+        .collect();
+    commander_blood_tools::script::assemble_words(&parts)
 }
 
 pub(super) fn decode_text_call_at(
@@ -2345,13 +2338,26 @@ mod assemble_tests {
         assert_eq!(assemble_dialogue(&w(&["a", ";", "b"])), "a ; b");
     }
 
+    /// `0x672A` is PREDICTIVE — `add al,dl / cmp al,0x23 / jb`, where `al` is the
+    /// NEXT word's length. The break lands before the word that would overflow.
+    ///
+    /// Eight 8-character words is the case that separates the two readings:
+    /// predictive fits THREE per line (27 chars + the trailing space), reactive fits
+    /// FOUR (36 chars) because it only notices after writing. The old assertion here
+    /// was `line.chars().count() <= 40`, which both satisfy — so this test existed
+    /// while the function was wrong (audit-fixes #590).
     #[test]
     fn wraps_at_35_chars() {
-        // 8x "wordword" (8 chars) + spaces: line breaks once length reaches 0x23.
         let out = assemble_dialogue(&w(&["abcdefgh"; 8]));
-        assert!(out.contains('\n'), "should wrap long lines: {out:?}");
-        for line in out.split('\n') {
-            assert!(line.chars().count() <= 40, "line not over-long: {line:?}");
+        assert_eq!(
+            out,
+            "abcdefgh abcdefgh abcdefgh \nabcdefgh abcdefgh abcdefgh \nabcdefgh abcdefgh"
+        );
+        // The trailing space before each break is the original's: `0x6722` writes the
+        // space and `0x6728` counts it BEFORE the comparison decides to break.
+        for line in out.split('\n').take(2) {
+            assert!(line.ends_with(' '), "the space is written before the CR: {line:?}");
+            assert_eq!(line.chars().count(), 27, "three words and their spaces");
         }
     }
 }

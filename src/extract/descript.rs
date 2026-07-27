@@ -4,6 +4,14 @@ use super::*;
 // DESCRIPT.DES parser
 // ===========================================================================
 
+/// The extract tool's mirror of [`crate::descript::SubtitleCue`] — the `0x0D`
+/// command's `u16` tick and text, plus `active_line_id`, which DESCRIPT does not
+/// carry: it is threaded in later from the script's `0xA6` TEXT call so an exported
+/// cue can be traced back to the line that plays it.
+///
+/// The format lives on the runtime type; this exists because the tool parses the
+/// file separately. `both_descript_parsers_agree_on_the_shipped_file` holds the two
+/// readers to the same cues (audit-fixes #589).
 #[derive(Clone, Debug)]
 pub(super) struct SubtitleCue {
     pub(super) tick: u16,
@@ -30,17 +38,25 @@ pub(super) struct DescriptRecord {
     pub(super) subtitles: Vec<SubtitleCue>,
 }
 
+/// The extract tool's parse of DESCRIPT.DES — the second of this tree's two readers
+/// of that file. See [`crate::descript::DescriptRecord`] for the format and #589 for
+/// why both exist and what holds them together.
 #[derive(Clone, Debug)]
 pub(super) struct DescriptDb {
     pub(super) records: Vec<DescriptRecord>,
 }
 
+/// A character record's talk clips, keyed by slot: the `0x09`/`0x0A` commands, which
+/// carry a slot byte before the filename so one record can name several.
 #[derive(Clone, Debug)]
 pub(super) struct CharacterScene {
     pub(super) record_name: String,
     pub(super) talk_hnms: Vec<(u8, String)>,
 }
 
+/// A cutscene record as the exporter sees it: its `0x10` full HNMs, `0x12` music, and
+/// `0x0D` cues. `kind` is the raw byte BEFORE the record's offset, kept unmapped here
+/// (the runtime type resolves it to `RecordKind`).
 #[derive(Clone, Debug)]
 pub(super) struct DescriptVideoScene {
     pub(super) record_name: String,
