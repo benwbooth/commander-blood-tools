@@ -15436,3 +15436,39 @@ Provisional queue: 164, from 246 at the session's start.
 
 2229 items, 1154 confirmed (51.8%), 1075 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #471 — twelve more, settled partly from the data
+
+Twelve rows. Four ride on earlier entries (`0x604E`/`0x721A` #470, `0x0FFB` #470,
+`0x1FA7` #450, `0xB31`/`0xB35` #453/#454). Four verify at labelled routine
+entries: `0x79E5` `screen_mode_update`, `0x9240` `entity_draw_full`, `0x94BA`
+`dlg_...`, `0x4BAA`. And `0x7362` is `mov word ptr gs:[0xb35], ax` — the
+record-end hold #454 traced from the other side.
+
+TWO ARE DATA, not code, and settle from the bytes:
+
+`DS:0x2B97` is the box-open zoom table, and the shape is unmistakable once dumped:
+
+    (155, 67, 10, 15)   x,y shrinking...
+    (143, 57, 34, 35)
+    (120, 51, 80, 47)   ...w,h growing
+
+which is exactly "a 6-phase zoom, {x,y,w,h} growing from a point to the full
+320x130 frame". Disassembling `0x2B97` gives `xchg dx, ax` — meaningless, and the
+third instance this session of a citation that reads as wrong when checked in the
+wrong address space (#470's `0xCFB`, #452's two-halves divisor, this).
+
+`BoldConsoleFont` cites file `0x1451A = DS:0x70FA` and `0x145CA = DS:0x71AA`, and
+the arithmetic confirms both: `0x1451A - 0xD420 = 0x70FA`, `0x145CA - 0xD420 =
+0x71AA`. A file offset given WITH its DS equivalent is checkable without
+disassembling anything, which is why those two took seconds and `0x2B97` took a
+dump to figure out.
+
+NOT settled: `response_text` and `menu_submenu_labels` cite only `0xFFFF`, a
+terminator value rather than an address. There is nothing there to verify, and
+`audit_settle` would take them on a technicality.
+
+Provisional queue: 152, from 246.
+
+2229 items, 1166 confirmed (52.3%), 1063 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
