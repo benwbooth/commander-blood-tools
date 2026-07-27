@@ -81,6 +81,29 @@ pub fn resource_descriptor_offset(id: u16) -> u16 {
 /// inference in this project (audit-fixes #114, #194).
 pub const RESOURCE_READ_CHUNK: u16 = 0x7D00;
 
+/// THE GAME CANNOT ENUMERATE A DIRECTORY (audit-fixes #481), which is why this
+/// table exists and why every "scan the assets folder" in the port is port-side
+/// discovery rather than a decoded behaviour.
+///
+/// The evidence is three counts over `BLOODPRG.EXE`:
+///
+/// ```text
+///   mov ah,0x4E (DOS FindFirst)   1 site
+///   mov ah,0x4F (DOS FindNext)    0 sites
+///   wildcard filename strings     none ("*.hnm", "*.*", ... absent)
+/// ```
+///
+/// FindNext is the call that iterates a directory; without it, and without a
+/// wildcard to pass, there is no enumeration available. The single FindFirst is a
+/// STAT: `mov ebp, dword ptr es:[bx + 0x1a]` @`0x3FF4` takes the file SIZE out of
+/// the DTA and `mov ax, 0x3d00` @`0x3FF9` then opens that same file by name.
+///
+/// So the game learns what exists from THIS TABLE and asks DOS only how big a
+/// known file is. A port that globs reaches the same files by a route the game
+/// has no instruction for — see the INFRA classifications in audit-fixes #479 and
+/// #480.
+pub const RESOURCE_ENUMERATION_IS_TABLE_ONLY: bool = true;
+
 /// One directory slot: a 16-byte NUL-padded filename, the same record shape as
 /// the world-art table's name field ([`WORLD_ART_RECORD`]).
 ///

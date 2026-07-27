@@ -15767,3 +15767,41 @@ Provisional queue: 112, from 246.
 
 2229 items, 1206 confirmed (54.1%), 1023 open. 798 citations verified, 0 wrong.
 724 workspace tests, 0 failures.
+
+## #481 — the game cannot enumerate a directory
+
+#480 classified two globbing loaders INFRA on the grounds that "the game loads by
+resource ID; it has no directory listing". That was an inference from the resource
+table's existence. Checked it directly, and it is stronger than inferred:
+
+    mov ah,0x4E (DOS FindFirst)   1 site
+    mov ah,0x4F (DOS FindNext)    0 sites
+    wildcard filename strings     none — no "*.hnm", no "*.*", nothing
+
+FindNext is the call that ITERATES a directory. With zero of them, and no wildcard
+string anywhere to pass to FindFirst, the game has no enumeration available by any
+route. The single FindFirst is a STAT: `mov ebp, dword ptr es:[bx + 0x1a]` @`0x3FF4`
+lifts the file SIZE out of the DTA, and `mov ax, 0x3d00` @`0x3FF9` opens that same
+known file.
+
+So the game learns what exists from the `FS:0x0C04` table and asks DOS only how
+big a named file is.
+
+THE PORT SCANS DIRECTORIES IN SEVEN RUNTIME PLACES (`engine.rs` ×4, `script.rs`,
+`snd.rs`, `hnm.rs`), plus tests and the DOS runtime — where `read_dir` is
+legitimate, since `recomp/runtime.rs` is EMULATING the file access the game makes.
+Two are already classified INFRA (#480). The rest reach the same files the game
+would, by a route it has no instruction for.
+
+Recorded centrally, next to the resource table, rather than at each site: the
+finding is about the game, and a reader asking "may the port scan for assets?"
+should meet the answer where the alternative lives.
+
+I have not changed the scanners. Replacing seven of them with table lookups is a
+real piece of work and each needs its own check that the table actually covers the
+files it wants — `collect_hnm_paths`, for instance, resolves DESCRIPT talk-HNM
+names, and whether every such name has a resource ID is exactly the sort of thing
+#438 found untrue for two phone contacts.
+
+2229 items, 1206 confirmed (54.1%), 1023 open. 800 citations verified, 0 wrong.
+724 workspace tests, 0 failures.
