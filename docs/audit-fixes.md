@@ -17441,3 +17441,34 @@ so nobody checks where the game says it — and "obviously right" is exactly the
 status that survives a wrong value.
 
 622 tests, 0 failures.
+
+## #526 — a sixth literal, and a string the port both read and copied
+
+`OPTION_BOX_LABEL = "CANCEL"` is the same defect #524 removed five of, and its own
+doc already said as much: the value "was previously justified by an ORACLE CAPTURE
+… which is exactly backwards under the prime rule". It had since been pinned to
+`DS:0x0174` by a test — better, still a transcription.
+
+What makes it worth its own entry is that THE PORT ALREADY READ THIS STRING.
+`bloodprg::list_widget_cancel_label()` reads `DS:0x0174` and `main.rs` appends it to
+the OPTION-menu labels. So the port held a literal copy of a string it was
+simultaneously reading correctly a few hundred lines away. Now both paths read it,
+via #524's `ds_text`, which cost one line in `UI_STRING_OFFSETS`.
+
+Also deleted: `pub const OPTION_BOX: [&str; 1] = [OPTION_BOX_LABEL]` — a
+one-element array wrapping the literal — and with it the assertion
+`OPTION_BOX[0] == OPTION_BOX_LABEL`. The surrounding comment already identified that
+as a tautology ("both sides are the same transcription", #370) and it survived
+anyway, because deleting an assertion feels like weakening a test. It was comparing
+a copy to itself.
+
+The DS offset earns a citation of its own, and it is a load I had already decoded:
+`mov si,0x174` @`0x85B3` — the list widget's shared trailing row (#492), where it is
+named `SHIP_3D_TARGET_EXTRA_LABEL_OFFSET`. ONE string, ONE load site, TWO port names
+in two files. Both are now cross-referenced, so a reader in either file learns the
+other exists rather than discovering a second copy later.
+
+`check_ui_literals.py` now reports 39 display literals present in the image with
+ONE unpinned, down from the six this pass started with.
+
+622 tests, 0 failures.

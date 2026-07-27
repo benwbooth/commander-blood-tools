@@ -1414,11 +1414,22 @@ impl EngineState {
     /// previously justified by an ORACLE CAPTURE ("resume-probe rp_option: the
     /// measured gold choice box containing CANCEL"), which is exactly backwards under
     /// the prime rule — the capture may only confirm the decoded value, never source it.
-    pub const OPTION_BOX: [&'static str; 1] = [Self::OPTION_BOX_LABEL];
-    /// `DS:0x0174` / file `0x0D594`, NUL-terminated.
-    pub const OPTION_BOX_LABEL: &'static str = "CANCEL";
+    /// `DS:0x0174` / file `0x0D594`, NUL-terminated — READ from the image, not
+    /// transcribed (audit-fixes #526). The literal `"CANCEL"` and the
+    /// one-element `OPTION_BOX` array that wrapped it are gone; the string comes
+    /// from [`EngineState::ds_text`] like the five in #524.
+    ///
+    /// This is the SAME string `bloodprg::list_widget_cancel_label` reads and
+    /// `main.rs` already appends to the OPTION-menu labels, so the port was
+    /// holding a copy of something it also read correctly elsewhere.
     /// Ten save slots — the `blood.sav` directory's record count.
     pub const SAVE_SLOT_ROWS: usize = crate::bloodsav::SLOT_COUNT;
+    /// `mov si,0x174` @`0x85B3`, the list widget's shared trailing row, drawn
+    /// only when `[0xadd]` bit 0 is set @`0x85AC` (audit-fixes #526).
+    ///
+    /// `ship3d::SHIP_3D_TARGET_EXTRA_LABEL_OFFSET` is the SAME `0x174` from the
+    /// SAME instruction (#492), named for the widget that draws it rather than
+    /// the menu that supplies it — one string, one load site, two port names.
     pub const OPTION_BOX_LABEL_DS_OFFSET: u16 = 0x0174;
     pub const OPTION_BOX_LABEL_FILE_OFFSET: usize = 0x0d594;
 
@@ -1651,7 +1662,8 @@ impl EngineState {
             self.draw_choice_box(&labels, None);
         }
         if self.option_box_active {
-            let labels: Vec<String> = Self::OPTION_BOX.iter().map(|s| s.to_string()).collect();
+            let labels: Vec<String> =
+                vec![self.ds_text(Self::OPTION_BOX_LABEL_DS_OFFSET).to_string()];
             self.draw_choice_box(&labels, None);
         }
         if !self.console_box.is_empty() {
@@ -2178,7 +2190,8 @@ impl EngineState {
 
     /// The DS offsets whose strings this engine draws. Each is cited on its own
     /// constant; they are gathered here so `load_ds_strings` has one list.
-    pub const UI_STRING_OFFSETS: [u16; 5] = [
+    pub const UI_STRING_OFFSETS: [u16; 6] = [
+        Self::OPTION_BOX_LABEL_DS_OFFSET,
         Self::LOADING_TEXT_DS,
         Self::PAUSE_TEXT_DS,
         Self::CONFIRM_TITLE_DS,
@@ -2390,7 +2403,7 @@ impl EngineState {
             self.save_ui_name,
             width = crate::bloodsav::SLOT_NAME_LEN - 1
         );
-        rows.push(Self::OPTION_BOX_LABEL.to_string());
+        rows.push(self.ds_text(Self::OPTION_BOX_LABEL_DS_OFFSET).to_string());
         self.draw_choice_box(&rows, Some(editing));
     }
 
@@ -6150,9 +6163,11 @@ mod tests {
         {
             let at = EngineState::OPTION_BOX_LABEL_FILE_OFFSET;
             let end = exe[at..].iter().position(|&b| b == 0).unwrap_or(0) + at;
+            let mut probe = EngineState::new();
+            probe.load_ds_strings(&exe);
             assert_eq!(
                 String::from_utf8_lossy(&exe[at..end]),
-                EngineState::OPTION_BOX_LABEL,
+                probe.ds_text(EngineState::OPTION_BOX_LABEL_DS_OFFSET),
                 "the extra row must BE the game's string at DS:0x0174"
             );
             // ...and the DS offset and file offset must agree, since the doc
@@ -7571,9 +7586,11 @@ mod tests {
         };
         let start = EngineState::OPTION_BOX_LABEL_FILE_OFFSET;
         let end = start + exe[start..].iter().position(|&b| b == 0).expect("NUL-terminated");
+        let mut probe = EngineState::new();
+        probe.load_ds_strings(&exe);
         assert_eq!(
             std::str::from_utf8(&exe[start..end]).unwrap(),
-            EngineState::OPTION_BOX_LABEL,
+            probe.ds_text(EngineState::OPTION_BOX_LABEL_DS_OFFSET),
             "OPTION row must equal the string at DS:0x0174"
         );
         // DS base is file 0xD420, so the recorded DS offset must agree with the file
@@ -7583,7 +7600,9 @@ mod tests {
             EngineState::OPTION_BOX_LABEL_DS_OFFSET as usize,
             "DS offset and file offset must describe the same byte"
         );
-        assert_eq!(EngineState::OPTION_BOX[0], EngineState::OPTION_BOX_LABEL);
+        // (The old `OPTION_BOX[0] == OPTION_BOX_LABEL` assertion is gone with the
+        // array: it compared a transcription to itself, which is the tautology
+        // the comment above already names — audit-fixes #526.)
     }
 
     #[test]
