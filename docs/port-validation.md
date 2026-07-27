@@ -2150,7 +2150,25 @@ live code (so dispatch-table registrations count as uses) with doc comments stri
 dynamically, and it says nothing about whether a WIRED function is called on a path
 that actually runs.
 
-## UNVERIFIED — the console menu opens instantly; the game animates it (#612)
+## SPECIFIED (#613, #614) — ten frames, and the spec is now a test
+
+The wiring target is fully determined, so connecting it is mechanical:
+
+* the length is `mov byte [0xada],0x0a` @`0x86E4` — in the SAME click path that sets
+  `[0x2A19]` and arms the seek — so the open animates over TEN ticks
+  (`SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION`, already assigned by
+  `update_ship_3d_nav_choice_dispatch`);
+* the sequence is `the_contact_handler_holds_until_interpolation_completes`: prepass
+  and advance, block every frame while incomplete WITHOUT mutating state, then clear;
+* the gate driving it (`step_ship_3d_interpolation_gate`, `0x1E5D`) is decoded and its
+  ten-frame count is asserted against the real gate.
+
+Nothing here needs another decode. What remains is engine plumbing: hold a
+`Ship3dNavChoiceState` and a `Ship3dInterpolationGate` across frames, start them on a
+menu click instead of setting `phone_active` directly, and open the screen when the
+handler reports `cleared_handler_phase`.
+
+## SUPERSEDED — the console menu opens instantly; the game animates it (#612)
 
 **Two different things, not two copies.** #611 listed
 `ship3d::run_ship_3d_nav_choice_handler_0..4` as decoded-but-unwired. Reading them

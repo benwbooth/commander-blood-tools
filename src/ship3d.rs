@@ -5967,8 +5967,32 @@ mod tests {
         assert!(!done.phase_gate_blocked);
         assert_eq!(state.handler_phase, 0);
 
-        // SO THE OPEN IS NOT INSTANT: at least ten frames elapsed above before the
-        // handler said it was finished. `main.rs` opens on frame one.
+        // SO THE OPEN IS NOT INSTANT. And the length is DECODED, not chosen:
+        // `mov byte [0xada],0x0a` @`0x86E4`, in the very click path that sets
+        // `[0x2A19]` and arms the seek, gives the interpolation TEN ticks
+        // ([`SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION`], which
+        // `update_ship_3d_nav_choice_dispatch` already assigns).
+        //
+        // Driven by the real gate, that is exactly how many frames the screen must
+        // wait before opening:
+        let mut gate = Ship3dInterpolationGate {
+            duration_ticks: SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION,
+            current_tick: 0,
+        };
+        let (src, dst) = ([100u16, 100, 40, 40], [0u16, 0, 0, 0]);
+        let mut frames = 0usize;
+        loop {
+            match step_ship_3d_interpolation_gate(&mut gate, src, dst) {
+                Some(Ship3dInterpolationStep::Active(_)) => frames += 1,
+                Some(Ship3dInterpolationStep::Complete) => break,
+                None => panic!("the gate trapped"),
+            }
+            assert!(frames <= 32, "the gate never completed");
+        }
+        assert_eq!(
+            frames, SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION as usize,
+            "0x86E4 sets ten ticks, so the open animates over ten frames"
+        );
     }
 
     /// TWO PORTS OF ONE HIT TEST. `0x8614`..`0x868D` is implemented twice: here as

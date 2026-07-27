@@ -20465,3 +20465,26 @@ That is the value of writing the spec before the wiring: it cost one wrong assum
 here instead of one wrong animation in the engine.
 
 735 tests, 0 failures.
+
+## #614 — the animation is ten frames, and the number was already in the tree
+
+Completing #613's specification. The open's LENGTH does not need inventing:
+`mov byte [0xada],0x0a` at `0x86E4` sits in the same click path that writes `[0x2A19]`
+and arms the seek, so the interpolation runs TEN ticks. `DS:0x0ADA` is already
+labelled `ship_3d_interpolation_duration`, `SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION`
+is already `10`, and `update_ship_3d_nav_choice_dispatch` already assigns it.
+
+So the whole machine was decoded — phase counter, gate, duration — and none of it
+runs. That is worth stating plainly, because it changes what "wire it up" means: not
+a decode with plumbing attached, but plumbing alone.
+
+The spec test now drives the REAL gate and asserts the count: ten `Active` steps then
+`Complete`. A wiring that opens the screen on any other frame fails here.
+
+I nearly invented this number. Before searching I was ready to treat the duration as
+unknown and pick something plausible for the animation — which would have been a
+capture-flavoured constant in the middle of an otherwise fully decoded path. Seven
+writers of `[0x0ADA]` exist in the image and one of them is in the click path; the
+search took one command.
+
+735 tests, 0 failures.
