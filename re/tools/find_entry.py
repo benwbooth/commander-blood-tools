@@ -28,19 +28,46 @@ from collections import defaultdict
 EXE = "re/bin/BLOODPRG.EXE"
 
 
+# Bytes a real routine entry plausibly starts with: the push/save prologue this
+# binary uses everywhere, plus the 0x66 operand-size prefix its 32-bit routines
+# lead with. NOT a proof -- a filter (audit-fixes #570).
+PROLOGUE = {
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,  # push r16
+    0x06, 0x0E, 0x16, 0x1E,                          # push es/cs/ss/ds
+    0x60,                                            # pusha
+    0x66,                                            # operand-size prefix
+    0x9C,                                            # pushf
+    0xC3, 0xCB,                                      # a bare ret/retf stub IS an entry
+}
+
+
 def call_targets(data):
-    """target -> [call sites], for near and far calls."""
+    """target -> [call sites], for near and far calls.
+
+    BYTE-SCANNING FOR `E8`/`9A` FINDS PHANTOM CALLS. `0xA8D1` in this image is the
+    `E8` of `mov bp,ax` (`8B E8`) followed by `stc`, and reading it as a near call
+    invents a target at `0x7ACD` -- an address that is not an instruction boundary,
+    which is how the first version of this tool reported a phantom entry for the
+    montage routine (audit-fixes #570). The same self-synchronisation trap that
+    makes disassembling from an arbitrary address unsafe applies to scanning for
+    opcodes.
+
+    Mitigated, not solved: a target whose first byte is not a plausible prologue is
+    dropped. A real entry can still be missed (one starting with something odd) and
+    a phantom can still survive (landing on a `push` by chance), so the caller
+    should treat a single-site target with more suspicion than an eight-site one.
+    """
     out = defaultdict(list)
     for i in range(len(data) - 5):
         if data[i] == 0xE8:
             rel = struct.unpack_from("<h", data, i + 1)[0]
             t = i + 3 + rel
-            if 0 <= t < len(data):
+            if 0 <= t < len(data) and data[t] in PROLOGUE:
                 out[t].append((i, "near"))
         elif data[i] == 0x9A:
             off, seg = struct.unpack_from("<HH", data, i + 1)
             t = 0x600 + seg * 16 + off
-            if 0 <= t < len(data):
+            if 0 <= t < len(data) and data[t] in PROLOGUE:
                 out[t].append((i, "far"))
     return out
 

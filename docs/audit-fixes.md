@@ -18927,3 +18927,42 @@ That is a question about playback, and it decides between "fix the divisor" and
 "replace the model".
 
 726 tests, 0 failures.
+
+## #570 — my own new tool found a phantom call, and then demonstrated its own limit
+
+`find_entry.py` (#569) resolved the montage routine's entry to `0x7ACD`. That is not
+an instruction boundary. Checking the caller it named:
+
+```text
+  0xA8CF  lodsw                  ac
+  0xA8D0  mov bp, ax             8b e8   <- the E8 my scanner read as a CALL
+  0xA8D2  stc                    f9
+  0xA8D3  rcr bp, 1              d1 dd
+```
+
+The `E8` is the second byte of `mov bp,ax`. Byte-scanning for call opcodes invents
+calls exactly as decoding from an arbitrary address invents instructions — the same
+self-synchronisation trap, one level up, and I built it into a tool whose whole
+purpose was to be more reliable than the heuristic it replaced.
+
+Mitigated by requiring the target's first byte to be a plausible prologue (`push`,
+`pusha`, `pushf`, the `0x66` prefix, or a bare `ret` stub). `0x7ACD` holds `0x00` —
+the high byte of `mov bp,0xc8`'s immediate — and is now dropped.
+
+THEN IT DEMONSTRATED ITS OTHER LIMIT, on the same address. With the phantom gone,
+`0x7B65` resolves to `0x79E5`, 384 bytes back — while `labels.csv` names
+`montage_frame_setup` at `0x7AC3`. Checked: **`0x7AC3` has ZERO call sites** and
+starts with `0xBB` (`mov bx,imm`), no prologue. It is reached by a jump or fallen
+into, so no call-target scan can find it, and the tool reports the previous CALLED
+routine instead — which is what its docstring warns about and why it prints the
+distance.
+
+So `montage_frame_setup` is very likely an inner block of the routine at `0x79E5`
+rather than a routine of its own. That matters for the #550 thread: the cue walker
+(`0x7CE8`, called from `0x7BC0`) and the frame setup may be one routine, in which
+case the cue check and the frame reset share a caller.
+
+Both facts are now in the tool's docstring, because the next person to trust an
+entry it reports needs to know which of the two ways it can be wrong.
+
+726 tests, 0 failures.
