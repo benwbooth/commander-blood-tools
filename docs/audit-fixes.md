@@ -19725,3 +19725,45 @@ one-line delegations, settled INFRA.
 point of recording it.
 
 732 tests, 0 failures.
+
+## #593 — opcode 0xA2 is a RANDOM branch, and its label said "condition/test"
+
+Reading the VM's comparison helpers led to `vm_op_a2_cond_call` @`0x6588`, whose
+labels.csv row described its far call as "(condition/test)". It is not:
+
+    0x6588  lodsw                      the operand
+    0x6589  lcall 0x1ce:0xb02          = blood_prng_next, file 0x2DE2
+    0x658e  or ax,ax / je 0x6595
+    0x6592  call 0x6462                vm_branch
+
+`0x1CE:0xB02` is THE PRNG — already labelled at `0x2DE2` and confirmed three ways.
+So `0xA2` draws `random(operand)` and branches when the draw is NON-ZERO: with
+modulus N the branch is taken with probability (N-1)/N, and modulus 1 never branches.
+Label corrected.
+
+I ARRIVED AT THE WRONG ADDRESS TWICE ON THE WAY. `0x600 + 0x1CE*16 + 0xB02` is
+`0x2DE2`; I hand-computed `0x23E2` (a palette interpolator), then tried the `+0x1A2`
+relocated segment and got `0x4802` (mid-instruction), and briefly doubted a correct
+label. `seg_offset.py` answers this exactly and I should have used it first — the
+same hand-arithmetic slip as #574, now twice.
+
+THE PORT WAS ALREADY RIGHT, and its own doc said otherwise. The `0xA2` arm calls
+`VmMachine::rand`, which is a faithful port of `0x2DE2` — but the state field beside
+it read "Deterministic LCG for 0xA2 (the game uses its runtime random 0x1CE:0xB02)",
+describing a fabrication where the real thing sits. That field, `rng: u32`, was set
+once to `0x1234_5678` and NEVER READ: dead code whose comment pointed at it as the
+mechanism. Removed.
+
+WHAT THE READING ACTUALLY EXPOSED: `0x2DE2` is ported TWICE — `VmMachine::rand` and
+`ship3d::BloodPrng::next`, written independently. #246 already found one of them
+using the rotated registers instead of the stored bytes for the feedback, a bug that
+"agrees at an all-zero state and diverges from the second draw onward". Nothing was
+comparing them. `prngs_agree_with_the_ship3d_port` now runs both from the same state,
+unbounded and with a modulus, and asserts the sequence varies so two constants cannot
+pass.
+
+`compare_vm_words`, `global_word_condition` and `global_pair_condition` remain OPEN —
+I set out to cite them and followed `0xA2` instead. The settle guard refused all
+three for want of an address, which is correct.
+
+733 tests, 0 failures.

@@ -5187,8 +5187,6 @@ pub struct VmMachine {
     /// Globals `gs:0xAA6` (0xCA) and `gs:0xAAA` (0xCB).
     pub global_aa6: i16,
     pub global_aaa: u8,
-    /// Deterministic LCG for 0xA2 (the game uses its runtime random 0x1CE:0xB02).
-    pub rng: u32,
     /// Byte length of the loaded VAR file (= the line-record table's saved size).
     pub var_len: usize,
     /// Events raised since the last drain.
@@ -5246,6 +5244,7 @@ pub struct VmMachine {
 }
 
 impl Default for VmMachine {
+
     fn default() -> Self {
         VmMachine {
             pc: 0,
@@ -5282,7 +5281,6 @@ impl Default for VmMachine {
             yielded: false,
             global_aa6: 0,
             global_aaa: 0,
-            rng: 0x1234_5678,
             var_len: 0,
             events: Vec::new(),
             cod: Vec::new(),
@@ -6816,6 +6814,21 @@ impl VmMachine {
             }
             self.line_records[i] = u16::from_le_bytes([ch[0], ch[1]]);
         }
+    }
+
+    /// `0x1CE:0xB02` = `blood_prng_next` (file `0x2DE2`), the game's ONLY random
+    /// source. `0xA2` passes its operand as the MODULUS and branches when the draw
+    /// is non-zero (`or ax,ax / je 0x6595`), so modulus 1 never branches and
+    /// modulus N branches with probability (N-1)/N.
+    ///
+    /// THIS IS THE SECOND FAITHFUL PORT OF THAT ROUTINE. `ship3d::BloodPrng::next`
+    /// is the first. `prngs_agree_with_the_ship3d_port` holds them to the same
+    /// sequence, because two implementations of one routine is how the VM's random
+    /// branches and the starfield quietly stop sharing a generator (audit-fixes
+    /// #593).
+    /// Test hook for `prngs_agree_with_the_ship3d_port`.
+    pub fn rand_pub(&mut self, n: u16) -> u16 {
+        self.rand(n)
     }
 
     fn rand(&mut self, n: u16) -> u16 {
@@ -10245,6 +10258,40 @@ mod tests {
     }
 
     use super::*;
+
+    /// TWO PORTS OF ONE ROUTINE. `VmMachine::rand` and `ship3d::BloodPrng::next` are
+    /// both `0x1CE:0xB02` (file `0x2DE2`), written independently. Same state must
+    /// give the same sequence, or the VM's random branches and everything driven by
+    /// `BloodPrng` have silently forked (audit-fixes #593).
+    #[test]
+    fn prngs_agree_with_the_ship3d_port() {
+        let mut m = VmMachine::new();
+        let mut other = crate::ship3d::BloodPrng {
+            seed_word: m.prng_seed,
+            a: m.prng_af0,
+            b: m.prng_af1,
+            counter: m.prng_af2,
+        };
+        // Unbounded draws first: the raw word, before any modulus folding.
+        let mine: Vec<u16> = (0..16).map(|_| m.rand_pub(0)).collect();
+        let theirs: Vec<u16> = (0..16).map(|_| other.next(0)).collect();
+        assert_eq!(mine, theirs, "the two ports of 0x2DE2 diverge");
+        // NOT VACUOUS: the generator must actually move, or two constants match.
+        assert!(mine.iter().any(|&v| v != mine[0]), "the sequence must vary");
+
+        // And with a modulus, which 0xA2 always passes.
+        let mut m2 = VmMachine::new();
+        let mut o2 = crate::ship3d::BloodPrng {
+            seed_word: m2.prng_seed,
+            a: m2.prng_af0,
+            b: m2.prng_af1,
+            counter: m2.prng_af2,
+        };
+        for i in 0..16u16 {
+            let n = 2 + i % 7;
+            assert_eq!(m2.rand_pub(n), o2.next(n), "modulus {n}");
+        }
+    }
 
     /// The inline `0xA1` prefix is consumed REGARDLESS OF MODE.
     ///
