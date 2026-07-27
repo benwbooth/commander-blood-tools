@@ -85,7 +85,18 @@ pub struct SaveSlot {
 }
 
 /// Bytes per directory record, and the record count.
+///
+/// `SLOT_NAME_LEN` is from the CODE: the rename copies the name with
+/// `mov cx,4 / rep movsd` @`0x1BB7`-`0x1BBD` — four dwords, sixteen bytes — into
+/// `DS:0x273B` (audit-fixes #544).
+///
+/// `SLOT_RECORD_LEN` and `SLOT_COUNT` are from the DATA: the shipped `blood.sav`
+/// is exactly **320 bytes**, and 320 = 10 * 32. Neither number appears as an
+/// immediate in the save flow, so the file's own size is the evidence — which is
+/// why `parse_slot_directory` rejects any image that is not exactly that, and why
+/// `shipped_slot_directory_is_ten_thirty_two_byte_records` pins it.
 pub const SLOT_RECORD_LEN: usize = 32;
+/// `mov cx,4 / rep movsd` @`0x1BB7`-`0x1BBD` — four dwords (audit-fixes #544).
 pub const SLOT_NAME_LEN: usize = 16;
 pub const SLOT_COUNT: usize = 10;
 
@@ -380,5 +391,26 @@ mod tests {
             SAVE_PROFILE_SOURCE_DS, LOAD_PROFILE_DEST_DS,
             "if these ever match, the mechanism note in the module docs is wrong"
         );
+    }
+
+    /// The record geometry is the shipped file's own size (audit-fixes #544).
+    #[test]
+    fn shipped_slot_directory_is_ten_thirty_two_byte_records() {
+        let Some(bytes) = [
+            "output/_tmp_iso/blood.sav",
+            "accuracy/cdrive/cblood/blood.sav",
+            "../output/_tmp_iso/blood.sav",
+        ]
+        .iter()
+        .find_map(|p| std::fs::read(p).ok())
+        else {
+            return;
+        };
+        assert_eq!(bytes.len(), super::SLOT_COUNT * super::SLOT_RECORD_LEN);
+        assert_eq!(bytes.len(), 320, "10 records of 32 bytes");
+        // The name field cannot exceed the record it lives in.
+        assert!(super::SLOT_NAME_LEN < super::SLOT_RECORD_LEN);
+        // And the parser agrees the image is well-formed.
+        assert!(super::parse_slot_directory(&bytes).is_some());
     }
 }

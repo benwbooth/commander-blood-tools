@@ -18087,3 +18087,32 @@ tool earning its keep in the other direction: same-colour repeats are the subtit
 helper doing its job, and only distinct colours are reported.
 
 723 tests, 0 failures.
+
+## #544 — the save-slot geometry: one constant from code, two from the file itself
+
+Three constants, and they need DIFFERENT KINDS of evidence — which is why they had
+sat together uncited under one comment.
+
+`SLOT_NAME_LEN = 16` is in the CODE: the rename copies the name with
+`mov cx,4 / rep movsd` @`0x1BB7`-`0x1BBD` into `DS:0x273B`. Four dwords, sixteen
+bytes, settled ASM.
+
+`SLOT_RECORD_LEN = 32` and `SLOT_COUNT = 10` are NOT in the code — I searched the
+save-UI region `0x1900..0x1E00` for a `mov cx,10`, an `add si,32` and a `320`, and
+found none of them. They are in the DATA: the shipped `blood.sav` is **exactly 320
+bytes**, and 320 = 10 * 32. Settled DATA, not ASM, because that is what the evidence
+is.
+
+The distinction matters more than the two rows. A constant with no instruction
+behind it is not automatically unverified — the game's own shipped file can be the
+authority, and here it is the ONLY authority. Filing these ASM would have implied an
+address that does not exist; leaving them UNVERIFIED would have implied nothing had
+been checked. `audit_settle.py`'s `DATA` status exists for exactly this, and the
+`REFUSED ... (ASM needs a cited address)` on the first attempt is the tool holding
+the line correctly.
+
+`shipped_slot_directory_is_ten_thirty_two_byte_records` now pins it, and asserts
+the parser accepts the shipped image — so if the format ever disagrees with the
+constants, the file itself fails the test rather than the port silently mis-parsing.
+
+724 tests, 0 failures.
