@@ -20641,3 +20641,36 @@ one that looked like a step backwards (#617, refusing the info panel's seed) is 
 it grows from the clicked row instead of from the mouse.
 
 737 tests, 0 failures.
+
+## #620 — the animation blits an IMAGE, not an outline
+
+Closing this thread with the last thing I would otherwise have got wrong. #619 said
+what remained was "a box-outline blit per tick". Reading the gate's tail says
+otherwise:
+
+    0x1ead  mov si,[0xac8]        the SOURCE IMAGE handle
+    0x1eb1  lcall 0x299,0x40e     the window blit, bx/cx/dx/bp = the interpolated words
+
+`0x299:0x40E` (file `0x339E`) is a WINDOW BLIT and `[0xAC8]` a source handle, so every
+tick draws a SCALED IMAGE into the travelling rect. The console box grows from the
+clicked row as a picture. An outline would have been a plausible-looking animation and
+the wrong one — the fourth time this thread that the obvious reading was not the
+routine's.
+
+The phrase that misled me was my own: "the gate DRAWS the interpolated rect rather
+than storing it", quoted from the `0x90FF` decode across three entries. True, and it
+says nothing about WHAT is drawn. I carried it as though it did.
+
+WHERE THIS LEAVES THE THREAD, which is a good deal further than it started:
+
+* the ten-frame delay is wired and tested (#615);
+* the travelling rect is wired, seeded from the clicked row, and tested (#619);
+* the draw is specified — a scaled window blit through `0x299:0x40E` with the handle
+  in `[0xAC8]` — and is a genuine renderer feature rather than plumbing, since the
+  engine has no scaled blit on this path and `[0xAC8]`'s value here is untraced.
+
+Recorded rather than attempted: a scaled blit written from a guess at the source image
+would put a wrong picture on screen every time the menu opens, which is worse than the
+current no-picture.
+
+737 tests, 0 failures.

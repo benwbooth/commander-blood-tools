@@ -2189,10 +2189,21 @@ and `the_opening_box_travels_from_the_clicked_row` asserts it takes intermediate
 positions and ends closer to the target than it began — which a delay-only
 implementation cannot do.
 
-REMAINING: the rect travels but is not yet DRAWN. `0x1E5D`'s caller on the info-panel
-path draws each interpolated rect rather than storing it (`0x90FF`), so the port needs
-a box-outline blit per tick. That is a renderer change with no decode attached — the
-geometry, the timing and the endpoints are all now in the port.
+REMAINING: the rect travels but is not DRAWN — and the draw is NOT an outline, which
+is what "draws the interpolated rect" invited me to assume. `0x1EAD`..`0x1EB1` is:
+
+    0x1ead  mov si,[0xac8]        the SOURCE IMAGE handle
+    0x1eb1  lcall 0x299,0x40e     the window blit, with bx/cx/dx/bp = the four
+                                   interpolated words
+
+So each tick blits a SCALED IMAGE into the travelling rect: the console box grows
+from the clicked row as a picture, not as a frame. The port needs a scaled window
+blit (`0x299:0x40E` = file `0x339E`) plus whatever `[0xAC8]` holds for this path —
+`0x90FF` uses the same pair on the info panel, so the primitive serves both.
+
+That is a real renderer feature, not plumbing: `extract/render.rs` has a
+`ScaledSpriteFrame` shape but the engine has no scaled blit on this path, and
+`[0xAC8]`'s value for the console open has not been traced.
 
 SUPERSEDED — the paragraph below was #616's claim and #617's correction of it, both
 kept because the reasoning matters:
