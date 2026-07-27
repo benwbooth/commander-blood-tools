@@ -16254,3 +16254,46 @@ sourced; the flag that narrows the box is the flag that adds this label.
 `ship3d.rs` is down from 115 uncited constants to 93.
 
 618 tests, 0 failures.
+
+## #493 — the nav-choice gate is the PANORAMA FRAME, and the list is in perspective
+
+#491 left three constants open rather than settle them on a failed scan. All three
+are in the routine's head, found by scanning for the RANGE TEST rather than for
+either value alone — `cmp` with 40 and `cmp` with 60 within 24 bytes of each other
+occurs exactly ONCE in the image:
+
+```text
+  0x8614  mov ax, [0x2795]      the BRIDGE PANORAMA FRAME
+  0x8617  cmp ax, 0x3c / jg     MAX_GATE
+  0x861E  cmp ax, 0x28 / jl     MIN_GATE
+```
+
+`[0x2795]` is not an abstract "gate value" — it is the panorama frame that
+`bridge_view_sector_update` (@`0x9512`, labels.csv) steps. So the nav choice exists
+ONLY while the bridge view faces frames 40..60. A constant named `MIN_GATE` says
+nothing about that; the cell it is compared against says all of it, which is the
+argument for citing the COMPARISON rather than the number.
+
+`Y_BASE = 72` is `mov bx,0x48` @`0x8674`, and it is only a base:
+
+```text
+  0x8674  mov bx, 0x48      y origin = 72 ...
+  0x8677  add bx, ax        ... + |axis - 45| ...
+  0x8679  mov cl, 0x12      row pitch = 18 ...
+  0x867B  shr ax, 2         quarter = |axis-45| >> 2
+  0x867E  add bx, ax        ... + quarter
+  0x8680  shr al, 1         half the quarter, on the LOW BYTE
+  0x8682  sub cl, al        ... - that
+```
+
+The list SLIDES DOWN and its rows COMPRESS as the player looks away from centre —
+a perspective effect, not a fixed layout. I checked the port against it rather than
+assuming, after #486: `hit_test_ship_3d_nav_choice` implements all of it, including
+that `shr al,1` acts on AL so the truncation to 8 bits happens BEFORE the shift
+(`(quarter_axis as u8) >> 1`, not `(quarter_axis >> 1) as u8`). Those differ once
+the quarter exceeds 255. No defect here — but the check is the point, since three
+constants sourced is worth less than knowing the arithmetic around them agrees.
+
+`ship3d.rs`: 93 uncited constants -> 90.
+
+618 tests, 0 failures.

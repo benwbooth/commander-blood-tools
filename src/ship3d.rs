@@ -122,7 +122,12 @@ pub const SHIP_3D_TARGET_EXTRA_LABEL_OFFSET: u16 = 0x0174;
 /// (`cmp si,[0x2734] / jne` @`0x8573`) — an ALIAS for one particular label, done
 /// in the draw pass and again in the layout pass @`0x8467` (audit-fixes #492).
 pub const SHIP_3D_TARGET_ALIAS_LABEL_OFFSET: u16 = 0x273b;
+/// `cmp ax,0x28 / jl 0x8705` @`0x861E` (audit-fixes #493). The gated value is
+/// `[0x2795]` @`0x8614` — the BRIDGE PANORAMA FRAME — so this is not an abstract
+/// gate: the nav choice exists only while the view faces frames 40..60.
 pub const SHIP_3D_NAV_CHOICE_MIN_GATE: u16 = 40;
+/// `cmp ax,0x3c / jg 0x8705` @`0x8617`, the upper half of the panorama-frame
+/// window described on [`SHIP_3D_NAV_CHOICE_MIN_GATE`] (audit-fixes #493).
 pub const SHIP_3D_NAV_CHOICE_MAX_GATE: u16 = 60;
 /// `sub ax,0x2d` @`0x8642` — the dynamic axis is biased by 45 before the `shl ax,3`
 /// @`0x864B` that turns a choice index into a column (audit-fixes #491).
@@ -136,6 +141,13 @@ pub const SHIP_3D_NAV_CHOICE_RIGHT_BASE: u16 = 287;
 /// `sub ax,0x6e` @`0x865C` — the left edge is 110 left of the right edge, tested
 /// by `cmp bx,ax / jl` @`0x8663` after a `js` guard @`0x865F` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_X_WIDTH: u16 = 110;
+/// `mov bx,0x48` @`0x8674` — the list's y origin, but only its BASE: the routine
+/// then adds `|axis - 45|` @`0x8677` and a further `>> 2` of it @`0x867E`, while
+/// the row pitch shrinks by HALF THAT QUARTER — `shr al,1 / sub cl,al`
+/// @`0x8680`, i.e. `18 - (|axis-45| >> 3)`. The shift is on AL, the quarter's LOW
+/// BYTE, so the port truncates to `u8` and then shifts, in that order.
+/// Looking away from centre slides the list down and compresses its rows — a
+/// perspective effect, not a fixed layout (audit-fixes #493).
 pub const SHIP_3D_NAV_CHOICE_Y_BASE: u16 = 72;
 /// `mov cl,0x12` @`0x8679` — a BASE, reduced by `shr al,1 / sub cl,al` @`0x8680`
 /// before `div cl` @`0x868B` converts a cursor y into a row (audit-fixes #491).
