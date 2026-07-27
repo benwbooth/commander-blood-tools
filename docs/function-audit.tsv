@@ -702,7 +702,7 @@ decode_iff	src/lbm.rs	35	fn		UNVERIFIED	// BMHD: w(2) h(2) x(2) y(2) nPlanes(1) 
 decode_planar_body	src/lbm.rs	107	fn		DATA?	/// Decode an ILBM planar BODY into chunky indexed pixels. Each row stores `n_planes` /// bitplanes of `row_bytes = ((width+15)/16)*2` each (optionally ByteRun1-compressed); /// bit `p` of a pixel com
 byterun1_row	src/lbm.rs	136	fn		UNVERIFIED	/// ByteRun1-decompress exactly `row_bytes` for one scanline, returning `(row, consumed)` /// where `consumed` is how many source bytes were used.
 decode_byterun1	src/lbm.rs	168	fn		UNVERIFIED	/// ByteRun1 (PackBits) decompression to exactly `want` bytes. // copy the next n+1 bytes literally // repeat the next byte (1 - n) times // n == -128 is a no-op
-LevelEntry	src/levels.rs	11	struct	0x0c04	CELL?	"/// A directory entry: the base filename (no dir/extension) and its kind. /// The resource ID (`FS:0x0c04` table index) the loader uses. /// The base file stem, e.g. `""venusia""` for `venusia.ext`. ///"
+LevelEntry	src/levels.rs	11	struct	0x0c04	ASM	"/// A directory entry: the base filename (no dir/extension) and its kind. /// The resource ID (`FS:0x0c04` table index) the loader uses. /// The base file stem, e.g. `""venusia""` for `venusia.ext`. ///"
 LevelKind	src/levels.rs	21	enum		TESTED	/// A navigable planet world (`*.ext`, including cyberspace + sub-levels). /// A bridge/HUD sprite bank (`*.spr`). /// A `script2.*` bytecode/data file. /// Other resource (`dnsdb.drv`, etc.).
 LEVEL_DIRECTORY_FILE_OFFSET	src/levels.rs	40	const	0x0c04,0x0bbf,0x600,0xBBF,0xC1F0,0xCDF4,0x3FC7,0xc04,0x3FD4	DATA	/// The decoded resource directory (`FS:0x0c04`), `index` = resource ID = table /// position. IDs 0..21 are engine sprites/drivers/the script1 set/buffers, 22..36 the /// primary `.ext` worlds, 37+ th
 RESOURCE_DESCRIPTOR_STRIDE	src/levels.rs	47	const	0x51A5,0x0C04,0xC04	ASM	/// The RESOURCE DESCRIPTOR table's stride: `shl bx,3` @`0x51A5` turns a resource /// ID into a descriptor offset, so records are 8 bytes and the table is based at /// `FS:0x0000` (no base is added to
@@ -722,7 +722,7 @@ level_entry_from_image	src/levels.rs	190	fn		DATA	/// One directory entry read f
 LEVEL_DIRECTORY	src/levels.rs	205	const		TESTED	
 primary_worlds	src/levels.rs	264	fn		UNVERIFIED	/// The primary navigable planet worlds — the distinct destinations shown on the nav /// map (the top-level `.ext` worlds, excluding cyberspace levels and `2`/`3` sub-levels /// which are entered from
 entry	src/levels.rs	274	fn		TESTED	/// Look up a directory entry by its resource ID.
-world_resource_id	src/levels.rs	282	fn	0x0c04	CELL?	"/// The resource ID the game loads a world by (its `FS:0x0c04` table index), given the /// world stem (`""venusia""` → 25). This is the handle passed to the resource loader /// (`vm_resource_profile_sel"
+world_resource_id	src/levels.rs	282	fn	0x0c04	ASM	"/// The resource ID the game loads a world by (its `FS:0x0c04` table index), given the /// world stem (`""venusia""` → 25). This is the handle passed to the resource loader /// (`vm_resource_profile_sel"
 EXT_WORLD_MAGIC	src/levels.rs	312	const	0x3FC7	TESTED	/// The invariant head of a `.ext` world file, MEASURED ACROSS ALL 50 SHIPPED /// WORLDS rather than sampled. /// /// The previous constant here was the full eight bytes /// `02 00 00 01 00 00 00 81`,
 is_ext_world	src/levels.rs	316	fn		TESTED	/// Whether `data` looks like a `.ext` world file. A port-side heuristic — see /// [`EXT_WORLD_MAGIC`] for why there is no game rule to copy here.
 world_location_art_prefix	src/levels.rs	326	fn		DATA?	/// The `fd/` location-art filename prefix for a world's rooms. Each world has multiple /// room backgrounds under `fd/` (floors `1`/`2`/`3`, view-angle suffixes `b`/`d`/`f`/`g`); /// the naming is pe
@@ -730,7 +730,7 @@ world_location_abbrev	src/levels.rs	350	fn		TESTED	/// The world's abbreviation 
 art_belongs_to_world	src/levels.rs	360	fn		TESTED	/// Whether an `fd/` filename belongs to `world` on any floor: it starts with the world's /// abbreviation, optionally preceded by a single floor digit (`1magnu…`, `2magnu…`).
 art_floor	src/levels.rs	371	fn		TESTED	/// The floor number of an `fd/` art filename (the leading digit, or 1 if none).
 parse_room_view	src/levels.rs	384	fn		TESTED	/// Parse a world's `fd/` room-art filename into `(room, view)`: after the world's /// [`world_location_art_prefix`], the trailing letter is the view-angle (the direction /// the player faces — `b`/`d
-WorldArtEntry	src/levels.rs	401	struct	0x2BC7,0xFFE7,0xCDF4	CELL?	/// One row of the WORLD-ARTWORK table at `DS:0x2BC7` (file `0xFFE7`): a 22-byte /// record whose `+0x00` is a 16-byte NUL-terminated display name and whose /// `+0x10` is a RESOURCE ID into the same 
+WorldArtEntry	src/levels.rs	401	struct	0x2BC7,0xFFE7,0xCDF4	ASM	/// One row of the WORLD-ARTWORK table at `DS:0x2BC7` (file `0xFFE7`): a 22-byte /// record whose `+0x00` is a 16-byte NUL-terminated display name and whose /// `+0x10` is a RESOURCE ID into the same 
 WORLD_ART_RECORD	src/levels.rs	413	const	0x2BC7	DATA	/// Byte size of one `DS:0x2BC7` record — 22, and the LAYOUT says why: a 16-byte /// NUL-padded name followed by three `u16` fields (id, group, extra). /// /// Not an immediate: the stride is the reco
 WORLD_ART_TABLE_FILE_OFFSET	src/levels.rs	415	const	0x2BC7,0xD420	ASM	/// File offset of the table (`DS:0x2BC7`, DS base `0xD420`).
 WORLD_ART_DIRECTORY	src/levels.rs	427	const	0x9098,0x90B6,0x8000,0x90B8,0x90C3	DATA	/// The game's own object-name -> artwork lookup, read by the info panel's first /// zoom frame: it walks these records comparing each name against the selected /// object's inline name (`0x9098..0x90
@@ -748,17 +748,17 @@ run	src/main.rs	99	fn		INFRA	// Bare `cargo run` (no subcommand): launch the liv
 run_engine_play	src/main.rs	260	fn		INFRA	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
 text_speed_setting_for_step	src/main.rs	338	fn		INFRA?	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
 run_engine_window	src/main.rs	344	fn	0x0c04,0x259D	INFRA	// Parse every script's FULL decoded dialogue (all characters' speech events, ~3400 // lines) so the engine can play the whole content, not just execute_trace's single // linear branch. // The real st
-refresh_nav_chart	src/main.rs	517	fn	0x604E,0x721A	CELL?	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
+refresh_nav_chart	src/main.rs	517	fn	0x604E,0x721A	ASM	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
 play	src/main.rs	593	fn		INFRA	
 stop	src/main.rs	602	fn		INFRA	
 menu_item_index	src/manu3.rs	18	fn		UNVERIFIED	/// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
 MENU_ROW_BIAS	src/manu3.rs	23	const		UNVERIFIED	/// The amount added to a menu row (placed in the high byte of the derived coordinate word).
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
-menu_item_handler	src/manu3.rs	36	fn	0x2306	CELL?	/// Resolve a selected menu item to its handler offset (method `0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base + table[i
+menu_item_handler	src/manu3.rs	36	fn	0x2306	ASM	/// Resolve a selected menu item to its handler offset (method `0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base + table[i
 MENU_CAMERA_CENTRE	src/manu3.rs	41	const		UNVERIFIED	/// The menu-view centre the camera pans around (screen 160,100).
 MENU_ANGLE_MASK	src/manu3.rs	58	const	0xffc,0xFFC	ASM	/// The rotation angle-index mask, `mov bx,0xffc` at manu3.xdb `0x283`. /// /// The mask is loaded once and applied to THREE per-node angle fields: /// /// ```text ///   0x0283  mov bx,0xffc ///   0x0
-menu_pyramid_angles	src/manu3.rs	65	fn	0xFFC	CELL?	/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the /// trig-table offsets that
-menu_camera_pan	src/manu3.rs	78	fn	0x23E4,0x23E2	CELL?	/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from /// `[0x1A]`) / `[0x23E2]
+menu_pyramid_angles	src/manu3.rs	65	fn	0xFFC	ASM	/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the /// trig-table offsets that
+menu_camera_pan	src/manu3.rs	78	fn	0x23E4,0x23E2	ASM	/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from /// `[0x1A]`) / `[0x23E2]
 MenuAnimDescriptor	src/manu3.rs	101	struct	0x102e,0x102c,0x102C	ASM	/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects /// and the tween setup (`0x1DF`) consumes. NOT a code routine; the field layout is /// read straight off `XDB:man
 parse	src/manu3.rs	115	fn		DATA?	/// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count, /// `[off+4]`=target, `[off+6]`=end).
 tween	src/manu3.rs	130	fn		DATA?	/// Build the tween this descriptor drives (via `0x1DF`): animate the target field /// from its `current` value to `end` over `count` frames.
@@ -770,8 +770,8 @@ step	src/manu3.rs	183	fn		UNVERIFIED	/// Advance one frame exactly as `0x19B` do
 MenuTweenList	src/manu3.rs	197	struct		UNVERIFIED	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
 step	src/manu3.rs	207	fn		TESTED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active. // swap-remove the fi
 DS	src/manu3_hand.rs	79	const	0x2274,0x2394,0x23E2,0x23E4	ASM?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE): ///   +0x00 parent record ptr   +0x
-SEG2	src/manu3_hand.rs	82	const	0xB18	CELL?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
-STATE_BASE	src/manu3_hand.rs	94	const	0x2274,0x2974	CELL?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
+SEG2	src/manu3_hand.rs	82	const	0xB18	ASM	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
+STATE_BASE	src/manu3_hand.rs	94	const	0x2274,0x2974	ASM	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
 STATE_LEN	src/manu3_hand.rs	95	const		UNVERIFIED	
 WRIST	src/manu3_hand.rs	96	const		UNVERIFIED	
 TEX	src/manu3_hand.rs	104	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
@@ -783,7 +783,7 @@ rd_parent	src/manu3_hand.rs	124	fn		UNVERIFIED
 tcos	src/manu3_hand.rs	129	fn		UNVERIFIED	
 tsin	src/manu3_hand.rs	134	fn		UNVERIFIED	
 build_matrix	src/manu3_hand.rs	143	fn		UNVERIFIED	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
-HandMesh	src/manu3_hand.rs	166	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
+HandMesh	src/manu3_hand.rs	166	struct	0xFFFF,0x2274,0x2974	ASM	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
 load	src/manu3_hand.rs	183	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
 st16	src/manu3_hand.rs	218	fn		UNVERIFIED	
 st32	src/manu3_hand.rs	223	fn		UNVERIFIED	
@@ -796,8 +796,8 @@ debug_project	src/manu3_hand.rs	461	fn		UNVERIFIED	/// Debug helper: the project
 face_depth	src/manu3_hand.rs	503	fn		UNVERIFIED	
 fill_triangle_tex	src/manu3_hand.rs	509	fn		UNVERIFIED	
 fill_triangle	src/manu3_hand.rs	570	fn		UNVERIFIED	
-PosePlayer	src/manu3_hand.rs	602	struct	0x2394	CELL?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
-new	src/manu3_hand.rs	615	fn	0x2306,0x2974	CELL?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
+PosePlayer	src/manu3_hand.rs	602	struct	0x2394	ASM	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
+new	src/manu3_hand.rs	615	fn	0x2306,0x2974	ASM	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
 step	src/manu3_hand.rs	634	fn		UNVERIFIED	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
 done	src/manu3_hand.rs	674	fn		UNVERIFIED	
 set_pose	src/manu3_hand.rs	681	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.

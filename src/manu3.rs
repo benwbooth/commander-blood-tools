@@ -75,6 +75,24 @@ pub fn menu_pyramid_angles(angle_x: u16, angle_y: u16, angle_z: u16) -> [u16; 3]
 /// `[0x1A]`) / `[0x23E2]` (y from `[0x1C]`) each frame before the pyramid draw (`0x270`)
 /// — the same centre-delta steering as the ship-3D / alien views. Returns the
 /// `(dx, dy)` added to the view offset.
+// Verified at `XDB:manu3:0x0034..0x0058` (audit-fixes #472) — the whole law,
+// including its non-destructive push/pop:
+//
+//   0x0034  push word ptr [0x23e2]   save pitch
+//   0x0038  push word ptr [0x23e4]   save yaw
+//   0x003C  mov ax, word ptr [0x1a]  cursor X
+//   0x0043  sub ax, 0xa0             X - 160
+//   0x0046  add ax, ax               ...doubled
+//   0x0048  add word ptr [0x23e4], ax
+//   0x004C  sub bx, 0x64             Y - 100
+//   0x004F  add bx, bx               ...doubled
+//   0x0051  add word ptr [0x23e2], bx
+//   0x0055  call 0x270               compose
+//   0x0058  pop word ptr [0x23e4]    restore
+//
+// So MENU_CAMERA_CENTRE (160, 100) is `0xA0`/`0x64` as immediates, the doubling
+// is `add reg,reg` rather than a shift, and the angles are ADDED to the stored
+// values then restored — the hand aims by DISPLACEMENT and does not accumulate.
 pub fn menu_camera_pan(cursor_x: i16, cursor_y: i16) -> (i16, i16) {
     let dx = cursor_x.wrapping_sub(MENU_CAMERA_CENTRE.0).wrapping_mul(2);
     let dy = cursor_y.wrapping_sub(MENU_CAMERA_CENTRE.1).wrapping_mul(2);

@@ -15472,3 +15472,38 @@ Provisional queue: 152, from 246.
 
 2229 items, 1166 confirmed (52.3%), 1063 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #472 — the cursor law, verified end to end
+
+Twelve more rows. The one worth reading is `menu_camera_pan`, whose doc described
+"centre-delta steering" without an instruction behind the centre. All of it is at
+`XDB:manu3:0x0034..0x0058`:
+
+    0x0034  push word ptr [0x23e2]   save pitch
+    0x0038  push word ptr [0x23e4]   save yaw
+    0x003C  mov ax, word ptr [0x1a]  cursor X
+    0x0043  sub ax, 0xa0             X - 160
+    0x0046  add ax, ax               ...doubled
+    0x0048  add word ptr [0x23e4], ax
+    0x004C  sub bx, 0x64             Y - 100
+    0x004F  add bx, bx               ...doubled
+    0x0051  add word ptr [0x23e2], bx
+    0x0055  call 0x270               compose
+    0x0058  pop word ptr [0x23e4]    restore
+
+So `MENU_CAMERA_CENTRE` (160, 100) is `0xA0`/`0x64` as immediates; the doubling is
+`add reg,reg`, not a shift; and — the part the port's two-line function cannot
+express — the angles are ADDED to the stored values, composed, then POPPED BACK.
+The hand aims by DISPLACEMENT and does not accumulate. `manu3_hand`'s module
+header already said this ("receives the cursor law non-destructively"); now the
+push/pop pair is on the function that computes the delta.
+
+Getting there needed the address-space discipline of the last two entries:
+`0x2306`, `0xFFC` and `0x23E2` all disassemble as nonsense (`enter -0x769a, 0x4c`
+for one) because they are DATA offsets. The way in was to search the entry region
+for references TO `0x23E2`, which found `0x0034` immediately.
+
+Provisional queue: 140, from 246 at the session's start.
+
+2229 items, 1178 confirmed (52.8%), 1051 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
