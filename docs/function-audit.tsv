@@ -740,7 +740,8 @@ world_art_resource_id	src/levels.rs	498	fn	0x5486	ASM	/// The artwork resource i
 parse_world_art_table	src/levels.rs	508	fn	0x90A7	ASM	/// Parse the table straight out of a `BLOODPRG.EXE` image, so a checkout with /// the binary never has to trust the transcription above. Stops at the first /// record whose name byte is zero (`cmp by
 VIEWPORT_W	src/lib.rs	57	const		UNVERIFIED	
 VIEWPORT_H	src/lib.rs	58	const		UNVERIFIED	
-HNM_FPS	src/lib.rs	59	const		UNVERIFIED	/// No decoded rule may be implemented under the SAME NAME in two files. /// /// `subtitle_draw_glyph` existed in both `font.rs` and `extract/render.rs`, and /// the second copy still had a 128-entry 
+HNM_FPS	src/lib.rs	66	const		INFRA	/// The export's video frame rate — a PORT CHOICE, not the game's (audit-fixes /// #549). The HNM header carries NO frame-rate field (it is header size, palette /// block, frame offsets — see `hnm::Hn
+GAME_TICK_SECS	src/lib.rs	77	const	0x1746,0xB2D,0x0FFB	ASM	/// One game tick in seconds — `8 / (1193182 / 5958)` = 39.95 ms, i.e. ~25 Hz. /// /// The PIT divisor is `0x1746` (audit-fixes #411) and a frame's budget is the 8 /// of `[0xB2D]` (`0x0FFB`, #477). A
 menu_dish_lines	src/main.rs	6	fn		ORACLE?	"/// The cook's daily-fare lines (the MENU row's presentation — oracle: white /// subtitle text, e.g. ""Jellied URTIKAN with MURFFALO bone marrow""): the SCRIPT1 /// dish block around offset 0x100."
 commit_world_destination	src/main.rs	44	fn	0xB0DC,0xB0EA,0x6752,0xB0FB,0xB20C,0x5B38	ASM	/// Run the game's own destination COMMIT when the port enters a world. /// /// `ship_click_commit` (`0xB0DC`) roots the candidate chain at `arche` /// (`0xB0EA mov di,[0x6752]`), picks the first cand
 main	src/main.rs	62	fn		INFRA	
@@ -1629,33 +1630,33 @@ show_speaker	src/extract/character.rs	79	fn		UNVERIFIED
 play_talk_hnm	src/extract/character.rs	83	fn		UNVERIFIED	
 play_voice	src/extract/character.rs	90	fn		UNVERIFIED	
 take_line	src/extract/character.rs	97	fn		UNVERIFIED	
-subtitle_line_complete_hold_seconds	src/extract/character.rs	102	fn		UNVERIFIED	
-subtitle_display_duration	src/extract/character.rs	106	fn		UNVERIFIED	
-voice_duration_seconds	src/extract/character.rs	115	fn		UNVERIFIED	
-dialogue_segment_duration	src/extract/character.rs	119	fn		TESTED	
-silent_dialogue_segment	src/extract/character.rs	127	fn		UNVERIFIED	
-dialogue_subtitle_cues	src/extract/character.rs	138	fn		UNVERIFIED	
-mark_last_segment_chatter	src/extract/character.rs	152	fn		UNVERIFIED	
-dialogue_chatter_events	src/extract/character.rs	160	fn		UNVERIFIED	
-dialogue_timeline_path	src/extract/character.rs	179	fn		UNVERIFIED	
-format_seconds	src/extract/character.rs	183	fn		UNVERIFIED	
-write_dialogue_timeline	src/extract/character.rs	187	fn		TESTED	
-create_character_videos	src/extract/character.rs	267	fn		DATA?	/// Create combined character videos for each DESCRIPT.DES character record that /// uses this SND bank.
-create_character_video_from_scene	src/extract/character.rs	304	fn		DATA?	/// Create a combined character video: all voice clips back-to-back with looping /// foreground animations from DESCRIPT.DES, composited on the location background.
-create_character_dialogue_videos_from_scene	src/extract/character.rs	479	fn		UNVERIFIED	
-executed_dialogue_groups_for_scene	src/extract/character.rs	515	fn		TESTED	// Keep the line if it has a resolvable voice clip (voiced, talking-head) // OR non-empty subtitle text (voiceless: b3==0xFF radio/narrator text the // player still saw, rendered subtitle-only). Drop 
-create_executed_dialogue_run_videos	src/extract/character.rs	555	fn		UNVERIFIED	
-create_profile_dialogue_run_videos	src/extract/character.rs	582	fn		UNVERIFIED	
-create_executed_dialogue_run_video	src/extract/character.rs	609	fn		UNVERIFIED	
-create_profile_dialogue_run_video	src/extract/character.rs	715	fn		UNVERIFIED	
-resolve_actor_talk_hnm_path	src/extract/character.rs	817	fn		UNVERIFIED	
-resolve_actor_voice_clip	src/extract/character.rs	833	fn		UNVERIFIED	
-resolve_actor_event_segment	src/extract/character.rs	854	fn		UNVERIFIED	
-create_character_dialogue_video	src/extract/character.rs	894	fn		UNVERIFIED	
-render_dialogue_segments	src/extract/character.rs	1041	fn		UNVERIFIED	
-load_landscape_lbm	src/extract/character.rs	1274	fn		DATA?	/// Load a location landscape background from its LBM (`dat_dir/fd/<lbm>`), /// decoded to a VIEWPORT-sized indexed framebuffer + palette.
-load_planet_hnm	src/extract/character.rs	1289	fn		DATA?	/// Load frame 0 of a planet/orbital `FullHnm` (the fallback when a location has /// no landscape LBM).
-character_background_path	src/extract/character.rs	1301	fn		UNVERIFIED	
+subtitle_line_complete_hold_seconds	src/extract/character.rs	102	fn		DATA?	// TICKS -> SECONDS goes through the GAME's tick, not the video frame rate // (audit-fixes #549). This divided by HNM_FPS (15) while the game ticks at // ~25 Hz, so every completed-line hold was 1.67x
+subtitle_display_duration	src/extract/character.rs	110	fn		UNVERIFIED	
+voice_duration_seconds	src/extract/character.rs	119	fn		UNVERIFIED	
+dialogue_segment_duration	src/extract/character.rs	123	fn		TESTED	
+silent_dialogue_segment	src/extract/character.rs	131	fn		UNVERIFIED	
+dialogue_subtitle_cues	src/extract/character.rs	142	fn		UNVERIFIED	
+mark_last_segment_chatter	src/extract/character.rs	156	fn		UNVERIFIED	
+dialogue_chatter_events	src/extract/character.rs	164	fn		UNVERIFIED	
+dialogue_timeline_path	src/extract/character.rs	183	fn		UNVERIFIED	
+format_seconds	src/extract/character.rs	187	fn		UNVERIFIED	
+write_dialogue_timeline	src/extract/character.rs	191	fn		TESTED	
+create_character_videos	src/extract/character.rs	271	fn		DATA?	/// Create combined character videos for each DESCRIPT.DES character record that /// uses this SND bank.
+create_character_video_from_scene	src/extract/character.rs	308	fn		DATA?	/// Create a combined character video: all voice clips back-to-back with looping /// foreground animations from DESCRIPT.DES, composited on the location background.
+create_character_dialogue_videos_from_scene	src/extract/character.rs	483	fn		UNVERIFIED	
+executed_dialogue_groups_for_scene	src/extract/character.rs	519	fn		TESTED	// Keep the line if it has a resolvable voice clip (voiced, talking-head) // OR non-empty subtitle text (voiceless: b3==0xFF radio/narrator text the // player still saw, rendered subtitle-only). Drop 
+create_executed_dialogue_run_videos	src/extract/character.rs	559	fn		UNVERIFIED	
+create_profile_dialogue_run_videos	src/extract/character.rs	586	fn		UNVERIFIED	
+create_executed_dialogue_run_video	src/extract/character.rs	613	fn		UNVERIFIED	
+create_profile_dialogue_run_video	src/extract/character.rs	719	fn		UNVERIFIED	
+resolve_actor_talk_hnm_path	src/extract/character.rs	821	fn		UNVERIFIED	
+resolve_actor_voice_clip	src/extract/character.rs	837	fn		UNVERIFIED	
+resolve_actor_event_segment	src/extract/character.rs	858	fn		UNVERIFIED	
+create_character_dialogue_video	src/extract/character.rs	898	fn		UNVERIFIED	
+render_dialogue_segments	src/extract/character.rs	1045	fn		UNVERIFIED	
+load_landscape_lbm	src/extract/character.rs	1278	fn		DATA?	/// Load a location landscape background from its LBM (`dat_dir/fd/<lbm>`), /// decoded to a VIEWPORT-sized indexed framebuffer + palette.
+load_planet_hnm	src/extract/character.rs	1293	fn		DATA?	/// Load frame 0 of a planet/orbital `FullHnm` (the fallback when a location has /// no landscape LBM).
+character_background_path	src/extract/character.rs	1305	fn		UNVERIFIED	
 extract_dat	src/extract/dat.rs	7	fn		UNVERIFIED	
 SubtitleCue	src/extract/descript.rs	8	struct		UNVERIFIED	
 DescriptRecord	src/extract/descript.rs	15	struct		DATA?	/// Location landscape backgrounds (slot, LBM): the static surface images the /// dialogue plays over (the `0x03` Background commands), distinct from the /// `full_hnms` planet/orbital view. See re/RE

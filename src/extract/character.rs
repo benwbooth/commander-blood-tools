@@ -100,7 +100,11 @@ impl PendingDialogueMedia {
 }
 
 fn subtitle_line_complete_hold_seconds() -> f64 {
-    vm::reveal_complete_hold_ticks(DEFAULT_SUBTITLE_TEXT_SPEED_STEP) as f64 / HNM_FPS as f64
+    // TICKS -> SECONDS goes through the GAME's tick, not the video frame rate
+    // (audit-fixes #549). This divided by HNM_FPS (15) while the game ticks at
+    // ~25 Hz, so every completed-line hold was 1.67x too long in the exports.
+    vm::reveal_complete_hold_ticks(DEFAULT_SUBTITLE_TEXT_SPEED_STEP) as f64
+        * commander_blood_tools::GAME_TICK_SECS
 }
 
 fn subtitle_display_duration(text: &str) -> f64 {
@@ -1359,9 +1363,12 @@ mod tests {
 
     #[test]
     fn subtitle_display_duration_uses_binary_reveal_complete_hold() {
+        // The hold is a TICK count and converts through the GAME's tick, not the
+        // export's frame rate (audit-fixes #549). This asserted `/ HNM_FPS`, which
+        // is what let the 1.67x stretch pass for as long as it did.
         let expected = 3.0 / default_subtitle_reveal_chars_per_second()
             + vm::reveal_complete_hold_ticks(DEFAULT_SUBTITLE_TEXT_SPEED_STEP) as f64
-                / HNM_FPS as f64;
+                * commander_blood_tools::GAME_TICK_SECS;
 
         assert!((subtitle_display_duration("abc") - expected).abs() < f64::EPSILON);
         assert_eq!(subtitle_display_duration(" \r\n "), 0.0);
@@ -1443,10 +1450,16 @@ mod tests {
         // 3/30 = 0.1s. This was 0.25s while the port used step 5 -- a value the
         // OPTION menu cannot even select (audit-fixes #111).
         assert_eq!(rows[1][6], "0.100000");
-        // ...and the segment END is reveal + the decoded line-complete hold:
-        // `reveal_complete_hold_ticks(2)` = 2<<2 = 8 ticks at 15fps = 0.5333s,
-        // so 0.1 + 0.5333 = 0.6333. (At the old step 5 it was 0.25 + 20/15.)
-        assert_eq!(rows[1][7], "0.633333");
+        // ...and the segment END is reveal + the decoded line-complete hold.
+        // `reveal_complete_hold_ticks(2)` = 2<<2 = 8 TICKS, and a tick is
+        // 8/(1193182/5958) = 39.948 ms (audit-fixes #477), so the hold is
+        // 0.319576s and the segment ends at 0.1 + 0.319576 = 0.419576.
+        //
+        // This asserted 0.633333 — 8 ticks divided by the EXPORT's 15 fps rather
+        // than the game's ~25 Hz tick, stretching every hold by 1.67x. The
+        // expected value was computed the same wrong way as the code, so the
+        // test agreed with the bug (audit-fixes #549).
+        assert_eq!(rows[1][7], "0.419576");
         assert_eq!(rows[1][8], "0x000a");
         assert_eq!(rows[1][9], "3");
         assert_eq!(rows[1][10], "true");

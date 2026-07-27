@@ -56,7 +56,25 @@ pub mod vm;
 
 pub const VIEWPORT_W: usize = 320;
 pub const VIEWPORT_H: usize = 200;
+/// The export's video frame rate — a PORT CHOICE, not the game's (audit-fixes
+/// #549). The HNM header carries NO frame-rate field (it is header size, palette
+/// block, frame offsets — see `hnm::HnmFile::open`), so nothing in the format
+/// dictates a playback rate and this is simply what the MP4s are encoded at.
+///
+/// DO NOT USE IT TO CONVERT GAME TICKS TO SECONDS. That is
+/// [`GAME_TICK_SECS`], and they differ by a factor of 1.67.
 pub const HNM_FPS: u32 = 15;
+
+/// One game tick in seconds — `8 / (1193182 / 5958)` = 39.95 ms, i.e. ~25 Hz.
+///
+/// The PIT divisor is `0x1746` (audit-fixes #411) and a frame's budget is the 8
+/// of `[0xB2D]` (`0x0FFB`, #477). Any duration the game expresses in TICKS —
+/// `vm::reveal_complete_hold_ticks`, `vm::record_end_hold_ticks`, the chatter
+/// throttle — converts to seconds through THIS, never through a video frame rate.
+///
+/// `extract` divided a tick count by [`HNM_FPS`] (15), stretching every subtitle
+/// hold in the exported videos by 25.03/15 = 1.67x (audit-fixes #549).
+pub const GAME_TICK_SECS: f64 = 8.0 / (1_193_182.0 / 5958.0);
 
 #[cfg(test)]
 mod duplicate_rule_tests {
@@ -358,3 +376,20 @@ mod offset_pair_tests {
         assert!(checked >= 15, "expected the sweep to find pairs, got: {text}");
     }
 }
+
+#[cfg(test)]
+mod tick_rate_tests {
+    /// The game tick is ~25 Hz, not the export's 15 fps (audit-fixes #549).
+    #[test]
+    fn game_tick_is_not_the_video_frame_rate() {
+        let hz = 1.0 / super::GAME_TICK_SECS;
+        assert!((hz - 25.03).abs() < 0.05, "8 PIT ticks at 1193182/5958 -> {hz} Hz");
+        // The two must not be conflated: a tick count divided by HNM_FPS is 1.67x
+        // too long, which is what extract did before this entry.
+        assert!(
+            (hz / super::HNM_FPS as f64 - 1.67).abs() < 0.02,
+            "the factor the bug introduced"
+        );
+    }
+}
+

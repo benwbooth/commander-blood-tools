@@ -18242,3 +18242,40 @@ either way would put a wrong label on a row that currently says "unknown", which
 at least true.
 
 724 tests, 0 failures.
+
+## #549 — chasing one uncited constant found a 1.67x timing bug in the exports
+
+#548 left `HNM_FPS = 15` UNVERIFIED rather than guess whether it was the game's rate
+or the port's. Reading the format settles it: `HnmFile::open` parses header size, a
+palette block and frame offsets — THE HNM HEADER CARRIES NO FRAME RATE. So 15 is the
+export's encoding choice, and INFRA is the honest label.
+
+Then its use sites showed it doing a second job it has no business doing:
+
+```rust
+vm::reveal_complete_hold_ticks(step) as f64 / HNM_FPS as f64
+```
+
+That converts a GAME TICK COUNT to seconds by dividing by the VIDEO frame rate. The
+game's tick is `8 / (1193182 / 5958)` = 39.948 ms — **~25 Hz**, decoded in #477 —
+so every completed-line subtitle hold in the exported videos was stretched by
+25.03/15 = **1.67x**.
+
+TWO TESTS AGREED WITH THE BUG, which is why it survived. One asserted the formula
+including `/ HNM_FPS`; the other hardcoded `0.633333` with a comment stating the
+reasoning outright: "8 ticks at 15fps = 0.5333s". Both were computed the same wrong
+way as the code, so they could only ever confirm it. The corrected value, 0.419576,
+is checkable by hand: 3 chars / 30 cps = 0.1s reveal, plus 8 x 39.948 ms = 0.319576s
+hold.
+
+`GAME_TICK_SECS` now lives in `lib.rs` with its derivation, and its doc says the
+thing that was missing: any duration the game expresses in TICKS converts through
+it, never through a frame rate. `HNM_FPS`'s doc says the converse. A test pins the
+two apart and names the 1.67 factor, so re-conflating them fails.
+
+THE SETTLE GUARD (#537) CAUGHT THIS MID-FIX. I ran the settle while the bin tests
+were red from my own change; it refused and printed the failing test. That is the
+third time this session a guard has caught me and the first time it prevented a
+false claim rather than merely reporting one.
+
+725 tests, 0 failures.
