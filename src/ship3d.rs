@@ -231,10 +231,26 @@ pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 165;
 /// call, so the narrowed band applies to one draw only (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 200;
 pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 2;
+/// `test word [0x2793],8` @`0x9733` (audit-fixes #496). Bit 3 of the HUD word —
+/// the same bit the nav-choice dispatcher tests as a BLOCK @`0x86F1` (#491).
 pub const SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG: u16 = 0x0008;
+/// `test word [0x2793],4` @`0x975A` — bit 2, which selects between two otherwise
+/// identical wrap paths (`0x976A` vs `0x97AD`) that differ only in step size
+/// (audit-fixes #496).
 pub const SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG: u16 = 0x0004;
+/// `cmp ax,0xb4 / jl` @`0x9748`, the fold that turns a raw difference into the
+/// SHORTEST angular distance: past 180 the routine does `sub ax,0x168 / neg ax`
+/// @`0x974D` (audit-fixes #496).
 pub const SHIP_3D_PROCEDURAL_HALF_TURN: u16 = 180;
+/// `0x168` — 360, the panorama's modulus, appearing throughout this routine both
+/// as the fold above @`0x974D` and as the wrap on every accumulated angle
+/// (`cmp dx,0x168 / sub dx,0x168` @`0x976E`, and again @`0x97B1`, `0x977F`,
+/// `0x97D7`) — audit-fixes #496.
 pub const SHIP_3D_PROCEDURAL_FULL_TURN: u16 = 360;
+/// `add cx,0x5a0` @`0x979D` — 1440, added to `angle * 4` (`shl bp,2` @`0x9794`)
+/// and handed to `int 0x33` with AX=4 @`0x97A8`, the SET CURSOR POSITION call. So
+/// the pointer rides a ring four units per degree, offset by a full 360*4 so the
+/// ring never runs negative (audit-fixes #496).
 pub const SHIP_3D_PROCEDURAL_MOUSE_RING: u16 = 1440;
 pub const SHIP_3D_PROCEDURAL_MOUSE_CENTER_X: u16 = 1440;
 pub const SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK: u16 = 0xfff8;
@@ -2104,6 +2120,21 @@ pub fn run_ship_3d_navigation_sequence_update(
     effect
 }
 
+/// The panorama auto-turn, `0x9733..0x97FC` (audit-fixes #496). PARTIALLY
+/// verified — this function had no citation at all, and now names its routine,
+/// but only its CONSTANTS have been checked instruction by instruction:
+/// `test word [0x2793],8` @`0x9733`, the shortest-distance fold
+/// `cmp ax,0xb4 / sub ax,0x168 / neg ax` @`0x9748`, the `[0x2793]` bit-2 branch
+/// @`0x975A`, and the cursor ring `shl bp,2 / add cx,0x5a0 / int 0x33` AX=4
+/// @`0x9794`.
+///
+/// WHAT IS NOT ESTABLISHED, stated so the row stays honest: the binary works in
+/// DEGREES and wraps at `0x168` (360), while this models the angle in panorama
+/// FRAMES and doubles it (`angle * 2`) — 180 frames of 2 degrees. That mapping is
+/// consistent with the frame cell `[0x2795]` (#493) but has not been checked
+/// against every wrap site here, and the two step sizes the branch selects
+/// (`0x28` @`0x977C` and `0x1E` @`0x97C4`) are not yet tied to named constants.
+/// The ledger row stays provisional until they are.
 pub fn run_ship_3d_procedural_update(
     state: &mut Ship3dProceduralUpdateState,
 ) -> Ship3dProceduralUpdateEffect {

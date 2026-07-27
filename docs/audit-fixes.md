@@ -16377,3 +16377,43 @@ because "I searched and found nothing" is only as strong as what was searched.
 `ship3d.rs`: 85 uncited constants -> 79.
 
 619 tests, 0 failures.
+
+## #496 — the panorama auto-turn, and a function documented WITHOUT settling it
+
+Five `SHIP_3D_PROCEDURAL_*` constants, located by scanning for 180/360/1440 in
+word-immediate forms and taking the only window holding more than one — `0x9748`.
+The routine is the panorama auto-turn, `0x9733..0x97FC`:
+
+```text
+  0x9733  test word [0x2793], 8       HUD_ACTIVE_FLAG
+  0x9748  cmp ax, 0xb4 / jl           HALF_TURN ...
+  0x974D  sub ax, 0x168 / neg ax      ... folding to the SHORTEST distance
+  0x975A  test word [0x2793], 4       TARGET_LIST_FLAG picks the step size
+  0x9794  shl bp, 2                   angle * 4 ...
+  0x979D  add cx, 0x5a0               ... + 1440 = MOUSE_RING
+  0x97A8  int 0x33  (ax = 4)          SET CURSOR POSITION
+```
+
+`MOUSE_RING` is the one whose name only makes sense with the call beside it: the
+game DRIVES THE HARDWARE CURSOR round a ring of four units per degree, offset by a
+whole 360*4 so the coordinate never goes negative. A constant named "1440" beside
+`int 0x33` is a mechanism; alone it is a number.
+
+`HALF_TURN` and `FULL_TURN` are likewise not two constants but one fold —
+`cmp 180 / sub 360 / neg` is the standard shortest-angular-distance idiom, and
+reading either number without the other makes the routine look like it clamps.
+
+THE FUNCTION IS DOCUMENTED BUT NOT SETTLED, deliberately.
+`run_ship_3d_procedural_update` had no citation at all and now names its routine.
+Its constants are verified instruction by instruction; its BODY is not. The binary
+works in degrees and wraps at `0x168`, while the port models frames and doubles
+(`angle * 2`) — consistent with the 180-frame panorama and the `[0x2795]` cell
+(#493), but not checked against every wrap site, and the two step sizes the branch
+selects (`0x28` @`0x977C`, `0x1E` @`0x97C4`) are still unnamed. Settling it ASM now
+would claim a whole-function transcription I have not done — which is exactly the
+move #491's near-miss and #494's over-constrained test both warn against. The doc
+says what is checked and what is not; the row stays provisional.
+
+`ship3d.rs`: 79 uncited constants -> 74.
+
+619 tests, 0 failures.
