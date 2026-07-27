@@ -471,6 +471,35 @@ mod tests {
     /// self-consistent: these are what every text surface draws. `GAME_FONT_CHAR_MAP`
     /// is covered by `bloodprg`'s extractor test; these two were not covered at all.
     #[test]
+    /// The BOLD console face must reach its accented entries.
+    ///
+    /// Its map is 176 bytes (`0x145CA - 0x1451A`), and `0x80..0xAF` holds twelve real
+    /// entries where the game folds accents onto unaccented glyphs. The loader read
+    /// 128 bytes and the renderer indexed by Unicode scalar, so every accented
+    /// character in console text drew NOTHING — in a French game (audit-fixes #591).
+    #[test]
+    fn the_bold_console_face_draws_accented_characters() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let font = BoldConsoleFont::load_from_exe(&exe).expect("bold face loads");
+        assert_eq!(BoldConsoleFont::MAP_LEN, 176, "map extent = gap to the glyphs");
+
+        // The folds the table actually contains, read from the image at 0x1451A.
+        for (ch, plain) in [('é', 'e'), ('à', 'a'), ('ç', 'c'), ('ö', 'o'), ('ù', 'u')] {
+            let a = font.glyph_index(ch).unwrap_or_else(|| panic!("{ch:?} has no glyph"));
+            let b = font.glyph_index(plain).unwrap_or_else(|| panic!("{plain:?} has no glyph"));
+            assert_eq!(a, b, "{ch:?} folds onto {plain:?}");
+        }
+
+        // ...and drawing one actually marks pixels, which indexing by Unicode did not.
+        let mut fb = vec![0u8; 320 * 200];
+        font.draw(&mut fb, 320, 200, "é", 0, 0, 0xEE);
+        assert!(fb.iter().any(|&p| p == 0xEE), "an accented glyph must render");
+    }
+
     fn game_font_glyphs_and_widths_match_the_image() {
         let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
             .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
@@ -494,6 +523,27 @@ mod tests {
                 "glyph {i} drifted from the image"
             );
         }
+        // THE CHAR MAP TOO. Its length was used in the chain assertion below and a
+        // handful of entries were spot-checked by `glyphs_match_bloodprg_exe_byte_for_byte`,
+        // but the 176 bytes themselves were never compared — so a wrong entry for
+        // any character those spot checks do not name would have gone unnoticed,
+        // and 89 of them are the `0xff` SKIP marker whose absence changes layout
+        // rather than raising an error (audit-fixes #591).
+        const MAP: usize = 0x14C22;
+        assert_eq!(
+            &exe[MAP..MAP + GAME_FONT_CHAR_MAP.len()],
+            GAME_FONT_CHAR_MAP.as_slice(),
+            "ascii->glyph map drifted from the image"
+        );
+        // Every entry is either the skip marker or a valid glyph index — the
+        // property that fixes the table's LENGTH at 176 (audit-fixes #578).
+        for (i, &g) in GAME_FONT_CHAR_MAP.iter().enumerate() {
+            assert!(
+                g == 0xFF || (g as usize) < GAME_FONT_WIDTHS.len(),
+                "entry {i} ({g:#04x}) is neither a skip nor a glyph index"
+            );
+        }
+
         // The three tables chain: map ends where advances begin, advances where
         // the rows begin.
         assert_eq!(0x14C22 + GAME_FONT_CHAR_MAP.len(), ADVANCES);
@@ -508,8 +558,8 @@ mod tests {
 /// on-console text (tutorial lines, prompts) with this face — the thin
 /// [`GAME_FONT_GLYPHS`] face is the letterboxed-scene subtitle font.
 pub struct BoldConsoleFont {
-    /// ascii -> glyph index (0xFF = none).
-    map: [u8; 128],
+    /// CP437 byte -> glyph index (`0xFF` = none). [`BoldConsoleFont::MAP_LEN`] long.
+    map: [u8; BoldConsoleFont::MAP_LEN],
     /// 8-byte row bitmaps per glyph.
     glyphs: Vec<[u8; 8]>,
 }
@@ -528,11 +578,32 @@ impl BoldConsoleFont {
     /// index into the bitmap table, so each glyph is 8 bytes — one byte per row,
     /// which is what makes the glyph 8 pixels wide (audit-fixes #536).
     pub const ADVANCE: usize = 8;
+    /// 176 (`0xB0`) — the map's extent, MEASURED as the gap to the glyph table:
+    /// `0x145CA - 0x1451A`. The same 176 as the thin face's map, and for the same
+    /// reason: entries past 128 are the accented characters.
+    ///
+    /// This used to be 128, so `0x80..0xAF` was never loaded. Twelve of those are
+    /// real — `0x82`(é)->`e`, `0x85`(à)->`a`, `0x87`(ç)->`c`, `0x94`(ö)->`o`,
+    /// `0x97`(ù)->`u` among them, the game folding accents onto their unaccented
+    /// glyphs. Dropping them rendered NOTHING for those characters, which in a
+    /// French game means console text silently losing its accents (audit-fixes #591).
+    pub const MAP_LEN: usize = Self::GLYPHS_FILE_OFFSET - Self::GLYPH_MAP_FILE_OFFSET;
+
+    /// This character's glyph index in the map, or `None` for the `0xFF` skip.
+    /// Indexed by CP437 byte, matching `xlatb` @`0x3687`.
+    pub fn glyph_index(&self, ch: char) -> Option<u8> {
+        let code = usize::from(cp437_byte(ch)?);
+        match self.map.get(code).copied() {
+            Some(0xFF) | None => None,
+            Some(gi) => Some(gi),
+        }
+    }
 
     /// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
     pub fn load_from_exe(exe: &[u8]) -> Option<BoldConsoleFont> {
-        let map_bytes = exe.get(Self::GLYPH_MAP_FILE_OFFSET..Self::GLYPH_MAP_FILE_OFFSET + 128)?;
-        let mut map = [0xFFu8; 128];
+        let map_bytes =
+            exe.get(Self::GLYPH_MAP_FILE_OFFSET..Self::GLYPH_MAP_FILE_OFFSET + Self::MAP_LEN)?;
+        let mut map = [0xFFu8; Self::MAP_LEN];
         map.copy_from_slice(map_bytes);
         let max_glyph = map.iter().filter(|&&g| g != 0xFF).max().copied()? as usize + 1;
         let table = exe.get(Self::GLYPHS_FILE_OFFSET..Self::GLYPHS_FILE_OFFSET + max_glyph * 8)?;
@@ -561,8 +632,11 @@ impl BoldConsoleFont {
     ) {
         let mut pen = x;
         for ch in text.chars() {
-            let code = ch as usize;
-            if code < 128 {
+            // CP437 BYTE, not the Unicode scalar. `é` is U+00E9 = 233, which the old
+            // `ch as usize` compared against a 128-entry map and dropped; the game's
+            // table wants the byte 0x82 (audit-fixes #591).
+            let code = cp437_byte(ch).map(usize::from).unwrap_or(usize::MAX);
+            if code < Self::MAP_LEN {
                 let gi = self.map[code];
                 if gi != 0xFF {
                     if let Some(rows) = self.glyphs.get(gi as usize) {

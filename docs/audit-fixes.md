@@ -19642,3 +19642,45 @@ A "tidier" implementation that breaks first and omits the space produces differe
 strings, and the exact-output assertion now pins that too.
 
 731 tests, 0 failures.
+
+## #591 — the bold console face dropped every accent, in a French game
+
+Chasing `check_duplicate_rules.py`'s address cluster at `0x14C22` (the font tables
+cited from two files) led through the baked-table checks and into a real defect.
+
+FIRST, A GAP CLOSED. `GAME_FONT_WIDTHS` and `GAME_FONT_GLYPHS` were compared to the
+image byte for byte; `GAME_FONT_CHAR_MAP` was not — only its LENGTH fed a chain
+assertion, plus a handful of spot-checked entries. 89 of its 176 entries are the
+`0xFF` SKIP marker, and a wrong one changes LAYOUT rather than raising an error, so
+it is exactly the table that needs a wholesale comparison. Added, plus a check that
+every entry is either the skip marker or a valid glyph index — the property that
+fixes the length at 176.
+
+THEN THE BUG. `BoldConsoleFont` — the face the game draws ALL console and tutorial
+text with — had two independent faults:
+
+- Its map was declared `[u8; 128]` and the loader read 128 bytes. The table is 176:
+  `GLYPHS_FILE_OFFSET - GLYPH_MAP_FILE_OFFSET` = `0x145CA - 0x1451A` = `0xB0`, the
+  same measurement that fixes the thin face's map. Twelve entries live in the dropped
+  range — `0x82`(é)->`e`, `0x85`(à)->`a`, `0x87`(ç)->`c`, `0x94`(ö)->`o`, `0x97`(ù)->`u`
+  and others — the game folding accents onto their unaccented glyphs.
+- `draw` indexed with `ch as usize`, the UNICODE SCALAR. `é` is U+00E9 = 233, so even
+  a 256-entry map would have missed it; the game's `xlatb` @`0x3687` wants the CP437
+  byte `0x82`.
+
+Either fault alone drops accented characters. Together they meant console text in a
+FRENCH game rendered nothing where an accent belonged — a blank, not a fallback.
+
+Its own doc had said "256-byte TRANSLATE TABLE" while the code read 128, and neither
+number was the 176 the file shows. The measurement was available the whole time as
+the gap between the two offsets the struct already named.
+
+Fixed both, with `MAP_LEN` derived from that gap rather than written down. The test
+folds é/à/ç/ö/ù onto their plain glyphs and then DRAWS one, checking pixels land —
+verified to fail on the old lookup before keeping it ("an accented glyph must
+render").
+
+A guard also caught me citing a verifying test by a name that does not exist
+(`every_doc_named_verifier_exists`); corrected to the real one.
+
+732 tests, 0 failures.
