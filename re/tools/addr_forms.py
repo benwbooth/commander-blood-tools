@@ -262,3 +262,55 @@ def show_census(data, addr, limit=None):
     if len(shown) < len(rows):
         print(f"  ... {len(rows) - len(shown)} MORE NOT SHOWN")
     return hits
+
+
+def census_all(data, addr):
+    """EVERY way an address is reached, in one call — the entry point to use.
+
+    `census` answers only "is this a DIRECT operand", and three addressing modes
+    make that far narrower than it looks. #459 taught `show_census` to explain its
+    zeros, but left the real gap open: ad-hoc probes call `census` directly and get
+    a bare `{}`. This is that gap closed (audit-fixes #460).
+
+    Returns `{site: (form, kind, immediate)}` merging:
+
+      * direct-address forms          (`census`)
+      * `[reg+disp]` forms            (`reg_disp_census`)
+      * `mov reg16, imm16` loads      -- how a BUFFER address reaches code
+                                         (`0x6ADE` #458, `0x2A1B` #388, `0x5491` #444)
+      * any modrm carrying the value  -- catches opcodes no table lists
+                                         (`les`/`lds` #434, byte loads #434)
+
+    Prefer this over `census` unless you specifically want the direct-operand
+    question. The narrow one has been the wrong question five times.
+
+    IT IS A SUPERSET, NOT A TRUTH. The last two sources are HEURISTIC: any two
+    bytes matching the address, preceded by a byte that looks like a modrm, are
+    reported. Over data or mid-instruction that produces false positives, and the
+    counts show it — `0x2793` goes from 69 direct sites to 135 here, and the
+    difference is NOT 66 newly-found accesses.
+
+    So: use this to ask "have I missed a way in", then confirm each candidate by
+    disassembling it. Use `census` when you want a list you can quote. Reporting
+    `census_all`'s count as a finding would be the same over-trust this file's
+    other comments keep documenting.
+    """
+    out = dict(census(data, addr))
+    if addr <= 0xFFFF:
+        for site, info in reg_disp_census(data, addr).items():
+            out.setdefault(site, info)
+        regs = ("ax", "cx", "dx", "bx", "sp", "bp", "si", "di")
+        lo, hi = addr & 0xFF, (addr >> 8) & 0xFF
+        for i in range(len(data) - 3):
+            if 0xB8 <= data[i] <= 0xBF and data[i + 1] == lo and data[i + 2] == hi:
+                out.setdefault(i, (f"mov {regs[data[i] - 0xB8]},imm16", "IMM", addr))
+        le = addr.to_bytes(2, "little")
+        at = data.find(le)
+        while at > 0:
+            modrm = data[at - 1]
+            if modrm & 0xC0 == 0x80:
+                out.setdefault(at - 1, ("modrm reg+disp16", "R/W", None))
+            elif modrm & 0xC7 == 0x06:
+                out.setdefault(at - 1, ("modrm direct", "R/W", None))
+            at = data.find(le, at + 1)
+    return out

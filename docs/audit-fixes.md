@@ -15086,3 +15086,36 @@ explain. That gap is real and stated rather than papered over.
 
 2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #460 — closing the gap #459 admitted, and refusing the number it produces
+
+#459 taught `show_census` to explain a zero but left the gap it named: ad-hoc
+probes call `census` directly and get a bare `{}`. `census_all` closes it — one
+call merging direct forms, `[reg+disp]` forms, `mov reg16, imm16` loads, and any
+modrm carrying the value.
+
+The difference on addresses this session got wrong:
+
+    0x6ADE   census 0   census_all 6      (#458)
+    0x2A1B   census 0   census_all 4      (#388)
+    0x6D60   census 0   census_all 3      (#434)
+    0x6724   census 0   census_all 32     (#434)
+    0x2793   census 69  census_all 135
+
+THE LAST ROW IS THE ONE TO BE CAREFUL WITH. `0x2793` is the VM UI-flags word this
+session has reasoned about repeatedly (#364, #365, #408), and it is tempting to
+report "half its traffic was invisible". That would be wrong. The last two sources
+are HEURISTIC: any two bytes matching the address preceded by a plausible modrm
+byte are reported, and over data or mid-instruction that produces false positives.
+The 135 is a SUPERSET, not a count.
+
+So the docstring says what the function is for — asking "have I missed a way in",
+then disassembling each candidate — and what it is not for: quoting. `census`
+remains the one whose output can go in a doc.
+
+That distinction is the whole point. Five entries this session found an
+enumeration too narrow; the fix for that is not an enumeration that is too wide
+and reported with the same confidence.
+
+2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
