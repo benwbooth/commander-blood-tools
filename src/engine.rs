@@ -3070,15 +3070,27 @@ impl EngineState {
     /// WHAT SURVIVES that correction is the stronger half and it does not depend
     /// on `0x2760` at all: NO instruction anywhere in the image compares against
     /// `0x5F`. So nothing in the game can special-case an underscore, whatever
-    /// renders the caption. `BOB MORLOCK` remains unsupported and `BOB_MORLOCK`
-    /// remains the likely spelling — but the caption renderer is still unfound,
-    /// so the table stays as it is rather than being rewritten on an inference.
+    /// renders the caption.
+    ///
+    /// SETTLED FROM THE DATA (audit-fixes #437). #328 left the spelling open
+    /// because the caption RENDERER is unfound — but the renderer is not the only
+    /// evidence available. Searching all 261 shipped files: `Bob Morlock` in any
+    /// case appears in ZERO; `Bob_Morlock` appears in 31, among them
+    /// DESCRIPT.DES (`EBob_Morlock`) and SCRIPT2.DIC @0x462F. So the spaced form
+    /// was invented here, and with nothing in the image able to fold `0x5F` there
+    /// is no mechanism by which the underscore could disappear on the way to the
+    /// screen. Corrected to `BOB_MORLOCK`.
     ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
     /// decode cleanly; the phone shows the dialled one as the live "video feed".
     const PHONE_CONTACTS: [(&'static str, &'static str); 9] = [
-        ("BOB MORLOCK", "aabob"),
+        // `BOB_MORLOCK`, not `BOB MORLOCK` (audit-fixes #437). Searching all 261
+        // shipped files: `Bob Morlock` in ANY case appears in ZERO of them;
+        // `Bob_Morlock` appears in 31, including DESCRIPT.DES (`EBob_Morlock`,
+        // a tagged record) and SCRIPT2.DIC @0x462F. The spaced spelling was
+        // invented here.
+        ("BOB_MORLOCK", "aabob"),
         ("HOM", "aahom"),
         ("IZWALITO", "aaisw"),
         ("JERRY", "aajer"),

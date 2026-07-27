@@ -14342,3 +14342,33 @@ easier to call than a hand-rolled loop gets called.
 
 2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #437 — the underscore, settled from the data instead of the renderer
+
+`PHONE_CONTACTS` has carried `"BOB MORLOCK"` through three entries. #327 tried to
+justify it from a case-folding loop; #328 withdrew that (the loop has zero callers
+and folds a DOS file read), keeping only the strong negative — NO instruction in
+the image compares against `0x5F`, so nothing can special-case an underscore. It
+then stopped, "because the caption renderer is still unfound".
+
+THE RENDERER IS NOT THE ONLY EVIDENCE. Searching all 261 shipped files:
+
+    'Bob Morlock' / 'BOB MORLOCK' / 'bob morlock'   0 files
+    'Bob_Morlock'                                   31 files
+
+including `DESCRIPT.DES` (`EBob_Morlock`, a tagged record) and `SCRIPT2.DIC`
+@`0x462F`. The spaced spelling exists nowhere in the game. Combined with the
+`0x5F` negative — nothing in the image can fold an underscore away — there is no
+route by which the game's own `Bob_Morlock` reaches a screen as `BOB MORLOCK`.
+
+Corrected. The prime rule's test is not "did we find the renderer" but "does this
+literal come from the game", and that question had a cheap answer for three
+entries. #328 was right to withdraw a bad argument and right that the renderer
+matters — but "we cannot confirm it the way I was looking" is not the same as
+"we cannot confirm it".
+
+The other eight entries are single words with no separator, so this was the only
+one at risk. Their provenance is still a transcription and the row stays open.
+
+2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
