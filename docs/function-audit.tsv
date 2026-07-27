@@ -663,19 +663,19 @@ GAME_FONT_WIDTHS	src/font.rs	156	const		DATA
 GAME_FONT_GLYPHS	src/font.rs	166	const		DATA	
 draw_text_indexed	src/font.rs	257	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
 BoldConsoleFont	src/font.rs	507	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
-GLYPH_MAP_FILE_OFFSET	src/font.rs	515	const		UNVERIFIED	
-GLYPHS_FILE_OFFSET	src/font.rs	516	const		UNVERIFIED	
-ADVANCE	src/font.rs	517	const		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
-load_from_exe	src/font.rs	520	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
-draw	src/font.rs	539	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
-SQUARE_CAPS_GLYPHS	src/font.rs	595	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
-SQUARE_CAPS_WIDTHS	src/font.rs	652	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
-SQUARE_CAPS_CHAR_MAP	src/font.rs	657	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
-square_caps_glyph_index	src/font.rs	677	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
-square_caps_glyph	src/font.rs	685	fn		UNVERIFIED	
-square_caps_advance	src/font.rs	691	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
-square_caps_text_width	src/font.rs	713	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
-draw_square_caps	src/font.rs	725	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
+GLYPH_MAP_FILE_OFFSET	src/font.rs	519	const	0x70FA,0xD420,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (= file `0xD420 + 0x70FA`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to se
+GLYPHS_FILE_OFFSET	src/font.rs	523	const	0x71AA,0xD420,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (= file `0xD420 + 0x71AA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
+ADVANCE	src/font.rs	527	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
+load_from_exe	src/font.rs	530	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
+draw	src/font.rs	549	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
+SQUARE_CAPS_GLYPHS	src/font.rs	605	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
+SQUARE_CAPS_WIDTHS	src/font.rs	662	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
+SQUARE_CAPS_CHAR_MAP	src/font.rs	667	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
+square_caps_glyph_index	src/font.rs	687	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
+square_caps_glyph	src/font.rs	695	fn		UNVERIFIED	
+square_caps_advance	src/font.rs	701	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
+square_caps_text_width	src/font.rs	723	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
+draw_square_caps	src/font.rs	735	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
 new	src/gpu.rs	105	fn		INFRA	/// Create over an existing X11 (xcb) window. /// /// # Safety /// `xcb_conn` must be a live xcb_connection_t pointer outliving the presenter.

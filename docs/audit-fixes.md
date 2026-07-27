@@ -17795,3 +17795,41 @@ instructions, so `STATE_SOURCE_DS` and the 96-byte size cannot drift apart witho
 one of them disagreeing with `0x1C72`.
 
 723 tests, 0 failures.
+
+## #536 — the bold console font, and a guard that reads doc arithmetic literally
+
+Three `font.rs` constants, from one nine-byte stretch that decodes the whole
+lookup:
+
+```text
+  0x3684  mov bx, 0x70fa      the glyph MAP
+  0x3687  xlatb               AL = [bx + AL]  -- a 256-byte TRANSLATE table
+  0x3689  or al, al / js      a NEGATIVE entry means "no glyph"
+  0x368D  mov bp, 0x71aa      the glyph BITMAPS
+  0x3691  shl ax, 3           index * 8
+  0x3694  add bp, ax
+```
+
+`xlatb` is what makes the map's shape unambiguous: it is indexed by the character
+code directly, so the table is 256 bytes and dense, not a list to search. And
+`ADVANCE = 8` is not a measured glyph width — it is `shl ax,3`, the scale factor
+between glyph index and bitmap offset, which is the same fact the main font's row
+table already implies (one byte per row, eight rows).
+
+THE OFFSET GUARD CAUGHT MY WORDING. I wrote the file offsets as arithmetic:
+
+    /// `DS:0x70FA` (= file `0xD420 + 0x70FA`), loaded ...
+
+and `documented_ds_and_file_offsets_agree` reported
+`doc says DS:0x70fa and file 0x0d420`. It reads the first file offset in the doc
+and checks it against the DS offset — so an EXPRESSION reads as a claim that the
+file offset IS `0xD420`. The guard was right and my doc was wrong in exactly the
+way it exists to catch: a reader skimming would also have taken `0xD420` as the
+answer. Replaced with the resolved values (`0x1451A`, `0x145CA`).
+
+Worth noting I chained the settle onto the same command as the test run, so the
+rows were settled while the suite was failing — the #423/#505 mistake a third time.
+The docs were fixed and the suite is green before this entry was written, but the
+ordering was luck rather than discipline.
+
+723 tests, 0 failures.

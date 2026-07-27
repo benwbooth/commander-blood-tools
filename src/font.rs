@@ -512,8 +512,18 @@ pub struct BoldConsoleFont {
 }
 
 impl BoldConsoleFont {
+    /// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684`
+    /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed
+    /// by the character code, not a list to search. A NEGATIVE entry means "no
+    /// glyph" (`or al,al / js 0x36D7` @`0x3689`) — audit-fixes #536.
     pub const GLYPH_MAP_FILE_OFFSET: usize = 0x1451A;
+    /// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`,
+    /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the
+    /// `xlatb` above produced (audit-fixes #536).
     pub const GLYPHS_FILE_OFFSET: usize = 0x145CA;
+    /// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph
+    /// index into the bitmap table, so each glyph is 8 bytes — one byte per row,
+    /// which is what makes the glyph 8 pixels wide (audit-fixes #536).
     pub const ADVANCE: usize = 8;
 
     /// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
