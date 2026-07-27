@@ -18116,3 +18116,36 @@ the parser accepts the shipped image — so if the format ever disagrees with th
 constants, the file itself fails the test rather than the port silently mis-parsing.
 
 724 tests, 0 failures.
+
+## #545 — four constants feeding a lifted routine: three are the game's, one is the harness's
+
+`build_console_bank_remap_table` runs `recomp::auto::func_242d` — a bit-exact lift —
+and sets up four constants for it. They looked like one group and are two:
+
+```text
+  PAL_DS    0x5251  `mov si,0x5251` @0x243E, inside the routine
+  TABLE_DS  0x6011  `mov bx,0x6011` @0x9625, at the CALL SITE
+  BANK_BASE 0x00E0  `mov ax,0xe0`   @0x9622, the same setup
+  GS        0x2600  NOTHING -- a scratch segment the port picked
+```
+
+The call site is `lcall 0x1ce:0x14d` @`0x9628`, which resolves to `0x242D`; the two
+instructions before it are the routine's arguments. So `TABLE_DS` and `BANK_BASE`
+are the game's values, just not from the routine that consumes them — they are its
+CALLER's, which is where a search inside `0x242D` would never have found them.
+`refs_in_routine.py` on `0x242D` reports `0x5251` and nothing else, and I nearly
+concluded the other two were port inventions on that basis.
+
+`GS = 0x2600` IS a port invention, and correctly so. The routine does
+`mov ax,gs / mov ds,ax` @`0x2436`, so it works against whatever segment it is given;
+the port hands it an arbitrary base to lay the emulator's buffers out in. The game's
+own data segment is `0x0CE2` (`bloodprg::DATA_SEGMENT`), which is NOT what this is —
+settled INFRA, with the difference spelled out so nobody "corrects" it to the real
+segment and moves the buffers out from under the lift.
+
+The general shape, worth naming because it will recur with every lifted routine: a
+harness that runs decoded code needs BOTH the game's arguments and its own
+scaffolding, and the two sit adjacent in the source looking identical. Only the
+citation distinguishes them.
+
+724 tests, 0 failures.

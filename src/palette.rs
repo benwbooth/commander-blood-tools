@@ -201,9 +201,19 @@ pub fn build_palette_blend_remap_table(
 /// the function, it simply was not being used.
 pub fn build_console_bank_remap_table(palette_dac: &[u8; 768]) -> [u8; 256] {
     use crate::recomp::{auto, machine::Machine};
+    // A SCRATCH SEGMENT FOR THE LIFTED RUN, not a game value (audit-fixes #545).
+    // The routine itself does `mov ax,gs / mov ds,ax` @0x2436, so it works in
+    // whatever gs holds; the port gives it an arbitrary base to lay the buffers
+    // out in. The game's own data segment is `bloodprg::DATA_SEGMENT` (0x0CE2).
     const GS: u16 = 0x2600;
+    // `mov si,0x5251` @0x243E — the palette the routine walks, 0x100 entries
+    // (`mov cx,0x100` @0x2441), three bytes each (`mov dx,3 / mul dl` @0x244A).
     const PAL_DS: u32 = 0x5251;
+    // `mov bx,0x6011` @0x9625 at the call site, immediately before
+    // `lcall 0x1ce:0x14d` @0x9628 — which resolves to 0x242D, this routine.
     const TABLE_DS: u32 = 0x6011;
+    // `mov ax,0xe0` @0x9622, the other half of that same call setup; the routine
+    // takes it as `mov bp,ax` @0x2434.
     const BANK_BASE: u16 = 0xE0;
 
     let mut m = Machine::new();

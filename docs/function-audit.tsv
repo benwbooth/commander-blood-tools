@@ -813,11 +813,11 @@ GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
 build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x22F1,0x22FC,0x22F5,0x2303,0x22FD,0x230C,0x2304,0x23	ORACLE	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
 build_console_bank_remap_table	src/palette.rs	202	fn	0x6011,0x242D,0x22E0,0x9622,0x5251,0x7AC3	ORACLE	/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN /// builder, not by reimplementing it. /// /// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from t
-GS	src/palette.rs	204	const		UNVERIFIED	
-PAL_DS	src/palette.rs	205	const		UNVERIFIED	
-TABLE_DS	src/palette.rs	206	const		UNVERIFIED	
-BANK_BASE	src/palette.rs	207	const		UNVERIFIED	
-game_screen_palette	src/palette.rs	235	fn		UNVERIFIED	/// The game-screen palette expanded to 8-bit RGB for the engine framebuffer, /// scaling each 6-bit DAC channel to full range (v * 255 / 63).
+GS	src/palette.rs	208	const	0x2436,0x0CE2	INFRA	// A SCRATCH SEGMENT FOR THE LIFTED RUN, not a game value (audit-fixes #545). // The routine itself does `mov ax,gs / mov ds,ax` @0x2436, so it works in // whatever gs holds; the port gives it an arbi
+PAL_DS	src/palette.rs	211	const	0x5251,0x243E,0x2441,0x244A	ASM	// `mov si,0x5251` @0x243E — the palette the routine walks, 0x100 entries // (`mov cx,0x100` @0x2441), three bytes each (`mov dx,3 / mul dl` @0x244A).
+TABLE_DS	src/palette.rs	214	const	0x6011,0x9625,0x9628,0x242D	ASM	// `mov bx,0x6011` @0x9625 at the call site, immediately before // `lcall 0x1ce:0x14d` @0x9628 — which resolves to 0x242D, this routine.
+BANK_BASE	src/palette.rs	217	const	0x9622,0x2434	ASM	// `mov ax,0xe0` @0x9622, the other half of that same call setup; the routine // takes it as `mov bp,ax` @0x2434.
+game_screen_palette	src/palette.rs	245	fn		UNVERIFIED	/// The game-screen palette expanded to 8-bit RGB for the engine framebuffer, /// scaling each 6-bit DAC channel to full range (v * 255 / 63).
 GameProgress	src/progress.rs	18	struct		UNVERIFIED	/// The player's game progression: a set of trackable entities (locations, crew) keyed by /// name, each carrying the decoded [`EntityObject`] flag state.
 new	src/progress.rs	24	fn		UNVERIFIED	/// An empty progression.
 find	src/progress.rs	28	fn		UNVERIFIED	
