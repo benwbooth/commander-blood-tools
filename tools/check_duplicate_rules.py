@@ -45,9 +45,16 @@ def main():
 # so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
 # screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
 # on that basis alone -- evidenced-looking rows with no evidence.
-        m = re.search(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"])
+# An origin may name the OVERLAY space (`XDB:manu3:0x19B`). Key by SPACE plus
+# address so an overlay offset can never compare equal to an image address at the
+# same number -- the spaces are unrelated, and manu3.xdb's method entries sit
+# exactly where small image offsets would (audit-fixes #485).
+        m = re.search(
+            r"(?:(XDB:[A-Za-z0-9_]+):)?(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"]
+        )
         if m:
-            by_addr[int(m.group(1), 16)].append((r["item"], r["file"], r["status"]))
+            key = (m.group(1) or "IMG", int(m.group(2), 16))
+            by_addr[key].append((r["item"], r["file"], r["status"]))
 
     clusters = {a: v for a, v in by_addr.items() if len(v) > 1}
     # The strongest signal: one NAME implemented twice for one address. Two files
@@ -63,16 +70,21 @@ def main():
                 files = [f for i, f, _ in items if i == name]
                 same_name.append((addr, name, files))
 
+    def show(key):
+        """`(space, addr)` -> a printable, space-qualified address."""
+        space, addr = key
+        return f"{addr:#07x}" if space == "IMG" else f"{space}:{addr:#05x}"
+
     print(f"{len(clusters)} addresses cited by more than one port function\n")
     for addr, items in sorted(clusters.items()):
-        print(f"  {addr:#07x}")
+        print(f"  {show(addr)}")
         for item, path, status in sorted(items):
             print(f"      {item:<42} {path:<24} {status}")
 
     if same_name:
         print("\nDUPLICATE NAMES — one name implemented twice for one address:")
         for addr, name, files in sorted(same_name):
-            print(f"  {addr:#07x}  {name}  in {', '.join(files)}")
+            print(f"  {show(addr)}  {name}  in {', '.join(files)}")
         return 1
     print("\nNo same-name duplicates. Clusters above are for judgement: a routine")
     print("and its helper may share an address legitimately.")

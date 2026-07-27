@@ -14,7 +14,7 @@
 //! the final pyramid vertex blit.
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
-/// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
+/// entry `XDB:manu3:0x000`/`XDB:manu3:0x181`) — 0..31 selects one of up to 32 menu items.
 pub fn menu_item_index(input: u16) -> usize {
     (input & 0x1F) as usize
 }
@@ -29,7 +29,7 @@ pub fn menu_screen_row(input: u16) -> u16 {
     shifted.wrapping_add(MENU_ROW_BIAS << 8)
 }
 
-/// Resolve a selected menu item to its handler offset (method `0x181`): the item index
+/// Resolve a selected menu item to its handler offset (method `XDB:manu3:0x181`): the item index
 /// (word-scaled) reads an entry from the offset table located at `base`, and the
 /// handler is `base + table[item]` (`di = [0x2306]; di += [item*2 + di]`). `table` is
 /// the overlay's word table read at `base`. Out-of-range items resolve to `base`.
@@ -57,7 +57,7 @@ pub const MENU_CAMERA_CENTRE: (i16, i16) = (160, 100);
 /// `re/tools/find_imm.py 0xFFC output/_tmp_dat/manu3.xdb`.
 pub const MENU_ANGLE_MASK: u16 = 0x0FFC;
 
-/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three
+/// The pyramid draw's per-axis rotation angle indices (method `XDB:manu3:0x270` setup): the three
 /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the
 /// trig-table offsets that build the rotation matrix — after which the menu reuses the
 /// **shared ship-3D projection** (`build_ship_3d_projection_matrix` + `project_ship_3d_point`)
@@ -72,7 +72,7 @@ pub fn menu_pyramid_angles(angle_x: u16, angle_y: u16, angle_z: u16) -> [u16; 3]
 
 /// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's
 /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from
-/// `[0x1A]`) / `[0x23E2]` (y from `[0x1C]`) each frame before the pyramid draw (`0x270`)
+/// `[0x1A]`) / `[0x23E2]` (y from `[0x1C]`) each frame before the pyramid draw (`XDB:manu3:0x270`)
 /// — the same centre-delta steering as the ship-3D / alien views. Returns the
 /// `(dx, dy)` added to the view offset.
 // Verified at `XDB:manu3:0x0034..0x0058` (audit-fixes #472) — the whole law,
@@ -99,8 +99,8 @@ pub fn menu_camera_pan(cursor_x: i16, cursor_y: i16) -> (i16, i16) {
     (dx, dy)
 }
 
-/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects
-/// and the tween setup (`0x1DF`) consumes. NOT a code routine; the field layout is
+/// A menu item's animation descriptor — the DATA the item-dispatch (`XDB:manu3:0x181`) selects
+/// and the tween setup (`XDB:manu3:0x1DF`) consumes. NOT a code routine; the field layout is
 /// read straight off `XDB:manu3:0x01DF..0x01FE`:
 ///
 /// ```text
@@ -143,14 +143,14 @@ impl MenuAnimDescriptor {
         })
     }
 
-    /// Build the tween this descriptor drives (via `0x1DF`): animate the target field
+    /// Build the tween this descriptor drives (via `XDB:manu3:0x1DF`): animate the target field
     /// from its `current` value to `end` over `count` frames.
     pub fn tween(&self, current: i16) -> MenuTween {
         MenuTween::to_target(current, self.end, self.count as i16)
     }
 }
 
-/// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween
+/// One entry in the menu's active-animation list (method `XDB:manu3:0x19B`): a fixed-point tween
 /// that each frame writes its accumulator's high word to a target field, then advances
 /// the accumulator by a delta, decrementing a frame counter until it expires.
 ///
@@ -176,7 +176,7 @@ impl MenuTween {
         }
     }
 
-    /// Build a tween from an animation descriptor (method `0x1DF`, the setup that links
+    /// Build a tween from an animation descriptor (method `XDB:manu3:0x1DF`, the setup that links
     /// item-selection to the tween list): animate a field from its `current` value to
     /// the descriptor's `end` value over `count` frames. The accumulator starts at
     /// `current << 16` and the per-frame delta is `((end - current) << 16) / count`
@@ -185,7 +185,21 @@ impl MenuTween {
     pub fn to_target(current: i16, end: i16, count: i16) -> Self {
         let n = (count as i32).max(1);
         let delta = ((end as i32 - current as i32) << 16) / n;
-        Self::new(count, (current as i32) << 16, delta)
+        // THE SETUP PRE-ADVANCES BY ONE FRAME, and both halves of that are easy to
+        // miss (audit-fixes #486). `dec cx` @0x214 stores `count - 1`, and
+        // `add ebp,eax` @0x219 stores `(current << 16) + delta` — so the FIRST
+        // value the step loop writes is already `current + delta`, and the tween
+        // lands on `end` after exactly `count` writes. Storing `count` and a bare
+        // `current << 16` (as this did) writes the unmoved start value for one
+        // extra frame, making every menu animation one frame long and one step
+        // behind. `count == 0` never reaches here in the binary — `or cl,cl / je`
+        // @0x1E7 skips the descriptor entirely — so the saturating floor is the
+        // port's own guard, not a decoded behaviour.
+        Self::new(
+            count.saturating_sub(1),
+            ((current as i32) << 16).wrapping_add(delta),
+            delta,
+        )
     }
 
     /// The output value written to the target this frame — the accumulator's high word
@@ -194,7 +208,7 @@ impl MenuTween {
         (self.accumulator >> 16) as u16
     }
 
-    /// Advance one frame exactly as `0x19B` does per entry: the caller first takes
+    /// Advance one frame exactly as `XDB:manu3:0x19B` does per entry: the caller first takes
     /// [`output`](Self::output) and writes it to the target, then this decrements the
     /// counter — returning `false` (remove me) when it goes negative — and otherwise
     /// advances the accumulator by the delta.
@@ -208,7 +222,7 @@ impl MenuTween {
     }
 }
 
-/// The menu's active-animation list (`0x19B`): processes every tween each frame,
+/// The menu's active-animation list (`XDB:manu3:0x19B`): processes every tween each frame,
 /// writing each output to its target via a caller-supplied sink, and swap-removes the
 /// tweens that have expired (mirroring the binary's `sub bx,2; xchg [bx],di` compaction).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -325,17 +339,28 @@ mod tests {
 
     #[test]
     fn tween_to_target_walks_current_to_end() {
-        // Animate 10 -> 50 over 8 frames: output starts at 10, and after stepping the
-        // full count the high word reaches (about) 50.
+        // Animate 10 -> 50 over 8 frames. The setup PRE-ADVANCES one delta
+        // (`add ebp,eax` @XDB:manu3:0x219) and PRE-DECREMENTS the counter
+        // (`dec cx` @0x214), so the first value written is current + delta = 15,
+        // NOT the unmoved 10 (audit-fixes #486). Eight writes then land on 50.
         let mut t = MenuTween::to_target(10, 50, 8);
-        assert_eq!(t.output(), 10, "starts at current");
+        assert_eq!(t.output(), 15, "first write is current + delta, pre-advanced");
         for _ in 0..8 {
             t.step();
         }
         assert_eq!(t.output(), 50, "reaches end after count frames");
-        // Descending target too.
+        // The eighth step is the one that expires it: seven advance, then the
+        // counter goes negative and `step` reports remove-me without advancing.
+        let mut t = MenuTween::to_target(10, 50, 8);
+        for i in 0..7 {
+            assert!(t.step(), "step {i} still active");
+        }
+        assert_eq!(t.output(), 50);
+        assert!(!t.step(), "expires on the count-th step");
+        assert_eq!(t.output(), 50, "an expired tween does not advance past end");
+        // Descending target too: 100 -> 20 over 4, first write 100 - 20 = 80.
         let mut d = MenuTween::to_target(100, 20, 4);
-        assert_eq!(d.output(), 100);
+        assert_eq!(d.output(), 80);
         for _ in 0..4 {
             d.step();
         }

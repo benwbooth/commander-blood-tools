@@ -3379,6 +3379,35 @@ pub fn collect_ship_3d_dirty_sprite_slot_render_commands(
     commands
 }
 
+/// The temporary `sn\3D.snd` presentation path — `ship_3d_temp_snd_setup`
+/// @`0xB591` (`0x0A9A:0x05F1`), verified instruction by instruction (audit-fixes
+/// #484). The whole body is gated on `test byte [0xAE4],1 / je` @0xB592, so a
+/// clear trigger returns having done nothing.
+///
+/// Taken in order, the routine: clears `[0xAE4]` and `[0xAE3]`; PUSHES the mouse
+/// position `[0xA2A]`/`[0xA2C]` @0xB5A5 and pops it back @0xB64F, which is the
+/// `preserved_mouse_position` effect; cycles the overlay index `[0xAE5]` 0..2
+/// @0xB5B5 and indexes the 3-pointer table `DS:0xACC` (amer / croolis / scrut);
+/// loads `sn\3D.snd` (`si = DS:0xD23`) @0xB5DC; zeroes the callback-bank gate
+/// `[0xBA0]` around `lcall [0xA96]` @0xB5FE; restores `sn\tb.snd`
+/// (`si = DS:0xCFC`) @0xB610; writes the viewport descriptor through the far
+/// pointer at `DS:0x522D` @0xB629 (see `SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR`);
+/// then clears the hold counter `[0xB3B]` and sets the refresh flag `[0x5B55]`.
+///
+/// THE INDEX USES THE OLD PHASE, and the encoding is the reason. `0x98` @0xB5C2
+/// is a bare one-byte **CBW** — capstone prints it `cwde` in 16-bit mode (see
+/// re/tools/check_opsize_mnemonics.py, audit-fixes #100). CBW sign-extends AL,
+/// OVERWRITING the AH that `inc ah` had just advanced, so `add ax,ax / add si,ax`
+/// indexes with the PRE-advance value. Read as `cwde` the index would be
+/// `(next<<8)|old` doubled — far outside a 3-pointer table. Hence the ordering
+/// here: read the callback offset first, advance the phase after.
+///
+/// The tail branches on `test byte [0x252A],1` @0xB657 — `sequence_active`:
+/// - set (@0xB65E): `[0x252E]` is cleared, `lcall 0x8B:0x967` runs, `[0x252E]` is
+///   set again, then `[0x1FA3] = 0xFFFF`. The clear-then-set below is NOT
+///   redundant — it brackets that call, and the sentinel is the scene selector.
+/// - clear (@0xB675): `lcall 0x8B:0x929`, then the two byte clears `[0x5B53]` and
+///   `[0x5B57]` — the pair modelled as `setup_flag_a` / `setup_flag_b`.
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -3408,6 +3437,9 @@ pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship
     state.viewport_descriptor = SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR;
 
     if state.sequence_active {
+        // @0xB65E: `[0x252E]` is cleared, `lcall 0x8B:0x967` runs with it clear,
+        // and it is set again @0xB668. The clear/set pair BRACKETS that call —
+        // not dead motion, which is why both edges are reported as effects.
         state.plane_copy_enabled = false;
         effect.temporarily_disabled_plane_copy = true;
         state.plane_copy_enabled = true;

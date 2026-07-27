@@ -53,7 +53,7 @@
 //! motion law, transform math, and palette here are the game's own.
 
 /// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at
-/// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE):
+/// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded XDB:manu3:0x270/XDB:manu3:0x3DE):
 ///   +0x00 parent record ptr   +0x02 vertex count
 ///   +0x12..+0x32 composed rows (X/Y/Z, Q15 dwords)   +0x36/3A/3E composed T
 ///   +0x42/46/4A local position L (dwords)            +0x4E/50/52 local Euler angles
@@ -136,7 +136,7 @@ fn tsin(off: i32) -> i32 {
     i16::from_le_bytes([TRIG[o + 2], TRIG[o + 3]]) as i32
 }
 
-/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler
+/// EXACT transcription of the manu3 matrix build (xdb XDB:manu3:0x270..XDB:manu3:0x3DE): three Euler
 /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the
 /// angle-sum identity reads the original performs. Cell order matches the
 /// transform: out.x = (m00 x + m01 y + m02 z)>>15 etc.
@@ -165,7 +165,7 @@ pub fn build_matrix(a1: i32, a2: i32, a3: i32) -> [i32; 9] {
 
 pub struct HandMesh {
     /// Current pose selector + its running player (selector -> sequence index,
-    /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left,
+    /// per the XDB:manu3:0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left,
     /// 0xB=UI-close, 0xFFFF=hidden).
     pose_sel: u16,
     pose: Option<PosePlayer>,
@@ -300,7 +300,7 @@ impl HandMesh {
     }
 
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy):
-    /// the decoded cursor law + hierarchical composition + the re-verified 0x549
+    /// the decoded cursor law + hierarchical composition + the re-verified XDB:manu3:0x549
     /// projection. No screen-space fixups — the fingertip lands at the cursor
     /// because the game's own math puts it there (HANDGRID oracle: tip = cursor+(2,-3)).
     pub fn draw(&self, fb: &mut [u8], w: usize, h: usize, cx: i32, cy: i32) {
@@ -596,7 +596,7 @@ fn fill_triangle(
     }
 }
 
-/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B):
+/// The phased tween pose player (exact transcription of XDB:manu3:0x181/XDB:manu3:0x1DF/XDB:manu3:0x19B):
 /// applies sequence `seq`'s groups to the segment cells, animating the hand.
 /// Cells address the live record block (0x2394 + seg*0x5E + field).
 pub struct PosePlayer {
@@ -608,7 +608,7 @@ pub struct PosePlayer {
 
 impl PosePlayer {
     /// Look up the sequence for a SELECTOR through the game's own dispatch table
-    /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base +
+    /// (XDB:manu3:0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base +
     /// table[(selector & 0x1F) * 2]; groups run until a count==0 terminator).
     /// 17 distinct sequences, one per selector 0..0x10; higher selectors alias
     /// selector 0's no-op.
@@ -630,7 +630,7 @@ impl PosePlayer {
     }
 
     /// One frame: construct due groups (phase match), step active tweens; writes go
-    /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
+    /// through `cells` (cell address -> current value), exactly as XDB:manu3:0x1DF/XDB:manu3:0x19B do.
     pub fn step(&mut self, cells: &mut dyn FnMut(u16, Option<i16>) -> i16) {
         // Construct groups whose phase == current phase.
         while self.cursor < self.seq.len() {
@@ -741,7 +741,7 @@ mod tests {
     use super::*;
 
     /// The pose player runs sequence 0 to completion, writing plausible values
-    /// into the segment cells (the exact 0x1DF construction + 0x19B stepping).
+    /// into the segment cells (the exact XDB:manu3:0x1DF construction + XDB:manu3:0x19B stepping).
     #[test]
     fn pose_player_animates_cells() {
         // Sequence 0 is the null pose (empty stream); later selectors carry the

@@ -56,7 +56,13 @@ def main():
 # so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
 # screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
 # on that basis alone -- evidenced-looking rows with no evidence.
-        for a in re.findall(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"]):
+        # Lifted addresses are IMAGE offsets, so an overlay citation must never
+        # match one; skip the XDB-qualified entries outright (audit-fixes #485).
+        for space, a in re.findall(
+            r"(?:(XDB:[A-Za-z0-9_]+):)?(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"]
+        ):
+            if space:
+                continue
             addr = int(a, 16)
             if addr not in lifts:
                 continue

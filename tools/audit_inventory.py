@@ -45,6 +45,20 @@ OUT = "docs/function-audit.tsv"
 # a doc, and 11 rows were provisionally ASM? on that basis alone -- rows that look
 # evidenced and are not.
 ADDR = re.compile(r"(?<![0-9A-Za-z])0x[0-9A-Fa-f]{3,6}")
+# OVERLAY citations live in a different address space, where the >=0x600 MZ bound
+# below is simply wrong: manu3.xdb's method entries are 0x000, 0x181, 0x19B, 0x1DF
+# and its matrix build is 0x270..0x3DE. Filtering those as "prose numbers" made
+# nine genuinely decoded overlay functions look uncited, and `audit_settle.py`
+# then REFUSED to settle them for want of an address they had all along
+# (audit-fixes #485). The qualified `XDB:<name>:0xNNN` form re/CLAUDE.md already
+# defines is what distinguishes the spaces, so it is matched separately and kept
+# WITH its prefix -- an overlay 0x19B must never compare equal to an image 0x19B.
+XDB_ADDR = re.compile(r"XDB:[A-Za-z0-9_]+:0x[0-9A-Fa-f]{1,6}")
+
+
+def cited(text):
+    """Any citation, in either address space."""
+    return XDB_ADDR.search(text) or ADDR.search(text)
 TEST_NAMES = set()
 
 # Statuses the heuristics below can produce. Anything else in an existing ledger
@@ -237,7 +251,7 @@ for root, _, files in os.walk(SRC):
             if (
                 fn_body_depth > 0
                 and kind != "fn"
-                and not ADDR.search(" ".join(doc))
+                and not cited(" ".join(doc))
                 and not re.search(r"0x[0-9A-Fa-f]+", line)
             ):
                 continue
@@ -257,7 +271,7 @@ for root, _, files in os.walk(SRC):
             # look. Scan the body's COMMENT lines only -- a bare literal in code is
             # a VALUE, and treating it as an address is how "320x200" became a
             # citation in #123.
-            if not ADDR.search(fulldoc):
+            if not cited(fulldoc):
                 body_comments = []
                 depth, started = 0, False
                 for offset, probe in enumerate(lines[i - 1 : i + 80]):
@@ -287,7 +301,11 @@ for root, _, files in os.walk(SRC):
             # ...but addresses come from the WHOLE doc: a long transcription puts
             # its citations past 400 chars, and truncating them away made a
             # thoroughly cited function look uncited.
-            addrs = ADDR.findall(fulldoc)
+            # Take the qualified overlay citations first, then scrub them so the
+            # bare-address pass cannot re-harvest their `0x...` tail as an image
+            # address (and drop it, or worse, keep it unqualified).
+            xdb_hits = XDB_ADDR.findall(fulldoc)
+            addrs = ADDR.findall(XDB_ADDR.sub(" ", fulldoc))
             # DROP values below the 0x600 MZ header: they are not code addresses
             # in this image (audit-fixes #387 established the same bound for
             # labels.csv). Refreshing the ledger after a session of doc edits
@@ -295,7 +313,7 @@ for root, _, files in os.walk(SRC):
             # prose -- look like citations, and the duplicate-rule test then
             # reported 65 addresses 'cited by more than one port function',
             # nearly all of them junk (audit-fixes #423).
-            addrs = [a for a in addrs if int(a, 16) >= 0x600]
+            addrs = xdb_hits + [a for a in addrs if int(a, 16) >= 0x600]
             origin = ",".join(dict.fromkeys(addrs))[:60]
             # provisional status
             low = doctext.lower()

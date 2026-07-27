@@ -15899,3 +15899,80 @@ warnings in this sweep are cosmetic and stay: `mx`/`my` @`bin/blood.rs:99` are t
 VERIFYSCRIPT harness's scripted mouse (INFRA, not game state).
 
 616 tests, 0 failures.
+
+## #485 — the ledger's MZ bound silently un-cited every OVERLAY function
+
+Settling `run_ship_3d_temp_snd_setup` (#484) needed a ledger refresh first, and the
+refresh exposed something bigger: `audit_settle.py` REFUSES `ASM` on a row whose
+`origin` is empty, and nine manu3 rows had empty origins while their doc comments
+carried addresses all along. `MenuTween::step` cites `0x19B` in its first sentence
+and the ledger called it UNVERIFIED.
+
+The cause is a filter I added in #423 and was right to add: drop addresses below
+`0x600`, because prose numbers (`0x100`, `0x181`) were being harvested as citations
+and 65 rows read as evidenced on that basis. What it missed is that **the MZ bound
+is a fact about ONE address space**. manu3.xdb's method entries are `0x000`,
+`0x181`, `0x19B`, `0x1DF`; its matrix build is `0x270..0x3DE`. Every real overlay
+citation sits exactly where the junk does.
+
+So the rule "below 0x600 is not an address" was true of the image and false of the
+overlays, and applying it globally deleted the evidence of the modules that are
+ENTIRELY overlay ports — manu3.rs and manu3_hand.rs.
+
+The fix uses the qualified form `re/CLAUDE.md` already defines rather than a new
+heuristic: `XDB:manu3:0x19B`. `audit_inventory.py` matches it separately, exempts
+it from the MZ bound, and KEEPS THE PREFIX in `origin`, so the two spaces can never
+compare equal. 26 citations across the two files were rewritten to it (several were
+already in that form, which is what confirmed the convention rather than inventing one).
+
+Both downstream consumers of `origin` had to learn the same distinction, and this is
+the part that would have bitten later: `check_duplicate_rules.py` keys its
+"one rule implemented twice" cluster BY ADDRESS, and `check_liftable_twins.py`
+matches origins against lifted IMAGE offsets. An overlay `0x1234` and an image
+`0x1234` are unrelated numbers. The first now keys by `(space, address)`; the second
+skips XDB citations outright, since a lift is always an image offset. Both still
+report cleanly, "No same-name duplicates".
+
+The nine rows are now citable. Six of them are settled ASM below on real evidence,
+not on the citation merely existing — and verifying one of them found #486.
+
+## #486 — the menu tween is ONE FRAME LONG and one step behind
+
+Verifying `MenuTween` against `XDB:manu3:0x19B` (the whole method disassembled, not
+sampled) matched the port everywhere: `[di+4]` is the target, `[di+8]` is the high
+word of the dword accumulator at `[di+6]` — which is exactly `accumulator >> 16` —
+`dec [di] / js` is the expiry, `add [di+6],eax` the advance, and `sub bx,2 /
+xchg [bx],di` the swap-remove the port already mirrored.
+
+The CONSTRUCTOR did not match. At `XDB:manu3:0x1FE`:
+
+```text
+0x0207  shl eax, 0x10      ; (end - current) << 16
+0x020B  shl ebp, 0x10      ; current << 16
+0x020F  cdq / idiv ecx     ; delta = ((end-current)<<16) / count
+0x0214  dec cx             ; <-- counter = count - 1
+0x0215  mov [di+0xa], eax  ; delta
+0x0219  add ebp, eax       ; <-- accumulator = (current<<16) + delta
+0x021C  mov [di], cx
+0x021E  mov [di+6], ebp
+```
+
+The port stored `count` and a bare `current << 16`. The binary PRE-ADVANCES by one
+frame in both fields, and the two go together: because the step loop writes the
+accumulator BEFORE advancing it, the first value written is `current + delta`, and
+the tween lands on `end` after exactly `count` writes. The port instead wrote the
+unmoved `current` first and took `count + 1` frames — every menu animation one frame
+long and one step behind, on every item, for as long as this has been in.
+
+The existing test asserted `output() == 10, "starts at current"` — it encoded the
+PORT's behaviour, which is how this survived. Note what it got right: its
+`reaches end after count frames` assertion passes under BOTH readings, because the
+extra step just returns remove-me without advancing. Only the first-value assertion
+could ever have caught this, and it was written to the wrong answer. Now 15, with
+the expiry edge (seven advancing steps, then `false`) pinned separately.
+
+`count == 0` cannot reach the constructor in the binary — `or cl,cl / je` @0x1E7
+skips the descriptor — so the port's saturating floor is its own guard and is
+labelled as such rather than presented as decoded.
+
+616 tests, 0 failures.
