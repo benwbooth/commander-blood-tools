@@ -15702,3 +15702,36 @@ constant is that the codebase is full of them.
 
 2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
 724 workspace tests, 0 failures.
+
+## #479 — four rows, and the DATA/INFRA line
+
+The `DATA?` queue is asset loaders with empty origins, so settling them means
+asking what they read rather than checking an address. Four resolve, and they
+split across the line #421 drew:
+
+DATA — genuinely reading shipped content:
+
+  * `load_intro` takes the credit subtitles from the DESCRIPT `present` record's
+    cues, which its own doc states is "sourced from the game data rather than
+    hard-coded" — the divergence fixed earlier in this project's history.
+  * `intro_clip_music` returns that same record's music stem.
+  * `start_descript_cutscene` is explicitly "a general, data-driven cutscene
+    player; each cutscene's music/subtitles come from the [record], not
+    hardcoded".
+
+INFRA — no binary counterpart at all:
+
+  * `collect_hnm_paths` recursively walks a directory collecting `*.hnm` files
+    into a name map. The game does not scan directories; it loads by RESOURCE ID
+    through the `FS:0x0C04` name table (#463, and the loader `0x3FC7`). This is
+    the port finding files on a modern filesystem, and no amount of decoding will
+    give it an address.
+
+Classifying it DATA would have been the easy move — it does touch game files — and
+would have been wrong in the way that matters: DATA asserts the port reads what
+the game reads, and this reads a directory the game never looks at.
+
+Provisional queue: 117, from 246 at the session's start.
+
+2229 items, 1201 confirmed (53.9%), 1028 open. 798 citations verified, 0 wrong.
+724 workspace tests, 0 failures.
