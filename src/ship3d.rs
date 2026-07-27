@@ -329,8 +329,19 @@ pub const SHIP_3D_POINT_BUFFER_OFFSET: u16 = 0x2fc1;
 /// `mov di,0x4f01` @`0x9A26` — the scratch vector each point is transformed
 /// through, set up beside the source and matrix pointers (audit-fixes #500).
 pub const SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET: u16 = 0x4f01;
+/// `mov word ptr [bp+0x24],ax` @`0x9AB0`, where `bp` is the PROJECTION MATRIX
+/// base `0x2f95` (`mov bp,0x2f95` @`0x9A31`) — so `0x2f95 + 0x24 = 0x2FB9`. The
+/// matrix is nine dwords (0x24 bytes) and the projected output begins IMMEDIATELY
+/// after it; these are fields of one structure, not a separate buffer
+/// (audit-fixes #501). The stored value is already screen-centred: `add ax,0xa0`
+/// @`0x9AAD` adds 160 after the perspective divide.
 pub const SHIP_3D_PROJECTED_X_OFFSET: u16 = 0x2fb9;
+/// `mov word ptr [bp+0x26],ax` @`0x9AE5` = `0x2f95 + 0x26`, centred by
+/// `add ax,0x64` @`0x9AE2` (100) — audit-fixes #501.
 pub const SHIP_3D_PROJECTED_Y_OFFSET: u16 = 0x2fbb;
+/// `mov word ptr [bp+0x28],cx` @`0x9AE8` = `0x2f95 + 0x28`. `cx` is the divisor
+/// the two `idiv ecx` @`0x9AAA`/`0x9ADF` used, so the stored depth is the value
+/// the perspective divide was performed BY (audit-fixes #501).
 pub const SHIP_3D_PROJECTED_DEPTH_OFFSET: u16 = 0x2fbd;
 /// Touched by the game at `sub ax, word ptr [0x5235]` @`0x033B4`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).

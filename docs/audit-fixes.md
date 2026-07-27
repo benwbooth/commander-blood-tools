@@ -16578,3 +16578,42 @@ below the point buffer and the arithmetic would be tidy.
 `ship3d.rs`: 60 uncited constants -> 54.
 
 620 tests, 0 failures.
+
+## #501 — the tidy inference I declined in #500 was WRONG, and that is the point
+
+#500 left `PROJECTED_X/Y/DEPTH` (`0x2fb9`/`0x2fbb`/`0x2fbd`) unverified with a note
+that they sit "eight bytes below the point buffer" and that the arithmetic being
+tidy is not evidence. Followed them properly, and the tidy reading was wrong.
+
+They are not relative to the point buffer at all:
+
+```text
+  0x9A31  mov bp, 0x2f95            the PROJECTION MATRIX base
+  ...
+  0x9AAD  add ax, 0xa0              screen-centre x (+160)
+  0x9AB0  mov word [bp+0x24], ax    0x2f95 + 0x24 = 0x2FB9   PROJECTED_X
+  0x9AE2  add ax, 0x64              screen-centre y (+100)
+  0x9AE5  mov word [bp+0x26], ax    PROJECTED_Y
+  0x9AE8  mov word [bp+0x28], cx    PROJECTED_DEPTH
+```
+
+`0x24` is 36 — exactly nine dwords — so the projected triple begins IMMEDIATELY
+after the 3x3 matrix. These are fields of ONE structure whose base is the matrix,
+which is why no immediate or direct displacement for them exists anywhere in the
+image: they are only ever reached as `[bp+disp]`.
+
+Both readings put the cells in the same place. Only one says what they ARE. Had I
+taken the tidy inference, the port would carry three constants documented as
+neighbours of a buffer they have no relationship to, and the next person to move
+the point buffer would have "fixed" the offsets by the wrong rule.
+
+Two details fell out that a bare address would not carry: the stored X and Y are
+ALREADY SCREEN-CENTRED (`+160`, `+100` after the perspective divide), and the stored
+depth is `cx`, the very divisor the two `idiv ecx` @`0x9AAA`/`0x9ADF` divided BY —
+so it is the perspective denominator, not a transformed z. Also confirmed in
+passing: `dec word [0x2f77] / jne 0x9A34` @`0x9AEE` closes the loop on the cell
+#500 sourced as `POINT_CLOUD_COUNT`, so 1000 really is an iteration count.
+
+`ship3d.rs`: 54 uncited constants -> 51.
+
+620 tests, 0 failures.
