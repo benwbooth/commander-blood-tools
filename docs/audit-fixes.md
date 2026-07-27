@@ -18307,3 +18307,28 @@ it needs an EXTERNAL anchor or an explicit "unverified" label. Two of these exis
 in one file and one of them was a real bug.
 
 725 tests, 0 failures.
+
+## #551 — a negative result worth writing down
+
+Tried to settle #550 by finding the game's consumer of DESCRIPT command `0x0D`
+(the subtitle cue: command byte, `u16` tick, NUL string).
+
+`cmp al,0x0d` occurs EXACTLY ONCE in the entire image, at `0x1DED`, and it is not
+the cue handler — the two instructions after it are `cmp al,0x30 / jb` and
+`cmp al,0x39`, an ASCII digit range, so that `0x0D` is a CARRIAGE RETURN in the
+save-name editor. No `sub al,0x0d` exists either.
+
+So the DESCRIPT interpreter does not compare command bytes directly; it dispatches
+them some other way — a jump table, or code not yet located. Given #502's standing
+conclusion (this compiler prefers shifts and tables to immediates) that is the
+expected shape, and the `0x0D` scan was always the cheap thing to try first.
+
+RECORDED IN THE MATRIX ROW rather than left as a dead end in my head. The row now
+says what was searched and what the single hit turned out to be, so the next
+attempt starts from "find the command dispatch" instead of re-running a scan that
+returns one misleading match. A negative result costs the same to write down as a
+positive one and saves exactly as much time.
+
+Status unchanged: #550 remains UNVERIFIED, honestly.
+
+725 tests, 0 failures.

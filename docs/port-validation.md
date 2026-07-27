@@ -1731,6 +1731,15 @@ regardless of whether 10 is right. That is precisely the configuration that let
 #549's 1.67x hold-duration error survive two tests — both computed the same wrong
 way as the code they checked.
 
+**Searched already, so nobody repeats it (audit-fixes #551).** The cue is DESCRIPT
+command `0x0D` (`descript.rs`: command byte, `u16` tick, NUL string). `cmp al,0x0d`
+occurs EXACTLY ONCE in the whole image, at `0x1DED` — and it is not this: the next
+instructions are `cmp al,0x30 / jb` and `cmp al,0x39`, an ASCII digit range, so that
+`0x0D` is a CARRIAGE RETURN in the save-name editor. There is no `sub al,0x0d`
+either. The DESCRIPT interpreter therefore dispatches its command bytes some other
+way — a jump table, or code that has not been located — and that dispatch is the
+thing to find.
+
 **What would settle it.** The game's own consumer of the DESCRIPT cue field: find
 the routine that reads a cue's tick and compare it against the timer it drives
 (`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
