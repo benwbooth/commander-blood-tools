@@ -7972,6 +7972,39 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+    /// The frame cadence and the state-countdown beat are BOTH counted in PIT
+    /// ticks, so their ratio is rational and the PIT frequency cancels
+    /// (audit-fixes #477). Pinned because the port previously computed the beat as
+    /// `8.011 * 0.046` -- a decoded rate times a MEASURED frame time -- which came
+    /// to 0.36851 and ran scripted countdowns 15% fast.
+    #[test]
+    fn the_countdown_beat_is_exactly_eight_twentyfifths_of_a_frame() {
+        const PIT_DIVISOR: f64 = 5958.0; // 0x1746, func_79c @0x07C0 (#411)
+        const FRAME_TICKS: f64 = 8.0;    // [0xB2D] budget, 0x0FFB (#476)
+        const BEAT_TICKS: f64 = 25.0;    // [0xB27] reload 0x19, 0x07D5 (#411)
+        let pit_hz = 1_193_182.0 / PIT_DIVISOR;
+        let frame_secs = FRAME_TICKS / pit_hz;
+        let beat_hz = pit_hz / BEAT_TICKS;
+
+        // The PIT frequency cancels: beats-per-frame is 8/25 regardless of it.
+        let beats_per_frame = beat_hz * frame_secs;
+        assert!(
+            (beats_per_frame - 0.32).abs() < 1e-9,
+            "beats per frame must be exactly 8/25, got {beats_per_frame}"
+        );
+        // And the cadence the loop paces on.
+        assert!(
+            (frame_secs - 0.039_95).abs() < 5e-5,
+            "frame cadence ~39.95 ms, got {}",
+            frame_secs * 1000.0
+        );
+        // The superseded value, kept so its size is visible.
+        assert!(
+            (8.011_f64 * 0.046 - 0.368_5).abs() < 1e-3,
+            "the old measured-mix value was ~0.3685, 15% above 0.32"
+        );
+    }
+
 
     /// `scan_zero_word` DIFFERENTIALLED against `func_6293`.
     ///

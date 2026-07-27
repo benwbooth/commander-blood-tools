@@ -15677,3 +15677,28 @@ would have AGREED with the wrong value, since 46 ms is what the game achieves.
 
 2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #478 — pinning the ratio, and finding it was the only one
+
+#477 replaced a decoded-times-measured constant with an exact rational. Two
+follow-ups.
+
+PINNED. `the_countdown_beat_is_exactly_eight_twentyfifths_of_a_frame` derives the
+relationship from the three decoded integers — PIT divisor `5958` (`0x1746`,
+#411), frame budget `8` (`[0xB2D]`, #476), beat reload `25` (`[0xB27]`, #411) —
+and asserts that beats-per-frame is 8/25 with the PIT frequency CANCELLED. It also
+asserts the superseded `8.011 * 0.046` came to ~0.3685, so the size of the old
+error stays visible rather than being quietly forgotten.
+
+That test cannot be satisfied by measurement: it is a statement about the
+relationship between two decoded counts, and it holds for any PIT frequency. A
+capture-derived value can only pass it by accident.
+
+SWEPT for the same shape — a decoded rate multiplied by a measured duration —
+across `main.rs`, `engine.rs` and `vm.rs`. The only hits are this entry's own
+comments and the new test. So #477's was a single instance, not a pattern, which
+is worth knowing after finding it: the reasonable fear on discovering one mixed
+constant is that the codebase is full of them.
+
+2229 items, 1197 confirmed (53.7%), 1032 open. 798 citations verified, 0 wrong.
+724 workspace tests, 0 failures.
