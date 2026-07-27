@@ -17833,3 +17833,37 @@ The docs were fixed and the suite is green before this entry was written, but th
 ordering was luck rather than discipline.
 
 723 tests, 0 failures.
+
+## #537 — settling now REFUSES on a red tree, because discipline failed three times
+
+`audit_settle.py` writes a claim into the ledger: this row was checked against the
+binary. Three times I made that claim while the suite was FAILING — #423, #505, and
+#536 — twice by chaining the settle onto the same shell command as the test run and
+reading the output afterwards. Every time the fix was small and the ordering was
+luck. Three occurrences is not a lapse, it is a process that does not work.
+
+So the tool enforces it. `audit_settle.py` now runs
+`cargo test --release --lib --bins --quiet` before writing anything and refuses if
+it fails, printing the failing test:
+
+```text
+  REFUSING TO SETTLE: the test suite is not green.
+    font::tests::game_font_row_table_is_one_byte_per_row --- FAILED
+  Fix the tree first. `--no-verify` is for reverting to UNVERIFIED only.
+```
+
+`--no-verify` exists for exactly one case: putting a MIS-SETTLED row back to
+`UNVERIFIED`, which has to work when something is broken — that is the undo path
+the tool's own docstring calls out, and gating it behind a green suite would make
+the tool refuse to fix its own mistakes.
+
+I VERIFIED THE GUARD FIRES, rather than trusting that it would. A guard that never
+triggers is indistinguishable from no guard — #527's checker had been silently
+failing to flag inline-declared literals for exactly that reason. Injected a failing
+assertion into `font.rs`, confirmed the refusal above, restored the file, confirmed
+723 tests green again.
+
+The cost is ~5 seconds per settle. The thing it prevents is a ledger row that says
+"verified" about a tree where nothing was.
+
+723 tests, 0 failures.

@@ -28,7 +28,34 @@ def main():
             "  them as `src/gpu.rs:run` instead."
         )
         return 2
-    status, wanted = sys.argv[1], set(sys.argv[2:])
+    status, wanted = sys.argv[1], set(a for a in sys.argv[2:] if a != "--no-verify")
+
+    # SETTLE ONLY ON A GREEN SUITE (audit-fixes #537).
+    #
+    # Settling is a claim that a row was checked against the binary. Three times
+    # (#423, #505, #536) I settled rows while the suite was RED -- twice by
+    # chaining the settle onto the same shell command as the test run and reading
+    # the output afterwards. Each time the fix was easy and the ordering was luck.
+    # A claim recorded against a failing tree is not a claim about anything, so the
+    # tool now refuses rather than trusting the operator to look first.
+    #
+    # `--no-verify` exists for the one legitimate case: putting a mis-settled row
+    # BACK to UNVERIFIED, which must work even when something is broken.
+    if "--no-verify" not in sys.argv and status != "UNVERIFIED":
+        import subprocess
+
+        probe = subprocess.run(
+            ["cargo", "test", "--release", "--lib", "--bins", "--quiet"],
+            capture_output=True,
+            text=True,
+        )
+        if probe.returncode != 0:
+            tail = [ln for ln in probe.stdout.splitlines() if "FAILED" in ln or "panicked" in ln]
+            print("REFUSING TO SETTLE: the test suite is not green.")
+            for ln in tail[:5]:
+                print(f"  {ln}")
+            print("\nFix the tree first. `--no-verify` is for reverting to UNVERIFIED only.")
+            return 1
 
     with open(LEDGER, newline="") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
