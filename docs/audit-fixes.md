@@ -18966,3 +18966,26 @@ Both facts are now in the tool's docstring, because the next person to trust an
 entry it reports needs to know which of the two ways it can be wrong.
 
 726 tests, 0 failures.
+
+## #571 — the DS base is forced arithmetic; the cursor colour is a port choice
+
+Two `engine.rs` constants, and they are opposite kinds despite both being bare
+numbers in a function body.
+
+`DS_BASE = 0xD420` is FORCED: `0x600 + DATA_SEGMENT * 16` where
+`bloodprg::DATA_SEGMENT` is `0x0CE2`. It is the same MZ image-to-file identity every
+row of `KNOWN_CODE_SEGMENTS` satisfies (#553), so it cannot be wrong without the
+segment being wrong. Settled ASM.
+
+`CURSOR_COLOR = 0xFE` is a PORT CHOICE and settled INFRA — the same call as #542's
+`RETICLE`/`BAR`. `0xC0..0xFF` being reserved and runtime-filled is decoded; using
+one of them for a heading cursor is not. The settle tool refused ASM for want of an
+address, correctly: there is no instruction behind "draw the cursor in this slot".
+
+It is also the FIFTH port writer of `0xFE`, and it agrees with the other four at
+`[245,245,160]` — which is why `check_palette_slot_writers.py` (#543) reports that
+slot as non-conflicting while flagging `0xFD` and `0xE0`. A tool that reported all
+five would have buried the two that matter; this is the same signal-versus-noise
+line #528 drew for the literal checker.
+
+726 tests, 0 failures.

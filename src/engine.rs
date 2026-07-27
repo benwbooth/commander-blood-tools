@@ -2201,6 +2201,11 @@ impl EngineState {
     /// build instead of following it. `STATUS_STRING_TABLE` reached the same
     /// conclusion and was converted; these had not been.
     pub fn load_ds_strings(&mut self, exe: &[u8]) {
+        // `0x600 + DATA_SEGMENT * 16` = `0x600 + 0x0CE2 * 16` — the MZ
+        // image-to-file identity, the same one every row of
+        // `bloodprg::KNOWN_CODE_SEGMENTS` satisfies (#553). Not a remembered
+        // number: `bloodprg::DATA_SEGMENT` is 0x0CE2 and the arithmetic is forced
+        // (audit-fixes #571).
         const DS_BASE: usize = 0xD420;
         for off in Self::UI_STRING_OFFSETS {
             let start = DS_BASE + off as usize;
@@ -5010,6 +5015,13 @@ impl EngineState {
                 self.scene_palette = chart.palette;
                 // Heading cursor: a reserved-colour tick along the chart's top, swept by
                 // the compass angle, so steering has visible feedback over the static chart.
+                // A RESERVED slot (0xC0..0xFF), filled by the game at runtime and
+                // therefore left [0,0,0] by a scene's own palette — which is why
+                // this installs a colour before drawing through it. FIFTH port
+                // writer of 0xFE and it agrees with the other four
+                // ([245,245,160]); `tools/check_palette_slot_writers.py` reports
+                // 0xFE as non-conflicting precisely because they match
+                // (audit-fixes #542, #543, #571).
                 const CURSOR_COLOR: u8 = 0xFE;
                 self.scene_palette[CURSOR_COLOR as usize] = [245, 245, 160];
                 let cursor_x = (self.compass_angle as usize % 180) * (ENGINE_SCREEN_WIDTH - 1) / 179;
