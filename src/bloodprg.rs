@@ -44,6 +44,37 @@ pub const DS_BASE: usize = MZ_HEADER_SIZE + DATA_SEGMENT as usize * 16;
 pub const MZ_HEADER_SIZE: usize = 0x600;
 pub const OPCODE_HANDLER_TABLE_FILE_OFFSET: usize = 0x142d0;
 pub const OPCODE_LENGTH_TABLE_FILE_OFFSET: usize = 0x14338;
+/// 52 — how many opcodes each VM table ACTUALLY contains (`0xA0..=0xD3`).
+///
+/// MEASURED FROM THE FILE. The two tables are adjacent and the data after them is
+/// unrelated, giving a wall on each: `0x142D0 + 52*2 = 0x14338` is exactly where the
+/// length table begins, and `0x14338 + 52*2 = 0x143A0` is where the bytes stop being
+/// lengths and become the string `"memoire libre"`.
+///
+/// THIS IS NOT THE PARSE LENGTH, and the difference is the whole point. Neither
+/// `vm_token_advance` (`0x62B6`) nor `vm_exec_loop_dispatch` (`0x5613`) bounds its
+/// index:
+///
+/// ```text
+/// 0x62b9  mov bp,0x6f18            walker: the length table
+/// 0x62bf  sub al,0xa0 / cbw        ...biased, SIGN-extended (0x98 is CBW here)
+/// 0x62c2  add ax,ax / add bp,ax    ...and indexed. No compare, anywhere.
+///
+/// 0x5614  cmp al,0xff / je         dispatch: only the END marker is checked
+/// 0x561a  sub bl,0xa0 / xor bh,bh  ...biased, ZERO-extended
+/// 0x561f  add bx,bx / call gs:[bx+0x6eb0]
+/// ```
+///
+/// So a script byte above `0xD3` reads whatever follows the table, and the port's
+/// 96-entry [`vm::OPCODE_DESC`] REPRODUCES THAT — which is why its tail spells
+/// `"memoire libre"`. That is faithful, not a defect: it is the bytes the original
+/// walker would read. Truncating the parsers to this constant would replace the
+/// game's behaviour with a tidier one (audit-fixes #588).
+///
+/// Note the two paths extend differently: the walker sign-extends, so a byte BELOW
+/// `0xA0` indexes BACKWARDS out of the table, while dispatch zero-extends and always
+/// runs forward.
+pub const VM_OPCODE_TABLE_ENTRIES: usize = 52;
 pub const RESOURCE_NAME_TABLE_FS_OFFSET: u16 = 0x0c04;
 pub const RESOURCE_NAME_TABLE_FILE_OFFSET: usize = 0x0cdf4;
 /// 16 — the table at file `0x0CDF4` is 16-byte NUL-PADDED slots, measured by
@@ -513,6 +544,36 @@ pub struct BinarySymbol {
     pub comment: &'static str,
 }
 
+/// One row of the VM opcode LENGTH table at file [`OPCODE_LENGTH_TABLE_FILE_OFFSET`]
+/// (`0x14338`, `DS:0x6F18`): a WORD per opcode from `0xA0` up, split into its two
+/// bytes. As the file has them:
+///
+/// ```text
+/// 0xA0 -> 0xff03    0xA1 -> 0xfe01    0xA2 -> 0x0303    0xA3 -> 0xfb03
+/// 0xA4 -> 0x0303    0xA5 -> 0x0204    0xA6 -> 0x0000    0xA7 -> 0x0303
+/// ```
+///
+/// `len_mode0` is the LOW byte, `len_mode1_or_sentinel` the HIGH one — which is why
+/// the second field is named for two jobs:
+///
+/// - a plain value (`0x03`, `0x02`) is the MODE-1 token length;
+/// - bit 7 set (`0xFF`, `0xFE`, `0xFB`) makes it a MODE-CONTROL SENTINEL. The token
+///   length is then `len_mode0` in both modes, and the sentinel says what to do to
+///   the decoder's mode: `0xFF` switches to mode 1, `0xFE` back to mode 0, and
+///   `0xFD`/`0xFB` additionally consume a following `0xA1` byte if present.
+///
+/// A SENTINEL IS NOT A VARIABLE LENGTH — those are different properties of the same
+/// byte and `build_vm_opcode_specs` computes them separately (`& 0x80` for
+/// `mode_control`, BOTH bytes zero for `variable_length`). `0xA3` is `0xfb03`: a
+/// mode-control opcode with a perfectly definite 3-byte token.
+///
+/// Reading the word as a little-endian `u16` and comparing it to a length is the
+/// mistake the split prevents: `0xff03` is not the number 65283 (audit-fixes #588).
+///
+/// `0xA6` is `0x0000` — both halves zero, so it IS variable-length. It is the TEXT
+/// opcode, whose extent comes from the `0xFFFF`-separated word list rather than any
+/// table entry. `0xA8`/`0xAC`/`0xCC`/`0xD3` are the other zero entries: bare 1-byte
+/// opcodes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct OpcodeDescriptor {
     pub opcode: u8,
@@ -520,6 +581,24 @@ pub struct OpcodeDescriptor {
     pub len_mode1_or_sentinel: u8,
 }
 
+/// One row of the VM opcode HANDLER table at [`OPCODE_HANDLER_TABLE_FILE_OFFSET`]
+/// (`0x142D0`): a near offset per opcode from `0xA0`, resolved against
+/// [`VM_CODE_SEGMENT`] (`0x04DA`) as `0x600 + 0x4DA*16 + offset`.
+///
+/// ```text
+/// 0xA0 -> 0x11b9 -> 0x06559     0xA1 -> 0x11d2 -> 0x06572
+/// 0xA2 -> 0x11e8 -> 0x06588     0xA3 -> 0x11f6 -> 0x06596
+/// 0xA6 -> 0x126c -> 0x0660c
+/// ```
+///
+/// `handler_offset` is what the TABLE holds; `handler_file_offset` is that resolved.
+/// Both are kept because a bare `0x11B9` is meaningless without the segment, and a
+/// bare `0x6559` cannot be checked against the table bytes.
+///
+/// This is the check that pins `VM_CODE_SEGMENT` itself: `0xA0`/`0xA6` land on
+/// `0x6559`/`0x660C`, two handlers decoded independently of the table (#517). A
+/// wrong segment would move every entry together, so agreeing on two separately
+/// found addresses is not something a wrong base can do (audit-fixes #588).
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct OpcodeHandler {
     pub opcode: u8,
@@ -3778,6 +3857,51 @@ mod tests {
     }
 
     #[test]
+    /// A mode-control SENTINEL and a VARIABLE LENGTH are different properties of the
+    /// same byte, and the table says so plainly (audit-fixes #588).
+    #[test]
+    fn sentinels_and_variable_lengths_are_disjoint_in_the_real_table() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let specs = binary.vm_opcode_specs().expect("opcode tables parse");
+        // WITHIN THE REAL TABLE ONLY. `specs` runs to 0xFF because neither the walker
+        // nor dispatch bounds its index (see VM_OPCODE_TABLE_ENTRIES), so the entries
+        // past 0xD3 are the adjacent string and must not be read as opcode facts.
+        let real = &specs[..VM_OPCODE_TABLE_ENTRIES];
+        let variable: Vec<u8> = real.iter().filter(|s| s.variable_length).map(|s| s.opcode).collect();
+        // The five the vm module documents as length-0: the TEXT opcode plus four
+        // bare 1-byte ones. Read from the shipped table, not transcribed.
+        assert_eq!(variable, vec![0xA6, 0xA8, 0xAC, 0xCC, 0xD3]);
+        assert_eq!(real.last().expect("52 entries").opcode, 0xD3, "the table ends at 0xD3");
+        // And the tail really is the string, which is what makes the slice necessary:
+        // 0xD4/0xD5 spell "me"/"mo" of `memoire libre` at file 0x143A0.
+        assert_eq!(
+            (specs[52].len_mode0, specs[52].len_mode1_or_sentinel),
+            (b'm', b'e'),
+            "past the table the port faithfully reproduces the adjacent string"
+        );
+
+        let sentinels: Vec<&VmOpcodeSpec> = real.iter().filter(|s| s.mode_control).collect();
+        assert!(sentinels.len() > 20, "the table is full of mode-control opcodes");
+        for spec in &sentinels {
+            assert!(
+                !spec.variable_length,
+                "{:#04x}: bit 7 set does NOT mean variable-length",
+                spec.opcode
+            );
+            assert!(
+                spec.len_mode0 > 0,
+                "{:#04x}: a mode-control opcode still has a definite token length",
+                spec.opcode
+            );
+        }
+        // 0xA3 is the concrete case the doc names: sentinel 0xFB, length 3.
+        let a3 = real.iter().find(|s| s.opcode == 0xA3).expect("0xA3");
+        assert_eq!((a3.len_mode1_or_sentinel, a3.len_mode0, a3.mode_control), (0xFB, 3, true));
+    }
+
     fn parses_mz_header_and_address_conversions() {
         let Some(binary) = fixture() else {
             eprintln!("skipping: BLOODPRG.EXE not available");

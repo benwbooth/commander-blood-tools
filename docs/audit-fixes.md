@@ -19507,3 +19507,54 @@ the header, and `image_total` equals the file size exactly, so nothing is append
 past the image.
 
 729 tests, 0 failures.
+
+## #588 — the opcode tables are 52 entries; the port reading 96 is CORRECT
+
+Documenting `OpcodeDescriptor` and `OpcodeHandler` turned into a near-miss worth
+recording in full, because I nearly replaced faithful behaviour with tidy behaviour.
+
+WHAT IS TRUE ABOUT THE TABLES. Each holds 52 entries, `0xA0..=0xD3`, and both walls
+are visible in the file: `0x142D0 + 52*2 = 0x14338` is exactly where the length table
+starts, and `0x14338 + 52*2 = 0x143A0` is where the bytes stop being lengths and
+become the string `"memoire libre"`.
+
+WHAT I THEN GOT WRONG. Both parsers read `vm::OPCODE_DESC.len()` = 96 entries, so
+entries past `0xD3` are adjacent data — the handler reader quoting the LENGTH table
+(`0xD4`'s handler comes back `0xff03`, which is `0xA0`'s length word) and the length
+reader quoting that French string as token lengths. `vm::OPCODE_DESC`'s own tail
+spells `me`, `mo`, `ir`, `e `, `li`, `br`. I bounded both parsers to 52 and three
+tests failed, which looked like confirmation.
+
+WHY THAT WAS BACKWARDS. `vm_token_advance` has NO BOUND CHECK:
+
+    0x62b9  mov bp,0x6f18
+    0x62bf  sub al,0xa0 / cbw
+    0x62c2  add ax,ax / add bp,ax      indexed. No compare, anywhere.
+
+and dispatch tests only the end marker (`0x5614 cmp al,0xff`). A byte above `0xD3`
+really does read the neighbouring bytes as a length or a handler address. The port's
+96-entry array REPRODUCES THAT. Its tail spelling a French status string is the
+original's behaviour showing through, not a defect — and truncating to 52 would have
+given the walker a bound the game does not have.
+
+Reverted. `VM_OPCODE_TABLE_ENTRIES = 52` stays as a documented fact about the TABLE,
+explicitly not the parse length, and the new test slices with it so table facts are
+asserted only where a table exists — while also asserting that `specs[52]` is `('m',
+'e')`, so the reproduction is pinned rather than merely tolerated.
+
+`OP_MAX`'s doc claimed "OPCODE_DESC at DS:0x6F18 has 96 entries". Corrected: the
+table is 52; the ARRAY is 96 because the index is unbounded. The doc had already made
+the adjacency argument for the handler table and simply had not applied it to the one
+immediately after it.
+
+TWO GUARDS FIRED ON ME, both usefully. `cited_convert_mnemonics_match_the_encoded_
+operand_size` rejected my quoting `cwde` at `0x62BF` — `0x98` is CBW in 16-bit mode
+and capstone displays it wrong, exactly what that guard exists for. And the three
+opcode-table tests failed the moment I truncated, which is what sent me to read the
+walker instead of trusting the table's shape.
+
+ONE ASYMMETRY WORTH KEEPING: the walker SIGN-extends its index (`cbw`), so a byte
+below `0xA0` indexes BACKWARDS out of the table; dispatch ZERO-extends (`xor bh,bh`)
+and always runs forward. Same bias, two different out-of-range behaviours.
+
+730 tests, 0 failures.
