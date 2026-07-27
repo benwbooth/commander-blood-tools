@@ -15735,3 +15735,35 @@ Provisional queue: 117, from 246 at the session's start.
 
 2229 items, 1201 confirmed (53.9%), 1028 open. 798 citations verified, 0 wrong.
 724 workspace tests, 0 failures.
+
+## #480 — real names, invented enumeration
+
+Five more asset loaders, and the split needed a distinction #479 did not yet have
+to make: a function can use REAL game asset names and still discover them a way
+the game never would.
+
+Checked the names against the image: `cryorad` IS in `BLOODPRG.EXE`, `hyper_` IS
+in `BLOODPRG.EXE`, `tvgren` is not (it is a filename on disk only). So the
+cryobox and cyberspace stems are the game's own.
+
+DATA — `TvProgram` (a DESCRIPT Sequence record that self-identifies as a channel),
+`render_tv` (plays that programming with its tick-timed cues), `load_cryobox`
+(loads the named `cryorad.hnm` and takes its palette from the HNM's own header).
+
+INFRA — `load_tv_channels` and `load_cyberspace`. Both GLOB: "globs `sq/` for
+`tv*`", "globs `sq/hyper_*.hnm`, sorted so segments advance in order". The game
+loads by resource ID through the `FS:0x0C04` table; it has no directory listing
+and no sort. `load_tv_channels`'s own doc calls itself a "legacy fallback for when
+the DESCRIPT programming is unavailable", which is the port covering a case the
+game does not have.
+
+The `hyper_` case is the interesting one, because the prefix is a REAL string in
+the image and it would be easy to read that as provenance for the whole function.
+It is provenance for the NAME and not for the ENUMERATION — the game knows what
+`hyper_` files exist because its resource table lists them, and the port knows
+because it asked the filesystem. Same set, different authority.
+
+Provisional queue: 112, from 246.
+
+2229 items, 1206 confirmed (54.1%), 1023 open. 798 citations verified, 0 wrong.
+724 workspace tests, 0 failures.

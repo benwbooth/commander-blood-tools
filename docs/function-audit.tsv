@@ -393,7 +393,7 @@ WorldVisit	src/engine.rs	164	struct		UNVERIFIED	/// A world being visited from t
 ENGINE_SCREEN_WIDTH	src/engine.rs	175	const		UNVERIFIED	/// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 ENGINE_SCREEN_HEIGHT	src/engine.rs	176	const		UNVERIFIED	
 civil_from_days	src/engine.rs	180	fn		INFRA	/// Days-since-Unix-epoch → (year, month, day) civil date (Howard Hinnant's `civil_from_days`). /// Used for the TV ad channel's seasonal variants (Dec 25 / Jan 1) — no external time dep needed.
-TvProgram	src/engine.rs	196	struct		DATA?	"/// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel /// (its subtitles announce ""…watching…""), played as its chained HNM clips + music + /// tick-timed subtitle "
+TvProgram	src/engine.rs	196	struct		DATA	"/// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel /// (its subtitles announce ""…watching…""), played as its chained HNM clips + music + /// tick-timed subtitle "
 NavChartObject	src/engine.rs	208	struct	0x2AD3,0x604E,0x721A	ASM	/// One entry of the nav chart's visible-object list (`DS:0x2AD3`, built by /// `0x604E` -> `0x721A`): a real object record, its display name (`record+4`), /// its kind and the marker the picker hit-t
 hit_box	src/engine.rs	225	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`). /// /// Delegates rather than repeating the kind ladder: `VmMachine::nav_chart_hit_box` /// is the same three tests, and it is the one
 LocationPanelState	src/engine.rs	249	enum	0x2788,0x9083,0x27BF,0x9217,0x27bf,0x921C,0x9043,0x922F,0x91	ASM	/// The destination info panel's state word, `gs:0x2788`. The dispatcher at /// `0x9083` reads it as a bitfield: bit0 = zooming open, bit1 = zooming shut, /// zero = open and drawn. There is no separa
@@ -414,8 +414,8 @@ skip_intro	src/engine.rs	1066	fn		UNVERIFIED	/// Skip the rest of the boot intro
 load_alien_view	src/engine.rs	1074	fn		DATA?	/// Load an alien-examination screen's pre-rendered rotation views (the /// `pe/<stem>_a..d.hnm` set, e.g. `scrut` → Scruter Jo). Any that open are kept /// in rotation order; the screen renders once 
 load_tv_programs	src/engine.rs	1095	fn		DATA?	"/// Load the TV PROGRAMMING from the DESCRIPT data: every Sequence record whose own subtitles /// announce it as broadcast content. The records self-identify decisively: ///   `hatetv` ""YOU ARE WATCHI"
 tv_music	src/engine.rs	1164	fn		TESTED	/// The current TV channel's broadcast music (from its record), for the driver to play while /// the channel is on — e.g. `hatetv.voc` / `balise.voc`. `None` on the legacy raw channels.
-load_tv_channels	src/engine.rs	1177	fn		DATA?	"/// Load the comms ""Hate TV"" screen: the broadcast-channel HNMs named `<prefix>*` /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels /// in a stable order. The screen ren"
-render_tv	src/engine.rs	1204	fn		DATA?	/// Render the comms/TV screen: play the current broadcast channel looped. A driver /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip /// channels — the interactive part o
+load_tv_channels	src/engine.rs	1177	fn		INFRA	"/// Load the comms ""Hate TV"" screen: the broadcast-channel HNMs named `<prefix>*` /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels /// in a stable order. The screen ren"
+render_tv	src/engine.rs	1204	fn		DATA	/// Render the comms/TV screen: play the current broadcast channel looped. A driver /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip /// channels — the interactive part o
 tv_channel_count	src/engine.rs	1290	fn		UNVERIFIED	/// Number of loaded TV channels.
 switch_tv_channel	src/engine.rs	1299	fn		TESTED	/// Switch the TV channel by `delta` (wrapping), restarting the broadcast. // Restart the new broadcast from its top (clip 0, frame 0, cue clock reset).
 load_bridge	src/engine.rs	1315	fn		TESTED	/// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD /// root directory. Without it the bridge ca
@@ -509,13 +509,13 @@ bridge_nav_orb_click	src/engine.rs	2711	fn		ORACLE?	/// Whether a click hits the
 bridge_station	src/engine.rs	2725	fn		INFRA	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set). /// The station the current panorama frame belongs to, rea
 bridge_nav_destination_click	src/engine.rs	2744	fn	0x8508	ASM	/// Map a click to a nav-destination row, while the view is at the PYRAMID /// NAVIGATION ROOM. /// /// The station comes from the panorama's own frame header (`station == 2`), /// not from a frame ra
 render_bridge_background	src/engine.rs	2764	fn	0x954A	ASM	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
-load_cyberspace	src/engine.rs	2818	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
+load_cyberspace	src/engine.rs	2818	fn		INFRA	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
 start_cyberspace	src/engine.rs	2839	fn		TESTED	/// Begin (or restart) a cyberspace traversal from the first segment.
 cyber_progress	src/engine.rs	2847	fn		TESTED	/// The cyberspace traversal progress: (current segment, total segments).
 render_cyberspace	src/engine.rs	2859	fn		DATA?	/// Render the cyberspace hyperspace-traversal mini-game: fly through the real /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle /// with the mouse; each completed
 RETICLE	src/engine.rs	2884	const		UNVERIFIED	// HUD overlay: a course reticle (steered) + a journey progress bar.
 BAR	src/engine.rs	2885	const		UNVERIFIED	
-load_cryobox	src/engine.rs	2916	fn		DATA?	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
+load_cryobox	src/engine.rs	2916	fn		DATA	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
 render_cryobox	src/engine.rs	2922	fn		UNVERIFIED	/// Render the CRYOBOX cryo-chamber, looping its frames.
 apply_console_bank_remap	src/engine.rs	2939	fn	0x7AC3,0x6011	ASM	/// The montage's full-screen colour reduction at `0x7AC3` (`si=DS:0x6011`, /// `lcall 0x299:0x40E` over `(0, 0, 320, 200)`), through the table the game's /// own builder produces — see /// [`crate::p
 overlay_console_band	src/engine.rs	2971	fn	0x7AC3,0x6011	ASM	/// Overlay the intro montage's console band — FROM THE REAL ASSET. /// /// The band is `TB.BIG` panorama frame [`CONSOLE_BAND_FRAME`], rows 140..200, /// pushed through the console-bank remap table t
