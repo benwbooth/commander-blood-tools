@@ -20023,3 +20023,40 @@ per line) and that the surviving talk-HNM use computes `b3 - 1` where the game f
 `b3 + 9`. Same family, same unresolved question.
 
 733 tests, 0 failures.
+
+## #601 — vm_branch POPS, and its label said it reads an operand
+
+Two decodes and a label correction.
+
+`build_nav_source_list` is `ship_3d_nav_source_list_build_full` @`0x624B`, the
+depth-first walk that fills `DS:0x6886` with a target's selector-`0x11` children.
+The subtle part is the loop condition:
+
+    0x627e  add si,0x14               advance FIRST
+    0x6281  mov ax,[si+0x12] / cmp ax,1 / je 0x6254
+
+The test is on the NEXT entry, read after `si` has already moved, so a directory
+entry whose `+0x12` is not 1 ENDS the scan rather than being skipped — an eligible
+object past it is never reached. The port's `break` is that, and `continue` would be
+a different program. The depth guard IS the port's: `0x624B` recurses without one,
+relying on the data being a tree.
+
+THE LABEL CORRECTION IS THE REAL FIND. `vm_branch` @`0x6462` was described as
+"consumes the branch-target operand from the script stream". It does nothing of the
+kind:
+
+    0x6463  sub word gs:[0x6884],2    the 0xA0/0xA1 stack pointer
+    0x6469  mov ax,gs:[0x6884] / mov bp,ax
+    0x646f  mov si,[bp+0x6820]        si IS the script PC -> the popped word is the target
+    0x6473  mov byte gs:[0x67ad],0    and QUERY MODE is cleared on the way out
+
+It POPS the stack `0xA0` pushes (`0x656C lodsw / 0x656D mov [bp+0x6820],ax`). The
+port's `branch_fail` — a bare `branch_stack.pop()` — is exactly right and looked like
+a simplification against the label. It was the label that was wrong.
+
+`0x6473` is worth its own line: taking a branch CLEARS QUERY MODE, leaving the VM in
+mode 0 exactly as `0xA1` POP would. Nothing in the name "branch" suggests a mode
+change, and a port that jumped without it would drift into evaluating later tokens in
+the wrong mode.
+
+733 tests, 0 failures.

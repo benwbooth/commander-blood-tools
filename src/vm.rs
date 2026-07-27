@@ -4039,10 +4039,29 @@ fn record_entry_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+/// `vm_branch` @`0x6462` — and it POPS, which is the whole content of this function:
+///
+/// ```text
+/// 0x6463  sub word gs:[0x6884],2    the 0xA0/0xA1 stack pointer
+/// 0x6469  mov ax,gs:[0x6884] / mov bp,ax
+/// 0x646f  mov si,[bp+0x6820]        si IS the script PC -> that word is the target
+/// 0x6473  mov byte gs:[0x67ad],0    ...and QUERY MODE is cleared on the way out
+/// ```
+///
+/// The target was pushed by `0xA0` (`0x656C lodsw / 0x656D mov [bp+0x6820],ax`), so a
+/// branch is a POP of that stack — not a read of an operand following the opcode,
+/// which is what `labels.csv` claimed until audit-fixes #601.
+///
+/// `0x6473` is a real side effect the name does not suggest: taking a branch leaves
+/// the VM in mode 0, exactly as `0xA1` POP would.
 fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
     branch_stack.pop()
 }
 
+/// [`branch_fail`] (`vm_branch` @`0x6462`) plus the trace bookkeeping: a mode-0
+/// write that failed its guard takes the branch, and the event records
+/// `condition_passed: Some(false)` so a reader can tell a FAILED WRITE from a failed
+/// query — both branch, for different reasons (audit-fixes #601).
 fn push_mode0_branch_fail(
     branch_stack: &mut Vec<u16>,
     branch_events: &mut Vec<BranchEvent>,
@@ -6330,9 +6349,39 @@ impl VmMachine {
         entries
     }
 
+    /// `ship_3d_nav_source_list_build_full` @`0x624B` — the depth-first walk that
+    /// fills `DS:0x6886` with a target's selector-`0x11` children:
+    ///
+    /// ```text
+    /// 0x624f  lds si,gs:[0x672c]        the 20-byte directory
+    /// 0x6254  mov bx,[si+0x10]          the entry's object offset
+    /// 0x6258  mov bx,es:[bx]            the object's KIND
+    /// 0x625b  mov ax,0x11 / call 0x6023 vm_field_offset(selector 0x11, kind)
+    /// 0x6262  or ax,ax / je 0x627e      no such field for this kind -> skip
+    /// 0x6268  cmp di,es:[bx] / jne      the field must equal the CURRENT target
+    /// 0x626d  mov [bp],ax / add bp,2    append the object
+    /// 0x6276  push di / mov di,ax       ...and RECURSE with it as the new target
+    /// 0x627a  call 0x624b / 0x627d pop di
+    /// 0x627e  add si,0x14               next directory entry
+    /// 0x6281  mov ax,[si+0x12] / cmp ax,1 / je 0x6254
+    /// ```
+    ///
+    /// THE LOOP CONDITION IS ON THE NEXT ENTRY, read after `si` has already advanced:
+    /// a directory entry whose `+0x12` is not 1 ENDS the scan rather than being
+    /// skipped, so an eligible object sitting past it is never reached. That is the
+    /// `break` in the port, and it is not the same as `continue`.
+    ///
+    /// `push di` / `pop di` around the recursion is why the routine returns the
+    /// CALLER's target in `di` (#194) — the recursion does not clobber it.
+    ///
+    /// THE DEPTH GUARD IS THE PORT'S. `0x624B` recurses with no limit; the game's
+    /// data is a tree and it relies on that. `depth > 32` bounds a cycle that would
+    /// otherwise hang the walker on malformed input, and is a port choice rather
+    /// than a decode (audit-fixes #601).
     pub fn build_nav_source_list(&self, target: u16) -> Vec<u16> {
-        // Named for its selector so it does not collide with the token walker
-        // `walk` in this same file (the audit ledger keys rows by name+file).
+        /// The recursive body of `0x624B`; see [`VmMachine::build_nav_source_list`]
+        /// for the disassembly. Named for its selector so it does not collide with
+        /// the token walker `walk` in this file.
         fn walk_selector11_children(
             m: &VmMachine,
             target: u16,
