@@ -16925,3 +16925,32 @@ question behind a real address.
 `ship3d.rs`: 15 uncited constants -> 13.
 
 620 tests, 0 failures.
+
+## #510 — one row boundary, two names; and "a reason" is not "evidence"
+
+Three constants, and two of them were justified by REASONING rather than cited.
+
+`SHIP_3D_PROJECTION_SCREEN_HEIGHT` carried the note "the DOS pixel helper computes
+`y * 320 + x`; 200 native rows cover it". That is a correct inference and not a
+citation — nothing in it could fail if the value were wrong. The binary states it
+directly where it restores the clip: `mov word [0x523b],0xc8` @`0xB41D` (#495).
+
+`SHIP_3D_HUD_BAND_TOP = 165` is the SAME `0xA5` the navigation routine writes as the
+clip bottom @`0xB40D`. The scene band ends exactly where the HUD band begins, so
+this is ONE row boundary written into ONE cell and read under two names — not two
+independently chosen values that happen to match. Anyone changing one must change
+the other, and until now nothing in either doc said so.
+
+`RADIO_SND_PATH_OFFSET` is `mov si,0xd16` @`0x8860`, `sn\radio.snd`, and the detail
+worth keeping is the argument: the loader `lcall 0xb1b:0x855` @`0x8866` is called
+with **AX=1** here, where the `sn\3D.snd` and `sn\tb.snd` loads of #484/#506 pass
+**AX=0**. Three calls to one loader, two different modes — so AX is a parameter the
+port must carry, not a constant zero. The routine is four instructions and its `ret`
+@`0x886B` lands immediately before nav-choice handler 4, which is how #494's
+dispatch table and this load corroborate each other's addresses.
+
+WITH THESE, `ship3d.rs` HAS 10 UNCITED CONSTANTS LEFT, from 115 when the tranche
+began. The remainder are the target-record and navigation-record flags, which need
+their own routines found rather than another pass over ones already read.
+
+620 tests, 0 failures.

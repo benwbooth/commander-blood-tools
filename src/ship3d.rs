@@ -206,6 +206,11 @@ pub const SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG: u8 = 0x04;
 /// and the handler runs the gate `lcall 0x8b:0xfad` @`0x88AA` while it is set
 /// (audit-fixes #494).
 pub const SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING: u8 = 2;
+/// `mov si,0xd16` @`0x8860` — `sn\radio.snd` (`DS:0x0D16`, file `0xE136`), handed
+/// to the bank loader `lcall 0xb1b:0x855` @`0x8866` with **AX=1**, where the
+/// `3D.snd`/`tb.snd` loads of #484/#506 pass AX=0. The whole routine is four
+/// instructions ending `ret` @`0x886B`, immediately before nav-choice handler 4
+/// (#494) — audit-fixes #510.
 pub const SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET: u16 = 0x0d16;
 /// `mov si,0x2567` @`0x8871`, the word list handler 4 hands to the layout widget
 /// (audit-fixes #494). Handler 4 is the FIFTH entry of the dispatch table at
@@ -2805,6 +2810,9 @@ pub fn randomize_ship_3d_point_cloud(prng: &mut BloodPrng) -> Vec<Ship3dProjecti
 
 /// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel
 /// helper computes `y * 320 + x` into the active page; 200 native rows cover it.
+/// 200 rows, and the binary says so where it RESTORES the clip: `mov word
+/// [0x523b],0xc8` @`0xB41D` (#495). Previously this was justified as "200 native
+/// rows cover it", which is a reason rather than evidence (audit-fixes #510).
 pub const SHIP_3D_PROJECTION_SCREEN_HEIGHT: usize = 200;
 
 /// One plotted starfield pixel and, alongside the returned count, the whole
@@ -2901,6 +2909,10 @@ pub fn ship_3d_point_cloud_points(
 /// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the
 /// scene band that ends at row 0xA5=165), where the engine draws the grey
 /// pyramid-nav grid + central eye-orb. See re/REVERSE.md.
+/// 165 — the same `0xA5` the navigation routine writes as the clip bottom,
+/// `mov word [0x523b],0xa5` @`0xB40D` (#495). The scene band ENDS where the HUD
+/// band BEGINS, so one row boundary is written into one cell and read under two
+/// names; it is not two independently chosen values (audit-fixes #510).
 pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 
 /// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed
