@@ -18595,3 +18595,28 @@ A TOOL THAT WILL BE FORGOTTEN. #537 reached the same shape from the other side b
 making `audit_settle.py` refuse rather than trusting me to run tests first.
 
 726 tests, 0 failures.
+
+## #560 — the same matrix column in a FIFTH file, spelled in decimal
+
+`script.rs` holds `OBJECT_LOCATION_FIELD = 24` and `OBJECT_TALK_FIELD = 58`. These
+are the LOCATION and TALK columns of the field-offset matrix at `DS:0x6D60` — the
+same two values as `vm::LOCATION_FIELD`, `extract::SCRIPT_OBJECT_LOCATION_FIELD` and
+`extract::SCRIPT_OBJECT_TALK_FIELD` (#548).
+
+**Three files, one matrix column, and the fifth cross-file duplicate this session**
+after #526, #538, #539 and #548.
+
+`58` is the detail worth keeping: every other copy spells it `0x3A`. A decimal
+spelling of a hex-shaped value is invisible to a reader scanning for `0x3A` and to
+any grep for it, which is part of why five homes accumulated without anyone noticing
+— and it is the same trap #533 found in `bloodprg.rs`, where five DS offsets were
+written in decimal among hex neighbours and stayed uncited longest.
+
+`SUBTITLE_WRAP_COLUMN = 35` is NOT settled. Its doc says the game's dialogue "is
+broken into ~35-column lines" — a tilde, which is an observation about output rather
+than a decoded width. Reading a wrap width off rendered text is exactly the
+capture-derived reasoning the prime rule forbids as a SOURCE, so it stays UNVERIFIED
+until the wrapping routine is found. That the value may well be right does not make
+the reasoning admissible.
+
+726 tests, 0 failures.
