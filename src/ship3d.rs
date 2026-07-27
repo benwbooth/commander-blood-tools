@@ -3244,7 +3244,25 @@ pub fn project_star_map_point(
     matrix: &Ship3dProjectionMatrix,
 ) -> Option<(i32, i32, i32)> {
     let m = &matrix.terms;
-    let t = [pos[0] - origin[0], pos[1] - origin[1], pos[2] - origin[2]];
+    // 16-BIT SUBTRACT, THEN SIGN-EXTEND — the order the routine uses, and not the
+    // same function as subtracting in 32 bits (audit-fixes #586):
+    //
+    //   0x9be8  mov ax,[0x2f65] / sub [di],ax        x -= origin x   (WORD)
+    //   0x9bed  mov ax,[0x2f67] / sub [di+2],ax      y -= origin y   (WORD)
+    //   0x9bf3  mov ax,[0x2f69] / sub [di+4],ax      z -= origin z   (WORD)
+    //   0x9bf9  movsx eax, word ptr [di]             THEN widen
+    //
+    // The difference is carried in 16 bits and wraps there, so a separation past
+    // 32767 comes out the far side as a small negative. Subtracting in `i32` keeps
+    // the true distance instead, and the two agree only while `|pos - origin|`
+    // stays inside `i16` — which the intro camera does not guarantee, since
+    // `origin_x` is advanced with `wrapping_sub` and passes through `0x8000`.
+    let delta = |p: i32, o: i32| ((p as u16).wrapping_sub(o as u16)) as i16 as i32;
+    let t = [
+        delta(pos[0], origin[0]),
+        delta(pos[1], origin[1]),
+        delta(pos[2], origin[2]),
+    ];
     let mut depth = (t[0] * m[6] + t[1] * m[7] + t[2] * m[8]) >> 15;
     if depth == 0 {
         return None;
@@ -4056,6 +4074,16 @@ impl Ship3dCameraApproach {
     }
 
     /// The camera origin as a projection origin (for `project_star_map_point` etc.).
+    ///
+    /// The three cells the projector subtracts: `[0x2F65]`, `[0x2F67]`, `[0x2F69]`,
+    /// read at `0x9BE8`/`0x9BED`/`0x9BF3` and seeded by `mov word [0x2f65],0x2710`
+    /// @`0x8AFE` and `mov word [0x2f69],0x4e20` @`0x8AF2`.
+    ///
+    /// The `as i16` here is presentation only — [`project_star_map_point`] does the
+    /// subtraction in 16 bits itself (`sub [di],ax` then `movsx`), so widening the
+    /// origin first cannot change the result. It is signed rather than zero-extended
+    /// so the value READS as the coordinate it is when printed or asserted on
+    /// (audit-fixes #586).
     pub fn origin(&self) -> [i32; 3] {
         [
             self.origin_x as i16 as i32,
@@ -5821,6 +5849,31 @@ mod tests {
         assert_eq!((x, y, sc), (162, 105, 0x40000));
         // depth 0 -> culled
         assert!(project_star_map_point([1, 1, 0], origin, &m).is_none());
+    }
+
+    /// `0x9BE8`..`0x9BF9`: the camera subtract happens in 16 BITS and the result is
+    /// sign-extended after. A separation past 32767 therefore comes out negative,
+    /// and subtracting in `i32` — which the port used to do — gives a different
+    /// point entirely (audit-fixes #586).
+    #[test]
+    fn the_camera_subtract_wraps_in_sixteen_bits() {
+        let m = Ship3dProjectionMatrix { terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768] };
+        // z separation 40004 - 4 = 40000, which does NOT fit in i16: as a word it is
+        // 0x9C40, sign-extended to -25536. Depth is therefore negative, and the
+        // `depth += 0x10000` fixup @0x9C29 is what rescues it.
+        let (_, _, scale) = project_star_map_point([10, 20, 40004], [0, 0, 4], &m)
+            .expect("negative depth is fixed up, not culled");
+        // 16-bit reading: depth = (-25536*32768)>>15 = -25536, +0x10000 -> 40000.
+        assert_eq!(scale, 0x100000 / 40000, "the wrapped, sign-extended depth");
+        // A 32-bit subtract would have given depth 40000 with NO fixup, and the
+        // fixup only fires on a negative — so the two readings agree here by
+        // arithmetic accident. The x axis is where they part company:
+        let (x16, _, _) = project_star_map_point([40010, 20, 40004], [10, 0, 4], &m)
+            .expect("projects");
+        // 16-bit: 40000 -> -25536, so sx = ((-25536*128)>>7)/40000 + 160 = 160.
+        assert_eq!(x16, 160 + (-25536i32) / 40000, "x from the WRAPPED delta");
+        // 32-bit would have been 160 + 40000/40000 = 161. Different pixel.
+        assert_ne!(x16, 161, "a 32-bit subtract would put this star a pixel right");
     }
 
     #[test]

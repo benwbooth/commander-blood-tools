@@ -19430,3 +19430,43 @@ accumulator high words at `XDB:croolis:0x0BFA`/`0x0C00`/`0x0C06`, identical in s
 which is what settles the #269/#270 asymmetry: it came from decoding one axis.
 
 729 tests, 0 failures.
+
+## #586 — the star-map camera subtract belongs in 16 bits, and the port did it in 32
+
+Settling `Ship3dIntroCamera::origin` meant reading what actually consumes it, and
+the consumer is doing something the port was not:
+
+    0x9be8  mov ax,[0x2f65] / sub [di],ax      x -= origin x    WORD subtract
+    0x9bed  mov ax,[0x2f67] / sub [di+2],ax    y -= origin y    WORD subtract
+    0x9bf3  mov ax,[0x2f69] / sub [di+4],ax    z -= origin z    WORD subtract
+    0x9bf9  movsx eax, word ptr [di]           THEN widen to 32
+
+`project_star_map_point` computed `pos[i] - origin[i]` in `i32`. That is not the
+same function. The difference is carried in 16 bits and WRAPS there, so a separation
+past 32767 emerges as a small negative — a star far ahead reads as slightly behind.
+Subtracting in 32 bits keeps the true distance and never wraps.
+
+The two agree whenever `|pos - origin|` stays inside `i16`, which is why nothing
+caught it: every existing test used small coordinates, and all 628 passed both
+before and after the change. The intro camera does not guarantee that range —
+`origin_x` is advanced with `wrapping_sub` and passes through `0x8000`, at which
+point `as i16` reads it as −32768 and the separation from a positive point exceeds
+`i16` immediately.
+
+Fixed to the binary's order, and pinned by a test that FAILS on the old form:
+
+    x from the WRAPPED delta: left: 161  right: 160
+
+One pixel at that input, more at others. I checked the failure rather than assuming
+it, because a test written after a change tends to encode the change.
+
+While there: `origin()`'s `as i16` is presentation only. The projector does its own
+16-bit subtraction, so widening the origin first cannot change the result; it is
+signed so the value reads as the coordinate it is. Said explicitly, because a
+sign-extension that looks load-bearing invites someone to "fix" the wrapping one to
+match it.
+
+Also settled `engine::ds_text` and `vm::execute_trace_with_context` as INFRA —
+a map lookup and a two-line delegation, neither carrying a decoded rule.
+
+729 tests, 0 failures.
