@@ -17364,3 +17364,45 @@ an ARRAY's provenance, which is not what I built it for.
 `vm.rs` is now at 3 uncited constants, from 37.
 
 622 tests, 0 failures.
+
+## #524 — five UI strings the port was still transcribing
+
+`STATUS_STRING_TABLE` carries a note this project wrote earlier: the strings "used
+to be [here], pinned to these bytes by a test — a verified transcription, which is
+far better than a loose literal and still A COPY: it breaks against a differing
+build instead of following it. The port now READS them." That conversion was done
+for the location headers and never for five others:
+
+```rust
+pub const LOADING_TEXT: &'static str = "LOADING";
+pub const PAUSE_TEXT:   &'static str = "PAUSE";
+pub const CONFIRM_TITLE: &'static str = "ARE_YOU_SURE?";
+pub const CONFIRM_YES:   &'static str = "YES";
+pub const CONFIRM_NO:    &'static str = "NO";
+```
+
+All five were pinned by tests, so nothing was WRONG — and all five were still
+content-bearing literals, which `CLAUDE.md` calls a defect outright. Replaced with
+`EngineState::load_ds_strings`, which reads them from the image at the DS offsets
+the instructions name, keyed into a map; `main.rs` calls it beside the OPTION-menu
+labels it already reads that way.
+
+The DS offsets keep their own citations, and they are LOADS, not data addresses:
+`mov si,0x159` @`0x16BC`, `mov si,0x166` @`0x1ABB`, `mov si,0x17b` @`0x14FE`,
+`mov si,0x189` @`0x150C`, `mov si,0x18d` @`0x151A`, each immediately before its draw
+call.
+
+TWO THINGS THE DECODE ADDED beyond removing literals. The confirm dialog places YES
+and NO by RELATIVE steps from the title — `add bx,0x14 / add dx,0x11` @`0x150F`
+then `add bx,0x3c` @`0x151D` — so the three positions are one anchor plus offsets,
+not three independent coordinates. And the two status overlays, which look symmetric
+in this file, use DIFFERENT render entries and register conventions: LOADING passes
+`ax`/`bx`/`dl` to `0x299:0xD6`, PAUSE passes `bx`/`dx`/`al` to `0x299:0x498`. Only
+the shared `y = 0x60` is genuinely common.
+
+The tests were rewritten to prove the CHAIN rather than the value: the DS offset is
+read from the instruction operand, the string is read from the image at that offset,
+and the engine's loaded string must equal it. No literal appears anywhere in the
+assertion.
+
+622 tests, 0 failures.

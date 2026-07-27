@@ -553,6 +553,8 @@ pub struct EngineState {
     /// contextual gold box over the panorama): its item labels, or empty = closed. The last
     /// item is always CANCEL. `console_box_kind` = which console row opened it.
     pub console_box: Vec<String>,
+    /// UI strings read from `BLOODPRG.EXE`, keyed by DS offset (audit-fixes #524).
+    pub ds_strings: std::collections::HashMap<u16, String>,
     /// When set, the hand is NOT software-rasterized into the 320x200 framebuffer;
     /// instead its triangles are exported here each frame for the GPU presenter
     /// (window-resolution rendering with per-pixel texel sampling).
@@ -806,6 +808,7 @@ impl EngineState {
             bob_topics: Vec::new(),
             presentation_open_phase: 0,
             console_box: Vec::new(),
+            ds_strings: std::collections::HashMap::new(),
             gpu_hand: None,
             gpu_hand_enabled: false,
             gpu_stars: None,
@@ -2134,11 +2137,28 @@ impl EngineState {
     /// ```
     ///
     /// Both land on y=96 — the screen's vertical centre band.
-    pub const LOADING_TEXT: &'static str = "LOADING";
+    /// `mov si,0x159` @`0x16BC` — the string is READ from the image, not held as a
+    /// literal (audit-fixes #524). See [`EngineState::load_ds_strings`].
+    pub const LOADING_TEXT_DS: u16 = 0x159;
+    /// `mov ax,0x82` @`0x16BF` (x) and `mov bx,0x60` @`0x16C2` (y)
+    /// (audit-fixes #523).
     pub const LOADING_POS: (usize, usize) = (0x82, 0x60);
+    /// `mov dl,0xef` @`0x16C5`, passed to `lcall 0x299,0xd6` @`0x16C9` —
+    /// `RENDER_FIXED_8X8_TEXT_OFFSET` (#490), with the colour in DL
+    /// (audit-fixes #523).
     pub const LOADING_COLOR: u8 = 0xEF;
-    pub const PAUSE_TEXT: &'static str = "PAUSE";
+    /// `mov si,0x166` @`0x1ABB` (audit-fixes #524).
+    pub const PAUSE_TEXT_DS: u16 = 0x166;
+    /// `mov bx,0x87` @`0x1ABE` (x) and `mov dx,0x60` @`0x1AC1` (y) — note the
+    /// registers are NOT the ones LOADING uses (audit-fixes #523).
     pub const PAUSE_POS: (usize, usize) = (0x87, 0x60);
+    /// `mov al,0xe8` @`0x1AC4`, passed to `lcall 0x299,0x498` @`0x1AC6` —
+    /// `RENDER_PLANAR_UI_TEXT_OFFSET` (#490), a DIFFERENT text entry from
+    /// LOADING's, with the colour in AL rather than DL.
+    ///
+    /// The two overlays look symmetric in this file and are not: different render
+    /// routines, different register conventions, and only the shared y=0x60 is
+    /// genuinely common (audit-fixes #523).
     pub const PAUSE_COLOR: u8 = 0xE8;
 
     /// The QUICKSAVE slot name (`0x1B58`): the game copies the literal `LAST` into
@@ -2148,19 +2168,54 @@ impl EngineState {
     pub const QUICKSAVE_SLOT_NAME: &'static str = "LAST";
     pub const QUICKSAVE_NAME_BUFFER_DS: u16 = 0x270D;
 
+    /// The DS offsets whose strings this engine draws. Each is cited on its own
+    /// constant; they are gathered here so `load_ds_strings` has one list.
+    pub const UI_STRING_OFFSETS: [u16; 5] = [
+        Self::LOADING_TEXT_DS,
+        Self::PAUSE_TEXT_DS,
+        Self::CONFIRM_TITLE_DS,
+        Self::CONFIRM_YES_DS,
+        Self::CONFIRM_NO_DS,
+    ];
+
+    /// Read the UI strings out of `BLOODPRG.EXE` (audit-fixes #524).
+    ///
+    /// The port used to hold `"LOADING"`, `"PAUSE"`, `"ARE_YOU_SURE?"`, `"YES"`
+    /// and `"NO"` as `&'static str` literals pinned to these bytes by a test. That
+    /// is a VERIFIED TRANSCRIPTION and still a copy: it breaks against a differing
+    /// build instead of following it. `STATUS_STRING_TABLE` reached the same
+    /// conclusion and was converted; these had not been.
+    pub fn load_ds_strings(&mut self, exe: &[u8]) {
+        const DS_BASE: usize = 0xD420;
+        for off in Self::UI_STRING_OFFSETS {
+            let start = DS_BASE + off as usize;
+            let Some(len) = exe.get(start..).and_then(|t| t.iter().position(|&b| b == 0))
+            else {
+                continue;
+            };
+            self.ds_strings
+                .insert(off, String::from_utf8_lossy(&exe[start..start + len]).into_owned());
+        }
+    }
+
+    /// A UI string by its DS offset; empty when the image has not been loaded.
+    pub fn ds_text(&self, off: u16) -> &str {
+        self.ds_strings.get(&off).map_or("", String::as_str)
+    }
+
     /// Draw one of the centred status overlays at its own decoded position:
     /// `LOADING` from `0x16BC` and `PAUSE` from `0x1ABB`.
     pub fn draw_status_overlay(&mut self, loading: bool) {
         let (text, (x, y), color) = if loading {
-            (Self::LOADING_TEXT, Self::LOADING_POS, Self::LOADING_COLOR)
+            (self.ds_text(Self::LOADING_TEXT_DS).to_string(), Self::LOADING_POS, Self::LOADING_COLOR)
         } else {
-            (Self::PAUSE_TEXT, Self::PAUSE_POS, Self::PAUSE_COLOR)
+            (self.ds_text(Self::PAUSE_TEXT_DS).to_string(), Self::PAUSE_POS, Self::PAUSE_COLOR)
         };
         draw_text_indexed(
             &mut self.framebuffer,
             ENGINE_SCREEN_WIDTH,
             ENGINE_SCREEN_HEIGHT,
-            text,
+            &text,
             x,
             y,
             color,
@@ -2215,14 +2270,28 @@ impl EngineState {
     pub const CONFIRM_TITLE_POS: (usize, usize) = (100, 88);
     pub const CONFIRM_YES_REGION: (usize, usize, usize, usize) = (120, 105, 30, 10);
     pub const CONFIRM_NO_REGION: (usize, usize, usize, usize) = (180, 105, 20, 10);
-    /// The game's own strings — `DS:0x17B`, `DS:0x189`, `DS:0x18D`.
-    pub const CONFIRM_TITLE: &'static str = "ARE_YOU_SURE?";
-    pub const CONFIRM_YES: &'static str = "YES";
-    pub const CONFIRM_NO: &'static str = "NO";
-    pub const CONFIRM_STRING_TABLE: [(u16, usize, &'static str); 3] = [
-        (0x017B, 0x0D59B, Self::CONFIRM_TITLE),
-        (0x0189, 0x0D5A9, Self::CONFIRM_YES),
-        (0x018D, 0x0D5AD, Self::CONFIRM_NO),
+    /// The game's own strings, READ from the image rather than transcribed
+    /// (audit-fixes #524). The table keeps the `(DS offset, file offset)` pairs as
+    /// the address evidence — the same shape `STATUS_STRING_TABLE` settled on.
+    ///
+    /// The title itself: `mov si,0x17b` @`0x14FE`, drawn by `lcall 0x299,0x176`
+    /// @`0x1507`.
+    pub const CONFIRM_TITLE_DS: u16 = 0x017B;
+    /// `mov si,0x189` @`0x150C`, drawn by `lcall 0x299,0x176` @`0x1515` after
+    /// `add bx,0x14` / `add dx,0x11` step the cursor from the title
+    /// (audit-fixes #524).
+    pub const CONFIRM_YES_DS: u16 = 0x0189;
+    /// `mov si,0x18d` @`0x151A`, drawn @`0x1520` after `add bx,0x3c` — so YES and
+    /// NO are placed by RELATIVE steps from the title, not absolute positions
+    /// (audit-fixes #524).
+    pub const CONFIRM_NO_DS: u16 = 0x018D;
+    /// The `(DS offset, file offset)` pairs, kept as address evidence now that the
+    /// strings themselves are read: `0x17B` @`0x14FE`, `0x189` @`0x150C`, `0x18D`
+    /// @`0x151A` (audit-fixes #524).
+    pub const CONFIRM_STRING_TABLE: [(u16, usize); 3] = [
+        (0x017B, 0x0D59B),
+        (0x0189, 0x0D5A9),
+        (0x018D, 0x0D5AD),
     ];
 
     /// Draw the confirm dialog. The box is the same tinted window every other
@@ -2245,15 +2314,15 @@ impl EngineState {
         // `0x299:0x176`, called once per line at 0x1507/0x1515/0x1520.)
         const TEXT: u8 = 0xE8;
         for (text, (x, y)) in [
-            (Self::CONFIRM_TITLE, Self::CONFIRM_TITLE_POS),
-            (Self::CONFIRM_YES, (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1)),
-            (Self::CONFIRM_NO, (Self::CONFIRM_NO_REGION.0, Self::CONFIRM_NO_REGION.1)),
+            (self.ds_text(Self::CONFIRM_TITLE_DS).to_string(), Self::CONFIRM_TITLE_POS),
+            (self.ds_text(Self::CONFIRM_YES_DS).to_string(), (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1)),
+            (self.ds_text(Self::CONFIRM_NO_DS).to_string(), (Self::CONFIRM_NO_REGION.0, Self::CONFIRM_NO_REGION.1)),
         ] {
             draw_text_indexed(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
-                text,
+                &text,
                 x,
                 y,
                 TEXT,
@@ -5784,11 +5853,23 @@ mod tests {
                 std::str::from_utf8(&exe[f..end]).unwrap().to_string()
             };
             // LOADING: si=0x159 @0x16BC, ax=0x82 @0x16BF, bx=0x60 @0x16C2, dl=0xEF @0x16C5.
-            assert_eq!(string_at(imm16(0x16BD)), EngineState::LOADING_TEXT);
+            // The DS offset comes from the INSTRUCTION OPERAND; the string then
+            // comes from the image. No literal in between (audit-fixes #524).
+            assert_eq!(imm16(0x16BD), EngineState::LOADING_TEXT_DS as usize);
+            let mut probe = EngineState::new();
+            probe.load_ds_strings(&exe);
+            assert_eq!(
+                probe.ds_text(EngineState::LOADING_TEXT_DS),
+                string_at(imm16(0x16BD))
+            );
             assert_eq!((imm16(0x16C0), imm16(0x16C3)), EngineState::LOADING_POS);
             assert_eq!(imm8(0x16C6), EngineState::LOADING_COLOR);
             // PAUSE: si=0x166 @0x1ABB, bx=0x87 @0x1ABE, dx=0x60 @0x1AC1, al=0xE8 @0x1AC4.
-            assert_eq!(string_at(imm16(0x1ABC)), EngineState::PAUSE_TEXT);
+            assert_eq!(imm16(0x1ABC), EngineState::PAUSE_TEXT_DS as usize);
+            assert_eq!(
+                probe.ds_text(EngineState::PAUSE_TEXT_DS),
+                string_at(imm16(0x1ABC))
+            );
             assert_eq!((imm16(0x1ABF), imm16(0x1AC2)), EngineState::PAUSE_POS);
             assert_eq!(imm8(0x1AC5), EngineState::PAUSE_COLOR);
             // Quicksave: si=0x161 "LAST" @0x1B58, di=0x270D @0x1B5B.
@@ -5799,7 +5880,13 @@ mod tests {
             );
         }
 
+        let Ok(exe_bytes) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
         let mut e = EngineState::new();
+        e.load_ds_strings(&exe_bytes);
         e.framebuffer.fill(0);
         e.draw_status_overlay(true);
         let painted = |e: &EngineState, color: u8, (x, y): (usize, usize)| {
@@ -5827,10 +5914,17 @@ mod tests {
         if let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
             .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
         {
-            for (ds_off, file_off, text) in EngineState::CONFIRM_STRING_TABLE {
+            let mut probe = EngineState::new();
+            probe.load_ds_strings(&exe);
+            for (ds_off, file_off) in EngineState::CONFIRM_STRING_TABLE {
                 let end = file_off + exe[file_off..].iter().position(|&b| b == 0).unwrap();
-                assert_eq!(std::str::from_utf8(&exe[file_off..end]).unwrap(), text);
+                // The loader reaches the same bytes the file offset names.
+                assert_eq!(
+                    probe.ds_text(ds_off),
+                    std::str::from_utf8(&exe[file_off..end]).unwrap()
+                );
                 assert_eq!(file_off - 0xD420, ds_off as usize);
+                assert!(!probe.ds_text(ds_off).is_empty());
             }
             // The rect immediates at 0x14E6..0x14F1 and the two region records.
             let imm16 = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]) as usize;
@@ -5862,7 +5956,13 @@ mod tests {
             EngineState::CONFIRM_YES_REGION.0 + 0x3C
         );
 
+        let Ok(exe_bytes) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
         let mut e = EngineState::new();
+        e.load_ds_strings(&exe_bytes);
         for (i, entry) in e.scene_palette.iter_mut().enumerate() {
             *entry = [i as u8, i as u8, i as u8];
         }
@@ -8498,8 +8598,10 @@ mod tests {
             String::from_utf8_lossy(&exe[start..end]).to_string()
         };
 
-        assert_eq!(at(0x159), EngineState::LOADING_TEXT);
-        assert_eq!(at(0x166), EngineState::PAUSE_TEXT);
+        let mut probe = EngineState::new();
+        probe.load_ds_strings(&exe);
+        assert_eq!(at(0x159), probe.ds_text(EngineState::LOADING_TEXT_DS));
+        assert_eq!(at(0x166), probe.ds_text(EngineState::PAUSE_TEXT_DS));
         assert_eq!(at(0x161), EngineState::QUICKSAVE_SLOT_NAME);
         // The block is contiguous and NUL-separated: each string ends exactly
         // where the next begins, which is what makes these offsets meaningful

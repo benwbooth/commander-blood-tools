@@ -470,6 +470,20 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         .cloned()
         .unwrap_or_default();
 
+    // The UI strings the engine draws (LOADING / PAUSE / the confirm dialog) are
+    // READ from the executable, not held as literals (audit-fixes #524) — the same
+    // rule the OPTION menu labels above follow.
+    if let Some(exe_bytes) = [
+        format!("{iso}/BLOODPRG.EXE"),
+        format!("{assets}/BLOODPRG.EXE"),
+        "re/bin/BLOODPRG.EXE".to_string(),
+    ]
+    .iter()
+    .find_map(|path| std::fs::read(path).ok())
+    {
+        engine.load_ds_strings(&exe_bytes);
+    }
+
     // Boot straight into the intro logos + cutscene, exactly as the real game does
     // (MINDSCAPE → Microfolie's → intro cutscene → CRYO credit → crew showcase) — NOT a
     // static box-art title screen (the real game has none; `BLOOD.LBM` box art isn't part
