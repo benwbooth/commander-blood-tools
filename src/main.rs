@@ -1496,7 +1496,30 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                             ),
                                         );
                                     }
-                                    1 => music.stop(), // MUSIC_OFF
+                                    // ONE-WAY WHERE THE GAME TOGGLES
+                                    // (audit-fixes #464). The game does not have a
+                                    // MUSIC_OFF row; it has ONE row whose LABEL is
+                                    // swapped by patching the pointer list in place:
+                                    //
+                                    //   0x88F0  mov ax, 0x2578        MUSIC_ON
+                                    //   0x88F3  mov word [0x2569], ax  <- slot 1 of
+                                    //                                     the list at
+                                    //                                     DS:0x2567
+                                    //   0x8907  mov ax, 0x2581        MUSIC_OFF
+                                    //   0x890A  mov word [0x2569], ax  <- same slot
+                                    //
+                                    // with `mov byte [0xba3], 0/1` @0x88EB/0x8902 as
+                                    // the music-enabled flag. `MUSIC_ON` (DS:0x2578)
+                                    // and `MUSIC_OFF` (DS:0x2581) are adjacent
+                                    // strings (#463), which is why only one appears
+                                    // in the list: the list is SELF-MODIFYING.
+                                    //
+                                    // This port stops music and never starts it, and
+                                    // `bloodprg::music_on_label` has no caller. The
+                                    // fix is to hold the [0xBA3] flag, swap the row's
+                                    // label from it, and start rather than stop when
+                                    // it is clear.
+                                    1 => music.stop(), // MUSIC_OFF (see above)
                                     2 => {
                                         // SAVE: the slot list with the edit
                                         // buffer swapped into the renamed row

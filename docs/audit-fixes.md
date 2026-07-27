@@ -15199,3 +15199,44 @@ was cheap: there was nothing to disassemble, only bytes to look at.
 
 2229 items, 1123 confirmed (50.4%), 1106 open. 797 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #464 — the game toggles a label by patching its own pointer list
+
+#463 found `MUSIC_ON` (`DS:0x2578`) sitting immediately before `MUSIC_OFF`
+(`DS:0x2581`), with only the OFF one in the menu's pointer list. Followed it, and
+the mechanism is complete:
+
+    0x88EB  mov byte ptr [0xba3], 0    music-enabled flag CLEAR
+    0x88F0  mov ax, 0x2578             MUSIC_ON
+    0x88F3  mov word ptr [0x2569], ax  <- SLOT 1 of the list at DS:0x2567
+
+    0x8902  mov byte ptr [0xba3], 1    flag SET
+    0x8907  mov ax, 0x2581             MUSIC_OFF
+    0x890A  mov word ptr [0x2569], ax  <- the same slot
+
+`DS:0x2569` is `0x2567 + 2` — the second entry of the very pointer list #463 read.
+The game does not have a MUSIC_OFF row; it has ONE row whose label is swapped by
+PATCHING THE LIST IN PLACE. That is why only one of the two adjacent strings is
+ever named statically, and it answers #463's "why does `music_on_label` need its
+own address" completely: nothing indexes to it, the pointer is rewritten.
+
+THE PORT IS ONE-WAY. `1 => music.stop()` stops music and no path starts it, the
+`[0xBA3]` flag is not held, and `bloodprg::music_on_label` has NO CALLER — the
+dead-accessor shape of #385 and #404. So the row is a switch where the game has a
+toggle, and a player who turns music off cannot turn it back on.
+
+Recorded at the fix site rather than fixed: the port's OPTION box and its console
+box are two different paths (the OPTION box renders only `CANCEL`), so wiring the
+flag correctly is a restructure, not a line. What the next pass needs is now
+written where it will be read — the flag cell, the two label addresses, the slot
+that gets patched.
+
+ALSO SPOTTED: `engine.rs` compares against an inline
+`["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"]`, which is the same content
+literal #385 deleted as `CONSOLE_MENU`. It survived because it is a COMPARISON
+rather than a declaration, and `check_dead_pub_consts.py` only looks at `pub
+const`. Noted, not removed — it drives `is_baked_menu`, so deleting it needs the
+replacement decided first.
+
+2229 items, 1123 confirmed (50.4%), 1106 open. 800 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
