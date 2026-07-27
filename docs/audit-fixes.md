@@ -18024,3 +18024,31 @@ phantom generator; #515 made this point about the GS prefix and it applies to an
 address not already known to be an instruction boundary.
 
 723 tests, 0 failures.
+
+## #542 — two reserved palette slots, four port writers, no name saying so
+
+`RETICLE = 0xFE` and `BAR = 0xFD` in the cyberspace HUD are the SAME two indices the
+subtitle reveal draws through (`SUBTITLE_COLOR_REVEALED`/`_REVEAL_EDGE`, #541). That
+much is decoded: `0xC0..0xFF` are RESERVED entries the game fills at RUNTIME, which
+is why a scene's LBM/HNM palette leaves them `[0,0,0]` and why the port has a helper
+to install subtitle colours before drawing.
+
+What is NOT decoded is this screen's use of them for a reticle and a progress bar,
+or the RGB it writes. Those are port choices, and they are now labelled as such
+rather than sitting in the UNVERIFIED queue looking like undone decode work.
+
+THE COUPLING IS THE POINT. Four port sites write these two indices with different
+colours — the cyber HUD here, the nav object-marker path, and the subtitle helper.
+Whichever runs last wins, and NO CONSTANT'S NAME SUGGESTS IT SHARES A SLOT:
+`RETICLE`, `BAR`, `SUBTITLE_COLOR_REVEALED` and a bare `scene_palette[0xFD] = ...`
+read as four independent decisions. If a screen ever draws a HUD and a subtitle
+together, one silently recolours the other, and the symptom (a wrong-coloured
+subtitle) is three files from its cause.
+
+Classified INFRA, not ASM: `RETICLE`/`BAR` have no binary counterpart as a
+reticle-and-bar pairing. Same for `NAV_DEST_Y/PITCH/W`, whose own doc already says
+they are "AN INVENTED LAYOUT WEARING A GAME PROVENANCE" kept as a port affordance —
+leaving those UNVERIFIED reads as "not yet decoded" when the truth is "deliberately
+not from the game", and the ledger should not blur the two.
+
+723 tests, 0 failures.

@@ -1053,11 +1053,13 @@ pub(super) const SUBTITLE_Y: usize = 8;
 // `game_font_row_table_is_one_byte_per_row`), and the bold console font indexes
 // its bitmaps with `shl ax,3` @`0x3691` for the same reason (audit-fixes #536).
 pub(super) const GAME_FONT_WIDTH: usize = 8;
-// 8 rows per glyph — the `height` of that same `glyphs * height` row table
-// (audit-fixes #536).
+// 8 rows per glyph — the `height` of the row table at file `0x14D28`, whose
+// extent `0x14D28 + 86 * 8 = 0x14FD8` is asserted by
+// `game_font_row_table_is_one_byte_per_row` (audit-fixes #536).
 pub(super) const GAME_FONT_HEIGHT: usize = 8;
 // 8 — the subtitle block advances in Y only, by exactly the glyph height, since
-// BX is not reloaded inside the loop (see the note above).
+// BX is not reloaded inside the loop between the `lcall 0x299,0x6a0` draws
+// @`0x94EE`. Same 8 as the row table at file `0x14D28` (audit-fixes #536).
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;
 pub(super) const SUBTITLE_COLOR_REVEALED: u8 = 0xFD;
 pub(super) const SUBTITLE_COLOR_REVEAL_EDGE: u8 = 0xFE;

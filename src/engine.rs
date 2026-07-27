@@ -2984,6 +2984,18 @@ impl EngineState {
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
         // HUD overlay: a course reticle (steered) + a journey progress bar.
+        //
+        // PORT-SIDE CHOICE OF A DECODED SLOT (audit-fixes #542). `0xFD`/`0xFE` are
+        // RESERVED high-palette entries the game fills at RUNTIME — that much is
+        // decoded (REVERSE.md; the subtitle reveal draws through the same two, see
+        // `extract::render::SUBTITLE_COLOR_REVEALED`). What is NOT decoded is this
+        // screen's use of them for a reticle and a bar, nor the RGB below.
+        //
+        // The coupling is worth knowing: FOUR port sites write these two indices
+        // with different colours (here, `0x110C`/`0x110D` in the nav marker path,
+        // and the subtitle helper `apply_reserved_subtitle_palette`). Any screen
+        // that draws a HUD and a subtitle gets whichever wrote last, and neither
+        // constant's name suggests it shares a slot.
         const RETICLE: u8 = 0xFE;
         const BAR: u8 = 0xFD;
         self.scene_palette[RETICLE as usize] = [245, 245, 160];
