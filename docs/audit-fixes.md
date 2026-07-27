@@ -16781,3 +16781,42 @@ would have read as perfectly plausible to any human reviewer.
 `ship3d.rs`: 34 uncited constants -> 30.
 
 620 tests, 0 failures.
+
+## #506 — a sentinel the reader never compares, and an alias kept as an alias
+
+Six more `ship3d.rs` constants. Two are worth more than their addresses.
+
+**`DIRTY_RECT_SENTINEL` is not tested for.** The port names `0xFFFF`, and `0xFFFF`
+is indeed what the writer stores, but the walker at file `0x50B7` terminates with:
+
+```text
+  0x50B4  mov ax, es:[di]
+  0x50B7  or ax, ax
+  0x50B9  js 0x517B          <- ANY negative ends the list
+```
+
+A sign test, not a comparison. So the game's rule is "negative terminates" and
+`0xFFFF` is merely the negative it happens to write. A port terminating on equality
+with `0xFFFF` is STRICTER than the game and would run past any other negative entry.
+Same species as #492's zero-or-`0xFFFF` pair: the constant records what is written,
+the instruction records what is accepted, and only the second is the rule.
+
+**`FINAL_RESET_SCROLL_MODE` is deliberately left an alias** of
+`SHIP_3D_SCROLL_MODE_HOLD` rather than given its own `= 10`. The final reset really
+does restore the hold mode, so duplicating the literal would create a second thing
+to keep in step with `cmp word [0x524d],0xa` @`0xB6F0`. One value, one citation.
+
+The rest are direct: `DIRTY_RECT_LIST_OFFSET` is `mov di,0x6612` @`0x787C` sitting
+immediately before the `lcall 0x299,0x210d` @`0x787F` that #490 sourced by census —
+the list and the routine that consumes it, confirmed from both sides again. The
+temp-SND path pair (`0x0D23` `sn\3D.snd` @`0xB5D7`, `0x0CFC` `sn\tb.snd` @`0xB610`)
+comes from #484's routine, cited now rather than left implicit in the fix log.
+
+Noted in passing: the dirty-rect walker computes its row address with
+`xchg bh,bl / shl cx,6 / add` @`0x50C4` — the SAME 320-stride idiom #502 found in
+the star plot. Two independent routines, one arithmetic trick, and neither contains
+`0x140`.
+
+`ship3d.rs`: 30 uncited constants -> 24.
+
+620 tests, 0 failures.

@@ -473,13 +473,28 @@ pub const NAV_DESTINATION_POINTS: [[i16; 3]; 10] = [[10200, 12100, 900]; 10];
 /// Touched by the game at `mov word ptr [0x5249], 1` @`0x0AFAB`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET: u16 = 0x5249;
+/// `mov di,0x6612` @`0x787C`, immediately before `lcall 0x299,0x210d` @`0x787F` —
+/// so DI IS the list handed to the dirty-rects copy (`RENDER_DIRTY_RECTS_COPY_OFFSET`,
+/// #490). The same pairing occurs at `0x8E9D`/`0x8EA0` (audit-fixes #506).
 pub const SHIP_3D_DIRTY_RECT_LIST_OFFSET: u16 = 0x6612;
+/// The value the WRITER stores, but the READER does not compare against it: the
+/// walker terminates on `or ax,ax / js 0x517B` @`0x50B7` — a SIGN TEST, so ANY
+/// negative entry ends the list and `0xFFFF` is simply the negative the game
+/// happens to write. A port that terminates on equality with `0xFFFF` is stricter
+/// than the game and would run past any other negative (audit-fixes #506).
 pub const SHIP_3D_DIRTY_RECT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
+/// `mov si,0xd23` @`0xB5D7` — `sn\3D.snd`, loaded by the `lcall 0xb1b:0x855`
+/// @`0xB5DC` that follows with AX=0 (audit-fixes #506; the routine is #484's).
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
+/// `mov si,0xcfc` @`0xB60B` — `sn\tb.snd`, RESTORED through the same loader
+/// @`0xB610` once the temporary bank has been used. The pair makes the swap
+/// symmetric, which is why both offsets are named (audit-fixes #506).
 pub const SHIP_3D_TB_SND_PATH_OFFSET: u16 = 0x0cfc;
 pub const SHIP_3D_TEMP_SND_PHASE_COUNT: u8 = 3;
+/// `mov word ptr [0x1fa3],0xffff` @`0xB66D`, on the sequence-active branch of
+/// #484's tail (audit-fixes #506).
 pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
 /// UNEXPLAINED, and marked so rather than given a plausible story.
 ///
@@ -545,6 +560,9 @@ pub const SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL: u16 = 0xffff;
 /// `mov byte ptr [0x5b52],0xff` @`0xB57B`.
 pub const SHIP_3D_FINAL_RESET_DIRTY_MARKER: u8 = 0xff;
+/// The final reset restores the HOLD mode, so this is deliberately an ALIAS of
+/// [`SHIP_3D_SCROLL_MODE_HOLD`] (`cmp word [0x524d],0xa` @`0xB6F0`, #496) rather
+/// than a second copy of 10 — one value, one citation (audit-fixes #506).
 pub const SHIP_3D_FINAL_RESET_SCROLL_MODE: u16 = SHIP_3D_SCROLL_MODE_HOLD;
 /// `and byte ptr [0x67aa],0xfc` @`0xB54D` — clears the low two bits, so it is a MASK applied to what is there rather than a value written.
 pub const SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK: u8 = 0xfc;
