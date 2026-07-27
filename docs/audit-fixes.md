@@ -16161,3 +16161,63 @@ independent check that the table's tail is read right, which the new test assert
 Settled ASM: all 41. Ledger 1252/2232 (56.1%), UNVERIFIED down to 870.
 
 618 tests, 0 failures.
+
+## #491 — 287 is not a measurement, it is two adds (and I nearly filed it as fabricated)
+
+The `SHIP_3D_NAV_CHOICE_*` block — 14 constants, an undocumented enclosing function
+(`hit_test_ship_3d_nav_choice`), and screen-shaped values like 287, 110, 72 — is
+exactly the profile of geometry lifted off a capture, which `CLAUDE.md` forbids
+outright. I searched the image for 287 (`0x011F`) in every immediate form a 16-bit
+instruction can carry: `mov`/`cmp`/`sub`/`add`/`test` against ax/bx/cx/dx/si/di/bp.
+**Zero occurrences.** The conclusion sitting right there was "fabricated, delete it".
+
+It is in the binary. The routine COMPUTES it:
+
+```text
+  0x8642  sub ax, 0x2d       axis - 45          AXIS_BIAS
+  0x864B  shl ax, 3          * 8
+  0x864E  neg ax
+  0x8650  add ax, 0xe8       + 232 ...
+  0x8653  add ax, 0x37       ... + 55  =  287   RIGHT_BASE
+  0x8656  cmp bx, ax / jg    the right bound
+  0x865C  sub ax, 0x6e       - 110              X_WIDTH
+  0x8663  cmp bx, ax / jl    the left bound
+```
+
+232 + 55, in two instructions, so no scan for the constant could ever find it. This
+is the THIRD time this session that a zero-result meant the wrong question, after
+the overlay address space (#485) and the blitter dispatch table (#490) — and #484
+had already recorded the identical shape, where the viewport descriptor's `0`, `1`
+and `4` are built by `xor`/`inc`/`add ax,3`. I had written that lesson down and
+still spent the search before remembering it.
+
+Worth being precise about what saved it: not the disassembly, which I only ran
+afterwards, but `docs/audit-fixes.md` containing `0x86D1 ... SHIP_3D_NAV_CHOICE_TARGET_Y`
+from an earlier session. The routine had been found before and the constants were
+never annotated with it. A decode that lives only in the fix log and not in the
+code it explains is one refactor away from being deleted as unsourced.
+
+Thirteen settled ASM from the two routines around it:
+
+```text
+  0x862E  mov al, 0x7b        PALETTE_FIRST, out to DAC index port 0x3C8
+  0x8633  mov cx, 5           COUNT -- also `cmp al,5 / jge` @0x868D
+  0x8679  mov cl, 0x12        ROW_HEIGHT_BASE, reduced by `shr al,1 / sub cl,al`
+  0x86AB  mov [0xa32], 5      PRESENTATION_MODE
+  0x86B6  or  [0x2793], 0xc   HUD_SELECT_FLAGS
+  0x86BB  mov [0x279b], 0x5a  HOLD_TICKS (90)
+  0x86C1  mov [0x2565], 1     HANDLER_PHASE -- the widget phase cell read @0x8874
+  0x86CA  mov cl,0x12/mul cl  TARGET_Y_STEP, applied to bl-1 (`dec al` @0x86C8)
+  0x86CE  add ax, 0x50        TARGET_Y_BASE
+  0x86F1  test [0x2793], 8    DISPATCH_BLOCK_FLAG -- bit 3 BLOCKS the call @0x8700
+```
+
+The last one is the kind of thing a name alone hides: `0x0C` is RAISED by this same
+routine @`0x86B6` and `0x08` is tested as a BLOCK a few instructions later, so the
+two flag constants overlap in bits but not in meaning.
+
+STILL OPEN in this block: `MIN_GATE` (40), `MAX_GATE` (60) and `Y_BASE` (72) — not
+found in the decoded stretch, and after 287 I am not willing to call them absent on
+a failed scan. They stay UNVERIFIED until the routine's head is read.
+
+618 tests, 0 failures.

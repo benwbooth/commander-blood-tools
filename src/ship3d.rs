@@ -101,19 +101,47 @@ pub const SHIP_3D_TARGET_EXTRA_LABEL_OFFSET: u16 = 0x0174;
 pub const SHIP_3D_TARGET_ALIAS_LABEL_OFFSET: u16 = 0x273b;
 pub const SHIP_3D_NAV_CHOICE_MIN_GATE: u16 = 40;
 pub const SHIP_3D_NAV_CHOICE_MAX_GATE: u16 = 60;
+/// `sub ax,0x2d` @`0x8642` — the dynamic axis is biased by 45 before the `shl ax,3`
+/// @`0x864B` that turns a choice index into a column (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_AXIS_BIAS: u16 = 45;
+/// 287, and it is NEVER AN IMMEDIATE — the routine COMPUTES it with two adds,
+/// `add ax,0xe8` @`0x8650` then `add ax,0x37` @`0x8653` (232 + 55). Searching the
+/// image for `0x011F` in every instruction form returns zero hits, which is why
+/// this looked unsourced (audit-fixes #491; same shape as #484's descriptor).
+/// The bound is then `cmp bx,ax / jg` @`0x8656`.
 pub const SHIP_3D_NAV_CHOICE_RIGHT_BASE: u16 = 287;
+/// `sub ax,0x6e` @`0x865C` — the left edge is 110 left of the right edge, tested
+/// by `cmp bx,ax / jl` @`0x8663` after a `js` guard @`0x865F` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_X_WIDTH: u16 = 110;
 pub const SHIP_3D_NAV_CHOICE_Y_BASE: u16 = 72;
+/// `mov cl,0x12` @`0x8679` — a BASE, reduced by `shr al,1 / sub cl,al` @`0x8680`
+/// before `div cl` @`0x868B` converts a cursor y into a row (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE: u8 = 18;
+/// `cmp al,5 / jge 0x8705` @`0x868D` rejects any row at or past 5, and `mov cx,5`
+/// @`0x8633` is the matching palette-write loop count (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_COUNT: u8 = 5;
+/// `mov al,0x7b` @`0x862E`, written to the DAC index port `0x3C8` — the first of
+/// the five choice colours, and the same 0x7B is added to the selected row
+/// @`0x8697` to address that row's own entry (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_PALETTE_FIRST: u8 = 0x7b;
+/// `mov word [0xa32],5` @`0x86AB` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_PRESENTATION_MODE: u16 = 5;
+/// `or byte [0x2793],0xc` @`0x86B6` — bits 2 and 3 raised together (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS: u8 = 0x0c;
+/// `test byte [0x2793],8 / jne 0x8705` @`0x86F1` — bit 3 BLOCKS the handler call
+/// @`0x8700`, which is why it is separate from the 0x0C the same routine raised
+/// @`0x86B6` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG: u8 = 0x08;
+/// `mov word [0x279b],0x5a` @`0x86BB` — 90 ticks (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_HOLD_TICKS: u16 = 90;
+/// `mov byte [0x2565],1` @`0x86C1` — the same widget phase cell the list driver
+/// tests @`0x8874` (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_HANDLER_PHASE: u8 = 1;
+/// `add ax,0x50` @`0x86CE` — 80, the offset added after the per-row multiply
+/// (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_BASE: u16 = 80;
+/// `mov cl,0x12 / mul cl` @`0x86CA` — the row pitch, applied to `bl - 1`
+/// (`dec al` @`0x86C8`), so row 1 lands exactly on the base (audit-fixes #491).
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_STEP: u16 = 18;
 pub const SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X: u16 = 100;
 pub const SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION: u8 = 10;
