@@ -6,7 +6,7 @@
   };
 
   outputs =
-    { nixpkgs, ... }:
+    inputs@{ nixpkgs, ... }:
     let
       systems = [
         "x86_64-linux"
@@ -41,6 +41,12 @@
         in
         {
           default = pkgs.mkShell {
+            FLAKE_INPUTS = builtins.concatStringsSep ":" (
+              map (input: input.outPath) (
+                builtins.attrValues (builtins.removeAttrs inputs [ "self" ])
+              )
+            );
+
             packages = with pkgs; [
               cargo
               clippy
