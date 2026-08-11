@@ -10,7 +10,7 @@
 
 // label: dlg_line_asset_table_fill
 
-extern "C" void CB_NEAR cb_bloodprg_007684_dlg_line_asset_table_fill(void)
+extern "C" void CB_NEAR cb_bloodprg_007684_dlg_line_asset_table_fill(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007684; see re/assembly/bloodprg/seg_04da/func_007684_dlg_line_asset_table_fill.asm"
 }

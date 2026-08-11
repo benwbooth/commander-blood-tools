@@ -10,7 +10,7 @@
 
 // label: get_video_mode
 
-extern "C" void CB_FAR cb_bloodprg_000c26_get_video_mode(void)
+extern "C" void CB_FAR cb_bloodprg_000c26_get_video_mode(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000c26; see re/assembly/bloodprg/seg_0000/func_000c26_get_video_mode.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: kbd_read_int16
 
-extern "C" void CB_FAR cb_bloodprg_00267d_kbd_read_int16(void)
+extern "C" void CB_FAR cb_bloodprg_00267d_kbd_read_int16(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00267d; see re/assembly/bloodprg/seg_01ce/func_00267d_kbd_read_int16.asm"
 }

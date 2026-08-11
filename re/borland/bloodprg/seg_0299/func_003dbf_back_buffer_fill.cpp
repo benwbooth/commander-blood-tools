@@ -10,7 +10,7 @@
 
 // label: back_buffer_fill
 
-extern "C" void CB_FAR cb_bloodprg_003dbf_back_buffer_fill(void)
+extern "C" void CB_FAR cb_bloodprg_003dbf_back_buffer_fill(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003dbf; see re/assembly/bloodprg/seg_0299/func_003dbf_back_buffer_fill.asm"
 }

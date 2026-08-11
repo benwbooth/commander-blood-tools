@@ -10,7 +10,7 @@
 
 // label: manu3_matrix_build
 
-extern "C" void CB_NEAR cb_xdb_manu3_000270_manu3_matrix_build(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000270_manu3_matrix_build(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000270; see re/assembly/xdb/manu3/manu3_labeled/func_000270_manu3_matrix_build.asm"
 }

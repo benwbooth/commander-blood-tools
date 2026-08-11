@@ -10,7 +10,7 @@
 
 // label: vm_op_a3_collect
 
-extern "C" void CB_NEAR cb_bloodprg_005afd_vm_op_a3_collect(void)
+extern "C" void CB_NEAR cb_bloodprg_005afd_vm_op_a3_collect(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005afd; see re/assembly/bloodprg/seg_04da/func_005afd_vm_op_a3_collect.asm"
 }

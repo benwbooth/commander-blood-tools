@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_bloodprg_0076ba_routine(void)
+extern "C" void CB_NEAR cb_bloodprg_0076ba_routine(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0076ba; see re/assembly/bloodprg/seg_04da/func_0076ba_routine.asm"
 }

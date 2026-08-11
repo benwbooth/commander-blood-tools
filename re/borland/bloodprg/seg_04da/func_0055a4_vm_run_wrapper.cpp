@@ -10,7 +10,7 @@
 
 // label: vm_run_wrapper
 
-extern "C" void CB_FAR cb_bloodprg_0055a4_vm_run_wrapper(void)
+extern "C" void CB_FAR cb_bloodprg_0055a4_vm_run_wrapper(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0055a4; see re/assembly/bloodprg/seg_04da/func_0055a4_vm_run_wrapper.asm"
 }

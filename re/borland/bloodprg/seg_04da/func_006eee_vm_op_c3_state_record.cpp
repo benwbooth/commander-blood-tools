@@ -10,7 +10,7 @@
 
 // label: vm_op_c3_state_record
 
-extern "C" void CB_NEAR cb_bloodprg_006eee_vm_op_c3_state_record(void)
+extern "C" void CB_NEAR cb_bloodprg_006eee_vm_op_c3_state_record(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006eee; see re/assembly/bloodprg/seg_04da/func_006eee_vm_op_c3_state_record.asm"
 }

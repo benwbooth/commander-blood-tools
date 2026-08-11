@@ -10,7 +10,7 @@
 
 // label: path_builder_gs_relative
 
-extern "C" void CB_FAR cb_bloodprg_002693_path_builder_gs_relative(void)
+extern "C" void CB_FAR cb_bloodprg_002693_path_builder_gs_relative(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002693; see re/assembly/bloodprg/seg_01ce/func_002693_path_builder_gs_relative.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: manu3_face_activate
 
-extern "C" void CB_NEAR cb_xdb_manu3_000d7d_manu3_face_activate(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000d7d_manu3_face_activate(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000d7d; see re/assembly/xdb/manu3/manu3_labeled/func_000d7d_manu3_face_activate.asm"
 }

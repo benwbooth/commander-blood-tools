@@ -10,7 +10,7 @@
 
 // label: presentation_ready_gate
 
-extern "C" void CB_FAR cb_bloodprg_008963_presentation_ready_gate(void)
+extern "C" void CB_FAR cb_bloodprg_008963_presentation_ready_gate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008963; see re/assembly/bloodprg/seg_071e/func_008963_presentation_ready_gate.asm"
 }

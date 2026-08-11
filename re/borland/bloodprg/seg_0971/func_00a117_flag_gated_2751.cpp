@@ -10,7 +10,7 @@
 
 // label: flag_gated_2751
 
-extern "C" void CB_NEAR cb_bloodprg_00a117_flag_gated_2751(void)
+extern "C" void CB_NEAR cb_bloodprg_00a117_flag_gated_2751(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a117; see re/assembly/bloodprg/seg_0971/func_00a117_flag_gated_2751.asm"
 }

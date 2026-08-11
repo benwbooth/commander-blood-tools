@@ -10,7 +10,7 @@
 
 // label: ship_3d_point_cloud_randomize
 
-extern "C" void CB_FAR cb_bloodprg_009b67_ship_3d_point_cloud_randomize(void)
+extern "C" void CB_FAR cb_bloodprg_009b67_ship_3d_point_cloud_randomize(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009b67; see re/assembly/bloodprg/seg_071e/func_009b67_ship_3d_point_cloud_randomize.asm"
 }

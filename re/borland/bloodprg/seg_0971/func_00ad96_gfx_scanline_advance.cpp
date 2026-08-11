@@ -10,7 +10,7 @@
 
 // label: gfx_scanline_advance
 
-extern "C" void CB_NEAR cb_bloodprg_00ad96_gfx_scanline_advance(void)
+extern "C" void CB_NEAR cb_bloodprg_00ad96_gfx_scanline_advance(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00ad96; see re/assembly/bloodprg/seg_0971/func_00ad96_gfx_scanline_advance.asm"
 }

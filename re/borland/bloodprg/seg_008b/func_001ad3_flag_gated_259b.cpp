@@ -10,7 +10,7 @@
 
 // label: flag_gated_259b
 
-extern "C" void CB_NEAR cb_bloodprg_001ad3_flag_gated_259b(void)
+extern "C" void CB_NEAR cb_bloodprg_001ad3_flag_gated_259b(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001ad3; see re/assembly/bloodprg/seg_008b/func_001ad3_flag_gated_259b.asm"
 }

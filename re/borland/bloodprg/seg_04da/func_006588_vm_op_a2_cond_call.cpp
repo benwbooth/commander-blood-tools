@@ -10,7 +10,7 @@
 
 // label: vm_op_a2_cond_call
 
-extern "C" void CB_NEAR cb_bloodprg_006588_vm_op_a2_cond_call(void)
+extern "C" void CB_NEAR cb_bloodprg_006588_vm_op_a2_cond_call(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006588; see re/assembly/bloodprg/seg_04da/func_006588_vm_op_a2_cond_call.asm"
 }

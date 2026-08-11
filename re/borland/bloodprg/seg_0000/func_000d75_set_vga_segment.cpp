@@ -10,7 +10,7 @@
 
 // label: set_vga_segment
 
-extern "C" void CB_FAR cb_bloodprg_000d75_set_vga_segment(void)
+extern "C" void CB_FAR cb_bloodprg_000d75_set_vga_segment(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000d75; see re/assembly/bloodprg/seg_0000/func_000d75_set_vga_segment.asm"
 }

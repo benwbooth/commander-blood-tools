@@ -10,7 +10,7 @@
 
 // label: active_object_list_build
 
-extern "C" void CB_NEAR cb_bloodprg_00604e_active_object_list_build(void)
+extern "C" void CB_NEAR cb_bloodprg_00604e_active_object_list_build(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00604e; see re/assembly/bloodprg/seg_04da/func_00604e_active_object_list_build.asm"
 }

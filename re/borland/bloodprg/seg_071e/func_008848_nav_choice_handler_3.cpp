@@ -10,7 +10,7 @@
 
 // label: nav_choice_handler_3
 
-extern "C" void CB_NEAR cb_bloodprg_008848_nav_choice_handler_3(void)
+extern "C" void CB_NEAR cb_bloodprg_008848_nav_choice_handler_3(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008848; see re/assembly/bloodprg/seg_071e/func_008848_nav_choice_handler_3.asm"
 }

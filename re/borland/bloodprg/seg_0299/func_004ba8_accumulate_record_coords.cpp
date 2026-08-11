@@ -10,7 +10,7 @@
 
 // label: accumulate_record_coords
 
-extern "C" void CB_NEAR cb_bloodprg_004ba8_accumulate_record_coords(void)
+extern "C" void CB_NEAR cb_bloodprg_004ba8_accumulate_record_coords(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004ba8; see re/assembly/bloodprg/seg_0299/func_004ba8_accumulate_record_coords.asm"
 }

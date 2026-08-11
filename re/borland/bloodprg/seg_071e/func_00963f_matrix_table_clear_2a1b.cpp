@@ -10,7 +10,7 @@
 
 // label: matrix_table_clear_2a1b
 
-extern "C" void CB_FAR cb_bloodprg_00963f_matrix_table_clear_2a1b(void)
+extern "C" void CB_FAR cb_bloodprg_00963f_matrix_table_clear_2a1b(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00963f; see re/assembly/bloodprg/seg_071e/func_00963f_matrix_table_clear_2a1b.asm"
 }

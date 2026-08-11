@@ -10,7 +10,7 @@
 
 // label: presentation_state_set
 
-extern "C" void CB_NEAR cb_bloodprg_0014ca_presentation_state_set(void)
+extern "C" void CB_NEAR cb_bloodprg_0014ca_presentation_state_set(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0014ca; see re/assembly/bloodprg/seg_008b/func_0014ca_presentation_state_set.asm"
 }

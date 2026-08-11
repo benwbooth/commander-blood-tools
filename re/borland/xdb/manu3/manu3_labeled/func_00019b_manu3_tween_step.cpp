@@ -10,7 +10,7 @@
 
 // label: manu3_tween_step
 
-extern "C" void CB_NEAR cb_xdb_manu3_00019b_manu3_tween_step(void)
+extern "C" void CB_NEAR cb_xdb_manu3_00019b_manu3_tween_step(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x00019b; see re/assembly/xdb/manu3/manu3_labeled/func_00019b_manu3_tween_step.asm"
 }

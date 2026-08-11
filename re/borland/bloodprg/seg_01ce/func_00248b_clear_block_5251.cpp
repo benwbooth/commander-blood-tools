@@ -10,7 +10,7 @@
 
 // label: clear_block_5251
 
-extern "C" void CB_FAR cb_bloodprg_00248b_clear_block_5251(void)
+extern "C" void CB_FAR cb_bloodprg_00248b_clear_block_5251(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00248b; see re/assembly/bloodprg/seg_01ce/func_00248b_clear_block_5251.asm"
 }

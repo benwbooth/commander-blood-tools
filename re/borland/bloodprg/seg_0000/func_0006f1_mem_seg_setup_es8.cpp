@@ -10,7 +10,7 @@
 
 // label: mem_seg_setup_es8
 
-extern "C" void CB_NEAR cb_bloodprg_0006f1_mem_seg_setup_es8(void)
+extern "C" void CB_NEAR cb_bloodprg_0006f1_mem_seg_setup_es8(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0006f1; see re/assembly/bloodprg/seg_0000/func_0006f1_mem_seg_setup_es8.asm"
 }

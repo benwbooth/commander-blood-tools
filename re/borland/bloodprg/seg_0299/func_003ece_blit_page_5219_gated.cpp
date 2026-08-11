@@ -10,7 +10,7 @@
 
 // label: blit_page_5219_gated
 
-extern "C" void CB_FAR cb_bloodprg_003ece_blit_page_5219_gated(void)
+extern "C" void CB_FAR cb_bloodprg_003ece_blit_page_5219_gated(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003ece; see re/assembly/bloodprg/seg_0299/func_003ece_blit_page_5219_gated.asm"
 }

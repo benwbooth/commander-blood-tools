@@ -8,7 +8,8 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_bloodprg_00509c_routine(void)
+extern "C" void CB_NEAR cb_bloodprg_00509c_routine(CbMachine* m)
 {
+    (void)m;
     return;
 }

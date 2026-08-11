@@ -10,7 +10,7 @@
 
 // label: list_d8c_iterate
 
-extern "C" void CB_NEAR cb_bloodprg_00a2ab_list_d8c_iterate(void)
+extern "C" void CB_NEAR cb_bloodprg_00a2ab_list_d8c_iterate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a2ab; see re/assembly/bloodprg/seg_0971/func_00a2ab_list_d8c_iterate.asm"
 }

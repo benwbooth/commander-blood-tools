@@ -10,7 +10,7 @@
 
 // label: screen_mode_update
 
-extern "C" void CB_NEAR cb_bloodprg_0079e5_screen_mode_update(void)
+extern "C" void CB_NEAR cb_bloodprg_0079e5_screen_mode_update(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0079e5; see re/assembly/bloodprg/seg_071e/func_0079e5_screen_mode_update.asm"
 }

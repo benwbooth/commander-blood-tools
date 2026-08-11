@@ -10,7 +10,7 @@
 
 // label: vm_resource_profile_select
 
-extern "C" void CB_FAR cb_bloodprg_0053a0_vm_resource_profile_select(void)
+extern "C" void CB_FAR cb_bloodprg_0053a0_vm_resource_profile_select(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0053a0; see re/assembly/bloodprg/seg_04da/func_0053a0_vm_resource_profile_select.asm"
 }

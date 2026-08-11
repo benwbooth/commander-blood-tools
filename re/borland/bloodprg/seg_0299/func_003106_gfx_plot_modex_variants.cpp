@@ -10,7 +10,7 @@
 
 // label: gfx_plot_modex_variants
 
-extern "C" void CB_FAR cb_bloodprg_003106_gfx_plot_modex_variants(void)
+extern "C" void CB_FAR cb_bloodprg_003106_gfx_plot_modex_variants(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003106; see re/assembly/bloodprg/seg_0299/func_003106_gfx_plot_modex_variants.asm"
 }

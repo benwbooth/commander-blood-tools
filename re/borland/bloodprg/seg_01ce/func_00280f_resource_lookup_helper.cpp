@@ -10,7 +10,7 @@
 
 // label: resource_lookup_helper
 
-extern "C" void CB_FAR cb_bloodprg_00280f_resource_lookup_helper(void)
+extern "C" void CB_FAR cb_bloodprg_00280f_resource_lookup_helper(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00280f; see re/assembly/bloodprg/seg_01ce/func_00280f_resource_lookup_helper.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: gfx_clipped_span_fill
 
-extern "C" void CB_FAR cb_bloodprg_0039bb_gfx_clipped_span_fill(void)
+extern "C" void CB_FAR cb_bloodprg_0039bb_gfx_clipped_span_fill(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0039bb; see re/assembly/bloodprg/seg_0299/func_0039bb_gfx_clipped_span_fill.asm"
 }

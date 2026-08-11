@@ -10,7 +10,7 @@
 
 // label: resource_file_load
 
-extern "C" void CB_FAR cb_bloodprg_002bfd_resource_file_load(void)
+extern "C" void CB_FAR cb_bloodprg_002bfd_resource_file_load(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002bfd; see re/assembly/bloodprg/seg_01ce/func_002bfd_resource_file_load.asm"
 }

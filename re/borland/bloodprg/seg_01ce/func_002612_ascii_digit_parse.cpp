@@ -10,7 +10,7 @@
 
 // label: ascii_digit_parse
 
-extern "C" void CB_FAR cb_bloodprg_002612_ascii_digit_parse(void)
+extern "C" void CB_FAR cb_bloodprg_002612_ascii_digit_parse(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002612; see re/assembly/bloodprg/seg_01ce/func_002612_ascii_digit_parse.asm"
 }

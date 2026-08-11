@@ -10,7 +10,7 @@
 
 // label: vm_op_a4_jump
 
-extern "C" void CB_NEAR cb_bloodprg_0065db_vm_op_a4_jump(void)
+extern "C" void CB_NEAR cb_bloodprg_0065db_vm_op_a4_jump(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0065db; see re/assembly/bloodprg/seg_04da/func_0065db_vm_op_a4_jump.asm"
 }

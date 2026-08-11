@@ -10,7 +10,7 @@
 
 // label: ship_3d_object_sprite_project
 
-extern "C" void CB_FAR cb_bloodprg_009b98_ship_3d_object_sprite_project(void)
+extern "C" void CB_FAR cb_bloodprg_009b98_ship_3d_object_sprite_project(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009b98; see re/assembly/bloodprg/seg_071e/func_009b98_ship_3d_object_sprite_project.asm"
 }

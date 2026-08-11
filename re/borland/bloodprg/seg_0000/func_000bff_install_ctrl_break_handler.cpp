@@ -10,7 +10,7 @@
 
 // label: install_ctrl_break_handler
 
-extern "C" void CB_FAR cb_bloodprg_000bff_install_ctrl_break_handler(void)
+extern "C" void CB_FAR cb_bloodprg_000bff_install_ctrl_break_handler(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000bff; see re/assembly/bloodprg/seg_0000/func_000bff_install_ctrl_break_handler.asm"
 }

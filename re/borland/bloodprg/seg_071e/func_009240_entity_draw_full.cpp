@@ -10,7 +10,7 @@
 
 // label: entity_draw_full
 
-extern "C" void CB_NEAR cb_bloodprg_009240_entity_draw_full(void)
+extern "C" void CB_NEAR cb_bloodprg_009240_entity_draw_full(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009240; see re/assembly/bloodprg/seg_071e/func_009240_entity_draw_full.asm"
 }

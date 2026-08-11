@@ -10,7 +10,7 @@
 
 // label: state_snapshot_2739
 
-extern "C" void CB_NEAR cb_bloodprg_001b4b_state_snapshot_2739(void)
+extern "C" void CB_NEAR cb_bloodprg_001b4b_state_snapshot_2739(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001b4b; see re/assembly/bloodprg/seg_008b/func_001b4b_state_snapshot_2739.asm"
 }

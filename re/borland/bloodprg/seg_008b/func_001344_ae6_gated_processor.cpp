@@ -10,7 +10,7 @@
 
 // label: ae6_gated_processor
 
-extern "C" void CB_NEAR cb_bloodprg_001344_ae6_gated_processor(void)
+extern "C" void CB_NEAR cb_bloodprg_001344_ae6_gated_processor(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001344; see re/assembly/bloodprg/seg_008b/func_001344_ae6_gated_processor.asm"
 }

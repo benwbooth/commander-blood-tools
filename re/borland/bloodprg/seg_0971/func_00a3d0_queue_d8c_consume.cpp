@@ -10,7 +10,7 @@
 
 // label: queue_d8c_consume
 
-extern "C" void CB_NEAR cb_bloodprg_00a3d0_queue_d8c_consume(void)
+extern "C" void CB_NEAR cb_bloodprg_00a3d0_queue_d8c_consume(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a3d0; see re/assembly/bloodprg/seg_0971/func_00a3d0_queue_d8c_consume.asm"
 }

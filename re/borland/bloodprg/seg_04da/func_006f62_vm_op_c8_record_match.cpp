@@ -10,7 +10,7 @@
 
 // label: vm_op_c8_record_match
 
-extern "C" void CB_NEAR cb_bloodprg_006f62_vm_op_c8_record_match(void)
+extern "C" void CB_NEAR cb_bloodprg_006f62_vm_op_c8_record_match(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006f62; see re/assembly/bloodprg/seg_04da/func_006f62_vm_op_c8_record_match.asm"
 }

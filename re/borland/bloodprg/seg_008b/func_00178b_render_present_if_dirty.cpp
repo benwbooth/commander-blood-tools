@@ -10,7 +10,7 @@
 
 // label: render_present_if_dirty
 
-extern "C" void CB_NEAR cb_bloodprg_00178b_render_present_if_dirty(void)
+extern "C" void CB_NEAR cb_bloodprg_00178b_render_present_if_dirty(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00178b; see re/assembly/bloodprg/seg_008b/func_00178b_render_present_if_dirty.asm"
 }

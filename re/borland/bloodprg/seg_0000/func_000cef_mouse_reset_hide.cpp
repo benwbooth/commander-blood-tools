@@ -10,7 +10,7 @@
 
 // label: mouse_reset_hide
 
-extern "C" void CB_FAR cb_bloodprg_000cef_mouse_reset_hide(void)
+extern "C" void CB_FAR cb_bloodprg_000cef_mouse_reset_hide(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000cef; see re/assembly/bloodprg/seg_0000/func_000cef_mouse_reset_hide.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: dos_set_drive_and_chdir
 
-extern "C" void CB_FAR cb_bloodprg_0027e9_dos_set_drive_and_chdir(void)
+extern "C" void CB_FAR cb_bloodprg_0027e9_dos_set_drive_and_chdir(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0027e9; see re/assembly/bloodprg/seg_01ce/func_0027e9_dos_set_drive_and_chdir.asm"
 }

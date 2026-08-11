@@ -10,7 +10,7 @@
 
 // label: sprite_slot_dirty_range_render
 
-extern "C" void CB_FAR cb_bloodprg_004471_sprite_slot_dirty_range_render(void)
+extern "C" void CB_FAR cb_bloodprg_004471_sprite_slot_dirty_range_render(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004471; see re/assembly/bloodprg/seg_0299/func_004471_sprite_slot_dirty_range_render.asm"
 }

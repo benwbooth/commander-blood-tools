@@ -10,7 +10,7 @@
 
 // label: ems_map_page_and_copy
 
-extern "C" void CB_NEAR cb_bloodprg_00bd26_ems_map_page_and_copy(void)
+extern "C" void CB_NEAR cb_bloodprg_00bd26_ems_map_page_and_copy(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bd26; see re/assembly/bloodprg/seg_0b1b/func_00bd26_ems_map_page_and_copy.asm"
 }

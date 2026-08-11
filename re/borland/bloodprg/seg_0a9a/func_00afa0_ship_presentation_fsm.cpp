@@ -10,7 +10,7 @@
 
 // label: ship_presentation_fsm
 
-extern "C" void CB_FAR cb_bloodprg_00afa0_ship_presentation_fsm(void)
+extern "C" void CB_FAR cb_bloodprg_00afa0_ship_presentation_fsm(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00afa0; see re/assembly/bloodprg/seg_0a9a/func_00afa0_ship_presentation_fsm.asm"
 }

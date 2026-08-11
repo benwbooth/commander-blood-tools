@@ -10,7 +10,7 @@
 
 // label: resource_palette_blocks_apply
 
-extern "C" void CB_NEAR cb_bloodprg_00a0c3_resource_palette_blocks_apply(void)
+extern "C" void CB_NEAR cb_bloodprg_00a0c3_resource_palette_blocks_apply(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a0c3; see re/assembly/bloodprg/seg_0971/func_00a0c3_resource_palette_blocks_apply.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: resource_handle_resolve
 
-extern "C" void CB_FAR cb_bloodprg_005320_resource_handle_resolve(void)
+extern "C" void CB_FAR cb_bloodprg_005320_resource_handle_resolve(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005320; see re/assembly/bloodprg/seg_04b9/func_005320_resource_handle_resolve.asm"
 }

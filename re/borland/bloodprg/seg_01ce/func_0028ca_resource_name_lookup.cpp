@@ -10,7 +10,7 @@
 
 // label: resource_name_lookup
 
-extern "C" void CB_FAR cb_bloodprg_0028ca_resource_name_lookup(void)
+extern "C" void CB_FAR cb_bloodprg_0028ca_resource_name_lookup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0028ca; see re/assembly/bloodprg/seg_01ce/func_0028ca_resource_name_lookup.asm"
 }

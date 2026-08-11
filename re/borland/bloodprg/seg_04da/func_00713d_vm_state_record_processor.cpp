@@ -10,7 +10,7 @@
 
 // label: vm_state_record_processor
 
-extern "C" void CB_FAR cb_bloodprg_00713d_vm_state_record_processor(void)
+extern "C" void CB_FAR cb_bloodprg_00713d_vm_state_record_processor(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00713d; see re/assembly/bloodprg/seg_04da/func_00713d_vm_state_record_processor.asm"
 }

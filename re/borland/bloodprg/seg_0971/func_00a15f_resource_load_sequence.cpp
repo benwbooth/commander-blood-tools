@@ -10,7 +10,7 @@
 
 // label: resource_load_sequence
 
-extern "C" void CB_NEAR cb_bloodprg_00a15f_resource_load_sequence(void)
+extern "C" void CB_NEAR cb_bloodprg_00a15f_resource_load_sequence(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a15f; see re/assembly/bloodprg/seg_0971/func_00a15f_resource_load_sequence.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: snd_driver_call
 
-extern "C" void CB_FAR cb_bloodprg_00bb9d_snd_driver_call(void)
+extern "C" void CB_FAR cb_bloodprg_00bb9d_snd_driver_call(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bb9d; see re/assembly/bloodprg/seg_0b1b/func_00bb9d_snd_driver_call.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: poll_status_port
 
-extern "C" void CB_FAR cb_bloodprg_000b42_poll_status_port(void)
+extern "C" void CB_FAR cb_bloodprg_000b42_poll_status_port(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000b42; see re/assembly/bloodprg/seg_0000/func_000b42_poll_status_port.asm"
 }

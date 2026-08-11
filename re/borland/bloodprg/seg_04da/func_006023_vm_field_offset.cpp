@@ -10,7 +10,7 @@
 
 // label: vm_field_offset
 
-extern "C" void CB_NEAR cb_bloodprg_006023_vm_field_offset(void)
+extern "C" void CB_NEAR cb_bloodprg_006023_vm_field_offset(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006023; see re/assembly/bloodprg/seg_04da/func_006023_vm_field_offset.asm"
 }

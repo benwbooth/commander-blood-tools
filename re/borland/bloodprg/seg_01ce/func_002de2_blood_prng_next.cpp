@@ -10,7 +10,7 @@
 
 // label: blood_prng_next
 
-extern "C" void CB_FAR cb_bloodprg_002de2_blood_prng_next(void)
+extern "C" void CB_FAR cb_bloodprg_002de2_blood_prng_next(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002de2; see re/assembly/bloodprg/seg_01ce/func_002de2_blood_prng_next.asm"
 }

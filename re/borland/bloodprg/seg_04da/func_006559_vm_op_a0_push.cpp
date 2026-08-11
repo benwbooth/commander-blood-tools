@@ -10,7 +10,7 @@
 
 // label: vm_op_a0_push
 
-extern "C" void CB_NEAR cb_bloodprg_006559_vm_op_a0_push(void)
+extern "C" void CB_NEAR cb_bloodprg_006559_vm_op_a0_push(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006559; see re/assembly/bloodprg/seg_04da/func_006559_vm_op_a0_push.asm"
 }

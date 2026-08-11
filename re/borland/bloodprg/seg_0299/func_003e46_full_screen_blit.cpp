@@ -10,7 +10,7 @@
 
 // label: full_screen_blit
 
-extern "C" void CB_FAR cb_bloodprg_003e46_full_screen_blit(void)
+extern "C" void CB_FAR cb_bloodprg_003e46_full_screen_blit(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003e46; see re/assembly/bloodprg/seg_0299/func_003e46_full_screen_blit.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: credit_presenter_b_cryo
 
-extern "C" void CB_NEAR cb_bloodprg_007612_credit_presenter_b_cryo(void)
+extern "C" void CB_NEAR cb_bloodprg_007612_credit_presenter_b_cryo(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007612; see re/assembly/bloodprg/seg_04da/func_007612_credit_presenter_b_cryo.asm"
 }

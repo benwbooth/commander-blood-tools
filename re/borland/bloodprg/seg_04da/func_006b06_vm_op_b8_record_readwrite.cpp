@@ -10,7 +10,7 @@
 
 // label: vm_op_b8_record_readwrite
 
-extern "C" void CB_NEAR cb_bloodprg_006b06_vm_op_b8_record_readwrite(void)
+extern "C" void CB_NEAR cb_bloodprg_006b06_vm_op_b8_record_readwrite(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006b06; see re/assembly/bloodprg/seg_04da/func_006b06_vm_op_b8_record_readwrite.asm"
 }

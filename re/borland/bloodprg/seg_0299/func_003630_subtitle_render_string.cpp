@@ -10,7 +10,7 @@
 
 // label: subtitle_render_string
 
-extern "C" void CB_FAR cb_bloodprg_003630_subtitle_render_string(void)
+extern "C" void CB_FAR cb_bloodprg_003630_subtitle_render_string(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003630; see re/assembly/bloodprg/seg_0299/func_003630_subtitle_render_string.asm"
 }

@@ -11,7 +11,7 @@
 // label: manu3_api_entry
 // label: manu3_segments_resolved
 
-extern "C" void CB_FAR cb_xdb_manu3_000000_manu3_api_entry(void)
+extern "C" void CB_FAR cb_xdb_manu3_000000_manu3_api_entry(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000000; see re/assembly/xdb/manu3/manu3_labeled/func_000000_manu3_api_entry.asm"
 }

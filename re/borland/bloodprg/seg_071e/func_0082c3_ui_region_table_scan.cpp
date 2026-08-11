@@ -10,7 +10,7 @@
 
 // label: ui_region_table_scan
 
-extern "C" void CB_FAR cb_bloodprg_0082c3_ui_region_table_scan(void)
+extern "C" void CB_FAR cb_bloodprg_0082c3_ui_region_table_scan(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0082c3; see re/assembly/bloodprg/seg_071e/func_0082c3_ui_region_table_scan.asm"
 }

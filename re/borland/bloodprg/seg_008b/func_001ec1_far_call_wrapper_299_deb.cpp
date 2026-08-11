@@ -10,7 +10,7 @@
 
 // label: far_call_wrapper_299_deb
 
-extern "C" void CB_NEAR cb_bloodprg_001ec1_far_call_wrapper_299_deb(void)
+extern "C" void CB_NEAR cb_bloodprg_001ec1_far_call_wrapper_299_deb(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001ec1; see re/assembly/bloodprg/seg_008b/func_001ec1_far_call_wrapper_299_deb.asm"
 }

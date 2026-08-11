@@ -10,7 +10,7 @@
 
 // label: vm_lookup_prep
 
-extern "C" void CB_FAR cb_bloodprg_0071cf_vm_lookup_prep(void)
+extern "C" void CB_FAR cb_bloodprg_0071cf_vm_lookup_prep(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0071cf; see re/assembly/bloodprg/seg_04da/func_0071cf_vm_lookup_prep.asm"
 }

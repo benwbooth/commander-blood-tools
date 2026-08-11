@@ -10,7 +10,7 @@
 
 // label: composite_draw_a
 
-extern "C" void CB_FAR cb_bloodprg_003b45_composite_draw_a(void)
+extern "C" void CB_FAR cb_bloodprg_003b45_composite_draw_a(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003b45; see re/assembly/bloodprg/seg_0299/func_003b45_composite_draw_a.asm"
 }

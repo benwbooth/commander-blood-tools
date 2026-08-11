@@ -10,7 +10,7 @@
 
 // label: back_buffer_copy_from
 
-extern "C" void CB_NEAR cb_bloodprg_00933a_back_buffer_copy_from(void)
+extern "C" void CB_NEAR cb_bloodprg_00933a_back_buffer_copy_from(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00933a; see re/assembly/bloodprg/seg_071e/func_00933a_back_buffer_copy_from.asm"
 }

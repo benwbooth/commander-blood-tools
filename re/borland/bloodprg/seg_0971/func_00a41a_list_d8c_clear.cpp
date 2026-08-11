@@ -10,7 +10,7 @@
 
 // label: list_d8c_clear
 
-extern "C" void CB_FAR cb_bloodprg_00a41a_list_d8c_clear(void)
+extern "C" void CB_FAR cb_bloodprg_00a41a_list_d8c_clear(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a41a; see re/assembly/bloodprg/seg_0971/func_00a41a_list_d8c_clear.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: vm_op_cd_state_gated
 
-extern "C" void CB_NEAR cb_bloodprg_0069c7_vm_op_cd_state_gated(void)
+extern "C" void CB_NEAR cb_bloodprg_0069c7_vm_op_cd_state_gated(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0069c7; see re/assembly/bloodprg/seg_04da/func_0069c7_vm_op_cd_state_gated.asm"
 }

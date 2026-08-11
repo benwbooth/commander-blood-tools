@@ -10,7 +10,7 @@
 
 // label: vm_context_pointer_setup
 
-extern "C" void CB_NEAR cb_bloodprg_001d94_vm_context_pointer_setup(void)
+extern "C" void CB_NEAR cb_bloodprg_001d94_vm_context_pointer_setup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001d94; see re/assembly/bloodprg/seg_008b/func_001d94_vm_context_pointer_setup.asm"
 }

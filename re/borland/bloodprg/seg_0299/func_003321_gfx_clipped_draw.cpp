@@ -10,7 +10,7 @@
 
 // label: gfx_clipped_draw
 
-extern "C" void CB_FAR cb_bloodprg_003321_gfx_clipped_draw(void)
+extern "C" void CB_FAR cb_bloodprg_003321_gfx_clipped_draw(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003321; see re/assembly/bloodprg/seg_0299/func_003321_gfx_clipped_draw.asm"
 }

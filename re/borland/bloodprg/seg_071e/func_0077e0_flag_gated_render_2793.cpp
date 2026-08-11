@@ -10,7 +10,7 @@
 
 // label: flag_gated_render_2793
 
-extern "C" void CB_FAR cb_bloodprg_0077e0_flag_gated_render_2793(void)
+extern "C" void CB_FAR cb_bloodprg_0077e0_flag_gated_render_2793(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0077e0; see re/assembly/bloodprg/seg_071e/func_0077e0_flag_gated_render_2793.asm"
 }

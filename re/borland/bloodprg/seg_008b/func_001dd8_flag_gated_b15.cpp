@@ -10,7 +10,7 @@
 
 // label: flag_gated_b15
 
-extern "C" void CB_NEAR cb_bloodprg_001dd8_flag_gated_b15(void)
+extern "C" void CB_NEAR cb_bloodprg_001dd8_flag_gated_b15(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001dd8; see re/assembly/bloodprg/seg_008b/func_001dd8_flag_gated_b15.asm"
 }

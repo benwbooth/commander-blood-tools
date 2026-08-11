@@ -10,7 +10,7 @@
 
 // label: vm_segment_call_wrapper
 
-extern "C" void CB_FAR cb_bloodprg_008c96_vm_segment_call_wrapper(void)
+extern "C" void CB_FAR cb_bloodprg_008c96_vm_segment_call_wrapper(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008c96; see re/assembly/bloodprg/seg_071e/func_008c96_vm_segment_call_wrapper.asm"
 }

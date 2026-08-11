@@ -10,7 +10,7 @@
 
 // label: screen_flags_init
 
-extern "C" void CB_NEAR cb_bloodprg_00959d_screen_flags_init(void)
+extern "C" void CB_NEAR cb_bloodprg_00959d_screen_flags_init(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00959d; see re/assembly/bloodprg/seg_071e/func_00959d_screen_flags_init.asm"
 }

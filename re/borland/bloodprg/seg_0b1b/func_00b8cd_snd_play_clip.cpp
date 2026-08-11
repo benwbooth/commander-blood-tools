@@ -10,7 +10,7 @@
 
 // label: snd_play_clip
 
-extern "C" void CB_FAR cb_bloodprg_00b8cd_snd_play_clip(void)
+extern "C" void CB_FAR cb_bloodprg_00b8cd_snd_play_clip(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b8cd; see re/assembly/bloodprg/seg_0b1b/func_00b8cd_snd_play_clip.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: vm_op_d2_script_profile_request
 
-extern "C" void CB_NEAR cb_bloodprg_0064b8_vm_op_d2_script_profile_request(void)
+extern "C" void CB_NEAR cb_bloodprg_0064b8_vm_op_d2_script_profile_request(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0064b8; see re/assembly/bloodprg/seg_04da/func_0064b8_vm_op_d2_script_profile_request.asm"
 }

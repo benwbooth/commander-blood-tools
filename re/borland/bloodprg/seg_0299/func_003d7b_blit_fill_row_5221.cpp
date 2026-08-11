@@ -10,7 +10,7 @@
 
 // label: blit_fill_row_5221
 
-extern "C" void CB_FAR cb_bloodprg_003d7b_blit_fill_row_5221(void)
+extern "C" void CB_FAR cb_bloodprg_003d7b_blit_fill_row_5221(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003d7b; see re/assembly/bloodprg/seg_0299/func_003d7b_blit_fill_row_5221.asm"
 }

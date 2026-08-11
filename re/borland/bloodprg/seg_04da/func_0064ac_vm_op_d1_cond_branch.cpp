@@ -10,7 +10,7 @@
 
 // label: vm_op_d1_cond_branch
 
-extern "C" void CB_NEAR cb_bloodprg_0064ac_vm_op_d1_cond_branch(void)
+extern "C" void CB_NEAR cb_bloodprg_0064ac_vm_op_d1_cond_branch(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0064ac; see re/assembly/bloodprg/seg_04da/func_0064ac_vm_op_d1_cond_branch.asm"
 }

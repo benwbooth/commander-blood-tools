@@ -10,7 +10,7 @@
 
 // label: render_string_entry
 
-extern "C" void CB_FAR cb_bloodprg_003192_render_string_entry(void)
+extern "C" void CB_FAR cb_bloodprg_003192_render_string_entry(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003192; see re/assembly/bloodprg/seg_0299/func_003192_render_string_entry.asm"
 }

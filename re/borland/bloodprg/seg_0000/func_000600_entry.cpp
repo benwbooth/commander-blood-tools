@@ -10,7 +10,7 @@
 
 // label: entry
 
-extern "C" void CB_NEAR cb_bloodprg_000600_entry(void)
+extern "C" void CB_NEAR cb_bloodprg_000600_entry(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000600; see re/assembly/bloodprg/seg_0000/func_000600_entry.asm"
 }

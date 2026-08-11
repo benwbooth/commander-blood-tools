@@ -10,7 +10,7 @@
 
 // label: list_d8c_init
 
-extern "C" void CB_FAR cb_bloodprg_00a757_list_d8c_init(void)
+extern "C" void CB_FAR cb_bloodprg_00a757_list_d8c_init(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a757; see re/assembly/bloodprg/seg_0971/func_00a757_list_d8c_init.asm"
 }

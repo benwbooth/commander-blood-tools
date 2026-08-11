@@ -10,7 +10,7 @@
 
 // label: detect_cdrom
 
-extern "C" void CB_NEAR cb_bloodprg_000b32_detect_cdrom(void)
+extern "C" void CB_NEAR cb_bloodprg_000b32_detect_cdrom(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000b32; see re/assembly/bloodprg/seg_0000/func_000b32_detect_cdrom.asm"
 }

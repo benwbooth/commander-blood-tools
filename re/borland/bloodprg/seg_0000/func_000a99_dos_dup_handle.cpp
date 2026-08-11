@@ -10,7 +10,7 @@
 
 // label: dos_dup_handle
 
-extern "C" void CB_FAR cb_bloodprg_000a99_dos_dup_handle(void)
+extern "C" void CB_FAR cb_bloodprg_000a99_dos_dup_handle(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000a99; see re/assembly/bloodprg/seg_0000/func_000a99_dos_dup_handle.asm"
 }

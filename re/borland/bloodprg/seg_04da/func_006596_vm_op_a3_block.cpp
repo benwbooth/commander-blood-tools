@@ -10,7 +10,7 @@
 
 // label: vm_op_a3_block
 
-extern "C" void CB_NEAR cb_bloodprg_006596_vm_op_a3_block(void)
+extern "C" void CB_NEAR cb_bloodprg_006596_vm_op_a3_block(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006596; see re/assembly/bloodprg/seg_04da/func_006596_vm_op_a3_block.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: page_flip
 
-extern "C" void CB_FAR cb_bloodprg_00954a_page_flip(void)
+extern "C" void CB_FAR cb_bloodprg_00954a_page_flip(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00954a; see re/assembly/bloodprg/seg_071e/func_00954a_page_flip.asm"
 }

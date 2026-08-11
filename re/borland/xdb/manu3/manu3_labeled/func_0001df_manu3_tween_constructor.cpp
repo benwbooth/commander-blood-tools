@@ -10,7 +10,7 @@
 
 // label: manu3_tween_constructor
 
-extern "C" void CB_NEAR cb_xdb_manu3_0001df_manu3_tween_constructor(void)
+extern "C" void CB_NEAR cb_xdb_manu3_0001df_manu3_tween_constructor(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x0001df; see re/assembly/xdb/manu3/manu3_labeled/func_0001df_manu3_tween_constructor.asm"
 }

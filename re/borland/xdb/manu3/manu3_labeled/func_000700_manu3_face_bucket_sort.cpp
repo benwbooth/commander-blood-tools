@@ -10,7 +10,7 @@
 
 // label: manu3_face_bucket_sort
 
-extern "C" void CB_NEAR cb_xdb_manu3_000700_manu3_face_bucket_sort(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000700_manu3_face_bucket_sort(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000700; see re/assembly/xdb/manu3/manu3_labeled/func_000700_manu3_face_bucket_sort.asm"
 }

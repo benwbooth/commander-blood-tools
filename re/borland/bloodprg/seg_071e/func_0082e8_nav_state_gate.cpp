@@ -10,7 +10,7 @@
 
 // label: nav_state_gate
 
-extern "C" void CB_NEAR cb_bloodprg_0082e8_nav_state_gate(void)
+extern "C" void CB_NEAR cb_bloodprg_0082e8_nav_state_gate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0082e8; see re/assembly/bloodprg/seg_071e/func_0082e8_nav_state_gate.asm"
 }

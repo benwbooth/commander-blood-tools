@@ -10,7 +10,7 @@
 
 // label: ship_3d_interpolation_gate
 
-extern "C" void CB_FAR cb_bloodprg_001e5d_ship_3d_interpolation_gate(void)
+extern "C" void CB_FAR cb_bloodprg_001e5d_ship_3d_interpolation_gate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001e5d; see re/assembly/bloodprg/seg_008b/func_001e5d_ship_3d_interpolation_gate.asm"
 }

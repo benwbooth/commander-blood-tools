@@ -10,7 +10,7 @@
 
 // label: range_count
 
-extern "C" void CB_FAR cb_bloodprg_004240_range_count(void)
+extern "C" void CB_FAR cb_bloodprg_004240_range_count(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004240; see re/assembly/bloodprg/seg_0299/func_004240_range_count.asm"
 }

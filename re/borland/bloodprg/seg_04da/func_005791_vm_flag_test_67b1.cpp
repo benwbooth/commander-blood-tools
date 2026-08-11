@@ -10,7 +10,7 @@
 
 // label: vm_flag_test_67b1
 
-extern "C" void CB_NEAR cb_bloodprg_005791_vm_flag_test_67b1(void)
+extern "C" void CB_NEAR cb_bloodprg_005791_vm_flag_test_67b1(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005791; see re/assembly/bloodprg/seg_04da/func_005791_vm_flag_test_67b1.asm"
 }

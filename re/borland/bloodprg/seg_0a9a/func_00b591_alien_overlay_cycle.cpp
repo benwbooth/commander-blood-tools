@@ -10,7 +10,7 @@
 
 // label: alien_overlay_cycle
 
-extern "C" void CB_FAR cb_bloodprg_00b591_alien_overlay_cycle(void)
+extern "C" void CB_FAR cb_bloodprg_00b591_alien_overlay_cycle(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b591; see re/assembly/bloodprg/seg_0a9a/func_00b591_alien_overlay_cycle.asm"
 }

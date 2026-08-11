@@ -10,7 +10,7 @@
 
 // label: flag_gated_ae6_b
 
-extern "C" void CB_FAR cb_bloodprg_0013c4_flag_gated_ae6_b(void)
+extern "C" void CB_FAR cb_bloodprg_0013c4_flag_gated_ae6_b(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0013c4; see re/assembly/bloodprg/seg_008b/func_0013c4_flag_gated_ae6_b.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: ship_3d_navigation_candidate_build
 
-extern "C" void CB_FAR cb_bloodprg_0070ee_ship_3d_navigation_candidate_build(void)
+extern "C" void CB_FAR cb_bloodprg_0070ee_ship_3d_navigation_candidate_build(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0070ee; see re/assembly/bloodprg/seg_04da/func_0070ee_ship_3d_navigation_candidate_build.asm"
 }

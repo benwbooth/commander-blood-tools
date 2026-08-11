@@ -10,7 +10,7 @@
 
 // label: text_width_dual_font
 
-extern "C" void CB_FAR cb_bloodprg_0030cd_text_width_dual_font(void)
+extern "C" void CB_FAR cb_bloodprg_0030cd_text_width_dual_font(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0030cd; see re/assembly/bloodprg/seg_0299/func_0030cd_text_width_dual_font.asm"
 }

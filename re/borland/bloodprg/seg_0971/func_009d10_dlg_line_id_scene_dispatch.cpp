@@ -10,7 +10,7 @@
 
 // label: dlg_line_id_scene_dispatch
 
-extern "C" void CB_FAR cb_bloodprg_009d10_dlg_line_id_scene_dispatch(void)
+extern "C" void CB_FAR cb_bloodprg_009d10_dlg_line_id_scene_dispatch(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009d10; see re/assembly/bloodprg/seg_0971/func_009d10_dlg_line_id_scene_dispatch.asm"
 }

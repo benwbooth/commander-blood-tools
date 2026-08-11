@@ -10,7 +10,7 @@
 
 // label: vm_op_b7_record_op
 
-extern "C" void CB_NEAR cb_bloodprg_006aa7_vm_op_b7_record_op(void)
+extern "C" void CB_NEAR cb_bloodprg_006aa7_vm_op_b7_record_op(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006aa7; see re/assembly/bloodprg/seg_04da/func_006aa7_vm_op_b7_record_op.asm"
 }

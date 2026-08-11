@@ -10,7 +10,7 @@
 
 // label: file_read
 
-extern "C" void CB_NEAR cb_bloodprg_004086_file_read(void)
+extern "C" void CB_NEAR cb_bloodprg_004086_file_read(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004086; see re/assembly/bloodprg/seg_0299/func_004086_file_read.asm"
 }

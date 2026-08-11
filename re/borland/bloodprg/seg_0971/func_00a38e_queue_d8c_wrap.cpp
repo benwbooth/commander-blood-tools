@@ -10,7 +10,7 @@
 
 // label: queue_d8c_wrap
 
-extern "C" void CB_NEAR cb_bloodprg_00a38e_queue_d8c_wrap(void)
+extern "C" void CB_NEAR cb_bloodprg_00a38e_queue_d8c_wrap(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a38e; see re/assembly/bloodprg/seg_0971/func_00a38e_queue_d8c_wrap.asm"
 }

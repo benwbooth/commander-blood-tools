@@ -10,7 +10,7 @@
 
 // label: presentation_update_1fb2
 
-extern "C" void CB_FAR cb_bloodprg_009f53_presentation_update_1fb2(void)
+extern "C" void CB_FAR cb_bloodprg_009f53_presentation_update_1fb2(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009f53; see re/assembly/bloodprg/seg_0971/func_009f53_presentation_update_1fb2.asm"
 }

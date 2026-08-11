@@ -10,7 +10,7 @@
 
 // label: sprite_slot_commit_dirty_range
 
-extern "C" void CB_FAR cb_bloodprg_0043f7_sprite_slot_commit_dirty_range(void)
+extern "C" void CB_FAR cb_bloodprg_0043f7_sprite_slot_commit_dirty_range(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0043f7; see re/assembly/bloodprg/seg_0299/func_0043f7_sprite_slot_commit_dirty_range.asm"
 }

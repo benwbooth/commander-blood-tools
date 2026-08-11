@@ -10,7 +10,7 @@
 
 // label: resource_get_field4
 
-extern "C" void CB_FAR cb_bloodprg_00533c_resource_get_field4(void)
+extern "C" void CB_FAR cb_bloodprg_00533c_resource_get_field4(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00533c; see re/assembly/bloodprg/seg_04b9/func_00533c_resource_get_field4.asm"
 }

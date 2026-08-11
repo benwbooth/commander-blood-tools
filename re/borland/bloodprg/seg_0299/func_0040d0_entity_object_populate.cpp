@@ -10,7 +10,7 @@
 
 // label: entity_object_populate
 
-extern "C" void CB_FAR cb_bloodprg_0040d0_entity_object_populate(void)
+extern "C" void CB_FAR cb_bloodprg_0040d0_entity_object_populate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0040d0; see re/assembly/bloodprg/seg_0299/func_0040d0_entity_object_populate.asm"
 }

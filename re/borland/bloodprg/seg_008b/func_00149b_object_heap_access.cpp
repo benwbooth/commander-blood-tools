@@ -10,7 +10,7 @@
 
 // label: object_heap_access
 
-extern "C" void CB_NEAR cb_bloodprg_00149b_object_heap_access(void)
+extern "C" void CB_NEAR cb_bloodprg_00149b_object_heap_access(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00149b; see re/assembly/bloodprg/seg_008b/func_00149b_object_heap_access.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: nav_choice_dispatch
 
-extern "C" void CB_NEAR cb_bloodprg_0085e2_nav_choice_dispatch(void)
+extern "C" void CB_NEAR cb_bloodprg_0085e2_nav_choice_dispatch(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0085e2; see re/assembly/bloodprg/seg_071e/func_0085e2_nav_choice_dispatch.asm"
 }

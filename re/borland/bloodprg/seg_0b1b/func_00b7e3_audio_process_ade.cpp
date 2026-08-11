@@ -10,7 +10,7 @@
 
 // label: audio_process_ade
 
-extern "C" void CB_FAR cb_bloodprg_00b7e3_audio_process_ade(void)
+extern "C" void CB_FAR cb_bloodprg_00b7e3_audio_process_ade(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b7e3; see re/assembly/bloodprg/seg_0b1b/func_00b7e3_audio_process_ade.asm"
 }

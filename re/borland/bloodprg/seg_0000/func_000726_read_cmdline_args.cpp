@@ -10,7 +10,7 @@
 
 // label: read_cmdline_args
 
-extern "C" void CB_NEAR cb_bloodprg_000726_read_cmdline_args(void)
+extern "C" void CB_NEAR cb_bloodprg_000726_read_cmdline_args(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000726; see re/assembly/bloodprg/seg_0000/func_000726_read_cmdline_args.asm"
 }

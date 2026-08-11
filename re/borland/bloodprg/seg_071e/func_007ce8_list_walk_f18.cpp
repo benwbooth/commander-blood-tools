@@ -10,7 +10,7 @@
 
 // label: list_walk_f18
 
-extern "C" void CB_NEAR cb_bloodprg_007ce8_list_walk_f18(void)
+extern "C" void CB_NEAR cb_bloodprg_007ce8_list_walk_f18(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007ce8; see re/assembly/bloodprg/seg_071e/func_007ce8_list_walk_f18.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: list_d8c_bounds_init
 
-extern "C" void CB_NEAR cb_bloodprg_00a73e_list_d8c_bounds_init(void)
+extern "C" void CB_NEAR cb_bloodprg_00a73e_list_d8c_bounds_init(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a73e; see re/assembly/bloodprg/seg_0971/func_00a73e_list_d8c_bounds_init.asm"
 }

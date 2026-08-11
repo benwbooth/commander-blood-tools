@@ -10,7 +10,7 @@
 
 // label: vm_record_state_proc
 
-extern "C" void CB_FAR cb_bloodprg_00555b_vm_record_state_proc(void)
+extern "C" void CB_FAR cb_bloodprg_00555b_vm_record_state_proc(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00555b; see re/assembly/bloodprg/seg_04da/func_00555b_vm_record_state_proc.asm"
 }

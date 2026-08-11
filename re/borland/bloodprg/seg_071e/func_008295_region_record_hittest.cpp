@@ -10,7 +10,7 @@
 
 // label: region_record_hittest
 
-extern "C" void CB_FAR cb_bloodprg_008295_region_record_hittest(void)
+extern "C" void CB_FAR cb_bloodprg_008295_region_record_hittest(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008295; see re/assembly/bloodprg/seg_071e/func_008295_region_record_hittest.asm"
 }

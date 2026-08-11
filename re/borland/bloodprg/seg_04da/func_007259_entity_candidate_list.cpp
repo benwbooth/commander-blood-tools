@@ -10,7 +10,7 @@
 
 // label: entity_candidate_list
 
-extern "C" void CB_FAR cb_bloodprg_007259_entity_candidate_list(void)
+extern "C" void CB_FAR cb_bloodprg_007259_entity_candidate_list(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007259; see re/assembly/bloodprg/seg_04da/func_007259_entity_candidate_list.asm"
 }

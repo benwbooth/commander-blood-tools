@@ -10,7 +10,7 @@
 
 // label: install_timer_isr_hook
 
-extern "C" void CB_FAR cb_bloodprg_00079c_install_timer_isr_hook(void)
+extern "C" void CB_FAR cb_bloodprg_00079c_install_timer_isr_hook(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00079c; see re/assembly/bloodprg/seg_0000/func_00079c_install_timer_isr_hook.asm"
 }

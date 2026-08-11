@@ -10,7 +10,7 @@
 
 // label: get_ems_int_vector
 
-extern "C" void CB_FAR cb_bloodprg_00099f_get_ems_int_vector(void)
+extern "C" void CB_FAR cb_bloodprg_00099f_get_ems_int_vector(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00099f; see re/assembly/bloodprg/seg_0000/func_00099f_get_ems_int_vector.asm"
 }

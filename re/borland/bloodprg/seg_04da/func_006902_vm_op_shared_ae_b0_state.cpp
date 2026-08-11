@@ -10,7 +10,7 @@
 
 // label: vm_op_shared_ae_b0_state
 
-extern "C" void CB_NEAR cb_bloodprg_006902_vm_op_shared_ae_b0_state(void)
+extern "C" void CB_NEAR cb_bloodprg_006902_vm_op_shared_ae_b0_state(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006902; see re/assembly/bloodprg/seg_04da/func_006902_vm_op_shared_ae_b0_state.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: rtc_time_read
 
-extern "C" void CB_FAR cb_bloodprg_00093b_rtc_time_read(void)
+extern "C" void CB_FAR cb_bloodprg_00093b_rtc_time_read(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00093b; see re/assembly/bloodprg/seg_0000/func_00093b_rtc_time_read.asm"
 }

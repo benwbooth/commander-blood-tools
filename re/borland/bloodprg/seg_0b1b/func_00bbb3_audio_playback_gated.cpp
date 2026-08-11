@@ -10,7 +10,7 @@
 
 // label: audio_playback_gated
 
-extern "C" void CB_FAR cb_bloodprg_00bbb3_audio_playback_gated(void)
+extern "C" void CB_FAR cb_bloodprg_00bbb3_audio_playback_gated(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bbb3; see re/assembly/bloodprg/seg_0b1b/func_00bbb3_audio_playback_gated.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: transition_progress_524
 
-extern "C" void CB_FAR cb_bloodprg_001f78_transition_progress_524(void)
+extern "C" void CB_FAR cb_bloodprg_001f78_transition_progress_524(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001f78; see re/assembly/bloodprg/seg_008b/func_001f78_transition_progress_524.asm"
 }

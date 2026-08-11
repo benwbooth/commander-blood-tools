@@ -10,7 +10,7 @@
 
 // label: vm_c2_descript_lookup
 
-extern "C" void CB_FAR cb_bloodprg_007409_vm_c2_descript_lookup(void)
+extern "C" void CB_FAR cb_bloodprg_007409_vm_c2_descript_lookup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007409; see re/assembly/bloodprg/seg_04da/func_007409_vm_c2_descript_lookup.asm"
 }

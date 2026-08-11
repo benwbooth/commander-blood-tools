@@ -10,7 +10,7 @@
 
 // label: bridge_steer_update
 
-extern "C" void CB_FAR cb_bloodprg_009656_bridge_steer_update(void)
+extern "C" void CB_FAR cb_bloodprg_009656_bridge_steer_update(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009656; see re/assembly/bloodprg/seg_071e/func_009656_bridge_steer_update.asm"
 }

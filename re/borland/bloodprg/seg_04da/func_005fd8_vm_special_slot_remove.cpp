@@ -10,7 +10,7 @@
 
 // label: vm_special_slot_remove
 
-extern "C" void CB_NEAR cb_bloodprg_005fd8_vm_special_slot_remove(void)
+extern "C" void CB_NEAR cb_bloodprg_005fd8_vm_special_slot_remove(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005fd8; see re/assembly/bloodprg/seg_04da/func_005fd8_vm_special_slot_remove.asm"
 }

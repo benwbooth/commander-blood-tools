@@ -10,7 +10,7 @@
 
 // label: manu3_anim_select
 
-extern "C" void CB_NEAR cb_xdb_manu3_000181_manu3_anim_select(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000181_manu3_anim_select(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000181; see re/assembly/xdb/manu3/manu3_labeled/func_000181_manu3_anim_select.asm"
 }

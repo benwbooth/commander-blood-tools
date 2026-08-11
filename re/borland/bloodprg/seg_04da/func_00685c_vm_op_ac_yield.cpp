@@ -10,7 +10,7 @@
 
 // label: vm_op_ac_yield
 
-extern "C" void CB_NEAR cb_bloodprg_00685c_vm_op_ac_yield(void)
+extern "C" void CB_NEAR cb_bloodprg_00685c_vm_op_ac_yield(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00685c; see re/assembly/bloodprg/seg_04da/func_00685c_vm_op_ac_yield.asm"
 }

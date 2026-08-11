@@ -10,7 +10,7 @@
 
 // label: vm_op_shared_state_marker
 
-extern "C" void CB_NEAR cb_bloodprg_006863_vm_op_shared_state_marker(void)
+extern "C" void CB_NEAR cb_bloodprg_006863_vm_op_shared_state_marker(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006863; see re/assembly/bloodprg/seg_04da/func_006863_vm_op_shared_state_marker.asm"
 }

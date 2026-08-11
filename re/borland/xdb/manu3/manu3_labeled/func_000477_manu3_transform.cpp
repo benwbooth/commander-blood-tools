@@ -10,7 +10,7 @@
 
 // label: manu3_transform
 
-extern "C" void CB_NEAR cb_xdb_manu3_000477_manu3_transform(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000477_manu3_transform(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000477; see re/assembly/xdb/manu3/manu3_labeled/func_000477_manu3_transform.asm"
 }

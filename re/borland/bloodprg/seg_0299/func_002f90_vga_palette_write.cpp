@@ -10,7 +10,7 @@
 
 // label: vga_palette_write
 
-extern "C" void CB_FAR cb_bloodprg_002f90_vga_palette_write(void)
+extern "C" void CB_FAR cb_bloodprg_002f90_vga_palette_write(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002f90; see re/assembly/bloodprg/seg_0299/func_002f90_vga_palette_write.asm"
 }

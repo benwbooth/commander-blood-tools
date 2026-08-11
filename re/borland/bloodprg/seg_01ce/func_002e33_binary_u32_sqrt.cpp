@@ -10,7 +10,7 @@
 
 // label: binary_u32_sqrt
 
-extern "C" void CB_FAR cb_bloodprg_002e33_binary_u32_sqrt(void)
+extern "C" void CB_FAR cb_bloodprg_002e33_binary_u32_sqrt(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002e33; see re/assembly/bloodprg/seg_01ce/func_002e33_binary_u32_sqrt.asm"
 }

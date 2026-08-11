@@ -10,7 +10,7 @@
 
 // label: dlg_line_record_parser
 
-extern "C" void CB_NEAR cb_bloodprg_00766f_dlg_line_record_parser(void)
+extern "C" void CB_NEAR cb_bloodprg_00766f_dlg_line_record_parser(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00766f; see re/assembly/bloodprg/seg_04da/func_00766f_dlg_line_record_parser.asm"
 }

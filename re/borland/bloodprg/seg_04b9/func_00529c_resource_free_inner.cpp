@@ -10,7 +10,7 @@
 
 // label: resource_free_inner
 
-extern "C" void CB_FAR cb_bloodprg_00529c_resource_free_inner(void)
+extern "C" void CB_FAR cb_bloodprg_00529c_resource_free_inner(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00529c; see re/assembly/bloodprg/seg_04b9/func_00529c_resource_free_inner.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: set_video_mode_saved
 
-extern "C" void CB_FAR cb_bloodprg_000cc0_set_video_mode_saved(void)
+extern "C" void CB_FAR cb_bloodprg_000cc0_set_video_mode_saved(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000cc0; see re/assembly/bloodprg/seg_0000/func_000cc0_set_video_mode_saved.asm"
 }

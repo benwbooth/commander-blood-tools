@@ -10,7 +10,7 @@
 
 // label: resource_name_write_c00
 
-extern "C" void CB_FAR cb_bloodprg_005190_resource_name_write_c00(void)
+extern "C" void CB_FAR cb_bloodprg_005190_resource_name_write_c00(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005190; see re/assembly/bloodprg/seg_04b9/func_005190_resource_name_write_c00.asm"
 }

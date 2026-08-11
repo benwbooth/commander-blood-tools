@@ -10,7 +10,7 @@
 
 // label: input_dispatch_handler_table_UNRESOLVED
 
-extern "C" void CB_FAR cb_bloodprg_00210e_input_dispatch_handler_table_unresolved(void)
+extern "C" void CB_FAR cb_bloodprg_00210e_input_dispatch_handler_table_unresolved(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00210e; see re/assembly/bloodprg/seg_008b/func_00210e_input_dispatch_handler_table_unresolved.asm"
 }

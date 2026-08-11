@@ -10,7 +10,7 @@
 
 // label: get_rtc_date
 
-extern "C" void CB_FAR cb_bloodprg_000950_get_rtc_date(void)
+extern "C" void CB_FAR cb_bloodprg_000950_get_rtc_date(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000950; see re/assembly/bloodprg/seg_0000/func_000950_get_rtc_date.asm"
 }

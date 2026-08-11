@@ -10,7 +10,7 @@
 
 // label: blit_coord_guard_b
 
-extern "C" void CB_FAR cb_bloodprg_003b85_blit_coord_guard_b(void)
+extern "C" void CB_FAR cb_bloodprg_003b85_blit_coord_guard_b(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003b85; see re/assembly/bloodprg/seg_0299/func_003b85_blit_coord_guard_b.asm"
 }

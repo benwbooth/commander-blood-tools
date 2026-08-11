@@ -10,7 +10,7 @@
 
 // label: ship_3d_depth_scroll_step
 
-extern "C" void CB_NEAR cb_bloodprg_00b75c_ship_3d_depth_scroll_step(void)
+extern "C" void CB_NEAR cb_bloodprg_00b75c_ship_3d_depth_scroll_step(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b75c; see re/assembly/bloodprg/seg_0a9a/func_00b75c_ship_3d_depth_scroll_step.asm"
 }

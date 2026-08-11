@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_xdb_amer_00164c_routine(void)
+extern "C" void CB_NEAR cb_xdb_amer_00164c_routine(CbMachine* m)
 {
 #error "Untranslated routine xdb_amer:0x00164c; see re/assembly/xdb/amer/method_table_103a/func_00164c_routine.asm"
 }

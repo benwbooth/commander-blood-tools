@@ -10,7 +10,7 @@
 
 // label: lookup_table_1fb5
 
-extern "C" void CB_NEAR cb_bloodprg_009f80_lookup_table_1fb5(void)
+extern "C" void CB_NEAR cb_bloodprg_009f80_lookup_table_1fb5(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009f80; see re/assembly/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.asm"
 }

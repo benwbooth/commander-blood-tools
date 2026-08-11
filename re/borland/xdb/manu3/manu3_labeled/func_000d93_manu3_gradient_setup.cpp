@@ -10,7 +10,7 @@
 
 // label: manu3_gradient_setup
 
-extern "C" void CB_NEAR cb_xdb_manu3_000d93_manu3_gradient_setup(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000d93_manu3_gradient_setup(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000d93; see re/assembly/xdb/manu3/manu3_labeled/func_000d93_manu3_gradient_setup.asm"
 }

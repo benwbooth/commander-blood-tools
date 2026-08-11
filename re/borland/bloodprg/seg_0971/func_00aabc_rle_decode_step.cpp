@@ -10,7 +10,7 @@
 
 // label: rle_decode_step
 
-extern "C" void CB_NEAR cb_bloodprg_00aabc_rle_decode_step(void)
+extern "C" void CB_NEAR cb_bloodprg_00aabc_rle_decode_step(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00aabc; see re/assembly/bloodprg/seg_0971/func_00aabc_rle_decode_step.asm"
 }

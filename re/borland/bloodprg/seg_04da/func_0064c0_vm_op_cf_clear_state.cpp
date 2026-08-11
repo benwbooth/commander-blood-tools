@@ -10,7 +10,7 @@
 
 // label: vm_op_cf_clear_state
 
-extern "C" void CB_NEAR cb_bloodprg_0064c0_vm_op_cf_clear_state(void)
+extern "C" void CB_NEAR cb_bloodprg_0064c0_vm_op_cf_clear_state(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0064c0; see re/assembly/bloodprg/seg_04da/func_0064c0_vm_op_cf_clear_state.asm"
 }

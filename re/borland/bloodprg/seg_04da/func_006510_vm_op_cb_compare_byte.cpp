@@ -10,7 +10,7 @@
 
 // label: vm_op_cb_compare_byte
 
-extern "C" void CB_NEAR cb_bloodprg_006510_vm_op_cb_compare_byte(void)
+extern "C" void CB_NEAR cb_bloodprg_006510_vm_op_cb_compare_byte(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006510; see re/assembly/bloodprg/seg_04da/func_006510_vm_op_cb_compare_byte.asm"
 }

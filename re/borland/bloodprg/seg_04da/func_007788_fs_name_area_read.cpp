@@ -10,7 +10,7 @@
 
 // label: fs_name_area_read
 
-extern "C" void CB_NEAR cb_bloodprg_007788_fs_name_area_read(void)
+extern "C" void CB_NEAR cb_bloodprg_007788_fs_name_area_read(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007788; see re/assembly/bloodprg/seg_04da/func_007788_fs_name_area_read.asm"
 }

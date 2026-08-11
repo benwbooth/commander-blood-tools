@@ -10,7 +10,7 @@
 
 // label: flag_test_a2e
 
-extern "C" void CB_NEAR cb_bloodprg_001fbc_flag_test_a2e(void)
+extern "C" void CB_NEAR cb_bloodprg_001fbc_flag_test_a2e(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001fbc; see re/assembly/bloodprg/seg_008b/func_001fbc_flag_test_a2e.asm"
 }

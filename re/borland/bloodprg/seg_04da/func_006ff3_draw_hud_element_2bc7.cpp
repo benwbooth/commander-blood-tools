@@ -10,7 +10,7 @@
 
 // label: draw_hud_element_2bc7
 
-extern "C" void CB_FAR cb_bloodprg_006ff3_draw_hud_element_2bc7(void)
+extern "C" void CB_FAR cb_bloodprg_006ff3_draw_hud_element_2bc7(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006ff3; see re/assembly/bloodprg/seg_04da/func_006ff3_draw_hud_element_2bc7.asm"
 }

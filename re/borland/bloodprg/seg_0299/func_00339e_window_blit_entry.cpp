@@ -10,7 +10,7 @@
 
 // label: window_blit_entry
 
-extern "C" void CB_FAR cb_bloodprg_00339e_window_blit_entry(void)
+extern "C" void CB_FAR cb_bloodprg_00339e_window_blit_entry(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00339e; see re/assembly/bloodprg/seg_0299/func_00339e_window_blit_entry.asm"
 }

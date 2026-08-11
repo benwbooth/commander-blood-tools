@@ -61,6 +61,17 @@ RETURN_MNEMONICS = {"ret", "retf"}
 
 ALIEN_XDBS = {"amer", "croolis", "scrut"}
 
+MANUAL_TRANSLATIONS = {
+    ("bloodprg", 0x002665): (
+        "translated_strlen_es_di",
+        "mechanical translation of ES:DI NUL scan preserving CX/DI",
+    ),
+    ("bloodprg", 0x00A7E6): (
+        "translated_mem_copy_words_4",
+        "mechanical translation of push ds/pop es plus four MOVSW instructions",
+    ),
+}
+
 MANU3_CODE_SEEDS = {
     0x0000: "manu3 external far-call API entry",
     0x0121: "manu3 self-relocation/init entry",
@@ -398,6 +409,11 @@ def decode_routine(
 
 def classify_cxx_translation(routine: Routine) -> None:
     insns = routine.instructions
+    manual = MANUAL_TRANSLATIONS.get((routine.module, routine.entry))
+    if manual is not None:
+        routine.cxx_status = manual[0]
+        routine.cxx_reason = manual[1]
+        return
     if len(insns) == 1 and insns[0].mnemonic in RETURN_MNEMONICS:
         routine.cxx_status = "translated_empty_return"
         routine.cxx_reason = f"single {insns[0].mnemonic} instruction"
@@ -685,9 +701,62 @@ def asm_text(routine: Routine, data: bytes) -> str:
     return "\n".join(lines)
 
 
+def translated_cpp_body(routine: Routine) -> list[str] | None:
+    if routine.cxx_status == "translated_empty_return":
+        return [
+            "    (void)m;",
+            "    return;",
+        ]
+
+    if routine.cxx_status == "translated_mem_copy_words_4":
+        return [
+            "    m->es = m->ds;",
+            "    for (int i = 0; i != 4; ++i) {",
+            "        cb_u16 value = m->read16(m->ds, m->si);",
+            "        m->write16(m->es, m->di, value);",
+            "        if (m->df) {",
+            "            m->si = (cb_u16)(m->si - 2);",
+            "            m->di = (cb_u16)(m->di - 2);",
+            "        } else {",
+            "            m->si = (cb_u16)(m->si + 2);",
+            "            m->di = (cb_u16)(m->di + 2);",
+            "        }",
+            "    }",
+            "    return;",
+        ]
+
+    if routine.cxx_status == "translated_strlen_es_di":
+        return [
+            "    cb_u16 saved_cx = m->cx;",
+            "    cb_u16 saved_di = m->di;",
+            "    cb_u16 scan_cx = 0xffffu;",
+            "    cb_u16 scan_di = m->di;",
+            "",
+            "    while (scan_cx != 0) {",
+            "        cb_u8 value = m->read8(m->es, scan_di);",
+            "        scan_di = (cb_u16)(m->df ? scan_di - 1 : scan_di + 1);",
+            "        scan_cx = (cb_u16)(scan_cx - 1);",
+            "        if (value == 0) {",
+            "            break;",
+            "        }",
+            "    }",
+            "",
+            "    cb_u16 neg_cx = (cb_u16)(0 - scan_cx);",
+            "    cb_u16 before_sub = neg_cx;",
+            "    m->ax = (cb_u16)(before_sub - 2);",
+            "    m->set_sub16_flags(before_sub, 2, m->ax);",
+            "    m->di = saved_di;",
+            "    m->cx = saved_cx;",
+            "    return;",
+        ]
+
+    return None
+
+
 def cpp_text(routine: Routine) -> str:
     asm_path = rel(routine.asm_path) if routine.asm_path else ""
     qualifier = routine_qualifier(routine)
+    body = translated_cpp_body(routine)
     lines = [
         "// Commander Blood Borland C++ translation unit",
         f"// module: {routine.module}",
@@ -705,10 +774,10 @@ def cpp_text(routine: Routine) -> str:
     if routine.labels:
         lines.append("")
 
-    lines.append(f'extern "C" void {qualifier} {routine.func_name}(void)')
+    lines.append(f'extern "C" void {qualifier} {routine.func_name}(CbMachine* m)')
     lines.append("{")
-    if routine.cxx_status == "translated_empty_return":
-        lines.append("    return;")
+    if body is not None:
+        lines.extend(body)
     else:
         lines.append(
             f'#error "Untranslated routine {routine.module}:{h(routine.entry, 6)}; see {asm_path}"'
@@ -736,6 +805,57 @@ typedef unsigned short cb_u16;
 typedef signed short cb_i16;
 typedef unsigned long cb_u32;
 typedef signed long cb_i32;
+
+struct CbMachine {
+    cb_u16 ax;
+    cb_u16 bx;
+    cb_u16 cx;
+    cb_u16 dx;
+    cb_u16 si;
+    cb_u16 di;
+    cb_u16 bp;
+    cb_u16 sp;
+    cb_u16 ds;
+    cb_u16 es;
+    cb_u16 fs;
+    cb_u16 gs;
+    cb_u16 ss;
+    cb_u16 cs;
+    int cf;
+    int zf;
+    int sf;
+    int of;
+    int pf;
+    int af;
+    int df;
+
+    cb_u8 read8(cb_u16 seg, cb_u16 off) const;
+    cb_u16 read16(cb_u16 seg, cb_u16 off) const;
+    void write8(cb_u16 seg, cb_u16 off, cb_u8 value);
+    void write16(cb_u16 seg, cb_u16 off, cb_u16 value);
+    void set_logic16_flags(cb_u16 value);
+    void set_sub16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
+};
+
+inline cb_u8 cb_lo8(cb_u16 value)
+{
+    return (cb_u8)(value & 0xffu);
+}
+
+inline cb_u8 cb_hi8(cb_u16 value)
+{
+    return (cb_u8)((value >> 8) & 0xffu);
+}
+
+inline void cb_set_lo8(cb_u16& reg, cb_u8 value)
+{
+    reg = (cb_u16)((reg & 0xff00u) | value);
+}
+
+inline void cb_set_hi8(cb_u16& reg, cb_u8 value)
+{
+    reg = (cb_u16)((reg & 0x00ffu) | ((cb_u16)value << 8));
+}
 
 #endif
 """
@@ -773,14 +893,21 @@ C++-shaped method-table dispatch, while still using plain `extern "C"` function
 names for controllable linkage. This is a working choice, not proof of the
 original compiler.
 
-There is one C++ source file per recovered assembly routine. Files marked
-`translated_empty_return` contain real minimal C++ for routines that are exactly
-a single `ret` or `retf`. Every other file deliberately contains `#error` until
-that routine has been translated from its assembly dump. That stop gate prevents
+There is one C++ source file per recovered assembly routine. Translated files
+take a `CbMachine*` context so register, segment, memory, and flag effects can
+be represented explicitly while the original calling convention is still being
+recovered. Every untranslated file deliberately contains `#error` until that
+routine has been translated from its assembly dump. That stop gate prevents
 untranslated routines from silently compiling as no-ops.
 
 Recovered routine files: {sum(counts.values())}
 Mechanically translated files: {translated}
+
+`translated_sources.lst` lists the files that should parse today. Verify that
+subset with `python3 re/tools/check_translated_borland_subset.py`. This is a
+host C++ syntax preflight only. A DOSBox game run still requires a checked-in or
+documented 16-bit Borland-compatible toolchain, a DOS build harness, and removal
+of the remaining `#error` stop gates through faithful routine translation.
 """
 
 
@@ -820,6 +947,7 @@ def write_outputs(
 
     counts = collections.Counter(r.module for r in routines)
     translated = 0
+    translated_paths = []
     index_rows = []
     manifest_entries = []
 
@@ -831,6 +959,7 @@ def write_outputs(
         routine.cpp_path = cpp_path
         if routine.cxx_status.startswith("translated"):
             translated += 1
+            translated_paths.append(rel(cpp_path))
 
         write_text(asm_path, asm_text(routine, data_by_path[routine.artifact_path]))
         write_text(cpp_path, cpp_text(routine))
@@ -876,7 +1005,7 @@ def write_outputs(
     for root in (asm_out, cpp_out):
         index_path = root / "routine_index.tsv"
         with index_path.open("w", newline="", encoding="utf-8") as fh:
-            writer = csv.writer(fh, delimiter="\t")
+            writer = csv.writer(fh, delimiter="\t", lineterminator="\n")
             writer.writerow(
                 [
                     "module",
@@ -894,6 +1023,10 @@ def write_outputs(
 
     write_text(asm_out / "README.md", readme_assembly_text(dict(counts)))
     write_text(cpp_out / "README.md", readme_borland_text(dict(counts), translated))
+    write_text(
+        cpp_out / "translated_sources.lst",
+        "\n".join(sorted(translated_paths)) + ("\n" if translated_paths else ""),
+    )
 
     manifest = {
         "generator": "re/tools/export_routine_sources.py",

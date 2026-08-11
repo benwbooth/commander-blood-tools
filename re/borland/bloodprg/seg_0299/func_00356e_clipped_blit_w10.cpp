@@ -10,7 +10,7 @@
 
 // label: clipped_blit_w10
 
-extern "C" void CB_FAR cb_bloodprg_00356e_clipped_blit_w10(void)
+extern "C" void CB_FAR cb_bloodprg_00356e_clipped_blit_w10(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00356e; see re/assembly/bloodprg/seg_0299/func_00356e_clipped_blit_w10.asm"
 }

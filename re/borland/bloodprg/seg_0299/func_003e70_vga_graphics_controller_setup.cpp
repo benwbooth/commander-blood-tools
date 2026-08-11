@@ -10,7 +10,7 @@
 
 // label: vga_graphics_controller_setup
 
-extern "C" void CB_FAR cb_bloodprg_003e70_vga_graphics_controller_setup(void)
+extern "C" void CB_FAR cb_bloodprg_003e70_vga_graphics_controller_setup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003e70; see re/assembly/bloodprg/seg_0299/func_003e70_vga_graphics_controller_setup.asm"
 }

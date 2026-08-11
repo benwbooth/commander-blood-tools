@@ -10,7 +10,7 @@
 
 // label: ems_buffer_setup
 
-extern "C" void CB_NEAR cb_bloodprg_00bd4e_ems_buffer_setup(void)
+extern "C" void CB_NEAR cb_bloodprg_00bd4e_ems_buffer_setup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bd4e; see re/assembly/bloodprg/seg_0b1b/func_00bd4e_ems_buffer_setup.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: file_open_dd7
 
-extern "C" void CB_NEAR cb_bloodprg_00147f_file_open_dd7(void)
+extern "C" void CB_NEAR cb_bloodprg_00147f_file_open_dd7(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00147f; see re/assembly/bloodprg/seg_008b/func_00147f_file_open_dd7.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: block_iter_6byte
 
-extern "C" void CB_NEAR cb_bloodprg_00ab25_block_iter_6byte(void)
+extern "C" void CB_NEAR cb_bloodprg_00ab25_block_iter_6byte(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00ab25; see re/assembly/bloodprg/seg_0971/func_00ab25_block_iter_6byte.asm"
 }

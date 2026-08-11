@@ -10,7 +10,7 @@
 
 // label: set_ds_gs_check_ae0
 
-extern "C" void CB_FAR cb_bloodprg_0027c3_set_ds_gs_check_ae0(void)
+extern "C" void CB_FAR cb_bloodprg_0027c3_set_ds_gs_check_ae0(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0027c3; see re/assembly/bloodprg/seg_01ce/func_0027c3_set_ds_gs_check_ae0.asm"
 }

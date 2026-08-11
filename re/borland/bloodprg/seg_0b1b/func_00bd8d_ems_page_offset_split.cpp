@@ -10,7 +10,7 @@
 
 // label: ems_page_offset_split
 
-extern "C" void CB_NEAR cb_bloodprg_00bd8d_ems_page_offset_split(void)
+extern "C" void CB_NEAR cb_bloodprg_00bd8d_ems_page_offset_split(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bd8d; see re/assembly/bloodprg/seg_0b1b/func_00bd8d_ems_page_offset_split.asm"
 }

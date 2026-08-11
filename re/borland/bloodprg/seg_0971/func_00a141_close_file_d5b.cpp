@@ -10,7 +10,7 @@
 
 // label: close_file_d5b
 
-extern "C" void CB_NEAR cb_bloodprg_00a141_close_file_d5b(void)
+extern "C" void CB_NEAR cb_bloodprg_00a141_close_file_d5b(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a141; see re/assembly/bloodprg/seg_0971/func_00a141_close_file_d5b.asm"
 }

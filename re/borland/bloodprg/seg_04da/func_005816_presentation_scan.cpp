@@ -10,7 +10,7 @@
 
 // label: presentation_scan
 
-extern "C" void CB_NEAR cb_bloodprg_005816_presentation_scan(void)
+extern "C" void CB_NEAR cb_bloodprg_005816_presentation_scan(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005816; see re/assembly/bloodprg/seg_04da/func_005816_presentation_scan.asm"
 }

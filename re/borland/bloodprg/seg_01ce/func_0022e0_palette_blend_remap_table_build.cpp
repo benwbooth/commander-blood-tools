@@ -10,7 +10,7 @@
 
 // label: palette_blend_remap_table_build
 
-extern "C" void CB_FAR cb_bloodprg_0022e0_palette_blend_remap_table_build(void)
+extern "C" void CB_FAR cb_bloodprg_0022e0_palette_blend_remap_table_build(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0022e0; see re/assembly/bloodprg/seg_01ce/func_0022e0_palette_blend_remap_table_build.asm"
 }

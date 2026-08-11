@@ -10,7 +10,7 @@
 
 // label: counter_gate_b12
 
-extern "C" void CB_FAR cb_bloodprg_000bd7_counter_gate_b12(void)
+extern "C" void CB_FAR cb_bloodprg_000bd7_counter_gate_b12(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000bd7; see re/assembly/bloodprg/seg_0000/func_000bd7_counter_gate_b12.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: list_widget_layout_unified
 
-extern "C" void CB_FAR cb_bloodprg_008428_list_widget_layout_unified(void)
+extern "C" void CB_FAR cb_bloodprg_008428_list_widget_layout_unified(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008428; see re/assembly/bloodprg/seg_071e/func_008428_list_widget_layout_unified.asm"
 }

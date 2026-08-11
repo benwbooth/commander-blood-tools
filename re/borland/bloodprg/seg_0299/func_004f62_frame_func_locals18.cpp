@@ -10,7 +10,7 @@
 
 // label: frame_func_locals18
 
-extern "C" void CB_NEAR cb_bloodprg_004f62_frame_func_locals18(void)
+extern "C" void CB_NEAR cb_bloodprg_004f62_frame_func_locals18(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004f62; see re/assembly/bloodprg/seg_0299/func_004f62_frame_func_locals18.asm"
 }

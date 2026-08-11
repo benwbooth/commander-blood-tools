@@ -10,7 +10,7 @@
 
 // label: graphics_plot_modex
 
-extern "C" void CB_FAR cb_bloodprg_003428_graphics_plot_modex(void)
+extern "C" void CB_FAR cb_bloodprg_003428_graphics_plot_modex(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003428; see re/assembly/bloodprg/seg_0299/func_003428_graphics_plot_modex.asm"
 }

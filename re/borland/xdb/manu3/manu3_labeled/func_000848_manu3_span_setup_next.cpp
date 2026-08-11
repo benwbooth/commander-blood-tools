@@ -10,7 +10,8 @@
 
 // label: manu3_span_setup_next
 
-extern "C" void CB_NEAR cb_xdb_manu3_000848_manu3_span_setup_next(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000848_manu3_span_setup_next(CbMachine* m)
 {
+    (void)m;
     return;
 }

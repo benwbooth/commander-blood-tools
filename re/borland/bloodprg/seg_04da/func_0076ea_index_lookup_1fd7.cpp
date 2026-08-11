@@ -10,7 +10,7 @@
 
 // label: index_lookup_1fd7
 
-extern "C" void CB_NEAR cb_bloodprg_0076ea_index_lookup_1fd7(void)
+extern "C" void CB_NEAR cb_bloodprg_0076ea_index_lookup_1fd7(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0076ea; see re/assembly/bloodprg/seg_04da/func_0076ea_index_lookup_1fd7.asm"
 }

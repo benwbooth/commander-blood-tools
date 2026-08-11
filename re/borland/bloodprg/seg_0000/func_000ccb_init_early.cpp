@@ -10,7 +10,7 @@
 
 // label: init_early
 
-extern "C" void CB_FAR cb_bloodprg_000ccb_init_early(void)
+extern "C" void CB_FAR cb_bloodprg_000ccb_init_early(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000ccb; see re/assembly/bloodprg/seg_0000/func_000ccb_init_early.asm"
 }

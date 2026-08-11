@@ -10,7 +10,7 @@
 
 // label: entity_record_setter
 
-extern "C" void CB_FAR cb_bloodprg_00414e_entity_record_setter(void)
+extern "C" void CB_FAR cb_bloodprg_00414e_entity_record_setter(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00414e; see re/assembly/bloodprg/seg_0299/func_00414e_entity_record_setter.asm"
 }

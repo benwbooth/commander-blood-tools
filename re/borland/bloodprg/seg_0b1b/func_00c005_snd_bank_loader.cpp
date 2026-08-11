@@ -10,7 +10,7 @@
 
 // label: snd_bank_loader
 
-extern "C" void CB_FAR cb_bloodprg_00c005_snd_bank_loader(void)
+extern "C" void CB_FAR cb_bloodprg_00c005_snd_bank_loader(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00c005; see re/assembly/bloodprg/seg_0b1b/func_00c005_snd_bank_loader.asm"
 }

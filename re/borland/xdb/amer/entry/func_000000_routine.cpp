@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_FAR cb_xdb_amer_000000_routine(void)
+extern "C" void CB_FAR cb_xdb_amer_000000_routine(CbMachine* m)
 {
 #error "Untranslated routine xdb_amer:0x000000; see re/assembly/xdb/amer/entry/func_000000_routine.asm"
 }

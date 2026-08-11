@@ -10,7 +10,7 @@
 
 // label: vm_state_processor
 
-extern "C" void CB_NEAR cb_bloodprg_005a74_vm_state_processor(void)
+extern "C" void CB_NEAR cb_bloodprg_005a74_vm_state_processor(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005a74; see re/assembly/bloodprg/seg_04da/func_005a74_vm_state_processor.asm"
 }

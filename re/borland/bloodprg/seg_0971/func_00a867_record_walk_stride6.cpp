@@ -10,7 +10,7 @@
 
 // label: record_walk_stride6
 
-extern "C" void CB_NEAR cb_bloodprg_00a867_record_walk_stride6(void)
+extern "C" void CB_NEAR cb_bloodprg_00a867_record_walk_stride6(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a867; see re/assembly/bloodprg/seg_0971/func_00a867_record_walk_stride6.asm"
 }

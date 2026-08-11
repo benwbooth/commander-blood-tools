@@ -10,7 +10,7 @@
 
 // label: print_string_dos
 
-extern "C" void CB_FAR cb_bloodprg_000d61_print_string_dos(void)
+extern "C" void CB_FAR cb_bloodprg_000d61_print_string_dos(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000d61; see re/assembly/bloodprg/seg_0000/func_000d61_print_string_dos.asm"
 }

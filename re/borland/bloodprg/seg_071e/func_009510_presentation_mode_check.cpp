@@ -10,7 +10,7 @@
 
 // label: presentation_mode_check
 
-extern "C" void CB_NEAR cb_bloodprg_009510_presentation_mode_check(void)
+extern "C" void CB_NEAR cb_bloodprg_009510_presentation_mode_check(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009510; see re/assembly/bloodprg/seg_071e/func_009510_presentation_mode_check.asm"
 }

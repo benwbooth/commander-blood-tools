@@ -10,7 +10,7 @@
 
 // label: palette_upload_wrapper
 
-extern "C" void CB_NEAR cb_bloodprg_0016a7_palette_upload_wrapper(void)
+extern "C" void CB_NEAR cb_bloodprg_0016a7_palette_upload_wrapper(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0016a7; see re/assembly/bloodprg/seg_008b/func_0016a7_palette_upload_wrapper.asm"
 }

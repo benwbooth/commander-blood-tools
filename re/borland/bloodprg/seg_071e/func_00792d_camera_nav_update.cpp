@@ -10,7 +10,7 @@
 
 // label: camera_nav_update
 
-extern "C" void CB_NEAR cb_bloodprg_00792d_camera_nav_update(void)
+extern "C" void CB_NEAR cb_bloodprg_00792d_camera_nav_update(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00792d; see re/assembly/bloodprg/seg_071e/func_00792d_camera_nav_update.asm"
 }

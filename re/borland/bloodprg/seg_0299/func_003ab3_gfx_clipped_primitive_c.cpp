@@ -10,7 +10,7 @@
 
 // label: gfx_clipped_primitive_c
 
-extern "C" void CB_FAR cb_bloodprg_003ab3_gfx_clipped_primitive_c(void)
+extern "C" void CB_FAR cb_bloodprg_003ab3_gfx_clipped_primitive_c(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003ab3; see re/assembly/bloodprg/seg_0299/func_003ab3_gfx_clipped_primitive_c.asm"
 }

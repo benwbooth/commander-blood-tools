@@ -10,7 +10,7 @@
 
 // label: bridge_panorama_frame_unpack
 
-extern "C" void CB_FAR cb_bloodprg_002d50_bridge_panorama_frame_unpack(void)
+extern "C" void CB_FAR cb_bloodprg_002d50_bridge_panorama_frame_unpack(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002d50; see re/assembly/bloodprg/seg_01ce/func_002d50_bridge_panorama_frame_unpack.asm"
 }

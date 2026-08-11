@@ -10,7 +10,7 @@
 
 // label: mode_gate_27e8
 
-extern "C" void CB_NEAR cb_bloodprg_008bab_mode_gate_27e8(void)
+extern "C" void CB_NEAR cb_bloodprg_008bab_mode_gate_27e8(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x008bab; see re/assembly/bloodprg/seg_071e/func_008bab_mode_gate_27e8.asm"
 }

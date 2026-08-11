@@ -10,7 +10,7 @@
 
 // label: timer_tick_b9f
 
-extern "C" void CB_NEAR cb_bloodprg_00bd09_timer_tick_b9f(void)
+extern "C" void CB_NEAR cb_bloodprg_00bd09_timer_tick_b9f(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bd09; see re/assembly/bloodprg/seg_0b1b/func_00bd09_timer_tick_b9f.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: tint_table_build_banked
 
-extern "C" void CB_FAR cb_bloodprg_00242d_tint_table_build_banked(void)
+extern "C" void CB_FAR cb_bloodprg_00242d_tint_table_build_banked(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00242d; see re/assembly/bloodprg/seg_01ce/func_00242d_tint_table_build_banked.asm"
 }

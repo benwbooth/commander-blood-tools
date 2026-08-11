@@ -10,7 +10,7 @@
 
 // label: ems_resource_flush
 
-extern "C" void CB_NEAR cb_bloodprg_00a1b4_ems_resource_flush(void)
+extern "C" void CB_NEAR cb_bloodprg_00a1b4_ems_resource_flush(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a1b4; see re/assembly/bloodprg/seg_0971/func_00a1b4_ems_resource_flush.asm"
 }

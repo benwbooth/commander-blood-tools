@@ -10,7 +10,7 @@
 
 // label: poll_mouse
 
-extern "C" void CB_FAR cb_bloodprg_000d0e_poll_mouse(void)
+extern "C" void CB_FAR cb_bloodprg_000d0e_poll_mouse(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000d0e; see re/assembly/bloodprg/seg_0000/func_000d0e_poll_mouse.asm"
 }

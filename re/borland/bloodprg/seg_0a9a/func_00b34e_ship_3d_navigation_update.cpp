@@ -10,7 +10,7 @@
 
 // label: ship_3d_navigation_update
 
-extern "C" void CB_NEAR cb_bloodprg_00b34e_ship_3d_navigation_update(void)
+extern "C" void CB_NEAR cb_bloodprg_00b34e_ship_3d_navigation_update(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b34e; see re/assembly/bloodprg/seg_0a9a/func_00b34e_ship_3d_navigation_update.asm"
 }

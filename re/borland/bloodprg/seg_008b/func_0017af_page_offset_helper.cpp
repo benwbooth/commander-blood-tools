@@ -10,7 +10,7 @@
 
 // label: page_offset_helper
 
-extern "C" void CB_NEAR cb_bloodprg_0017af_page_offset_helper(void)
+extern "C" void CB_NEAR cb_bloodprg_0017af_page_offset_helper(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0017af; see re/assembly/bloodprg/seg_008b/func_0017af_page_offset_helper.asm"
 }

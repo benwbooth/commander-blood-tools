@@ -10,7 +10,7 @@
 
 // label: vm_op_a5_cond_state_array
 
-extern "C" void CB_NEAR cb_bloodprg_0065eb_vm_op_a5_cond_state_array(void)
+extern "C" void CB_NEAR cb_bloodprg_0065eb_vm_op_a5_cond_state_array(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0065eb; see re/assembly/bloodprg/seg_04da/func_0065eb_vm_op_a5_cond_state_array.asm"
 }

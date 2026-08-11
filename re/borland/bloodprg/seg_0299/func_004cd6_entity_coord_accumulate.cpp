@@ -10,7 +10,7 @@
 
 // label: entity_coord_accumulate
 
-extern "C" void CB_NEAR cb_bloodprg_004cd6_entity_coord_accumulate(void)
+extern "C" void CB_NEAR cb_bloodprg_004cd6_entity_coord_accumulate(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x004cd6; see re/assembly/bloodprg/seg_0299/func_004cd6_entity_coord_accumulate.asm"
 }

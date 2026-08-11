@@ -10,7 +10,7 @@
 
 // label: ems_paged_read
 
-extern "C" void CB_NEAR cb_bloodprg_00a664_ems_paged_read(void)
+extern "C" void CB_NEAR cb_bloodprg_00a664_ems_paged_read(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a664; see re/assembly/bloodprg/seg_0971/func_00a664_ems_paged_read.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: copy_abc_to_671c
 
-extern "C" void CB_NEAR cb_bloodprg_001d74_copy_abc_to_671c(void)
+extern "C" void CB_NEAR cb_bloodprg_001d74_copy_abc_to_671c(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001d74; see re/assembly/bloodprg/seg_008b/func_001d74_copy_abc_to_671c.asm"
 }

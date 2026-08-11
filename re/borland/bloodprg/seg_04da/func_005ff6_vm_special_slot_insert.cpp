@@ -10,7 +10,7 @@
 
 // label: vm_special_slot_insert
 
-extern "C" void CB_NEAR cb_bloodprg_005ff6_vm_special_slot_insert(void)
+extern "C" void CB_NEAR cb_bloodprg_005ff6_vm_special_slot_insert(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005ff6; see re/assembly/bloodprg/seg_04da/func_005ff6_vm_special_slot_insert.asm"
 }

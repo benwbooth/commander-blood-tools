@@ -10,7 +10,7 @@
 
 // label: manu3_span_insert
 
-extern "C" void CB_NEAR cb_xdb_manu3_000849_manu3_span_insert(void)
+extern "C" void CB_NEAR cb_xdb_manu3_000849_manu3_span_insert(CbMachine* m)
 {
 #error "Untranslated routine xdb_manu3:0x000849; see re/assembly/xdb/manu3/manu3_labeled/func_000849_manu3_span_insert.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: program_pit
 
-extern "C" void CB_FAR cb_bloodprg_0007ea_program_pit(void)
+extern "C" void CB_FAR cb_bloodprg_0007ea_program_pit(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0007ea; see re/assembly/bloodprg/seg_0000/func_0007ea_program_pit.asm"
 }

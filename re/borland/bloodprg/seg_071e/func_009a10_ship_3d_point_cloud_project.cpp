@@ -10,7 +10,7 @@
 
 // label: ship_3d_point_cloud_project
 
-extern "C" void CB_FAR cb_bloodprg_009a10_ship_3d_point_cloud_project(void)
+extern "C" void CB_FAR cb_bloodprg_009a10_ship_3d_point_cloud_project(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009a10; see re/assembly/bloodprg/seg_071e/func_009a10_ship_3d_point_cloud_project.asm"
 }

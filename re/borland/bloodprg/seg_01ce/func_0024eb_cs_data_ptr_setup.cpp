@@ -10,7 +10,7 @@
 
 // label: cs_data_ptr_setup
 
-extern "C" void CB_FAR cb_bloodprg_0024eb_cs_data_ptr_setup(void)
+extern "C" void CB_FAR cb_bloodprg_0024eb_cs_data_ptr_setup(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0024eb; see re/assembly/bloodprg/seg_01ce/func_0024eb_cs_data_ptr_setup.asm"
 }

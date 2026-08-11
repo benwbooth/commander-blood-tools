@@ -10,7 +10,7 @@
 
 // label: backbuffer_clear_flags
 
-extern "C" void CB_FAR cb_bloodprg_001817_backbuffer_clear_flags(void)
+extern "C" void CB_FAR cb_bloodprg_001817_backbuffer_clear_flags(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x001817; see re/assembly/bloodprg/seg_008b/func_001817_backbuffer_clear_flags.asm"
 }

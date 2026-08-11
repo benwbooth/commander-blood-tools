@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_xdb_scrut_0005dc_routine(void)
+extern "C" void CB_NEAR cb_xdb_scrut_0005dc_routine(CbMachine* m)
 {
 #error "Untranslated routine xdb_scrut:0x0005dc; see re/assembly/xdb/scrut/direct_calls/func_0005dc_routine.asm"
 }

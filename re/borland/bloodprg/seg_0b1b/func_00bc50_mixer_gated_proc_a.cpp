@@ -10,7 +10,7 @@
 
 // label: mixer_gated_proc_a
 
-extern "C" void CB_FAR cb_bloodprg_00bc50_mixer_gated_proc_a(void)
+extern "C" void CB_FAR cb_bloodprg_00bc50_mixer_gated_proc_a(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00bc50; see re/assembly/bloodprg/seg_0b1b/func_00bc50_mixer_gated_proc_a.asm"
 }

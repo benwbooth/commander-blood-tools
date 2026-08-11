@@ -10,7 +10,7 @@
 
 // label: resource_close_check
 
-extern "C" void CB_NEAR cb_bloodprg_0026cf_resource_close_check(void)
+extern "C" void CB_NEAR cb_bloodprg_0026cf_resource_close_check(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0026cf; see re/assembly/bloodprg/seg_01ce/func_0026cf_resource_close_check.asm"
 }

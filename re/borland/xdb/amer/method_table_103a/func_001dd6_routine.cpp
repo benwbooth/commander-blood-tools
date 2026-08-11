@@ -8,7 +8,8 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_xdb_amer_001dd6_routine(void)
+extern "C" void CB_NEAR cb_xdb_amer_001dd6_routine(CbMachine* m)
 {
+    (void)m;
     return;
 }

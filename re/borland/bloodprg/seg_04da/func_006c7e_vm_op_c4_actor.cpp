@@ -10,7 +10,7 @@
 
 // label: vm_op_c4_actor
 
-extern "C" void CB_NEAR cb_bloodprg_006c7e_vm_op_c4_actor(void)
+extern "C" void CB_NEAR cb_bloodprg_006c7e_vm_op_c4_actor(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x006c7e; see re/assembly/bloodprg/seg_04da/func_006c7e_vm_op_c4_actor.asm"
 }

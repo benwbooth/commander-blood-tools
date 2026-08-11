@@ -1594,8 +1594,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 19,
       "cpp_path": "re/borland/bloodprg/seg_01ce/func_002665_strlen.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of ES:DI NUL scan preserving CX/DI",
+      "cxx_status": "translated_strlen_es_di",
       "direct_callees": [],
       "entry": "0x002665",
       "group": "seg_01ce",
@@ -8227,8 +8227,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 7,
       "cpp_path": "re/borland/bloodprg/seg_0971/func_00a7e6_mem_copy_words.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of push ds/pop es plus four MOVSW instructions",
+      "cxx_status": "translated_mem_copy_words_4",
       "direct_callees": [],
       "entry": "0x00a7e6",
       "group": "seg_0971",
@@ -11176,6 +11176,6 @@
     "xdb_scrut": 25
   },
   "routine_count": 401,
-  "translated_count": 7,
-  "untranslated_count": 394
+  "translated_count": 9,
+  "untranslated_count": 392
 }

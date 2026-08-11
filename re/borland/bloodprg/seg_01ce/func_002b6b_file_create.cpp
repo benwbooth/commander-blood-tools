@@ -10,7 +10,7 @@
 
 // label: file_create
 
-extern "C" void CB_FAR cb_bloodprg_002b6b_file_create(void)
+extern "C" void CB_FAR cb_bloodprg_002b6b_file_create(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002b6b; see re/assembly/bloodprg/seg_01ce/func_002b6b_file_create.asm"
 }

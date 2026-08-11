@@ -10,7 +10,7 @@
 
 // label: entity_flag_state_transition
 
-extern "C" void CB_FAR cb_bloodprg_0041d1_entity_flag_state_transition(void)
+extern "C" void CB_FAR cb_bloodprg_0041d1_entity_flag_state_transition(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0041d1; see re/assembly/bloodprg/seg_0299/func_0041d1_entity_flag_state_transition.asm"
 }

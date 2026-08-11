@@ -10,7 +10,7 @@
 
 // label: queue_d8c_enqueue
 
-extern "C" void CB_NEAR cb_bloodprg_00a734_queue_d8c_enqueue(void)
+extern "C" void CB_NEAR cb_bloodprg_00a734_queue_d8c_enqueue(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a734; see re/assembly/bloodprg/seg_0971/func_00a734_queue_d8c_enqueue.asm"
 }

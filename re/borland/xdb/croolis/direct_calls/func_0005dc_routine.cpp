@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_xdb_croolis_0005dc_routine(void)
+extern "C" void CB_NEAR cb_xdb_croolis_0005dc_routine(CbMachine* m)
 {
 #error "Untranslated routine xdb_croolis:0x0005dc; see re/assembly/xdb/croolis/direct_calls/func_0005dc_routine.asm"
 }

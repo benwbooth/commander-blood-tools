@@ -10,7 +10,7 @@
 
 // label: blit_dst_row_addr_5221
 
-extern "C" void CB_FAR cb_bloodprg_003066_blit_dst_row_addr_5221(void)
+extern "C" void CB_FAR cb_bloodprg_003066_blit_dst_row_addr_5221(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x003066; see re/assembly/bloodprg/seg_0299/func_003066_blit_dst_row_addr_5221.asm"
 }

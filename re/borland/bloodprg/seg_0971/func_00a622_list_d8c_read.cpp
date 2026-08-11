@@ -10,7 +10,7 @@
 
 // label: list_d8c_read
 
-extern "C" void CB_NEAR cb_bloodprg_00a622_list_d8c_read(void)
+extern "C" void CB_NEAR cb_bloodprg_00a622_list_d8c_read(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a622; see re/assembly/bloodprg/seg_0971/func_00a622_list_d8c_read.asm"
 }

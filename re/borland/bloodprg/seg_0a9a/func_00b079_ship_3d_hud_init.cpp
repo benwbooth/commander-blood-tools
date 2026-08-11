@@ -10,7 +10,7 @@
 
 // label: ship_3d_hud_init
 
-extern "C" void CB_NEAR cb_bloodprg_00b079_ship_3d_hud_init(void)
+extern "C" void CB_NEAR cb_bloodprg_00b079_ship_3d_hud_init(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00b079; see re/assembly/bloodprg/seg_0a9a/func_00b079_ship_3d_hud_init.asm"
 }

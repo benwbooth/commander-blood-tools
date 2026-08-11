@@ -10,7 +10,7 @@
 
 // label: dirty_rect_blit
 
-extern "C" void CB_FAR cb_bloodprg_00509d_dirty_rect_blit(void)
+extern "C" void CB_FAR cb_bloodprg_00509d_dirty_rect_blit(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00509d; see re/assembly/bloodprg/seg_0299/func_00509d_dirty_rect_blit.asm"
 }

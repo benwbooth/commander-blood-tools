@@ -10,7 +10,7 @@
 
 // label: nav_actor_handler_4
 
-extern "C" void CB_NEAR cb_bloodprg_0081fb_nav_actor_handler_4(void)
+extern "C" void CB_NEAR cb_bloodprg_0081fb_nav_actor_handler_4(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0081fb; see re/assembly/bloodprg/seg_071e/func_0081fb_nav_actor_handler_4.asm"
 }

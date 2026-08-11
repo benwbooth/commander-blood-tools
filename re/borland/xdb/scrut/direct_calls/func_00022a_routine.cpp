@@ -8,7 +8,7 @@
 
 #include "recovered.hpp"
 
-extern "C" void CB_NEAR cb_xdb_scrut_00022a_routine(void)
+extern "C" void CB_NEAR cb_xdb_scrut_00022a_routine(CbMachine* m)
 {
 #error "Untranslated routine xdb_scrut:0x00022a; see re/assembly/xdb/scrut/direct_calls/func_00022a_routine.asm"
 }

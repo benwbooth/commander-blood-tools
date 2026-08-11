@@ -10,7 +10,7 @@
 
 // label: vga_dac_clear
 
-extern "C" void CB_FAR cb_bloodprg_002fa6_vga_dac_clear(void)
+extern "C" void CB_FAR cb_bloodprg_002fa6_vga_dac_clear(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x002fa6; see re/assembly/bloodprg/seg_0299/func_002fa6_vga_dac_clear.asm"
 }

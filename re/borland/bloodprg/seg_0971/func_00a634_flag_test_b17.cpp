@@ -10,7 +10,7 @@
 
 // label: flag_test_b17
 
-extern "C" void CB_NEAR cb_bloodprg_00a634_flag_test_b17(void)
+extern "C" void CB_NEAR cb_bloodprg_00a634_flag_test_b17(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00a634; see re/assembly/bloodprg/seg_0971/func_00a634_flag_test_b17.asm"
 }

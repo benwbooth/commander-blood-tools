@@ -10,7 +10,7 @@
 
 // label: record_access_7bb8
 
-extern "C" void CB_NEAR cb_bloodprg_007cb4_record_access_7bb8(void)
+extern "C" void CB_NEAR cb_bloodprg_007cb4_record_access_7bb8(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007cb4; see re/assembly/bloodprg/seg_071e/func_007cb4_record_access_7bb8.asm"
 }

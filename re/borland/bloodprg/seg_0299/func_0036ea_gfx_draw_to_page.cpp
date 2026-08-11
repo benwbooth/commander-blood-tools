@@ -10,7 +10,7 @@
 
 // label: gfx_draw_to_page
 
-extern "C" void CB_FAR cb_bloodprg_0036ea_gfx_draw_to_page(void)
+extern "C" void CB_FAR cb_bloodprg_0036ea_gfx_draw_to_page(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0036ea; see re/assembly/bloodprg/seg_0299/func_0036ea_gfx_draw_to_page.asm"
 }

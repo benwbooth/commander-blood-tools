@@ -10,7 +10,7 @@
 
 // label: resource_release
 
-extern "C" void CB_FAR cb_bloodprg_005288_resource_release(void)
+extern "C" void CB_FAR cb_bloodprg_005288_resource_release(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x005288; see re/assembly/bloodprg/seg_04b9/func_005288_resource_release.asm"
 }

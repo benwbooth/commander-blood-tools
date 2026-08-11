@@ -10,7 +10,7 @@
 
 // label: nav_actor_slot_update_loop
 
-extern "C" void CB_NEAR cb_bloodprg_007d7b_nav_actor_slot_update_loop(void)
+extern "C" void CB_NEAR cb_bloodprg_007d7b_nav_actor_slot_update_loop(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x007d7b; see re/assembly/bloodprg/seg_071e/func_007d7b_nav_actor_slot_update_loop.asm"
 }

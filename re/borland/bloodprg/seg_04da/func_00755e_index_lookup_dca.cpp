@@ -10,7 +10,7 @@
 
 // label: index_lookup_dca
 
-extern "C" void CB_NEAR cb_bloodprg_00755e_index_lookup_dca(void)
+extern "C" void CB_NEAR cb_bloodprg_00755e_index_lookup_dca(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00755e; see re/assembly/bloodprg/seg_04da/func_00755e_index_lookup_dca.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: vm_op_ab_poke_byte
 
-extern "C" void CB_NEAR cb_bloodprg_00684c_vm_op_ab_poke_byte(void)
+extern "C" void CB_NEAR cb_bloodprg_00684c_vm_op_ab_poke_byte(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00684c; see re/assembly/bloodprg/seg_04da/func_00684c_vm_op_ab_poke_byte.asm"
 }

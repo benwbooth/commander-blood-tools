@@ -10,7 +10,7 @@
 
 // label: nav_chart_list_build
 
-extern "C" void CB_FAR cb_bloodprg_00721a_nav_chart_list_build(void)
+extern "C" void CB_FAR cb_bloodprg_00721a_nav_chart_list_build(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00721a; see re/assembly/bloodprg/seg_04da/func_00721a_nav_chart_list_build.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: vm_op_a8_load_string
 
-extern "C" void CB_NEAR cb_bloodprg_0067c8_vm_op_a8_load_string(void)
+extern "C" void CB_NEAR cb_bloodprg_0067c8_vm_op_a8_load_string(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0067c8; see re/assembly/bloodprg/seg_04da/func_0067c8_vm_op_a8_load_string.asm"
 }

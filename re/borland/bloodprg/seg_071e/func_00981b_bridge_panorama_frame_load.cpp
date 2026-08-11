@@ -10,7 +10,7 @@
 
 // label: bridge_panorama_frame_load
 
-extern "C" void CB_NEAR cb_bloodprg_00981b_bridge_panorama_frame_load(void)
+extern "C" void CB_NEAR cb_bloodprg_00981b_bridge_panorama_frame_load(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x00981b; see re/assembly/bloodprg/seg_071e/func_00981b_bridge_panorama_frame_load.asm"
 }

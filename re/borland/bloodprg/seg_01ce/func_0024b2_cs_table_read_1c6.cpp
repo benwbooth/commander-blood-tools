@@ -10,7 +10,7 @@
 
 // label: cs_table_read_1c6
 
-extern "C" void CB_FAR cb_bloodprg_0024b2_cs_table_read_1c6(void)
+extern "C" void CB_FAR cb_bloodprg_0024b2_cs_table_read_1c6(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0024b2; see re/assembly/bloodprg/seg_01ce/func_0024b2_cs_table_read_1c6.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: vm_token_advance
 
-extern "C" void CB_NEAR cb_bloodprg_0062b6_vm_token_advance(void)
+extern "C" void CB_NEAR cb_bloodprg_0062b6_vm_token_advance(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x0062b6; see re/assembly/bloodprg/seg_04da/func_0062b6_vm_token_advance.asm"
 }

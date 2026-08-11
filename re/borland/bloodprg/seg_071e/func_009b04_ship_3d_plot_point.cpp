@@ -10,7 +10,7 @@
 
 // label: ship_3d_plot_point
 
-extern "C" void CB_NEAR cb_bloodprg_009b04_ship_3d_plot_point(void)
+extern "C" void CB_NEAR cb_bloodprg_009b04_ship_3d_plot_point(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x009b04; see re/assembly/bloodprg/seg_071e/func_009b04_ship_3d_plot_point.asm"
 }

@@ -10,7 +10,7 @@
 
 // label: mouse_set_hrange
 
-extern "C" void CB_FAR cb_bloodprg_000d4a_mouse_set_hrange(void)
+extern "C" void CB_FAR cb_bloodprg_000d4a_mouse_set_hrange(CbMachine* m)
 {
 #error "Untranslated routine bloodprg:0x000d4a; see re/assembly/bloodprg/seg_0000/func_000d4a_mouse_set_hrange.asm"
 }
