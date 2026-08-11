@@ -1,3 +1,5 @@
+re/borland/bloodprg/seg_0000/func_00093b_rtc_time_read.cpp
+re/borland/bloodprg/seg_0000/func_000950_get_rtc_date.cpp
 re/borland/bloodprg/seg_0000/func_000b32_detect_cdrom.cpp
 re/borland/bloodprg/seg_0000/func_000bff_install_ctrl_break_handler.cpp
 re/borland/bloodprg/seg_0000/func_000cc0_set_video_mode_saved.cpp
@@ -15,6 +17,7 @@ re/borland/bloodprg/seg_01ce/func_0027e9_dos_set_drive_and_chdir.cpp
 re/borland/bloodprg/seg_01ce/func_002dd3_cmos_rtc_read.cpp
 re/borland/bloodprg/seg_0299/func_002f90_vga_palette_write.cpp
 re/borland/bloodprg/seg_0299/func_002fa6_vga_dac_clear.cpp
+re/borland/bloodprg/seg_0299/func_003b45_composite_draw_a.cpp
 re/borland/bloodprg/seg_0299/func_003e46_full_screen_blit.cpp
 re/borland/bloodprg/seg_0299/func_003e5b_fullscreen_copy_to_backbuffer.cpp
 re/borland/bloodprg/seg_0299/func_0041d1_entity_flag_state_transition.cpp
@@ -25,6 +28,8 @@ re/borland/bloodprg/seg_0299/func_00509c_routine.cpp
 re/borland/bloodprg/seg_04b9/func_005288_resource_release.cpp
 re/borland/bloodprg/seg_04b9/func_005320_resource_handle_resolve.cpp
 re/borland/bloodprg/seg_04da/func_00577a_value_scan_match.cpp
+re/borland/bloodprg/seg_04da/func_005fd8_vm_special_slot_remove.cpp
+re/borland/bloodprg/seg_04da/func_005ff6_vm_special_slot_insert.cpp
 re/borland/bloodprg/seg_04da/func_006023_vm_field_offset.cpp
 re/borland/bloodprg/seg_04da/func_006293_vm_token_special.cpp
 re/borland/bloodprg/seg_04da/func_006494_vm_op_ce_cond_branch.cpp

@@ -154,8 +154,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 21,
       "cpp_path": "re/borland/bloodprg/seg_0000/func_00093b_rtc_time_read.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of BIOS RTC time read plus BCD conversion call",
+      "cxx_status": "translated_rtc_time_read",
       "direct_callees": [
         "0x000986"
       ],
@@ -184,8 +184,8 @@
       "boundary_reason": "cfg_blocks_4_terminals_2",
       "byte_count": 54,
       "cpp_path": "re/borland/bloodprg/seg_0000/func_000950_get_rtc_date.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of BIOS RTC date read plus decoded GS stores",
+      "cxx_status": "translated_rtc_date_read",
       "direct_callees": [
         "0x000986"
       ],
@@ -2655,8 +2655,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 32,
       "cpp_path": "re/borland/bloodprg/seg_0299/func_003b45_composite_draw_a.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of same-segment far-return draw wrapper",
+      "cxx_status": "translated_composite_draw_a",
       "direct_callees": [
         "0x0032ac",
         "0x003321"
@@ -4007,8 +4007,8 @@
       "boundary_reason": "cfg_blocks_4_terminals_2",
       "byte_count": 30,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_005fd8_vm_special_slot_remove.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of 16-word sentinel-list remove preserving loop flags",
+      "cxx_status": "translated_vm_special_slot_remove",
       "direct_callees": [],
       "entry": "0x005fd8",
       "group": "seg_04da",
@@ -4033,8 +4033,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_2",
       "byte_count": 45,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_005ff6_vm_special_slot_insert.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of 16-word sentinel-list insert/present probe",
+      "cxx_status": "translated_vm_special_slot_insert",
       "direct_callees": [],
       "entry": "0x005ff6",
       "group": "seg_04da",
@@ -11176,6 +11176,6 @@
     "xdb_scrut": 25
   },
   "routine_count": 401,
-  "translated_count": 106,
-  "untranslated_count": 295
+  "translated_count": 111,
+  "untranslated_count": 290
 }
