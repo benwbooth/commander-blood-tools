@@ -41,8 +41,12 @@ struct CbMachine {
 
     cb_u8 read8(cb_u16 seg, cb_u16 off) const;
     cb_u16 read16(cb_u16 seg, cb_u16 off) const;
+    cb_u32 read32(cb_u16 seg, cb_u16 off) const;
     void write8(cb_u16 seg, cb_u16 off, cb_u8 value);
     void write16(cb_u16 seg, cb_u16 off, cb_u16 value);
+    void write32(cb_u16 seg, cb_u16 off, cb_u32 value);
+    cb_u8 in8(cb_u16 port);
+    void out8(cb_u16 port, cb_u8 value);
     void set_logic8_flags(cb_u8 value);
     void set_logic16_flags(cb_u16 value);
     void set_add16_flags(cb_u16 left, cb_u16 right, cb_u16 result);

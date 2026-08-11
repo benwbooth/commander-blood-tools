@@ -3,8 +3,8 @@
 // file_offset: 0x002f90
 // assembly: re/assembly/bloodprg/seg_0299/func_002f90_vga_palette_write.asm
 // provenance: recursive_graph, relocation_proven_far_transfer_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_vga_palette_write
+// reason: mechanical translation of VGA DAC port upload loop
 
 #include "recovered.hpp"
 
@@ -12,5 +12,28 @@
 
 extern "C" void CB_FAR cb_bloodprg_002f90_vga_palette_write(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x002f90; see re/assembly/bloodprg/seg_0299/func_002f90_vga_palette_write.asm"
+    m->push16(m->ax);
+    m->push16(m->cx);
+    m->push16(m->dx);
+    m->push16(m->si);
+    m->dx = 0x03c8;
+    cb_set_lo8(m->ax, 0);
+    m->set_logic8_flags(cb_lo8(m->ax));
+    m->out8(m->dx, cb_lo8(m->ax));
+    cb_u8 dl_before = cb_lo8(m->dx);
+    cb_u8 dl_after = (cb_u8)(dl_before + 1);
+    cb_set_lo8(m->dx, dl_after);
+    m->set_inc8_flags(dl_before, dl_after);
+    m->cx = 0x0300;
+    while (m->cx != 0) {
+        cb_u8 value = m->read8(m->ds, m->si);
+        m->out8(m->dx, value);
+        cb_advance_u16(m->si, 1, m->df);
+        m->cx = (cb_u16)(m->cx - 1);
+    }
+    m->si = m->pop16();
+    m->dx = m->pop16();
+    m->cx = m->pop16();
+    m->ax = m->pop16();
+    return;
 }
