@@ -147,6 +147,54 @@ no Pascal-origin code was ever used, but it makes Pascal a lower-priority
 candidate than Borland C/C++ with custom startup/runtime or a mostly custom
 ASM/C engine.
 
+## XDB Overlay Status
+
+The `.xdb` files are executable runtime overlays, not ordinary asset banks.
+They are raw code+data images, so `file` reports them as `data`, but Capstone
+disassembles their entrypoints cleanly with `re/tools/dis_xdb.py`:
+
+```sh
+python3 re/tools/dis_xdb.py output/_tmp_dat/croolis.xdb 0 80
+python3 re/tools/dis_xdb.py output/_tmp_dat/croolis.xdb 0xa3 90
+```
+
+Current extracted overlay sizes and SHA-256:
+
+| Overlay | Size | SHA-256 |
+|---|---:|---|
+| `amer.xdb` | 266800 | `6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31` |
+| `croolis.xdb` | 258832 | `13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31` |
+| `scrut.xdb` | 258080 | `8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77` |
+| `manu3.xdb` | 62544 | `d0f64e99a646197906e273edfa0124172307a5cd766c88591c12ebd9ea556d31` |
+
+The three alien/scrutinizer overlays (`amer`, `croolis`, `scrut`) share the same
+custom entry ABI:
+
+- save full 386 register state (`push eax/ebx/ecx/edx/esi/edi`, segment
+  registers, `ebp`)
+- derive `DS`/`FS` from `CS + cs:[delta]`
+- patch segment words and a dispatch operand in the overlay image
+- read a handle/selector through `les di,[bp]`
+- call local body entry `0x00A3`
+- restore registers and `retf`
+
+The body entry is also structured subsystem code: it uploads a 768-byte VGA DAC
+palette, initializes mouse ranges, clears VGA planes, runs init routines, walks
+an object list at `fs:0x2308`, dispatches object methods through
+`call word ptr fs:[bx+0x103a]`, and calls back through a runtime far pointer at
+`[0x20]`.
+
+`manu3.xdb` is a different overlay family. Its entry sets `FS/DS/ES` from
+`cs:[0x136A]`, reads parameters from `[bp]`, and immediately runs 3D
+matrix/projection math for the menu/manual overlay.
+
+Current C/C++ verdict for XDBs: **unproven**. They contain native 16-bit/386
+code and C-like object/table dispatch, but there are still no Borland/Turbo,
+Watcom, Microsoft, Pascal, or runtime marker strings, and the entry/calling ABI
+is custom rather than a stock C runtime shape. Treat them as raw overlay
+modules that may contain compiler-generated C/C++-like routines mixed with
+handwritten assembly, not as confirmed compiled C files.
+
 ## Function Atlas
 
 `re/tools/function_atlas.py` emits a provenance-aware function report for the

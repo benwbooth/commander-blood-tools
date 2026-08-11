@@ -7,7 +7,18 @@ images loaded verbatim from blood.dat; runtime cs maps 1:1 to file offsets
 
 Usage: python3 tools/dis_xdb.py <file.xdb> <hexoff> [count]
 """
+import os
 import sys
+
+# This tool lives beside re/tools/dis.py, which shadows the stdlib dis module
+# that capstone imports indirectly through inspect. Drop our own directory from
+# sys.path before importing capstone so plain `python3 re/tools/dis_xdb.py ...`
+# works without requiring PYTHONSAFEPATH.
+_here = os.path.dirname(os.path.abspath(__file__))
+sys.path[:] = [
+    path for path in sys.path if os.path.abspath(path or os.curdir) != _here
+]
+
 from capstone import Cs, CS_ARCH_X86, CS_MODE_16
 
 path, off = sys.argv[1], int(sys.argv[2], 16)
