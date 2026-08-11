@@ -25,6 +25,41 @@ Short answer for native gameplay code: **`BLOODPRG.EXE` + four `*.xdb` overlays
 + two `*.drv` sound drivers**, with `BLOOD.EXE` added if launcher/boot-path
 exactness matters.
 
+## Known Contents By Artifact
+
+This is the current high-confidence content map. It deliberately separates
+confirmed structure from likely purpose where an overlay has not yet been decoded
+as deeply as `croolis.xdb` or `manu3.xdb`.
+
+| Artifact | What it contains |
+|---|---|
+| `BLOOD.EXE` | A tiny launcher MZ executable. It is part of the shipped boot path, but no recovered evidence says it contains gameplay systems. |
+| `BLOODPRG.EXE` | The main game host: custom DOS startup, segmented 386 real-mode setup, EMS/XMS/CD-ROM/mouse/video probing, resource directory, script-profile loader, custom VM dispatch, presentation/cutscene handlers, dialogue font/tables, renderer/blitters, ship/bridge/3D systems, sound-bank host code, and far-pointer calls into the external sound driver. It has at least 308 internal code entries before trace-only input/presentation callbacks. |
+| `amer.xdb` | One member of the alien-examination overlay cycle selected with `croolis.xdb` and `scrut.xdb`. It shares the alien overlay engine shape: self-relocating 386 overlay entry, 0x5E-byte object records, the shared alien animation PRNG, and the same loaded-overlay calling convention. Its individual data/behavior tables still need a deeper pass. |
+| `croolis.xdb` | The best-decoded alien overlay so far. It contains a self-relocating entry stub, a full 256-color VGA DAC palette upload, mouse range/position setup, VGA plane clear, a null-terminated alien object list, vtable-dispatched object methods, shared PRNG/timer animation state, object position wrapping, proximity/visibility gates, camera accumulators, 3D projection/blit setup, and script-variable list tables. |
+| `scrut.xdb` | Another alien overlay using the same shared engine/template. Known contents include the shared object/PRNG machinery, Scruter/examination-specific tables, a 111-entry exam record table with script-record result sinks, and variable-list tables matching the `croolis` family. |
+| `manu3.xdb` | A different overlay family for the 3D pyramid/menu/manual/hand interface. Known contents include its far-call API, cursor-to-pose law, menu-item dispatch, tween/animation descriptor processing, 3D camera pan, trig tables, matrix/projection math, and data that feeds the pyramid/hand rendering path. Some live mesh/state regions are still partly runtime-derived rather than fully explained from shipped bytes. |
+| `dnsdb.drv` | The real sound driver. It is a COM-style native code module loaded at offset `0x100`, beginning with nine `E9 rel16` vector jumps. Known vectors include service calls, playback/queue setup, and vector 8 reading the 8237 DMA current-count register so the host can compute playback position. |
+| `nosound.drv` | A minimal no-sound driver using the same loaded-driver ABI. It has eight `E9 rel16` vector jumps, all currently resolving to the same target, making it a compact reference for the driver interface. |
+| `SCRIPT1.{COD,BAS,VAR,DIC,DEB}` | VM profile 1. The executable's profile table loads resource IDs `2..6`: `script1.cod`, `.bas`, `.var`, `.dic`, `.deb`. Current decoded symbol shape: 122 object records, 13 functions, and 1 kind-5 sequence/cutscene-like symbol. Known gameplay role: opening/tutorial/console/HONK/CRYOBOX/MENU flow. |
+| `SCRIPT2.{COD,BAS,VAR,DIC,DEB}` | VM profile 2. Loaded from resource IDs `37..41`. Current decoded symbol shape: 122 objects, 127 functions, 85 kind-5 symbols, and 7 kind-4 symbols. Known gameplay role: bridge/consultation hub, psychotherapy/concept-menu flow, current-location state, and profile handoffs toward later worlds. |
+| `SCRIPT3.{COD,BAS,VAR,DIC,DEB}` | VM profile 3. Loaded from resource IDs `76..80`. Current decoded symbol shape: 130 objects, 166 functions, 50 kind-5 symbols, and 6 kind-4 symbols. Known gameplay role: one of the later destination/world script sets and part of the navigation/profile chain. |
+| `SCRIPT4.{COD,BAS,VAR,DIC,DEB}` | VM profile 4. Loaded from resource IDs `81..85`. Current decoded symbol shape: 136 objects, 85 functions, 21 kind-5 symbols, and 1 kind-4 symbol. Known gameplay role: one of the later destination/world script sets and part of the navigation/profile chain. |
+| `SCRIPT5.{COD,BAS,VAR,DIC,DEB}` | VM profile 5. Loaded from resource IDs `86..90`. Current decoded symbol shape: 130 objects, 89 functions, and 24 kind-5 symbols. Known gameplay role: later destination/world script set including the Bigbang/concert ending state chain. |
+| `INSTALL.EXE` | Setup utility. It is Borland TLINK-marked and useful as a local toolchain clue, but it is not evidence that `BLOODPRG.EXE` used the same compiler/linker. |
+| `HELP_4_U/CDTEST.EXE` | Helper utility for CD/test support. Not known to be loaded by the game runtime. |
+| `HELP_4_U/SNAP.EXE` | Helper utility shipped with the help tools. Not known to be loaded by the game runtime. |
+
+The script bundle extensions have stable roles across all five profiles:
+
+| Extension | Meaning |
+|---|---|
+| `.COD` | Bytecode consumed by the custom VM. Opcodes are biased at `0xA0`; current dispatch maps 52 opcode slots to 37 distinct handlers. |
+| `.BAS` | Binary token/listing-style script companion data. It is not plain text BASIC source and has no QuickBASIC/BRUN signature. |
+| `.VAR` | Initial object/runtime state image for the profile. Switching away from a profile frees/reloads this state from disk. |
+| `.DIC` | NUL-separated CP437 dictionary words keyed by byte offset; text tokens refer into this dictionary. |
+| `.DEB` | Fixed 20-byte symbol records: 16-byte name, 2-byte offset, 2-byte kind. Used to recover objects, functions, cutscene/sequence references, and dialogue context. |
+
 ## Runtime VM Code And Script Resources
 
 The `SCRIPT1` through `SCRIPT5` bundles are not native x86 code, but they are
