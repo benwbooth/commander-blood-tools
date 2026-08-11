@@ -3,8 +3,8 @@
 // file_offset: 0x00a73e
 // assembly: re/assembly/bloodprg/seg_0971/func_00a73e_list_d8c_bounds_init.asm
 // provenance: recursive_graph
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_list_d8c_bounds_init
+// reason: mechanical translation of list bound initialization plus fall-through tail stores
 
 #include "recovered.hpp"
 
@@ -12,5 +12,9 @@
 
 extern "C" void CB_NEAR cb_bloodprg_00a73e_list_d8c_bounds_init(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x00a73e; see re/assembly/bloodprg/seg_0971/func_00a73e_list_d8c_bounds_init.asm"
+    m->write16(m->ds, 0x0d60, 0);
+    m->write16(m->ds, 0x0d62, 0);
+    m->write16(m->ds, 0x0d64, 0xffff);
+    m->write16(m->ds, 0x0d66, 0xffff);
+    return;
 }

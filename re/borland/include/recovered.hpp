@@ -52,6 +52,11 @@ struct CbMachine {
     void set_inc16_flags(cb_u16 before, cb_u16 result);
     void set_dec16_flags(cb_u16 before, cb_u16 result);
     void set_sar16_flags(cb_u16 before, unsigned count, cb_u16 result);
+    void push16(cb_u16 value);
+    cb_u16 pop16();
+    void call_near(cb_u16 off);
+    void call_far(cb_u16 seg, cb_u16 off);
+    void interrupt(cb_u8 vector);
     void jump_near(cb_u16 off);
 };
 
