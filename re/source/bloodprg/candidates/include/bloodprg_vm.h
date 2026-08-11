@@ -28,6 +28,7 @@ extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
+extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
