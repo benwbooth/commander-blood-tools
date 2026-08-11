@@ -22,7 +22,15 @@ re/borland/bloodprg/seg_04da/func_007542_routine.cpp
 re/borland/bloodprg/seg_04da/func_007549_routine.cpp
 re/borland/bloodprg/seg_04da/func_007550_routine.cpp
 re/borland/bloodprg/seg_04da/func_007557_routine.cpp
+re/borland/bloodprg/seg_04da/func_007612_credit_presenter_b_cryo.cpp
+re/borland/bloodprg/seg_04da/func_007629_routine.cpp
+re/borland/bloodprg/seg_04da/func_00766f_dlg_line_record_parser.cpp
 re/borland/bloodprg/seg_04da/func_0076ba_routine.cpp
+re/borland/bloodprg/seg_04da/func_0076c0_routine.cpp
+re/borland/bloodprg/seg_04da/func_0076d5_routine.cpp
+re/borland/bloodprg/seg_04da/func_007754_routine.cpp
+re/borland/bloodprg/seg_04da/func_007776_routine.cpp
+re/borland/bloodprg/seg_04da/func_007788_fs_name_area_read.cpp
 re/borland/bloodprg/seg_071e/func_008713_nav_choice_handler_0.cpp
 re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
 re/borland/bloodprg/seg_0971/func_00a40b_routine.cpp

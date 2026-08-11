@@ -15,7 +15,7 @@ routine has been translated from its assembly dump. That stop gate prevents
 untranslated routines from silently compiling as no-ops.
 
 Recovered routine files: 401
-Mechanically translated files: 46
+Mechanically translated files: 54
 
 `translated_sources.lst` lists the files that should parse today. Verify that
 subset with `python3 re/tools/check_translated_borland_subset.py`. This is a
