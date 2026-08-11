@@ -1,0 +1,25 @@
+; Commander Blood recovered routine assembly
+; module: bloodprg
+; artifact: re/bin/BLOODPRG.EXE
+; artifact_sha256: 7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823
+; file_offset: 0x009f80
+; seg_off: 0971:0270
+; group: seg_0971
+; provenance: recursive_graph
+; label: lookup_table_1fb5
+; label_comment: 4-byte-record table accessor (5 calls): bx=0x1fb5 + ax*4 (add bx,ax x4); return word [bx]. Indexes a table of 4-byte records at DS:0x1fb5 by AX, returning the first word. A data-structure lookup helper
+; byte_count: 14
+; boundary: cfg_blocks_1_terminals_1
+; terminal: ret:1
+; direct_callees: none
+; indirect_calls: 0
+; cxx_source: re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
+; routine_bytes_sha256: 2e3eabf98179886172a5201127a38719a696bdb5eec9828c91d10a9b422ae85a
+
+009F80:  BB B5 1F                     mov      bx, 0x1fb5
+009F83:  03 D8                        add      bx, ax
+009F85:  03 D8                        add      bx, ax
+009F87:  03 D8                        add      bx, ax
+009F89:  03 D8                        add      bx, ax
+009F8B:  8B 1F                        mov      bx, word ptr [bx]
+009F8D:  C3                           ret     
