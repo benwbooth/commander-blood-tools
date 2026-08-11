@@ -3,8 +3,8 @@
 // file_offset: 0x008713
 // assembly: re/assembly/bloodprg/seg_071e/func_008713_nav_choice_handler_0.asm
 // provenance: static_dispatch_table_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_nav_choice_handler_0
+// reason: mechanical translation of phase-bit guarded navigation state stores
 
 #include "recovered.hpp"
 
@@ -12,5 +12,13 @@
 
 extern "C" void CB_NEAR cb_bloodprg_008713_nav_choice_handler_0(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x008713; see re/assembly/bloodprg/seg_071e/func_008713_nav_choice_handler_0.asm"
+    cb_u8 test_result = (cb_u8)(m->read8(m->ds, 0x2565) & 1);
+    m->set_logic8_flags(test_result);
+    if (test_result != 0) {
+        m->ax = m->read16(m->ds, 0x6754);
+        m->write16(m->ds, 0x676a, m->ax);
+        m->write16(m->ds, 0x6768, 0x00c3);
+        m->write8(m->ds, 0x2565, 0);
+    }
+    return;
 }

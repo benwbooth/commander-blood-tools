@@ -1,3 +1,4 @@
+re/borland/bloodprg/seg_01ce/func_0025a4_string_compare.cpp
 re/borland/bloodprg/seg_01ce/func_002665_strlen.cpp
 re/borland/bloodprg/seg_0299/func_00509a_routine.cpp
 re/borland/bloodprg/seg_0299/func_00509b_routine.cpp
@@ -16,7 +17,11 @@ re/borland/bloodprg/seg_04da/func_007549_routine.cpp
 re/borland/bloodprg/seg_04da/func_007550_routine.cpp
 re/borland/bloodprg/seg_04da/func_007557_routine.cpp
 re/borland/bloodprg/seg_04da/func_0076ba_routine.cpp
+re/borland/bloodprg/seg_071e/func_008713_nav_choice_handler_0.cpp
 re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
+re/borland/bloodprg/seg_0971/func_00a40b_routine.cpp
+re/borland/bloodprg/seg_0971/func_00a634_flag_test_b17.cpp
+re/borland/bloodprg/seg_0971/func_00a734_queue_d8c_enqueue.cpp
 re/borland/bloodprg/seg_0971/func_00a744_routine.cpp
 re/borland/bloodprg/seg_0971/func_00a757_list_d8c_init.cpp
 re/borland/bloodprg/seg_0971/func_00a7e6_mem_copy_words.cpp
