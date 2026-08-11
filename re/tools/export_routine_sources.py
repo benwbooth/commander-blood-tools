@@ -113,6 +113,18 @@ XDB_MOUSE_POSITION_TRANSLATIONS = {
     ("xdb_scrut", 0x00035C),
 }
 
+XDB_FIELD_DELTA_TRANSLATIONS = {
+    ("xdb_amer", 0x001B5F),
+    ("xdb_croolis", 0x001ACB),
+    ("xdb_scrut", 0x001B80),
+}
+
+XDB_FIELD_DELTA_SAR4_TRANSLATIONS = {
+    ("xdb_amer", 0x001B8F),
+    ("xdb_croolis", 0x001AFB),
+    ("xdb_scrut", 0x001BB0),
+}
+
 MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x000B32): (
         "translated_detect_cdrom",
@@ -154,9 +166,17 @@ MANUAL_TRANSLATIONS = {
         "translated_resource_handle_resolve",
         "mechanical translation of FS resource-handle table resolver",
     ),
+    ("bloodprg", 0x005288): (
+        "translated_resource_release",
+        "mechanical translation of resource loaded-flag test plus CS-pushed free call",
+    ),
     ("bloodprg", 0x00577A): (
         "translated_value_scan_match",
         "mechanical translation of linked value scan preserving SI",
+    ),
+    ("bloodprg", 0x006023): (
+        "translated_vm_field_offset",
+        "mechanical translation of selector/kind bit-scan field-offset table lookup",
     ),
     ("bloodprg", 0x006293): (
         "translated_vm_token_special",
@@ -251,6 +271,10 @@ MANUAL_TRANSLATIONS = {
         "translated_close_file_d5b",
         "mechanical translation of DOS close gate plus list bound reset call",
     ),
+    ("bloodprg", 0x00A622): (
+        "translated_list_d8c_read",
+        "mechanical translation of queue read helper and conditional LES result fetch",
+    ),
     ("bloodprg", 0x00A2DD): (
         "translated_resource_empty_close_gate",
         "mechanical translation of queue-empty flag update plus close call",
@@ -258,6 +282,14 @@ MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x008713): (
         "translated_nav_choice_handler_0",
         "mechanical translation of phase-bit guarded navigation state stores",
+    ),
+    ("bloodprg", 0x001D74): (
+        "translated_copy_abc_to_671c",
+        "mechanical translation of GS far-pointer record copy loop",
+    ),
+    ("bloodprg", 0x0041D1): (
+        "translated_entity_flag_state_transition",
+        "mechanical translation of GS entity flag state transition preserving AX/BX",
     ),
     ("bloodprg", 0x008848): (
         "translated_nav_choice_handler_3",
@@ -303,6 +335,10 @@ MANUAL_TRANSLATIONS = {
         "translated_list_d8c_init",
         "mechanical translation of list D8C initialization stores",
     ),
+    ("bloodprg", 0x00A778): (
+        "translated_list_d8c_call_a0c3",
+        "mechanical translation of LES setup plus near call to 0xa0c3",
+    ),
     ("bloodprg", 0x00A7E6): (
         "translated_mem_copy_words_4",
         "mechanical translation of push ds/pop es plus four MOVSW instructions",
@@ -341,6 +377,20 @@ MANUAL_TRANSLATIONS = {
             "mechanical translation of XDB int 33h mouse position helper",
         )
         for key in XDB_MOUSE_POSITION_TRANSLATIONS
+    },
+    **{
+        key: (
+            "translated_xdb_field_delta",
+            "mechanical translation of XDB slot field-delta propagation loop",
+        )
+        for key in XDB_FIELD_DELTA_TRANSLATIONS
+    },
+    **{
+        key: (
+            "translated_xdb_field_delta_sar4",
+            "mechanical translation of XDB slot SAR4 field-delta propagation loop",
+        )
+        for key in XDB_FIELD_DELTA_SAR4_TRANSLATIONS
     },
     ("xdb_manu3", 0x00017C): (
         "translated_manu3_selector_wrapper",
@@ -1009,6 +1059,60 @@ def control_byte_copy_body(setup: list[str], post_null_store: list[str]) -> list
     ]
 
 
+def xdb_field_delta_body(sar4: bool) -> list[str]:
+    body = [
+        "    m->push16(m->ds);",
+        "    m->si = m->read16(m->ds, (cb_u16)(m->di + 0x38));",
+        "    m->bx = m->read16(m->ds, (cb_u16)(m->di + 0x3a));",
+        "    m->ax = m->read16(m->ds, (cb_u16)(m->si + 0x36));",
+        "    cb_u16 before_add = m->si;",
+        "    m->si = (cb_u16)(m->si + 4);",
+        "    m->set_add16_flags(before_add, 4, m->si);",
+        "    m->si = (cb_u16)(m->si & 0x0ffcu);",
+        "    m->set_logic16_flags(m->si);",
+        "    m->write16(m->ds, (cb_u16)(m->di + 0x38), m->si);",
+    ]
+    if sar4:
+        body.extend(
+            [
+                "    cb_u16 before_sar = m->ax;",
+                "    if ((before_sar & 0x8000u) != 0) {",
+                "        m->ax = (cb_u16)((before_sar >> 4) | 0xf000u);",
+                "    } else {",
+                "        m->ax = (cb_u16)(before_sar >> 4);",
+                "    }",
+                "    m->set_sar16_flags(before_sar, 4, m->ax);",
+            ]
+        )
+    body.extend(
+        [
+            "    m->write16(m->ds, (cb_u16)(m->di + 0x3a), m->ax);",
+            "    cb_u16 before_sub = m->ax;",
+            "    m->ax = (cb_u16)(m->ax - m->bx);",
+            "    m->set_sub16_flags(before_sub, m->bx, m->ax);",
+            "    m->ds = m->read16(m->fs, 0x0002);",
+            "    m->si = m->read16(m->fs, (cb_u16)(m->di + 0x1c));",
+            "    m->cx = m->read16(m->fs, (cb_u16)(m->di + 0x20));",
+            "    for (;;) {",
+            "        cb_u16 field_value = m->read16(m->ds, m->si);",
+            "        cb_u16 field_result = (cb_u16)(field_value + m->ax);",
+            "        m->write16(m->ds, m->si, field_result);",
+            "        m->set_add16_flags(field_value, m->ax, field_result);",
+            "        before_add = m->si;",
+            "        m->si = (cb_u16)(m->si + 0x14);",
+            "        m->set_add16_flags(before_add, 0x14, m->si);",
+            "        m->cx = (cb_u16)(m->cx - 1);",
+            "        if (m->cx == 0) {",
+            "            break;",
+            "        }",
+            "    }",
+            "    m->ds = m->pop16();",
+            "    return;",
+        ]
+    )
+    return body
+
+
 def translated_cpp_body(routine: Routine) -> list[str] | None:
     if routine.cxx_status == "translated_empty_return":
         return [
@@ -1302,6 +1406,21 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key == ("bloodprg", 0x005288):
+        return [
+            "    m->push16(m->bx);",
+            "    m->bx = m->ax;",
+            "    m->bx = (cb_u16)(m->bx << 3);",
+            "    cb_u16 test_result = (cb_u16)(m->read16(m->fs, (cb_u16)(m->bx + 2)) & 3);",
+            "    m->set_logic16_flags(test_result);",
+            "    if (test_result != 0) {",
+            "        m->push16(m->cs);",
+            "        m->call_near(0x529c);",
+            "    }",
+            "    m->bx = m->pop16();",
+            "    return;",
+        ]
+
     if key == ("bloodprg", 0x00577A):
         return [
             "    cb_u16 saved_si = m->si;",
@@ -1327,6 +1446,30 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "            return;",
             "        }",
             "    }",
+        ]
+
+    if key == ("bloodprg", 0x006023):
+        return [
+            "    m->push16(m->bx);",
+            "    m->ax = (cb_u16)(m->ax << 4);",
+            "    cb_u16 bsf_source = m->bx;",
+            "    if (bsf_source != 0) {",
+            "        cb_u16 bit_index = 0;",
+            "        while (((bsf_source >> bit_index) & 1u) == 0) {",
+            "            bit_index = (cb_u16)(bit_index + 1);",
+            "        }",
+            "        m->bx = bit_index;",
+            "        m->zf = 0;",
+            "    } else {",
+            "        m->zf = 1;",
+            "    }",
+            "    cb_u16 before_add = m->bx;",
+            "    m->bx = (cb_u16)(m->bx + m->ax);",
+            "    m->set_add16_flags(before_add, m->ax, m->bx);",
+            "    cb_set_lo8(m->ax, m->read8(m->gs, (cb_u16)(m->bx + 0x6d60)));",
+            "    m->ax = (cb_u16)(cb_i16)(cb_i8)cb_lo8(m->ax);",
+            "    m->bx = m->pop16();",
+            "    return;",
         ]
 
     if key == ("bloodprg", 0x006293):
@@ -1570,6 +1713,70 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key == ("bloodprg", 0x001D74):
+        return [
+            "    m->push16(m->ds);",
+            "    m->push16(m->si);",
+            "    m->push16(m->es);",
+            "    m->push16(m->di);",
+            "    m->push16(m->cx);",
+            "    m->cx = m->ax;",
+            "    m->si = m->read16(m->gs, 0x0abc);",
+            "    m->ds = m->read16(m->gs, 0x0abe);",
+            "    m->di = m->read16(m->gs, 0x671c);",
+            "    m->es = m->read16(m->gs, 0x671e);",
+            "    for (;;) {",
+            "        m->ax = m->read16(m->ds, m->si);",
+            "        cb_advance_u16(m->si, 2, m->df);",
+            "        m->di = m->ax;",
+            "        cb_u8 value = m->read8(m->ds, m->si);",
+            "        m->write8(m->es, m->di, value);",
+            "        cb_advance_u16(m->si, 1, m->df);",
+            "        cb_advance_u16(m->di, 1, m->df);",
+            "        cb_u16 before_sub = m->cx;",
+            "        m->cx = (cb_u16)(m->cx - 3);",
+            "        m->set_sub16_flags(before_sub, 3, m->cx);",
+            "        if (m->cx == 0) {",
+            "            break;",
+            "        }",
+            "    }",
+            "    m->cx = m->pop16();",
+            "    m->di = m->pop16();",
+            "    m->es = m->pop16();",
+            "    m->si = m->pop16();",
+            "    m->ds = m->pop16();",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x0041D1):
+        return [
+            "    m->push16(m->ax);",
+            "    m->push16(m->bx);",
+            "    m->ax = (cb_u16)(m->ax << 5);",
+            "    m->bx = 0x6212;",
+            "    cb_u16 before_add = m->bx;",
+            "    m->bx = (cb_u16)(m->bx + m->ax);",
+            "    m->set_add16_flags(before_add, m->ax, m->bx);",
+            "    m->ax = m->read16(m->gs, m->bx);",
+            "    cb_u8 al = cb_lo8(m->ax);",
+            "    m->set_logic8_flags(al);",
+            "    if ((al & 0x80u) != 0) {",
+            "        cb_u8 test_result = (cb_u8)(al & 1);",
+            "        m->set_logic8_flags(test_result);",
+            "        if (test_result != 0) {",
+            "            al = (cb_u8)(al & 0xfeu);",
+            "            m->set_logic8_flags(al);",
+            "            al = (cb_u8)(al | 2);",
+            "            m->set_logic8_flags(al);",
+            "            cb_set_lo8(m->ax, al);",
+            "        }",
+            "    }",
+            "    m->write16(m->gs, m->bx, m->ax);",
+            "    m->bx = m->pop16();",
+            "    m->ax = m->pop16();",
+            "    return;",
+        ]
+
     if key == ("bloodprg", 0x00A141):
         return [
             "    m->bx = m->read16(m->ds, 0x0d5b);",
@@ -1604,6 +1811,18 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "        m->write8(m->ds, 0x0d5f, flags_result);",
             "        m->set_logic8_flags(flags_result);",
             "        m->call_near(0xa141);",
+            "    }",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x00A622):
+        return [
+            "    m->cx = 2;",
+            "    m->call_near(0xa664);",
+            "    if (!m->cf) {",
+            "        m->si = m->read16(m->gs, 0x0d8c);",
+            "        m->es = m->read16(m->gs, 0x0d8e);",
+            "        m->ax = m->read16(m->es, (cb_u16)(m->si - 2));",
             "    }",
             "    return;",
         ]
@@ -1753,6 +1972,15 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key == ("bloodprg", 0x00A778):
+        return [
+            "    m->si = m->read16(m->ds, 0x0d8c);",
+            "    m->es = m->read16(m->ds, 0x0d8e);",
+            "    m->si = m->read16(m->ds, 0x0d9e);",
+            "    m->call_near(0xa0c3);",
+            "    return;",
+        ]
+
     if key in XDB_ACTOR_FIELD_SUB_TRANSLATIONS:
         cs_slot = XDB_ACTOR_FIELD_SUB_TRANSLATIONS[key]
         body = [
@@ -1830,6 +2058,12 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    m->interrupt(0x33);",
             "    return;",
         ]
+
+    if key in XDB_FIELD_DELTA_TRANSLATIONS:
+        return xdb_field_delta_body(sar4=False)
+
+    if key in XDB_FIELD_DELTA_SAR4_TRANSLATIONS:
+        return xdb_field_delta_body(sar4=True)
 
     if key == ("xdb_manu3", 0x00017C):
         return [
