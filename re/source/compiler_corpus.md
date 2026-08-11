@@ -25,3 +25,12 @@ Compile tiny programs that exercise:
 Do not accept a recovered `.c` file until its routine's calling convention and
 data declarations have a matching corpus result or a documented assembly ABI
 boundary.
+
+The initial corpus lives under `re/compiler_corpus` and is checked with:
+
+```sh
+python3 re/tools/compiler_corpus.py --check
+python3 re/tools/compiler_corpus.py --original-shapes
+```
+
+The sample files are codegen probes only. They are not recovered game source.

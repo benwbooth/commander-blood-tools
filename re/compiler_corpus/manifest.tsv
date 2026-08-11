@@ -1,0 +1,6 @@
+sample	source	target_routine	question
+far_strlen	samples/far_strlen.c	0x002665	Can a candidate compiler lower natural far-pointer strlen-like C into ES:DI scanning and AX length return?
+string_equal_mixed	samples/string_equal_mixed.c	0x0025a4	Can a candidate compiler lower natural mixed near/far string equality into DS:SI versus ES:DI comparison and status return?
+segment_global_gate	samples/segment_global_gate.c	0x006494	Can a candidate compiler express a segment-qualified global bit test followed by a near call with the same branch shape?
+field_offset	samples/field_offset.c	0x006023	Can a candidate compiler lower selector*16 plus lowest-set-kind-bit table lookup into the observed shift/bit-scan/table byte load?
+u32_sqrt_newton	samples/u32_sqrt_newton.c	0x002e33	Can natural integer-square-root C produce the observed 16-bit divide/refinement loop shape for DX:AX inputs?

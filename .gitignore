@@ -9,6 +9,7 @@
 # RE workspace transient files
 __pycache__/
 /re/re_loop_sessions
+/re/compiler_corpus/out/
 /accuracy/captures
 /accuracy/comparisons
 /accuracy/.dosbox.runtime.conf
