@@ -5,4 +5,7 @@ BLOODPRG.EXE	recovered routines commonly save only the registers they need and t
 0x0025a4 string_compare	body compares DS:SI against ES:DI, preserves AX/SI/DI, returns match in carry flag	not acceptable as bool/string-compare C until carry-return mechanism is reproduced or isolated as an asm ABI boundary
 0x002612 ascii_digit_parse	body reads DS:SI, returns parsed signed value in AX, preserves BX/CX/DX/SI/DI, uses CS:0x02da lookup table	natural C requires the real decimal-weight table declaration and proof of DS:SI input convention
 0x006494 vm_op_ce_cond_branch	body is source-shaped as if (!(gs_2793 & 1)) vm_branch(); then near ret	possible natural C candidate after GS global ownership and the near-call prototype for 0x006462 are declared
+0x0064a0 vm_op_d0_cond_branch	body is source-shaped as if (!(gs_252a & 1)) vm_branch(); then near ret	sibling natural C candidate to 0x006494; global byte ownership and codegen remain pending
+0x0064ac vm_op_d1_cond_branch	body is source-shaped as if (!(gs_274f & 1)) vm_branch(); then near ret	sibling natural C candidate to 0x006494; global byte ownership and codegen remain pending
+0x0064c0 vm_op_cf_clear_state	body stores zero to gs:0x67b1 byte and gs:0x6764 word; then near ret	possible natural C candidate as two global assignments once GS data placement is reproduced
 0x006023 vm_field_offset	body uses AX as selector, BX as kind bitmask, BSF BX,BX, and returns signed GS table byte in AX	ordinary C helper is not enough; accepted source must explain AX/BX register ABI and signed-byte promotion

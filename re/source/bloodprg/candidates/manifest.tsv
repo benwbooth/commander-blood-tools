@@ -1,0 +1,5 @@
+entry	source	asm_path	function	status	notes
+0x006494	seg_04da/func_006494_vm_op_ce_cond_branch.c	re/assembly/bloodprg/seg_04da/func_006494_vm_op_ce_cond_branch.asm	vm_op_ce_cond_branch	natural_candidate_pending_codegen	VM opcode CE branches through 0x006462 when ui flags bit0 is clear.
+0x0064a0	seg_04da/func_0064a0_vm_op_d0_cond_branch.c	re/assembly/bloodprg/seg_04da/func_0064a0_vm_op_d0_cond_branch.asm	vm_op_d0_cond_branch	natural_candidate_pending_codegen	VM opcode D0 branches through 0x006462 when sequence flag bit0 is clear.
+0x0064ac	seg_04da/func_0064ac_vm_op_d1_cond_branch.c	re/assembly/bloodprg/seg_04da/func_0064ac_vm_op_d1_cond_branch.asm	vm_op_d1_cond_branch	natural_candidate_pending_codegen	VM opcode D1 branches through 0x006462 when scene gate bit0 is clear.
+0x0064c0	seg_04da/func_0064c0_vm_op_cf_clear_state.c	re/assembly/bloodprg/seg_04da/func_0064c0_vm_op_cf_clear_state.asm	vm_op_cf_clear_state	natural_candidate_pending_codegen	VM opcode CF clears resume state byte 0x67B1 and resume word 0x6764.

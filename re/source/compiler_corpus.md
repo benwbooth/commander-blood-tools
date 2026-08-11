@@ -34,3 +34,5 @@ python3 re/tools/compiler_corpus.py --original-shapes
 ```
 
 The sample files are codegen probes only. They are not recovered game source.
+Recovered routine candidates live separately under `bloodprg/candidates` and
+are checked with `python3 re/tools/source_candidates.py --check`.
