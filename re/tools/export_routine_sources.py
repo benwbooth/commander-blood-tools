@@ -198,6 +198,14 @@ MANUAL_TRANSLATIONS = {
         "translated_render_present_if_dirty",
         "mechanical translation of dirty-flag gated display far-call sequence",
     ),
+    ("bloodprg", 0x0027C3): (
+        "translated_set_ds_gs_check_ae0",
+        "mechanical translation of GS DOS-drive setup gate preserving AX/DX/DS",
+    ),
+    ("bloodprg", 0x0027E9): (
+        "translated_dos_set_drive_and_chdir",
+        "mechanical translation of GS DOS-drive restore gate preserving AX/DX/DS",
+    ),
     ("bloodprg", 0x00577A): (
         "translated_value_scan_match",
         "mechanical translation of linked value scan preserving SI",
@@ -319,6 +327,10 @@ MANUAL_TRANSLATIONS = {
         "translated_entity_flag_state_transition",
         "mechanical translation of GS entity flag state transition preserving AX/BX",
     ),
+    ("bloodprg", 0x004240): (
+        "translated_range_count",
+        "mechanical translation of inclusive range entity-flag update loop",
+    ),
     ("bloodprg", 0x008848): (
         "translated_nav_choice_handler_3",
         "mechanical translation of phase-bit guarded navigation state stores plus radio far call",
@@ -342,6 +354,10 @@ MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x00A40B): (
         "translated_gs_d5f_compare_zero_or_one",
         "mechanical translation of two-stage GS:0x0d5f byte compare",
+    ),
+    ("bloodprg", 0x00A117): (
+        "translated_flag_gated_2751_copy",
+        "mechanical translation of GS:0x2751-gated 0x60 dword copy",
     ),
     ("bloodprg", 0x00A38E): (
         "translated_queue_d8c_wrap",
@@ -382,6 +398,10 @@ MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x00BB9D): (
         "translated_snd_driver_call",
         "mechanical translation of GS-based indirect sound-driver far call",
+    ),
+    ("bloodprg", 0x00BD8D): (
+        "translated_ems_page_offset_split",
+        "mechanical translation of DOS seek/read EMS-page split helper",
     ),
     **{
         key: (
@@ -1566,6 +1586,54 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key == ("bloodprg", 0x0027C3):
+        return [
+            "    m->push16(m->ax);",
+            "    m->push16(m->ds);",
+            "    m->push16(m->dx);",
+            "    m->ax = m->gs;",
+            "    m->ds = m->ax;",
+            "    cb_u8 test_result = (cb_u8)(m->read8(m->ds, 0x0ae0) & 1);",
+            "    m->set_logic8_flags(test_result);",
+            "    if (test_result == 0) {",
+            "        cb_set_hi8(m->ax, 0x0e);",
+            "        cb_set_lo8(m->dx, m->read8(m->ds, 0x01b8));",
+            "        m->interrupt(0x21);",
+            "        m->dx = 0x01ba;",
+            "        cb_set_hi8(m->ax, 0x3b);",
+            "        m->interrupt(0x21);",
+            "        m->write8(m->ds, 0x0ae0, 1);",
+            "    }",
+            "    m->dx = m->pop16();",
+            "    m->ds = m->pop16();",
+            "    m->ax = m->pop16();",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x0027E9):
+        return [
+            "    m->push16(m->ax);",
+            "    m->push16(m->ds);",
+            "    m->push16(m->dx);",
+            "    m->ax = m->gs;",
+            "    m->ds = m->ax;",
+            "    cb_u8 test_result = (cb_u8)(m->read8(m->ds, 0x0ae0) & 1);",
+            "    m->set_logic8_flags(test_result);",
+            "    if (test_result != 0) {",
+            "        cb_set_hi8(m->ax, 0x0e);",
+            "        cb_set_lo8(m->dx, m->read8(m->ds, 0x01b9));",
+            "        m->interrupt(0x21);",
+            "        m->dx = 0x01da;",
+            "        cb_set_hi8(m->ax, 0x3b);",
+            "        m->interrupt(0x21);",
+            "        m->write8(m->ds, 0x0ae0, 0);",
+            "    }",
+            "    m->dx = m->pop16();",
+            "    m->ds = m->pop16();",
+            "    m->ax = m->pop16();",
+            "    return;",
+        ]
+
     if key == ("bloodprg", 0x00577A):
         return [
             "    cb_u16 saved_si = m->si;",
@@ -2000,6 +2068,55 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key == ("bloodprg", 0x004240):
+        return [
+            "    m->push16(m->ax);",
+            "    m->push16(m->bx);",
+            "    m->push16(m->cx);",
+            "    m->push16(m->ds);",
+            "    m->push16(m->si);",
+            "    m->cx = m->bx;",
+            "    cb_u16 before_sub = m->cx;",
+            "    m->cx = (cb_u16)(m->cx - m->ax);",
+            "    m->set_sub16_flags(before_sub, m->ax, m->cx);",
+            "    cb_u16 before_inc = m->cx;",
+            "    m->cx = (cb_u16)(m->cx + 1);",
+            "    m->set_inc16_flags(before_inc, m->cx);",
+            "    m->bx = m->gs;",
+            "    m->ds = m->bx;",
+            "    m->si = 0x6212;",
+            "    m->ax = (cb_u16)(m->ax << 5);",
+            "    cb_u16 before_add = m->si;",
+            "    m->si = (cb_u16)(m->si + m->ax);",
+            "    m->set_add16_flags(before_add, m->ax, m->si);",
+            "    for (;;) {",
+            "        m->ax = m->read16(m->ds, m->si);",
+            "        cb_u8 al = cb_lo8(m->ax);",
+            "        m->set_logic8_flags(al);",
+            "        if ((al & 0x80u) != 0) {",
+            "            al = (cb_u8)(al & 0x7eu);",
+            "            m->set_logic8_flags(al);",
+            "            al = (cb_u8)(al | 2);",
+            "            m->set_logic8_flags(al);",
+            "            cb_set_lo8(m->ax, al);",
+            "            m->write16(m->ds, m->si, m->ax);",
+            "        }",
+            "        before_add = m->si;",
+            "        m->si = (cb_u16)(m->si + 0x20);",
+            "        m->set_add16_flags(before_add, 0x20, m->si);",
+            "        m->cx = (cb_u16)(m->cx - 1);",
+            "        if (m->cx == 0) {",
+            "            break;",
+            "        }",
+            "    }",
+            "    m->si = m->pop16();",
+            "    m->ds = m->pop16();",
+            "    m->cx = m->pop16();",
+            "    m->bx = m->pop16();",
+            "    m->ax = m->pop16();",
+            "    return;",
+        ]
+
     if key == ("bloodprg", 0x00A141):
         return [
             "    m->bx = m->read16(m->ds, 0x0d5b);",
@@ -2061,6 +2178,31 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    cb_u8 second_value = m->read8(m->gs, 0x0d5f);",
             "    cb_u8 second_result = (cb_u8)(second_value - 1);",
             "    m->set_sub8_flags(second_value, 1, second_result);",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x00A117):
+        return [
+            "    m->push16(m->ds);",
+            "    m->push16(m->si);",
+            "    cb_u8 test_result = (cb_u8)(m->read8(m->gs, 0x2751) & 1);",
+            "    m->set_logic8_flags(test_result);",
+            "    if (test_result == 0) {",
+            "        m->cx = m->es;",
+            "        m->ds = m->cx;",
+            "        m->si = 0x5251;",
+            "        m->di = 0x5851;",
+            "        m->cx = 0x0060;",
+            "        while (m->cx != 0) {",
+            "            cb_u32 value = m->read32(m->ds, m->si);",
+            "            m->write32(m->es, m->di, value);",
+            "            cb_advance_u16(m->si, 4, m->df);",
+            "            cb_advance_u16(m->di, 4, m->df);",
+            "            m->cx = (cb_u16)(m->cx - 1);",
+            "        }",
+            "    }",
+            "    m->si = m->pop16();",
+            "    m->ds = m->pop16();",
             "    return;",
         ]
 
@@ -2220,6 +2362,34 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    m->es = m->pop16();",
             "    m->ds = m->pop16();",
             "    m->ax = m->pop16();",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x00BD8D):
+        return [
+            "    m->push16(m->ds);",
+            "    m->push16(m->ax);",
+            "    m->push16(m->bx);",
+            "    m->push16(m->cx);",
+            "    m->push16(m->dx);",
+            "    m->cx = m->ax;",
+            "    m->cx = (cb_u16)(m->cx >> 2);",
+            "    m->ax = (cb_u16)(m->ax << 14);",
+            "    m->dx = m->ax;",
+            "    m->bx = m->read16(m->gs, 0x0c49);",
+            "    m->ax = 0x4200;",
+            "    m->interrupt(0x21);",
+            "    m->cx = 0x4000;",
+            "    cb_set_hi8(m->ax, 0x3f);",
+            "    m->push16(m->es);",
+            "    m->ds = m->pop16();",
+            "    m->dx = m->di;",
+            "    m->interrupt(0x21);",
+            "    m->dx = m->pop16();",
+            "    m->cx = m->pop16();",
+            "    m->bx = m->pop16();",
+            "    m->ax = m->pop16();",
+            "    m->ds = m->pop16();",
             "    return;",
         ]
 
