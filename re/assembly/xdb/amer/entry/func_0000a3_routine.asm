@@ -10,7 +10,6 @@
 ; terminal: jmp 0x121:1, retf:1
 ; direct_callees: 0x000223, 0x0002f0, 0x000336, 0x000347, 0x00059b, 0x000734, 0x001dd8, 0x002027, 0x0024cf
 ; indirect_calls: 2
-; cxx_source: re/borland/xdb/amer/entry/func_0000a3_routine.cpp
 ; routine_bytes_sha256: d9ac4420d0879158c8023912cc10a07f16931b23f561ad3b8534011d54b8c47e
 
 0000A3:  1E                           push     ds

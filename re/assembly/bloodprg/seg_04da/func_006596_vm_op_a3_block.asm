@@ -14,7 +14,6 @@
 ; terminal: jmp 0x65d9:2, ret:1
 ; direct_callees: 0x006293, 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006596_vm_op_a3_block.cpp
 ; routine_bytes_sha256: c575e6f7dd8a751259b763576fc96136bb0a3a23540c251e37ecb9db4cfeb000
 
 006596:  57                           push     di

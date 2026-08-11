@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/method_table_103a/func_001bb0_routine.cpp
 ; routine_bytes_sha256: adbd3507c4073fd2f2e866dc269fcb1885d1873f896c7d1861824f46492dfafe
 
 001BB0:  1E                           push     ds

@@ -12,7 +12,6 @@
 ; terminal: jmp 0x471a:1, jmp 0x4753:1, jmp 0x47e7:1, jmp 0x47ee:2, jmp 0x4826:3, jmp 0x4839:1, jmp 0x4852:1, jmp 0x4876:1, jmp 0x48b5:4, jmp 0x48e7:1, jmp 0x48ee:2, jmp 0x4926:3, jmp 0x4939:1, jmp 0x4954:1, jmp 0x497a:1, jmp 0x49b7:4, jmp 0x49e3:1, jmp 0x49ea:2, jmp 0x4a22:3, jmp 0x4a33:1, jmp 0x4a46:1, jmp 0x4a64:1, jmp 0x4a96:4, jmp 0x4ac3:1, jmp 0x4aca:2, jmp 0x4b02:3, jmp 0x4b13:1, jmp 0x4b28:1, jmp 0x4b48:1, jmp 0x4b7a:4, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0046bc_routine.cpp
 ; routine_bytes_sha256: f98b0fd105ad6b88cfa1c3a7c2e146ac425df32dc811e81064a677b5ffbc29b4
 
 0046BC:  50                           push     ax

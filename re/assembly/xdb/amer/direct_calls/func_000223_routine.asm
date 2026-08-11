@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2be:1, ret:3
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/direct_calls/func_000223_routine.cpp
 ; routine_bytes_sha256: 66cc8762f57e7fe55e6dd95eb82acb977851b95c46ed0b75a9665a39a8ef9a59
 
 000223:  B8 03 00                     mov      ax, 3

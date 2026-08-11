@@ -14,7 +14,6 @@
 ; terminal: jmp 0x76a8:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_007684_dlg_line_asset_table_fill.cpp
 ; routine_bytes_sha256: 8775c9c9dfe17ef427907c6adb0c3d9dbc00ba2fd8edc1951114fe97ce6a6478
 
 007684:  65 8B 3E AF 1F               mov      di, word ptr gs:[0x1faf]

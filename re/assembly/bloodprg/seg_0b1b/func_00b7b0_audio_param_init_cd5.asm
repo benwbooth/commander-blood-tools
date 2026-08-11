@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00b7b0_audio_param_init_cd5.cpp
 ; routine_bytes_sha256: a4c1c0b88b5a0946e63d332601244eae5acfc57d56ab020bb232920255f67b3c
 
 00B7B0:  53                           push     bx

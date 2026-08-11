@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x00529c
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04b9/func_005288_resource_release.cpp
 ; routine_bytes_sha256: 51355c79878d14bfff085e4b54683078a95a4455f3450e8d8e52b14fc5f05820
 
 005288:  53                           push     bx

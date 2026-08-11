@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0023c5_render_state_5251_access.cpp
 ; routine_bytes_sha256: cc5aa75531534b4ad46005afe9348397b3c8b309bbf9d2e5885007eb9c24c130
 
 0023C5:  0F A0                        push     fs

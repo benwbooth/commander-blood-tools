@@ -13,7 +13,6 @@
 ; terminal: jmp 0x6020:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_005ff6_vm_special_slot_insert.cpp
 ; routine_bytes_sha256: ff7b1ecd0e7fe8001d9779a9e5323bfceffc67deb4f66b81891bfe1b36226165
 
 005FF6:  51                           push     cx

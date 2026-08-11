@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a73e
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a141_close_file_d5b.cpp
 ; routine_bytes_sha256: 04deb165f2b81e49c1debc75c0a6481d6b5910c315a03dfef2da7634c8f8e43f
 
 00A141:  8B 1E 5B 0D                  mov      bx, word ptr [0xd5b]

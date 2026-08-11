@@ -18,7 +18,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003dbf_back_buffer_fill.cpp
 ; routine_bytes_sha256: d096dbe66ed768141f59cac7ca0194e475163b977b3e157a27a9e6146de8a490
 
 003DBF:  66 50                        push     eax

@@ -18,7 +18,6 @@
 ; terminal: jmp 0x231f:1, jmp 0x2357:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0022e0_palette_blend_remap_table_build.cpp
 ; routine_bytes_sha256: ffc21fec39315ead7e4c402542613eaadc680af73b2eff8e39d531d5e23b13c3
 
 0022E0:  55                           push     bp

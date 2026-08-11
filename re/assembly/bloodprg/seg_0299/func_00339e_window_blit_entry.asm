@@ -20,7 +20,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00339e_window_blit_entry.cpp
 ; routine_bytes_sha256: 3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac
 
 00339E:  50                           push     ax

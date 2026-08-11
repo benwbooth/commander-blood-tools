@@ -13,7 +13,6 @@
 ; terminal: jmp 0x8b95:5, jmp 0x8ba8:3, ret:1
 ; direct_callees: 0x008c96, 0x00959d, 0x0098b9, 0x009a10, 0x009b98
 ; indirect_calls: 5
-; cxx_source: re/borland/bloodprg/seg_071e/func_008a4e_camera_fsm_state_gate.cpp
 ; routine_bytes_sha256: a18703e4df1d18484136dad0121e300f341d951bf379e9ffdc7dc35d13421baf
 
 008A4E:  53                           push     bx

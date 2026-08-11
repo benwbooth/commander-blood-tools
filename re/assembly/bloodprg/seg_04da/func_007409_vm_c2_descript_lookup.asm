@@ -18,7 +18,6 @@
 ; terminal: jmp 0x74f8:1, jmp 0x7514:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_04da/func_007409_vm_c2_descript_lookup.cpp
 ; routine_bytes_sha256: 5e1f22afd92e9fe529c2d92df7b557c9e07381b64d1d74f413048fdd14cf0376
 
 007409:  1E                           push     ds

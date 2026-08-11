@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_001397_flag_gated_ae6_a.cpp
 ; routine_bytes_sha256: aac9686cb22869e079aa6dbbc93dd6ec7cb86a9e13d1417c851bab1c6e099bf4
 
 001397:  50                           push     ax

@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_001817_backbuffer_clear_flags.cpp
 ; routine_bytes_sha256: 2b151a4f13e91f729130c124f06634dc898d53789c5477c0e8a8f019793160fe
 
 001817:  1E                           push     ds

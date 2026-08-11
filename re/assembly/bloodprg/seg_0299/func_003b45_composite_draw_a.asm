@@ -17,7 +17,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x0032ac, 0x003321
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003b45_composite_draw_a.cpp
 ; routine_bytes_sha256: 244b88c80dc7d12184b6a54d14e89ec241265ffff99a902cdc64a4ba07c8c539
 
 003B45:  51                           push     cx

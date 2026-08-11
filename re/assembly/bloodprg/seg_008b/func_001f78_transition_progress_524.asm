@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_008b/func_001f78_transition_progress_524.cpp
 ; routine_bytes_sha256: fcf9037274a0cac487a1ce94f3feed6c8a699d01aaaec22163ddf555d8e6368c
 
 001F78:  50                           push     ax

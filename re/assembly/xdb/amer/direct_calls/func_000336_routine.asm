@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/direct_calls/func_000336_routine.cpp
 ; routine_bytes_sha256: 9088c864b81d156291d0a7bcc1f0de09edfa68b14d89034733fd541a0d196efc
 
 000336:  51                           push     cx

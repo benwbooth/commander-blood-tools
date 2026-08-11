@@ -13,7 +13,6 @@
 ; terminal: jmp 0x3396:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003321_gfx_clipped_draw.cpp
 ; routine_bytes_sha256: 3650cb0ea04f103b6c3acce45f65881fde88135096ab4354eae1f24711596417
 
 003321:  50                           push     ax

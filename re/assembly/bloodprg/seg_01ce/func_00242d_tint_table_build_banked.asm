@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_00242d_tint_table_build_banked.cpp
 ; routine_bytes_sha256: fa951f30b87b00b6bcd2badbb4fc0c8bc664233194e9cc84ac8d6258eb97c869
 
 00242D:  51                           push     cx

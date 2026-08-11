@@ -13,7 +13,6 @@
 ; terminal: none
 ; direct_callees: 0x00a141, 0x00a73e, 0x00a757
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_009f8e_resource_switch.cpp
 ; routine_bytes_sha256: 579c18105617c7ee134a7cea71849bb5dd874484c4e9ff775f994a0908cc52dc
 
 009F8E:  66 50                        push     eax

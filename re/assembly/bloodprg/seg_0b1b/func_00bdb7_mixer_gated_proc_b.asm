@@ -19,7 +19,6 @@
 ; terminal: jmp 0xbf0a:1, jmp 0xbfd1:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 5
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bdb7_mixer_gated_proc_b.cpp
 ; routine_bytes_sha256: ddea3b50a1ab2133d199f5c84fd96458bcf9c7a67446852276c53927875e4381
 
 00BDB7:  50                           push     ax

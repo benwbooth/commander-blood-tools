@@ -13,7 +13,6 @@
 ; terminal: jmp 0xb2b3:1, ret:1
 ; direct_callees: 0x00b2bb, 0x00b6dd
 ; indirect_calls: 15
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b079_ship_3d_hud_init.cpp
 ; routine_bytes_sha256: 7986e7ff48c5c6b130f918cd1ff3ad5039ea676b8eec9ea7a0546a877175497e
 
 00B079:  50                           push     ax

@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0067ba_vm_op_a7_set_if_presentation.cpp
 ; routine_bytes_sha256: ab9c9d28c806f026e04825afecc5711063785d9da85b90d16e650f12c5b87bce
 
 0067BA:  AD                           lodsw    ax, word ptr [si]

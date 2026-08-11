@@ -14,7 +14,6 @@
 ; terminal: jmp 0x2d68:3, jmp 0x2d9b:2, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002d50_bridge_panorama_frame_unpack.cpp
 ; routine_bytes_sha256: 3fee20d60c4cfd5bebdf4d5bb6ab915b147a1483c2d353a4edbacff915a4f2b4
 
 002D50:  65 C4 3E 29 52               les      di, ptr gs:[0x5229]

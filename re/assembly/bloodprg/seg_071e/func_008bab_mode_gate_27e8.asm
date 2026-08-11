@@ -13,7 +13,6 @@
 ; terminal: jmp 0x8c8d:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_008bab_mode_gate_27e8.cpp
 ; routine_bytes_sha256: 6d470b4ca2cd6f54bcec1b05dd688dc0ee0bfc6119dbf7818b57a4eaed884375
 
 008BAB:  06                           push     es

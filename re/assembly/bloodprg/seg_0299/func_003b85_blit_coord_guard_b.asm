@@ -15,7 +15,6 @@
 ; terminal: jmp 0x3c63:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0299/func_003b85_blit_coord_guard_b.cpp
 ; routine_bytes_sha256: f20fddb25b109931a6b96df8fac268ae1f3beb6f50889d4e94295ce92a8ec89b
 
 003B85:  50                           push     ax

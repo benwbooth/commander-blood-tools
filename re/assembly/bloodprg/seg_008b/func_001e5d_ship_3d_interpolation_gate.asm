@@ -22,7 +22,6 @@
 ; terminal: jmp 0x1eba:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_008b/func_001e5d_ship_3d_interpolation_gate.cpp
 ; routine_bytes_sha256: d10a38f7b513426a28ffb9f8cb926da1132159fdeeea5a161db3aa5705f7a8b1
 
 001E5D:  50                           push     ax

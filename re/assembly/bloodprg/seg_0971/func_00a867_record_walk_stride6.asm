@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa8a0:3, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a867_record_walk_stride6.cpp
 ; routine_bytes_sha256: 68f21ed3bcbe8308592cb8c1c2773657b5066df70b3a5ce647b352863e477d56
 
 00A867:  51                           push     cx

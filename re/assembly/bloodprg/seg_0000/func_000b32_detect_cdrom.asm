@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000b32_detect_cdrom.cpp
 ; routine_bytes_sha256: 8cec90cd480b3a3987d65e72cdf0065bc3cf5dfe4c785b87f5d69906562437bb
 
 000B32:  B8 00 15                     mov      ax, 0x1500

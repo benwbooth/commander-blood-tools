@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1dae:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_001d94_vm_context_pointer_setup.cpp
 ; routine_bytes_sha256: dcd48c0f477c455a519ca60894afa403d371b1bff858f5ec024dd5137794a1d8
 
 001D94:  06                           push     es

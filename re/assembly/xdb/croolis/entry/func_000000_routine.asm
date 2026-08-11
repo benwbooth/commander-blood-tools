@@ -10,7 +10,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x0000a3
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/entry/func_000000_routine.cpp
 ; routine_bytes_sha256: 6fb4e4318577167cf011c7028aad0c8a16224cd78ef7cf43e395998acc82c584
 
 000000:  66 50                        push     eax

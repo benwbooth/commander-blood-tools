@@ -14,7 +14,6 @@
 ; terminal: jmp 0x508a:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004f62_frame_func_locals18.cpp
 ; routine_bytes_sha256: edfe8ea346c15b34b87fa3432eea992f12c95c435118f8bec8283084c42fe6c6
 
 004F62:  66 50                        push     eax

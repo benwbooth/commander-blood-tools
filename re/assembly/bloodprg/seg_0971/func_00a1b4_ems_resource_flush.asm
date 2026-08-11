@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa1bc:1, ret:1
 ; direct_callees: 0x00a1f3, 0x00a20c, 0x00a240, 0x00a2ab, 0x00a3d0, 0x00a41a, 0x00a778
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a1b4_ems_resource_flush.cpp
 ; routine_bytes_sha256: 40c7a6d363d6cebf8c0a8bf5918ec51f867652c93f859d5663c1ee419ee36a97
 
 00A1B4:  1E                           push     ds

@@ -13,7 +13,6 @@
 ; terminal: jmp 0xb34a:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b2bb_ship_3d_target_record_select.cpp
 ; routine_bytes_sha256: dded91c3049c7a8551314c036c3bbe1531ac79264cbcf315d73575e76cb3a887
 
 00B2BB:  56                           push     si

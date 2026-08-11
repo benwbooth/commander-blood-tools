@@ -10,7 +10,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x000181
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_00017c_routine.cpp
 ; routine_bytes_sha256: 5ca59432c288b57ddf6d9c6a31b795f0fdf2b9dee14c83df53eb84133420e2f8
 
 00017C:  E8 02 00                     call     0x181

@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a664
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a622_list_d8c_read.cpp
 ; routine_bytes_sha256: b11b14dd5e323bd7f73ffe721f8a5ddcce7dd7e34e770391077c71deb442a6fe
 
 00A622:  B9 02 00                     mov      cx, 2

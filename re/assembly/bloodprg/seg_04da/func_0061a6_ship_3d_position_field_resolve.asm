@@ -13,7 +13,6 @@
 ; terminal: jmp 0x61ad:2, jmp 0x620d:2, ret:1
 ; direct_callees: 0x006023
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0061a6_ship_3d_position_field_resolve.cpp
 ; routine_bytes_sha256: bef68d922e95de6fb8528b1283f26d7092375640a4d5c780b7db1346bfd5dbea
 
 0061A6:  53                           push     bx

@@ -11,7 +11,6 @@
 ; terminal: ret:2
 ; direct_callees: 0x00a867, 0x00a914
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a82c_routine.cpp
 ; routine_bytes_sha256: 75ac345da65c1258183340faaf1505164d8b4b53fc2f2b1288a95d0b31c730ee
 
 00A82C:  81 E7 FF FD                  and      di, 0xfdff

@@ -23,7 +23,6 @@
 ; terminal: jmp 0xbb03:3, jmp 0xbb4e:1, jmp 0xbb76:1, jmp 0xbb93:4, retf:1
 ; direct_callees: 0x00bb9d
 ; indirect_calls: 8
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00b8cd_snd_play_clip.cpp
 ; routine_bytes_sha256: 9c7e53a679ab66f26f0621eb7f70b6da0e348778f2b6183da22c1c5b202ab063
 
 00B8CD:  1E                           push     ds

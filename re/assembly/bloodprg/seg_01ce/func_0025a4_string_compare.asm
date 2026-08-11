@@ -24,7 +24,6 @@
 ; terminal: jmp 0x25b6:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0025a4_string_compare.cpp
 ; routine_bytes_sha256: 1691a2639d9965aec2aef0b71864c5f83041c5eccdf86acac625d778f958bdd3
 
 0025A4:  50                           push     ax

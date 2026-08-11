@@ -16,7 +16,6 @@
 ; terminal: jmp 0xbfc:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000bd7_counter_gate_b12.cpp
 ; routine_bytes_sha256: a22e3eda60d05ab9a97801a19f060a212a2d5c4fd8f87d4318aff1bd504823c0
 
 000BD7:  50                           push     ax

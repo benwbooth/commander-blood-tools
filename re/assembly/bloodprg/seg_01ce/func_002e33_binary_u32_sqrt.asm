@@ -14,7 +14,6 @@
 ; terminal: jmp 0x2e5c:2, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002e33_binary_u32_sqrt.cpp
 ; routine_bytes_sha256: 053e6585212671dcd885fa828776a23bd65c13b9905c43cad9e20e9b6318b188
 
 002E33:  53                           push     bx

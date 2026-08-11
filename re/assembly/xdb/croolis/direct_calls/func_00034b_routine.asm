@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/direct_calls/func_00034b_routine.cpp
 ; routine_bytes_sha256: 9088c864b81d156291d0a7bcc1f0de09edfa68b14d89034733fd541a0d196efc
 
 00034B:  51                           push     cx

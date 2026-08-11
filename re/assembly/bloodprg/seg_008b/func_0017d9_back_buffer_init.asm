@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_0017d9_back_buffer_init.cpp
 ; routine_bytes_sha256: 187df516a277a3c3d50715b93758e2c0c8eec83294473e1f1577596190c4b428
 
 0017D9:  1E                           push     ds

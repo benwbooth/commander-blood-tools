@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a734_queue_d8c_enqueue.cpp
 ; routine_bytes_sha256: 397508aab83c2e32beb2b763a55283030a360ddd6ed6a5c762662710512c3f09
 
 00A734:  01 06 8C 0D                  add      word ptr [0xd8c], ax

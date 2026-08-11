@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_00963f_matrix_table_clear_2a1b.cpp
 ; routine_bytes_sha256: 60225baa9b9f1b75e86b7849f4a7b8b9dff1baf628d87ec419d1ed2e67568a32
 
 00963F:  50                           push     ax

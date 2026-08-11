@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a3ad_queue_d8c_empty_check.cpp
 ; routine_bytes_sha256: ba1b14b60f408bf920ea5e66674732334e992ec47235796073b75a72c3a76539
 
 00A3AD:  A1 8C 0D                     mov      ax, word ptr [0xd8c]

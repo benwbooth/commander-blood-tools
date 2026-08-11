@@ -13,7 +13,6 @@
 ; terminal: jmp 0x73aa:1, jmp 0x73e7:1, ret:1
 ; direct_callees: 0x006023, 0x0062b6
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00739b_vm_cod_scan.cpp
 ; routine_bytes_sha256: 378ed47245448b5c6573030e6e2128dd0a22c3ce1d73c1ac36ebd24239b55973
 
 00739B:  1E                           push     ds

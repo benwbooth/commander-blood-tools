@@ -20,7 +20,6 @@
 ; terminal: jmp 0x69c2:1, jmp 0x69c5:2, ret:1
 ; direct_callees: 0x005fd8, 0x005ff6, 0x006034, 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006946_vm_op_shared_record_wildcard.cpp
 ; routine_bytes_sha256: ddff05a758bb8e61b5d1c3e6256399a6ba777b756fdacbfa09dd7111343b3fd3
 
 006946:  57                           push     di

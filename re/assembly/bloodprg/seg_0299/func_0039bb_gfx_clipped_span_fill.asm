@@ -14,7 +14,6 @@
 ; terminal: jmp 0x3a9e:1, jmp 0x3aaa:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0039bb_gfx_clipped_span_fill.cpp
 ; routine_bytes_sha256: 462a918d52d2c1f7d3741acf183ddd6fcca6f2a3ab78243a1d7c8fa3ab9f6630
 
 0039BB:  50                           push     ax

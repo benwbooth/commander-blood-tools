@@ -16,7 +16,6 @@
 ; terminal: jmp 0x96a5:1, jmp 0x96f3:1, jmp 0x96fc:1, jmp 0x9717:1, jmp 0x9794:1, jmp 0x97e1:1, jmp 0x97fc:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_009656_bridge_steer_update.cpp
 ; routine_bytes_sha256: 6fe70e0d16926546ddd268e3b76389d4ac4ba7fb4aa0792ff114be219e8be55f
 
 009656:  A1 95 27                     mov      ax, word ptr [0x2795]

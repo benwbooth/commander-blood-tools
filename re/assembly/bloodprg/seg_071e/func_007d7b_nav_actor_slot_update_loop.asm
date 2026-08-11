@@ -13,7 +13,6 @@
 ; terminal: jmp 0x7e04:1, ret:1
 ; direct_callees: 0x008269
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_071e/func_007d7b_nav_actor_slot_update_loop.cpp
 ; routine_bytes_sha256: 10e3dc30894e83264c391791e90722465d66152d6f51dea830c0acb9132f37ec
 
 007D7B:  50                           push     ax

@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_071e/func_009240_entity_draw_full.cpp
 ; routine_bytes_sha256: 8a64f53286b9dab1afe8a31223091c0e2037b2c5bf5bc10e0da3c83c0b9c8462
 
 009240:  06                           push     es

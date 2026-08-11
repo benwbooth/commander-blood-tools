@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x007e1c
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_00813a_nav_actor_handler_2.cpp
 ; routine_bytes_sha256: c42f71c2705b768ec78d8834bbc52c0765ee76e2c1120adbe5bbf54ab0f92e70
 
 00813A:  51                           push     cx

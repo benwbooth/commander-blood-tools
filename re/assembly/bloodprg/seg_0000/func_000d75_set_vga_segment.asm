@@ -16,7 +16,6 @@
 ; terminal: jmp 0xe53:2, retf:1
 ; direct_callees: 0x000e62
 ; indirect_calls: 14
-; cxx_source: re/borland/bloodprg/seg_0000/func_000d75_set_vga_segment.cpp
 ; routine_bytes_sha256: a03c615631c6c929440cfafa741891a1b0bdb4dc0b4b8a1c6b15607ec3f9e3a4
 
 000D75:  66 50                        push     eax

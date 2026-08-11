@@ -21,7 +21,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0027c3_set_ds_gs_check_ae0.cpp
 ; routine_bytes_sha256: 13fabd2f516c822ed776e53c3c177d99d5ab54d5e02bbb9a6d557d256693426a
 
 0027C3:  50                           push     ax

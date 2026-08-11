@@ -14,7 +14,6 @@
 ; terminal: jmp 0xb076:5, retf:1
 ; direct_callees: 0x00b079, 0x00b34e, 0x00b6dd, 0x00b75c
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00afa0_ship_presentation_fsm.cpp
 ; routine_bytes_sha256: 097da2c66843f677d4d07cd154d36336f0a000e7fac1d2d575eb53e9c7bcfa34
 
 00AFA0:  1E                           push     ds

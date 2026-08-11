@@ -10,7 +10,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x0000a3
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/entry/func_000000_routine.cpp
 ; routine_bytes_sha256: 7d04c0a35e82fbf020b08f8d7278e90f2f552717cc658572fab77cb889b307e7
 
 000000:  66 50                        push     eax

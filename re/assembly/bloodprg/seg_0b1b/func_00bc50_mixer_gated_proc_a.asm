@@ -15,7 +15,6 @@
 ; terminal: jmp 0xbc79:2, retf:1
 ; direct_callees: 0x00bd09
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bc50_mixer_gated_proc_a.cpp
 ; routine_bytes_sha256: 99c96376cc75ea56f0a0d77f7540549d10bfc80eac3e1be93a131a71a5b9a765
 
 00BC50:  06                           push     es

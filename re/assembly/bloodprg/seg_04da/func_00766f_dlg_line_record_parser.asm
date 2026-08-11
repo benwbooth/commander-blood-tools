@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7672:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00766f_dlg_line_record_parser.cpp
 ; routine_bytes_sha256: 563a3edc7b8e95fd2ba6c8d95374d3c6a92c93d610460c31c04a7372bc5fb205
 
 00766F:  BF C6 24                     mov      di, 0x24c6

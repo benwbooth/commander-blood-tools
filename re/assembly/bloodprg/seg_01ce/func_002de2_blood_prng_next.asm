@@ -22,7 +22,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002de2_blood_prng_next.cpp
 ; routine_bytes_sha256: 556f10ea452fbf38cec2b971d2d5ce61a6a6da621427034ebb4f1a3f8249cd51
 
 002DE2:  53                           push     bx

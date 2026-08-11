@@ -15,7 +15,6 @@
 ; terminal: jmp 0x82c1:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_008295_region_record_hittest.cpp
 ; routine_bytes_sha256: 5ba395485dab841fbe4d86bba408b4f61c85444c2e858b94ec645f07bafec3b2
 
 008295:  50                           push     ax

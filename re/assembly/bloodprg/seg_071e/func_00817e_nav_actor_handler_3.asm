@@ -14,7 +14,6 @@
 ; terminal: jmp 0x81e8:1, ret:1
 ; direct_callees: 0x007e1c
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_071e/func_00817e_nav_actor_handler_3.cpp
 ; routine_bytes_sha256: 65408f79c2031a8c3137a107deed6e6416e5ac4fcfb69de418b7bcd06668fe4b
 
 00817E:  F6 06 93 27 40               test     byte ptr [0x2793], 0x40

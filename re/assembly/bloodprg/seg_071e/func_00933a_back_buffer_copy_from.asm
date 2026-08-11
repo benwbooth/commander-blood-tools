@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_00933a_back_buffer_copy_from.cpp
 ; routine_bytes_sha256: 0f0d19e171bb60749bf5523468b18aa2a731b735356689d76ba4f520f8161fc3
 
 00933A:  06                           push     es

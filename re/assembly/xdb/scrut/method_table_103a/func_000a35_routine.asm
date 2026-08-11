@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/method_table_103a/func_000a35_routine.cpp
 ; routine_bytes_sha256: 70beadba1cb0ec4ea057445fd9d1b849457f1c285836cb05770be63d19a69806
 
 000A35:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff

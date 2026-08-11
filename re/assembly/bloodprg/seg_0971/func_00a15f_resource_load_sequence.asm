@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x009f8e, 0x00a2ab, 0x00a41a, 0x00a552, 0x00a642, 0x00a757
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a15f_resource_load_sequence.cpp
 ; routine_bytes_sha256: 3e1ca8aa98aaf77324b482441d46184dea56f924e68737181bede861f493c665
 
 00A15F:  50                           push     ax

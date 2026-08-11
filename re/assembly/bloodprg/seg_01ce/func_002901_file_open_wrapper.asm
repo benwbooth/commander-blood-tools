@@ -14,7 +14,6 @@
 ; terminal: jmp 0x29e5:1, jmp 0x29e8:1, retf:1
 ; direct_callees: 0x002693
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002901_file_open_wrapper.cpp
 ; routine_bytes_sha256: 7a06ef7c766e9919b6c8ca3a09ae979c3b659525dec95187edf2b171a94ded45
 
 002901:  66 50                        push     eax

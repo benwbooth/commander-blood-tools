@@ -11,7 +11,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a141
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a2dd_routine.cpp
 ; routine_bytes_sha256: e1d6530f0db000cfc3ecb5028e10c414f83108e0cace3fd43ce4ef71fceeca7f
 
 00A2DD:  80 0E 5F 0D 01               or       byte ptr [0xd5f], 1

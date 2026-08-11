@@ -10,7 +10,6 @@
 ; terminal: jmp bx:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/method_table_103a/func_001bea_routine.cpp
 ; routine_bytes_sha256: 9d298b17dbf20f335fe135f28ed40e81110af1973e9628dd3ab5d420b60e9eed
 
 001BEA:  8B 5D 36                     mov      bx, word ptr [di + 0x36]

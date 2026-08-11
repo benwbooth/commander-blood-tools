@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003630_subtitle_render_string.cpp
 ; routine_bytes_sha256: 92b974665ae76fd5b36a0b4e503813b7aa8cf7f601076e459ceb0c4e0a5f3a21
 
 003630:  55                           push     bp

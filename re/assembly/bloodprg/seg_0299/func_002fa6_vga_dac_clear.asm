@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_002fa6_vga_dac_clear.cpp
 ; routine_bytes_sha256: ce29048be80390a42628857ed4689ef168bf4364ca84cda03b34bddda6a697ab
 
 002FA6:  50                           push     ax

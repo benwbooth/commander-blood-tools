@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003e70_vga_graphics_controller_setup.cpp
 ; routine_bytes_sha256: fccf6f984ecd00f605ffb78207e8357ee8105cd23fc3476a6b8f2a293da4f057
 
 003E70:  50                           push     ax

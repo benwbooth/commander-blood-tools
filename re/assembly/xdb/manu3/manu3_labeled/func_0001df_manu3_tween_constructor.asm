@@ -12,7 +12,6 @@
 ; terminal: ret:3
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_0001df_manu3_tween_constructor.cpp
 ; routine_bytes_sha256: bda522f4e9b3ec9663a2568a6a45ec969621599ed2546d6531fbf61fb495409d
 
 0001DF:  8B 36 2E 10                  mov      si, word ptr [0x102e]

@@ -14,7 +14,6 @@
 ; terminal: jmp 0x6c1c:2, jmp 0x6c7a:1, jmp 0x6c7c:3, ret:1
 ; direct_callees: 0x006023, 0x006034, 0x0060dd, 0x006210, 0x00624b, 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006b4c_vm_op_c1_record_state.cpp
 ; routine_bytes_sha256: 47d60246bcb856e4fb2483f3358c78183bec65e07d1d14f9f2bb35142d521651
 
 006B4C:  57                           push     di

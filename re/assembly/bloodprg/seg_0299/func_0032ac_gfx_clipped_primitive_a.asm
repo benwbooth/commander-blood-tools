@@ -13,7 +13,6 @@
 ; terminal: jmp 0x3318:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0032ac_gfx_clipped_primitive_a.cpp
 ; routine_bytes_sha256: a87fa6100f182d90eaed1ca7299a34c3b6cc995278c15f0d181631fbcb0512eb
 
 0032AC:  50                           push     ax

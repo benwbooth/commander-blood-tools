@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a622, 0x00a757
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a642_banked_list_load.cpp
 ; routine_bytes_sha256: ad608c6fb80044aeec02c44132c4bd973b66c4c1e6431349799532debce68133
 
 00A642:  0E                           push     cs

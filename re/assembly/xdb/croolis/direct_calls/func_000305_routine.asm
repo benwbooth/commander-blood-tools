@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/direct_calls/func_000305_routine.cpp
 ; routine_bytes_sha256: 3efa9eb40129f518dfc3dc860ca40a59ddb841eee7db8cada6ea9c15839291df
 
 000305:  BA C8 03                     mov      dx, 0x3c8

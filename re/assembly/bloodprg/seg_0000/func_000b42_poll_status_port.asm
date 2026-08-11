@@ -13,7 +13,6 @@
 ; terminal: jmp 0xbcb:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000b42_poll_status_port.cpp
 ; routine_bytes_sha256: 014e4328d0f2ac17161080435af22e14ad3000551ea78d401f72831a08af52fa
 
 000B42:  50                           push     ax

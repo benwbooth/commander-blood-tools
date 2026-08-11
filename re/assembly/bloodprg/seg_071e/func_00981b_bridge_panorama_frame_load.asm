@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_00981b_bridge_panorama_frame_load.cpp
 ; routine_bytes_sha256: 15f5ca552b2f2c16e3836a20d958494931366820d788599c0d068a5b44c09910
 
 00981B:  66 50                        push     eax

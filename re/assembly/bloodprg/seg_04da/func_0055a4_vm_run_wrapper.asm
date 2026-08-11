@@ -16,7 +16,6 @@
 ; terminal: jmp 0x5613:1, jmp 0x567b:2, jmp 0x569e:1, retf:1
 ; direct_callees: 0x005791, 0x005816, 0x005a74, 0x0062b6
 ; indirect_calls: 5
-; cxx_source: re/borland/bloodprg/seg_04da/func_0055a4_vm_run_wrapper.cpp
 ; routine_bytes_sha256: 5b1e8001ff77d92b99b51fd5bd530c42d3fe55c4b6077a81d6d20ca18efedb5e
 
 0055A4:  53                           push     bx

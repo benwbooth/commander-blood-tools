@@ -12,7 +12,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000848_manu3_span_setup_next.cpp
 ; routine_bytes_sha256: ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e
 
 000848:  C3                           ret     

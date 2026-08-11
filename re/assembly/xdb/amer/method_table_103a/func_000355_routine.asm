@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/method_table_103a/func_000355_routine.cpp
 ; routine_bytes_sha256: ece70386a3be89e1fee265e7a6574ab62278cba59efa250d2bbe20bd19a17249
 
 000355:  8B 75 16                     mov      si, word ptr [di + 0x16]

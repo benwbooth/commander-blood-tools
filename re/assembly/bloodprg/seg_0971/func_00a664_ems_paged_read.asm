@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa722:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a664_ems_paged_read.cpp
 ; routine_bytes_sha256: 6030932e78a0968b041fc7d343a49c3ed79316b8ae5e9d6f1dfa0a261819085a
 
 00A664:  F6 06 BC 0D 01               test     byte ptr [0xdbc], 1

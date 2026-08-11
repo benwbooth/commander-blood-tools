@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x000986
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_00093b_rtc_time_read.cpp
 ; routine_bytes_sha256: 35de745a4bb6ad6236d826f979558ddcfa4915bdfc4afc63657f21dd24ffa235
 
 00093B:  50                           push     ax

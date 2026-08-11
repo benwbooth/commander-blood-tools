@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006559_vm_op_a0_push.cpp
 ; routine_bytes_sha256: f50046678408b664ce607278ea5a0bd5f68dcf525a0cc360c1ffc5fb41f60ba0
 
 006559:  65 C6 06 AD 67 01            mov      byte ptr gs:[0x67ad], 1

@@ -13,7 +13,6 @@
 ; terminal: jmp 0x8d6e:1, jmp 0x8e59:1, jmp 0x8e75:2, jmp 0x8f2a:1, jmp 0x8f3c:1, jmp 0x8f44:1, jmp 0x8f62:1, jmp 0x9078:3, ret:1
 ; direct_callees: 0x008c96, 0x009083, 0x0092a3, 0x00933a, 0x009364, 0x00954a, 0x00981b
 ; indirect_calls: 17
-; cxx_source: re/borland/bloodprg/seg_071e/func_008cce_nav_camera_state_check.cpp
 ; routine_bytes_sha256: 784167ae2bd32bc90fa2b0d00863a8c58c3058bd6cca8254c2a33dda68351900
 
 008CCE:  66 50                        push     eax

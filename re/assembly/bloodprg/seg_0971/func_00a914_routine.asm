@@ -11,7 +11,6 @@
 ; terminal: jmp 0xa956:10, jmp 0xaa03:1, jmp 0xaa0e:9, jmp 0xaa1c:1, ret:2
 ; direct_callees: 0x00aabc
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a914_routine.cpp
 ; routine_bytes_sha256: b8b6aa14a6315aa039a8e09eb970cc390244b135db8cc51e7ce921ddbfec946d
 
 00A914:  8B DE                        mov      bx, si

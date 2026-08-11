@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x00981b, 0x0098b9, 0x009a10, 0x009b98
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_071e/func_00954a_page_flip.cpp
 ; routine_bytes_sha256: 0a61a944d558d1857c447eea7994d4773fcb3597a0e30041fdb6e259936db9c3
 
 00954A:  C6 06 55 5B 01               mov      byte ptr [0x5b55], 1

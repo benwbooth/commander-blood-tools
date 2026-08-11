@@ -17,7 +17,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x00a2dd
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_009f53_presentation_update_1fb2.cpp
 ; routine_bytes_sha256: ced1a45f7a02ce1d83ab877ecee1b36eb4147bbae70f5294d32b7d860663bf3e
 
 009F53:  50                           push     ax

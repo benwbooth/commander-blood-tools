@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 6
-; cxx_source: re/borland/bloodprg/seg_008b/func_0016a7_palette_upload_wrapper.cpp
 ; routine_bytes_sha256: 01da4bafc1ea757304d8e6d9f3498949e7a06568d2442a01d6411b83a94a374c
 
 0016A7:  8C E8                        mov      ax, gs

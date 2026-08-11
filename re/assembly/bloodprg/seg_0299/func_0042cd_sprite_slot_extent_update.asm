@@ -15,7 +15,6 @@
 ; terminal: jmp 0x430d:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0042cd_sprite_slot_extent_update.cpp
 ; routine_bytes_sha256: 463f6e4fbb383556b88c63c4c2bc5d4cc6a37ee1694dc2a29da80b8395dfb225
 
 0042CD:  66 50                        push     eax

@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/direct_calls/func_00035c_routine.cpp
 ; routine_bytes_sha256: 6eef96589bdec402ce6079bdeac73e81b55468ed5c9e7ed666225fd3145ffe32
 
 00035C:  89 0E 2A 00                  mov      word ptr [0x2a], cx

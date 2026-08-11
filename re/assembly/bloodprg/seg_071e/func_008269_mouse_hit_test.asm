@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_008269_mouse_hit_test.cpp
 ; routine_bytes_sha256: 4d58fbabbdbb394b7434f1a085d2b779a56bcb414939a27c43a5652f58895962
 
 008269:  50                           push     ax

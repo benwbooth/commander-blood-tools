@@ -15,7 +15,6 @@
 ; terminal: jmp 0x28c2:1, retf:1
 ; direct_callees: 0x0028ca, 0x002abb
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_01ce/func_00287b_resource_load_by_id.cpp
 ; routine_bytes_sha256: 2ef711193074fd2dbc1bb93c3f9cf3698fe854d1c77940b18eecb5dad2b5dd91
 
 00287B:  53                           push     bx

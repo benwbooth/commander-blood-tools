@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006023_vm_field_offset.cpp
 ; routine_bytes_sha256: 7dbb54cd24e4f0a70c96b557a988933bd79ff057be6881d5817d38fdb14ea932
 
 006023:  53                           push     bx

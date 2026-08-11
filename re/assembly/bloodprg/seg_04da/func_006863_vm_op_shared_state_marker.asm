@@ -20,7 +20,6 @@
 ; terminal: jmp 0x68db:6, jmp 0x68fd:2, jmp 0x6900:1, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006863_vm_op_shared_state_marker.cpp
 ; routine_bytes_sha256: b2630958f693c2d37f25b2cdedb0420c7765dd7a03e9851497b34a371a272dec
 
 006863:  57                           push     di

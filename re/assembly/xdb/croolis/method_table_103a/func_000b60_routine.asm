@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/method_table_103a/func_000b60_routine.cpp
 ; routine_bytes_sha256: c74ca55adaf050bd2fcd4d0ec1d112f3a4341bf8fe309e5eeb801255cf127b59
 
 000B60:  8B 75 16                     mov      si, word ptr [di + 0x16]

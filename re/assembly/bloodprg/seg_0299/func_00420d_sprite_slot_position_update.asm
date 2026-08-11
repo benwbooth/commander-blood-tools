@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00420d_sprite_slot_position_update.cpp
 ; routine_bytes_sha256: b06aba7a8862bde0678fdb2cab5e6e25126e627df1a0c73bf442be4dd583b6df
 
 00420D:  50                           push     ax

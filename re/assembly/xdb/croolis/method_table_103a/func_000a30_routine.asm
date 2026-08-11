@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/method_table_103a/func_000a30_routine.cpp
 ; routine_bytes_sha256: 0eb73213de1c93215d04029e4e35a966aebab191513a24408512a6145e17e822
 
 000A30:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff

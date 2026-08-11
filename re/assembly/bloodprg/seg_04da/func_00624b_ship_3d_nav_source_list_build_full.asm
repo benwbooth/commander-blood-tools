@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x006023, 0x00624b
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00624b_ship_3d_nav_source_list_build_full.cpp
 ; routine_bytes_sha256: f268dc67f3d776dfbdfbd201f389565afd4bb8f818d1fa53d1343b16281d9c91
 
 00624B:  1E                           push     ds

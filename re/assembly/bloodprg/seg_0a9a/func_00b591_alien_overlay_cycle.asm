@@ -14,7 +14,6 @@
 ; terminal: jmp 0xb690:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 11
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b591_alien_overlay_cycle.cpp
 ; routine_bytes_sha256: 7abf19b449320cd3b3a67b20979c0b29faf4fdf13dfa3ff5ba22cebdbc7094c3
 
 00B591:  06                           push     es

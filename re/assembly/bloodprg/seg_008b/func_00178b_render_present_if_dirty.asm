@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_00178b_render_present_if_dirty.cpp
 ; routine_bytes_sha256: 56810a11ff589407d2745bfac0ab53dc5b527318438fbea78feb8e6b59bff08b
 
 00178B:  F6 06 55 5B 01               test     byte ptr [0x5b55], 1

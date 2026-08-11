@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x006023
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006fb9_vm_op_c9_clear_record_full.cpp
 ; routine_bytes_sha256: 267d54cfc0f8f7c1a93c9065b2ec15f840a287b7d3b626a25c569d621c5b2d04
 
 006FB9:  57                           push     di

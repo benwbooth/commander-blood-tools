@@ -20,7 +20,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bb9d_snd_driver_call.cpp
 ; routine_bytes_sha256: e7fc7b7a0177bf7cbb2bd10dad92f9144b1bb5af1d5fb5d71b53b43f03ac725b
 
 00BB9D:  50                           push     ax

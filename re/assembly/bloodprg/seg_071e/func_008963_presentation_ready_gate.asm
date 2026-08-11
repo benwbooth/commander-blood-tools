@@ -14,7 +14,6 @@
 ; terminal: jmp 0x8a49:1, retf:1
 ; direct_callees: 0x008428
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_071e/func_008963_presentation_ready_gate.cpp
 ; routine_bytes_sha256: d32b63e352178f5e4f668594a96cce5d350b1ae048f3aeb10c374d327a41ccee
 
 008963:  50                           push     ax

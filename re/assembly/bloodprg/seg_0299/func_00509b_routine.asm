@@ -12,7 +12,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00509b_routine.cpp
 ; routine_bytes_sha256: ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e
 
 00509B:  C3                           ret     

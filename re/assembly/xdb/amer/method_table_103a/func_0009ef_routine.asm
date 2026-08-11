@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/method_table_103a/func_0009ef_routine.cpp
 ; routine_bytes_sha256: c0951844b3334d3b24815a6347e8051452aa4472ed0fe310563d0cb649ac5f3c
 
 0009EF:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff

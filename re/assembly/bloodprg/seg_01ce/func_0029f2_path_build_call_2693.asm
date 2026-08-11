@@ -14,7 +14,6 @@
 ; terminal: jmp 0x2aae:1, jmp 0x2ab1:1, retf:1
 ; direct_callees: 0x002693
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0029f2_path_build_call_2693.cpp
 ; routine_bytes_sha256: 5fb6e58818cf21a363df36ed0fb7601aadb7a0ba13e78244c3b8aa2b15d20cfa
 
 0029F2:  66 50                        push     eax

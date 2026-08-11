@@ -13,7 +13,6 @@
 ; terminal: jmp 0x17bd:1, jmp 0x17ce:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_0017af_page_offset_helper.cpp
 ; routine_bytes_sha256: 3669a5ba5a7f728a031ad39d931654f2c8b4a52ef374246fa174195b948253db
 
 0017AF:  A1 19 52                     mov      ax, word ptr [0x5219]

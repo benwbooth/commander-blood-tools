@@ -12,7 +12,6 @@
 ; terminal: jmp 0x7641:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_04da/func_00763e_routine.cpp
 ; routine_bytes_sha256: bb675d3e7d745fdc18a840fff4e5864670c27ebb0aba72520a4b25cd49c9a713
 
 00763E:  BF 09 0D                     mov      di, 0xd09

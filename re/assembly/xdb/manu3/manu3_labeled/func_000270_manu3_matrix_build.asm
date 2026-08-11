@@ -12,7 +12,6 @@
 ; terminal: none
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000270_manu3_matrix_build.cpp
 ; routine_bytes_sha256: f383ad334ccd68c5dfecb155d1522cf9d09648f8dde3c8f815eb98fc0583c813
 
 000270:  BF 36 23                     mov      di, 0x2336

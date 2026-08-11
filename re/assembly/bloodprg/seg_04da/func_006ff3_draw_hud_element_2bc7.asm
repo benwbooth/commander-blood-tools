@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7009:1, jmp 0x7084:1, jmp 0x70ad:1, retf:1
 ; direct_callees: 0x006023
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_04da/func_006ff3_draw_hud_element_2bc7.cpp
 ; routine_bytes_sha256: d3a65c8af19b8d9e6e126b8eaea038f1a7acdf239a0594e6681e1e028d612698
 
 006FF3:  06                           push     es

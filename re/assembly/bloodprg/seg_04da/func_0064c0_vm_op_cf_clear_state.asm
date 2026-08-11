@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0064c0_vm_op_cf_clear_state.cpp
 ; routine_bytes_sha256: 5883e6dc39e258e62b23a50005b0c89a3788ce559ac50e8e421298dd941e2bbf
 
 0064C0:  65 C6 06 B1 67 00            mov      byte ptr gs:[0x67b1], 0

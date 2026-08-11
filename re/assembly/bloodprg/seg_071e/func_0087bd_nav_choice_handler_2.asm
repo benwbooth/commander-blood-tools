@@ -14,7 +14,6 @@
 ; terminal: jmp 0x87cb:1, ret:1
 ; direct_callees: 0x008428
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_0087bd_nav_choice_handler_2.cpp
 ; routine_bytes_sha256: 89ce507699583e0e3478943d422fe598e12703aa2d391fb41da5bb93554da9b5
 
 0087BD:  06                           push     es

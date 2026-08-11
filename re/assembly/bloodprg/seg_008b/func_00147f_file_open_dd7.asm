@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_00147f_file_open_dd7.cpp
 ; routine_bytes_sha256: df3e0a226e075adb120a93e1abd3cd0a5d166fd1e32dc7ccf91cfc2fa2c7c06d
 
 00147F:  66 33 D2                     xor      edx, edx

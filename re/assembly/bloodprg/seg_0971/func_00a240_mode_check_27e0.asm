@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa290:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a240_mode_check_27e0.cpp
 ; routine_bytes_sha256: 13d0c4bc7f9892797b231cf4df9424aa2f9d30bf34791cf7cf98e351beed0b73
 
 00A240:  F6 06 E0 27 01               test     byte ptr [0x27e0], 1

@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_002f90_vga_palette_write.cpp
 ; routine_bytes_sha256: d7a784d4a48ec96200f782d433b961f34131658870c5761c8d112fe7b2bfcb08
 
 002F90:  50                           push     ax

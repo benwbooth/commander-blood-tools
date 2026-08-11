@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_04da/func_006588_vm_op_a2_cond_call.cpp
 ; routine_bytes_sha256: 00a5d4a09f44da47917b30e0a841fe07da3b35b9d97dd1cc89c041968c43142b
 
 006588:  AD                           lodsw    ax, word ptr [si]

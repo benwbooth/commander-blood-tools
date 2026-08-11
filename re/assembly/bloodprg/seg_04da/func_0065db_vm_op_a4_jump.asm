@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0065db_vm_op_a4_jump.cpp
 ; routine_bytes_sha256: c1eca78647642bd73e303a1a203042c7e47bc8f3c2d192c1c308430a1fc742a9
 
 0065DB:  8B 34                        mov      si, word ptr [si]

@@ -11,7 +11,6 @@
 ; terminal: jmp 0x1649:1, jmp 0x165b:1, jmp 0x16a6:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_008b/func_001610_routine.cpp
 ; routine_bytes_sha256: ba151c144bd8270408f41fc313f60d87c1400b6f4e8b11be055029634182af38
 
 001610:  F6 06 E0 27 01               test     byte ptr [0x27e0], 1

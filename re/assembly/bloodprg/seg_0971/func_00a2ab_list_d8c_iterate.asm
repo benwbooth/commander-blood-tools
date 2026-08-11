@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa664:1, ret:1
 ; direct_callees: 0x00a3ad
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a2ab_list_d8c_iterate.cpp
 ; routine_bytes_sha256: 34fd9b5527f7f74cf515fb19444538cc03fae38879579dbea6c1b381247b205e
 
 00A2AB:  8B 0E A0 0D                  mov      cx, word ptr [0xda0]

@@ -13,7 +13,6 @@
 ; terminal: jmp 0x56a9:2, jmp 0x56fd:1, ret:1
 ; direct_callees: 0x0062b6
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_04da/func_0056a6_vm_script_block_scan.cpp
 ; routine_bytes_sha256: c4ff3c09a33b3bccb3f6a403f17144eddad34f62d8c07c42e1245e707474266c
 
 0056A6:  BF B0 6E                     mov      di, 0x6eb0

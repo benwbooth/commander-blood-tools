@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a552
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a20c_ems_list_query.cpp
 ; routine_bytes_sha256: 8c2be585dd7b3567cf6c2e7a3472cdc57ea5657c6c2366f9f2a85681837f2f33
 
 00A20C:  83 3E 96 0D 00               cmp      word ptr [0xd96], 0

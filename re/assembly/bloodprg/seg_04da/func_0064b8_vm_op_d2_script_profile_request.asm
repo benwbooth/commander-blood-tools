@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0064b8_vm_op_d2_script_profile_request.cpp
 ; routine_bytes_sha256: 98ab9918a5bcad942ff5f60cf107c5d65d21b16c2d8e8771cf6847f568fb13f9
 
 0064B8:  AC                           lodsb    al, byte ptr [si]

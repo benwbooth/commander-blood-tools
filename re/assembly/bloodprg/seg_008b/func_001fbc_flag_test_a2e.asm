@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_001fbc_flag_test_a2e.cpp
 ; routine_bytes_sha256: 223c44bf3248ca556f9f5740f65fae46529a1ca556d5a5f3e0a4fa84a99a0ea5
 
 001FBC:  A1 2E 0A                     mov      ax, word ptr [0xa2e]

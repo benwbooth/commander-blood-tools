@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_00210e_input_dispatch_handler_table_unresolved.cpp
 ; routine_bytes_sha256: 3c635d7aebb8a3fe33353a58934f677a59d093ec7906b1b57aa30bf0fe8cfd6d
 
 00210E:  50                           push     ax

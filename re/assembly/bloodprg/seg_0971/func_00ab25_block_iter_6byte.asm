@@ -13,7 +13,6 @@
 ; terminal: jmp 0xabbf:11, jmp 0xabe8:3, jmp 0xabf5:3, jmp 0xac35:2, jmp 0xac86:1, jmp 0xad03:1, jmp 0xad4f:1, jmp 0xadb2:1, jmp 0xadb4:11, jmp 0xadc3:1, jmp 0xaddd:3, jmp 0xadec:1, jmp 0xadfd:1, jmp 0xae43:1, jmp 0xae9c:3, jmp 0xaee7:2, ret:2
 ; direct_callees: 0x00aabc, 0x00ad96
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00ab25_block_iter_6byte.cpp
 ; routine_bytes_sha256: ba6707b90afc944be901c66398b2f1272535c6c5502dd573b7d17160404379cf
 
 00AB25:  1E                           push     ds

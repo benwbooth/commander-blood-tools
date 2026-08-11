@@ -46,7 +46,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0041d1_entity_flag_state_transition.cpp
 ; routine_bytes_sha256: 07642a26707bc535c2ccc6c1b6f3ac29aaa621814a3dcdd06be4704def6872d5
 
 0041D1:  50                           push     ax

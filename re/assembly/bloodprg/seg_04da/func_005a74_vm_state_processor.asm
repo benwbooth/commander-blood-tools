@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x0061a6
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_005a74_vm_state_processor.cpp
 ; routine_bytes_sha256: b6c57749157210edff8c1aa442c08e7792fe972b3735833e502f121faf1096d0
 
 005A74:  66 50                        push     eax

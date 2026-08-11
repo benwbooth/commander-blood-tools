@@ -1,0 +1,4 @@
+module	entry	asm_path	source_path	status	notes
+bloodprg	0x00149b	re/assembly/bloodprg/seg_008b/func_00149b_object_heap_access.asm	re/source/bloodprg/object_heap.c	source_ported	real C port of object heap flag/activity update loop
+bloodprg	0x00604e	re/assembly/bloodprg/seg_04da/func_00604e_active_object_list_build.asm	re/source/bloodprg/object_heap.c	source_ported	real C port of active object offset list builder
+bloodprg	0x006fb9	re/assembly/bloodprg/seg_04da/func_006fb9_vm_op_c9_clear_record_full.asm	re/source/bloodprg/vm_records.c	source_ported	real C port of VM C9 three-word record clear and reciprocal teardown

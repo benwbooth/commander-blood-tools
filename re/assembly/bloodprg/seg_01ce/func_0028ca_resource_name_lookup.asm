@@ -16,7 +16,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x002693
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0028ca_resource_name_lookup.cpp
 ; routine_bytes_sha256: 18ac4b82ad55c5b35142cc8f7cf215d93681ee7e621839a39f3a85811369bc99
 
 0028CA:  50                           push     ax

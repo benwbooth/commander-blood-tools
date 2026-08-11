@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_0007ea_program_pit.cpp
 ; routine_bytes_sha256: 6b36e730d0da3c9952d868446201d9934b9cfdde8c22f91040d445df1ec00867
 
 0007EA:  50                           push     ax

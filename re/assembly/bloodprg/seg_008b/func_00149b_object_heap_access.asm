@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_00149b_object_heap_access.cpp
 ; routine_bytes_sha256: 23fc2a908b47847ad46c411b0ea3eac0447641651b0864c4ab0c1a2544d70439
 
 00149B:  06                           push     es

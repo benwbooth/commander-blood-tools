@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x0028ca
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_00280f_resource_lookup_helper.cpp
 ; routine_bytes_sha256: 00a0b6c3da48f564e7d4ae546eca794abaddd154d69232c60a802a94bc440ca6
 
 00280F:  66 55                        push     ebp

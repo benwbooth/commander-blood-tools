@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7233:1, retf:1
 ; direct_callees: 0x00604e
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00721a_nav_chart_list_build.cpp
 ; routine_bytes_sha256: 70a7a352c1d0b1bd3e8f67b342868de9071477eff51077a55a820b50c5c10da1
 
 00721A:  53                           push     bx

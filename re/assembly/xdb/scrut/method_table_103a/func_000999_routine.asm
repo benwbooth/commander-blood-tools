@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/method_table_103a/func_000999_routine.cpp
 ; routine_bytes_sha256: 440aacc88cf7b7f15e7fd49e6827fa3b922943ad509d3437e5f71510515f1928
 
 000999:  8B 75 16                     mov      si, word ptr [di + 0x16]

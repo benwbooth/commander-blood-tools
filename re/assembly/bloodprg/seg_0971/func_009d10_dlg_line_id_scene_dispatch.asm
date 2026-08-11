@@ -21,7 +21,6 @@
 ; terminal: jmp 0x9d5c:1, jmp 0x9dbf:1, jmp 0x9e57:1, jmp 0x9f4a:4, retf:1
 ; direct_callees: 0x00a15f, 0x00a1b4, 0x00a40b
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_0971/func_009d10_dlg_line_id_scene_dispatch.cpp
 ; routine_bytes_sha256: f29d509a5222b601da2df320823ffeccac6ae4231ab2e16cffe6a9892e791ae2
 
 009D10:  50                           push     ax

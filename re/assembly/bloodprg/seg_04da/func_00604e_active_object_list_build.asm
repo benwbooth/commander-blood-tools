@@ -13,7 +13,6 @@
 ; terminal: jmp 0x6068:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00604e_active_object_list_build.cpp
 ; routine_bytes_sha256: aae35b57bd4ca311aeb97c339d55521a01d8682843b3ed96c686e542b2f0ba5a
 
 00604E:  50                           push     ax

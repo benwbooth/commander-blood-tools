@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0067c8_vm_op_a8_load_string.cpp
 ; routine_bytes_sha256: 6f7818d61c8dcf7565c3ef19a51ddc3b38bb2331f58e7723ae69822a07aed6ea
 
 0067C8:  BD 20 21                     mov      bp, 0x2120

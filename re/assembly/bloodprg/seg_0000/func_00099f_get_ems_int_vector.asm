@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_0000/func_00099f_get_ems_int_vector.cpp
 ; routine_bytes_sha256: b54827c41368004235c8a04276c50ac29230fed5e95bd77460c7310bee245314
 
 00099F:  66 50                        push     eax

@@ -13,7 +13,6 @@
 ; terminal: jmp 0x93e7:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_009364_gfx_draw_centered.cpp
 ; routine_bytes_sha256: ff5a7011935b6206a9c3bd69d939108d3e2f36613bd0160236a3af05584c3dad
 
 009364:  50                           push     ax

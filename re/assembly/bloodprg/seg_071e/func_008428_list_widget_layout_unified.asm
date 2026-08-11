@@ -21,7 +21,6 @@
 ; terminal: jmp 0x8451:1, jmp 0x854e:1, jmp 0x8565:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 5
-; cxx_source: re/borland/bloodprg/seg_071e/func_008428_list_widget_layout_unified.cpp
 ; routine_bytes_sha256: 6b881bfc221a2deebed1cfebb4a128d4b8442753f415bae68280cab3f6aa1a29
 
 008428:  53                           push     bx

@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_001d74_copy_abc_to_671c.cpp
 ; routine_bytes_sha256: 30c8f13284ab8cb77ad2283714851fe93e0dbeecc377800db9c5488a42f8da2c
 
 001D74:  1E                           push     ds

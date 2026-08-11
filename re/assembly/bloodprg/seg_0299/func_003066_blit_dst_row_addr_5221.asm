@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003066_blit_dst_row_addr_5221.cpp
 ; routine_bytes_sha256: 1a6318b0c4bc03d39b77a5255c764e5f4f3c47d04b302bb3f833a0a091bdbaa9
 
 003066:  50                           push     ax

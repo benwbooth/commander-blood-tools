@@ -13,7 +13,6 @@
 ; terminal: jmp 0xced:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000ccb_init_early.cpp
 ; routine_bytes_sha256: e520dea595ea78c64e73982aa4dfd9a0f7e71510613ddda409d9cddb4682d321
 
 000CCB:  9C                           pushf   

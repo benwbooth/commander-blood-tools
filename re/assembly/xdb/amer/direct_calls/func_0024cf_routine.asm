@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2538:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/direct_calls/func_0024cf_routine.cpp
 ; routine_bytes_sha256: e784f6305eb359e3b85baaf4a5c87d0600db42cea9525f094cde2ee2ccc0bcc2
 
 0024CF:  BE 08 23                     mov      si, 0x2308

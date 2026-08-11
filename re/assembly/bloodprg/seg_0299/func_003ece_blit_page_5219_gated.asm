@@ -19,7 +19,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003ece_blit_page_5219_gated.cpp
 ; routine_bytes_sha256: 3dea266474dc41ea3dd4f31b6d85b4a6196de6bb49c6989f64142e4bced98652
 
 003ECE:  50                           push     ax

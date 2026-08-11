@@ -13,7 +13,6 @@
 ; terminal: jmp 0x72d:1, jmp 0x785:1, jmp 0x797:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0000/func_000726_read_cmdline_args.cpp
 ; routine_bytes_sha256: 752826499995c9e2e5a43b58f7f47ef37bc9d52183464b45f197335382afa18f
 
 000726:  55                           push     bp

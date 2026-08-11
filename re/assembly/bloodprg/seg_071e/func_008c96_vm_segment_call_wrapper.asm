@@ -18,7 +18,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_008c96_vm_segment_call_wrapper.cpp
 ; routine_bytes_sha256: f42a501f52c61d36a9b2deb444f2743502a69ae48ed908599ab15756d67212e6
 
 008C96:  55                           push     bp

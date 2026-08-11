@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bd4e_ems_buffer_setup.cpp
 ; routine_bytes_sha256: 264ce031bf2411ec0dd052e40c1d8d50e38c0e05d7c0816f4b7cb86f6089a023
 
 00BD4E:  1E                           push     ds

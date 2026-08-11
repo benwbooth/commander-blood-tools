@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1605:2, ret:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_008b/func_00155f_open_file_c1.cpp
 ; routine_bytes_sha256: 09cfefd4f2bb1664679eba55ffebe044280f07dfc25e3cb65cd20b8d5325060c
 
 00155F:  06                           push     es

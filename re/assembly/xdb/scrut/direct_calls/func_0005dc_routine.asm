@@ -10,7 +10,6 @@
 ; terminal: jmp 0x73a:1, ret:1
 ; direct_callees: 0x002696
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/direct_calls/func_0005dc_routine.cpp
 ; routine_bytes_sha256: e30b562918452a15fd9eeecf6b06ca502bd49f1223f313416b4ef2d05baf359b
 
 0005DC:  1E                           push     ds

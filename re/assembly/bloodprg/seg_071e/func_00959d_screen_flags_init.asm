@@ -13,7 +13,6 @@
 ; terminal: jmp 0x95fa:1, ret:1
 ; direct_callees: 0x00954a, 0x00963f, 0x00981b
 ; indirect_calls: 5
-; cxx_source: re/borland/bloodprg/seg_071e/func_00959d_screen_flags_init.cpp
 ; routine_bytes_sha256: 7149435d9dd1aa13cc8fcae0692e9f8b70745c16634d981a16c0d143a078d1b2
 
 00959D:  55                           push     bp

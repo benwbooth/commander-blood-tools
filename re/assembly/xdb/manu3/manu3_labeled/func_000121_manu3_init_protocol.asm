@@ -12,7 +12,6 @@
 ; terminal: jmp 0x11f:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000121_manu3_init_protocol.cpp
 ; routine_bytes_sha256: 53ee04799c1a04e8fa75a5da3c3003e16a4c3de7a8b51ec0ab5c519b9363a0f7
 
 000121:  8C C8                        mov      ax, cs

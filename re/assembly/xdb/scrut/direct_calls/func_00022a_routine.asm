@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2c5:1, ret:4
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/direct_calls/func_00022a_routine.cpp
 ; routine_bytes_sha256: 33edea2995d9e02b635337e879349eb351b468967e0d54a930b662861ddeb375
 
 00022A:  B8 03 00                     mov      ax, 3

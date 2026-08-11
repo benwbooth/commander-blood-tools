@@ -12,7 +12,6 @@
 ; terminal: jmp 0x1df:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_00019b_manu3_tween_step.cpp
 ; routine_bytes_sha256: 9072490ce643cd0fb2f7f955bf33ac5ffd75d4d3be30942b725a43991855a42d
 
 00019B:  0F A0                        push     fs

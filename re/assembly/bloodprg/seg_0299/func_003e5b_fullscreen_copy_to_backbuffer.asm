@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003e5b_fullscreen_copy_to_backbuffer.cpp
 ; routine_bytes_sha256: 362c8ff17c1838d14a1315e2b6c262674d128bd857001f944b9d9f789618ee05
 
 003E5B:  51                           push     cx

@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1ed2:1, ret:1
 ; direct_callees: 0x00178b, 0x0017af, 0x00210e
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_008b/func_001ec1_far_call_wrapper_299_deb.cpp
 ; routine_bytes_sha256: 03d13c948ca0c97cc97cc8b7d6f970ded618a7f10e97ba1d70caec6370633334
 
 001EC1:  33 C0                        xor      ax, ax

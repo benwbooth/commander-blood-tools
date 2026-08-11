@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006572_vm_op_a1_pop.cpp
 ; routine_bytes_sha256: bc6581c1f7c99b194d632b47ae66b97bed7177f82acc5b4f84e7cac0ef0beeac
 
 006572:  65 C6 06 AD 67 00            mov      byte ptr gs:[0x67ad], 0

@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_00079c_install_timer_isr_hook.cpp
 ; routine_bytes_sha256: f7eee5da7fe0d1a069465c1e93514586ad07e3e5bfe69a4786afae3d595347ba
 
 00079C:  50                           push     ax

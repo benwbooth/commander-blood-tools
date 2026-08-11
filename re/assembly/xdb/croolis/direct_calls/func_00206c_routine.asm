@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2407:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/direct_calls/func_00206c_routine.cpp
 ; routine_bytes_sha256: 684386c05fa5f8cf92643bbc57b996af068081eb76ff69ccf5278e67acb5691a
 
 00206C:  64 8B 3E 78 22               mov      di, word ptr fs:[0x2278]

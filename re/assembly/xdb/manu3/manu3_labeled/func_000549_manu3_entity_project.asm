@@ -12,7 +12,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000549_manu3_entity_project.cpp
 ; routine_bytes_sha256: b8b58b8148911c130bebdc2455fea987390e6c8f291d8521527f58596dbb41f7
 
 000549:  8E 06 02 00                  mov      es, word ptr [2]

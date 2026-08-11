@@ -16,7 +16,6 @@
 ; terminal: jmp 0x30eb:2, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0030cd_text_width_dual_font.cpp
 ; routine_bytes_sha256: 9ac3b22669fd6fa9c42530b56ea40a5ff96c3dab207d403aceb72bdb27256748
 
 0030CD:  53                           push     bx

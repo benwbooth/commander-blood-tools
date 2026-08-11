@@ -13,7 +13,6 @@
 ; terminal: ret:2
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00ad96_gfx_scanline_advance.cpp
 ; routine_bytes_sha256: feef3e2ff73a401183cbe70553f51c764629351adb6c54f7c16a81128e89d798
 
 00AD96:  FE 4E FA                     dec      byte ptr [bp - 6]

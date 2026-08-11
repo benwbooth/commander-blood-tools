@@ -21,7 +21,6 @@
 ; terminal: jmp 0x371a:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0036ea_gfx_draw_to_page.cpp
 ; routine_bytes_sha256: 42fe2f622a12ff3f3395b40c56e015d55e788fe49ab111a979103561971572a3
 
 0036EA:  50                           push     ax

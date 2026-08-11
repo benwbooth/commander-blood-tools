@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
 ; routine_bytes_sha256: 2e3eabf98179886172a5201127a38719a696bdb5eec9828c91d10a9b422ae85a
 
 009F80:  BB B5 1F                     mov      bx, 0x1fb5

@@ -14,7 +14,6 @@
 ; terminal: jmp 0x6dcd:3, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006d80_vm_op_c6_record_match.cpp
 ; routine_bytes_sha256: 437c508f2f7434812389fc91b24548bbcb76c6ba75d51948597d7a7c41f4d230
 
 006D80:  57                           push     di

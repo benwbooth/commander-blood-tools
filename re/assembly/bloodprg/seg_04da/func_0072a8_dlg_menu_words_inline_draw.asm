@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7349:1, jmp 0x7392:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_04da/func_0072a8_dlg_menu_words_inline_draw.cpp
 ; routine_bytes_sha256: 894d53441a36ff524fc93c8b3785a259c65a9eddd978f94ed81b57b1eb1ec500
 
 0072A8:  06                           push     es

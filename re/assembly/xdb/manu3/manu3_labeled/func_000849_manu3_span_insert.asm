@@ -12,7 +12,6 @@
 ; terminal: jmp 0x884:1, jmp 0x950:1, jmp 0x96a:5, jmp 0xa30:1, jmp 0xa83:1, jmp word ptr [0x67e]:1, jmp word ptr [si + 0x2c]:1
 ; direct_callees: 0x000d7d
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000849_manu3_span_insert.cpp
 ; routine_bytes_sha256: 3d75eed4836942d2d76a5388132ce1bcf995856babb604bcac2c9d5ff58c5f3b
 
 000849:  56                           push     si

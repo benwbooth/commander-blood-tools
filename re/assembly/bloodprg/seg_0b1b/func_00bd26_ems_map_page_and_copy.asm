@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bd26_ems_map_page_and_copy.cpp
 ; routine_bytes_sha256: db15b3cda28ad812dac847298327127233ee695c460da0f3a6ff517b2ba5a40e
 
 00BD26:  1E                           push     ds

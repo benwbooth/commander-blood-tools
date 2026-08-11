@@ -13,7 +13,6 @@
 ; terminal: jmp 0x7b6d:1, jmp 0x7b80:1, jmp 0x7c18:1, jmp 0x7cad:9, ret:1
 ; direct_callees: 0x007cb4, 0x007ce8, 0x008c96
 ; indirect_calls: 22
-; cxx_source: re/borland/bloodprg/seg_071e/func_0079e5_screen_mode_update.cpp
 ; routine_bytes_sha256: 3fa1e4fab8d4165c36fc55a7b0541e4304c90a17324f9c78e6f9ecca2e8bbd54
 
 0079E5:  50                           push     ax

@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_008713_nav_choice_handler_0.cpp
 ; routine_bytes_sha256: 0415e99bdfa96db2734d75f9db77377a62603f797a3526cd3650f7b9c96ce0df
 
 008713:  F6 06 65 25 01               test     byte ptr [0x2565], 1

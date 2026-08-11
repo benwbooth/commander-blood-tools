@@ -13,7 +13,6 @@
 ; terminal: jmp 0x52dc:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_04b9/func_00529c_resource_free_inner.cpp
 ; routine_bytes_sha256: d812c81a9fa76846cfd2bf73d0f72a16cfee1d0dd39b19427a3f26b902afcd00
 
 00529C:  66 50                        push     eax

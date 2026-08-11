@@ -15,7 +15,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0027e9_dos_set_drive_and_chdir.cpp
 ; routine_bytes_sha256: eb6b6b6954b87081c3141b81b9cd0507f5065eabb570dd365a600725a3cd650c
 
 0027E9:  50                           push     ax

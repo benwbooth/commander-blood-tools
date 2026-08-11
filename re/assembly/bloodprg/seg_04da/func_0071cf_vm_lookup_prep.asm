@@ -14,7 +14,6 @@
 ; terminal: jmp 0x71e6:1, retf:1
 ; direct_callees: 0x00604e
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0071cf_vm_lookup_prep.cpp
 ; routine_bytes_sha256: aaf60d2d580ad987ffdbb75dff624f3369cf2c58fc25a5b1abf4a632fba4d1b2
 
 0071CF:  53                           push     bx

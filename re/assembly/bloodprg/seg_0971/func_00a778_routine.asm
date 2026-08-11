@@ -11,7 +11,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x00a0c3
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a778_routine.cpp
 ; routine_bytes_sha256: eda7d9fd962cfc6acd23ec76178fe2308e8f4e6d5a28c1cd01d0acd74fc9b92d
 
 00A778:  C4 36 8C 0D                  les      si, ptr [0xd8c]

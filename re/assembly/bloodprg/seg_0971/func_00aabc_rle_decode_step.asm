@@ -13,7 +13,6 @@
 ; terminal: ret:4
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00aabc_rle_decode_step.cpp
 ; routine_bytes_sha256: 6f9aba91cf84930a552caddcbe3511006f7b3c6cca5ee86f53b57935f6816775
 
 00AABC:  32 E4                        xor      ah, ah

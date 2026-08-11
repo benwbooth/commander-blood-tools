@@ -14,7 +14,6 @@
 ; terminal: jmp 0x684b:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006830_vm_op_a9_cond_jump.cpp
 ; routine_bytes_sha256: 8d52c7cd9cdbe18a1703851da0ef43dd199a0145678698cf5e695eb31ab75ddf
 
 006830:  AC                           lodsb    al, byte ptr [si]

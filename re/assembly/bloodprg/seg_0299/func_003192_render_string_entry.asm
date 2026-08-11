@@ -18,7 +18,6 @@
 ; terminal: jmp 0x31ce:2, jmp 0x31fb:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003192_render_string_entry.cpp
 ; routine_bytes_sha256: 2c83af0acf062fa3fa48bb64c99d7af3f1e36640ac25ef84cf9a0ddf4d06d3b2
 
 003192:  50                           push     ax

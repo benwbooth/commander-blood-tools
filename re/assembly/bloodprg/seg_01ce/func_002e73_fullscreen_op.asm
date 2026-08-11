@@ -16,7 +16,6 @@
 ; terminal: jmp 0x2ec0:1, jmp 0x2f0b:2, jmp 0x2f50:2, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002e73_fullscreen_op.cpp
 ; routine_bytes_sha256: d7644d9198fc977af470a84a24d3e6898c5b0566c644ed196ea0ce845e158342
 
 002E73:  66 50                        push     eax

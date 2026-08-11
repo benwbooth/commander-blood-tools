@@ -10,7 +10,6 @@
 ; terminal: jmp bx:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/method_table_103a/func_001b46_routine.cpp
 ; routine_bytes_sha256: efadb9db7ca5a5948b626039dc5b44f96b1eb61b8ad6ebe0e2758ec249323a81
 
 001B46:  8B 5D 36                     mov      bx, word ptr [di + 0x36]

@@ -12,7 +12,6 @@
 ; terminal: none
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000d7d_manu3_face_activate.cpp
 ; routine_bytes_sha256: 2b309ac3e61e3280e4874c293d95ac9706bd0aa1151450d61ef8c32fef31287b
 
 000D7D:  26 8B 5C 02                  mov      bx, word ptr es:[si + 2]

@@ -12,7 +12,6 @@
 ; terminal: jmp 0x1df:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000181_manu3_anim_select.cpp
 ; routine_bytes_sha256: 2c95a4b6fd3aaae13c30793487b21286b267e557b3b8ab231caf4802fde54c61
 
 000181:  83 E3 1F                     and      bx, 0x1f

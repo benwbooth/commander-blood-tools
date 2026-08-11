@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1bfc:1, jmp 0x1c3f:1, jmp 0x1d5b:1, jmp 0x1d6d:1, ret:1
 ; direct_callees: 0x001d74, 0x001d94, 0x001dd8, 0x001e5d
 ; indirect_calls: 11
-; cxx_source: re/borland/bloodprg/seg_008b/func_001b4b_state_snapshot_2739.cpp
 ; routine_bytes_sha256: aac51f24e2f04b7eb02464e61d41a75b61ce0130f9687b5cd5eb3429a7e81dab
 
 001B4B:  56                           push     si

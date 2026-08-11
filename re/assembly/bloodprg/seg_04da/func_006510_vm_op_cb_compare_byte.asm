@@ -14,7 +14,6 @@
 ; terminal: jmp 0x6558:3, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006510_vm_op_cb_compare_byte.cpp
 ; routine_bytes_sha256: d62f591b2ec7c2dede39d54dd942b1ae1f8275bff60981115e4e2058b2b26097
 
 006510:  AC                           lodsb    al, byte ptr [si]

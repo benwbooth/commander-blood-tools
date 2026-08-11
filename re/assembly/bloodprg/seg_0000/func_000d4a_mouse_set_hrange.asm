@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000d4a_mouse_set_hrange.cpp
 ; routine_bytes_sha256: 2525634f2e7b2ba50d8c9f6fabbc0d7eca82898d7ca4eafa5bf0fe1bb15c1208
 
 000D4A:  50                           push     ax

@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/direct_calls/func_000734_routine.cpp
 ; routine_bytes_sha256: c20927be684fe47460ff868324a7f228fa927e1b00a4a61d8770bb700343e601
 
 000734:  1E                           push     ds

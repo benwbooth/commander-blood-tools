@@ -12,7 +12,6 @@
 ; terminal: jmp 0x745:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000700_manu3_face_bucket_sort.cpp
 ; routine_bytes_sha256: 7c332d7f4ed8cddf1dc6289e33919c57f0109bddda0a68301cf67eb912eaaa32
 
 000700:  64 8B 0E 04 23               mov      cx, word ptr fs:[0x2304]

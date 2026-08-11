@@ -16,7 +16,6 @@
 ; terminal: jmp 0x4464:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_0043f7_sprite_slot_commit_dirty_range.cpp
 ; routine_bytes_sha256: 689ca5c23e7a1b41b1c27b312bc0e4549302f37dc56346cb9fab5f2b2907578d
 
 0043F7:  66 55                        push     ebp

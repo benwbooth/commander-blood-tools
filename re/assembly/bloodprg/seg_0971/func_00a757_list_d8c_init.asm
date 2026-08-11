@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a757_list_d8c_init.cpp
 ; routine_bytes_sha256: 1898e092b06c16b06473284e2f625a6c4aa576718d90f4c44fe81021ad09040f
 
 00A757:  A1 7E 0A                     mov      ax, word ptr [0xa7e]

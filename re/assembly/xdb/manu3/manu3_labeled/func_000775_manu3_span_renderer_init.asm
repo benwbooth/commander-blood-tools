@@ -12,7 +12,6 @@
 ; terminal: jmp 0x8b5:1, jmp 0x950:1, jmp 0x96a:5, jmp 0xa30:1, jmp 0xa83:1, jmp word ptr [0x67e]:1, jmp word ptr [si + 0x2c]:1
 ; direct_callees: 0x000d7d
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000775_manu3_span_renderer_init.cpp
 ; routine_bytes_sha256: 85325d63c7e425ed4c2c634c2d21af804098ea2812a566e1a591f4a4439e4fcc
 
 000775:  64 8E 1E 06 00               mov      ds, word ptr fs:[6]

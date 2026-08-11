@@ -11,7 +11,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x009f80, 0x00a0c3, 0x00a622, 0x00a664
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0971/func_009fa2_routine.cpp
 ; routine_bytes_sha256: 90d0d235c176541cf43021868d5a1436e0c5e83012bb90f7205eaabcc345a7eb
 
 009FA2:  A1 80 0D                     mov      ax, word ptr [0xd80]

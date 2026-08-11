@@ -14,7 +14,6 @@
 ; terminal: jmp 0x710b:1, retf:1
 ; direct_callees: 0x00624b
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0070ee_ship_3d_navigation_candidate_build.cpp
 ; routine_bytes_sha256: 900f4f7fa776f880c818e637a2d67d768aafbc885b5f9f9f021956cec82f6bf7
 
 0070EE:  55                           push     bp

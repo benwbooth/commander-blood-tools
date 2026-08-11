@@ -13,7 +13,6 @@
 ; terminal: jmp 0xd66:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000d61_print_string_dos.cpp
 ; routine_bytes_sha256: 6d8c996dedfc2684eee31e8454f331807f9a5ae4a08e17f8db65e46c84b9115f
 
 000D61:  50                           push     ax

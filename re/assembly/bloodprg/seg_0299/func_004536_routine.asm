@@ -12,7 +12,6 @@
 ; terminal: jmp 0x46ac:3, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004536_routine.cpp
 ; routine_bytes_sha256: 6c9b670c496e7c25303e9cb96c47892c02c51c0596dab3047e450451c23cce81
 
 004536:  50                           push     ax

@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/direct_calls/func_000775_routine.cpp
 ; routine_bytes_sha256: d4d6f353d6eeb8dbecafed87f13994b317139a2b7dcbec524640c0abb9817f4f
 
 000775:  1E                           push     ds

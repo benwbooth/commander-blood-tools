@@ -13,7 +13,6 @@
 ; terminal: jmp 0x580a:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_005791_vm_flag_test_67b1.cpp
 ; routine_bytes_sha256: eec63db9842c209da711e71fbd088b983c51906d3e16cd40930294e85f32150d
 
 005791:  06                           push     es

@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0024b2_cs_table_read_1c6.cpp
 ; routine_bytes_sha256: 9883d69c45c5c81c34c7e1ac68698e5d8629a16537d226b69843d8509fa088f0
 
 0024B2:  50                           push     ax

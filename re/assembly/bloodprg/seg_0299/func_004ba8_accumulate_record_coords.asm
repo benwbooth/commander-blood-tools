@@ -14,7 +14,6 @@
 ; terminal: jmp 0x4ccb:3, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004ba8_accumulate_record_coords.cpp
 ; routine_bytes_sha256: 9f0855d33b09f0236b5e3beac6450c56c95ea69b8ebb4bfdd07bb77071c8934b
 
 004BA8:  66 50                        push     eax

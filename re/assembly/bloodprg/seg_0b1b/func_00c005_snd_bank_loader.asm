@@ -20,7 +20,6 @@
 ; terminal: jmp 0xc12d:1, jmp 0xc1cf:2, retf:1
 ; direct_callees: none
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00c005_snd_bank_loader.cpp
 ; routine_bytes_sha256: c792ab3ce5c558301f850256089f963a2738a41bad701b7cc866a4f1629ee662
 
 00C005:  50                           push     ax

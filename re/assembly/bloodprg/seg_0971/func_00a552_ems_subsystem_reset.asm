@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa3d0:1, jmp 0xa578:1, jmp 0xa615:1, ret:2
 ; direct_callees: 0x00a634, 0x00a82c
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a552_ems_subsystem_reset.cpp
 ; routine_bytes_sha256: 3783f26b33e432594b2256290f2c67a208dce8cfaedb64e2415705212c3c6d4e
 
 00A552:  65 C7 06 A0 0A 00 00         mov      word ptr gs:[0xaa0], 0

@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_0000/func_000a99_dos_dup_handle.cpp
 ; routine_bytes_sha256: c2088183669bcd39f1cc2b541d1629478140910fc144a7995df4a72ed9866da1
 
 000A99:  50                           push     ax

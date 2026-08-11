@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_007612_credit_presenter_b_cryo.cpp
 ; routine_bytes_sha256: 7e718bce20f875afc5bbc230ab874e536d9f4156a6c8ab73370d934a8d318449
 
 007612:  BF 18 0E                     mov      di, 0xe18

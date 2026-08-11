@@ -17,7 +17,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002665_strlen.cpp
 ; routine_bytes_sha256: 6e2373a08942d4b119e6d1336777d439d7ffb47d63f83afd33cf4113382e2718
 
 002665:  51                           push     cx

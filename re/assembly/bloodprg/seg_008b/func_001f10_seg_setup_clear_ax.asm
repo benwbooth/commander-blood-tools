@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1f45:1, ret:1
 ; direct_callees: 0x00178b, 0x0017af, 0x00210e
 ; indirect_calls: 8
-; cxx_source: re/borland/bloodprg/seg_008b/func_001f10_seg_setup_clear_ax.cpp
 ; routine_bytes_sha256: 884c493750fa6ba16c66642e3acf546ee0e0c831a153c1a246c32462360c1459
 
 001F10:  8C E8                        mov      ax, gs

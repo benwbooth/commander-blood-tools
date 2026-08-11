@@ -20,7 +20,6 @@
 ; terminal: jmp 0x26ca:1, retf:1
 ; direct_callees: 0x0025a4, 0x0026cf, 0x0027c3, 0x0027e9
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002693_path_builder_gs_relative.cpp
 ; routine_bytes_sha256: f13641713a2580b5495d510e887af229eda951055dcb968d1e6cf7c34b27485c
 
 002693:  50                           push     ax

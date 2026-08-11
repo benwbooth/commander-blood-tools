@@ -14,7 +14,6 @@
 ; terminal: jmp 0x1066:3, jmp 0x11a5:3, jmp 0x123b:1, jmp 0x1246:2, jmp 0xffb:1, retf:1
 ; direct_callees: 0x001344, 0x00147f, 0x00149b, 0x0014ca, 0x00155f, 0x001610, 0x0016a7, 0x00178b, 0x0017af, 0x0017d9, 0x001855, 0x001a93, 0x001ad3, 0x001b4b, 0x001ec1, 0x001f10, 0x001f78, 0x001fbc, 0x00210e
 ; indirect_calls: 37
-; cxx_source: re/borland/bloodprg/seg_008b/func_000eb0_mem_alloc_64k.cpp
 ; routine_bytes_sha256: 11c25185af4cf3fc10569a0bf64706d13f4c7ca5463cee449152d6b4279f5a00
 
 000EB0:  1E                           push     ds

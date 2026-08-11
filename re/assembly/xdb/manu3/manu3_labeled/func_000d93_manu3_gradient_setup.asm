@@ -12,7 +12,6 @@
 ; terminal: jmp 0x1181:1, jmp 0x12e8:1, jmp 0x1329:2, ret:3
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000d93_manu3_gradient_setup.cpp
 ; routine_bytes_sha256: b09e1d75783188d574c5ba2f6bebeb8a9602aa469367f28e7d0f7a9977fd4a2d
 
 000D93:  66 26 8B 47 0A               mov      eax, dword ptr es:[bx + 0xa]

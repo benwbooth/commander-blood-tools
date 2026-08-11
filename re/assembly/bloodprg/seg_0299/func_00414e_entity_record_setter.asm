@@ -17,7 +17,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00414e_entity_record_setter.cpp
 ; routine_bytes_sha256: d8a9e868f509555f30b4f5187fffab8b5f02990791a5d3dae58a39d2a564824c
 
 00414E:  50                           push     ax

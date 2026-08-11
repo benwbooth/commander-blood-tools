@@ -12,7 +12,6 @@
 ; terminal: none
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_0006f6_manu3_face_builder_next.cpp
 ; routine_bytes_sha256: ca58b810bd257232784dea4ec18b70600fd2d014ef7fea532fbf7c810973ac29
 
 0006F6:  64 8E 06 06 00               mov      es, word ptr fs:[6]

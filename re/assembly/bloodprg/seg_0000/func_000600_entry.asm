@@ -13,7 +13,6 @@
 ; terminal: jmp 0x6e1:1, jmp 0x6ec:1
 ; direct_callees: 0x0006f1, 0x00079c, 0x0007ea, 0x00099f, 0x000a99, 0x000b32, 0x000b42, 0x000bff, 0x000c26, 0x000cc0, 0x000ccb, 0x000cef, 0x000d4a, 0x000d61
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_0000/func_000600_entry.cpp
 ; routine_bytes_sha256: cfdfc610f110ef623fe97e8ea7355a154add5103fac5b60e379aa72d78d35b08
 
 000600:  B8 E2 0C                     mov      ax, 0xce2

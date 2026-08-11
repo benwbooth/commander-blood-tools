@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0000/func_000c26_get_video_mode.cpp
 ; routine_bytes_sha256: 7f021e7db6e3efd3a5b2789397c1eb34d0d3c17681a33c612b40cf89585cefed
 
 000C26:  50                           push     ax

@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_00248b_clear_block_5251.cpp
 ; routine_bytes_sha256: 3fb16f13f03026bad977ca20171ea909e4a885b15a5651318d1ea398992f96c5
 
 00248B:  06                           push     es

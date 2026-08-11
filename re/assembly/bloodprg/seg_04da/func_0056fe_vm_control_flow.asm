@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x0056a6, 0x00577a, 0x005afd, 0x006023
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0056fe_vm_control_flow.cpp
 ; routine_bytes_sha256: 016affce6332a2dc45e2ede986dcb42bddb2b8b0f520713d728bacb063e3d304
 
 0056FE:  1E                           push     ds

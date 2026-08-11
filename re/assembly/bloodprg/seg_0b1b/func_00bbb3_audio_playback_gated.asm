@@ -19,7 +19,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x00bb9d, 0x00bd09
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bbb3_audio_playback_gated.cpp
 ; routine_bytes_sha256: e2568920091990dad94d80153b8d6981b474cca099647f0ff716b90198dae376
 
 00BBB3:  06                           push     es

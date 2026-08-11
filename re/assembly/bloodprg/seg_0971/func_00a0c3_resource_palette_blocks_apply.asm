@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa0d3:1, ret:1
 ; direct_callees: 0x00a117
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a0c3_resource_palette_blocks_apply.cpp
 ; routine_bytes_sha256: 4721d1394bf610e0c221c0ec8a92ff143d65247d3275a157c4bde8906f0918ef
 
 00A0C3:  50                           push     ax

@@ -14,7 +14,6 @@
 ; terminal: jmp 0x4d34:1, jmp 0x4d6d:1, jmp 0x4dd9:1, jmp 0x4ddf:2, jmp 0x4e17:2, jmp 0x4e28:1, jmp 0x4e49:1, jmp 0x4e69:4, jmp 0x4e95:1, jmp 0x4e9b:2, jmp 0x4ed3:2, jmp 0x4ee4:1, jmp 0x4f0b:1, jmp 0x4f35:4, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004cd6_entity_coord_accumulate.cpp
 ; routine_bytes_sha256: 15c6e9bd08ba4bb1285c354f4e036a89ac314ddf5015198454351fdc477baa21
 
 004CD6:  50                           push     ax

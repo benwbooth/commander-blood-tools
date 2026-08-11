@@ -16,7 +16,6 @@
 ; terminal: jmp 0x50b4:1, jmp 0x5168:1, jmp 0x5176:4, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00509d_dirty_rect_blit.cpp
 ; routine_bytes_sha256: 3b4e4e0ddaf931b6a3bdaac56a0d2dc34ab89aa36b42e0d61a4d151afcb97932
 
 00509D:  06                           push     es

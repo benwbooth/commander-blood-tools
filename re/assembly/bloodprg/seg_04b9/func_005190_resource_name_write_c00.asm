@@ -21,7 +21,6 @@
 ; terminal: jmp 0x51b3:1, jmp 0x521e:1, jmp 0x527d:1, retf:1
 ; direct_callees: 0x00529c
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_04b9/func_005190_resource_name_write_c00.cpp
 ; routine_bytes_sha256: 8a3cab21e7ae6a9c952f5a78826d986db329184368f10b612abe98b79fe14d24
 
 005190:  66 53                        push     ebx

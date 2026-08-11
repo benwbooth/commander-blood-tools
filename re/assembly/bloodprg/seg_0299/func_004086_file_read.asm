@@ -13,7 +13,6 @@
 ; terminal: jmp 0x408c:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004086_file_read.cpp
 ; routine_bytes_sha256: cb4950819183084423bcb5c17e9ef1881b4096f05f6a81b2764726ff8221b9b7
 
 004086:  66 50                        push     eax

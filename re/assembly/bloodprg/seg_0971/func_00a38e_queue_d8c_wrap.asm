@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a38e_queue_d8c_wrap.cpp
 ; routine_bytes_sha256: 84de4c19f0e44213424ba2e92b86fe66d3d582c0c42555fe59031b629b10a323
 
 00A38E:  03 F0                        add      si, ax

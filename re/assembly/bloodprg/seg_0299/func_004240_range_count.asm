@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_004240_range_count.cpp
 ; routine_bytes_sha256: a7ed64c1f53178c137384872786bbb9eb520553a7829fe72853109873ee69eb3
 
 004240:  50                           push     ax

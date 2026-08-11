@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x008295
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_0082c3_ui_region_table_scan.cpp
 ; routine_bytes_sha256: ed06b04960c68f21312006c2f4dfbf201f6e6200e202d110e8cad963d288bbff
 
 0082C3:  55                           push     bp

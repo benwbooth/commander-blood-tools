@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006494_vm_op_ce_cond_branch.cpp
 ; routine_bytes_sha256: 5f519a19f7c2bc74f446ba94134050199f080500b64edba183e3f3fd671995bf
 
 006494:  65 F6 06 93 27 01            test     byte ptr gs:[0x2793], 1

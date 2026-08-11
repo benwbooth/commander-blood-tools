@@ -13,7 +13,6 @@
 ; terminal: jmp 0x9bba:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_071e/func_009b98_ship_3d_object_sprite_project.cpp
 ; routine_bytes_sha256: 4c1e816863fe14d2f7835c89e6d0692195f55abacb012b3c7db8e1338a165051
 
 009B98:  66 50                        push     eax

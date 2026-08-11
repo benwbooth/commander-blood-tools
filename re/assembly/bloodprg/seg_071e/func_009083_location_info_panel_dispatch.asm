@@ -13,7 +13,6 @@
 ; terminal: jmp 0x90a7:1, jmp 0x91c3:1, jmp 0x91f1:1, jmp 0x923f:2, ret:1
 ; direct_callees: 0x009240
 ; indirect_calls: 16
-; cxx_source: re/borland/bloodprg/seg_071e/func_009083_location_info_panel_dispatch.cpp
 ; routine_bytes_sha256: 290e3acc332846a85d22dd7219164a91efa14d5b024d1e6552a311ec778f12d6
 
 009083:  8C E8                        mov      ax, gs

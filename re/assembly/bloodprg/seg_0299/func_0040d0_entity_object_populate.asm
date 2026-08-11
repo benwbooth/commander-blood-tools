@@ -17,7 +17,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0299/func_0040d0_entity_object_populate.cpp
 ; routine_bytes_sha256: 21ebe98dec4b2b51201ea38666d0d4f1a2f4d198036bc892bad67e4a31ec2909
 
 0040D0:  50                           push     ax

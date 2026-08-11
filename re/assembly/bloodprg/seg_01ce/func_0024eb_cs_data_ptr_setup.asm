@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0024eb_cs_data_ptr_setup.cpp
 ; routine_bytes_sha256: a790e7b89b4440bcaecf68020324903f72b9da52639a6713389f9c829287e79b
 
 0024EB:  66 50                        push     eax

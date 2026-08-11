@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1e27:1, jmp 0x1e55:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_001dd8_flag_gated_b15.cpp
 ; routine_bytes_sha256: 3a1706e8bcaac3b07eb0b174ee8eb810ee35f9798ad785e5d49db82a04889a98
 
 001DD8:  50                           push     ax

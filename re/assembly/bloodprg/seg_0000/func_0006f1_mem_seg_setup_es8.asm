@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x000726
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_0006f1_mem_seg_setup_es8.cpp
 ; routine_bytes_sha256: 677c17d8e691e0bfa9885696da31a9777e35d867afe9b26cd7a366b02c866a44
 
 0006F1:  06                           push     es

@@ -15,7 +15,6 @@
 ; terminal: jmp 0x9457:2, jmp 0x94e2:1, jmp 0x94ee:1, jmp 0x950a:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_071e/func_0093f5_screen_mode_check.cpp
 ; routine_bytes_sha256: 970702f7ce87cbad4c1f148d20926131674a76d5b3bb15b234927e5c94ba7639
 
 0093F5:  66 50                        push     eax

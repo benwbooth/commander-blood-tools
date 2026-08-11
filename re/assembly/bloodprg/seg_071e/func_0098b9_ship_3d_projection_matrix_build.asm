@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_0098b9_ship_3d_projection_matrix_build.cpp
 ; routine_bytes_sha256: ee9cefae7bb3c3bcc0acfa72dd6f6f3731e166b91b2e15c3d3e62eee82653bb5
 
 0098B9:  66 50                        push     eax

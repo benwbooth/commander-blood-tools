@@ -15,7 +15,6 @@
 ; terminal: jmp 0x6944:3, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006902_vm_op_shared_ae_b0_state.cpp
 ; routine_bytes_sha256: 982bc049edca13d8a8c5d278e509b87447e1dc567cd991fc6c7f9cf8bb54e0e6
 
 006902:  57                           push     di

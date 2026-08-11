@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000d0e_poll_mouse.cpp
 ; routine_bytes_sha256: 285c0d1c7d58630dd6764b8ac8cf090ad50d226c16a28801183e60259b6fc717
 
 000D0E:  50                           push     ax

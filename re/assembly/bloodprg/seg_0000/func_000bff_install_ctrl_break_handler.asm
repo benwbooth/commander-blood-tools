@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000bff_install_ctrl_break_handler.cpp
 ; routine_bytes_sha256: 0576dc05ccd853136e3c3e3c936e4588052e3a92f626c1f9b14ccf53621064c1
 
 000BFF:  50                           push     ax

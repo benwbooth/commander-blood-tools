@@ -16,7 +16,6 @@
 ; terminal: jmp 0x5486:1, jmp 0x5524:5, jmp 0x552a:1, jmp 0x5553:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 12
-; cxx_source: re/borland/bloodprg/seg_04da/func_0053a0_vm_resource_profile_select.cpp
 ; routine_bytes_sha256: ef4501eb798abb40d90c8a77ea8eadec4fa2060f438aa47e481ef830f86b932c
 
 0053A0:  53                           push     bx

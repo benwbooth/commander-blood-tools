@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_007cb4_record_access_7bb8.cpp
 ; routine_bytes_sha256: 1c9098a89a5306202fce335d2cb43b064b913101451d01deda9115263d87d20d
 
 007CB4:  06                           push     es

@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_008b/func_001344_ae6_gated_processor.cpp
 ; routine_bytes_sha256: 82a19bceb5835190242fddfcd708a524b73132661667cfe6b3478a3a113906d1
 
 001344:  06                           push     es

@@ -10,7 +10,6 @@
 ; terminal: jmp word ptr [si + 0xe]:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/method_table_103a/func_001692_routine.cpp
 ; routine_bytes_sha256: 93ab5fc7e70f4185f3af1c80581ad143fe9a5835c8a1ae937b70c347bf03615f
 
 001692:  8B 75 16                     mov      si, word ptr [di + 0x16]

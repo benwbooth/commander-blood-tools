@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a3d0_queue_d8c_consume.cpp
 ; routine_bytes_sha256: 4c199e1c8299b742a5d4150cc4185349f9c2b836c9c526973c792330dd904f7e
 
 00A3D0:  C4 36 90 0D                  les      si, ptr [0xd90]

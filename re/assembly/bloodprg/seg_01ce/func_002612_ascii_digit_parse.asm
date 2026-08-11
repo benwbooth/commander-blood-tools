@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002612_ascii_digit_parse.cpp
 ; routine_bytes_sha256: 79aec148e4473edca687e714d782a1a810be0ea7a2b45d096a29b59bb4277366
 
 002612:  53                           push     bx

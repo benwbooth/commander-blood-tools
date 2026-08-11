@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a634_flag_test_b17.cpp
 ; routine_bytes_sha256: 70ed47cfe0a09240e61c1dda4ba1daf5f24019813d06e2f4d0151a221c046432
 
 00A634:  50                           push     ax

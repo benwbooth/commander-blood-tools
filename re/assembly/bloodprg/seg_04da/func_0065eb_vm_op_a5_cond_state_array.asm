@@ -14,7 +14,6 @@
 ; terminal: jmp 0x660b:1, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0065eb_vm_op_a5_cond_state_array.cpp
 ; routine_bytes_sha256: 185dcc8383a9d898b05fab9279e67ed099db5d7ca64dc174f3842cce4a57d2ed
 
 0065EB:  AC                           lodsb    al, byte ptr [si]

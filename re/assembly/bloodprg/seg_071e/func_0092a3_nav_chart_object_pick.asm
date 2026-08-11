@@ -13,7 +13,6 @@
 ; terminal: jmp 0x9308:1, jmp 0x9339:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_0092a3_nav_chart_object_pick.cpp
 ; routine_bytes_sha256: 09e896293459b3d194e3d736028340d9ad032d641d356822be7f3ae36cb60d24
 
 0092A3:  33 C0                        xor      ax, ax

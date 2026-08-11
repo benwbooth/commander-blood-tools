@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: 0x001e5d
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_001ad3_flag_gated_259b.cpp
 ; routine_bytes_sha256: 245ab7c35e055cac78510a7d33358c250623b597c8a326ad4649308f16d0f927
 
 001AD3:  F6 06 9B 25 01               test     byte ptr [0x259b], 1

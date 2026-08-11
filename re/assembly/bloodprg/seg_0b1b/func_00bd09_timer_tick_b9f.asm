@@ -13,7 +13,6 @@
 ; terminal: jmp 0xbd24:2, ret:1
 ; direct_callees: 0x00bd26, 0x00bd4e, 0x00bd8d
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bd09_timer_tick_b9f.cpp
 ; routine_bytes_sha256: c4f057a1f1e81d9fb22d0a27a472bcb804659cf240fed7127de452fa2d5dc071
 
 00BD09:  53                           push     bx

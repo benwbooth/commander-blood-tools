@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006855_vm_op_aa_yield.cpp
 ; routine_bytes_sha256: 93213edc4d025c4676206e12c9c85b2e17447e1c703690da9ae2c2c4d7bd1637
 
 006855:  65 C6 06 B4 67 01            mov      byte ptr gs:[0x67b4], 1

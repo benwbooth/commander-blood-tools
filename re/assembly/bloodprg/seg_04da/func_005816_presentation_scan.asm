@@ -13,7 +13,6 @@
 ; terminal: jmp 0x59f9:1, jmp 0x5a45:1, jmp 0x5a64:1, ret:1
 ; direct_callees: 0x0056fe, 0x005b38, 0x006023, 0x007409
 ; indirect_calls: 4
-; cxx_source: re/borland/bloodprg/seg_04da/func_005816_presentation_scan.cpp
 ; routine_bytes_sha256: d7a3c80e01ade4bb58a57cef8f1c2cc75889e9627b2b15c6c2d1ad304752b0f7
 
 005816:  57                           push     di

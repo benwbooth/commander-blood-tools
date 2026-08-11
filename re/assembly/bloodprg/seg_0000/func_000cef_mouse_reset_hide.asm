@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000cef_mouse_reset_hide.cpp
 ; routine_bytes_sha256: 93fcb283730c84a7e6d09b0f04862d9ca68850294f97a8ff107f627150a4999b
 
 000CEF:  50                           push     ax

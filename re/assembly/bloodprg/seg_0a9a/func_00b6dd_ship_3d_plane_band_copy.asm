@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b6dd_ship_3d_plane_band_copy.cpp
 ; routine_bytes_sha256: 616bbe2388ea24026c85002272ceaa97797ba660dbfa0531582defe5309fbe55
 
 00B6DD:  06                           push     es

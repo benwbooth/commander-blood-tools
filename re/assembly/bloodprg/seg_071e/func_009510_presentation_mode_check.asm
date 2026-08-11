@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_009510_presentation_mode_check.cpp
 ; routine_bytes_sha256: e392b2ee6954a3ddd813ed580b630c89d89ae7d30c5c2a6b645972a2e84425c4
 
 009510:  53                           push     bx

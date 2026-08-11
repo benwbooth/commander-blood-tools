@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1559:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 7
-; cxx_source: re/borland/bloodprg/seg_008b/func_0014ca_presentation_state_set.cpp
 ; routine_bytes_sha256: c772c1c2d807635b141b909ee6256798bdc032089d63cd7dc7c33a893da42590
 
 0014CA:  50                           push     ax

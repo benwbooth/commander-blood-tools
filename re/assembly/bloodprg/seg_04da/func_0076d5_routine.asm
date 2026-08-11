@@ -12,7 +12,6 @@
 ; terminal: jmp 0x76d8:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0076d5_routine.cpp
 ; routine_bytes_sha256: 58844d9c314183089aa7995edc052136351df7f785786144c6f892233f49575a
 
 0076D5:  BF 7A 24                     mov      di, 0x247a

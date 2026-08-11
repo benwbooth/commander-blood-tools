@@ -13,7 +13,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x009b04
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_009a10_ship_3d_point_cloud_project.cpp
 ; routine_bytes_sha256: 10a3734ef018c6766adeb2def5cb606e4af026d9ae3f26463eb2baf9c5cd45da
 
 009A10:  66 50                        push     eax

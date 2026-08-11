@@ -10,7 +10,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x00019b, 0x000270, 0x000549, 0x0006f6
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000150_routine.cpp
 ; routine_bytes_sha256: 5b722c6d62fdc873ebb82a18e20efcbd82febab4f0e954f6bdfab7b805fc09af
 
 000150:  1E                           push     ds

@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 2
-; cxx_source: re/borland/bloodprg/seg_008b/func_001a93_main_loop_hud_refresh.cpp
 ; routine_bytes_sha256: 8c191f412037f0fb6d4877e5fbbccb0bd32232216a8ce9e3e7a8855ae632cf67
 
 001A93:  56                           push     si

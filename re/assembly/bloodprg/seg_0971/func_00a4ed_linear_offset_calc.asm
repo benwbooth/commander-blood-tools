@@ -13,7 +13,6 @@
 ; terminal: jmp 0xa54f:3, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a4ed_linear_offset_calc.cpp
 ; routine_bytes_sha256: d68fc64fe931eda8ecabf762096b253b2324a77d9dcc17eb4298953f7d99fbdc
 
 00A4ED:  50                           push     ax

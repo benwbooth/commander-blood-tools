@@ -14,7 +14,6 @@
 ; terminal: jmp 0x650c:2, ret:1
 ; direct_callees: 0x006462
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0064e5_vm_op_ca_compare_var.cpp
 ; routine_bytes_sha256: 3243e7b5bf26ee35b97ac7e96602826281d5fc030dea3e8b1c7b39976d0c7e9d
 
 0064E5:  AD                           lodsw    ax, word ptr [si]

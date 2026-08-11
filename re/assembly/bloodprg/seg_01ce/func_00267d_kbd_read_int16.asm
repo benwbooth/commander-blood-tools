@@ -14,7 +14,6 @@
 ; terminal: jmp 0x268c:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_00267d_kbd_read_int16.cpp
 ; routine_bytes_sha256: 21e0f726cfb344e30aebf093f112ed735321d07c46214f8d194875618280f831
 
 00267D:  B8 00 01                     mov      ax, 0x100

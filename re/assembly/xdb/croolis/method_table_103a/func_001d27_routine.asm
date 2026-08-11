@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/method_table_103a/func_001d27_routine.cpp
 ; routine_bytes_sha256: ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e
 
 001D27:  C3                           ret     

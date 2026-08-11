@@ -15,7 +15,6 @@
 ; terminal: jmp 0x556f:1, retf:1
 ; direct_callees: 0x006023
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00555b_vm_record_state_proc.cpp
 ; routine_bytes_sha256: 9c41f2e1af557f037491e14e31b74b101ad43fb38a8a74d70dca5205152203b6
 
 00555B:  50                           push     ax

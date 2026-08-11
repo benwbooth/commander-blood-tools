@@ -14,7 +14,6 @@
 ; terminal: jmp 0x756b:1, jmp 0x758f:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_04da/func_00755e_index_lookup_dca.cpp
 ; routine_bytes_sha256: 3a600e6ae82ab1392ea69afdee2ce9fde0f3d65e1017f91b416a04cfbcf28d63
 
 00755E:  53                           push     bx

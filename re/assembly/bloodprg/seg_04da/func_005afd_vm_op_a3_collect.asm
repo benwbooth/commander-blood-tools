@@ -13,7 +13,6 @@
 ; terminal: jmp 0x5b1a:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_005afd_vm_op_a3_collect.cpp
 ; routine_bytes_sha256: 56ddbb00ce9c9b47acf0470acd0fe6f485d40b0e419c4a173ef8ddaf4fb77570
 
 005AFD:  50                           push     ax

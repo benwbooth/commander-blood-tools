@@ -10,7 +10,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/direct_calls/func_001edd_routine.cpp
 ; routine_bytes_sha256: 6f5317ac95a203f579dc60dd859573d7eb7f965bc22fc5298ade3e47b1ae2511
 
 001EDD:  A1 FA 22                     mov      ax, word ptr [0x22fa]

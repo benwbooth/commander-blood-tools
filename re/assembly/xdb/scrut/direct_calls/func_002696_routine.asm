@@ -10,7 +10,6 @@
 ; terminal: jmp 0x27d6:1, jmp 0x2871:1, jmp 0x288b:5, jmp 0x2951:1, jmp 0x29a4:1, jmp word ptr [0x946]:1, jmp word ptr [si + 0x2c]:1, ret:1
 ; direct_callees: 0x002c9d
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/scrut/direct_calls/func_002696_routine.cpp
 ; routine_bytes_sha256: b1f14c151111b6dc06b028f898ad55ed00860a988c44cd418f259f0db474a8d0
 
 002696:  64 8E 1E 06 00               mov      ds, word ptr fs:[6]

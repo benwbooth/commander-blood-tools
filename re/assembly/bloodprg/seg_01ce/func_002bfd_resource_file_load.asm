@@ -20,7 +20,6 @@
 ; terminal: jmp 0x2cee:3, jmp 0x2d21:2, retf:1
 ; direct_callees: 0x002693
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002bfd_resource_file_load.cpp
 ; routine_bytes_sha256: 3cc1de8ec905520a04c6ef34c7b6724a97a5143ada29276bf0219ec12bc4a055
 
 002BFD:  1E                           push     ds

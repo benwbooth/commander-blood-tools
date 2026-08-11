@@ -13,7 +13,6 @@
 ; terminal: jmp 0xb3f0:1, jmp 0xb58c:2, ret:1
 ; direct_callees: 0x00b591
 ; indirect_calls: 14
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b34e_ship_3d_navigation_update.cpp
 ; routine_bytes_sha256: 139b65834a72050bebc832debed5bb873478bcca4760ed8afa6c4d1da8270137
 
 00B34E:  66 50                        push     eax

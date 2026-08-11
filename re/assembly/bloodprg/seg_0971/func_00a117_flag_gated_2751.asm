@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a117_flag_gated_2751.cpp
 ; routine_bytes_sha256: 6cd00db04e9af49e2284c0a02160bf35661d5bd7051e0c780f6e58aafc8d0489
 
 00A117:  1E                           push     ds

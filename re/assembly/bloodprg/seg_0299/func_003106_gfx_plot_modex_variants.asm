@@ -19,7 +19,6 @@
 ; terminal: jmp 0x3142:1, jmp 0x3166:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_003106_gfx_plot_modex_variants.cpp
 ; routine_bytes_sha256: 2658c6fa6895f1c5bb2d16742d0980db5660d63384cf926bc7efb42b0d4f049d
 
 003106:  50                           push     ax

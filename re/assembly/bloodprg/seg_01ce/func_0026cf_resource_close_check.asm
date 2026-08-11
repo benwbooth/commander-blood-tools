@@ -13,7 +13,6 @@
 ; terminal: jmp 0x275c:2, jmp 0x2775:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_01ce/func_0026cf_resource_close_check.cpp
 ; routine_bytes_sha256: e85483839d72827a794ff588012ff18a7a86800448d894873f7cfefcca60875b
 
 0026CF:  1E                           push     ds

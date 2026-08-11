@@ -13,7 +13,6 @@
 ; terminal: jmp 0x577d:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00577a_value_scan_match.cpp
 ; routine_bytes_sha256: d3ffe46301e6ca63c1a8c4557ae6efb9a2ee8a75bd628d878258f36f946c827a
 
 00577A:  56                           push     si

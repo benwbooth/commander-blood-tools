@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a7e6_mem_copy_words.cpp
 ; routine_bytes_sha256: 6aa5c60d59aa4dd835e5df01e31aca24da6cd83fb35b6b96dfb1381bbf9de5b2
 
 00A7E6:  1E                           push     ds

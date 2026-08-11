@@ -12,7 +12,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000477_manu3_transform.cpp
 ; routine_bytes_sha256: 02a26b127e9c8e43f298876f26be497cee726feb95a0d92cccb694c04c067c9a
 
 000477:  66 89 45 3A                  mov      dword ptr [di + 0x3a], eax

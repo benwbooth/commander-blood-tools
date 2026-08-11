@@ -20,7 +20,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0299/func_004471_sprite_slot_dirty_range_render.cpp
 ; routine_bytes_sha256: 757fdd10edb7c7068597766a63b7825a1700d9760826d7f037ba2f4127628e0a
 
 004471:  66 50                        push     eax

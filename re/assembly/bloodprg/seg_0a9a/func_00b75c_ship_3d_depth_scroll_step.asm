@@ -13,7 +13,6 @@
 ; terminal: jmp 0xb7a5:3, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0a9a/func_00b75c_ship_3d_depth_scroll_step.cpp
 ; routine_bytes_sha256: 7b169cde9fa6c63a0388539519b45c9d087b3079b8bfc60fe27c28ade04553dd
 
 00B75C:  50                           push     ax

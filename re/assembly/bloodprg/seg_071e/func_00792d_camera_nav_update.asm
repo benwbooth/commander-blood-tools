@@ -13,7 +13,6 @@
 ; terminal: jmp 0x79df:1, ret:1
 ; direct_callees: 0x0082c3
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_00792d_camera_nav_update.cpp
 ; routine_bytes_sha256: de36e7ef9719c00e2e30248c395eb1bb6d6f39e379954e2d0cdc9d6a7c74cd2d
 
 00792D:  50                           push     ax

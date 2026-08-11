@@ -13,7 +13,6 @@
 ; terminal: jmp 0x5ff3:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_005fd8_vm_special_slot_remove.cpp
 ; routine_bytes_sha256: cad4df5d5c6daadda7971bd678e328bcd53205e1b2ae34dd698c9c9656510fe2
 
 005FD8:  51                           push     cx

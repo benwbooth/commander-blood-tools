@@ -14,7 +14,6 @@
 ; terminal: jmp 0x35bc:1, retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0299/func_00356e_clipped_blit_w10.cpp
 ; routine_bytes_sha256: 92cf717e0e565459666f57ef0e2ba6b1b3aecd3e00428767537d40a0f6726d98
 
 00356E:  66 50                        push     eax

@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2584:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/croolis/direct_calls/func_002514_routine.cpp
 ; routine_bytes_sha256: ef8eb9a19208f2e1446c47d2783b68c4e903587f2b3c8cc553c4ad4acc28c628
 
 002514:  BE 08 23                     mov      si, 0x2308

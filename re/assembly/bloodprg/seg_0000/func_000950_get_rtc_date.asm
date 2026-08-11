@@ -14,7 +14,6 @@
 ; terminal: jmp 0x97e:1, retf:1
 ; direct_callees: 0x000986
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0000/func_000950_get_rtc_date.cpp
 ; routine_bytes_sha256: f39e5811197c4750660ae551ca7b3fb80f75ea8ef5e99107e2ccc23c504ba763
 
 000950:  50                           push     ax

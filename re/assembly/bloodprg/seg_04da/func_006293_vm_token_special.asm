@@ -13,7 +13,6 @@
 ; terminal: jmp 0x6293:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_006293_vm_token_special.cpp
 ; routine_bytes_sha256: a3ecf862dea3865807f3c95f91722c5c5e055832af9206d61ca8117b16f98d44
 
 006293:  3B 04                        cmp      ax, word ptr [si]

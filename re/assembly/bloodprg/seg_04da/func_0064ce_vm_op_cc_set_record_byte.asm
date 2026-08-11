@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0064ce_vm_op_cc_set_record_byte.cpp
 ; routine_bytes_sha256: fb49c1c8da8dd70c2bcb24142f510ca420315f53a75896f5798bc6b3d8126ab5
 
 0064CE:  BD DE 6C                     mov      bp, 0x6cde

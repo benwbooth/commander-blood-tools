@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_009b04_ship_3d_plot_point.cpp
 ; routine_bytes_sha256: ac19f28f8de11959599f3709ac9a949cf4c83428d206d71a312b3cba58fd68a2
 
 009B04:  50                           push     ax

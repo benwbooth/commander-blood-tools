@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7790:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_007788_fs_name_area_read.cpp
 ; routine_bytes_sha256: d7a9b564c65a9ad53216b618864c4ee8519e6a58ae500780e3b0aefae6116fe0
 
 007788:  06                           push     es

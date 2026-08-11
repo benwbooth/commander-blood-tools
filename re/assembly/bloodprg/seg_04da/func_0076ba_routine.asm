@@ -12,7 +12,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0076ba_routine.cpp
 ; routine_bytes_sha256: a5af950d5dc5f3d0cd3642b67e6d3b53aacaa1f970c35510d431a4faf04ec0dd
 
 0076BA:  AD                           lodsw    ax, word ptr [si]

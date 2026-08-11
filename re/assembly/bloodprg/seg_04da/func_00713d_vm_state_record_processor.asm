@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7165:1, retf:1
 ; direct_callees: 0x006023
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00713d_vm_state_record_processor.cpp
 ; routine_bytes_sha256: 6851fef835189af38010ac811d0e61891725683e320cf63c20512756c0f11857
 
 00713D:  1E                           push     ds

@@ -13,7 +13,6 @@
 ; terminal: jmp 0x6316:4, jmp 0x6335:1, ret:1
 ; direct_callees: 0x006293
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0062b6_vm_token_advance.cpp
 ; routine_bytes_sha256: 842c4deffde9b5b7b2a580569f372312d12238562730ca49ce23f5d062ea68d2
 
 0062B6:  50                           push     ax

@@ -14,7 +14,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_00684c_vm_op_ab_poke_byte.cpp
 ; routine_bytes_sha256: 285ee9c410b37716bc1a698993a481a2df8711a6b7c6f3a22b17a33bcd387270
 
 00684C:  AC                           lodsb    al, byte ptr [si]

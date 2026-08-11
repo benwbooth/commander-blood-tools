@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_071e/func_0085e2_nav_choice_dispatch.cpp
 ; routine_bytes_sha256: 38cdc1831a3f2bdbdac9d5b2584fef467fe8dd0186079929b9eeccc514fe5581
 
 0085E2:  53                           push     bx

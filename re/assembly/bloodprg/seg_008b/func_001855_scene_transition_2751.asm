@@ -13,7 +13,6 @@
 ; terminal: jmp 0x1a8e:9, ret:1
 ; direct_callees: none
 ; indirect_calls: 11
-; cxx_source: re/borland/bloodprg/seg_008b/func_001855_scene_transition_2751.cpp
 ; routine_bytes_sha256: 29035d247ed5d6e49f85d71625ad49187155d5ddb69a56e4d50e2fd45e7d062b
 
 001855:  50                           push     ax

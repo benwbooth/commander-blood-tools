@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 3
-; cxx_source: re/borland/bloodprg/seg_071e/func_009b67_ship_3d_point_cloud_randomize.cpp
 ; routine_bytes_sha256: 8e518bfaaeff24ed55e4ebbdaec0ea0e13b3ee7810410bcd5a1e23d47938df31
 
 009B67:  06                           push     es

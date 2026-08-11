@@ -15,7 +15,6 @@
 ; terminal: jmp 0x7273:1, jmp 0x727b:1, retf:1
 ; direct_callees: 0x00624b
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_007259_entity_candidate_list.cpp
 ; routine_bytes_sha256: 09f6be86eda4305af0983636fe5efa9e81bf5037080b272f2b75f96fa2904e24
 
 007259:  1E                           push     ds

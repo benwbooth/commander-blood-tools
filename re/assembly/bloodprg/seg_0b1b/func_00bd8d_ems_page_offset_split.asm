@@ -13,7 +13,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00bd8d_ems_page_offset_split.cpp
 ; routine_bytes_sha256: 4ad91abe66caeda36b5ba7f2714f2dacabcddd3192b084b7f96c6b28fa9e9cf5
 
 00BD8D:  1E                           push     ds

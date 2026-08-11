@@ -13,7 +13,6 @@
 ; terminal: none
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a73e_list_d8c_bounds_init.cpp
 ; routine_bytes_sha256: 88b5d36ec038b13cc13ba402d872646d1cdb71508e3b78cde404af933938b546
 
 00A73E:  C7 06 60 0D 00 00            mov      word ptr [0xd60], 0

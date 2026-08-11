@@ -14,7 +14,6 @@
 ; terminal: jmp 0x7884:1, jmp 0x78c9:1, retf:1
 ; direct_callees: 0x0078d0, 0x00792d, 0x0079e5, 0x007d7b, 0x0082e8, 0x0085e2, 0x008a4e, 0x008bab, 0x008cce, 0x009510, 0x00954a, 0x00959d, 0x009656
 ; indirect_calls: 6
-; cxx_source: re/borland/bloodprg/seg_071e/func_0077e0_flag_gated_render_2793.cpp
 ; routine_bytes_sha256: fd36735a458af5a55d7422bf38c310ba96093914eb821ddf91d58859960bd86d
 
 0077E0:  66 50                        push     eax

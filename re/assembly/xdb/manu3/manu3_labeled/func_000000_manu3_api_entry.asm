@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: 0x000181, 0x00019b, 0x000270, 0x000549, 0x0006f6
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000000_manu3_api_entry.cpp
 ; routine_bytes_sha256: 9d5ca45567f31b131e58d4532c14fe288d957a3136ce4e25e1363e28de3ac8a5
 
 000000:  1E                           push     ds

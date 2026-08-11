@@ -14,7 +14,6 @@
 ; terminal: jmp 0x77ac:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0077a9_music_voc_name_patcher.cpp
 ; routine_bytes_sha256: 2177b4dd9c7763c956100260a38cb70600c06256437e351830023f135f4cbf4e
 
 0077A9:  BF 30 0D                     mov      di, 0xd30

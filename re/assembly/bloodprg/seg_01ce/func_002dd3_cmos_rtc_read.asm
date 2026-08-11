@@ -14,7 +14,6 @@
 ; terminal: retf:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_01ce/func_002dd3_cmos_rtc_read.cpp
 ; routine_bytes_sha256: aa2e7338694624fa1308e00b1a2cf05357396ec02147a6cf1015933d150747cf
 
 002DD3:  50                           push     ax

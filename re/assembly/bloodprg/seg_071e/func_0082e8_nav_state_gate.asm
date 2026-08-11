@@ -13,7 +13,6 @@
 ; terminal: jmp 0x8347:1, jmp 0x8381:1, jmp 0x8391:1, jmp 0x83a2:1, jmp 0x83cc:1, jmp 0x83ed:1, jmp 0x840e:1, jmp 0x8420:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_0082e8_nav_state_gate.cpp
 ; routine_bytes_sha256: a7e9873e82a6dc93b9209d39a05cde5b2b2d3066ad7e0f2689f4da517a9657d9
 
 0082E8:  50                           push     ax

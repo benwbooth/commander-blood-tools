@@ -14,7 +14,6 @@
 ; terminal: jmp 0xb816:1, jmp 0xb822:1, jmp 0xb898:1, retf:1
 ; direct_callees: 0x00b8cd
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_0b1b/func_00b7e3_audio_process_ade.cpp
 ; routine_bytes_sha256: 64cde5b00846af7e05e9d3bc48fa6088a5d2381d09d16bb322768d0162eec490
 
 00B7E3:  50                           push     ax

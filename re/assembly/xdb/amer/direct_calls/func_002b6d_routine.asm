@@ -10,7 +10,6 @@
 ; terminal: jmp 0x2f71:1, jmp 0x30d8:1, jmp 0x3119:2, ret:3
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/amer/direct_calls/func_002b6d_routine.cpp
 ; routine_bytes_sha256: 92d3573f9bd1b2b3d79e3a1179f00c075fe633903d28ec02be7b5e8ba3dac38d
 
 002B6D:  26 8B 5C 02                  mov      bx, word ptr es:[si + 2]

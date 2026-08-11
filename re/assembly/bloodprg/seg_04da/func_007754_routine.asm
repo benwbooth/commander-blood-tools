@@ -12,7 +12,6 @@
 ; terminal: jmp 0x7759:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_007754_routine.cpp
 ; routine_bytes_sha256: 4c74b7b0c5779a3a71a6883e2408d5bfec92d98a20c26bf2cee47b5ff54d0108
 
 007754:  65 8B 3E 1A 13               mov      di, word ptr gs:[0x131a]

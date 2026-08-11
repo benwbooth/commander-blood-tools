@@ -12,7 +12,6 @@
 ; terminal: jmp 0xc91:1, jmp word ptr [si + 0x2c]:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/xdb/manu3/manu3_labeled/func_000c2a_manu3_affine_fill.cpp
 ; routine_bytes_sha256: 40ac85af84980d617d9a167077ca2bf9ceb70516a39bf9e4d491010277862df2
 
 000C2A:  03 C5                        add      ax, bp

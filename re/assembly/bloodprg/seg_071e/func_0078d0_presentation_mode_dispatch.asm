@@ -13,7 +13,6 @@
 ; terminal: jmp 0x792b:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_071e/func_0078d0_presentation_mode_dispatch.cpp
 ; routine_bytes_sha256: c11749b0dc63915df07f9f78ffd4ae84dd79e06a576f05b5bd72707a38c919b9
 
 0078D0:  55                           push     bp

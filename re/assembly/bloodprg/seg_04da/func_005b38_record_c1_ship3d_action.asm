@@ -13,7 +13,6 @@
 ; terminal: jmp 0x5ba1:1, jmp 0x5d33:1, jmp 0x5e09:1, jmp 0x5f15:1, jmp 0x5fcd:9, ret:1
 ; direct_callees: 0x005fd8, 0x005ff6, 0x006023, 0x0061a6, 0x00739b, 0x007409
 ; indirect_calls: 7
-; cxx_source: re/borland/bloodprg/seg_04da/func_005b38_record_c1_ship3d_action.cpp
 ; routine_bytes_sha256: 2d0daac856af58f268f9364938bebdb1f47dbfa88fafc80b559c0988e67b891f
 
 005B38:  66 50                        push     eax

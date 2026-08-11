@@ -14,7 +14,6 @@
 ; terminal: jmp 0x6aa4:2, ret:1
 ; direct_callees: 0x005fd8, 0x005ff6, 0x006023, 0x006034, 0x006462, 0x007409
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_04da/func_0069c7_vm_op_cd_state_gated.cpp
 ; routine_bytes_sha256: fa54bc475ffdf8c8871c886f3bc527253ef8f87b83fd1459c9cebbd16c866e51
 
 0069C7:  06                           push     es

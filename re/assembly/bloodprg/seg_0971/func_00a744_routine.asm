@@ -11,7 +11,6 @@
 ; terminal: ret:1
 ; direct_callees: none
 ; indirect_calls: 0
-; cxx_source: re/borland/bloodprg/seg_0971/func_00a744_routine.cpp
 ; routine_bytes_sha256: 96b2e0264123fd02c44116c1fb9246ee9c4e8dd1dc997290fcfada1d6f2e204d
 
 00A744:  C7 06 62 0D 00 00            mov      word ptr [0xd62], 0

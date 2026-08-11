@@ -13,7 +13,6 @@
 ; terminal: jmp 0x7d0c:1, ret:1
 ; direct_callees: none
 ; indirect_calls: 1
-; cxx_source: re/borland/bloodprg/seg_071e/func_007ce8_list_walk_f18.cpp
 ; routine_bytes_sha256: 92dc92ecf871a930484a022ef1e87302750ec7bd825a8a071e7f8a127ef44ebd
 
 007CE8:  50                           push     ax
