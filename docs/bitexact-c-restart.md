@@ -75,6 +75,38 @@ Working hypothesis:
    from metadata alone. We need codegen fingerprinting against historical
    compiler candidates.
 
+## Fingerprint Harness
+
+`re/tools/toolchain_fingerprint.py` emits the comparison profile needed for that
+next step:
+
+```sh
+python3 re/tools/toolchain_fingerprint.py \
+  re/bin/BLOODPRG.EXE output/_tmp_iso/INSTALL.EXE \
+  --sample-limit 8
+```
+
+Initial output confirms the main-game/installer split:
+
+| Feature | `BLOODPRG.EXE` | `INSTALL.EXE` |
+|---|---:|---:|
+| MZ header size | `0x600` | `0x200` |
+| relocations | 367 | 24 |
+| relocation site order | monotonic | 2 backtracks |
+| recovered segment bases | 12 | 7 |
+| relocated far call/jump sites | 365 | 0 |
+| distinct relocated far targets | 107 | 0 |
+| `55 8B EC` byte-pattern hits | 0 | 7 |
+| `66` operand-size prefix hits | 1007 | 237 |
+| `67` address-size prefix hits | 647 | 104 |
+| `FS` prefix hits | 201 | 240 |
+| `GS` prefix hits | 1248 | 633 |
+
+The marker-string section is deliberately raw. For example, `INSTALL.EXE`
+contains `Microsoft` only because it prints `Microsoft compatible Mouse`; that
+is not a Microsoft compiler signal. Treat marker hits as leads to inspect, not
+as classifications.
+
 ## BASIC / VM Status
 
 Current answer: the game uses a **custom compiled-BASIC-like script VM**, not a
