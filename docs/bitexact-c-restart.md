@@ -107,6 +107,44 @@ contains `Microsoft` only because it prints `Microsoft compatible Mouse`; that
 is not a Microsoft compiler signal. Treat marker hits as leads to inspect, not
 as classifications.
 
+## Function Atlas
+
+`re/tools/function_atlas.py` emits a provenance-aware function report for the
+bit-exact track:
+
+```sh
+python3 re/tools/function_atlas.py \
+  --sample-limit 4 \
+  --lift-queue-limit 8
+```
+
+Initial atlas output:
+
+| Feature | Count |
+|---|---:|
+| relocation-proven direct far call sites | 365 |
+| relocation-proven direct far targets | 107 |
+| recursive graph functions from `re/func_graph.json` | 222 |
+| recursive graph edges | 442 |
+| recursive graph leaves | 112 |
+| unresolved recursive graph indirect sites | 48 |
+| far targets already present in recursive graph | 94 |
+| far targets missing from recursive graph | 13 |
+| graph entries without direct far incoming edge | 127 |
+| atlas entry lower bound | 235 |
+| entries beginning with `55 8B EC` | 0 |
+
+The 13 missing far targets are not obvious junk. They include labeled service
+and helper routines such as `rtc_time_read`, `get_rtc_date`, `poll_mouse`,
+`strlen`, `file_open_wrapper`, `binary_u32_sqrt`, `gfx_draw_to_page`, and
+`vm_lookup_prep`. That means the old 222-function graph is useful but not a
+complete bit-exact lifting denominator.
+
+Current denominator wording: **at least 235 atlas entries, plus unresolved
+indirect-dispatch targets**. The 48 indirect sites must be table-decoded or
+resolved with a dynamic trace before we can claim a whole-program function
+count.
+
 ## BASIC / VM Status
 
 Current answer: the game uses a **custom compiled-BASIC-like script VM**, not a
@@ -161,7 +199,8 @@ Do not guess the compiler from date or installer metadata. The next pass should:
 The immediate decompilation path should be:
 
 1. Treat `BLOODPRG.EXE` as the source of truth.
-2. Recover function boundaries and call graph from the MZ/far-call structure.
+2. Repair the function denominator by merging the relocation-proven far-target
+   atlas with the recursive graph, then resolving indirect dispatch tables.
 3. Produce C-like per-function lifts whose emitted assembly is verified against
    the original function behavior first.
 4. Only after enough codegen fingerprints are known, decide whether exact binary
