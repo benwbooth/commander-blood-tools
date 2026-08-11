@@ -749,8 +749,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_1",
       "byte_count": 47,
       "cpp_path": "re/borland/bloodprg/seg_008b/func_00149b_object_heap_access.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of object-heap flag test and activity-byte increment loop",
+      "cxx_status": "translated_object_heap_access",
       "direct_callees": [],
       "entry": "0x00149b",
       "group": "seg_008b",
@@ -1470,8 +1470,8 @@
       "boundary_reason": "cfg_blocks_5_terminals_1",
       "byte_count": 57,
       "cpp_path": "re/borland/bloodprg/seg_01ce/func_0024b2_cs_table_read_1c6.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of far decimal conversion helper using CS scratch table",
+      "cxx_status": "translated_cs_table_read_1c6",
       "direct_callees": [],
       "entry": "0x0024b2",
       "group": "seg_01ce",
@@ -3948,8 +3948,8 @@
       "boundary_reason": "cfg_blocks_8_terminals_2",
       "byte_count": 59,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_005afd_vm_op_a3_collect.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM opcode 0xa3 word-list collection into GS:0x67f8",
+      "cxx_status": "translated_vm_op_a3_collect",
       "direct_callees": [],
       "entry": "0x005afd",
       "group": "seg_04da",
@@ -5291,8 +5291,8 @@
       "boundary_reason": "cfg_blocks_3_terminals_1",
       "byte_count": 58,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_006fb9_vm_op_c9_clear_record_full.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM opcode 0xc9 three-word record clear and reciprocal C4 teardown",
+      "cxx_status": "translated_vm_op_c9_clear_record_full",
       "direct_callees": [
         "0x006023"
       ],
@@ -11176,6 +11176,6 @@
     "xdb_scrut": 25
   },
   "routine_count": 401,
-  "translated_count": 126,
-  "untranslated_count": 275
+  "translated_count": 130,
+  "untranslated_count": 271
 }
