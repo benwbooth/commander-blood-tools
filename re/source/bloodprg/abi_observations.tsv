@@ -8,6 +8,8 @@ BLOODPRG.EXE	recovered routines commonly save only the registers they need and t
 0x0064a0 vm_op_d0_cond_branch	body is source-shaped as if (!(gs_252a & 1)) vm_branch(); then near ret	sibling natural C candidate to 0x006494; global byte ownership and codegen remain pending
 0x0064ac vm_op_d1_cond_branch	body is source-shaped as if (!(gs_274f & 1)) vm_branch(); then near ret	sibling natural C candidate to 0x006494; global byte ownership and codegen remain pending
 0x0064c0 vm_op_cf_clear_state	body stores zero to gs:0x67b1 byte and gs:0x6764 word; then near ret	possible natural C candidate as two global assignments once GS data placement is reproduced
+0x006462 vm_branch	body decrements gs:0x6884 by 2, loads SI from gs:0x6820 plus the new stack offset, clears gs:0x67ad, and returns	not acceptable as ordinary C until the VM script-PC/SI ABI is declared; likely an assembly boundary or compiler-specific register return
+0x00647b scan_zero_word	body scans DS:SI by words until zero or negative, preserves SI/CX, and stores the scanned count in gs:0x27cf	not acceptable as ordinary C until DS:SI input, preserved SI, and gs:0x27cf side effect are declared
 0x006572 vm_op_a1_pop	body stores zero to gs:0x67ad, tests gs:0x6884 against 2, and subtracts 2 unless equal	possible natural C candidate as query-mode clear plus branch-stack pointer pop once GS data placement is reproduced
 0x006855 vm_op_aa_yield	body stores one to gs:0x67b4; then near ret	possible natural C candidate as a single yield-flag assignment once GS data placement is reproduced
 0x00685c vm_op_ac_yield	body is byte-identical to 0x006855 and stores one to gs:0x67b4; then near ret	possible natural C candidate as a single yield-flag assignment once GS data placement is reproduced
