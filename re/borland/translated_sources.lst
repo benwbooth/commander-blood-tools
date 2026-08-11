@@ -11,6 +11,7 @@ re/borland/bloodprg/seg_008b/func_001397_flag_gated_ae6_a.cpp
 re/borland/bloodprg/seg_008b/func_00149b_object_heap_access.cpp
 re/borland/bloodprg/seg_008b/func_00178b_render_present_if_dirty.cpp
 re/borland/bloodprg/seg_008b/func_001d74_copy_abc_to_671c.cpp
+re/borland/bloodprg/seg_008b/func_001d94_vm_context_pointer_setup.cpp
 re/borland/bloodprg/seg_008b/func_001fbc_flag_test_a2e.cpp
 re/borland/bloodprg/seg_01ce/func_0024b2_cs_table_read_1c6.cpp
 re/borland/bloodprg/seg_01ce/func_0025a4_string_compare.cpp
@@ -37,6 +38,7 @@ re/borland/bloodprg/seg_04da/func_005afd_vm_op_a3_collect.cpp
 re/borland/bloodprg/seg_04da/func_005fd8_vm_special_slot_remove.cpp
 re/borland/bloodprg/seg_04da/func_005ff6_vm_special_slot_insert.cpp
 re/borland/bloodprg/seg_04da/func_006023_vm_field_offset.cpp
+re/borland/bloodprg/seg_04da/func_00604e_active_object_list_build.cpp
 re/borland/bloodprg/seg_04da/func_006293_vm_token_special.cpp
 re/borland/bloodprg/seg_04da/func_006494_vm_op_ce_cond_branch.cpp
 re/borland/bloodprg/seg_04da/func_0064a0_vm_op_d0_cond_branch.cpp
@@ -44,9 +46,11 @@ re/borland/bloodprg/seg_04da/func_0064ac_vm_op_d1_cond_branch.cpp
 re/borland/bloodprg/seg_04da/func_0064b8_vm_op_d2_script_profile_request.cpp
 re/borland/bloodprg/seg_04da/func_0064c0_vm_op_cf_clear_state.cpp
 re/borland/bloodprg/seg_04da/func_0064ce_vm_op_cc_set_record_byte.cpp
+re/borland/bloodprg/seg_04da/func_0064e5_vm_op_ca_compare_var.cpp
 re/borland/bloodprg/seg_04da/func_006559_vm_op_a0_push.cpp
 re/borland/bloodprg/seg_04da/func_006572_vm_op_a1_pop.cpp
 re/borland/bloodprg/seg_04da/func_006588_vm_op_a2_cond_call.cpp
+re/borland/bloodprg/seg_04da/func_006596_vm_op_a3_block.cpp
 re/borland/bloodprg/seg_04da/func_0065db_vm_op_a4_jump.cpp
 re/borland/bloodprg/seg_04da/func_0065eb_vm_op_a5_cond_state_array.cpp
 re/borland/bloodprg/seg_04da/func_0067ba_vm_op_a7_set_if_presentation.cpp
@@ -54,6 +58,7 @@ re/borland/bloodprg/seg_04da/func_006830_vm_op_a9_cond_jump.cpp
 re/borland/bloodprg/seg_04da/func_00684c_vm_op_ab_poke_byte.cpp
 re/borland/bloodprg/seg_04da/func_006855_vm_op_aa_yield.cpp
 re/borland/bloodprg/seg_04da/func_00685c_vm_op_ac_yield.cpp
+re/borland/bloodprg/seg_04da/func_006902_vm_op_shared_ae_b0_state.cpp
 re/borland/bloodprg/seg_04da/func_006fb9_vm_op_c9_clear_record_full.cpp
 re/borland/bloodprg/seg_04da/func_007542_routine.cpp
 re/borland/bloodprg/seg_04da/func_007549_routine.cpp

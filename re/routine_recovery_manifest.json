@@ -1123,8 +1123,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_2",
       "byte_count": 68,
       "cpp_path": "re/borland/bloodprg/seg_008b/func_001d94_vm_context_pointer_setup.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM context pointer setup and COD work-buffer list build",
+      "cxx_status": "translated_vm_context_pointer_setup",
       "direct_callees": [],
       "entry": "0x001d94",
       "group": "seg_008b",
@@ -4085,8 +4085,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_2",
       "byte_count": 65,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_00604e_active_object_list_build.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of active object list builder from the GS lookup table",
+      "cxx_status": "translated_active_object_list_build",
       "direct_callees": [],
       "entry": "0x00604e",
       "group": "seg_04da",
@@ -4400,8 +4400,8 @@
       "boundary_reason": "cfg_blocks_9_terminals_3",
       "byte_count": 43,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_0064e5_vm_op_ca_compare_var.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM opcode 0xca signed state compare and branch helper call",
+      "cxx_status": "translated_vm_op_ca_compare_var",
       "direct_callees": [
         "0x006462"
       ],
@@ -4546,8 +4546,8 @@
       "boundary_reason": "cfg_blocks_13_terminals_3",
       "byte_count": 69,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_006596_vm_op_a3_block.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM opcode 0xa3 conditional block handler",
+      "cxx_status": "translated_vm_op_a3_block",
       "direct_callees": [
         "0x006293",
         "0x006462"
@@ -4871,8 +4871,8 @@
       "boundary_reason": "cfg_blocks_12_terminals_4",
       "byte_count": 68,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_006902_vm_op_shared_ae_b0_state.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of shared VM opcode 0xae/0xb0 state-table handler",
+      "cxx_status": "translated_vm_op_shared_ae_b0_state",
       "direct_callees": [
         "0x006462"
       ],
@@ -11176,6 +11176,6 @@
     "xdb_scrut": 25
   },
   "routine_count": 401,
-  "translated_count": 130,
-  "untranslated_count": 271
+  "translated_count": 135,
+  "untranslated_count": 266
 }
