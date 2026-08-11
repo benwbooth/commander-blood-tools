@@ -93,6 +93,22 @@ MANUAL_TRANSLATIONS = {
         "translated_string_compare",
         "mechanical translation of saved-register byte string compare",
     ),
+    ("bloodprg", 0x001FBC): (
+        "translated_flag_test_a2e",
+        "mechanical translation of two flag-bit propagation blocks",
+    ),
+    ("bloodprg", 0x005320): (
+        "translated_resource_handle_resolve",
+        "mechanical translation of FS resource-handle table resolver",
+    ),
+    ("bloodprg", 0x00577A): (
+        "translated_value_scan_match",
+        "mechanical translation of linked value scan preserving SI",
+    ),
+    ("bloodprg", 0x006293): (
+        "translated_vm_token_special",
+        "mechanical translation of VM token stream scanner",
+    ),
     ("bloodprg", 0x0064B8): (
         "translated_vm_op_d2_script_profile_request",
         "mechanical translation of lodsb/cbw/dec plus GS profile request store",
@@ -100,6 +116,10 @@ MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x0064C0): (
         "translated_vm_op_cf_clear_state",
         "mechanical translation of two GS state-clearing stores",
+    ),
+    ("bloodprg", 0x0064CE): (
+        "translated_vm_op_cc_set_record_byte",
+        "mechanical translation of BP-indexed byte copy loop",
     ),
     ("bloodprg", 0x006559): (
         "translated_vm_op_a0_push",
@@ -120,6 +140,10 @@ MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x00684C): (
         "translated_vm_op_ab_poke_byte",
         "mechanical translation of VM byte poke handler",
+    ),
+    ("bloodprg", 0x006830): (
+        "translated_vm_op_a9_cond_jump",
+        "mechanical translation of VM A9 conditional jump handler",
     ),
     **{
         key: (
@@ -868,6 +892,109 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    }",
         ]
 
+    if key == ("bloodprg", 0x001FBC):
+        return [
+            "    m->ax = m->read16(m->ds, 0x0a2e);",
+            "    cb_u8 al = cb_lo8(m->ax);",
+            "    cb_u8 test1 = (cb_u8)(al & 1);",
+            "    m->set_logic8_flags(test1);",
+            "    if (test1 != 0) {",
+            "        al = (cb_u8)(al & m->read8(m->ds, 0x0a30));",
+            "        cb_set_lo8(m->ax, al);",
+            "        m->set_logic8_flags(al);",
+            "        if (al == 0) {",
+            "            m->write8(m->ds, 0x0a3e, 1);",
+            "            m->write8(m->ds, 0x0a40, 1);",
+            "        }",
+            "    }",
+            "    cb_u8 test2 = (cb_u8)(al & 2);",
+            "    m->set_logic8_flags(test2);",
+            "    if (test2 != 0) {",
+            "        al = (cb_u8)(al & m->read8(m->ds, 0x0a30));",
+            "        cb_set_lo8(m->ax, al);",
+            "        m->set_logic8_flags(al);",
+            "        if (al == 0) {",
+            "            m->write8(m->ds, 0x0a3f, 1);",
+            "            m->write8(m->ds, 0x0a40, 1);",
+            "        }",
+            "    }",
+            "    m->ax = m->read16(m->ds, 0x0a2e);",
+            "    m->write16(m->ds, 0x0a30, m->ax);",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x005320):
+        return [
+            "    cb_u16 saved_bx = m->bx;",
+            "    cb_u16 table_off = (cb_u16)(m->ax << 3);",
+            "    m->bx = table_off;",
+            "    m->ax = 0;",
+            "    m->set_logic16_flags(m->ax);",
+            "    cb_u16 flags = m->read16(m->fs, (cb_u16)(m->bx + 2));",
+            "    cb_u16 test_result = (cb_u16)(flags & 3);",
+            "    m->set_logic16_flags(test_result);",
+            "    if (test_result != 0) {",
+            "        m->ax = m->read16(m->fs, m->bx);",
+            "        m->ds = m->ax;",
+            "        m->si = 0;",
+            "        m->set_logic16_flags(m->si);",
+            "        m->ax = 1;",
+            "    }",
+            "    m->bx = saved_bx;",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x00577A):
+        return [
+            "    cb_u16 saved_si = m->si;",
+            "    m->bx = m->ax;",
+            "    for (;;) {",
+            "        m->ax = m->read16(m->ds, m->si);",
+            "        cb_advance_u16(m->si, 2, m->df);",
+            "        cb_u16 cmp_result = (cb_u16)(m->ax - m->bx);",
+            "        m->set_sub16_flags(m->ax, m->bx, cmp_result);",
+            "        if (cmp_result == 0) {",
+            "            cb_u16 before_add = m->si;",
+            "            m->si = (cb_u16)(m->si + 2);",
+            "            m->set_add16_flags(before_add, 2, m->si);",
+            "            m->ax = m->si;",
+            "            m->si = saved_si;",
+            "            return;",
+            "        }",
+            "        m->si = m->read16(m->ds, m->si);",
+            "        m->set_logic16_flags(m->si);",
+            "        if (m->si == 0) {",
+            "            m->ax = m->si;",
+            "            m->si = saved_si;",
+            "            return;",
+            "        }",
+            "    }",
+        ]
+
+    if key == ("bloodprg", 0x006293):
+        return [
+            "    for (;;) {",
+            "        cb_u16 current = m->read16(m->ds, m->si);",
+            "        cb_u16 cmp_word = (cb_u16)(m->ax - current);",
+            "        m->set_sub16_flags(m->ax, current, cmp_word);",
+            "        if (cmp_word == 0) {",
+            "            cb_u16 before_add = m->si;",
+            "            m->si = (cb_u16)(m->si + 2);",
+            "            m->set_add16_flags(before_add, 2, m->si);",
+            "            cb_u8 right = m->read8(m->ds, m->si);",
+            "            cb_u8 cmp_byte = (cb_u8)(cb_lo8(m->ax) - right);",
+            "            m->set_sub8_flags(cb_lo8(m->ax), right, cmp_byte);",
+            "            if (cmp_byte == 0) {",
+            "                cb_u16 before_inc = m->si;",
+            "                m->si = (cb_u16)(m->si + 1);",
+            "                m->set_inc16_flags(before_inc, m->si);",
+            "            }",
+            "            return;",
+            "        }",
+            "        m->si = (cb_u16)(m->si + 1);",
+            "    }",
+        ]
+
     if key == ("bloodprg", 0x0064B8):
         return [
             "    cb_set_lo8(m->ax, m->read8(m->ds, m->si));",
@@ -878,6 +1005,31 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    m->set_dec16_flags(before_dec, m->ax);",
             "    m->write16(m->gs, 0x6780, m->ax);",
             "    return;",
+        ]
+
+    if key == ("bloodprg", 0x0064CE):
+        return [
+            "    m->bp = 0x6cde;",
+            "    cb_set_lo8(m->ax, m->read8(m->ds, m->si));",
+            "    cb_advance_u16(m->si, 1, m->df);",
+            "    cb_set_lo8(m->ax, (cb_u8)(cb_lo8(m->ax) - 1));",
+            "    m->ax = (cb_u16)(cb_i16)(cb_i8)cb_lo8(m->ax);",
+            "    m->ax = (cb_u16)(m->ax << 4);",
+            "    m->bp = (cb_u16)(m->bp + m->ax);",
+            "    for (;;) {",
+            "        cb_set_lo8(m->ax, m->read8(m->ds, m->si));",
+            "        cb_advance_u16(m->si, 1, m->df);",
+            "        m->write8(m->ss, m->bp, cb_lo8(m->ax));",
+            "        m->bp = (cb_u16)(m->bp + 1);",
+            "        cb_u8 test_result = cb_lo8(m->ax);",
+            "        m->set_logic8_flags(test_result);",
+            "        if (test_result == 0) {",
+            "            cb_u16 before_inc = m->si;",
+            "            m->si = (cb_u16)(m->si + 1);",
+            "            m->set_inc16_flags(before_inc, m->si);",
+            "            return;",
+            "        }",
+            "    }",
         ]
 
     if key == ("bloodprg", 0x0064C0):
@@ -968,6 +1120,24 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "        m->write16(m->ds, 0x6768, 0x00c3);",
             "        m->write8(m->ds, 0x2565, 0);",
             "    }",
+            "    return;",
+        ]
+
+    if key == ("bloodprg", 0x006830):
+        return [
+            "    cb_set_lo8(m->ax, m->read8(m->ds, m->si));",
+            "    cb_advance_u16(m->si, 1, m->df);",
+            "    cb_u8 test_result = (cb_u8)(cb_lo8(m->ax) & 1);",
+            "    m->set_logic8_flags(test_result);",
+            "    if (test_result == 0) {",
+            "        m->si = m->read16(m->ds, m->si);",
+            "        return;",
+            "    }",
+            "    m->write8(m->gs, 0x67ad, 1);",
+            "    m->ax = m->read16(m->ds, m->si);",
+            "    cb_advance_u16(m->si, 2, m->df);",
+            "    m->write16(m->gs, 0x6820, m->ax);",
+            "    m->write16(m->gs, 0x6884, 2);",
             "    return;",
         ]
 
@@ -1233,6 +1403,7 @@ struct CbMachine {
     void set_add16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
     void set_sub8_flags(cb_u8 left, cb_u8 right, cb_u8 result);
     void set_sub16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
+    void set_inc16_flags(cb_u16 before, cb_u16 result);
     void set_dec16_flags(cb_u16 before, cb_u16 result);
     void set_sar16_flags(cb_u16 before, unsigned count, cb_u16 result);
     void jump_near(cb_u16 off);
