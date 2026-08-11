@@ -3135,8 +3135,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_1",
       "byte_count": 51,
       "cpp_path": "re/borland/bloodprg/seg_0299/func_00420d_sprite_slot_position_update.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of active sprite-slot draw-position update and dirty flag",
+      "cxx_status": "translated_sprite_slot_position_update",
       "direct_callees": [],
       "entry": "0x00420d",
       "group": "seg_0299",
@@ -4605,8 +4605,8 @@
       "boundary_reason": "cfg_blocks_5_terminals_2",
       "byte_count": 33,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_0065eb_vm_op_a5_cond_state_array.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of VM opcode 0xa5 state-array conditional branch/store",
+      "cxx_status": "translated_vm_op_a5_cond_state_array",
       "direct_callees": [
         "0x006462"
       ],
@@ -5769,8 +5769,8 @@
       "boundary_reason": "cfg_blocks_7_terminals_2",
       "byte_count": 49,
       "cpp_path": "re/borland/bloodprg/seg_04da/func_00763e_routine.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of printable-byte copy to ES:0x0d09 plus optional radio call",
+      "cxx_status": "translated_byte_parser_string_d09",
       "direct_callees": [],
       "entry": "0x00763e",
       "group": "seg_04da",
@@ -7072,8 +7072,8 @@
       "boundary_reason": "cfg_blocks_8_terminals_1",
       "byte_count": 58,
       "cpp_path": "re/borland/bloodprg/seg_071e/func_009510_presentation_mode_check.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of presentation mode bucket update from DS:0x2795",
+      "cxx_status": "translated_presentation_mode_check",
       "direct_callees": [],
       "entry": "0x009510",
       "group": "seg_071e",
@@ -7322,8 +7322,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 49,
       "cpp_path": "re/borland/bloodprg/seg_071e/func_009b67_ship_3d_point_cloud_randomize.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of 1000-record GS point-cloud random initializer",
+      "cxx_status": "translated_ship_3d_point_cloud_randomize",
       "direct_callees": [],
       "entry": "0x009b67",
       "group": "seg_071e",
@@ -7417,8 +7417,8 @@
       "boundary_reason": "cfg_blocks_5_terminals_1",
       "byte_count": 45,
       "cpp_path": "re/borland/bloodprg/seg_0971/func_009f53_presentation_update_1fb2.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of presentation update gate and dirty-state stores",
+      "cxx_status": "translated_presentation_update_1fb2",
       "direct_callees": [
         "0x00a2dd"
       ],
@@ -7682,8 +7682,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 25,
       "cpp_path": "re/borland/bloodprg/seg_0971/func_00a1f3_routine.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of list iterate gate plus saved-register epilogue",
+      "cxx_status": "translated_list_d8c_iterate_epilogue",
       "direct_callees": [
         "0x00a2ab"
       ],
@@ -7705,8 +7705,8 @@
       "boundary_reason": "cfg_blocks_8_terminals_1",
       "byte_count": 52,
       "cpp_path": "re/borland/bloodprg/seg_0971/func_00a20c_ems_list_query.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of EMS list query/count gate and callback",
+      "cxx_status": "translated_ems_list_query",
       "direct_callees": [
         "0x00a552"
       ],
@@ -7862,8 +7862,8 @@
       "boundary_reason": "cfg_blocks_6_terminals_1",
       "byte_count": 59,
       "cpp_path": "re/borland/bloodprg/seg_0971/func_00a3d0_queue_d8c_consume.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of variable-length queue record consume and bounds update",
+      "cxx_status": "translated_queue_d8c_consume",
       "direct_callees": [],
       "entry": "0x00a3d0",
       "group": "seg_0971",
@@ -8608,8 +8608,8 @@
       "boundary_reason": "cfg_blocks_1_terminals_1",
       "byte_count": 51,
       "cpp_path": "re/borland/bloodprg/seg_0b1b/func_00b7b0_audio_param_init_cd5.cpp",
-      "cxx_reason": "requires human/mechanical translation from assembly",
-      "cxx_status": "untranslated",
+      "cxx_reason": "mechanical translation of audio parameter fill plus indirect driver callback",
+      "cxx_status": "translated_audio_param_init_cd5",
       "direct_callees": [],
       "entry": "0x00b7b0",
       "group": "seg_0b1b",
@@ -11176,6 +11176,6 @@
     "xdb_scrut": 25
   },
   "routine_count": 401,
-  "translated_count": 116,
-  "untranslated_count": 285
+  "translated_count": 126,
+  "untranslated_count": 275
 }
