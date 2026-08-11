@@ -70,6 +70,24 @@ GS_BYTE_STORE_IMM8_TRANSLATIONS = {
     ("bloodprg", 0x007557): (0x0B16, 1, "byte parser dispatch 0x04 flag store"),
 }
 
+XDB_ACTOR_FIELD_SUB_TRANSLATIONS = {
+    ("xdb_amer", 0x000B0F): 0x1BC2,
+    ("xdb_croolis", 0x000B50): 0x1B2E,
+    ("xdb_scrut", 0x000B55): 0x1BE3,
+    ("xdb_scrut", 0x000B65): None,
+}
+
+XDB_ADD_CS99_IF_NONNEG_TRANSLATIONS = {
+    ("xdb_amer", 0x000B1F),
+    ("xdb_croolis", 0x000B60),
+}
+
+XDB_JUMP_OR_INIT_TRANSLATIONS = {
+    ("xdb_amer", 0x001BEA): 0x1C34,
+    ("xdb_croolis", 0x001B46): 0x1B85,
+    ("xdb_scrut", 0x001BFB): 0x1C45,
+}
+
 MANUAL_TRANSLATIONS = {
     ("bloodprg", 0x0064B8): (
         "translated_vm_op_d2_script_profile_request",
@@ -130,6 +148,27 @@ MANUAL_TRANSLATIONS = {
         "translated_mem_copy_words_4",
         "mechanical translation of push ds/pop es plus four MOVSW instructions",
     ),
+    **{
+        key: (
+            "translated_xdb_actor_field_sub_0f",
+            "mechanical translation of XDB actor field subtract and optional CS slot update",
+        )
+        for key in XDB_ACTOR_FIELD_SUB_TRANSLATIONS
+    },
+    **{
+        key: (
+            "translated_xdb_add_cs99_if_nonnegative",
+            "mechanical translation of XDB CS:0x99 SAR/JS/add sequence",
+        )
+        for key in XDB_ADD_CS99_IF_NONNEG_TRANSLATIONS
+    },
+    **{
+        key: (
+            "translated_xdb_jump_or_init_method",
+            "mechanical translation of XDB method jump-or-initialize sequence",
+        )
+        for key in XDB_JUMP_OR_INIT_TRANSLATIONS
+    },
 }
 
 MANU3_CODE_SEEDS = {
@@ -904,6 +943,60 @@ def translated_cpp_body(routine: Routine) -> list[str] | None:
             "    return;",
         ]
 
+    if key in XDB_ACTOR_FIELD_SUB_TRANSLATIONS:
+        cs_slot = XDB_ACTOR_FIELD_SUB_TRANSLATIONS[key]
+        body = [
+            "    m->si = m->read16(m->ds, (cb_u16)(m->di + 0x16));",
+            "    cb_u16 before_add = m->si;",
+            "    m->si = (cb_u16)(m->si + 0x5e);",
+            "    m->set_add16_flags(before_add, 0x5e, m->si);",
+            "    cb_u16 field_addr = (cb_u16)(m->si + 0x52);",
+            "    cb_u16 field_value = m->read16(m->ds, field_addr);",
+            "    cb_u16 sub_result = (cb_u16)(field_value - 0x0f);",
+            "    m->write16(m->ds, field_addr, sub_result);",
+            "    m->set_sub16_flags(field_value, 0x0f, sub_result);",
+        ]
+        if cs_slot is not None:
+            body.append(f"    m->write16(m->cs, {h(cs_slot)}, m->si);")
+        body.extend(
+            [
+                "    return;",
+            ]
+        )
+        return body
+
+    if key in XDB_ADD_CS99_IF_NONNEG_TRANSLATIONS:
+        return [
+            "    m->si = m->read16(m->ds, (cb_u16)(m->di + 0x16));",
+            "    m->ax = m->read16(m->cs, 0x0099);",
+            "    cb_u16 before_sar = m->ax;",
+            "    m->ax = (cb_u16)((before_sar >> 1) | (before_sar & 0x8000u));",
+            "    m->set_sar16_flags(before_sar, 1, m->ax);",
+            "    if ((m->ax & 0x8000u) == 0) {",
+            "        cb_u16 field_addr = (cb_u16)(m->si + 0x00b0);",
+            "        cb_u16 field_value = m->read16(m->ds, field_addr);",
+            "        cb_u16 add_result = (cb_u16)(field_value + m->ax);",
+            "        m->write16(m->ds, field_addr, add_result);",
+            "        m->set_add16_flags(field_value, m->ax, add_result);",
+            "    }",
+            "    return;",
+        ]
+
+    if key in XDB_JUMP_OR_INIT_TRANSLATIONS:
+        init_target = XDB_JUMP_OR_INIT_TRANSLATIONS[key]
+        return [
+            "    m->bx = m->read16(m->ds, (cb_u16)(m->di + 0x36));",
+            "    m->set_logic16_flags(m->bx);",
+            "    if (m->bx != 0) {",
+            "        m->jump_near(m->bx);",
+            "        return;",
+            "    }",
+            f"    m->write16(m->ds, (cb_u16)(m->di + 0x36), {h(init_target)});",
+            "    m->write16(m->ds, (cb_u16)(m->di + 0x38), 0);",
+            "    m->write16(m->ds, (cb_u16)(m->di + 0x3a), 0);",
+            "    return;",
+        ]
+
     if routine.cxx_status == "translated_mem_copy_words_4":
         return [
             "    m->es = m->ds;",
@@ -1034,6 +1127,8 @@ struct CbMachine {
     void set_add16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
     void set_sub16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
     void set_dec16_flags(cb_u16 before, cb_u16 result);
+    void set_sar16_flags(cb_u16 before, unsigned count, cb_u16 result);
+    void jump_near(cb_u16 off);
 };
 
 inline cb_u8 cb_lo8(cb_u16 value)

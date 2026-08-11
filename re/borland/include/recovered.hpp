@@ -48,6 +48,8 @@ struct CbMachine {
     void set_add16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
     void set_sub16_flags(cb_u16 left, cb_u16 right, cb_u16 result);
     void set_dec16_flags(cb_u16 before, cb_u16 result);
+    void set_sar16_flags(cb_u16 before, unsigned count, cb_u16 result);
+    void jump_near(cb_u16 off);
 };
 
 inline cb_u8 cb_lo8(cb_u16 value)

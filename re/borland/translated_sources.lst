@@ -20,7 +20,16 @@ re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
 re/borland/bloodprg/seg_0971/func_00a744_routine.cpp
 re/borland/bloodprg/seg_0971/func_00a757_list_d8c_init.cpp
 re/borland/bloodprg/seg_0971/func_00a7e6_mem_copy_words.cpp
+re/borland/xdb/amer/method_table_103a/func_000b0f_routine.cpp
+re/borland/xdb/amer/method_table_103a/func_000b1f_routine.cpp
+re/borland/xdb/amer/method_table_103a/func_001bea_routine.cpp
 re/borland/xdb/amer/method_table_103a/func_001dd6_routine.cpp
+re/borland/xdb/croolis/method_table_103a/func_000b50_routine.cpp
+re/borland/xdb/croolis/method_table_103a/func_000b60_routine.cpp
+re/borland/xdb/croolis/method_table_103a/func_001b46_routine.cpp
 re/borland/xdb/croolis/method_table_103a/func_001d27_routine.cpp
 re/borland/xdb/manu3/manu3_labeled/func_000848_manu3_span_setup_next.cpp
+re/borland/xdb/scrut/method_table_103a/func_000b55_routine.cpp
+re/borland/xdb/scrut/method_table_103a/func_000b65_routine.cpp
+re/borland/xdb/scrut/method_table_103a/func_001bfb_routine.cpp
 re/borland/xdb/scrut/method_table_103a/func_001de7_routine.cpp
