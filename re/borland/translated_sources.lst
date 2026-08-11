@@ -1,6 +1,13 @@
+re/borland/bloodprg/seg_0000/func_000b32_detect_cdrom.cpp
+re/borland/bloodprg/seg_0000/func_000bff_install_ctrl_break_handler.cpp
+re/borland/bloodprg/seg_0000/func_000cc0_set_video_mode_saved.cpp
+re/borland/bloodprg/seg_0000/func_000cef_mouse_reset_hide.cpp
+re/borland/bloodprg/seg_0000/func_000d4a_mouse_set_hrange.cpp
+re/borland/bloodprg/seg_0000/func_000d61_print_string_dos.cpp
 re/borland/bloodprg/seg_008b/func_001fbc_flag_test_a2e.cpp
 re/borland/bloodprg/seg_01ce/func_0025a4_string_compare.cpp
 re/borland/bloodprg/seg_01ce/func_002665_strlen.cpp
+re/borland/bloodprg/seg_01ce/func_00267d_kbd_read_int16.cpp
 re/borland/bloodprg/seg_0299/func_00509a_routine.cpp
 re/borland/bloodprg/seg_0299/func_00509b_routine.cpp
 re/borland/bloodprg/seg_0299/func_00509c_routine.cpp
@@ -39,6 +46,8 @@ re/borland/bloodprg/seg_071e/func_008713_nav_choice_handler_0.cpp
 re/borland/bloodprg/seg_071e/func_008848_nav_choice_handler_3.cpp
 re/borland/bloodprg/seg_071e/func_00963f_matrix_table_clear_2a1b.cpp
 re/borland/bloodprg/seg_0971/func_009f80_lookup_table_1fb5.cpp
+re/borland/bloodprg/seg_0971/func_00a141_close_file_d5b.cpp
+re/borland/bloodprg/seg_0971/func_00a2dd_routine.cpp
 re/borland/bloodprg/seg_0971/func_00a38e_queue_d8c_wrap.cpp
 re/borland/bloodprg/seg_0971/func_00a3ad_queue_d8c_empty_check.cpp
 re/borland/bloodprg/seg_0971/func_00a40b_routine.cpp

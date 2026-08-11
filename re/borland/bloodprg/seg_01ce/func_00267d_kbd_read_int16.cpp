@@ -3,8 +3,8 @@
 // file_offset: 0x00267d
 // assembly: re/assembly/bloodprg/seg_01ce/func_00267d_kbd_read_int16.asm
 // provenance: recursive_graph, relocation_proven_far_transfer_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_kbd_read_int16
+// reason: mechanical translation of BIOS int 16h keyboard poll/read
 
 #include "recovered.hpp"
 
@@ -12,5 +12,15 @@
 
 extern "C" void CB_FAR cb_bloodprg_00267d_kbd_read_int16(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x00267d; see re/assembly/bloodprg/seg_01ce/func_00267d_kbd_read_int16.asm"
+    m->ax = 0x0100;
+    m->interrupt(0x16);
+    if (!m->zf) {
+        m->ax = 0;
+        m->set_logic16_flags(m->ax);
+        m->interrupt(0x16);
+        return;
+    }
+    m->ax = 0;
+    m->set_logic16_flags(m->ax);
+    return;
 }
