@@ -140,10 +140,58 @@ and helper routines such as `rtc_time_read`, `get_rtc_date`, `poll_mouse`,
 `vm_lookup_prep`. That means the old 222-function graph is useful but not a
 complete bit-exact lifting denominator.
 
-Current denominator wording: **at least 235 atlas entries, plus unresolved
-indirect-dispatch targets**. The 48 indirect sites must be table-decoded or
-resolved with a dynamic trace before we can claim a whole-program function
-count.
+This direct-call atlas is an interim denominator: **at least 235 entries before
+decoding indirect dispatch tables**.
+
+## Indirect Dispatch Atlas
+
+`re/tools/indirect_dispatch_atlas.py` classifies the 48 indirect records in the
+old graph:
+
+```sh
+python3 re/tools/indirect_dispatch_atlas.py --sample-limit 4
+```
+
+Initial output:
+
+| Feature | Count |
+|---|---:|
+| old graph indirect records | 48 |
+| unique indirect sites | 46 |
+| classified records | 48 |
+| unknown records | 0 |
+| direct far calls to relative segment 0 misfiled as indirect | 9 |
+| static internal dispatch records/sites | 6 |
+| static-table distinct targets | 74 |
+| static-table targets missing from old graph/direct-far denominator | 73 |
+| lower bound after direct far atlas | 235 |
+| lower bound after static-table decoding | 308 |
+
+Static internal tables decoded by the atlas:
+
+| Table | Dispatch site(s) | Entries | Distinct targets | Missing from old graph |
+|---|---|---:|---:|---:|
+| VM opcode handlers | `0x5627`, `0x56C4` | 52 | 37 | 36 |
+| nav actor subdispatch | `0x7E09` | 6 | 6 | 6 |
+| nav choice subdispatch | `0x8700` | 5 | 5 | 5 |
+| sprite blitter candidates | `0x4506` | 8 | 8 | 8 |
+| byte parser dispatch | `0x74E5` | 18 | 18 | 18 |
+
+The remaining indirect categories are not all internal code:
+
+- XMS driver vector `DS/GS:0x0A4A`: 18 records, external HIMEM/XMS boundary.
+- Sound-driver vectors `DS:0x0CD3..0x0CF3`: 12 records, external
+  `dnsdb.drv`/`nosound.drv` boundary.
+- Presentation callback vector `DS:0x0A96`: 2 records, runtime callback that
+  needs tracing.
+- Input action dispatch `0x2137`: mechanism is proven, but the handler entries
+  still require runtime trace or behavior matching. The xlat table at file
+  `0x173E` has 159 live input bytes, 51 distinct action indices, max index 125.
+
+Current denominator wording: **at least 308 internal `BLOODPRG.EXE` entries,
+plus trace-resolved input-action/presentation-callback targets**. External XMS
+and sound-driver vectors are runtime boundaries, not functions to decompile into
+the game executable.
 
 ## BASIC / VM Status
 
