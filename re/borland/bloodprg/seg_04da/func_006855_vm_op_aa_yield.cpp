@@ -3,8 +3,8 @@
 // file_offset: 0x006855
 // assembly: re/assembly/bloodprg/seg_04da/func_006855_vm_op_aa_yield.asm
 // provenance: static_dispatch_table_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_gs_byte_store_imm8
+// reason: mechanical translation of VM opcode 0xaa yield flag store to GS:0x67b4
 
 #include "recovered.hpp"
 
@@ -12,5 +12,6 @@
 
 extern "C" void CB_NEAR cb_bloodprg_006855_vm_op_aa_yield(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x006855; see re/assembly/bloodprg/seg_04da/func_006855_vm_op_aa_yield.asm"
+    m->write8(m->gs, 0x67b4, 1);
+    return;
 }

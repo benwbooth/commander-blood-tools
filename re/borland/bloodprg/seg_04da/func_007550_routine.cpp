@@ -3,12 +3,13 @@
 // file_offset: 0x007550
 // assembly: re/assembly/bloodprg/seg_04da/func_007550_routine.asm
 // provenance: static_dispatch_table_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_gs_byte_store_imm8
+// reason: mechanical translation of byte parser dispatch 0x0f flag store to GS:0x0b16
 
 #include "recovered.hpp"
 
 extern "C" void CB_NEAR cb_bloodprg_007550_routine(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x007550; see re/assembly/bloodprg/seg_04da/func_007550_routine.asm"
+    m->write8(m->gs, 0xb16, 1);
+    return;
 }

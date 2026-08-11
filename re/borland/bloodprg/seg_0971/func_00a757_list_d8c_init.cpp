@@ -3,8 +3,8 @@
 // file_offset: 0x00a757
 // assembly: re/assembly/bloodprg/seg_0971/func_00a757_list_d8c_init.asm
 // provenance: recursive_graph, relocation_proven_far_transfer_target
-// status: untranslated
-// reason: requires human/mechanical translation from assembly
+// status: translated_list_d8c_init
+// reason: mechanical translation of list D8C initialization stores
 
 #include "recovered.hpp"
 
@@ -12,5 +12,17 @@
 
 extern "C" void CB_FAR cb_bloodprg_00a757_list_d8c_init(CbMachine* m)
 {
-#error "Untranslated routine bloodprg:0x00a757; see re/assembly/bloodprg/seg_0971/func_00a757_list_d8c_init.asm"
+    m->ax = m->read16(m->ds, 0x0a7e);
+    m->write16(m->ds, 0x0d8e, m->ax);
+    m->write16(m->ds, 0x0d92, m->ax);
+    m->ax = 0;
+    m->set_logic16_flags(m->ax);
+    m->write16(m->ds, 0x0d8c, m->ax);
+    m->write16(m->ds, 0x0d90, m->ax);
+    m->write16(m->ds, 0x0d9a, m->ax);
+    m->write16(m->ds, 0x0da0, m->ax);
+    m->write16(m->ds, 0x0d96, m->ax);
+    m->ax = m->read16(m->ds, 0x5233);
+    m->write16(m->ds, 0x0d98, m->ax);
+    return;
 }
