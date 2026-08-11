@@ -3,6 +3,9 @@
 
 #include "bloodprg_common.h"
 
+extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
+extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
+extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
@@ -27,6 +30,7 @@ extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
+int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 void CB_NEAR vm_branch_fail(void);           /* 0x006462 */
 
 #endif
