@@ -107,6 +107,46 @@ contains `Microsoft` only because it prints `Microsoft compatible Mouse`; that
 is not a Microsoft compiler signal. Treat marker hits as leads to inspect, not
 as classifications.
 
+## Pascal Hypothesis Check
+
+Checked the Turbo/Borland Pascal hypothesis directly against `BLOODPRG.EXE`.
+
+Commands used:
+
+```sh
+nix shell nixpkgs#detect-it-easy -c diec \
+  re/bin/BLOODPRG.EXE output/_tmp_iso/INSTALL.EXE
+
+python3 re/tools/toolchain_fingerprint.py \
+  re/bin/BLOODPRG.EXE output/_tmp_iso/INSTALL.EXE \
+  --sample-limit 4
+
+python3 re/tools/indirect_dispatch_atlas.py --sample-limit 4
+```
+
+Results:
+
+- Detect It Easy still reports `BLOODPRG.EXE` as `MSDOS / Unknown`; only
+  `INSTALL.EXE` reports `Borland TLINK(5.0)`.
+- `BLOODPRG.EXE` has no `Borland`, `Turbo`, `Pascal`, `TPU`, `TPL`,
+  `Runtime error`, `Run-time error`, or classic Pascal runtime-error text.
+- Raw `RTE` byte hits in `BLOODPRG.EXE` are false positives inside resource names
+  such as `bcarte.spr` / `pterra.ext`, not runtime-error strings.
+- The 308-entry atlas (`function_atlas` plus static dispatch targets from
+  `indirect_dispatch_atlas`) has **zero aligned `ret imm` or `retf imm`
+  terminals**. Known entries terminate as plain `ret`, plain `retf`, or tail
+  `jmp`. That weakens a conventional Pascal callee-cleanup calling-convention
+  hypothesis.
+- Startup remains custom: entry `0x600` immediately sets `DS/SS/SP`, sets
+  `GS/FS`, uses 386 registers, resizes/allocates DOS memory, probes devices, and
+  starts the game. It does not look like a stock Turbo/Borland Pascal startup.
+
+Current Pascal verdict: **no positive evidence for stock Turbo Pascal/Borland
+Pascal runtime or compiler output in `BLOODPRG.EXE`**. This does not prove that
+no Pascal-origin code was ever used, but it makes Pascal a lower-priority
+candidate than Borland C/C++ with custom startup/runtime or a mostly custom
+ASM/C engine.
+
 ## Function Atlas
 
 `re/tools/function_atlas.py` emits a provenance-aware function report for the
