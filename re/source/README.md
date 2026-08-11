@@ -29,3 +29,10 @@ For each routine, the expected workflow is:
 
 The assembly dumps under `re/assembly` remain the evidence. A missing `.c` file
 means the routine has not yet cleared the natural-C evidence gate.
+
+Start with:
+
+- `compiler_corpus.md` for the compiler/codegen comparison gate.
+- `bloodprg/abi_observations.tsv` for current routine-level ABI facts.
+- `routine_status.tsv` for routines that were rejected from the wrapper-style
+  attempt and must be reworked from natural declarations.

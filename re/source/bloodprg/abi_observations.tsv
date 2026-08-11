@@ -1,0 +1,8 @@
+scope	evidence	natural_c_implication
+BLOODPRG.EXE	startup sets DS/SS/SP manually, sets GS=DS and FS=0x0bbf, and no aligned stock C prologue pattern has been proven	do not assume stock CRT, default stack arguments, or default data segment ownership
+BLOODPRG.EXE	recovered routines commonly save only the registers they need and terminate with plain ret or retf	source prototypes must be derived per routine from call sites and register live-in/live-out evidence
+0x002665 strlen	call sites preload ES:DI, body scans ES:DI with repne scasb, returns length in AX, preserves CX and DI	not acceptable as ordinary strlen(char *) until compiler/register convention for ES:DI argument is reproduced
+0x0025a4 string_compare	body compares DS:SI against ES:DI, preserves AX/SI/DI, returns match in carry flag	not acceptable as bool/string-compare C until carry-return mechanism is reproduced or isolated as an asm ABI boundary
+0x002612 ascii_digit_parse	body reads DS:SI, returns parsed signed value in AX, preserves BX/CX/DX/SI/DI, uses CS:0x02da lookup table	natural C requires the real decimal-weight table declaration and proof of DS:SI input convention
+0x006494 vm_op_ce_cond_branch	body is source-shaped as if (!(gs_2793 & 1)) vm_branch(); then near ret	possible natural C candidate after GS global ownership and the near-call prototype for 0x006462 are declared
+0x006023 vm_field_offset	body uses AX as selector, BX as kind bitmask, BSF BX,BX, and returns signed GS table byte in AX	ordinary C helper is not enough; accepted source must explain AX/BX register ABI and signed-byte promotion
