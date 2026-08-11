@@ -41,3 +41,9 @@ Start with:
 - `bloodprg/abi_observations.tsv` for current routine-level ABI facts.
 - `routine_status.tsv` for routines that were rejected from the wrapper-style
   attempt and must be reworked from natural declarations.
+
+Before accepting new recovered source, keep the assembly inventory closed:
+
+```sh
+python3 re/tools/assembly_inventory.py --check
+```
