@@ -1,14 +1,7 @@
 #ifndef BLOODPRG_VM_H
 #define BLOODPRG_VM_H
 
-typedef unsigned char cb_u8;
-typedef unsigned int cb_u16;
-
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
-#define CB_NEAR near
-#else
-#define CB_NEAR
-#endif
+#include "bloodprg_common.h"
 
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
