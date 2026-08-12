@@ -1,0 +1,72 @@
+[
+  {
+    "name": "ordinary_continue",
+    "continues": true,
+    "initial_rows_word": 2,
+    "result_rows_word": 1,
+    "row_width": 64,
+    "initial_row_offset": 4660,
+    "result_row_offset": 4980,
+    "result_cx": 64,
+    "result_di": 4980,
+    "result_sp": 61376,
+    "result_bp": 61440,
+    "result_ds": 8192
+  },
+  {
+    "name": "last_row_exits_decoder",
+    "continues": false,
+    "initial_rows_word": 1,
+    "result_rows_word": 0,
+    "row_width": 128,
+    "initial_row_offset": 22136,
+    "result_row_offset": 22136,
+    "result_cx": 13107,
+    "result_di": 26214,
+    "result_sp": 61444,
+    "result_bp": 48879,
+    "result_ds": 13398
+  },
+  {
+    "name": "zero_rows_wraps_to_255",
+    "continues": true,
+    "initial_rows_word": 0,
+    "result_rows_word": 255,
+    "row_width": 192,
+    "initial_row_offset": 39612,
+    "result_row_offset": 39932,
+    "result_cx": 192,
+    "result_di": 39932,
+    "result_sp": 61376,
+    "result_bp": 61440,
+    "result_ds": 8192
+  },
+  {
+    "name": "row_offset_wrap",
+    "continues": true,
+    "initial_rows_word": 3,
+    "result_rows_word": 2,
+    "row_width": 256,
+    "initial_row_offset": 65280,
+    "result_row_offset": 64,
+    "result_cx": 256,
+    "result_di": 64,
+    "result_sp": 61376,
+    "result_bp": 61440,
+    "result_ds": 8192
+  },
+  {
+    "name": "high_row_byte_preserved",
+    "continues": true,
+    "initial_rows_word": 43778,
+    "result_rows_word": 43777,
+    "row_width": 319,
+    "initial_row_offset": 9320,
+    "result_row_offset": 9640,
+    "result_cx": 319,
+    "result_di": 9640,
+    "result_sp": 61376,
+    "result_bp": 61440,
+    "result_ds": 8192
+  }
+]

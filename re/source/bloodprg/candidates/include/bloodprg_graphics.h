@@ -25,6 +25,13 @@ typedef struct bloodprg_layout_offset_result {
     cb_u16 y;
 } bloodprg_layout_offset_result;
 
+typedef struct bloodprg_gfx_scanline_state {
+    cb_u16 row_width;
+    cb_u16 row_offset;
+    cb_u8 rows_remaining;
+    cb_u8 row_count_high;
+} bloodprg_gfx_scanline_state;
+
 bloodprg_layout_offset_result CB_FAR layout_offset_calc(cb_u16 columns,
         cb_u16 rows); /* 0x000E62 */
 void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
@@ -38,5 +45,7 @@ cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
         int use_main_font); /* 0x0030CD */
 void CB_NEAR selected_mask_overlay(void); /* 0x007CB4 */
 void CB_NEAR flag_gated_2751(void);       /* 0x00A117 */
+int CB_NEAR gfx_scanline_advance(
+        bloodprg_gfx_scanline_state *state); /* 0x00AD96 */
 
 #endif

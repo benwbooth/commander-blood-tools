@@ -350,6 +350,18 @@ medium calls its far `SCOPY@` runtime. The routine is therefore classified as a
 fixed-record compiler/helper boundary with a behaviorally verified natural C
 body, not as exact compiler-generated source.
 
+For `0x00AD96`, five direct cases execute both forms of this outlined local
+helper from `0x00AB25`. They verify the low-byte-only row decrement, preserved
+high byte, zero-to-255 underflow, 16-bit 320-byte offset wrap, CX/DI reloads,
+and the last-row path that discards the helper return address and unwinds the
+enclosing decoder's SP/BP/DS frame. The natural six-byte state structure keeps
+the same three fields and returns a Boolean so the eventual `0x00AB25` C body
+can perform a normal return. Open Watcom 1.9 medium emits 13 instructions and
+27 bytes; Turbo C 2.01 medium emits 16 instructions, versus 11 instructions
+and 25 bytes in the complete original span. The close size does not make the
+code drop-in: the natural form materializes a Boolean instead of performing a
+nonlocal stack unwind.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

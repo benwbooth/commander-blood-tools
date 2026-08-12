@@ -1912,6 +1912,119 @@ def list_d8c_palette_blocks_apply_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def gfx_scanline_advance_vectors() -> list[dict[str, object]]:
+    stack_segment = 0x9000
+    frame_offset = 0xF000
+    call_sp = 0xEFC0
+    stack_base = call_sp
+    cases = [
+        ("ordinary_continue", 2, 0x1234, 0x0040, True),
+        ("last_row_exits_decoder", 1, 0x5678, 0x0080, False),
+        ("zero_rows_wraps_to_255", 0, 0x9ABC, 0x00C0, True),
+        ("row_offset_wrap", 3, 0xFF00, 0x0100, True),
+        ("high_row_byte_preserved", 0xAB02, 0x2468, 0x013F, True),
+    ]
+    vectors = []
+
+    for case_index, (name, rows_word, row_offset, row_width, continues) in enumerate(
+        cases
+    ):
+        stack = bytearray([0xCC]) * 0x50
+        struct.pack_into("<H", stack, 0, 0xAC12)
+        struct.pack_into("<H", stack, frame_offset - 0x0A - stack_base, row_width)
+        struct.pack_into("<H", stack, frame_offset - 0x08 - stack_base, row_offset)
+        struct.pack_into("<H", stack, frame_offset - 0x06 - stack_base, rows_word)
+        struct.pack_into("<H", stack, frame_offset - stack_base, 0xBEEF)
+        struct.pack_into("<H", stack, frame_offset + 2 - stack_base, 0x3456)
+        struct.pack_into("<H", stack, frame_offset + 4 - stack_base, 0x789A)
+        expected_stack = bytearray(stack)
+        expected_rows = ((rows_word & 0xFF) - 1) & 0xFF
+        expected_rows_word = (rows_word & 0xFF00) | expected_rows
+        struct.pack_into(
+            "<H",
+            expected_stack,
+            frame_offset - 0x06 - stack_base,
+            expected_rows_word,
+        )
+        expected_offset = row_offset
+        if continues:
+            expected_offset = (row_offset + 0x0140) & 0xFFFF
+            struct.pack_into(
+                "<H",
+                expected_stack,
+                frame_offset - 0x08 - stack_base,
+                expected_offset,
+            )
+
+        initial = {
+            "eax": 0xA5A50000 | case_index,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": frame_offset,
+            "sp": call_sp,
+            "ds": 0x2000,
+            "es": 0x4000,
+            "gs": 0x5000,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            0xAD96,
+            0xADA8 if continues else 0xADAE,
+            initial,
+            [(stack_segment, stack_base, bytes(stack))],
+        )
+
+        expected_registers = {
+            "eax": initial["eax"],
+            "bx": initial["bx"],
+            "cx": row_width if continues else initial["cx"],
+            "dx": initial["dx"],
+            "si": initial["si"],
+            "di": expected_offset if continues else initial["di"],
+            "bp": frame_offset if continues else 0xBEEF,
+            "sp": call_sp if continues else frame_offset + 4,
+            "ds": initial["ds"] if continues else 0x3456,
+            "es": initial["es"],
+            "gs": initial["gs"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xAD96 {name} {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SS) != stack_segment:
+            raise AssertionError(f"0xAD96 {name} changed SS")
+
+        actual_stack = bytes(
+            machine.mem_read(stack_segment * 16 + stack_base, len(stack))
+        )
+        if actual_stack != bytes(expected_stack):
+            raise AssertionError(f"0xAD96 {name} modified unexpected frame data")
+
+        vectors.append(
+            {
+                "name": name,
+                "continues": continues,
+                "initial_rows_word": rows_word,
+                "result_rows_word": expected_rows_word,
+                "row_width": row_width,
+                "initial_row_offset": row_offset,
+                "result_row_offset": expected_offset,
+                "result_cx": machine.reg_read(UC_X86_REG_CX),
+                "result_di": machine.reg_read(UC_X86_REG_DI),
+                "result_sp": machine.reg_read(UC_X86_REG_SP),
+                "result_bp": machine.reg_read(UC_X86_REG_BP),
+                "result_ds": machine.reg_read(UC_X86_REG_DS),
+            }
+        )
+
+    return vectors
+
+
 def banked_list_load_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     buffer_segment = 0x3000
@@ -4440,6 +4553,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a7e6_natural.json", mem_copy_words_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_ad96_natural.json",
+        gfx_scanline_advance_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_a117_natural.json", flag_gated_copy_vectors(), args.check
