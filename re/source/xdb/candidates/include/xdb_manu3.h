@@ -29,11 +29,19 @@ typedef struct xdb_manu3_tween_record {
     xdb_i32 step;
 } xdb_manu3_tween_record;
 
+typedef struct xdb_manu3_face {
+    xdb_u16 link;
+    xdb_u16 vertex_0;
+    xdb_u16 vertex_1;
+    xdb_u16 vertex_2;
+} xdb_manu3_face;
+
 extern volatile xdb_u16 xdb_manu3_cursor_x; /* DS:0x001A */
 extern volatile xdb_u16 xdb_manu3_tween_phase; /* DS:0x102C */
 extern volatile xdb_u16 xdb_manu3_tween_script_offset; /* DS:0x102E */
 extern volatile xdb_u16 xdb_manu3_active_end_offset; /* DS:0x1030 */
 extern volatile xdb_u16 xdb_manu3_active_slot_offsets[]; /* DS:0x1032 */
+extern volatile xdb_u16 xdb_manu3_active_raster_offset; /* DS:0x0908 */
 extern volatile xdb_u16 xdb_manu3_finished_pitch; /* DS:0x223A */
 extern volatile xdb_u16 xdb_manu3_finished_yaw; /* DS:0x223C */
 extern volatile xdb_u16 xdb_manu3_view_pitch; /* DS:0x23E2 */
@@ -45,6 +53,13 @@ void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector);
 void XDB_NEAR xdb_manu3_tween_step(void);
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
+void XDB_NEAR xdb_manu3_face_activate(
+        const volatile xdb_manu3_face XDB_FAR *face);
+void XDB_NEAR xdb_manu3_gradient_setup(
+        xdb_u16 vertex_0,
+        xdb_u16 vertex_1,
+        xdb_u16 vertex_2,
+        volatile void XDB_NEAR *raster);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_manu3_anim_select_entry \
@@ -55,6 +70,8 @@ void XDB_NEAR xdb_manu3_tween_constructor(
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_face_activate \
+        parm [es si] modify exact [ax bx cx dx si di bp]
 #endif
 
 #endif

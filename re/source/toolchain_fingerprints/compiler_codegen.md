@@ -2112,6 +2112,18 @@ instructions and calls `LDIV@`. The source-level data and control flow are
 verified; the constructor remains a codegen mismatch rather than an assembly
 substitute.
 
+Six direct vectors prove the `0x000D7D` face-activation prelude. It reads three
+vertex offsets from an `ES:SI` face, loads the active raster at DS:`0x0908`,
+returns through the shared `0x000848` `RET` when that raster is zero, and
+otherwise enters gradient setup at `0x000D93` with the original
+`BX/DI/BP/SI` contract. The cases include wrapped face fields and zero,
+high-bit, and maximum raster offsets while checking segment ownership, memory,
+stack, and `OR` flags. Watcom emits 12 instructions/28 bytes versus the
+original 6/22, while Turbo C emits 25 instructions. Watcom cannot name `BP` in
+a C parameter pragma without rejecting the function, so the typed gradient
+call deliberately uses the compiler convention and records the original call
+boundary for a later narrow ABI adapter.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2154,6 +2166,7 @@ LCS and then mnemonic similarity:
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
+| `xdb_manu3_face_activate` | medium, `-ox -zdp`, register | 6/12 | 0.0000 | 0.6667 | 0.0000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

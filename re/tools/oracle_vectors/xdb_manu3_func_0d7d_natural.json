@@ -1,0 +1,140 @@
+[
+  {
+    "name": "inactive",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 12288,
+    "vertex_offsets": [
+      4369,
+      8738,
+      13107
+    ],
+    "active_raster_offset": 0,
+    "gradient_tail_entered": false,
+    "inactive_return_offset": 2120,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 12800,
+    "vertex_offsets": [
+      4608,
+      13312,
+      22016
+    ],
+    "active_raster_offset": 16640,
+    "gradient_tail_entered": true,
+    "inactive_return_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "active_high_bit",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 13312,
+    "vertex_offsets": [
+      0,
+      32768,
+      65535
+    ],
+    "active_raster_offset": 32768,
+    "gradient_tail_entered": true,
+    "inactive_return_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "face_offset_wrap",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 65532,
+    "vertex_offsets": [
+      42330,
+      23205,
+      32767
+    ],
+    "active_raster_offset": 17152,
+    "gradient_tail_entered": true,
+    "inactive_return_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_active",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 13824,
+    "vertex_offsets": [
+      65535,
+      1,
+      65534
+    ],
+    "active_raster_offset": 65535,
+    "gradient_tail_entered": true,
+    "inactive_return_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mixed",
+    "module": "manu3",
+    "entry": 3453,
+    "face_offset": 14336,
+    "vertex_offsets": [
+      4951,
+      9320,
+      44256
+    ],
+    "active_raster_offset": 1,
+    "gradient_tail_entered": true,
+    "inactive_return_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

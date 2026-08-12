@@ -2905,6 +2905,191 @@ def manu3_tween_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_face_activate_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0D7D
+    gradient = 0x0D93
+    image = load_image(module)
+    expected_hash = "2b309ac3e61e3280e4874c293d95ac9706bd0aa1151450d61ef8c32fef31287b"
+    if hashlib.sha256(image[entry : entry + 22]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 22-byte body changed")
+
+    patched_image = bytearray(image)
+    patched_image[gradient] = 0xC3
+    cases = (
+        ("inactive", 0x3000, 0x0000, 0x1111, 0x2222, 0x3333),
+        ("ordinary", 0x3200, 0x4100, 0x1200, 0x3400, 0x5600),
+        ("active_high_bit", 0x3400, 0x8000, 0x0000, 0x8000, 0xFFFF),
+        ("face_offset_wrap", 0xFFFC, 0x4300, 0xA55A, 0x5AA5, 0x7FFF),
+        ("maximum_active", 0x3600, 0xFFFF, 0xFFFF, 0x0001, 0xFFFE),
+        ("mixed", 0x3800, 0x0001, 0x1357, 0x2468, 0xACE0),
+    )
+    data_segment = 0x4400
+    face_segment = 0x6000
+    extra_segment = 0x7000
+    game_segment = 0x7800
+    stack_segment = 0x9000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (name, face_offset, raster, v0, v1, v2) in enumerate(cases):
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        data_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x10000)
+        )
+        face_before = bytearray(
+            ((offset * 13 + case_index * 29 + 7) & 0xFF)
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x0908, raster)
+        for relative_offset, value in ((2, v0), (4, v1), (6, v2)):
+            encoded = struct.pack("<H", value)
+            field_offset = (face_offset + relative_offset) & 0xFFFF
+            for byte_index, byte in enumerate(encoded):
+                face_before[(field_offset + byte_index) & 0xFFFF] = byte
+
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | face_offset,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": face_segment,
+            "fs": extra_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        gradient_entries: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == gradient:
+                gradient_entries.append(
+                    {
+                        "bx": machine.reg_read(UC_X86_REG_EBX) & 0xFFFF,
+                        "di": machine.reg_read(UC_X86_REG_EDI) & 0xFFFF,
+                        "bp": machine.reg_read(UC_X86_REG_EBP) & 0xFFFF,
+                        "si": machine.reg_read(UC_X86_REG_ESI) & 0xFFFF,
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+
+        decoy = bytes(
+            ((offset * 31 + case_index * 17 + 5) & 0xFF)
+            for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (extra_segment, 0, decoy),
+                (game_segment, 0, decoy),
+                (data_segment, 0, bytes(data_before)),
+                (face_segment, 0, bytes(face_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=code_handler,
+        )
+        expected_gradient_entries = (
+            []
+            if raster == 0
+            else [
+                {
+                    "bx": v0,
+                    "di": v1,
+                    "bp": v2,
+                    "si": raster,
+                    "ds": data_segment,
+                    "es": face_segment,
+                    "sp": 0xFF00,
+                }
+            ]
+        )
+        if gradient_entries != expected_gradient_entries:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: gradient entries="
+                f"{gradient_entries}, expected={expected_gradient_entries}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | v0
+        expected_registers["edi"] = (initial["edi"] & 0xFFFF0000) | v1
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | v2
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | raster
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != data_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: DS data changed")
+        if bytes(machine.mem_read(face_segment * 16, 0x10000)) != face_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: ES face data changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != decoy:
+            raise AssertionError(f"{module}:{entry:#x} {name}: FS decoy changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != decoy:
+            raise AssertionError(f"{module}:{entry:#x} {name}: GS decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        expected_flags = _logical_flags_16(raster, initial_flags)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "face_offset": face_offset,
+                "vertex_offsets": [v0, v1, v2],
+                "active_raster_offset": raster,
+                "gradient_tail_entered": raster != 0,
+                "inactive_return_offset": 0x0848 if raster == 0 else None,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def _signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
     quotient = abs(dividend) // divisor
     if dividend < 0:
@@ -3264,6 +3449,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_01df_natural.json",
         manu3_tween_constructor_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0d7d_natural.json",
+        manu3_face_activate_vectors(),
         args.check,
     )
     for module, entry in (
