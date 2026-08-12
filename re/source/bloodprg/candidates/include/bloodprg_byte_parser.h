@@ -16,11 +16,23 @@ extern volatile cb_u8 fs_name_area_dirty;    /* GS:0x27E8 */
 extern volatile char music_voc_name_field[]; /* GS:0x0D30 */
 extern volatile cb_u8 music_voc_name_unchanged; /* GS:0x0BA0 */
 extern volatile cb_u8 music_voc_name_changed; /* GS:0x0BA1 */
+extern volatile char byte_parser_snd_bank_path[]; /* GS:0x0D06 */
+extern volatile char byte_parser_snd_bank_name_field[]; /* GS:0x0D09 */
+extern volatile cb_i16 byte_parser_ems_handle_a56; /* GS:0x0A56 */
+extern volatile cb_i16 byte_parser_ems_handle_a58; /* GS:0x0A58 */
+extern volatile cb_u16 byte_parser_index_word_1fd7; /* GS:0x1FD7 */
+extern volatile char byte_parser_index_path_2137[]; /* GS:0x2137 */
+extern volatile char byte_parser_index_text_213a[]; /* GS:0x213A */
+extern volatile cb_u8 CB_FAR *byte_parser_back_buffer; /* GS:0x5229 */
 extern volatile cb_u16 byte_parser_word_1fa5; /* GS:0x1FA5 */
 extern volatile char *byte_parser_detail_cursor; /* GS:0x1FAD */
 extern volatile cb_u16 *byte_parser_asset_cursor; /* GS:0x1FAF */
 extern volatile char *byte_parser_table_131a_cursor; /* GS:0x131A */
 extern volatile cb_u8 byte_parser_table_131e_count; /* GS:0x131E */
 extern volatile char *byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
+
+void CB_FAR path_build_call_2693(const volatile char *path); /* 0x01CE:0712 */
+void CB_FAR file_open_wrapper(const volatile char *path,
+        volatile cb_u8 CB_FAR *destination); /* 0x01CE:0621 */
 
 #endif
