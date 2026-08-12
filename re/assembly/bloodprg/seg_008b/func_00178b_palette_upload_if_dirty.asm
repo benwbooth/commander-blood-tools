@@ -6,8 +6,8 @@
 ; seg_off: 008b:08db
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: render_present_if_dirty
-; label_comment: conditional screen present (3 calls): if [0x5b55]&1 (dirty), lcall 0:0x5d7 + si=0x5251 + lcall 0x299:0 (present/blit), then clear [0x5b55]=0 and [0xa40]=0. Flushes the composed frame to the display only when dirty
+; label: palette_upload_if_dirty
+; label_comment: if DS:[0x5b55]&1, wait for the calibrated VGA retrace phase through 0000:05d7, upload 768 palette bytes from DS:0x5251 through 0299:0000, then clear DS:0x5b55, DS:0x0a40, and DS:0x0a3e; leaves SI=0x5251 on the dirty path
 ; byte_count: 36
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1

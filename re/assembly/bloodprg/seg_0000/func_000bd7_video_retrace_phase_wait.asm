@@ -6,8 +6,8 @@
 ; seg_off: 0000:05d7
 ; group: seg_0000
 ; provenance: relocation_proven_far_transfer_target
-; label: counter_gate_b12
-; label_comment: counter gate: al=gs:[0xb12]; if nonzero branch. A per-frame counter/state gate near the audio-timer state
+; label: video_retrace_phase_wait
+; label_comment: if GS:0x0b12 is nonzero, poll bit 3 of VGA Input Status Register 1 at the BIOS CRTC base GS:0x0a9e plus 6 until the calibrated retrace phase changes; preserves AX and DX
 ; incoming: call@0x001792->0000:05d7
 ; incoming: call@0x001acb->0000:05d7
 ; incoming: call@0x008625->0000:05d7

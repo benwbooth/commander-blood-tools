@@ -1338,6 +1338,238 @@ def object_heap_access_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def palette_upload_if_dirty_vectors() -> list[dict[str, object]]:
+    entry = 0x178B
+    retrace_entry = 0x05D7
+    palette_entry = 0x0299 * 16
+    expected_hash = "56810a11ff589407d2745bfac0ab53dc5b527318438fbea78feb8e6b59bff08b"
+    if hashlib.sha256(EXE[entry : entry + 36]).hexdigest() != expected_hash:
+        raise AssertionError("0x178b: recovered 36-byte body changed")
+
+    cases = [
+        ("clean_zero", 0x00),
+        ("dirty_bit", 0x01),
+        ("clean_other_bit", 0x02),
+        ("dirty_with_other_bit", 0x03),
+        ("clean_high_bit", 0x80),
+        ("clean_all_even_bits", 0xFE),
+        ("dirty_all_bits", 0xFF),
+    ]
+    data_segment = 0x2C00
+    game_decoy_segment = 0x3800
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    helper_flags = 0x0A93
+    flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+    vectors = []
+
+    for case_index, (name, dirty_value) in enumerate(cases):
+        dirty_path = bool(dirty_value & 1)
+        primary_before = (0x31 + case_index) & 0xFF
+        secondary_before = (0x51 + case_index) & 0xFF
+        pending_before = (0x71 + case_index) & 0xFF
+        palette = bytes((index * 37 + case_index * 11) & 0x3F for index in range(768))
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        decoy_state = bytes(
+            [
+                dirty_value ^ 0xA5,
+                primary_before ^ 0xA5,
+                secondary_before ^ 0xA5,
+                pending_before ^ 0xA5,
+            ]
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (case_index & 1),
+        }
+        memory = [
+            (data_segment, 0x5251, palette),
+            (data_segment, 0x5B55, bytes([dirty_value])),
+            (
+                data_segment,
+                0x0A3E,
+                bytes([primary_before, secondary_before, pending_before]),
+            ),
+            (game_decoy_segment, 0x5B55, decoy_state[:1]),
+            (game_decoy_segment, 0x0A3E, decoy_state[1:]),
+            (0, return_address, b"\xcc"),
+            (0, 0x05D7, b"\xcb"),
+            (0x0299, 0, b"\xcb"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        helper_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (retrace_entry, palette_entry):
+                return
+
+            is_palette_call = address == palette_entry
+            expected_cs = 0x0299 if is_palette_call else 0
+            expected_ip = 0 if is_palette_call else 0x05D7
+            expected_return_ip = 0x179F if is_palette_call else 0x1797
+            actual_call = {
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ebp": machine.reg_read(UC_X86_REG_EBP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_call = dict(initial)
+            del expected_call["flags"]
+            expected_call["sp"] = 0xFEFC
+            expected_call["cs"] = expected_cs
+            expected_call["ip"] = expected_ip
+            if is_palette_call:
+                expected_call["esi"] = (initial["esi"] & 0xFFFF0000) | 0x5251
+            if actual_call != expected_call:
+                raise AssertionError(
+                    f"0x178b {name}: call={actual_call}, expected={expected_call}"
+                )
+
+            stack_words = struct.unpack(
+                "<HHH",
+                machine.mem_read(stack_segment * 16 + 0xFEFC, 6),
+            )
+            expected_stack = (expected_return_ip, 0, return_address)
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x178b {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            helper_calls.append("palette" if is_palette_call else "retrace")
+
+            if is_palette_call:
+                machine.mem_write(data_segment * 16 + 0x5B55, b"\xa6")
+                machine.mem_write(data_segment * 16 + 0x0A3E, b"\xb7")
+                machine.mem_write(data_segment * 16 + 0x0A40, b"\xc8")
+                machine.reg_write(UC_X86_REG_EFLAGS, helper_flags)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        expected_calls = ["retrace", "palette"] if dirty_path else []
+        if helper_calls != expected_calls:
+            raise AssertionError(
+                f"0x178b {name}: calls={helper_calls}, expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if dirty_path:
+            expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | 0x5251
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x178b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x178b {name}: near return changed CS")
+
+        expected_state = (
+            bytes([0, 0, secondary_before, 0])
+            if dirty_path
+            else bytes([dirty_value, primary_before, secondary_before, pending_before])
+        )
+        actual_state = bytes(machine.mem_read(data_segment * 16 + 0x0A3E, 3))
+        actual_state = bytes(
+            [
+                machine.mem_read(data_segment * 16 + 0x5B55, 1)[0],
+                actual_state[0],
+                actual_state[1],
+                actual_state[2],
+            ]
+        )
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x178b {name}: state={actual_state.hex()}, "
+                f"expected={expected_state.hex()}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x5251, 768)) != palette:
+            raise AssertionError(f"0x178b {name}: palette source changed")
+        if bytes(
+            machine.mem_read(game_decoy_segment * 16 + 0x5B55, 1)
+        ) != decoy_state[:1]:
+            raise AssertionError(f"0x178b {name}: GS dirty decoy changed")
+        if bytes(
+            machine.mem_read(game_decoy_segment * 16 + 0x0A3E, 3)
+        ) != decoy_state[1:]:
+            raise AssertionError(f"0x178b {name}: GS mouse decoys changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x178b {name}: stack sentinel changed")
+
+        if dirty_path:
+            expected_flags = {
+                flag: bool(helper_flags & mask) for flag, mask in flag_masks.items()
+            }
+        else:
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x178b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "dirty_before": dirty_value,
+                "dirty_path": dirty_path,
+                "calls": expected_calls,
+                "palette_offset": 0x5251 if dirty_path else None,
+                "dirty_after": expected_state[0],
+                "primary_after": expected_state[1],
+                "secondary_after": expected_state[2],
+                "pending_after": expected_state[3],
+                "si_after": expected_registers["esi"] & 0xFFFF,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -24557,6 +24789,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_149b_natural.json",
         object_heap_access_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_178b_natural.json",
+        palette_upload_if_dirty_vectors(),
         args.check,
     )
     update_vector(

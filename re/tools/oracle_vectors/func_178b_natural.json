@@ -1,0 +1,144 @@
+[
+  {
+    "name": "clean_zero",
+    "dirty_before": 0,
+    "dirty_path": false,
+    "calls": [],
+    "palette_offset": null,
+    "dirty_after": 0,
+    "primary_after": 49,
+    "secondary_after": 81,
+    "pending_after": 113,
+    "si_after": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dirty_bit",
+    "dirty_before": 1,
+    "dirty_path": true,
+    "calls": [
+      "retrace",
+      "palette"
+    ],
+    "palette_offset": 21073,
+    "dirty_after": 0,
+    "primary_after": 0,
+    "secondary_after": 82,
+    "pending_after": 0,
+    "si_after": 21073,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "clean_other_bit",
+    "dirty_before": 2,
+    "dirty_path": false,
+    "calls": [],
+    "palette_offset": null,
+    "dirty_after": 2,
+    "primary_after": 51,
+    "secondary_after": 83,
+    "pending_after": 115,
+    "si_after": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dirty_with_other_bit",
+    "dirty_before": 3,
+    "dirty_path": true,
+    "calls": [
+      "retrace",
+      "palette"
+    ],
+    "palette_offset": 21073,
+    "dirty_after": 0,
+    "primary_after": 0,
+    "secondary_after": 84,
+    "pending_after": 0,
+    "si_after": 21073,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "clean_high_bit",
+    "dirty_before": 128,
+    "dirty_path": false,
+    "calls": [],
+    "palette_offset": null,
+    "dirty_after": 128,
+    "primary_after": 53,
+    "secondary_after": 85,
+    "pending_after": 117,
+    "si_after": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "clean_all_even_bits",
+    "dirty_before": 254,
+    "dirty_path": false,
+    "calls": [],
+    "palette_offset": null,
+    "dirty_after": 254,
+    "primary_after": 54,
+    "secondary_after": 86,
+    "pending_after": 118,
+    "si_after": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dirty_all_bits",
+    "dirty_before": 255,
+    "dirty_path": true,
+    "calls": [
+      "retrace",
+      "palette"
+    ],
+    "palette_offset": 21073,
+    "dirty_after": 0,
+    "primary_after": 0,
+    "secondary_after": 87,
+    "pending_after": 0,
+    "si_after": 21073,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

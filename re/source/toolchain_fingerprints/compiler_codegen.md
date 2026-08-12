@@ -1750,6 +1750,26 @@ saves extra registers around the inline boundary. Turbo C 2.01 medium emits 29
 instructions with stack-frame temporaries. These are register-placement
 boundaries, not missing C logic.
 
+Palette upload helper `0x00178B` tests bit zero of DS:0x5B55. On the dirty
+path it far-calls `0000:05D7`, loads SI with the palette at DS:0x5251,
+far-calls the 768-byte VGA DAC writer at `0299:0000`, and only then clears the
+dirty byte plus DS:0x0A40 and DS:0x0A3E. The first helper maps to recovered
+routine `0x000BD7`: GS:0x0A9E comes from BIOS Data Area word `0x40:0x63`, so
+its `base+6` bit-3 polling is a calibrated VGA retrace-phase wait, not an audio
+gate. Seven direct vectors prove clean and dirty values, both exact far-call
+frames, DS versus GS ownership, clear-after-call ordering, the untouched
+secondary mouse latch and palette bytes, path-specific SI, flags, and near
+return.
+
+Open Watcom `-3 -ox -mm` compiles the natural conditional and two calls to 14
+instructions/36 bytes, the same byte count as the original 9 instructions.
+Two inline instructions preserve incoming AX, which the navigation caller uses
+immediately after return; a local call-clobber declaration keeps the SI palette
+load after the retrace call. Watcom otherwise reuses zero in AL for the three
+stores. Turbo C 2.01 medium emits 11 instructions, but stack-passes the palette
+pointer and does not preserve AX. The natural logic is recovered; exact
+replacement still depends on the original far-helper and fixed-DGROUP linkage.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1828,6 +1848,7 @@ LCS and then mnemonic similarity:
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |
 | `layout_offset_calc` | medium, `-ox`, register | 32/35 | 0.1875 | 0.5938 | 0.2812 |
 | `object_heap_access` | medium, `-ox`, register | 20/30 | 0.1500 | 0.9500 | 0.3000 |
+| `palette_upload_if_dirty` | medium, `-ox`, register | 9/14 | 0.1111 | 0.6667 | 0.1111 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

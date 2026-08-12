@@ -7,7 +7,7 @@
 ; group: seg_0000
 ; provenance: recursive_graph
 ; label: poll_status_port
-; label_comment: poll a hardware status bit: dx=base+6; in al,dx; and al,8 -> mask status bit 3. Polls the VGA vertical-retrace status (or sound-card status) for timing/sync. Also 0x0b4e
+; label_comment: calibrate VGA retrace timing by polling bit 3 of Input Status Register 1 at the BIOS CRTC base GS:0x0a9e plus 6, measuring phase lengths with PIT channel 2, and incrementing GS:0x0b12 to select the stable phase
 ; byte_count: 149
 ; boundary: cfg_blocks_13_terminals_2
 ; terminal: jmp 0xbcb:1, retf:1

@@ -1660,7 +1660,7 @@ THE GAME HAS A PROGRAMMED CADENCE, and it is not 46 ms:
     0x012C9  cmp word ptr [0xb2d], 0      the main loop SPINS...
     0x012CE  jne 0x12c9                   ...until it reaches zero
     0x012D1  call 0x17af                  then page_offset_helper
-    0x012D4  call 0x178b                  and render_present_if_dirty
+    0x012D4  call 0x178b                  and palette_upload_if_dirty
 
 The PIT is programmed to `0x1746` = 5958 (`func_79c`, verified in #411), i.e.
 1193182/5958 = 200.26 Hz. Eight of those ticks is **39.95 ms = 25.0 fps**, so 25
