@@ -138,6 +138,19 @@ bytes exactly. Open Watcom 1.9 also emits 21 bytes, but reverses the branch and
 tail-jumps to the close helper instead of retaining the original call/return
 shape.
 
+For `0x00A778`, four direct cases patch only the palette-parser call and prove
+that the routine discards the queue head offset, retains its segment, replaces
+SI with the `pl` payload offset at DS:0x0D9E, and returns the parser's ES:SI
+stream result. The queue initializer at `0x00A757` is the only recovered writer
+of DS:0x0D8E and always stores the queue-buffer base segment, supporting the
+natural buffer-relative expression. With the proven parser and wrapper ES:SI
+ABI declared through `#pragma aux`, Open Watcom 1.9 medium emits 8 instructions
+and 18 bytes; Turbo C 2.01 medium emits 9 instructions, versus 4 instructions
+and 12 bytes in the original. Watcom preserves AX and the returned ES:SI, but
+materializes the buffer symbol's segment through AX and adds the payload offset
+to its relocatable base instead of using the original `LES` plus replacement
+`MOV SI` pair.
+
 For `0x00A141`, seven direct-execution cases cover zero and reserved-handle
 skips, successful and failed DOS closes, the clear-before-interrupt ordering,
 the unconditional post-close bounds reset, DS versus GS decoys, every register

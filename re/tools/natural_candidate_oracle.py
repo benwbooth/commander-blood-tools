@@ -1801,6 +1801,117 @@ def list_d8c_advance_due_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_palette_blocks_apply_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    cases = [
+        ("buffer_start", 0x0123, 0x4000, 0x0000),
+        ("ordinary_payload", 0x4567, 0x5000, 0x2345),
+        ("last_byte", 0x89AB, 0x6000, 0xFFFF),
+        ("zero_head_offset", 0x0000, 0x7000, 0x0100),
+    ]
+    vectors = []
+
+    for case_index, (name, head_offset, buffer_segment, payload_offset) in enumerate(
+        cases
+    ):
+        data = bytearray([0xCC]) * 0x1000
+        struct.pack_into(
+            "<HH", data, 0x0D8C, head_offset, buffer_segment
+        )
+        struct.pack_into("<H", data, 0x0D9E, payload_offset)
+        calls: list[dict[str, int | str]] = []
+        initial = {
+            "eax": 0xA5A50000 | case_index,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x8000,
+            "gs": decoy_segment,
+            "flags": 0x0A93,
+        }
+
+        def code_handler(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xA780:
+                calls.append(
+                    {
+                        "call": "resource_palette_blocks_apply",
+                        "stream_segment": machine.reg_read(UC_X86_REG_ES),
+                        "stream_offset": machine.reg_read(UC_X86_REG_SI),
+                    }
+                )
+
+        machine = execute(
+            0xA778,
+            0xA783,
+            initial,
+            [
+                (0, 0xA780, b"\x90" * 3),
+                (data_segment, 0, bytes(data)),
+                (decoy_segment, 0, bytes(data)),
+            ],
+            code_handler=code_handler,
+        )
+
+        expected_calls = [
+            {
+                "call": "resource_palette_blocks_apply",
+                "stream_segment": buffer_segment,
+                "stream_offset": payload_offset,
+            }
+        ]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0xA778 {name} calls={calls}, expected={expected_calls}"
+            )
+
+        expected_registers = {
+            "eax": initial["eax"],
+            "bx": initial["bx"],
+            "cx": initial["cx"],
+            "dx": initial["dx"],
+            "si": payload_offset,
+            "di": initial["di"],
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": buffer_segment,
+            "gs": initial["gs"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xA778 {name} {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        if machine.reg_read(UC_X86_REG_EFLAGS) != initial["flags"]:
+            raise AssertionError(f"0xA778 {name} did not preserve flags")
+        if bytes(machine.mem_read(data_segment * 16, len(data))) != bytes(data):
+            raise AssertionError(f"0xA778 {name} modified game data")
+        if bytes(machine.mem_read(decoy_segment * 16, len(data))) != bytes(data):
+            raise AssertionError(f"0xA778 {name} modified GS decoy data")
+
+        vectors.append(
+            {
+                "name": name,
+                "head_offset_ignored": head_offset,
+                "buffer_segment": buffer_segment,
+                "payload_offset": payload_offset,
+                "calls": calls,
+                "result_es": machine.reg_read(UC_X86_REG_ES),
+                "result_si": machine.reg_read(UC_X86_REG_SI),
+            }
+        )
+
+    return vectors
+
+
 def banked_list_load_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     buffer_segment = 0x3000
@@ -4321,6 +4432,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a757_natural.json", list_init_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a778_natural.json",
+        list_d8c_palette_blocks_apply_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_a7e6_natural.json", mem_copy_words_vectors(), args.check

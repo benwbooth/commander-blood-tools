@@ -21,6 +21,7 @@ extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D94 */
 extern volatile cb_u16 list_d8c_active_segment;    /* GS:0x0D96 */
 extern volatile cb_u16 list_d8c_wrap_limit;        /* GS:0x0D98 */
 extern volatile cb_u16 list_d8c_byte_count;        /* game data:0x0D9A */
+extern volatile cb_u16 list_d8c_palette_offset;    /* game data:0x0D9E */
 extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */
 extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
@@ -55,5 +56,13 @@ void CB_NEAR queue_d8c_enqueue(cb_u16 byte_count); /* 0x00A734 */
 void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
 void CB_NEAR list_d8c_wrap_bounds_reset(void);  /* 0x00A744 */
 void CB_FAR list_d8c_init(void);                /* 0x00A757 */
+volatile cb_u8 CB_FAR *CB_NEAR list_d8c_palette_blocks_apply(void); /* 0x00A778 */
+
+#if defined(__WATCOMC__)
+#pragma aux resource_palette_blocks_apply \
+        parm [es si] value [es si] modify [si di]
+#pragma aux list_d8c_palette_blocks_apply \
+        value [es si] modify [si di]
+#endif
 
 #endif

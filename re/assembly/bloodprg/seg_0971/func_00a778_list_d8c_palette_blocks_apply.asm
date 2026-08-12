@@ -6,6 +6,8 @@
 ; seg_off: 0971:0a68
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: list_d8c_palette_blocks_apply
+; label_comment: call resource_palette_blocks_apply with ES from the D8C queue-buffer segment at DS:0x0d8e and SI replaced by the pl-record payload offset at DS:0x0d9e
 ; byte_count: 12
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1
@@ -16,4 +18,4 @@
 00A778:  C4 36 8C 0D                  les      si, ptr [0xd8c]
 00A77C:  8B 36 9E 0D                  mov      si, word ptr [0xd9e]
 00A780:  E8 40 F9                     call     0xa0c3
-00A783:  C3                           ret     
+00A783:  C3                           ret

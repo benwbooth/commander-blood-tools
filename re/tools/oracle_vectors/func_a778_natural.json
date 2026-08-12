@@ -1,0 +1,62 @@
+[
+  {
+    "name": "buffer_start",
+    "head_offset_ignored": 291,
+    "buffer_segment": 16384,
+    "payload_offset": 0,
+    "calls": [
+      {
+        "call": "resource_palette_blocks_apply",
+        "stream_segment": 16384,
+        "stream_offset": 0
+      }
+    ],
+    "result_es": 16384,
+    "result_si": 0
+  },
+  {
+    "name": "ordinary_payload",
+    "head_offset_ignored": 17767,
+    "buffer_segment": 20480,
+    "payload_offset": 9029,
+    "calls": [
+      {
+        "call": "resource_palette_blocks_apply",
+        "stream_segment": 20480,
+        "stream_offset": 9029
+      }
+    ],
+    "result_es": 20480,
+    "result_si": 9029
+  },
+  {
+    "name": "last_byte",
+    "head_offset_ignored": 35243,
+    "buffer_segment": 24576,
+    "payload_offset": 65535,
+    "calls": [
+      {
+        "call": "resource_palette_blocks_apply",
+        "stream_segment": 24576,
+        "stream_offset": 65535
+      }
+    ],
+    "result_es": 24576,
+    "result_si": 65535
+  },
+  {
+    "name": "zero_head_offset",
+    "head_offset_ignored": 0,
+    "buffer_segment": 28672,
+    "payload_offset": 256,
+    "calls": [
+      {
+        "call": "resource_palette_blocks_apply",
+        "stream_segment": 28672,
+        "stream_offset": 256
+      }
+    ],
+    "result_es": 28672,
+    "result_si": 256
+  }
+]
