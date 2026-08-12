@@ -134,6 +134,16 @@ so this is a confirmed one-instruction assembly ABI boundary; the prior natural
 C `return 1` was not supported by caller behavior. Turbo C 2.01 instead uses a
 stack argument and emits eight instructions.
 
+For `0x00A757`, five direct-execution cases confirm the ordered far-pointer
+field initialization, five cleared queue words, wrap-limit copy, adjacent-word
+preservation, final AX, and far return. Open Watcom 1.9 medium emits the same 12
+mnemonics in the same order and the same 33-byte length as the original. Eleven
+instruction encodings match modulo external-address relocations; its equivalent
+`XOR AX,AX` is encoded as `31 C0` instead of the original `33 C0`. All three
+callers execute PUSH CS before a near CALL, independently confirming the
+natural candidate's far-return declaration. Turbo C 2.01 emits 13 instructions
+because it saves SI for the base-segment temporary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

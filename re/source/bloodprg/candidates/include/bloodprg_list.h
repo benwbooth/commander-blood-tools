@@ -31,5 +31,6 @@ int CB_NEAR list_d8c_state_le_one(void);         /* 0x00A40B */
 void CB_NEAR queue_d8c_enqueue(cb_u16 byte_count); /* 0x00A734 */
 void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
 void CB_NEAR list_d8c_wrap_bounds_reset(void);  /* 0x00A744 */
+void CB_FAR list_d8c_init(void);                /* 0x00A757 */
 
 #endif

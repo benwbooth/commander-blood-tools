@@ -886,6 +886,96 @@ def queue_enqueue_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_init_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("zero_bounds", 0x0000, 0x0000),
+        ("ordinary", 0x3456, 0x4000),
+        ("maximum_segment", 0xFFFF, 0x1234),
+        ("maximum_end", 0x1357, 0xFFFF),
+        ("matching_values", 0xAAAA, 0xAAAA),
+    ]
+    reset_offsets = (0x0D8C, 0x0D90, 0x0D96, 0x0D9A, 0x0DA0)
+    vectors = []
+
+    for name, base_segment, buffer_end in cases:
+        initial_words = {
+            0x0D8C: 0x1111,
+            0x0D8E: 0x2222,
+            0x0D90: 0x3333,
+            0x0D92: 0x4444,
+            0x0D94: 0x5555,
+            0x0D96: 0x6666,
+            0x0D98: 0x7777,
+            0x0D9A: 0x8888,
+            0x0D9C: 0x9999,
+            0x0D9E: 0xAAAA,
+            0x0DA0: 0xBBBB,
+        }
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": 0x2C00,
+        }
+        memory = [
+            (data_segment, offset, struct.pack("<H", value))
+            for offset, value in initial_words.items()
+        ]
+        memory.extend(
+            [
+                (data_segment, 0x0A7E, struct.pack("<H", base_segment)),
+                (data_segment, 0x5233, struct.pack("<H", buffer_end)),
+            ]
+        )
+        machine = execute(0xA757, 0xA777, initial, memory)
+
+        expected_words = dict(initial_words)
+        expected_words[0x0D8E] = base_segment
+        expected_words[0x0D92] = base_segment
+        expected_words[0x0D98] = buffer_end
+        for offset in reset_offsets:
+            expected_words[offset] = 0
+        observed_words = {
+            offset: struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+            for offset in initial_words
+        }
+        if observed_words != expected_words:
+            raise AssertionError(
+                f"0xA757 {name}: actual={observed_words}, expected={expected_words}"
+            )
+        expected_registers = dict(initial)
+        expected_registers["ax"] = buffer_end
+        for register, value in expected_registers.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0xA757 did not preserve {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "base_segment": base_segment,
+                "buffer_end": buffer_end,
+                "head_pointer": [0, base_segment],
+                "tail_pointer": [0, base_segment],
+                "cleared_offsets": list(reset_offsets),
+                "result_wrap_limit": buffer_end,
+                "preserved_sentinel_offsets": [0x0D94, 0x0D9C, 0x0D9E],
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -926,6 +1016,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a734_natural.json", queue_enqueue_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a757_natural.json", list_init_vectors(), args.check
     )
     return 0
 

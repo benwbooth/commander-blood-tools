@@ -1,0 +1,132 @@
+[
+  {
+    "name": "zero_bounds",
+    "base_segment": 0,
+    "buffer_end": 0,
+    "head_pointer": [
+      0,
+      0
+    ],
+    "tail_pointer": [
+      0,
+      0
+    ],
+    "cleared_offsets": [
+      3468,
+      3472,
+      3478,
+      3482,
+      3488
+    ],
+    "result_wrap_limit": 0,
+    "preserved_sentinel_offsets": [
+      3476,
+      3484,
+      3486
+    ]
+  },
+  {
+    "name": "ordinary",
+    "base_segment": 13398,
+    "buffer_end": 16384,
+    "head_pointer": [
+      0,
+      13398
+    ],
+    "tail_pointer": [
+      0,
+      13398
+    ],
+    "cleared_offsets": [
+      3468,
+      3472,
+      3478,
+      3482,
+      3488
+    ],
+    "result_wrap_limit": 16384,
+    "preserved_sentinel_offsets": [
+      3476,
+      3484,
+      3486
+    ]
+  },
+  {
+    "name": "maximum_segment",
+    "base_segment": 65535,
+    "buffer_end": 4660,
+    "head_pointer": [
+      0,
+      65535
+    ],
+    "tail_pointer": [
+      0,
+      65535
+    ],
+    "cleared_offsets": [
+      3468,
+      3472,
+      3478,
+      3482,
+      3488
+    ],
+    "result_wrap_limit": 4660,
+    "preserved_sentinel_offsets": [
+      3476,
+      3484,
+      3486
+    ]
+  },
+  {
+    "name": "maximum_end",
+    "base_segment": 4951,
+    "buffer_end": 65535,
+    "head_pointer": [
+      0,
+      4951
+    ],
+    "tail_pointer": [
+      0,
+      4951
+    ],
+    "cleared_offsets": [
+      3468,
+      3472,
+      3478,
+      3482,
+      3488
+    ],
+    "result_wrap_limit": 65535,
+    "preserved_sentinel_offsets": [
+      3476,
+      3484,
+      3486
+    ]
+  },
+  {
+    "name": "matching_values",
+    "base_segment": 43690,
+    "buffer_end": 43690,
+    "head_pointer": [
+      0,
+      43690
+    ],
+    "tail_pointer": [
+      0,
+      43690
+    ],
+    "cleared_offsets": [
+      3468,
+      3472,
+      3478,
+      3482,
+      3488
+    ],
+    "result_wrap_limit": 43690,
+    "preserved_sentinel_offsets": [
+      3476,
+      3484,
+      3486
+    ]
+  }
+]
