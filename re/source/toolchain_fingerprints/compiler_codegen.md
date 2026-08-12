@@ -615,6 +615,21 @@ but it cannot reproduce the binary's simultaneous status in `AX` and conditional
 pointer in `DS:SI`; exact binary integration requires a narrow ABI adapter plus
 FS table placement.
 
+Resource dword getter `0x00533C` has eight deterministic direct vectors. They
+prove zero, high, and wrapped handles, 16-bit `handle * 8` indexing, full dword
+loads, read-only table ownership, preservation of BX and every unrelated
+register/segment, the `RETF` boundary, and the architecturally defined
+CF/PF/ZF/SF results left by `SHL AX,3`.
+
+Open Watcom compiles the actual candidate without warnings; `-3 -ox -mm` emits
+7 instructions/16 bytes versus 6/13 original. Standalone 8086/286/386 probes
+emit 10/7/7 instructions and 19/16/16 bytes, while Turbo C 2.01 emits 10
+instructions. Watcom preserves the original mnemonic set and AX input, but uses
+DS table placement, shifts BX, and returns the natural 32-bit value in DX:AX.
+Its C16 pragma parser rejects EAX register names, so exact integration needs a
+narrow FS/EAX adapter rather than contaminating the natural field getter with
+inline assembly.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

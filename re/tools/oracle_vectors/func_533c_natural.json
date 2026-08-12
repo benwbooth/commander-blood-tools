@@ -1,0 +1,106 @@
+[
+  {
+    "name": "zero_handle_zero_value",
+    "handle": 0,
+    "entry_offset": 0,
+    "field_04": 0,
+    "eax": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "first_entry_all_bits",
+    "handle": 1,
+    "entry_offset": 8,
+    "field_04": 4294967295,
+    "eax": 4294967295,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "largest_unwrapped_index",
+    "handle": 8191,
+    "entry_offset": 65528,
+    "field_04": 2147483649,
+    "eax": 2147483649,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true
+    }
+  },
+  {
+    "name": "index_wraps_to_zero",
+    "handle": 8192,
+    "entry_offset": 0,
+    "field_04": 305419896,
+    "eax": 305419896,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "index_wraps_to_entry_one",
+    "handle": 16385,
+    "entry_offset": 8,
+    "field_04": 2309737967,
+    "eax": 2309737967,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "high_handle_reads_final_dword",
+    "handle": 65535,
+    "entry_offset": 65528,
+    "field_04": 1437204735,
+    "eax": 1437204735,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true
+    }
+  },
+  {
+    "name": "shift_result_sets_zero",
+    "handle": 32768,
+    "entry_offset": 0,
+    "field_04": 3735928559,
+    "eax": 3735928559,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "shift_result_sets_sign",
+    "handle": 4096,
+    "entry_offset": 32768,
+    "field_04": 16909060,
+    "eax": 16909060,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true
+    }
+  }
+]

@@ -1057,7 +1057,9 @@ memory manager behind every handle-based asset:
   population is a HIGHER-LEVEL load (startup / level-load), not here.
 - `0x04B9:0x0190` (`0x5320`) = fast resident lookup; six direct vectors prove
   its conditional `AX` plus `DS:SI` result, while Watcom emits 70 bytes for the
-  natural structured-result API versus 28 original. `0x533C` = get size;
+  natural structured-result API versus 28 original. `0x533C` = get size; eight
+  direct vectors prove wrapped indexing, full dword return, defined shift flags,
+  ownership, and preservation, while Watcom emits 16 bytes versus 13 original;
   `0x5356` = free (clear in-use bit1); `0x5365` = acquire (bit0 set→mark bit1;
   else evictable→call loader `0x5190`).
 - `0x53A0` = `vm_resource_profile_select(ax)`: on profile change, copies five

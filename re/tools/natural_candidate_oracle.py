@@ -3615,6 +3615,106 @@ def resource_handle_resolve_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_get_field4_vectors() -> list[dict[str, object]]:
+    table_segment = 0x4000
+    cases = [
+        ("zero_handle_zero_value", 0x0000, 0x00000000),
+        ("first_entry_all_bits", 0x0001, 0xFFFFFFFF),
+        ("largest_unwrapped_index", 0x1FFF, 0x80000001),
+        ("index_wraps_to_zero", 0x2000, 0x12345678),
+        ("index_wraps_to_entry_one", 0x4001, 0x89ABCDEF),
+        ("high_handle_reads_final_dword", 0xFFFF, 0x55AA00FF),
+        ("shift_result_sets_zero", 0x8000, 0xDEADBEEF),
+        ("shift_result_sets_sign", 0x1000, 0x01020304),
+    ]
+    vectors = []
+
+    for case_index, (name, handle, field_04) in enumerate(cases):
+        entry_offset = (handle * 8) & 0xFFFF
+        entry = struct.pack(
+            "<HHI",
+            (0x5100 + case_index * 0x101) & 0xFFFF,
+            (0xA500 + case_index * 0x13) & 0xFFFF,
+            field_04,
+        )
+        initial = {
+            "eax": 0xA1A10000 | handle,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": table_segment,
+            "gs": 0x2C00,
+            "flags": 0x0AD7,
+        }
+
+        machine = execute(
+            0x533C,
+            0x5348,
+            initial,
+            [(table_segment, entry_offset, entry)],
+        )
+
+        expected = dict(initial)
+        del expected["flags"]
+        expected["eax"] = field_04
+        for register, value in expected.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x533c {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+        if bytes(
+            machine.mem_read(table_segment * 16 + entry_offset, len(entry))
+        ) != entry:
+            raise AssertionError(f"0x533c {name}: handle entry changed")
+
+        shifted = (handle << 3) & 0xFFFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_cf = bool(handle & 0x2000)
+        expected_zf = shifted == 0
+        expected_sf = bool(shifted & 0x8000)
+        expected_pf = (shifted & 0xFF).bit_count() % 2 == 0
+        actual_defined_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+        }
+        expected_defined_flags = {
+            "cf": expected_cf,
+            "pf": expected_pf,
+            "zf": expected_zf,
+            "sf": expected_sf,
+        }
+        if actual_defined_flags != expected_defined_flags:
+            raise AssertionError(
+                f"0x533c {name}: flags={actual_defined_flags}, "
+                f"expected={expected_defined_flags}"
+            )
+        if EXE[0x5348] != 0xCB:
+            raise AssertionError("0x533c: expected far RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "handle": handle,
+                "entry_offset": entry_offset,
+                "field_04": field_04,
+                "eax": field_04,
+                "defined_flags": actual_defined_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -8112,6 +8212,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5320_natural.json",
         resource_handle_resolve_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_533c_natural.json",
+        resource_get_field4_vectors(),
         args.check,
     )
     update_vector(
