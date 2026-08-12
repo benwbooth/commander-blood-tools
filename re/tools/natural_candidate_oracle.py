@@ -10566,6 +10566,298 @@ def vm_shared_state_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_shared_bit_state_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    record_segment = 0x5200
+    stack_segment = 0x9000
+    cases = [
+        ("query_present_pass", 1, False, 0x0001, 0x0001),
+        ("query_absent_fails", 1, False, 0x0000, 0x0001),
+        ("query_inverted_present_fails", 3, True, 0x0001, 0x0001),
+        ("query_inverted_absent_pass", 1, True, 0x0000, 0x0001),
+        ("query_any_bit_pass", 1, False, 0x0002, 0x0003),
+        ("query_zero_mask_fails", 1, False, 0xFFFF, 0x0000),
+        ("query_inverted_zero_mask_pass", 1, True, 0xFFFF, 0x0000),
+        ("query_inverted_segment_end", 1, True, 0x0000, 0x8000),
+        ("set_or_bits", 0, False, 0x0001, 0x0002),
+        ("set_or_no_change", 2, False, 0xFFFF, 0x00F0),
+        ("set_or_zero", 0, False, 0x0000, 0x0000),
+        ("clear_selected_bits", 0, True, 0xFFFF, 0x00F0),
+        ("clear_all_bits", 2, True, 0xA55A, 0xFFFF),
+        ("record_offset_wrap", 0, False, 0x0001, 0x0002),
+    ]
+    failure_tops = [2, 0, 1]
+    vectors = []
+
+    def logic_flags(value: int, sign_mask: int) -> dict[str, bool]:
+        result = value & (0xFFFF if sign_mask == 0x8000 else 0xFF)
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & sign_mask),
+            "of": False,
+        }
+
+    def sub_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    failure_index = 0
+    for case_index, (name, query_before, inverted, field_before, mask) in enumerate(cases):
+        start = 0xFFFB if name == "query_inverted_segment_end" else 0x3600 + case_index * 0x20
+        base_offset = 0xFFF0 if name == "record_offset_wrap" else 0x1200
+        field_offset = 0x0030 if name == "record_offset_wrap" else 0x0300 + case_index * 4
+        field_effective = (base_offset + field_offset) & 0xFFFF
+        prefix = b"\xa1" if inverted else b""
+        script = prefix + struct.pack("<HH", field_offset, mask)
+        operand_start = (start + len(prefix)) & 0xFFFF
+        final_script = (start + len(script)) & 0xFFFF
+        has_bits = bool(field_before & mask)
+        branch_failed = bool(query_before & 1) and has_bits == inverted
+        if branch_failed:
+            top_before = failure_tops[failure_index % len(failure_tops)]
+            failure_index += 1
+            top_after = (top_before - 2) & 0xFFFF
+            branch_target = (0x5400 + case_index * 0x41) & 0xFFFF
+            branch_stack_effective = (0x6820 + top_after) & 0xFFFF
+        else:
+            top_before = 0x2468
+            top_after = top_before
+            branch_target = 0x5AA5
+            branch_stack_effective = 0x681E
+
+        if query_before & 1:
+            field_after = field_before
+        elif inverted:
+            field_after = field_before & (~mask & 0xFFFF)
+        else:
+            field_after = field_before | mask
+
+        pointer = struct.pack("<HH", base_offset, record_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x2222, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x3333, stack_segment)
+        data_query_decoy = query_before ^ 0x55
+        stack_query_decoy = query_before ^ 0xAA
+        data_top_decoy = top_before ^ 0xFFFF
+        stack_top_decoy = top_before ^ 0x5A5A
+        field_decoy = field_before ^ 0xFFFF
+        memory = [
+            (game_segment, 0x6724, pointer),
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (game_segment, 0x67AD, bytes([query_before])),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (game_segment, 0x6884, struct.pack("<H", top_before)),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (stack_segment, 0x6884, struct.pack("<H", stack_top_decoy)),
+            (record_segment, field_effective, struct.pack("<H", field_before)),
+            (data_segment, field_effective, struct.pack("<H", field_decoy)),
+            (game_segment, field_effective, struct.pack("<H", field_decoy ^ 0xA5A5)),
+            (stack_segment, field_effective, struct.pack("<H", field_decoy ^ 0x5A5A)),
+            (stack_segment, branch_stack_effective, struct.pack("<H", branch_target)),
+            (game_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xFFFF)),
+            (data_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xA5A5)),
+            (data_segment, start, script),
+            (extra_segment, start, b"\x5a" * len(script)),
+            (game_segment, start, b"\xa5" * len(script)),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        parse_phases = []
+        terminal_phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address in (0x6908, 0x6913, 0x6914, 0x6917):
+                parse_phases.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address == 0x6944:
+                terminal_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        struct.unpack(
+                            "<H", machine.mem_read(record_segment * 16 + field_effective, 2)
+                        )[0],
+                        machine.mem_read(game_segment * 16 + 0x67AD, 1)[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            0x6902,
+            0x6945,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        probe_byte = 0xA1 if inverted else field_offset & 0xFF
+        dx_with_inversion = (initial["edx"] & 0xFF00) | int(inverted)
+        expected_parse = [
+            (0x6908, initial["eax"] & 0xFFFF, initial["ebx"] & 0xFFFF, initial["edx"] & 0xFFFF, start, base_offset, record_segment),
+            (0x6913, (initial["eax"] & 0xFF00) | probe_byte, initial["ebx"] & 0xFFFF, dx_with_inversion, operand_start, base_offset, record_segment),
+            (0x6914, field_offset, initial["ebx"] & 0xFFFF, dx_with_inversion, (operand_start + 2) & 0xFFFF, base_offset, record_segment),
+            (0x6917, mask, field_offset, dx_with_inversion, final_script, base_offset, record_segment),
+        ]
+        if parse_phases != expected_parse:
+            raise AssertionError(
+                f"0x6902 {name}: parse={parse_phases}, expected={expected_parse}"
+            )
+
+        if branch_failed:
+            expected_ax = top_after
+            expected_si = branch_target
+            query_after = 0
+            expected_flags = sub_flags_16(top_before, 2)
+        elif query_before & 1:
+            expected_ax = field_before & mask
+            expected_si = final_script
+            query_after = query_before
+            expected_flags = logic_flags(int(inverted), 0x80)
+        elif inverted:
+            expected_ax = ~mask & 0xFFFF
+            expected_si = final_script
+            query_after = query_before
+            expected_flags = logic_flags(field_after, 0x8000)
+        else:
+            expected_ax = mask
+            expected_si = final_script
+            query_after = query_before
+            expected_flags = logic_flags(field_after, 0x8000)
+
+        expected_terminal = [
+            (
+                expected_ax,
+                field_offset,
+                dx_with_inversion,
+                expected_si,
+                base_offset,
+                record_segment,
+                field_after,
+                query_after,
+                top_after,
+            )
+        ]
+        if terminal_phases != expected_terminal:
+            raise AssertionError(
+                f"0x6902 {name}: terminal={terminal_phases}, "
+                f"expected={expected_terminal}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | expected_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | field_offset
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | dx_with_inversion
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | expected_si
+        expected_registers["es"] = record_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6902 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_field = struct.unpack(
+            "<H", machine.mem_read(record_segment * 16 + field_effective, 2)
+        )[0]
+        if actual_field != field_after:
+            raise AssertionError(
+                f"0x6902 {name}: field={actual_field:#x}, expected={field_after:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + start, len(script))) != script:
+            raise AssertionError(f"0x6902 {name}: script input changed")
+        if machine.mem_read(extra_segment * 16 + start, len(script)) != b"\x5a" * len(script):
+            raise AssertionError(f"0x6902 {name}: ES script decoy changed")
+        if machine.mem_read(game_segment * 16 + start, len(script)) != b"\xa5" * len(script):
+            raise AssertionError(f"0x6902 {name}: GS script decoy changed")
+        decoys = [
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (stack_segment, 0x6884, struct.pack("<H", stack_top_decoy)),
+            (data_segment, field_effective, struct.pack("<H", field_decoy)),
+            (game_segment, field_effective, struct.pack("<H", field_decoy ^ 0xA5A5)),
+            (stack_segment, field_effective, struct.pack("<H", field_decoy ^ 0x5A5A)),
+        ]
+        for segment, offset, expected in decoys:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x6902 {name}: segment decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 0x0001, "pf": 0x0004, "af": 0x0010, "zf": 0x0040, "sf": 0x0080, "of": 0x0800}
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6902 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6945] != 0xC3:
+            raise AssertionError("0x6902: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "query_mode_before": query_before,
+                "inverted": inverted,
+                "field_before": field_before,
+                "mask": mask,
+                "field_after": field_after,
+                "branch_failed": branch_failed,
+                "final_script_offset": expected_si,
+                "query_mode_after": query_after,
+                "branch_stack_top_after": top_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -15241,6 +15533,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6863_natural.json",
         vm_shared_state_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6902_natural.json",
+        vm_shared_bit_state_vectors(),
         args.check,
     )
     update_vector(

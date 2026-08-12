@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_shared_ae_b0_state
-; label_comment: VM opcodes 0xAE + 0xB0 (shared handler 0x6902): object/line-record state op (les di,gs:0x6724 + 0xA1-skip). State-table family; exact op partial
+; label_comment: Shared AE/B0 handler: optional A1 inverts any-masked-bit query success and changes set mode from OR-mask to complemented-AND clear
 ; incoming: vm_opcode_handlers:opcode_0xae
 ; incoming: vm_opcode_handlers:opcode_0xb0
 ; byte_count: 68

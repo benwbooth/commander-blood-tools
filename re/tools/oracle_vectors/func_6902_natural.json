@@ -1,0 +1,271 @@
+[
+  {
+    "name": "query_present_pass",
+    "query_mode_before": 1,
+    "inverted": false,
+    "field_before": 1,
+    "mask": 1,
+    "field_after": 1,
+    "branch_failed": false,
+    "final_script_offset": 13828,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_absent_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "field_before": 0,
+    "mask": 1,
+    "field_after": 0,
+    "branch_failed": true,
+    "final_script_offset": 21569,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_present_fails",
+    "query_mode_before": 3,
+    "inverted": true,
+    "field_before": 1,
+    "mask": 1,
+    "field_after": 1,
+    "branch_failed": true,
+    "final_script_offset": 21634,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_absent_pass",
+    "query_mode_before": 1,
+    "inverted": true,
+    "field_before": 0,
+    "mask": 1,
+    "field_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 13925,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_any_bit_pass",
+    "query_mode_before": 1,
+    "inverted": false,
+    "field_before": 2,
+    "mask": 3,
+    "field_after": 2,
+    "branch_failed": false,
+    "final_script_offset": 13956,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_zero_mask_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "field_before": 65535,
+    "mask": 0,
+    "field_after": 65535,
+    "branch_failed": true,
+    "final_script_offset": 21829,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_zero_mask_pass",
+    "query_mode_before": 1,
+    "inverted": true,
+    "field_before": 65535,
+    "mask": 0,
+    "field_after": 65535,
+    "branch_failed": false,
+    "final_script_offset": 14021,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_segment_end",
+    "query_mode_before": 1,
+    "inverted": true,
+    "field_before": 0,
+    "mask": 32768,
+    "field_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 0,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_or_bits",
+    "query_mode_before": 0,
+    "inverted": false,
+    "field_before": 1,
+    "mask": 2,
+    "field_after": 3,
+    "branch_failed": false,
+    "final_script_offset": 14084,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_or_no_change",
+    "query_mode_before": 2,
+    "inverted": false,
+    "field_before": 65535,
+    "mask": 240,
+    "field_after": 65535,
+    "branch_failed": false,
+    "final_script_offset": 14116,
+    "query_mode_after": 2,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_or_zero",
+    "query_mode_before": 0,
+    "inverted": false,
+    "field_before": 0,
+    "mask": 0,
+    "field_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 14148,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "clear_selected_bits",
+    "query_mode_before": 0,
+    "inverted": true,
+    "field_before": 65535,
+    "mask": 240,
+    "field_after": 65295,
+    "branch_failed": false,
+    "final_script_offset": 14181,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "clear_all_bits",
+    "query_mode_before": 2,
+    "inverted": true,
+    "field_before": 42330,
+    "mask": 65535,
+    "field_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 14213,
+    "query_mode_after": 2,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "record_offset_wrap",
+    "query_mode_before": 0,
+    "inverted": false,
+    "field_before": 1,
+    "mask": 2,
+    "field_after": 3,
+    "branch_failed": false,
+    "final_script_offset": 14244,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

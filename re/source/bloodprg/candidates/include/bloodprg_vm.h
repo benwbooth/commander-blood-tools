@@ -145,6 +145,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_a9_cond_jump parm [si] value [si] modify exact [ax si]
 #pragma aux vm_op_ab_poke_byte parm [si] value [si] modify exact [ax bx si]
 #pragma aux vm_op_shared_state_marker parm [si] value [si] modify exact [ax bx cx dx si es]
+#pragma aux vm_op_shared_ae_b0_state parm [si] value [si] modify exact [ax bx dx si es]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -203,6 +204,8 @@ void CB_NEAR vm_op_aa_yield(void);            /* 0x006855 */
 void CB_NEAR vm_op_ac_yield(void);            /* 0x00685C */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006863 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_ae_b0_state(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006902 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
