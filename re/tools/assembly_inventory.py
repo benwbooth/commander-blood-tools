@@ -29,6 +29,8 @@ FILE_OFFSET_RE = re.compile(r"^; file_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
 OVERLAY_OFFSET_RE = re.compile(r"^; overlay_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
 BYTE_COUNT_RE = re.compile(r"^; byte_count: (\d+)$", re.MULTILINE)
 SHA_RE = re.compile(r"^; routine_bytes_sha256: ([0-9a-f]+)$", re.MULTILINE)
+ASM_LINE_RE = re.compile(r"^([0-9a-fA-F]{6,8}):  (.+)$")
+BYTE_TOKEN_RE = re.compile(r"^[0-9a-fA-F]{2}$")
 
 
 def load_index() -> list[dict[str, str]]:
@@ -125,6 +127,53 @@ def check_hashes(rows: list[dict[str, str]]) -> list[str]:
     return errors
 
 
+def check_disassembly_bytes(
+    rows: list[dict[str, str]],
+) -> tuple[list[str], int]:
+    errors = []
+    checked = 0
+    artifact_cache: dict[Path, bytes] = {}
+
+    for row in rows:
+        path = REPO_ROOT / row["asm_path"]
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        artifact_match = ARTIFACT_RE.search(text)
+        if artifact_match is None:
+            continue
+        artifact = REPO_ROOT / artifact_match.group(1)
+        if not artifact.exists():
+            continue
+        if artifact not in artifact_cache:
+            artifact_cache[artifact] = artifact.read_bytes()
+        blob = artifact_cache[artifact]
+
+        for line_number, line in enumerate(text.splitlines(), 1):
+            match = ASM_LINE_RE.match(line)
+            if match is None:
+                continue
+            byte_tokens = []
+            for token in match.group(2).split():
+                if BYTE_TOKEN_RE.fullmatch(token) is None:
+                    break
+                byte_tokens.append(token)
+            if not byte_tokens:
+                errors.append(f"{row['asm_path']}:{line_number}: missing byte listing")
+                continue
+            address = int(match.group(1), 16)
+            expected = bytes.fromhex(" ".join(byte_tokens))
+            actual = blob[address : address + len(expected)]
+            if actual != expected:
+                errors.append(
+                    f"{row['asm_path']}:{line_number}: instruction bytes at "
+                    f"{address:#08x} do not match {artifact.relative_to(REPO_ROOT)}"
+                )
+            checked += 1
+
+    return errors, checked
+
+
 def direct_callees_from_text(text: str) -> list[int]:
     out = []
     for match in DIRECT_CALLEE_RE.finditer(text):
@@ -136,8 +185,16 @@ def direct_callees_from_text(text: str) -> list[int]:
     return out
 
 
-def check_direct_callees(rows: list[dict[str, str]]) -> list[str]:
+def check_direct_callees(
+    rows: list[dict[str, str]], overrides: list[dict[str, str]]
+) -> list[str]:
     indexed = indexed_entries(rows)
+    merged_entries: dict[str, set[int]] = {}
+    for override in overrides:
+        if override["disposition"] == "merged_into_owner":
+            merged_entries.setdefault(override["module"], set()).add(
+                int(override["entry"], 16)
+            )
     errors = []
     for row in rows:
         path = REPO_ROOT / row["asm_path"]
@@ -145,7 +202,10 @@ def check_direct_callees(rows: list[dict[str, str]]) -> list[str]:
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for target in direct_callees_from_text(text):
-            if target not in indexed.get(row["module"], set()):
+            if (
+                target not in indexed.get(row["module"], set())
+                and target not in merged_entries.get(row["module"], set())
+            ):
                 rel = path.relative_to(REPO_ROOT)
                 errors.append(
                     f"{rel}: direct callee {target:#08x} is not indexed in {row['module']}"
@@ -219,7 +279,9 @@ def main() -> int:
     errors = []
     errors.extend(check_index_paths(rows))
     errors.extend(check_hashes(rows))
-    errors.extend(check_direct_callees(rows))
+    disassembly_errors, checked_instructions = check_disassembly_bytes(rows)
+    errors.extend(disassembly_errors)
+    errors.extend(check_direct_callees(rows, overrides))
     errors.extend(check_boundary_overrides(rows, overrides))
 
     if errors:
@@ -231,7 +293,11 @@ def main() -> int:
     for module, count in module_counts(rows):
         print(f"OK: {module}: {count} routine(s)")
     print("OK: routine byte hashes match source artifacts")
-    print("OK: direct callee targets are indexed")
+    print(
+        f"OK: {checked_instructions} listed instruction byte sequence(s) "
+        "match source artifacts"
+    )
+    print("OK: direct callee targets are indexed or reviewed merged entries")
     print(f"OK: {len(overrides)} reviewed boundary override(s)")
     return 0
 
