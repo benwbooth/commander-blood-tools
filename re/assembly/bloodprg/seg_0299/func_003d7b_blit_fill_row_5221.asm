@@ -7,7 +7,7 @@
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: blit_fill_row_5221
-; label_comment: row fill: les di,gs:[0x5221] (display page); cx=gs:[0x5239] (screen width); bx=cx. Fills/copies a full-width scanline into the display page
+; label_comment: display-buffer band fill parallel to 0x003DBF: uses the segment from gs:[0x5221], wrapped row bounds at gs:0x5239/0x523b, AL replicated over EAX, and REP STOSD
 ; incoming: call@0x0016b7->0299:0deb
 ; incoming: call@0x001ec3->0299:0deb
 ; incoming: call@0x001f39->0299:0deb

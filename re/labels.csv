@@ -522,7 +522,7 @@
 "0x002F76","modex_plane_split","mode-X plane/offset split: si=ax & 0xf; eax>>=4. Splits an X coordinate into its plane (low nibble) and byte-offset (high bits) for planar VGA addressing"
 "0x002FBB","blit_page_5221_a","page blit: lds si,gs:[0x5221] (display page); or cx,cx; js (skip negative count). Source-side of a display-page copy (sibling of the 0x3033 blit family)"
 "0x003000","blit_page_5221_b","page blit (sibling of 0x2fbb): lds si,gs:[0x5221]; signed-count guard, reject target 0x302d"
-"0x003D7B","blit_fill_row_5221","row fill: les di,gs:[0x5221] (display page); cx=gs:[0x5239] (screen width); bx=cx. Fills/copies a full-width scanline into the display page"
+"0x003D7B","blit_fill_row_5221","display-buffer band fill parallel to 0x003DBF: uses the segment from gs:[0x5221], wrapped row bounds at gs:0x5239/0x523b, AL replicated over EAX, and REP STOSD"
 "0x003E03","blit_fill_page_5219","back-page fill: les di,gs:[0x5219] (the OTHER framebuffer page - double-buffer back page); cx=gs:[0x5239] width. Full-width fill into the off-screen page"
 "0x003ECE","blit_page_5219_gated","gated back-page blit: les di,gs:[0x5219]; bp=0x3e80; test byte gs:[0x252e],1. Copies into the back page only when the 0x252e enable bit is set"
 "0x003FC7","resource_name_table_access","resource name-table access: ds=fs; dx=0xc04 -> FS:0x0c04, the 16-byte-record resource NAME TABLE (worlds are IDs 22-36). Looks up a resource descriptor by id"

@@ -2834,6 +2834,239 @@ def binary_u32_sqrt_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def graphics_band_fill_vectors(
+    entry: int, pointer_global: int, routine_name: str
+) -> list[dict[str, object]]:
+    routine_hashes = {
+        0x3D7B: "963263cfa7d2c9aade7cbf3e751fa2f8b31d0c5f0799fd2064243714ef262789",
+        0x3DBF: "d096dbe66ed768141f59cac7ca0194e475163b977b3e157a27a9e6146de8a490",
+    }
+    expected_hash = routine_hashes[entry]
+    if hashlib.sha256(EXE[entry : entry + 68]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered 68-byte body changed")
+
+    cases = [
+        ("empty_zero", 0x0000, 0x0000, 0x00),
+        ("empty_nonzero", 0x0011, 0x0011, 0x34),
+        ("one_row", 0x0001, 0x0002, 0xFF),
+        ("middle_band", 0x0025, 0x002A, 0x80),
+        ("full_screen", 0x0000, 0x00C8, 0x12),
+        ("row_offset_wrap", 0x00CD, 0x00CE, 0xA5),
+        ("high_byte_row", 0x0100, 0x0101, 0x3C),
+        ("dword_offset_wrap", 0xFCCC, 0xFCCD, 0x5A),
+        ("count_multiply_wrap", 0x0000, 0x1000, 0x77),
+        ("height_underflow", 0x000A, 0x0009, 0xCC),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    fs_segment = 0x5000
+    display_segment = 0x7000
+    back_segment = 0x9000
+    stack_segment = 0xB000
+    return_address = 0x6F00
+    target_segment = (
+        display_segment if pointer_global == 0x5221 else back_segment
+    )
+    other_segment = back_segment if target_segment == display_segment else display_segment
+    rep_address = entry + 0x3A
+    vectors = []
+
+    for case_index, (name, top, bottom, color) in enumerate(cases):
+        stored_pointer_offset = (0x1234 + case_index * 0x0111) & 0xFFFF
+        row_offset = (
+            (((top & 0x00FF) << 8) | (top >> 8)) + ((top << 6) & 0xFFFF)
+        ) & 0xFFFF
+        height = (bottom - top) & 0xFFFF
+        dword_count = (height * 80) & 0xFFFF
+
+        target_before = bytes(
+            (byte_index * 37 + case_index * 13) & 0xFF
+            for byte_index in range(0x10000)
+        )
+        other_before = bytes(
+            (byte_index * 19 + case_index * 29 + 7) & 0xFF
+            for byte_index in range(0x10000)
+        )
+        target_after = bytearray(target_before)
+        for byte_index in range(dword_count * 4):
+            target_after[(row_offset + byte_index) & 0xFFFF] = color
+
+        pointer_values = {
+            0x5221: (
+                stored_pointer_offset if pointer_global == 0x5221 else 0x5678,
+                display_segment,
+            ),
+            0x5229: (
+                stored_pointer_offset if pointer_global == 0x5229 else 0x9ABC,
+                back_segment,
+            ),
+        }
+        game_data = [
+            (
+                game_segment,
+                offset,
+                struct.pack("<HH", pointer_offset, segment),
+            )
+            for offset, (pointer_offset, segment) in pointer_values.items()
+        ]
+        game_data.extend(
+            [
+                (game_segment, 0x5239, struct.pack("<H", top)),
+                (game_segment, 0x523B, struct.pack("<H", bottom)),
+            ]
+        )
+        decoy_data = []
+        for segment, xor_value in (
+            (data_segment, 0x5A),
+            (extra_segment, 0xA5),
+            (fs_segment, 0x3C),
+        ):
+            decoy_data.extend(
+                [
+                    (segment, 0x5221, bytes([xor_value]) * 4),
+                    (segment, 0x5229, bytes([xor_value ^ 0xFF]) * 4),
+                    (segment, 0x5239, struct.pack("<H", top ^ 0xFFFF)),
+                    (segment, 0x523B, struct.pack("<H", bottom ^ 0x5A5A)),
+                ]
+            )
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A00000 | ((case_index & 1) << 16) | 0xBE00 | color,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if case_index & 1 else 0),
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == rep_address and not phases:
+                phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_EAX),
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                        bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x0400),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (display_segment, 0, target_before if target_segment == display_segment else other_before),
+                (back_segment, 0, target_before if target_segment == back_segment else other_before),
+                *game_data,
+                *decoy_data,
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=500000,
+        )
+
+        pattern = color * 0x01010101
+        expected_phases = [(pattern, dword_count, target_segment, row_offset, False)]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"{entry:#x} {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{entry:#x} {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        actual_target = bytes(machine.mem_read(target_segment * 16, 0x10000))
+        if actual_target != bytes(target_after):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_target, target_after)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{entry:#x} {name}: target mismatch at {mismatch:#x}"
+            )
+        if bytes(machine.mem_read(other_segment * 16, 0x10000)) != other_before:
+            raise AssertionError(f"{entry:#x} {name}: other framebuffer changed")
+        for segment, offset, value in game_data + decoy_data:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(
+                    f"{entry:#x} {name}: control or decoy memory changed"
+                )
+
+        pre_shift = (initial["eax"] & 0xFFFF0000) | (color * 0x0101)
+        shifted = (pre_shift << 16) & 0xFFFFFFFF
+        expected_flags = {
+            "cf": bool(pre_shift & 0x00010000),
+            "pf": True,
+            "zf": shifted == 0,
+            "sf": bool(shifted & 0x80000000),
+            "df": False,
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "routine": routine_name,
+                "color": color,
+                "top": top,
+                "bottom": bottom,
+                "stored_pointer_offset_ignored": stored_pointer_offset,
+                "destination_offset": row_offset,
+                "dword_count": dword_count,
+                "written_byte_count": dword_count * 4,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -26106,6 +26339,16 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_30cd_natural.json", text_width_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3d7b_natural.json",
+        graphics_band_fill_vectors(0x3D7B, 0x5221, "blit_fill_row_5221"),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3dbf_natural.json",
+        graphics_band_fill_vectors(0x3DBF, 0x5229, "back_buffer_fill"),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_41d1_natural.json",

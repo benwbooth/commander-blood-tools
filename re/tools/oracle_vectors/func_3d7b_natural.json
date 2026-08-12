@@ -1,0 +1,182 @@
+[
+  {
+    "name": "empty_zero",
+    "routine": "blit_fill_row_5221",
+    "color": 0,
+    "top": 0,
+    "bottom": 0,
+    "stored_pointer_offset_ignored": 4660,
+    "destination_offset": 0,
+    "dword_count": 0,
+    "written_byte_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "empty_nonzero",
+    "routine": "blit_fill_row_5221",
+    "color": 52,
+    "top": 17,
+    "bottom": 17,
+    "stored_pointer_offset_ignored": 4933,
+    "destination_offset": 5440,
+    "dword_count": 0,
+    "written_byte_count": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "one_row",
+    "routine": "blit_fill_row_5221",
+    "color": 255,
+    "top": 1,
+    "bottom": 2,
+    "stored_pointer_offset_ignored": 5206,
+    "destination_offset": 320,
+    "dword_count": 80,
+    "written_byte_count": 320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false
+    }
+  },
+  {
+    "name": "middle_band",
+    "routine": "blit_fill_row_5221",
+    "color": 128,
+    "top": 37,
+    "bottom": 42,
+    "stored_pointer_offset_ignored": 5479,
+    "destination_offset": 11840,
+    "dword_count": 400,
+    "written_byte_count": 1600,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false
+    }
+  },
+  {
+    "name": "full_screen",
+    "routine": "blit_fill_row_5221",
+    "color": 18,
+    "top": 0,
+    "bottom": 200,
+    "stored_pointer_offset_ignored": 5752,
+    "destination_offset": 0,
+    "dword_count": 16000,
+    "written_byte_count": 64000,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "row_offset_wrap",
+    "routine": "blit_fill_row_5221",
+    "color": 165,
+    "top": 205,
+    "bottom": 206,
+    "stored_pointer_offset_ignored": 6025,
+    "destination_offset": 64,
+    "dword_count": 80,
+    "written_byte_count": 320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false
+    }
+  },
+  {
+    "name": "high_byte_row",
+    "routine": "blit_fill_row_5221",
+    "color": 60,
+    "top": 256,
+    "bottom": 257,
+    "stored_pointer_offset_ignored": 6298,
+    "destination_offset": 16385,
+    "dword_count": 80,
+    "written_byte_count": 320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "dword_offset_wrap",
+    "routine": "blit_fill_row_5221",
+    "color": 90,
+    "top": 64716,
+    "bottom": 64717,
+    "stored_pointer_offset_ignored": 6571,
+    "destination_offset": 65532,
+    "dword_count": 80,
+    "written_byte_count": 320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "count_multiply_wrap",
+    "routine": "blit_fill_row_5221",
+    "color": 119,
+    "top": 0,
+    "bottom": 4096,
+    "stored_pointer_offset_ignored": 6844,
+    "destination_offset": 0,
+    "dword_count": 0,
+    "written_byte_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "df": false
+    }
+  },
+  {
+    "name": "height_underflow",
+    "routine": "blit_fill_row_5221",
+    "color": 204,
+    "top": 10,
+    "bottom": 9,
+    "stored_pointer_offset_ignored": 7117,
+    "destination_offset": 3200,
+    "dword_count": 65456,
+    "written_byte_count": 261824,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false
+    }
+  }
+]

@@ -13,13 +13,14 @@ extern volatile cb_u8 live_palette[768]; /* game data:0x5251 */
 /* First 192 RGB entries of live_palette, addressed through GS by 0x00248B. */
 extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
-extern volatile cb_u8 CB_FAR *graphics_display_buffer; /* GS:0x5221 */
+extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
+        graphics_display_buffer; /* GS:0x5221 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_back_buffer; /* GS:0x5229 */
 extern cb_u32 palette_low_5251_dwords[]; /* caller ES:0x5251 */
 extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
-extern volatile cb_u16 graphics_band_top_row; /* GS:0x5239 */
-extern volatile cb_u16 graphics_band_bottom_row; /* GS:0x523B */
+extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
+extern volatile cb_u16 CB_GAME_DATA graphics_band_bottom_row; /* GS:0x523B */
 extern const cb_u8 square_caps_character_map[]; /* GS:0x7362 */
 extern const cb_u8 square_caps_advance_table[]; /* GS:0x7412 */
 extern const cb_u8 main_font_character_map[]; /* GS:0x7802 */
@@ -71,6 +72,8 @@ int CB_NEAR gfx_scanline_advance(
         bloodprg_gfx_scanline_state *state); /* 0x00AD96 */
 void CB_NEAR back_buffer_copy_from(
         cb_u16 x, cb_u16 y, cb_u16 width); /* 0x00933A */
+void CB_FAR blit_fill_row_5221(cb_u8 color); /* 0x003D7B */
+void CB_FAR back_buffer_fill(cb_u8 color);   /* 0x003DBF */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
@@ -78,6 +81,8 @@ void CB_NEAR back_buffer_copy_from(
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
+#pragma aux blit_fill_row_5221 parm [ax] modify exact []
+#pragma aux back_buffer_fill parm [ax] modify exact []
 #endif
 
 #endif

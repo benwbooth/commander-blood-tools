@@ -1893,6 +1893,28 @@ invariant that every quotient fits 16 bits and executes one `DIV BX`, a fact C
 cannot express directly. Keeping this as natural division preserves the proven
 logic; a hardware-DIV intrinsic can remain a narrow later integration option.
 
+Framebuffer band-fill siblings `0x003D7B` and `0x003DBF` consume color in AL
+and differ only in selecting the display pointer at GS:0x5221 or backbuffer
+pointer at GS:0x5229. Both discard the stored pointer offset, use its segment,
+compute the destination with the binary's wrapping byte-swap-plus-shift row
+formula, compute `(bottom - top) * 80` dwords modulo 16 bits, replicate AL over
+EAX, clear DF, and execute `REP STOSD`. Ten independent direct vectors per
+routine verify GS ownership, segment-only pointer use, zero and full-screen
+bands, row/count wrap, height underflow, dword offset wrap, exact destination
+bytes, preservation, final shift flags, CLD, and far return. This also corrects
+the older single-scanline description of `0x003D7B`; it fills a row band.
+
+The corrected one-to-one candidates use named GAME_DATA controls,
+`FP_SEG`/`MK_FP` to preserve the segment-only framebuffer behavior, explicit
+16-bit arithmetic, and natural dword loops. Their Watcom declarations bind the
+byte-valued parameter through AX and preserve all registers. Open Watcom `-3
+-ox -mm` compiles each actual candidate without warnings to 52
+instructions/114 bytes versus 30/68 original; Turbo C 2.01 medium emits 77
+instructions. Watcom splits each dword into two word stores and emits a scalar
+loop instead of `REP STOSD`. It also relies on the normal clear-DF C ABI instead
+of reproducing the binary's unconditional `CLD`, which remains a narrow
+integration boundary rather than a reason to put assembly into the C logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1918,6 +1940,7 @@ LCS and then mnemonic similarity:
 | `segment_global_gate` | medium, `-ox`, register | 4/3 | 0.2500 | 0.5000 | 0.2500 |
 | `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | medium, `-ox`, register | 35/49 | 0.2286 | 0.6571 | 0.2571 |
+| `graphics_band_fill` | medium, `-ox`, register | 30/52 | 0.1667 | 0.7667 | 0.2000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
