@@ -16,6 +16,8 @@
 #define SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD 0x000cu
 #define SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD 0x000eu
 #define SHIP_3D_FIELD_SELECTOR_PARENT_LINK 0x0011u
+#define SHIP_3D_SOURCE_BITSET_SELECTOR 0x0005u
+#define SHIP_3D_SOURCE_BITSET_KIND 0x0002u
 
 typedef struct ship_3d_projection_context {
     cb_i32 matrix[9];
@@ -66,5 +68,7 @@ extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
 cb_u16 CB_NEAR ship_3d_position_field_resolve(cb_u16 record_offset,
         cb_u16 kind100_compare_word);        /* 0x0061A6 */
+int CB_NEAR ship_3d_object_table_bit_test_full(cb_u16 object_offset,
+        const volatile cb_u8 *bitset_base);  /* 0x006210 */
 
 #endif
