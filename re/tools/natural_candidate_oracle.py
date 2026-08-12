@@ -3274,6 +3274,266 @@ def resource_release_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_free_inner_vectors() -> list[dict[str, object]]:
+    table_segment = 0x3800
+    state_segment = 0x2C00
+    cases = [
+        {
+            "name": "last_resource_removes_without_move",
+            "handle": 2,
+            "resident": [2],
+            "released_size": 0x30,
+            "following_sizes": [],
+            "terminator": 0xFFFF,
+        },
+        {
+            "name": "first_resource_compacts_two_followers",
+            "handle": 2,
+            "resident": [2, 5, 7],
+            "released_size": 0x20,
+            "following_sizes": [0x30, 0x10],
+            "terminator": 0xFFFF,
+        },
+        {
+            "name": "middle_resource_preserves_predecessor",
+            "handle": 4,
+            "resident": [1, 4, 9],
+            "released_size": 0x20,
+            "following_sizes": [0x25],
+            "terminator": 0xFFFF,
+        },
+        {
+            "name": "nonparagraph_size_uses_floor_shift",
+            "handle": 3,
+            "resident": [3, 6],
+            "released_size": 0x2F,
+            "following_sizes": [0x31],
+            "terminator": 0xFFFF,
+        },
+        {
+            "name": "zero_sized_followers_skip_memmove",
+            "handle": 5,
+            "resident": [5, 8, 10],
+            "released_size": 0x40,
+            "following_sizes": [0, 0],
+            "terminator": 0xFFFF,
+        },
+        {
+            "name": "any_signed_negative_word_terminates",
+            "handle": 6,
+            "resident": [3, 6],
+            "released_size": 0x10,
+            "following_sizes": [],
+            "terminator": 0x8000,
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        handle = int(case["handle"])
+        resident = [int(value) for value in case["resident"]]
+        released_index = resident.index(handle)
+        released_size = int(case["released_size"])
+        following = resident[released_index + 1 :]
+        following_sizes = [int(value) for value in case["following_sizes"]]
+        if len(following) != len(following_sizes):
+            raise AssertionError(f"0x529c {name}: bad generated follower sizes")
+        terminator = int(case["terminator"])
+        paragraphs = (released_size >> 4) & 0xFFFF
+        released_segment = 0x5000 + case_index * 0x0100
+        initial_free_bytes = (0x10203040 + case_index * 0x11111111) & 0xFFFFFFFF
+        initial_pool_end = (0x6800 + case_index * 0x31) & 0xFFFF
+
+        table = bytearray(
+            (index * 17 + case_index * 29 + 5) & 0xFF
+            for index in range(0x0A00)
+        )
+
+        def write_entry(
+            entry_handle: int, segment: int, flags: int, size: int
+        ) -> None:
+            struct.pack_into(
+                "<HHI",
+                table,
+                (entry_handle * 8) & 0xFFFF,
+                segment & 0xFFFF,
+                flags & 0xFFFF,
+                size & 0xFFFFFFFF,
+            )
+
+        write_entry(handle, released_segment, 0xA503, released_size)
+        for position, entry_handle in enumerate(resident):
+            if entry_handle == handle:
+                continue
+            if position < released_index:
+                segment = (released_segment - 0x20 * (released_index - position))
+                size = 0x20
+            else:
+                follower_index = position - released_index - 1
+                segment = released_segment + paragraphs + follower_index * 0x20
+                size = following_sizes[follower_index]
+            write_entry(entry_handle, segment, 0xB703, size)
+
+        resident_words = [*resident, terminator]
+        for position, entry_handle in enumerate(resident_words):
+            struct.pack_into("<H", table, 0x0800 + position * 2, entry_handle)
+        expected_table = bytearray(table)
+        released_offset = (handle * 8) & 0xFFFF
+        released_flags = struct.unpack_from(
+            "<H", expected_table, released_offset + 2
+        )[0]
+        struct.pack_into(
+            "<H", expected_table, released_offset + 2, released_flags & 0xFFFC
+        )
+        for entry_handle in following:
+            entry_offset = (entry_handle * 8) & 0xFFFF
+            segment = struct.unpack_from("<H", expected_table, entry_offset)[0]
+            struct.pack_into(
+                "<H", expected_table, entry_offset, (segment - paragraphs) & 0xFFFF
+            )
+        shifted_words = [*resident[:released_index], *following, terminator]
+        for position, entry_handle in enumerate(shifted_words):
+            struct.pack_into(
+                "<H", expected_table, 0x0800 + position * 2, entry_handle
+            )
+
+        moved_bytes = sum(following_sizes) & 0xFFFFFFFF
+        pool = bytearray(
+            (index * 31 + case_index * 23 + 9) & 0xFF for index in range(0x1000)
+        )
+        expected_pool = bytearray(pool)
+        source_linear_offset = paragraphs * 16
+        if moved_bytes != 0:
+            expected_pool[:moved_bytes] = pool[
+                source_linear_offset : source_linear_offset + moved_bytes
+            ]
+
+        initial = {
+            "eax": 0xA1A10000 | handle,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": table_segment,
+            "gs": state_segment,
+        }
+        calls = []
+
+        def inspect_memmove(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x5302:
+                return
+            byte_count = machine.reg_read(UC_X86_REG_EAX)
+            source_segment = machine.reg_read(UC_X86_REG_DS)
+            source_offset = machine.reg_read(UC_X86_REG_SI)
+            destination_segment = machine.reg_read(UC_X86_REG_ES)
+            destination_offset = machine.reg_read(UC_X86_REG_DI)
+            calls.append(
+                {
+                    "byte_count": byte_count,
+                    "source": [source_segment, source_offset],
+                    "destination": [destination_segment, destination_offset],
+                }
+            )
+            payload = bytes(
+                machine.mem_read(
+                    source_segment * 16 + source_offset, byte_count
+                )
+            )
+            machine.mem_write(
+                destination_segment * 16 + destination_offset, payload
+            )
+
+        machine = execute(
+            0x529C,
+            0x5313,
+            initial,
+            [
+                (table_segment, 0, bytes(table)),
+                (
+                    state_segment,
+                    0x0A46,
+                    struct.pack("<I", initial_free_bytes),
+                ),
+                (
+                    state_segment,
+                    0x0A6A,
+                    struct.pack("<H", initial_pool_end),
+                ),
+                (released_segment, 0, bytes(pool)),
+                (0, 0x5302, b"\x90" * 5),
+            ],
+            code_handler=inspect_memmove,
+        )
+
+        expected_calls = []
+        if moved_bytes != 0:
+            expected_calls.append(
+                {
+                    "byte_count": moved_bytes,
+                    "source": [
+                        (released_segment + paragraphs) & 0xFFFF,
+                        0,
+                    ],
+                    "destination": [released_segment, 0],
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x529c {name}: calls={calls}, expected={expected_calls}"
+            )
+        if bytes(machine.mem_read(table_segment * 16, len(table))) != bytes(
+            expected_table
+        ):
+            raise AssertionError(f"0x529c {name}: table/list mismatch")
+        actual_free_bytes = struct.unpack(
+            "<I", machine.mem_read(state_segment * 16 + 0x0A46, 4)
+        )[0]
+        expected_free_bytes = (initial_free_bytes + released_size) & 0xFFFFFFFF
+        if actual_free_bytes != expected_free_bytes:
+            raise AssertionError(
+                f"0x529c {name}: free_bytes={actual_free_bytes:#x}, "
+                f"expected={expected_free_bytes:#x}"
+            )
+        actual_pool_end = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x0A6A, 2)
+        )[0]
+        expected_pool_end = (initial_pool_end - paragraphs) & 0xFFFF
+        if actual_pool_end != expected_pool_end:
+            raise AssertionError(
+                f"0x529c {name}: pool_end={actual_pool_end:#x}, "
+                f"expected={expected_pool_end:#x}"
+            )
+        if bytes(machine.mem_read(released_segment * 16, len(pool))) != bytes(
+            expected_pool
+        ):
+            raise AssertionError(f"0x529c {name}: compacted pool mismatch")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x529c {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "handle": handle,
+                "resident_before": resident_words,
+                "resident_after": shifted_words,
+                "released_size": released_size,
+                "released_paragraphs": paragraphs,
+                "moved_bytes": moved_bytes,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -7761,6 +8021,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5288_natural.json",
         resource_release_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_529c_natural.json",
+        resource_free_inner_vectors(),
         args.check,
     )
     update_vector(

@@ -1032,6 +1032,13 @@ memory manager behind every handle-based asset:
   low two flags at `FS:[handle*8+2]`, then calls the actual free routine at
   `0x010C`. Six direct vectors prove the AX handle ABI, wrapped indexing, flag
   gate, and push-CS/near-call boundary; Watcom emits 26 bytes versus 20 original.
+- `0x04B9:0x010C` (file `0x529C`) = resource pool compactor: clears the loaded
+  bits, returns the released size to `GS:0x0A46`, moves `GS:0x0A6A` down by
+  `floor(size/16)` paragraphs, removes the handle from the resident list at
+  `FS:0x0800`, adjusts every following resource segment, and compacts their
+  bytes with `far_memmove`. Six direct vectors prove first/middle/last removal,
+  accounting, signed-list termination, segment shifts, exact move boundaries,
+  and preservation; Watcom emits 158 bytes versus 120 original.
 - `0x04B9:0x0000` (file `0x5190`) = the core **pool allocator** (NOT a file
   reader): takes a handle id, returns its segment if already resident
   (`flags & 3`); else aligns the size (`ebp` from `entry+4`) to 16 bytes, and if

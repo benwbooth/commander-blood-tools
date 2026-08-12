@@ -33,7 +33,10 @@ typedef struct bloodprg_dos_dta {
 
 #define BLOODPRG_RESOURCE_FLAG_LOADED 0x0003u
 
-extern const volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
+extern volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
+extern volatile cb_u16 resource_resident_handles[256]; /* FS:0x0800 */
+extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */
+extern volatile cb_u16 resource_pool_end_segment; /* GS:0x0A6A */
 extern volatile bloodprg_resource_index_entry resource_index[]; /* DS:0x1FB5 */
 extern volatile cb_u8 resource_variant;             /* game data:0x1FB1 */
 extern volatile cb_u16 resource_requested_id;       /* game data:0x0D80 */

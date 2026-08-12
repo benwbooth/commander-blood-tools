@@ -584,6 +584,22 @@ Watcom relocates the abstract handle table through DS and emits a direct far
 call; exact integration still needs original FS placement and same-segment
 push-CS/near-call lowering.
 
+Resource compactor `0x00529C` has six patched-`far_memmove` direct vectors.
+They prove low-two-bit clearing, 32-bit free-byte accounting, floor(size/16)
+paragraph accounting, first/middle/last resident-list removal, arbitrary signed
+terminators, following-entry segment shifts, moved-size accumulation including
+zero-sized followers, exact compaction pointers/data, and complete register and
+segment preservation.
+
+Open Watcom compiles the actual `0x00529C` candidate without warnings; `-3 -ox
+-mm` emits 69 instructions/158 bytes versus 55/120 original. Standalone 8086/
+286/386 probes emit 71/69/69 instructions and 162/158/158 bytes, while Turbo C
+2.01 emits 95 instructions. The natural implementation preserves the typed
+resource table, resident list, accounting, and conditional `far_memmove` logic.
+Exact integration still needs the original FS/GS placement, `REPNE SCASW`
+search, packed 32-bit register operations, and DS/ES segment construction at
+the far-call boundary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

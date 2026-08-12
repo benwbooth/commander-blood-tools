@@ -1,0 +1,144 @@
+[
+  {
+    "name": "last_resource_removes_without_move",
+    "handle": 2,
+    "resident_before": [
+      2,
+      65535
+    ],
+    "resident_after": [
+      65535
+    ],
+    "released_size": 48,
+    "released_paragraphs": 3,
+    "moved_bytes": 0,
+    "calls": []
+  },
+  {
+    "name": "first_resource_compacts_two_followers",
+    "handle": 2,
+    "resident_before": [
+      2,
+      5,
+      7,
+      65535
+    ],
+    "resident_after": [
+      5,
+      7,
+      65535
+    ],
+    "released_size": 32,
+    "released_paragraphs": 2,
+    "moved_bytes": 64,
+    "calls": [
+      {
+        "byte_count": 64,
+        "source": [
+          20738,
+          0
+        ],
+        "destination": [
+          20736,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "middle_resource_preserves_predecessor",
+    "handle": 4,
+    "resident_before": [
+      1,
+      4,
+      9,
+      65535
+    ],
+    "resident_after": [
+      1,
+      9,
+      65535
+    ],
+    "released_size": 32,
+    "released_paragraphs": 2,
+    "moved_bytes": 37,
+    "calls": [
+      {
+        "byte_count": 37,
+        "source": [
+          20994,
+          0
+        ],
+        "destination": [
+          20992,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nonparagraph_size_uses_floor_shift",
+    "handle": 3,
+    "resident_before": [
+      3,
+      6,
+      65535
+    ],
+    "resident_after": [
+      6,
+      65535
+    ],
+    "released_size": 47,
+    "released_paragraphs": 2,
+    "moved_bytes": 49,
+    "calls": [
+      {
+        "byte_count": 49,
+        "source": [
+          21250,
+          0
+        ],
+        "destination": [
+          21248,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "zero_sized_followers_skip_memmove",
+    "handle": 5,
+    "resident_before": [
+      5,
+      8,
+      10,
+      65535
+    ],
+    "resident_after": [
+      8,
+      10,
+      65535
+    ],
+    "released_size": 64,
+    "released_paragraphs": 4,
+    "moved_bytes": 0,
+    "calls": []
+  },
+  {
+    "name": "any_signed_negative_word_terminates",
+    "handle": 6,
+    "resident_before": [
+      3,
+      6,
+      32768
+    ],
+    "resident_after": [
+      3,
+      32768
+    ],
+    "released_size": 16,
+    "released_paragraphs": 1,
+    "moved_bytes": 0,
+    "calls": []
+  }
+]
