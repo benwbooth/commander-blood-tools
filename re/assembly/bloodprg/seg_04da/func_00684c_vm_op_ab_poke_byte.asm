@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_ab_poke_byte
-; label_comment: VM opcode 0xAB: lodsb al value; bx=[si] address; [bx]=al; si+=2. Writes a byte to an arbitrary DS address given by the operand - a set-variable/poke op
+; label_comment: VM opcode 0xAB: consume a byte value and inline near pointer, write the value through that pointer in DS, and advance SI by three bytes total
 ; incoming: vm_opcode_handlers:opcode_0xab
 ; byte_count: 9
 ; boundary: cfg_blocks_1_terminals_1

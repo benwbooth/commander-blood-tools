@@ -1110,6 +1110,24 @@ Turbo C 2.01 medium emits 25 instructions. Exact integration therefore needs
 fixed GS placement and the original string-load/shared-return codegen; the
 natural C logic and data flow require no register or memory emulation.
 
+VM byte-poke handler `0x00684C` has ten direct vectors covering zero, high-bit,
+and maximum byte values; aligned and unaligned pointers; a target at
+`DS:FFFF`; an operand word spanning the segment end; and final cursor additions
+that exercise carry, zero, auxiliary carry, sign, and overflow. Two aliasing
+cases prove the target pointer is resolved before the write when it points at
+the source value or its own low pointer byte. The vectors also prove DS source
+and target ownership, AX/BX/SI outputs, preservation, final ADD flags, and near
+return.
+
+The direct-return natural candidate compiles without warnings under Open Watcom
+`-3 -ox -mm` to 6 instructions/11 bytes versus 5/9 original. Watcom expands
+`LODSB` into `MOV AL,[SI]` plus `INC SI`; its target load, byte store,
+`ADD SI,2`, and `RET` are byte-for-byte identical to the remaining original
+instructions. The expansion does not alter final behavior because the final ADD
+replaces INC's arithmetic flags. Turbo C 2.01 medium emits 20 instructions under
+its stack ABI. Exact codegen requires only LODSB selection, not a different C
+algorithm or an emulation layer.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1152,6 +1170,7 @@ LCS and then mnemonic similarity:
 | `vm_presentation_register_set` | medium, `-ox`, register | 5/7 | 0.2000 | 0.6000 | 0.2000 |
 | `vm_load_string` | medium, `-ox`, register | 29/38 | 0.0690 | 0.8621 | 0.1034 |
 | `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
+| `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

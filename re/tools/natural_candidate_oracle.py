@@ -9891,6 +9891,213 @@ def vm_conditional_jump_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_poke_byte_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("zero_value", 0x3400, 0x00, 0x2100),
+        ("maximum_value_and_target", 0x3501, 0xFF, 0xFFFF),
+        ("high_bit_value", 0x3600, 0x80, 0x2101),
+        ("unaligned_script_and_target", 0x3701, 0x5A, 0x2223),
+        ("target_is_value_byte", 0x3800, 0x6C, 0x3800),
+        ("target_is_operand_low_byte", 0x3900, 0xA7, 0x3901),
+        ("operand_word_crosses_segment_end", 0xFFFE, 0x7E, 0x2400),
+        ("cursor_add_wraps_to_zero", 0xFFFD, 0x35, 0x2500),
+        ("cursor_add_signed_overflow", 0x7FFD, 0xC3, 0x2600),
+        ("cursor_add_auxiliary_carry", 0x000E, 0x19, 0x2700),
+    ]
+    vectors = []
+
+    for name, start, value, target in cases:
+        script = bytes([value]) + struct.pack("<H", target)
+        script_offsets = [start + index for index in range(len(script))]
+        script_by_offset = dict(zip(script_offsets, script, strict=True))
+        target_before = script_by_offset.get(target, value ^ 0xC3)
+        es_target_decoy = target_before ^ 0x55
+        gs_target_decoy = target_before ^ 0xAA
+        ss_target_decoy = target_before ^ 0x3C
+        memory = []
+
+        for offset, byte in zip(script_offsets, script, strict=True):
+            memory.append((data_segment, offset, bytes([byte])))
+            memory.append((extra_segment, offset, b"\x5a"))
+            memory.append((game_segment, offset, b"\xa5"))
+            memory.append((stack_segment, offset, b"\x3c"))
+        if target not in script_by_offset:
+            memory.append((data_segment, target, bytes([target_before])))
+        memory.extend(
+            [
+                (extra_segment, target, bytes([es_target_decoy])),
+                (game_segment, target, bytes([gs_target_decoy])),
+                (stack_segment, target, bytes([ss_target_decoy])),
+            ]
+        )
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x684D, 0x684F, 0x6851):
+                return
+            phases.append(
+                (
+                    address,
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_BX),
+                    machine.reg_read(UC_X86_REG_SI),
+                    machine.mem_read(data_segment * 16 + target, 1)[0],
+                )
+            )
+
+        machine = execute(
+            0x684C,
+            0x6854,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        operand_offset = (start + 1) & 0xFFFF
+        final_script_offset = (start + 3) & 0xFFFF
+        ax_after_value = (initial["eax"] & 0xFF00) | value
+        expected_phases = [
+            (
+                0x684D,
+                ax_after_value,
+                initial["ebx"] & 0xFFFF,
+                operand_offset,
+                target_before,
+            ),
+            (
+                0x684F,
+                ax_after_value,
+                target,
+                operand_offset,
+                target_before,
+            ),
+            (
+                0x6851,
+                ax_after_value,
+                target,
+                operand_offset,
+                value,
+            ),
+        ]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x684c {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFFFF00) | value
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | target
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | final_script_offset
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x684c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_target = machine.mem_read(data_segment * 16 + target, 1)[0]
+        if actual_target != value:
+            raise AssertionError(
+                f"0x684c {name}: target={actual_target:#x}, expected={value:#x}"
+            )
+        target_decoys = [
+            (extra_segment, es_target_decoy),
+            (game_segment, gs_target_decoy),
+            (stack_segment, ss_target_decoy),
+        ]
+        for segment, expected in target_decoys:
+            actual = machine.mem_read(segment * 16 + target, 1)[0]
+            if actual != expected:
+                raise AssertionError(f"0x684c {name}: target segment decoy changed")
+
+        for offset, byte in zip(script_offsets, script, strict=True):
+            expected = value if offset == target else byte
+            actual = machine.mem_read(data_segment * 16 + offset, 1)[0]
+            if actual != expected:
+                raise AssertionError(
+                    f"0x684c {name}: script byte {offset:#x}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+            if offset == target:
+                continue
+            decoys = [
+                (extra_segment, 0x5A),
+                (game_segment, 0xA5),
+                (stack_segment, 0x3C),
+            ]
+            for segment, expected_decoy in decoys:
+                actual_decoy = machine.mem_read(segment * 16 + offset, 1)[0]
+                if actual_decoy != expected_decoy:
+                    raise AssertionError(f"0x684c {name}: script decoy changed")
+
+        before_add = operand_offset
+        full_sum = before_add + 2
+        expected_flags = {
+            "cf": full_sum > 0xFFFF,
+            "pf": (final_script_offset & 0xFF).bit_count() % 2 == 0,
+            "af": (before_add & 0x0F) + 2 > 0x0F,
+            "zf": final_script_offset == 0,
+            "sf": bool(final_script_offset & 0x8000),
+            "of": bool(
+                (~(before_add ^ 2) & (before_add ^ final_script_offset)) & 0x8000
+            ),
+        }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x684c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6854] != 0xC3:
+            raise AssertionError("0x684c: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "value": value,
+                "target_offset": target,
+                "target_before": target_before,
+                "final_script_offset": final_script_offset,
+                "self_modifying": target in script_by_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -14546,6 +14753,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6830_natural.json",
         vm_conditional_jump_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_684c_natural.json",
+        vm_poke_byte_vectors(),
         args.check,
     )
     update_vector(

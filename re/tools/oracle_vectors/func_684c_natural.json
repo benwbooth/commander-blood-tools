@@ -1,0 +1,172 @@
+[
+  {
+    "name": "zero_value",
+    "start_offset": 13312,
+    "value": 0,
+    "target_offset": 8448,
+    "target_before": 195,
+    "final_script_offset": 13315,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_value_and_target",
+    "start_offset": 13569,
+    "value": 255,
+    "target_offset": 65535,
+    "target_before": 60,
+    "final_script_offset": 13572,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bit_value",
+    "start_offset": 13824,
+    "value": 128,
+    "target_offset": 8449,
+    "target_before": 67,
+    "final_script_offset": 13827,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unaligned_script_and_target",
+    "start_offset": 14081,
+    "value": 90,
+    "target_offset": 8739,
+    "target_before": 153,
+    "final_script_offset": 14084,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "target_is_value_byte",
+    "start_offset": 14336,
+    "value": 108,
+    "target_offset": 14336,
+    "target_before": 108,
+    "final_script_offset": 14339,
+    "self_modifying": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "target_is_operand_low_byte",
+    "start_offset": 14592,
+    "value": 167,
+    "target_offset": 14593,
+    "target_before": 1,
+    "final_script_offset": 14595,
+    "self_modifying": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "operand_word_crosses_segment_end",
+    "start_offset": 65534,
+    "value": 126,
+    "target_offset": 9216,
+    "target_before": 189,
+    "final_script_offset": 1,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_add_wraps_to_zero",
+    "start_offset": 65533,
+    "value": 53,
+    "target_offset": 9472,
+    "target_before": 246,
+    "final_script_offset": 0,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_add_signed_overflow",
+    "start_offset": 32765,
+    "value": 195,
+    "target_offset": 9728,
+    "target_before": 0,
+    "final_script_offset": 32768,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "cursor_add_auxiliary_carry",
+    "start_offset": 14,
+    "value": 25,
+    "target_offset": 9984,
+    "target_before": 218,
+    "final_script_offset": 17,
+    "self_modifying": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
