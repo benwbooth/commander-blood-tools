@@ -21,6 +21,7 @@ import csv
 import json
 import re
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 
@@ -54,6 +55,11 @@ ASM_SKIP_PREFIXES = (
 
 INSN_RE = re.compile(
     r"^([0-9a-fA-F]{6}):\s+((?:[0-9a-fA-F]{2}\s+)+)\s*([A-Za-z][A-Za-z0-9]*)\s*(.*)$"
+)
+
+NUMERIC_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:0x[0-9a-f]+|[0-9a-f]+h|\d+)(?![A-Za-z0-9_])",
+    re.IGNORECASE,
 )
 
 
@@ -106,6 +112,71 @@ def read_original_shape(path: Path) -> dict[str, object]:
     }
 
 
+def read_original_routine(path: Path) -> dict[str, object]:
+    meta: dict[str, str] = {}
+    instructions: list[str] = []
+    byte_lines: list[str] = []
+
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("; "):
+            body = line[2:]
+            if ": " in body:
+                key, value = body.split(": ", 1)
+                meta[key] = value
+            continue
+        match = INSN_RE.match(line)
+        if not match:
+            continue
+        _, byte_text, mnemonic, op_str = match.groups()
+        instructions.append(format_instruction(mnemonic, op_str))
+        byte_lines.append(" ".join(byte_text.split()).lower())
+
+    return {
+        "meta": meta,
+        "instructions": instructions,
+        "mnemonics": [mnemonic_for(insn) for insn in instructions],
+        "byte_lines": byte_lines,
+    }
+
+
+def format_instruction(mnemonic: str, op_str: str) -> str:
+    op_str = " ".join(op_str.split())
+    return f"{mnemonic.lower()} {op_str}".strip()
+
+
+def mnemonic_for(instruction: str) -> str:
+    return instruction.split(" ", 1)[0]
+
+
+def canonicalize_instruction(instruction: str) -> str:
+    instruction = instruction.split(";", 1)[0].strip().lower()
+    instruction = re.sub(r"\s+", " ", instruction)
+    instruction = NUMERIC_RE.sub("#", instruction)
+    return instruction
+
+
+def lcs_length(left: list[str], right: list[str]) -> int:
+    if not left or not right:
+        return 0
+    previous = [0] * (len(right) + 1)
+    for left_item in left:
+        current = [0]
+        for col, right_item in enumerate(right, start=1):
+            if left_item == right_item:
+                current.append(previous[col - 1] + 1)
+            else:
+                current.append(max(previous[col], current[-1]))
+        previous = current
+    return previous[-1]
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def normalize_asm_text(text: str) -> list[str]:
     out: list[str] = []
     for raw in text.splitlines():
@@ -119,6 +190,26 @@ def normalize_asm_text(text: str) -> list[str]:
         line = re.sub(r"\s+", " ", line)
         out.append(line)
     return out
+
+
+def read_compiler_asm(path: Path) -> dict[str, object]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    parsed: list[str] = []
+    byte_lines: list[str] = []
+    for line in text.splitlines():
+        match = INSN_RE.match(line.strip())
+        if not match:
+            continue
+        _, byte_text, mnemonic, op_str = match.groups()
+        parsed.append(format_instruction(mnemonic, op_str))
+        byte_lines.append(" ".join(byte_text.split()).lower())
+
+    instructions = parsed if parsed else normalize_asm_text(text)
+    return {
+        "instructions": instructions,
+        "mnemonics": [mnemonic_for(insn) for insn in instructions],
+        "byte_lines": byte_lines,
+    }
 
 
 def expand_placeholders(value: str, row: dict[str, str], compiler: dict[str, object], outdir: Path) -> str:
@@ -294,6 +385,115 @@ def run_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
     return status
 
 
+def compare_sequences(original: list[str], compiled: list[str]) -> dict[str, object]:
+    original_canon = [canonicalize_instruction(insn) for insn in original]
+    compiled_canon = [canonicalize_instruction(insn) for insn in compiled]
+    original_mnemonics = [mnemonic_for(insn) for insn in original]
+    compiled_mnemonics = [mnemonic_for(insn) for insn in compiled]
+
+    instruction_lcs = lcs_length(original_canon, compiled_canon)
+    mnemonic_lcs = lcs_length(original_mnemonics, compiled_mnemonics)
+    mnemonic_overlap = sum(
+        (Counter(original_mnemonics) & Counter(compiled_mnemonics)).values()
+    )
+    original_len = len(original_canon)
+    compiled_len = len(compiled_canon)
+
+    return {
+        "original_instruction_count": original_len,
+        "compiled_instruction_count": compiled_len,
+        "instruction_lcs": instruction_lcs,
+        "instruction_lcs_ratio": round(instruction_lcs / original_len, 4)
+        if original_len
+        else 0.0,
+        "mnemonic_lcs": mnemonic_lcs,
+        "mnemonic_lcs_ratio": round(mnemonic_lcs / original_len, 4)
+        if original_len
+        else 0.0,
+        "mnemonic_multiset_overlap": mnemonic_overlap,
+        "mnemonic_multiset_overlap_ratio": round(mnemonic_overlap / original_len, 4)
+        if original_len
+        else 0.0,
+    }
+
+
+def compare_bytes(original: list[str], compiled: list[str]) -> dict[str, object]:
+    byte_lcs = lcs_length(original, compiled)
+    original_len = len(original)
+    compiled_len = len(compiled)
+    return {
+        "original_byte_line_count": original_len,
+        "compiled_byte_line_count": compiled_len,
+        "byte_line_lcs": byte_lcs,
+        "byte_line_lcs_ratio": round(byte_lcs / original_len, 4)
+        if original_len
+        else 0.0,
+        "has_compiled_bytes": bool(compiled_len),
+    }
+
+
+def compare_outputs(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
+    out_dir = Path(args.out_dir)
+    selected_samples = set(args.sample or [])
+    selected_compilers = set(args.compiler or [])
+    results: list[dict[str, object]] = []
+
+    if selected_samples:
+        known = {row["sample"] for row in rows}
+        missing = sorted(selected_samples.difference(known))
+        if missing:
+            raise SystemExit(f"unknown sample(s): {', '.join(missing)}")
+
+    for row in rows:
+        if selected_samples and row["sample"] not in selected_samples:
+            continue
+        asm_path = asm_path_for_target(row["target_routine"])
+        if asm_path is None:
+            continue
+        original = read_original_routine(asm_path)
+        sample_root = out_dir
+        if not sample_root.exists():
+            continue
+
+        for compiler_dir in sorted(p for p in sample_root.iterdir() if p.is_dir()):
+            compiler_name = compiler_dir.name
+            if selected_compilers and compiler_name not in selected_compilers:
+                continue
+            sample_dir = compiler_dir / row["sample"]
+            if not sample_dir.exists():
+                continue
+            asm_outputs = sorted(sample_dir.glob("*.normalized.asm"))
+            if not asm_outputs:
+                asm_outputs = sorted(sample_dir.glob("*.asm"))
+            for compiled_path in asm_outputs:
+                compiled = read_compiler_asm(compiled_path)
+                seq_scores = compare_sequences(
+                    original["instructions"], compiled["instructions"]
+                )
+                byte_scores = compare_bytes(
+                    original["byte_lines"], compiled["byte_lines"]
+                )
+                results.append(
+                    {
+                        "sample": row["sample"],
+                        "compiler": compiler_name,
+                        "compiled_asm": display_path(compiled_path),
+                        "target_routine": row["target_routine"],
+                        "original_asm": display_path(asm_path),
+                        **seq_scores,
+                        **byte_scores,
+                    }
+                )
+
+    print(json.dumps(results, indent=2))
+    if not results:
+        print(
+            f"WARN: no compiler outputs found under {out_dir}",
+            file=sys.stderr,
+        )
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="validate corpus files")
@@ -302,8 +502,10 @@ def main() -> int:
     parser.add_argument("--print-config-template", action="store_true")
     parser.add_argument("--config", help="JSON compiler runner config")
     parser.add_argument("--run", action="store_true", help="run configured compilers")
+    parser.add_argument("--compare", action="store_true", help="compare compiler outputs with target routines")
     parser.add_argument("--dry-run", action="store_true", help="print configured compiler commands")
     parser.add_argument("--sample", action="append", help="run only this sample; repeatable")
+    parser.add_argument("--compiler", action="append", help="compare only this compiler output directory; repeatable")
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT))
     args = parser.parse_args()
 
@@ -330,6 +532,9 @@ def main() -> int:
         if not args.config:
             raise SystemExit("--config is required with --run or --dry-run")
         return run_compilers(args, rows)
+    if args.compare:
+        ran_action = True
+        return compare_outputs(args, rows)
 
     if not ran_action:
         parser.print_help()

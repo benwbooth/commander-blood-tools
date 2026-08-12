@@ -29,5 +29,19 @@ Then run:
 python3 re/tools/compiler_corpus.py --config path/to/config.json --run
 ```
 
+After compiler listings exist, compare them against the recovered assembly
+oracles:
+
+```sh
+python3 re/tools/compiler_corpus.py --compare
+```
+
+The comparator scans `re/compiler_corpus/out/<compiler>/<sample>/` for
+`*.normalized.asm` files produced by `--run`, falling back to `*.asm` listings.
+It emits JSON metrics for ordered instruction matches, ordered mnemonic
+matches, mnemonic multiset overlap, and byte-line matches when the listing
+includes bytes. These scores are evidence for a compiler/codegen shape; they do
+not by themselves accept recovered source.
+
 Do not check generated compiler output into git. The default output directory is
 `re/compiler_corpus/out/`, which is ignored.
