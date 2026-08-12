@@ -14,9 +14,10 @@ sys.path[:] = [
 import argparse
 import json
 import struct
+from collections.abc import Callable
 from pathlib import Path
 
-from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, Uc
+from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_MODE_16, Uc
 from unicorn.x86_const import (
     UC_X86_REG_AX,
     UC_X86_REG_BP,
@@ -60,6 +61,7 @@ def execute(
     return_address: int,
     registers: dict[str, int],
     memory: list[tuple[int, int, bytes]],
+    interrupt_handler: Callable[[Uc, int], None] | None = None,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -81,6 +83,14 @@ def execute(
             machine.emu_stop()
 
     machine.hook_add(UC_HOOK_CODE, stop_at_return)
+    if interrupt_handler is not None:
+
+        def handle_interrupt(
+            machine: Uc, number: int, _data: object
+        ) -> None:
+            interrupt_handler(machine, number)
+
+        machine.hook_add(UC_HOOK_INTR, handle_interrupt)
     machine.emu_start(entry, return_address + 1, count=20000)
     if not returned:
         raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
@@ -1634,6 +1644,192 @@ def presentation_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def close_file_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("zero_handle_zero_reserved", 0x0000, 0x0000, None),
+        ("zero_handle", 0x0000, 0x1234, None),
+        ("reserved_handle", 0x1234, 0x1234, None),
+        ("reserved_max_handle", 0xFFFF, 0xFFFF, None),
+        ("close_success", 0x0005, 0x1234, None),
+        ("close_failure", 0x2468, 0x1234, 0x0006),
+        ("close_max_handle", 0xFFFF, 0x0000, None),
+    ]
+    initial_bounds = (0x1111, 0x2222, 0x3333, 0x4444)
+    vectors = []
+
+    for case_index, (name, handle, reserved_handle, dos_error) in enumerate(cases):
+        initial_ax = (0x1200 + case_index * 0x111 + 0x5A) & 0xFFFF
+        initial = {
+            "ax": initial_ax,
+            "bx": 0xA55A,
+            "cx": 0xB66B,
+            "dx": 0xC77C,
+            "si": 0xD88D,
+            "di": 0xE99E,
+            "bp": 0xFAAF,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "gs": 0x4000,
+            "flags": 0x0ED7,
+        }
+        interrupts = []
+
+        def interrupt_handler(
+            machine: Uc,
+            number: int,
+            case_name: str = name,
+            calls: list[dict[str, int]] = interrupts,
+            error: int | None = dos_error,
+        ) -> None:
+            if number != 0x21 or machine.reg_read(UC_X86_REG_AX) >> 8 != 0x3E:
+                raise AssertionError(
+                    f"0xA141 {case_name} invoked unexpected INT {number:#x}"
+                )
+            calls.append(
+                {
+                    "number": number,
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "stored_handle": struct.unpack(
+                        "<H", machine.mem_read(data_segment * 16 + 0x0D5B, 2)
+                    )[0],
+                }
+            )
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            if error is None:
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            else:
+                machine.reg_write(UC_X86_REG_AX, error)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+
+        machine = execute(
+            0xA141,
+            0xA15E,
+            initial,
+            [
+                (data_segment, 0x0A86, struct.pack("<H", reserved_handle)),
+                (data_segment, 0x0D5B, struct.pack("<H", handle)),
+                (data_segment, 0x0D60, struct.pack("<4H", *initial_bounds)),
+                (initial["gs"], 0x0A86, struct.pack("<H", 0xABCD)),
+                (initial["gs"], 0x0D5B, struct.pack("<H", 0xBCDE)),
+                (
+                    initial["gs"],
+                    0x0D60,
+                    struct.pack("<4H", 0x5555, 0x6666, 0x7777, 0x8888),
+                ),
+            ],
+            interrupt_handler,
+        )
+
+        closed = handle != 0 and handle != reserved_handle
+        expected_bounds = (
+            (0x0000, 0x0000, 0xFFFF, 0xFFFF) if closed else initial_bounds
+        )
+        observed_handle = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0D5B, 2)
+        )[0]
+        observed_bounds = struct.unpack(
+            "<4H", machine.mem_read(data_segment * 16 + 0x0D60, 8)
+        )
+        if observed_handle != (0 if closed else handle):
+            raise AssertionError(f"0xA141 {name} produced an unexpected stored handle")
+        if observed_bounds != expected_bounds:
+            raise AssertionError(
+                f"0xA141 {name} bounds={observed_bounds}, expected={expected_bounds}"
+            )
+        if len(interrupts) != int(closed):
+            raise AssertionError(f"0xA141 {name} produced unexpected interrupt count")
+        if closed and interrupts != [
+            {"number": 0x21, "handle": handle, "stored_handle": 0}
+        ]:
+            raise AssertionError(f"0xA141 {name} violated DOS-close ordering")
+
+        expected_ax = initial_ax
+        if closed:
+            expected_ax = (
+                dos_error if dos_error is not None else 0x3E00 | (initial_ax & 0xFF)
+            )
+        expected_registers = {
+            "ax": expected_ax,
+            "bx": handle,
+            "cx": 0,
+            "dx": initial["dx"],
+            "si": initial["si"],
+            "di": initial["di"],
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": initial["es"],
+            "gs": initial["gs"],
+        }
+        for register, value in expected_registers.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0xA141 {name} {register}={actual_register:#x}, expected={value:#x}"
+                )
+
+        gs_decoys = (
+            struct.unpack(
+                "<H", machine.mem_read(initial["gs"] * 16 + 0x0A86, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(initial["gs"] * 16 + 0x0D5B, 2)
+            )[0],
+            struct.unpack(
+                "<4H", machine.mem_read(initial["gs"] * 16 + 0x0D60, 8)
+            ),
+        )
+        if gs_decoys != (
+            0xABCD,
+            0xBCDE,
+            (0x5555, 0x6666, 0x7777, 0x8888),
+        ):
+            raise AssertionError(f"0xA141 {name} accessed GS-owned decoy data")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "carry": (flags >> 0) & 1,
+            "parity": (flags >> 2) & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "overflow": (flags >> 11) & 1,
+            "interrupt": (flags >> 9) & 1,
+            "direction": (flags >> 10) & 1,
+        }
+        expected_flags = {
+            "carry": 0,
+            "parity": 1,
+            "zero": 1,
+            "sign": 0,
+            "overflow": 0,
+            "interrupt": 1,
+            "direction": 1,
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xA141 {name} flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "initial_handle": handle,
+                "reserved_handle": reserved_handle,
+                "dos_error": dos_error,
+                "closed": closed,
+                "interrupts": interrupts,
+                "result_handle": observed_handle,
+                "result_bounds": list(observed_bounds),
+                "result_registers": expected_registers,
+                "final_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1700,6 +1896,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9f53_natural.json",
         presentation_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a141_natural.json",
+        close_file_vectors(),
         args.check,
     )
     return 0

@@ -4,7 +4,9 @@
 #include "bloodprg_common.h"
 
 extern volatile cb_u16 list_d8c_base_segment;      /* GS:0x0A7E */
+extern volatile cb_u16 list_d8c_reserved_file_handle; /* game data:0x0A86 */
 extern volatile cb_u8 state_flag_b17;              /* GS:0x0B17 */
+extern volatile cb_u16 list_d8c_file_handle;       /* game data:0x0D5B */
 extern volatile cb_u8 list_d8c_state_byte;         /* game data:0x0D5F */
 extern volatile cb_u16 list_d8c_read_wrap_index;   /* DS:0x0D60 */
 extern volatile cb_u16 list_d8c_wrap_count;        /* GS:0x0D62 */

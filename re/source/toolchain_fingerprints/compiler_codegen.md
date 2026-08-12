@@ -115,6 +115,22 @@ bytes exactly. Open Watcom 1.9 also emits 21 bytes, but reverses the branch and
 tail-jumps to the close helper instead of retaining the original call/return
 shape.
 
+For `0x00A141`, seven direct-execution cases cover zero and reserved-handle
+skips, successful and failed DOS closes, the clear-before-interrupt ordering,
+the unconditional post-close bounds reset, DS versus GS decoys, every register
+and segment effect, and the final `XOR CX,CX` flags. Open Watcom 1.9 targeting
+8086 in the medium model (`-0 -ox -mm`) keeps the handle in BX, emits the direct
+`INT 21h` close and bounds-reset call, and retains 10 of the original 11
+mnemonics in order. The ABI-honest source emits 14 instructions and 31 bytes
+versus the original 11 and 30: it saves/restores ES, uses equivalent `TEST BX,BX`
+instead of `OR BX,BX`, and lowers the zero assignment through `XOR AX,AX` plus a
+store. The last choice changes AL before the interrupt, so the build is not
+classified as exact. An exploratory 29-byte form omitted the ES save only after
+declaring ES clobbered at the C boundary; that declaration was rejected because
+the original preserves ES. Turbo C 2.01 medium preserves the natural branch and
+direct zero-store shape but saves SI and calls the far CRT `close` routine rather
+than issuing the interrupt inline.
+
 For `0x009F53`, eight direct-execution cases cover the inactive gate, both
 redraw outcomes, low-byte versus high-byte ship flags, nonzero and zero queue
 counts, the reserved-handle close path, request-bit preservation, and final

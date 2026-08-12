@@ -1,0 +1,279 @@
+[
+  {
+    "name": "zero_handle_zero_reserved",
+    "initial_handle": 0,
+    "reserved_handle": 0,
+    "dos_error": null,
+    "closed": false,
+    "interrupts": [],
+    "result_handle": 0,
+    "result_bounds": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "result_registers": {
+      "ax": 4698,
+      "bx": 0,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "zero_handle",
+    "initial_handle": 0,
+    "reserved_handle": 4660,
+    "dos_error": null,
+    "closed": false,
+    "interrupts": [],
+    "result_handle": 0,
+    "result_bounds": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "result_registers": {
+      "ax": 4971,
+      "bx": 0,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "reserved_handle",
+    "initial_handle": 4660,
+    "reserved_handle": 4660,
+    "dos_error": null,
+    "closed": false,
+    "interrupts": [],
+    "result_handle": 4660,
+    "result_bounds": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "result_registers": {
+      "ax": 5244,
+      "bx": 4660,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "reserved_max_handle",
+    "initial_handle": 65535,
+    "reserved_handle": 65535,
+    "dos_error": null,
+    "closed": false,
+    "interrupts": [],
+    "result_handle": 65535,
+    "result_bounds": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "result_registers": {
+      "ax": 5517,
+      "bx": 65535,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "close_success",
+    "initial_handle": 5,
+    "reserved_handle": 4660,
+    "dos_error": null,
+    "closed": true,
+    "interrupts": [
+      {
+        "number": 33,
+        "handle": 5,
+        "stored_handle": 0
+      }
+    ],
+    "result_handle": 0,
+    "result_bounds": [
+      0,
+      0,
+      65535,
+      65535
+    ],
+    "result_registers": {
+      "ax": 16030,
+      "bx": 5,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "close_failure",
+    "initial_handle": 9320,
+    "reserved_handle": 4660,
+    "dos_error": 6,
+    "closed": true,
+    "interrupts": [
+      {
+        "number": 33,
+        "handle": 9320,
+        "stored_handle": 0
+      }
+    ],
+    "result_handle": 0,
+    "result_bounds": [
+      0,
+      0,
+      65535,
+      65535
+    ],
+    "result_registers": {
+      "ax": 6,
+      "bx": 9320,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "close_max_handle",
+    "initial_handle": 65535,
+    "reserved_handle": 0,
+    "dos_error": null,
+    "closed": true,
+    "interrupts": [
+      {
+        "number": 33,
+        "handle": 65535,
+        "stored_handle": 0
+      }
+    ],
+    "result_handle": 0,
+    "result_bounds": [
+      0,
+      0,
+      65535,
+      65535
+    ],
+    "result_registers": {
+      "ax": 16064,
+      "bx": 65535,
+      "cx": 0,
+      "dx": 51068,
+      "si": 55437,
+      "di": 59806,
+      "bp": 64175,
+      "sp": 65280,
+      "ds": 8192,
+      "es": 12288,
+      "gs": 16384
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  }
+]
