@@ -477,7 +477,7 @@
 "0x009C9E","project_y_center_64","perspective-project Y: sar eax,7; cdq; idiv ecx (divide by depth); add ax,0x64 (center_y=100). Screen-Y projection (sibling of 0x9ad9), converts 3D dot/depth into a screen row"
 "0x009CF7","project_tail_9bba","projection epilogue: jmp 0x9bba then restore si/es/di - shared tail of the perspective-projection routines"
 "0x00A117","flag_gated_2751","flag-gated routine: test byte gs:[0x2751],1; if set jump, else ds=es and continue. Branches on the 0x2751 state bit (a render/update enable flag)"
-"0x00A634","flag_test_b17","flag test: ds=ax; test byte [0xb17],1. Reads the 0xb17 state bit (a mode/enable flag) and restores ds"
+"0x00A634","flag_test_b17","GS:0x0B17 bit-0 flag test; preserves all registers and DS, while the sole caller consumes ZF with JE"
 "0x00A867","record_walk_stride6","record walk: si+=6; bp=0; lodsw loop. Iterates a table of 6-byte records from si, reading the leading word of each"
 "0x00B146","call_plane_band_copy_pushcs","CORRECTED 2026-07-25 (was mis-anchored at 0x00B142 as `audio_helper_b6dd`, `cdq; call 0xb6dd`): 0xB142 is INSIDE `9a cb 0e 99 02` = lcall 0x299:0x0ecb at 0xB140, so the `cdq` was the 0x99 of the far-call SEGMENT 0x299, not an instruction. The real stream is 0xB145 pop ds / 0xB146 push cs / 0xB147 call 0xb6dd -- the push-cs-then-near-call idiom for entering ship_3d_plane_band_copy, which ends in RETF. Nothing audio about it. Found by re/tools/check_opsize_mnemonics.py boundary consensus"
 "0x00BC50","mixer_gated_proc_a","mixer-gated audio routine: test gs:[0xade],1 (software-mixer enable gate) AND test gs:[0xba3],1 (second audio-active flag); both must be set or it bails to 0xbd01. Runs the per-frame mix step only when the mixer and channel are live"

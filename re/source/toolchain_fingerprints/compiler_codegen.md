@@ -124,6 +124,17 @@ original four. The extra instructions materialize a C Boolean in AX; the
 original sole caller consumes ZF directly, making this a confirmed flag-ABI
 boundary rather than an unresolved algorithm.
 
+For `0x00A634`, exhaustive direct execution over all 256 state-byte values
+confirms that ZF is set exactly when GS:0x0B17 bit 0 is clear. It also verifies
+the GS-versus-DS selection, PF/CF/SF/OF results, preservation of IF/DF, and all
+register and segment effects. The sole caller immediately branches on JE and
+does not consume a register result. Open Watcom 1.9 emits four instructions and
+11 bytes for the core natural Boolean using `TEST`, `SETNE`, and `XOR`; Turbo C
+2.01 emits a six-instruction branch sequence. Neither returns the original TEST
+flags or preserves AX while materializing a Boolean, and neither ordinary data
+declaration models the helper's temporary GS-to-DS selection. This is therefore
+a verified logical predicate with a confirmed flag and segment ABI boundary.
+
 For `0x00A734`, eight direct-execution cases confirm the two wrapping queue
 updates, register preservation, and unconditional carry clear. Open Watcom 1.9
 medium compiles the corrected void function to the exact two direct memory ADD

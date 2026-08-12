@@ -1,0 +1,9 @@
+[
+  {
+    "tested_state_count": 256,
+    "zero_flag_set_rule": "(state & 1) == 0",
+    "zero_flag_clear_rule": "(state & 1) != 0",
+    "logical_result": "(state & 1) != 0",
+    "caller_branch": "JE skips the enabled-only store when the result is false"
+  }
+]

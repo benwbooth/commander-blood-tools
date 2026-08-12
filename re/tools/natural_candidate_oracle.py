@@ -813,6 +813,79 @@ def queue_state_le_one_vectors() -> list[dict[str, object]]:
     ]
 
 
+def flag_test_b17_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+
+    for state in range(0x100):
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+            "flags": 0x0E93,
+        }
+        machine = execute(
+            0xA634,
+            0xA641,
+            initial,
+            [
+                (data_segment, 0x0B17, bytes([state ^ 1])),
+                (state_segment, 0x0B17, bytes([state])),
+            ],
+        )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        zero_flag = (flags >> 6) & 1
+        parity_flag = (flags >> 2) & 1
+        expected_zero = int((state & 1) == 0)
+        if zero_flag != expected_zero or parity_flag != expected_zero:
+            raise AssertionError(
+                f"0xA634 state={state:#x} ZF/PF={zero_flag}/{parity_flag}, "
+                f"expected={expected_zero}"
+            )
+        if flags & ((1 << 0) | (1 << 7) | (1 << 11)):
+            raise AssertionError(f"0xA634 state={state:#x} did not clear CF/SF/OF")
+        if flags & ((1 << 9) | (1 << 10)) != initial["flags"] & (
+            (1 << 9) | (1 << 10)
+        ):
+            raise AssertionError(f"0xA634 state={state:#x} changed IF/DF")
+        for name in (
+            "ax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "gs",
+        ):
+            actual_register = machine.reg_read(REGISTERS[name])
+            if actual_register != initial[name]:
+                raise AssertionError(f"0xA634 did not preserve {name}")
+        actual_state = machine.mem_read(state_segment * 16 + 0x0B17, 1)[0]
+        if actual_state != state:
+            raise AssertionError(f"0xA634 changed state byte {state:#x}")
+
+    return [
+        {
+            "tested_state_count": 0x100,
+            "zero_flag_set_rule": "(state & 1) == 0",
+            "zero_flag_clear_rule": "(state & 1) != 0",
+            "logical_result": "(state & 1) != 0",
+            "caller_branch": "JE skips the enabled-only store when the result is false",
+        }
+    ]
+
+
 def queue_enqueue_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     cases = [
@@ -1104,6 +1177,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a40b_natural.json", queue_state_le_one_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a634_natural.json", flag_test_b17_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_a734_natural.json", queue_enqueue_vectors(), args.check

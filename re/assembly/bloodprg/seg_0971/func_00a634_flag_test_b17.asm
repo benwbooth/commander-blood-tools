@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: flag_test_b17
-; label_comment: flag test: ds=ax; test byte [0xb17],1. Reads the 0xb17 state bit (a mode/enable flag) and restores ds
+; label_comment: GS:0x0B17 bit-0 flag test; preserves all registers and DS, while the sole caller consumes ZF with JE
 ; byte_count: 14
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1
