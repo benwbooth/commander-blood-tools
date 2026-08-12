@@ -1401,6 +1401,21 @@ far call, but passes its natural far pointer in CX:BX rather than the original
 loader's DS:SI. A drop-in build therefore needs a narrow ABI boundary at that
 existing external call; the recovered handler itself remains natural C.
 
+Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
+little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
+and RET preserves all incoming status flags. Eight direct vectors prove aligned
+and unaligned loads, SI wrap from 0xFFFE, load-before-store order, distinct
+DS/GS ownership against segment decoys, AX/SI outputs, complete status-flag and
+register preservation, source immutability, exact bytes, and near return.
+
+The one-to-one candidate is a post-incremented near-word dereference assigned to
+a volatile named based-segment global, with the advanced cursor returned
+directly. Open Watcom `-3 -ox -mm` compiles it without warnings to 10
+instructions/19 bytes versus 3/6 original; Turbo C 2.01 medium emits 14
+instructions. Watcom preserves the C behavior but saves DX/ES, loads the named
+segment through them, and emits MOV plus ADD instead of the original ambient
+GS store and LODSW. Fixed GS placement remains the only integration boundary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1460,6 +1475,7 @@ LCS and then mnemonic similarity:
 | `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
 | `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
 | `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/24 | 0.0909 | 0.4091 | 0.1818 |
+| `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 

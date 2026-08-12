@@ -1,0 +1,138 @@
+[
+  {
+    "name": "zero",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24576,
+    "operand": 0,
+    "destination_before": 12544,
+    "destination_after": 0,
+    "final_source_offset": 24578,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "all_ones",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24608,
+    "operand": 65535,
+    "destination_before": 12817,
+    "destination_after": 65535,
+    "final_source_offset": 24610,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "little_endian",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24640,
+    "operand": 4660,
+    "destination_before": 13090,
+    "destination_after": 4660,
+    "final_source_offset": 24642,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "high_bit",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24672,
+    "operand": 32769,
+    "destination_before": 13363,
+    "destination_after": 32769,
+    "final_source_offset": 24674,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "low_byte_ff",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24704,
+    "operand": 4863,
+    "destination_before": 13636,
+    "destination_after": 4863,
+    "final_source_offset": 24706,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "high_byte_ff",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24736,
+    "operand": 65298,
+    "destination_before": 13909,
+    "destination_after": 65298,
+    "final_source_offset": 24738,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "unaligned",
+    "dispatch_opcode": "0x08",
+    "source_offset": 24769,
+    "operand": 42330,
+    "destination_before": 14182,
+    "destination_after": 42330,
+    "final_source_offset": 24771,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "source_end_wrap",
+    "dispatch_opcode": "0x08",
+    "source_offset": 65534,
+    "operand": 51966,
+    "destination_before": 14455,
+    "destination_after": 51966,
+    "final_source_offset": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

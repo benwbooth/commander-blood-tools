@@ -6,6 +6,8 @@
 ; seg_off: 04da:231a
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_store_word_1fa5
+; label_comment: Byte-parser opcode 0x08 consumes one little-endian word from DS:SI, advances SI by two, stores the word at GS:0x1FA5, and preserves the incoming flags.
 ; incoming: byte_parser_dispatch_74e5:byte_0x08
 ; byte_count: 6
 ; boundary: cfg_blocks_1_terminals_1
