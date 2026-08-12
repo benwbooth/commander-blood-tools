@@ -6,8 +6,8 @@
 ; seg_off: 01ce:00e5
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: render_state_5251_access
-; label_comment: render-state access: bp=di; es->fs; di=0x5251 (the 576-byte render-state block cleared by clear_block_5251 0x248b); push gs. Reads/updates the render state block
+; label: palette_range_interpolate
+; label_comment: Interpolates inclusive RGB palette entries BX..DX from DS:SI toward caller ES:DI by signed percent AL, writing the live GS:0x5251 palette
 ; incoming: call@0x001fb0->01ce:00e5
 ; byte_count: 104
 ; boundary: cfg_blocks_3_terminals_1

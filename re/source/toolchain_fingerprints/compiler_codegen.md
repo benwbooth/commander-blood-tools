@@ -1811,6 +1811,27 @@ emits all 16 original mnemonics within a 29-instruction stack-frame body. The
 remaining mismatch is optimizer and fixed-DGROUP placement, not omitted input
 logic.
 
+Palette helper `0x00248B` disproves its old render-state label. GS:0x5251 is
+the 768-byte live DAC palette used by the upload, resource palette, and blend
+routines. Clearing 0x90 dwords from that address zeroes exactly the first 576
+bytes: RGB entries 0 through 191. The upper 64 entries, where the UI/console
+color banks live, are deliberately preserved. Four direct vectors prove the
+ascending extent, surrounding bytes, GS ownership against DS/ES/FS decoys,
+full register and segment preservation, final XOR flags, far return, and the
+binary's inherited-direction behavior when DF is set.
+
+The natural candidate performs one far `_fmemset` over the named 576-byte scene
+palette region. Four Watcom-only push/pop instructions preserve EAX and ES;
+the function declaration makes Watcom preserve every remaining register. Open
+Watcom `-3 -ox -mm` emits 27 instructions/42 bytes versus 15/27 original. Its
+mnemonic multiset contains every original instruction and 14 of 15 mnemonics
+remain in order, but it lowers the even byte count to `REP STOSW` followed by a
+zero-length residual `REP STOSB`, rather than `REP STOSD`, and adds conservative
+saves. Turbo C 2.01 emits a 15-instruction wrapper around its far memset library
+instead of an inline clear. Natural C assumes the normal DOS C ABI invariant
+that DF is clear on entry; the direct oracle still records the original
+descending write extent for completeness.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1892,6 +1913,7 @@ LCS and then mnemonic similarity:
 | `palette_upload_if_dirty` | medium, `-ox`, register | 9/14 | 0.1111 | 0.6667 | 0.1111 |
 | `vm_patch_stream_apply` | medium, `-ox`, register | 19/30 | 0.2632 | 0.7895 | 0.2632 |
 | `mouse_button_edges_update` | medium, `-ox`, register | 16/20 | 0.0625 | 0.8750 | 0.2500 |
+| `palette_scene_entries_clear` | medium, `-ox`, register | 15/27 | 0.3333 | 0.9333 | 0.3333 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

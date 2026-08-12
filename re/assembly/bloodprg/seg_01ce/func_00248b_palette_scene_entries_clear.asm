@@ -6,8 +6,8 @@
 ; seg_off: 01ce:01ab
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: clear_block_5251
-; label_comment: buffer clear: es=gs; cx=0x90; di=0x5251; xor eax; stosd loop -> zeroes 0x90 (144) dwords = 576 bytes at gs:0x5251 (render-state block adjacent to back-buffer ptr 0x5229)
+; label: palette_scene_entries_clear
+; label_comment: Clears the first 576 bytes (RGB entries 0..191) of the live GS:0x5251 palette while preserving entries 192..255
 ; incoming: call@0x00b500->01ce:01ab
 ; byte_count: 27
 ; boundary: cfg_blocks_1_terminals_1

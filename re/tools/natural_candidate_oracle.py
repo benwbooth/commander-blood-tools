@@ -2018,6 +2018,210 @@ def mouse_button_edges_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def palette_scene_entries_clear_vectors() -> list[dict[str, object]]:
+    entry = 0x248B
+    expected_hash = "3fb16f13f03026bad977ca20171ea909e4a885b15a5651318d1ea398992f96c5"
+    if hashlib.sha256(EXE[entry : entry + 27]).hexdigest() != expected_hash:
+        raise AssertionError("0x248b: recovered 27-byte body changed")
+
+    game_segment = 0x3000
+    data_segment = 0x1800
+    extra_segment = 0x2000
+    fs_segment = 0x2800
+    stack_segment = 0x7000
+    return_address = 0x6F00
+    cases = [
+        ("ascending_pattern", False, 0x11),
+        ("ascending_already_zero", False, 0x00),
+        ("ascending_ffff", False, 0xFF),
+        ("descending_pattern", True, 0x53),
+    ]
+    vectors = []
+
+    for case_index, (name, direction_set, seed) in enumerate(cases):
+        window_offset = 0x4F00
+        window_size = 0x700
+        if seed == 0:
+            game_before = bytes(window_size)
+        elif seed == 0xFF:
+            game_before = bytes([0xFF]) * window_size
+        else:
+            game_before = bytes(
+                (seed + index * 0x2D + (index >> 3)) & 0xFF
+                for index in range(window_size)
+            )
+        expected_game = bytearray(game_before)
+        if direction_set:
+            clear_start = 0x5015
+            clear_end = 0x5255
+            final_di = 0x5011
+        else:
+            clear_start = 0x5251
+            clear_end = 0x5491
+            final_di = 0x5491
+        expected_game[
+            clear_start - window_offset : clear_end - window_offset
+        ] = bytes(0x240)
+
+        data_decoy = bytes(
+            (0x31 + case_index * 7 + index * 3) & 0xFF
+            for index in range(window_size)
+        )
+        extra_decoy = bytes(
+            (0x72 + case_index * 11 + index * 5) & 0xFF
+            for index in range(window_size)
+        )
+        fs_decoy = bytes(
+            (0xA4 + case_index * 13 + index * 9) & 0xFF
+            for index in range(window_size)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        flags_before = 0x0A93 | (0x0400 if direction_set else 0)
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x249D, 0x24A0):
+                return
+            if address == 0x249D and phases:
+                return
+            phases.append(
+                {
+                    "address": address,
+                    "eax": machine.reg_read(UC_X86_REG_EAX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (game_segment, window_offset, game_before),
+                (data_segment, window_offset, data_decoy),
+                (extra_segment, window_offset, extra_decoy),
+                (fs_segment, window_offset, fs_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_phases = [
+            {
+                "address": 0x249D,
+                "eax": 0,
+                "cx": 0x90,
+                "di": 0x5251,
+                "es": game_segment,
+            },
+            {
+                "address": 0x24A0,
+                "eax": 0,
+                "cx": 0,
+                "di": final_di,
+                "es": game_segment,
+            },
+        ]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x248b {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        actual_game = bytes(
+            machine.mem_read(game_segment * 16 + window_offset, window_size)
+        )
+        if actual_game != bytes(expected_game):
+            raise AssertionError(f"0x248b {name}: GS palette window mismatch")
+        for segment, expected in (
+            (data_segment, data_decoy),
+            (extra_segment, extra_decoy),
+            (fs_segment, fs_decoy),
+        ):
+            actual = bytes(
+                machine.mem_read(segment * 16 + window_offset, window_size)
+            )
+            if actual != expected:
+                raise AssertionError(f"0x248b {name}: segment {segment:#x} changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x248b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x248b {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x248b {name}: stack sentinel changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "zf": True,
+            "sf": False,
+            "df": direction_set,
+            "of": False,
+        }
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x248b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "direction": "descending" if direction_set else "ascending",
+                "clear_start": clear_start,
+                "clear_end_exclusive": clear_end,
+                "cleared_bytes": clear_end - clear_start,
+                "palette_entries_cleared": 192 if not direction_set else None,
+                "upper_palette_entries_preserved": 64 if not direction_set else None,
+                "result_sha256": hashlib.sha256(actual_game).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -25252,6 +25456,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1fbc_natural.json",
         mouse_button_edges_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_248b_natural.json",
+        palette_scene_entries_clear_vectors(),
         args.check,
     )
     update_vector(

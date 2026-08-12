@@ -8,5 +8,5 @@ void CB_NEAR flag_gated_2751(void)
         return;
     }
 
-    memcpy(render_state_5851_dwords, render_state_5251_dwords, 384u);
+    memcpy(palette_low_5851_dwords, palette_low_5251_dwords, 384u);
 }

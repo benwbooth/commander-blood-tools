@@ -18,8 +18,8 @@ typedef struct palette_low_block {
 #endif
 
 extern volatile u8 render_update_flag_2751;
-extern palette_low_block render_state_5251;
-extern palette_low_block render_state_5851;
+extern palette_low_block palette_low_5251;
+extern palette_low_block palette_low_5851;
 
 void NEAR flag_gated_2751_probe(void);
 
@@ -33,5 +33,5 @@ void NEAR flag_gated_2751_probe(void)
         return;
     }
 
-    render_state_5851 = render_state_5251;
+    palette_low_5851 = palette_low_5251;
 }

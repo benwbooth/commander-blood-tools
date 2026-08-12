@@ -71,7 +71,6 @@ extern volatile ship_3d_projection_context CB_GAME_DATA ship_3d_projection; /* G
 extern volatile ship_3d_point_record CB_GAME_DATA ship_3d_point_cloud[]; /* GS:0x2FC1 */
 /* Original BP indexing selects SS:0x4F45; GAME_DATA must bind to SS == GS. */
 extern const ship_3d_angle_table_entry CB_GAME_DATA ship_3d_angle_table[];
-extern volatile cb_u32 ship_3d_render_state_block[]; /* GS:0x5251 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_left;    /* GS:0x5235 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_right;   /* GS:0x5237 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_top;     /* GS:0x5239 */
