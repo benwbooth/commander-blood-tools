@@ -27,19 +27,26 @@ typedef struct bloodprg_presentation_line_record {
     cb_u16 draw_y;
 } bloodprg_presentation_line_record;
 
-extern volatile cb_u8 nav_choice_phase;       /* GS:0x2565 */
-extern volatile cb_u16 nav_choice_honk_record; /* GS:0x6754 */
-extern volatile cb_u16 nav_choice_radio_record; /* GS:0x6756 */
-extern volatile cb_u16 nav_deferred_record_type; /* GS:0x6768 */
-extern volatile cb_u16 nav_deferred_record_link; /* GS:0x676A */
-extern volatile char nav_radio_snd_path[];    /* GS:0x0D16 */
+extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
+extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
+extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
+extern volatile cb_u16 nav_deferred_record_type; /* DS:0x6768 */
+extern volatile cb_u16 nav_deferred_record_link; /* DS:0x676A */
+extern volatile char nav_radio_snd_path[];    /* DS:0x0D16 */
 extern volatile cb_u8 nav_presentation_reverse; /* DS:0x27E4 */
 extern volatile cb_u8 presentation_mode_flag_27e0; /* DS:0x27E0 */
 extern volatile cb_u8 presentation_mode_flag_27e1; /* DS:0x27E1 */
 extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
 extern const volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
+#if defined(__WATCOMC__)
+#pragma aux nav_choice_handler_0 modify exact [ax]
+#pragma aux nav_choice_handler_3 modify exact [ax si]
+#endif
+
 int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record *line); /* 0x007E1C */
+void CB_NEAR nav_choice_handler_0(void); /* 0x008713 */
+void CB_NEAR nav_choice_handler_3(void); /* 0x008848 */
 
 #endif

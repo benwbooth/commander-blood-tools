@@ -23,9 +23,10 @@ typedef unsigned int u16;
 extern char GAME_DATA snd_bank_name_field[];
 extern volatile char GAME_DATA snd_bank_path[];
 extern volatile u16 GAME_DATA ui_state;
-void FAR snd_bank_loader_probe(u16 mode, const volatile char FAR *path);
+void FAR snd_bank_loader_probe(u16 mode, const volatile char NEAR *path);
 
 #if defined(__WATCOMC__)
+#pragma aux snd_bank_loader_probe parm [ax] [si] modify exact []
 #pragma aux byte_parser_snd_bank_name_load_probe parm [si] value [si] modify exact [ax bx cx dx si di es]
 #endif
 

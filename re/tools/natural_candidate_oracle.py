@@ -16335,6 +16335,266 @@ def byte_parser_stream_0f18_append_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_choice_handler_vectors(entry: int) -> list[dict[str, object]]:
+    if entry not in (0x8713, 0x8848):
+        raise AssertionError(f"unsupported navigation choice handler {entry:#x}")
+    has_loader = entry == 0x8848
+    source_offset = 0x6756 if has_loader else 0x6754
+    byte_count = 36 if has_loader else 25
+    expected_hash = (
+        "1042a534ceca566ad5030d96d5ed1b4173f4e95b8d6fdbef331e9ce0aee7cdc3"
+        if has_loader
+        else "0415e99bdfa96db2734d75f9db77377a62603f797a3526cd3650f7b9c96ce0df"
+    )
+    if hashlib.sha256(EXE[entry : entry + byte_count]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered body changed")
+
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    loader_entry = 0xBA05  # Runtime 0B1B:0855.
+    cases = [
+        ("phase_zero", 0x00, 0x1111, 0x2222, 0x3333, 0x0002),
+        ("phase_bit_one_clear", 0x02, 0x4444, 0x5555, 0x6666, 0x0AD7),
+        ("phase_one", 0x01, 0x7777, 0x8888, 0x9999, 0x0803),
+        ("phase_both_low_bits", 0x03, 0xABCD, 0x1357, 0x2468, 0x00D6),
+        ("phase_all_bits", 0xFF, 0x0000, 0xFFFF, 0xA5A5, 0x0812),
+        ("source_all_ones", 0x81, 0xFFFF, 0x0102, 0x0304, 0x00C3),
+    ]
+    vectors = []
+    for name, phase, source_value, type_before, link_before, flags_before in cases:
+        active = (phase & 1) != 0
+        path = b"radio.snd\x00"
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (0, return_address, b"\xcc"),
+            (0, loader_entry, b"\xcb"),
+            (data_segment, 0x2565, bytes([phase])),
+            (data_segment, source_offset, struct.pack("<H", source_value)),
+            (data_segment, 0x6768, struct.pack("<H", type_before)),
+            (data_segment, 0x676A, struct.pack("<H", link_before)),
+            (data_segment, 0x0D16, path),
+            (game_segment, 0x2565, b"\x5a"),
+            (game_segment, source_offset, b"\xa5\x5a"),
+            (game_segment, 0x6768, b"\x69\x96"),
+            (game_segment, 0x676A, b"\x87\x78"),
+            (game_segment, 0x0D16, bytes([0xCC]) * len(path)),
+            (extra_segment, 0x2565, b"\x3c"),
+            (extra_segment, source_offset, b"\xc3\x3c"),
+            (extra_segment, 0x6768, b"\xf0\x0f"),
+            (extra_segment, 0x676A, b"\x55\xaa"),
+            (extra_segment, 0x0D16, bytes([0xDD]) * len(path)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        calls = []
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == loader_entry:
+                calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "phase": machine.mem_read(data_segment * 16 + 0x2565, 1)[0],
+                        "type": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x6768, 2)
+                        )[0],
+                        "link": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x676A, 2)
+                        )[0],
+                    }
+                )
+            if not active:
+                return
+            phase_addresses = (
+                (0x871A, 0x871D, 0x8720, 0x8726, 0x872B)
+                if not has_loader
+                else (0x884F, 0x8852, 0x8855, 0x885B, 0x8860)
+            )
+            if address in phase_addresses:
+                phases.append(
+                    (
+                        address,
+                        machine.mem_read(data_segment * 16 + 0x2565, 1)[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x6768, 2)
+                        )[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x676A, 2)
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        expected_phase_addresses = (
+            (0x871A, 0x871D, 0x8720, 0x8726, 0x872B)
+            if not has_loader
+            else (0x884F, 0x8852, 0x8855, 0x885B, 0x8860)
+        )
+        if active:
+            expected_phases = [
+                (expected_phase_addresses[0], phase, type_before, link_before),
+                (expected_phase_addresses[1], phase, type_before, link_before),
+                (expected_phase_addresses[2], phase, type_before, source_value),
+                (expected_phase_addresses[3], phase, 0x00C3, source_value),
+                (expected_phase_addresses[4], 0, 0x00C3, source_value),
+            ]
+        else:
+            expected_phases = []
+        if phases != expected_phases:
+            raise AssertionError(
+                f"{entry:#x} {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_calls = []
+        if has_loader and active:
+            expected_calls.append(
+                {
+                    "ax": 1,
+                    "ds": data_segment,
+                    "si": 0x0D16,
+                    "sp": 0xFEFC,
+                    "cs": 0x0B1B,
+                    "phase": 0,
+                    "type": 0x00C3,
+                    "link": source_value,
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"{entry:#x} {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_phase = 0 if active else phase
+        expected_type = 0x00C3 if active else type_before
+        expected_link = source_value if active else link_before
+        actual_phase = machine.mem_read(data_segment * 16 + 0x2565, 1)[0]
+        actual_type = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x6768, 2)
+        )[0]
+        actual_link = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x676A, 2)
+        )[0]
+        if (actual_phase, actual_type, actual_link) != (
+            expected_phase,
+            expected_type,
+            expected_link,
+        ):
+            raise AssertionError(
+                f"{entry:#x} {name}: state={(actual_phase, actual_type, actual_link)}, "
+                f"expected={(expected_phase, expected_type, expected_link)}"
+            )
+        for segment, offset, expected in (
+            (data_segment, source_offset, struct.pack("<H", source_value)),
+            (data_segment, 0x0D16, path),
+            (game_segment, 0x2565, b"\x5a"),
+            (game_segment, source_offset, b"\xa5\x5a"),
+            (game_segment, 0x6768, b"\x69\x96"),
+            (game_segment, 0x676A, b"\x87\x78"),
+            (game_segment, 0x0D16, bytes([0xCC]) * len(path)),
+            (extra_segment, 0x2565, b"\x3c"),
+            (extra_segment, source_offset, b"\xc3\x3c"),
+            (extra_segment, 0x6768, b"\xf0\x0f"),
+            (extra_segment, 0x676A, b"\x55\xaa"),
+            (extra_segment, 0x0D16, bytes([0xDD]) * len(path)),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if active:
+            expected_registers["eax"] = (
+                (initial["eax"] & 0xFFFF0000) | (1 if has_loader else source_value)
+            )
+            if has_loader:
+                expected_registers["esi"] = (
+                    initial["esi"] & 0xFFFF0000
+                ) | 0x0D16
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{entry:#x} {name}: far call did not restore CS")
+
+        expected_flags = {
+            "cf": False,
+            "pf": not active,
+            "zf": not active,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "phase_before": phase,
+                "phase_bit_zero_set": active,
+                "source_record": source_value,
+                "deferred_type_before": type_before,
+                "deferred_type_after": actual_type,
+                "deferred_link_before": link_before,
+                "deferred_link_after": actual_link,
+                "phase_after": actual_phase,
+                "loader_called": bool(calls),
+                "loader_mode": 1 if calls else None,
+                "loader_path_offset": 0x0D16 if calls else None,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -22133,6 +22393,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7e1c_natural.json",
         presentation_line_helper_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8713_natural.json",
+        nav_choice_handler_vectors(0x8713),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8848_natural.json",
+        nav_choice_handler_vectors(0x8848),
         args.check,
     )
     update_vector(

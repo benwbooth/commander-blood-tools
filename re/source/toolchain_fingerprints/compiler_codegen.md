@@ -49,7 +49,7 @@ for those listings.
 
 ## Recovered-source follow-up
 
-Four later recovered functions provide a stronger positive result for Turbo C
+Five later recovered functions provide a stronger positive result for Turbo C
 2.01 in the medium memory model with `-O -Z`:
 
 | routine | source operations | original bytes | Turbo OMF result |
@@ -58,8 +58,9 @@ Four later recovered functions provide a stronger positive result for Turbo C
 | `0x00A744 list_d8c_wrap_bounds_reset` | three direct word stores plus `ret` | 19 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, and 14 |
 | `0x00A2DD presentation_queue_finish` | two byte ORs, zero-word branch, near call, `ret` | 21 | exact LEDATA shape; global/call FIXUPP records at offsets 2, 7, 14, and 18 |
 | `0x009F53 presentation_update_1fb2` | natural gated state updates plus six inline register saves/restores | 45 | exact LEDATA shape; global/call FIXUPP records at offsets 5, 11, 15, 22, 27, 33, and 38 |
+| `0x008713 nav_choice_handler_0` | bit gate, word copy, word/byte constants, `ret` | 25 | exact LEDATA shape; address-word FIXUPP records at offsets 2, 8, 11, 15, and 21 |
 
-The object payloads contain zero placeholders where the original has
+The two list-bound initializer payloads contain zero placeholders where the original has
 `0x0D60`, `0x0D62`, `0x0D64`, and `0x0D66`; the adjacent FIXUPP records cover
 exactly those words. Binding the external globals to their recovered data
 offsets therefore supplies the original instruction bytes. The first two entrypoints
@@ -1393,13 +1394,29 @@ flags, and near return. The real loader body executes its early return in the
 call vectors, so this is not a synthetic call stub.
 
 The one-to-one candidate uses a direct SI result, named based-segment filename,
-path, and gate globals, plus an ordinary far C call. Open Watcom `-3 -ox -mm`
-compiles it without warnings to 24 instructions/58 bytes versus 22/49 original;
-Turbo C 2.01 medium emits 40 instructions. Watcom retains the signed and
-unsigned stops, explicit cursor decrement, NUL store, bit test, mode value, and
-far call, but passes its natural far pointer in CX:BX rather than the original
-loader's DS:SI. A drop-in build therefore needs a narrow ABI boundary at that
-existing external call; the recovered handler itself remains natural C.
+path, and gate globals, plus an ordinary far C call. The loader declaration now
+uses its actual AX mode and near-SI path convention. Open Watcom `-3 -ox -mm`
+compiles the candidate without warnings to 26 instructions/62 bytes versus
+22/49 original; Turbo C 2.01 medium emits 41 instructions. Watcom retains the
+signed and unsigned stops, explicit cursor decrement, NUL store, bit test,
+mode value, and SI argument. A drop-in build still needs a narrow adapter to
+switch DS to `GAME_DATA` around that call and restore the parser context.
+
+Navigation-choice handlers `0x008713` and `0x008848` share a natural early-
+return state update: test DS:0x2565 bit zero, copy a named source record to
+DS:0x676A, store type `0x00C3` at DS:0x6768, then clear the phase byte. Six
+direct vectors per routine prove inactive and active phases, exact store order,
+DS ownership against GS/ES decoys, register and flag effects, and near return.
+The radio handler's isolated far-call boundary additionally proves that its
+loader runs after all stores with AX=1 and DS:SI=DS:0x0D16.
+
+Turbo C 2.01 medium `-O -Z` emits the exact seven-instruction, 25-byte LEDATA
+shape for `0x008713`; FIXUPP records cover the five zero address words at byte
+offsets 2, 8, 11, 15, and 21. Binding those externals to DS:0x2565, 0x6754,
+0x676A, 0x6768, and 0x2565 reproduces the original bytes. `0x008848` is not
+exact: the near-pointer Watcom pragma supplies the correct AX/SI call arguments,
+but Watcom emits 14 instructions/40 bytes versus 10/36 because it preserves ES
+and splits the return; Turbo C emits 14 instructions with stack arguments.
 
 Byte-parser opcode-07 handler `0x007684` contains a stale-flag dependency that
 the earlier candidate misread as an asset-id sign test. Its `CBW` sign-extends
@@ -1583,13 +1600,15 @@ LCS and then mnemonic similarity:
 | `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
 | `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
-| `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/24 | 0.0909 | 0.4091 | 0.1818 |
+| `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/26 | 0.0455 | 0.4091 | 0.1364 |
 | `dlg_line_asset_table_fill` | medium, `-ox`, register | 22/35 | 0.0909 | 0.5455 | 0.1818 |
 | `index_lookup_1fd7` | medium, `-ox`, register | 47/44 | 0.0851 | 0.4043 | 0.1064 |
 | `byte_parser_copy_131a_entry` | medium, `-ox`, register | 13/27 | 0.1538 | 0.6154 | 0.2308 |
 | `byte_parser_stream_0f18_append` | medium, `-ox`, register | 8/23 | 0.1250 | 0.5000 | 0.1250 |
 | `fs_name_area_read` | medium, `-ox`, register | 16/26 | 0.2500 | 0.6875 | 0.3125 |
 | `music_voc_name_patcher` | medium, `-ox`, register | 20/38 | 0.1000 | 0.4500 | 0.2000 |
+| `nav_choice_handler_0` | medium, `-ox`, register | 7/8 | 0.1429 | 0.8571 | 0.1429 |
+| `nav_choice_handler_3` | medium, `-ox`, register | 10/14 | 0.1000 | 0.8000 | 0.2000 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

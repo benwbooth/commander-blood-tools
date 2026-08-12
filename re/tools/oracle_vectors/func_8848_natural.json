@@ -1,0 +1,128 @@
+[
+  {
+    "name": "phase_zero",
+    "phase_before": 0,
+    "phase_bit_zero_set": false,
+    "source_record": 4369,
+    "deferred_type_before": 8738,
+    "deferred_type_after": 8738,
+    "deferred_link_before": 13107,
+    "deferred_link_after": 13107,
+    "phase_after": 0,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_bit_one_clear",
+    "phase_before": 2,
+    "phase_bit_zero_set": false,
+    "source_record": 17476,
+    "deferred_type_before": 21845,
+    "deferred_type_after": 21845,
+    "deferred_link_before": 26214,
+    "deferred_link_after": 26214,
+    "phase_after": 2,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_one",
+    "phase_before": 1,
+    "phase_bit_zero_set": true,
+    "source_record": 30583,
+    "deferred_type_before": 34952,
+    "deferred_type_after": 195,
+    "deferred_link_before": 39321,
+    "deferred_link_after": 30583,
+    "phase_after": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3350,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_both_low_bits",
+    "phase_before": 3,
+    "phase_bit_zero_set": true,
+    "source_record": 43981,
+    "deferred_type_before": 4951,
+    "deferred_type_after": 195,
+    "deferred_link_before": 9320,
+    "deferred_link_after": 43981,
+    "phase_after": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3350,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_all_bits",
+    "phase_before": 255,
+    "phase_bit_zero_set": true,
+    "source_record": 0,
+    "deferred_type_before": 65535,
+    "deferred_type_after": 195,
+    "deferred_link_before": 42405,
+    "deferred_link_after": 0,
+    "phase_after": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3350,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_all_ones",
+    "phase_before": 129,
+    "phase_bit_zero_set": true,
+    "source_record": 65535,
+    "deferred_type_before": 258,
+    "deferred_type_after": 195,
+    "deferred_link_before": 772,
+    "deferred_link_after": 65535,
+    "phase_after": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3350,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
