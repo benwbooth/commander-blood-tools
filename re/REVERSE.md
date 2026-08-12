@@ -2157,7 +2157,13 @@ Named targets that are already tied to code behavior:
   typed-slot ABI instead of inline 32-bit arithmetic and register-fed bounds.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
-  into primary framebuffer `GS:0x5221`.
+  into primary framebuffer `GS:0x5221`. Bit 0 of `GS:0x5231` gates the walk;
+  each record is `{left,right,top,bottom}` with exclusive right/bottom edges,
+  and a signed-negative left edge terminates the list. Eight direct vectors
+  cover every byte/dword alignment class and multiple records. The assembly
+  deliberately discards both far-pointer offsets, so both buffers must begin at
+  segment offset zero. Watcom `-3 -ox -mm` emits 158 bytes from the natural row
+  copy versus the original 231-byte alignment-specialized implementation.
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine

@@ -3008,6 +3008,174 @@ def sprite_blit_scaled_transparent_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def dirty_rects_copy_secondary_to_primary_vectors() -> list[dict[str, object]]:
+    state_segment = 0x2600
+    rectangle_segment = 0x3600
+    rectangle_offset = 0x0100
+    primary_segment = 0x5000
+    primary_offset = 0x0000
+    secondary_segment = 0x6000
+    secondary_offset = 0x0000
+    cases = [
+        {
+            "name": "gate_clear_ignores_rectangles",
+            "flags": 0xA4,
+            "rectangles": [[4, 11, 3, 6]],
+        },
+        {
+            "name": "sentinel_first",
+            "flags": 0xA5,
+            "rectangles": [],
+        },
+        {
+            "name": "byte_only_unaligned",
+            "flags": 0xA5,
+            "rectangles": [[1, 4, 2, 4]],
+        },
+        {
+            "name": "aligned_dword_only",
+            "flags": 0xA5,
+            "rectangles": [[8, 16, 4, 7]],
+        },
+        {
+            "name": "aligned_dword_with_tail",
+            "flags": 0xA5,
+            "rectangles": [[12, 18, 5, 7]],
+        },
+        {
+            "name": "unaligned_leading_bytes_then_dword",
+            "flags": 0xA5,
+            "rectangles": [[5, 12, 6, 8]],
+        },
+        {
+            "name": "unaligned_leading_dword_and_tail",
+            "flags": 0xA5,
+            "rectangles": [[6, 15, 7, 9]],
+        },
+        {
+            "name": "multiple_rectangles_use_exclusive_edges",
+            "flags": 0xA5,
+            "rectangles": [
+                [0, 1, 0, 1],
+                [17, 30, 20, 23],
+                [319, 320, 199, 200],
+            ],
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        flags = int(case["flags"])
+        rectangles = [
+            [int(value) for value in rectangle]
+            for rectangle in case["rectangles"]
+        ]
+        records = bytearray()
+        for rectangle in rectangles:
+            records.extend(struct.pack("<HHHH", *rectangle))
+        records.extend(struct.pack("<HHHH", 0xFFFF, 0x1357, 0x2468, 0x369C))
+
+        primary = bytearray(
+            (index * 13 + case_index * 31 + 7) & 0xFF
+            for index in range(64000)
+        )
+        secondary = bytearray(
+            (index * 29 + case_index * 17 + 3) & 0xFF
+            for index in range(64000)
+        )
+        expected_primary = bytearray(primary)
+        copied_rows = []
+        if (flags & 1) != 0:
+            for left, right, top, bottom in rectangles:
+                width = (right - left) & 0xFFFF
+                rows = (bottom - top) & 0xFFFF
+                row_offset = (top * 320 + left) & 0xFFFF
+                for _ in range(rows):
+                    expected_primary[row_offset : row_offset + width] = (
+                        secondary[row_offset : row_offset + width]
+                    )
+                    copied_rows.append([row_offset, width])
+                    row_offset = (row_offset + 320) & 0xFFFF
+
+        state = bytearray(
+            (byte_index * 23 + case_index * 19 + 5) & 0xFF
+            for byte_index in range(0x11)
+        )
+        state[0:4] = struct.pack("<HH", primary_offset, primary_segment)
+        state[8:12] = struct.pack("<HH", secondary_offset, secondary_segment)
+        state[16] = flags
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | rectangle_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": rectangle_segment,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x509D,
+            0x5183,
+            initial,
+            [
+                (state_segment, 0x5221, bytes(state)),
+                (rectangle_segment, rectangle_offset, bytes(records)),
+                (primary_segment, primary_offset, bytes(primary)),
+                (secondary_segment, secondary_offset, bytes(secondary)),
+            ],
+        )
+
+        actual_primary = bytes(
+            machine.mem_read(primary_segment * 16 + primary_offset, 64000)
+        )
+        if actual_primary != bytes(expected_primary):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_primary, expected_primary)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x509d {name}: primary[{mismatch:#x}]="
+                f"{actual_primary[mismatch]:#x}, "
+                f"expected={expected_primary[mismatch]:#x}"
+            )
+        if bytes(
+            machine.mem_read(secondary_segment * 16 + secondary_offset, 64000)
+        ) != bytes(secondary):
+            raise AssertionError(f"0x509d {name}: secondary buffer changed")
+        if bytes(
+            machine.mem_read(rectangle_segment * 16 + rectangle_offset, len(records))
+        ) != bytes(records):
+            raise AssertionError(f"0x509d {name}: rectangle list changed")
+        if bytes(
+            machine.mem_read(state_segment * 16 + 0x5221, len(state))
+        ) != bytes(state):
+            raise AssertionError(f"0x509d {name}: render state changed")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x509d {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "dirty_copy_flags": flags,
+                "rectangles": rectangles,
+                "copied_rows": copied_rows,
+                "copied_bytes": sum(width for _offset, width in copied_rows),
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -7485,6 +7653,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_509c_natural.json",
         sprite_blitter_noop_vectors(0x509C),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_509d_natural.json",
+        dirty_rects_copy_secondary_to_primary_vectors(),
         args.check,
     )
     update_vector(

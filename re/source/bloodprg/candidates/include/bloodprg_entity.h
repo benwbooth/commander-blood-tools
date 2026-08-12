@@ -64,6 +64,8 @@ extern bloodprg_sprite_blitter *bloodprg_selected_sprite_blitter; /* CS:0x15A2 *
 extern volatile cb_u8 bloodprg_sprite_flip_x; /* CS:0x14DF */
 extern volatile cb_u8 bloodprg_sprite_flip_y; /* CS:0x14E0 */
 extern volatile cb_u8 CB_FAR *bloodprg_display_buffer; /* GS:0x5221 */
+extern volatile cb_u8 CB_FAR *bloodprg_secondary_buffer; /* GS:0x5229 */
+extern volatile cb_u8 bloodprg_dirty_copy_flags; /* GS:0x5231 */
 extern volatile cb_u8 bloodprg_sprite_remap_5f11[256]; /* GS:0x5F11 */
 extern volatile cb_u8 bloodprg_sprite_remap_6011[256]; /* GS:0x6011 */
 extern volatile cb_u8 CB_NEAR *bloodprg_selected_sprite_remap; /* GS:0x524B */
@@ -102,6 +104,9 @@ void CB_NEAR sprite_blitter_noop_6(
         volatile bloodprg_entity_record *record); /* 0x0299:0x210B */
 void CB_NEAR sprite_blitter_noop_7(
         volatile bloodprg_entity_record *record); /* 0x0299:0x210C */
+void CB_FAR dirty_rects_copy_secondary_to_primary(
+        const volatile bloodprg_dirty_rect CB_FAR *rectangles);
+        /* 0x0299:0x210D */
 
 void CB_FAR entity_record_setter(cb_u16 entity_id,
         const volatile void CB_FAR *resource,
@@ -125,6 +130,7 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux sprite_blitter_noop_5 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_6 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_7 parm [di] modify exact []
+#pragma aux dirty_rects_copy_secondary_to_primary parm [es di] modify exact []
 #endif
 
 #endif

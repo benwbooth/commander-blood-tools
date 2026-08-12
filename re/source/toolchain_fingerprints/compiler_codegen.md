@@ -555,6 +555,21 @@ halves, segments, flags, and adjacent stack bytes are preserved. Open Watcom
 `C3` byte. Turbo C 2.01 retains an unnecessary BP frame and emits four
 instructions, so Watcom is the exact result for this slice.
 
+Dirty-rectangle copy `0x00509D` has eight direct framebuffer vectors. They
+prove the bit-0 gate and immediate signed-sentinel exits, exclusive rectangle
+edges, byte-only, aligned and unaligned dword, leading-byte, and trailing-byte
+width classes, multiple records, source/destination/list ownership, and complete
+register/segment preservation. The assembly discards the offset words after
+loading both far framebuffer pointers, establishing the runtime precondition
+that `GS:0x5221` and `GS:0x5229` point at segment offset zero.
+
+Open Watcom compiles the actual `0x00509D` candidate without warnings; `-3 -ox
+-mm` emits 158 bytes versus 231 original. Standalone 8086/286/386 probes emit
+68/64/64 instructions and 160/154/158 bytes versus 111/231, while Turbo C 2.01
+emits 58 instructions. The natural function uses one scalar byte-copy loop. The
+binary instead splits rows by source alignment and width remainder, then uses
+four specialized combinations of `REP MOVSD` and `REP MOVSB`.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

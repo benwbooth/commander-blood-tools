@@ -1,0 +1,189 @@
+[
+  {
+    "name": "gate_clear_ignores_rectangles",
+    "dirty_copy_flags": 164,
+    "rectangles": [
+      [
+        4,
+        11,
+        3,
+        6
+      ]
+    ],
+    "copied_rows": [],
+    "copied_bytes": 0
+  },
+  {
+    "name": "sentinel_first",
+    "dirty_copy_flags": 165,
+    "rectangles": [],
+    "copied_rows": [],
+    "copied_bytes": 0
+  },
+  {
+    "name": "byte_only_unaligned",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        1,
+        4,
+        2,
+        4
+      ]
+    ],
+    "copied_rows": [
+      [
+        641,
+        3
+      ],
+      [
+        961,
+        3
+      ]
+    ],
+    "copied_bytes": 6
+  },
+  {
+    "name": "aligned_dword_only",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        8,
+        16,
+        4,
+        7
+      ]
+    ],
+    "copied_rows": [
+      [
+        1288,
+        8
+      ],
+      [
+        1608,
+        8
+      ],
+      [
+        1928,
+        8
+      ]
+    ],
+    "copied_bytes": 24
+  },
+  {
+    "name": "aligned_dword_with_tail",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        12,
+        18,
+        5,
+        7
+      ]
+    ],
+    "copied_rows": [
+      [
+        1612,
+        6
+      ],
+      [
+        1932,
+        6
+      ]
+    ],
+    "copied_bytes": 12
+  },
+  {
+    "name": "unaligned_leading_bytes_then_dword",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        5,
+        12,
+        6,
+        8
+      ]
+    ],
+    "copied_rows": [
+      [
+        1925,
+        7
+      ],
+      [
+        2245,
+        7
+      ]
+    ],
+    "copied_bytes": 14
+  },
+  {
+    "name": "unaligned_leading_dword_and_tail",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        6,
+        15,
+        7,
+        9
+      ]
+    ],
+    "copied_rows": [
+      [
+        2246,
+        9
+      ],
+      [
+        2566,
+        9
+      ]
+    ],
+    "copied_bytes": 18
+  },
+  {
+    "name": "multiple_rectangles_use_exclusive_edges",
+    "dirty_copy_flags": 165,
+    "rectangles": [
+      [
+        0,
+        1,
+        0,
+        1
+      ],
+      [
+        17,
+        30,
+        20,
+        23
+      ],
+      [
+        319,
+        320,
+        199,
+        200
+      ]
+    ],
+    "copied_rows": [
+      [
+        0,
+        1
+      ],
+      [
+        6417,
+        13
+      ],
+      [
+        6737,
+        13
+      ],
+      [
+        7057,
+        13
+      ],
+      [
+        63999,
+        1
+      ]
+    ],
+    "copied_bytes": 41
+  }
+]
