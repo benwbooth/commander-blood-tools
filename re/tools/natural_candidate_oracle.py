@@ -1638,13 +1638,15 @@ def sprite_slot_dirty_range_render_vectors() -> list[dict[str, object]]:
     return vectors
 
 
-def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
+def _sprite_blit_raw_vectors(
+    entry: int, stop: int, opaque: bool
+) -> list[dict[str, object]]:
     state_segment = 0x2600
     frame_segment = 0x3200
     frame_offset = 0x0200
     framebuffer_segment = 0x5000
     framebuffer_offset = 0x0100
-    cases = [
+    transparent_cases = [
         {
             "name": "transparent_zero_direct_copy",
             "flags": 0x0001,
@@ -1737,7 +1739,147 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
             "dirty": [0, 3, 1, 5],
             "stride": 6,
         },
+        {
+            "name": "noncanonical_flip_x_uses_bit_for_clip_byte_for_direction",
+            "flags": 0x0201,
+            "flip_x": 2,
+            "flip_y": 0,
+            "draw": [12, 10],
+            "extent": [5, 2],
+            "frame_offset": [-2, 0],
+            "dirty": [11, 15, 10, 12],
+            "stride": 6,
+        },
+        {
+            "name": "noncanonical_flip_y_uses_bit_for_clip_byte_for_direction",
+            "flags": 0x0101,
+            "flip_x": 0,
+            "flip_y": 2,
+            "draw": [20, 10],
+            "extent": [4, 4],
+            "frame_offset": [0, -1],
+            "dirty": [20, 24, 10, 13],
+            "stride": 6,
+        },
     ]
+    opaque_cases = [
+        {
+            "name": "opaque_zero_overwrite_mixed_dword_tail",
+            "flags": 0x0301,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [5, 6],
+            "extent": [5, 3],
+            "frame_offset": [1, 2],
+            "dirty": [6, 11, 8, 11],
+            "stride": 7,
+        },
+        {
+            "name": "aligned_dword_rows",
+            "flags": 0x0201,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [20, 12],
+            "extent": [4, 2],
+            "frame_offset": [0, 0],
+            "dirty": [20, 24, 12, 14],
+            "stride": 6,
+        },
+        {
+            "name": "short_byte_only_rows",
+            "flags": 0x0101,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [30, 18],
+            "extent": [3, 2],
+            "frame_offset": [0, 0],
+            "dirty": [30, 33, 18, 20],
+            "stride": 5,
+        },
+        {
+            "name": "clip_all_edges",
+            "flags": 0x0001,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [6, 5],
+            "frame_offset": [-2, 1],
+            "dirty": [10, 13, 12, 15],
+            "stride": 8,
+            "advanced_cursor": 8,
+            "advanced_x_offset": 2,
+        },
+        {
+            "name": "horizontal_flip_with_clipping",
+            "flags": 0x0301,
+            "flip_x": 1,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [6, 5],
+            "frame_offset": [-2, 1],
+            "dirty": [10, 13, 11, 15],
+            "stride": 8,
+        },
+        {
+            "name": "vertical_flip_with_clipping",
+            "flags": 0x0201,
+            "flip_x": 0,
+            "flip_y": 1,
+            "draw": [10, 10],
+            "extent": [6, 5],
+            "frame_offset": [-2, 1],
+            "dirty": [8, 14, 12, 16],
+            "stride": 8,
+        },
+        {
+            "name": "both_flips",
+            "flags": 0x0101,
+            "flip_x": 1,
+            "flip_y": 1,
+            "draw": [42, 24],
+            "extent": [5, 4],
+            "frame_offset": [-1, -1],
+            "dirty": [42, 45, 24, 26],
+            "stride": 7,
+            "advanced_cursor": 7,
+            "advanced_x_offset": 0,
+        },
+        {
+            "name": "signed_negative_frame_origin",
+            "flags": 0x0301,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [1, 2],
+            "extent": [5, 4],
+            "frame_offset": [-3, -1],
+            "dirty": [0, 3, 1, 5],
+            "stride": 6,
+        },
+        {
+            "name": "noncanonical_flip_x_uses_bit_for_clip_byte_for_direction",
+            "flags": 0x0201,
+            "flip_x": 2,
+            "flip_y": 0,
+            "draw": [12, 10],
+            "extent": [5, 2],
+            "frame_offset": [-2, 0],
+            "dirty": [11, 15, 10, 12],
+            "stride": 6,
+        },
+        {
+            "name": "noncanonical_flip_y_uses_bit_for_clip_byte_for_direction",
+            "flags": 0x0101,
+            "flip_x": 0,
+            "flip_y": 2,
+            "draw": [20, 10],
+            "extent": [4, 4],
+            "frame_offset": [0, -1],
+            "dirty": [20, 24, 10, 13],
+            "stride": 6,
+        },
+    ]
+    cases = opaque_cases if opaque else transparent_cases
+    routine = f"{entry:#06x}"
     vectors = []
 
     def signed_word(value: int) -> int:
@@ -1811,13 +1953,13 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
         if sprite_top < signed_word(dirty[2]):
             clipped = (signed_word(dirty[2]) - sprite_top) & 0xFFFF
             draw_height = (draw_height - clipped) & 0xFFFF
-            if flip_y == 0:
+            if (flip_y & 1) == 0:
                 source_index = (source_index + clipped * stride) & 0xFFFF
             destination_y = signed_word(dirty[2])
         if sprite_bottom >= signed_word(dirty[3]):
             clipped = (sprite_bottom - signed_word(dirty[3])) & 0xFFFF
             draw_height = (draw_height - clipped) & 0xFFFF
-            if flip_y != 0:
+            if (flip_y & 1) != 0:
                 source_index = (source_index + clipped * stride) & 0xFFFF
         cursor_x_offset = signed_word(
             struct.unpack("<H", frame[source_index + 4 : source_index + 6])[0]
@@ -1827,28 +1969,35 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
         if sprite_left < signed_word(dirty[0]):
             clipped = (signed_word(dirty[0]) - sprite_left) & 0xFFFF
             draw_width = (draw_width - clipped) & 0xFFFF
-            if flip_x == 0:
+            if (flip_x & 1) == 0:
                 source_index = (source_index + clipped) & 0xFFFF
             destination_x = signed_word(dirty[0])
         if sprite_right >= signed_word(dirty[1]):
             clipped = (sprite_right - signed_word(dirty[1])) & 0xFFFF
             draw_width = (draw_width - clipped) & 0xFFFF
-            if flip_x != 0:
+            if (flip_x & 1) != 0:
                 source_index = (source_index + clipped) & 0xFFFF
 
-        if flip_y != 0:
+        if (flip_y & 1) != 0:
             destination_y = signed_word(destination_y + draw_height - 1)
         if flip_x != 0:
             destination_x = signed_word(destination_x + draw_width - 1)
+        initial_selected_remap = 0x7777
         remap_mode = (flags >> 8) & 3
-        expected_remap_offset = (
-            0 if remap_mode == 0 else (0x5F11 if remap_mode == 1 else 0x6011)
-        )
-        remap_table = (
-            None
-            if remap_mode == 0
-            else (remap_5f11 if remap_mode == 1 else remap_6011)
-        )
+        if opaque:
+            expected_remap_offset = initial_selected_remap
+            remap_table = None
+        else:
+            expected_remap_offset = (
+                0
+                if remap_mode == 0
+                else (0x5F11 if remap_mode == 1 else 0x6011)
+            )
+            remap_table = (
+                None
+                if remap_mode == 0
+                else (remap_5f11 if remap_mode == 1 else remap_6011)
+            )
         changed_pixels = []
         row_source = source_index
         row_y = destination_y
@@ -1860,14 +2009,14 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
             for _column in range(draw_width):
                 if source_cursor >= len(pixels):
                     raise AssertionError(
-                        f"0x4536 {name}: source cursor {source_cursor:#x} "
+                        f"{routine} {name}: source cursor {source_cursor:#x} "
                         f"outside {len(pixels):#x}; width={draw_width:#x}, "
                         f"height={draw_height:#x}, start={source_index:#x}, "
                         f"sprite_left={sprite_left:#x}"
                     )
                 source_pixel = pixels[source_cursor]
                 source_cursor += 1
-                if source_pixel != 0:
+                if opaque or source_pixel != 0:
                     before = expected_framebuffer[destination_cursor]
                     after = (
                         source_pixel
@@ -1898,10 +2047,9 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
             "es": state_segment,
             "gs": state_segment,
         }
-        initial_selected_remap = 0x7777
         machine = execute(
-            0x4536,
-            0x46B5,
+            entry,
+            stop,
             initial,
             [
                 (state_segment, record_offset, bytes(record)),
@@ -1951,7 +2099,7 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
                 if before != after
             ][:20]
             raise AssertionError(
-                f"0x4536 {name}: framebuffer[{mismatch:#x}]="
+                f"{routine} {name}: framebuffer[{mismatch:#x}]="
                 f"{actual_framebuffer[mismatch]:#x}, "
                 f"expected={expected_framebuffer[mismatch]:#x}; "
                 f"actual_writes={actual_writes}; "
@@ -1961,24 +2109,24 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
             machine.mem_read(state_segment * 16 + record_offset, 32)
         )
         if actual_record != bytes(record):
-            raise AssertionError(f"0x4536 {name}: slot record changed")
+            raise AssertionError(f"{routine} {name}: slot record changed")
         actual_frame = bytes(
             machine.mem_read(frame_segment * 16 + frame_offset, len(frame))
         )
         if actual_frame != frame:
-            raise AssertionError(f"0x4536 {name}: source frame changed")
+            raise AssertionError(f"{routine} {name}: source frame changed")
         actual_remap_offset = struct.unpack(
             "<H", machine.mem_read(state_segment * 16 + 0x524B, 2)
         )[0]
         if actual_remap_offset != expected_remap_offset:
             raise AssertionError(
-                f"0x4536 {name}: remap={actual_remap_offset:#x}, "
+                f"{routine} {name}: remap={actual_remap_offset:#x}, "
                 f"expected={expected_remap_offset:#x}"
             )
         for register, value in initial.items():
             actual_register = machine.reg_read(REGISTERS[register])
             if actual_register != value:
-                raise AssertionError(f"0x4536 {name}: changed {register}")
+                raise AssertionError(f"{routine} {name}: changed {register}")
 
         vectors.append(
             {
@@ -1986,6 +2134,7 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
                 "flags": flags,
                 "flip_x": bool(flip_x),
                 "flip_y": bool(flip_y),
+                "flip_bytes": [flip_x, flip_y],
                 "draw": [draw_x, draw_y],
                 "extent": [extent_width, extent_height],
                 "frame_origin_offset": [x_offset, y_offset],
@@ -2000,6 +2149,14 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
         )
 
     return vectors
+
+
+def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
+    return _sprite_blit_raw_vectors(0x4536, 0x46B5, opaque=False)
+
+
+def sprite_blit_raw_opaque_vectors() -> list[dict[str, object]]:
+    return _sprite_blit_raw_vectors(0x4BA8, 0x4CD5, opaque=True)
 
 
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
@@ -6444,6 +6601,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_4536_natural.json",
         sprite_blit_raw_transparent_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4ba8_natural.json",
+        sprite_blit_raw_opaque_vectors(),
         args.check,
     )
     update_vector(

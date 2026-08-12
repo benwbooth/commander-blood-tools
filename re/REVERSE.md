@@ -2109,7 +2109,14 @@ Named targets that are already tied to code behavior:
   - mode 1 -> `0x0299:0x172C` (`sprite_blit_rle_transparent`): RLE
     transparent blit with the same zero-skip/remap semantics as mode 0.
   - mode 2 -> `0x0299:0x1C18` (`sprite_blit_raw_opaque`): uncompressed opaque
-    copy with no zero transparency or remap.
+    copy with no zero transparency or remap. Ten direct vectors prove that
+    source zeroes overwrite the destination, all three forward width classes
+    (dword-only, dword plus byte tail, and byte-only) execute correctly, and
+    high-byte remap selectors leave `GS:0x524B` untouched. Noncanonical flip
+    bytes also prove that clipping and initial vertical placement test bit 0,
+    while final traversal tests the whole byte. The routine shares mode 0's
+    signed clipping, DS=ES=GS entry contract, and advanced-source x-origin
+    reload.
   - mode 3 -> `0x0299:0x1D46` (`sprite_blit_rle_opaque`): RLE opaque decode
     and copy with no destination remap.
   - mode 4 -> `0x0299:0x1FD2` (`sprite_blit_scaled_transparent`): fixed-point

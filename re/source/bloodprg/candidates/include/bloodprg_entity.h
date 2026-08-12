@@ -85,6 +85,8 @@ void CB_FAR sprite_slot_dirty_range_render(cb_u16 first_object_id,
         cb_u16 last_object_id); /* 0x0299:0x14E1 */
 void CB_NEAR sprite_blit_raw_transparent(
         volatile bloodprg_entity_record *record); /* 0x0299:0x15A6 */
+void CB_NEAR sprite_blit_raw_opaque(
+        volatile bloodprg_entity_record *record); /* 0x0299:0x1C18 */
 void CB_NEAR sprite_blitter_noop_5(
         volatile bloodprg_entity_record *record); /* 0x0299:0x210A */
 void CB_NEAR sprite_blitter_noop_6(
@@ -107,6 +109,7 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux sprite_slot_commit_dirty_range parm [ax] [bx]
 #pragma aux sprite_slot_dirty_range_render parm [ax] [bx]
 #pragma aux sprite_blit_raw_transparent parm [di] modify exact []
+#pragma aux sprite_blit_raw_opaque parm [di] modify exact []
 #pragma aux sprite_blitter_noop_5 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_6 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_7 parm [di] modify exact []

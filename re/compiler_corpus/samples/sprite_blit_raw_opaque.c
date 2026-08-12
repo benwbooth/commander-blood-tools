@@ -1,4 +1,4 @@
-/* Codegen probe for BLOODPRG 0x004536. */
+/* Codegen probe for BLOODPRG 0x004BA8. */
 typedef unsigned char u8;
 typedef unsigned int u16;
 typedef signed int i16;
@@ -44,21 +44,17 @@ typedef struct sprite_slot_probe {
 extern volatile u8 sprite_flip_x_probe;
 extern volatile u8 sprite_flip_y_probe;
 extern volatile u8 FAR *display_buffer_probe;
-extern volatile u8 sprite_remap_5f11_probe[256];
-extern volatile u8 sprite_remap_6011_probe[256];
-extern volatile u8 NEAR *selected_sprite_remap_probe;
 
 #if defined(__WATCOMC__)
-#pragma aux sprite_blit_raw_transparent_probe parm [di] modify exact []
+#pragma aux sprite_blit_raw_opaque_probe parm [di] modify exact []
 #endif
 
-void NEAR sprite_blit_raw_transparent_probe(volatile sprite_slot_probe *record)
+void NEAR sprite_blit_raw_opaque_probe(volatile sprite_slot_probe *record)
 {
     const volatile sprite_frame_probe FAR *frame;
     const volatile u8 FAR *source;
     volatile u8 FAR *destination;
     volatile u8 FAR *row_destination;
-    volatile u8 NEAR *remap;
     i16 sprite_left;
     i16 sprite_top;
     i16 sprite_right;
@@ -72,7 +68,8 @@ void NEAR sprite_blit_raw_transparent_probe(volatile sprite_slot_probe *record)
     u16 source_row_skip;
     u16 rows;
     u16 columns;
-    u8 pixel;
+    i16 destination_step;
+    i16 row_step;
 
     frame = record->frame;
     sprite_top = (i16)(record->draw_y + (u16)frame->y_offset);
@@ -122,24 +119,19 @@ void NEAR sprite_blit_raw_transparent_probe(volatile sprite_slot_probe *record)
         }
     }
 
-    switch ((record->flags >> 8) & 3u) {
-    case 0u:
-        remap = 0;
-        break;
-    case 1u:
-        remap = &sprite_remap_5f11_probe[0];
-        break;
-    default:
-        remap = &sprite_remap_6011_probe[0];
-        break;
-    }
-    selected_sprite_remap_probe = remap;
-
     if ((sprite_flip_y_probe & 1u) != 0u) {
         destination_y = (i16)(destination_y + draw_height - 1u);
     }
+    if (sprite_flip_y_probe == 0u) {
+        row_step = 320;
+    } else {
+        row_step = -320;
+    }
     if (sprite_flip_x_probe != 0u) {
         destination_x = (i16)(destination_x + draw_width - 1u);
+        destination_step = -1;
+    } else {
+        destination_step = 1;
     }
     source += 8u;
     row_destination = display_buffer_probe +
@@ -151,28 +143,13 @@ void NEAR sprite_blit_raw_transparent_probe(volatile sprite_slot_probe *record)
         destination = row_destination;
         columns = draw_width;
         do {
-            pixel = *source++;
-            if (pixel != 0u) {
-                if (remap != 0) {
-                    *destination = remap[*destination];
-                } else {
-                    *destination = pixel;
-                }
-            }
-            if (sprite_flip_x_probe != 0u) {
-                --destination;
-            } else {
-                ++destination;
-            }
+            *destination = *source++;
+            destination += destination_step;
             --columns;
         } while (columns != 0u);
 
         source += source_row_skip;
-        if (sprite_flip_y_probe != 0u) {
-            row_destination -= 320u;
-        } else {
-            row_destination += 320u;
-        }
+        row_destination += row_step;
         --rows;
     } while (rows != 0u);
 }

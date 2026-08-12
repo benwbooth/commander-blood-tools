@@ -459,7 +459,7 @@ does reproduce the binary's DI callback argument and preserve-all contract. The
 binary instead packs the range through EBP, owns state in GS and dispatch
 scratch in CS, and performs two `MOVSD` copies.
 
-The first real dispatch target, raw-transparent blitter `0x004536`, has eight
+The first real dispatch target, raw-transparent blitter `0x004536`, has ten
 direct framebuffer vectors. They prove direct nonzero source copies, transparent
 zero skips, destination-as-index remapping through both `GS:0x5F11` and
 `GS:0x6011`, signed clipping on every edge, all flip combinations, and complete
@@ -469,14 +469,32 @@ the x-origin from `[SI+4]` at that advanced address. The natural source keeps
 that mutable cursor instead of replacing it with an immutable frame-header
 access.
 
-Open Watcom compiles the actual `0x004536` candidate without warnings; `-3 -ox
--mm` emits 417 bytes versus 384 original. Standalone 8086/286/386 probes emit
+Open Watcom compiles the actual `0x004536` candidate without warnings; after
+correcting destination-x initialization, `-3 -ox -mm` emits 422 bytes versus
+384 original. Standalone 8086/286/386 probes emit
 161/154/157 instructions and 427/410/422 bytes versus 166/384. Their far-pointer
 normalization keeps slot state and globals in DS while loading frame data in ES;
 the binary enters with DS=ES=GS, retains the slot in ES/GS, and loads frame data
 into DS. The original also receives its already-computed rectangle in
 AX/BX/DX/BP and uses register-shaped row loops, while the natural function
 derives that context from the typed slot.
+
+Raw-opaque blitter `0x004BA8` has ten direct framebuffer vectors over the
+same clipping geometry. They prove that source zeroes overwrite the destination,
+high-byte remap selectors leave `GS:0x524B` unchanged, and the forward path's
+dword-only, dword-plus-tail, and byte-only width classes agree with the binary.
+The remaining vectors cover every ordinary flip combination, signed origins,
+the advanced-source x-origin reload, source/framebuffer ownership, and complete
+register preservation. Two noncanonical flip-byte cases prove that clipping and
+initial vertical placement test bit 0 while final traversal tests the full byte.
+
+Open Watcom compiles the actual `0x004BA8` candidate without warnings; `-3 -ox
+-mm` emits 361 bytes versus 302 original. Standalone 8086/286/386 probes emit
+133/127/135 instructions and 350/340/361 bytes versus 135/302, while Turbo C
+2.01 emits 181 instructions. Watcom preserves the signed clipping and computed
+forward/reverse traversal, but normalizes segment ownership and emits scalar
+far-pointer copies. The binary instead receives AX/BX/DX/BP bounds from its
+caller and specializes forward rows with `REP MOVSD` plus `REP MOVSB`.
 
 Dispatch modes 5, 6, and 7 at `0x00509A..0x00509C` are exact one-byte no-ops.
 The direct oracle executes each `RET` with a synthetic near return address and
