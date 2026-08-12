@@ -9336,6 +9336,317 @@ def vm_presentation_register_set_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_load_string_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "empty_no_request",
+            "start": 0x2A00,
+            "text": b"",
+            "pad": 0xA5,
+        },
+        {
+            "name": "ordinary_no_request",
+            "start": 0x2B01,
+            "text": b"RADIO",
+            "pad": 0x5A,
+        },
+        {
+            "name": "exact_finale",
+            "start": 0x2C00,
+            "text": b"fin.",
+            "pad": 0xFF,
+        },
+        {
+            "name": "finale_prefix",
+            "start": 0x2D00,
+            "text": b"fin.ale",
+            "pad": 0x80,
+        },
+        {
+            "name": "case_sensitive_not_finale",
+            "start": 0x2E01,
+            "text": b"Fin.",
+            "pad": 0x7F,
+        },
+        {
+            "name": "request_blocked_by_pending_bit",
+            "start": 0x2F00,
+            "text": b"ship",
+            "pad": 0x33,
+            "request": 0xA2,
+            "ship": 1,
+            "scene": 1,
+        },
+        {
+            "name": "request_from_ship_flag",
+            "start": 0x3000,
+            "text": b"ship",
+            "pad": 0x44,
+            "request": 0xA1,
+            "ship": 0x8001,
+            "scene": 0,
+        },
+        {
+            "name": "request_from_scene_gate",
+            "start": 0x3101,
+            "text": b"scene",
+            "pad": 0x55,
+            "request": 0x10,
+            "ship": 0x8000,
+            "scene": 0x81,
+        },
+        {
+            "name": "unrelated_activity_bits_do_not_request",
+            "start": 0x3200,
+            "text": b"idle",
+            "pad": 0x66,
+            "request": 0x10,
+            "ship": 0x8000,
+            "scene": 0x80,
+        },
+        {
+            "name": "copy_and_pad_wrap_segment",
+            "start": 0xFFFC,
+            "text": b"fin.",
+            "pad": 0x77,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        start = int(case["start"])
+        text_bytes = bytes(case["text"])
+        pad = int(case["pad"])
+        script = text_bytes + b"\0" + bytes([pad])
+        finale_before = 0x5A
+        request_before = int(case.get("request", 0xA0))
+        ship_flags = int(case.get("ship", 0))
+        scene_gate = int(case.get("scene", 0))
+        active_line_before = 0x2468
+        presentation_gate_before = 0xA5
+        actor_before = 0x1357
+        dialog_gate_before = 0x5A
+        is_finale = text_bytes.startswith(b"fin.")
+        request_raised = not (request_before & 2) and bool(
+            (ship_flags & 1) or (scene_gate & 1)
+        )
+        memory = [
+            (game_segment, 0x67BD, bytes([finale_before])),
+            (game_segment, 0x67AA, bytes([request_before])),
+            (game_segment, 0x24F3, struct.pack("<H", ship_flags)),
+            (game_segment, 0x274F, bytes([scene_gate])),
+            (game_segment, 0x6788, struct.pack("<H", active_line_before)),
+            (game_segment, 0x1FB2, bytes([presentation_gate_before])),
+            (game_segment, 0x1FA3, struct.pack("<H", actor_before)),
+            (game_segment, 0x0B3B, bytes([dialog_gate_before])),
+            (stack_segment, 0x2120, b"\xcc" * 128),
+            (data_segment, 0x2120, b"\x5a" * 128),
+            (game_segment, 0x2120, b"\xa5" * 128),
+        ]
+        immutable = []
+        for byte_index, byte in enumerate(script):
+            offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x67D5, 0x67F6, 0x680F, 0x682F):
+                return
+            phases.append(
+                (
+                    address,
+                    machine.reg_read(UC_X86_REG_SI),
+                    machine.mem_read(game_segment * 16 + 0x67BD, 1)[0],
+                    machine.mem_read(game_segment * 16 + 0x67AA, 1)[0],
+                )
+            )
+
+        machine = execute(
+            0x67C8,
+            0x682F,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        nul_end = (start + len(text_bytes) + 1) & 0xFFFF
+        final_script = (nul_end + 1) & 0xFFFF
+        expected_phases = [
+            (0x67D5, final_script, finale_before, request_before),
+            (
+                0x67F6,
+                final_script,
+                1 if is_finale else finale_before,
+                request_before,
+            ),
+        ]
+        if request_raised:
+            expected_phases.append(
+                (
+                    0x680F,
+                    final_script,
+                    1 if is_finale else finale_before,
+                    request_before,
+                )
+            )
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x67c8 {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = initial["eax"] & 0xFFFFFF00
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | final_script
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | 0x2120
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x67c8 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        expected_buffer = text_bytes + b"\0"
+        actual_buffer = bytes(
+            machine.mem_read(stack_segment * 16 + 0x2120, len(expected_buffer))
+        )
+        if actual_buffer != expected_buffer:
+            raise AssertionError(
+                f"0x67c8 {name}: buffer={actual_buffer!r}, expected={expected_buffer!r}"
+            )
+        if machine.mem_read(data_segment * 16 + 0x2120, 8) != b"\x5a" * 8:
+            raise AssertionError(f"0x67c8 {name}: DS buffer decoy changed")
+        if machine.mem_read(game_segment * 16 + 0x2120, 8) != b"\xa5" * 8:
+            raise AssertionError(f"0x67c8 {name}: GS buffer decoy changed")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x67c8 {name}: script input changed")
+
+        expected_finale = 1 if is_finale else finale_before
+        actual_finale = machine.mem_read(game_segment * 16 + 0x67BD, 1)[0]
+        if actual_finale != expected_finale:
+            raise AssertionError(
+                f"0x67c8 {name}: finale={actual_finale:#x}, expected={expected_finale:#x}"
+            )
+        expected_request = request_before | (2 if request_raised else 0)
+        actual_request = machine.mem_read(game_segment * 16 + 0x67AA, 1)[0]
+        if actual_request != expected_request:
+            raise AssertionError(
+                f"0x67c8 {name}: request={actual_request:#x}, expected={expected_request:#x}"
+            )
+
+        expected_side_effects = {
+            0x6788: 7 if request_raised else active_line_before,
+            0x1FB2: 0 if request_raised else presentation_gate_before,
+            0x1FA3: 0xFFFF if request_raised else actor_before,
+            0x0B3B: 0 if request_raised else dialog_gate_before,
+        }
+        for offset, expected in expected_side_effects.items():
+            size = 2 if offset in (0x6788, 0x1FA3) else 1
+            actual_bytes = machine.mem_read(game_segment * 16 + offset, size)
+            actual = (
+                struct.unpack("<H", actual_bytes)[0]
+                if size == 2
+                else actual_bytes[0]
+            )
+            if actual != expected:
+                raise AssertionError(
+                    f"0x67c8 {name}: {offset:#x}={actual:#x}, expected={expected:#x}"
+                )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if request_raised:
+            expected_flags = {
+                "cf": False,
+                "pf": (expected_request & 0xFF).bit_count() % 2 == 0,
+                "zf": expected_request == 0,
+                "sf": bool(expected_request & 0x80),
+                "of": False,
+            }
+        elif request_before & 2:
+            tested = request_before & 2
+            expected_flags = {
+                "cf": False,
+                "pf": tested.bit_count() % 2 == 0,
+                "zf": False,
+                "sf": False,
+                "of": False,
+            }
+        elif ship_flags & 1:
+            tested = ship_flags & 1
+            expected_flags = {
+                "cf": False,
+                "pf": tested.bit_count() % 2 == 0,
+                "zf": False,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            tested = scene_gate & 1
+            expected_flags = {
+                "cf": False,
+                "pf": tested.bit_count() % 2 == 0,
+                "zf": tested == 0,
+                "sf": False,
+                "of": False,
+            }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x67c8 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x682F] != 0xC3:
+            raise AssertionError("0x67c8: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "text_hex": text_bytes.hex(),
+                "pad_byte": pad,
+                "final_script_offset": final_script,
+                "finale_set": is_finale,
+                "request_raised": request_raised,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -13981,6 +14292,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_67ba_natural.json",
         vm_presentation_register_set_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_67c8_natural.json",
+        vm_load_string_vectors(),
         args.check,
     )
     update_vector(

@@ -1,19 +1,18 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR vm_op_a8_load_string(const char **script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a8_load_string(
+    const cb_u8 CB_NEAR *script_bytes)
 {
-    volatile char *dst;
-    char ch;
+    volatile cb_u8 *dst;
+    cb_u8 ch;
 
     dst = vm_load_string_buffer;
     do {
-        ch = **script_bytes;
-        ++*script_bytes;
-        *dst = ch;
-        ++dst;
+        ch = *script_bytes++;
+        *dst++ = ch;
     } while (ch != '\0');
 
-    ++*script_bytes;
+    ++script_bytes;
 
     if (vm_load_string_buffer[0] == 'f'
             && vm_load_string_buffer[1] == 'i'
@@ -30,4 +29,6 @@ void CB_NEAR vm_op_a8_load_string(const char **script_bytes)
         vm_presentation_actor_record = 0xffffu;
         vm_dialog_gate_0b3b = 0;
     }
+
+    return script_bytes;
 }

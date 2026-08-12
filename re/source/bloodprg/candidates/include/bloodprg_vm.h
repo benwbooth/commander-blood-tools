@@ -26,7 +26,7 @@ extern volatile bloodprg_vm_ui_state vm_ui_state; /* GS:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* GS:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
-extern volatile char vm_load_string_buffer[]; /* GS:0x2120 */
+extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
 extern volatile cb_u8 vm_text_mode_0cf9;     /* GS:0x0CF9 */
 extern volatile cb_u8 vm_text_mode_0cfa;     /* GS:0x0CFA */
@@ -141,6 +141,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_a6_text parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux strlen_b parm [es di] value [ax] modify exact [ax]
 #pragma aux vm_op_a7_set_if_presentation parm [si] value [si] modify exact [ax si]
+#pragma aux vm_op_a8_load_string parm [si] value [si] modify exact [ax bp si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -189,6 +190,8 @@ cb_u8 CB_NEAR *CB_NEAR vm_op_a6_text(
 cb_u16 CB_NEAR strlen_b(const char CB_FAR *text); /* 0x0067A7 */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_a7_set_if_presentation(
     const cb_u16 CB_NEAR *script_words);      /* 0x0067BA */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a8_load_string(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x0067C8 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */

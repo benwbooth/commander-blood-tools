@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_a8_load_string
-; label_comment: 0xA8 handler: copy NUL-terminated operand into buffer 0x2120 (bp), skip pad. THEN if buffer starts 'fin.' set gs:[0x67BD]=1 (fin/finale flag). THEN if !(gs:[0x67AA]&2) AND (gs:[0x24F3]&1 ship-active OR gs:[0x274F]&1): presentation request -> gs:[0x6788]=7 (active line), gs:[0x67AA]|=2, gs:[0x1FB2]=0, gs:[0x1FA3]=0xFFFF, gs:[0xB3B]=0. Port models only the string copy (VmEvent::LoadString); the fin-flag + presentation-request are engine/ship-presentation-flag coupled
+; label_comment: 0xA8 handler: copies the NUL-terminated DS:SI operand to SS:0x2120 through BP, consumes one pad byte, sets gs:[0x67BD] when the buffer starts with case-sensitive "fin.", then raises presentation request bit1 and its ordered state stores only when that bit is clear and ship or scene gate bit0 is set
 ; incoming: vm_opcode_handlers:opcode_0xa8
 ; byte_count: 104
 ; boundary: cfg_blocks_12_terminals_1

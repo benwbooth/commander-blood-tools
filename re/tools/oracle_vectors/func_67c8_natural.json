@@ -1,0 +1,162 @@
+[
+  {
+    "name": "empty_no_request",
+    "start_offset": 10752,
+    "text_hex": "",
+    "pad_byte": 165,
+    "final_script_offset": 10754,
+    "finale_set": false,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary_no_request",
+    "start_offset": 11009,
+    "text_hex": "524144494f",
+    "pad_byte": 90,
+    "final_script_offset": 11016,
+    "finale_set": false,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "exact_finale",
+    "start_offset": 11264,
+    "text_hex": "66696e2e",
+    "pad_byte": 255,
+    "final_script_offset": 11270,
+    "finale_set": true,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "finale_prefix",
+    "start_offset": 11520,
+    "text_hex": "66696e2e616c65",
+    "pad_byte": 128,
+    "final_script_offset": 11529,
+    "finale_set": true,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "case_sensitive_not_finale",
+    "start_offset": 11777,
+    "text_hex": "46696e2e",
+    "pad_byte": 127,
+    "final_script_offset": 11783,
+    "finale_set": false,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "request_blocked_by_pending_bit",
+    "start_offset": 12032,
+    "text_hex": "73686970",
+    "pad_byte": 51,
+    "final_script_offset": 12038,
+    "finale_set": false,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "request_from_ship_flag",
+    "start_offset": 12288,
+    "text_hex": "73686970",
+    "pad_byte": 68,
+    "final_script_offset": 12294,
+    "finale_set": false,
+    "request_raised": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "request_from_scene_gate",
+    "start_offset": 12545,
+    "text_hex": "7363656e65",
+    "pad_byte": 85,
+    "final_script_offset": 12552,
+    "finale_set": false,
+    "request_raised": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unrelated_activity_bits_do_not_request",
+    "start_offset": 12800,
+    "text_hex": "69646c65",
+    "pad_byte": 102,
+    "final_script_offset": 12806,
+    "finale_set": false,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "copy_and_pad_wrap_segment",
+    "start_offset": 65532,
+    "text_hex": "66696e2e",
+    "pad_byte": 119,
+    "final_script_offset": 2,
+    "finale_set": true,
+    "request_raised": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]
