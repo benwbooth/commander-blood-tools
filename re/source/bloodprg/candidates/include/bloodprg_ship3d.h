@@ -2,6 +2,20 @@
 #define BLOODPRG_SHIP3D_H
 
 #include "bloodprg_common.h"
+#include "bloodprg_vm.h"
+
+#define SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8 0x0008u
+#define SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10 0x0010u
+#define SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40 0x0040u
+#define SHIP_3D_OBJECT_KIND_POSITION_KIND100 0x0100u
+#define SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200 0x0200u
+
+#define SHIP_3D_FIELD_SELECTOR_POSITION 0x000bu
+#define SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH 0x0009u
+#define SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH 0x000au
+#define SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD 0x000cu
+#define SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD 0x000eu
+#define SHIP_3D_FIELD_SELECTOR_PARENT_LINK 0x0011u
 
 typedef struct ship_3d_projection_context {
     cb_i32 matrix[9];
@@ -27,6 +41,11 @@ typedef struct ship_3d_matrix_slot {
     cb_u8 tail[22];
 } ship_3d_matrix_slot;
 
+typedef struct ship_3d_position_field {
+    cb_u16 x;
+    cb_u16 y;
+} ship_3d_position_field;
+
 extern volatile cb_u16 ship_3d_depth_offset; /* GS:0x2527 */
 extern volatile cb_u8 ship_3d_depth_opening; /* GS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* GS:0x2530 */
@@ -43,5 +62,9 @@ extern volatile cb_i16 ship_3d_clip_left;    /* GS:0x5235 */
 extern volatile cb_i16 ship_3d_clip_right;   /* GS:0x5237 */
 extern volatile cb_i16 ship_3d_clip_top;     /* GS:0x5239 */
 extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
+
+cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
+cb_u16 CB_NEAR ship_3d_position_field_resolve(cb_u16 record_offset,
+        cb_u16 kind100_compare_word);        /* 0x0061A6 */
 
 #endif

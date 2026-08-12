@@ -25,7 +25,8 @@ void CB_NEAR vm_op_b8_record_readwrite(const cb_u16 **script_words)
         field[0] = first;
         field[1] = second;
         threshold = vm_record_lookup_by_threshold(offset);
-        secondary_link = (volatile cb_u16 CB_FAR *)(vm_secondary_record + 0x16);
+        secondary_link = (volatile cb_u16 CB_FAR *)
+            (vm_record_base + vm_arche_record_offset + 0x16u);
         if (threshold == *secondary_link) {
             *secondary_link = 0;
         }
