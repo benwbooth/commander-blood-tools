@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: ship_3d_point_cloud_randomize
-; label_comment: initializes 1000 point-cloud records at DS:0x2FC1 with random x/y/z words
+; label_comment: initializes x/y/z in 1000 eight-byte point-cloud records at GS:0x2fc1 through three AX=0xffff PRNG calls per record; ES:DI stores advance six bytes and ADD DI,2 preserves each fourth scratch word
 ; incoming: call@0x000fd3->071e:2387
 ; byte_count: 49
 ; boundary: cfg_blocks_1_terminals_1

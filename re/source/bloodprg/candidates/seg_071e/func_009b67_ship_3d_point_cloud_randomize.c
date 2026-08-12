@@ -3,11 +3,13 @@
 
 void CB_FAR ship_3d_point_cloud_randomize(void)
 {
-    cb_u16 i;
+    volatile ship_3d_point_record CB_GAME_DATA *point;
 
-    for (i = 0; i < 1000u; ++i) {
-        ship_3d_point_cloud[i].x = (cb_u16)blood_prng_next(0xffffu);
-        ship_3d_point_cloud[i].y = (cb_u16)blood_prng_next(0xffffu);
-        ship_3d_point_cloud[i].z = (cb_u16)blood_prng_next(0xffffu);
-    }
+    point = ship_3d_point_cloud;
+    do {
+        point->x = (cb_u16)blood_prng_next(0xffffu);
+        point->y = (cb_u16)blood_prng_next(0xffffu);
+        point->z = (cb_u16)blood_prng_next(0xffffu);
+        ++point;
+    } while (point != ship_3d_point_cloud + 1000u);
 }

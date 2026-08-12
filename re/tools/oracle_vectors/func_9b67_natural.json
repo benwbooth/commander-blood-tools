@@ -1,0 +1,314 @@
+[
+  {
+    "name": "all_zero",
+    "prng_call_count": 3000,
+    "prng_outputs_sha256": "a6bedce1e512d6531cd02fe7a0b72bb64f229cdb254ec48d63308877004e620a",
+    "call_samples": [
+      {
+        "index": 0,
+        "record": 0,
+        "component": 0,
+        "di": 12225,
+        "cx": 1000,
+        "return_ip": 39804
+      },
+      {
+        "index": 1,
+        "record": 0,
+        "component": 1,
+        "di": 12227,
+        "cx": 1000,
+        "return_ip": 39813
+      },
+      {
+        "index": 2,
+        "record": 0,
+        "component": 2,
+        "di": 12229,
+        "cx": 1000,
+        "return_ip": 39822
+      },
+      {
+        "index": 2997,
+        "record": 999,
+        "component": 0,
+        "di": 20217,
+        "cx": 1,
+        "return_ip": 39804
+      },
+      {
+        "index": 2998,
+        "record": 999,
+        "component": 1,
+        "di": 20219,
+        "cx": 1,
+        "return_ip": 39813
+      },
+      {
+        "index": 2999,
+        "record": 999,
+        "component": 2,
+        "di": 20221,
+        "cx": 1,
+        "return_ip": 39822
+      }
+    ],
+    "first_record": [
+      0,
+      0,
+      0,
+      34935
+    ],
+    "last_record": [
+      0,
+      0,
+      0,
+      16431
+    ],
+    "point_cloud_sha256": "92e8efe82c367a5be8a24849a836570622b85e7b5436611319c928423c1ec2ce",
+    "scratch_sha256": "2f120a21e1bd1688a5c9fc7e99ca4164d8c07c4ec03ed2c5c07eec70177f81ed",
+    "final_cx": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ramp",
+    "prng_call_count": 3000,
+    "prng_outputs_sha256": "efa4978b091f46aae4872d344c7c9c0122f8c8be9910f647c5ca4c16ee71aa30",
+    "call_samples": [
+      {
+        "index": 0,
+        "record": 0,
+        "component": 0,
+        "di": 12225,
+        "cx": 1000,
+        "return_ip": 39804
+      },
+      {
+        "index": 1,
+        "record": 0,
+        "component": 1,
+        "di": 12227,
+        "cx": 1000,
+        "return_ip": 39813
+      },
+      {
+        "index": 2,
+        "record": 0,
+        "component": 2,
+        "di": 12229,
+        "cx": 1000,
+        "return_ip": 39822
+      },
+      {
+        "index": 2997,
+        "record": 999,
+        "component": 0,
+        "di": 20217,
+        "cx": 1,
+        "return_ip": 39804
+      },
+      {
+        "index": 2998,
+        "record": 999,
+        "component": 1,
+        "di": 20219,
+        "cx": 1,
+        "return_ip": 39813
+      },
+      {
+        "index": 2999,
+        "record": 999,
+        "component": 2,
+        "di": 20221,
+        "cx": 1,
+        "return_ip": 39822
+      }
+    ],
+    "first_record": [
+      4660,
+      4697,
+      4734,
+      44701
+    ],
+    "last_record": [
+      50014,
+      50051,
+      50088,
+      26197
+    ],
+    "point_cloud_sha256": "6e9cc186c8b9c9fea491f33625a120c0c10b5883de46eb47e42468e91df4b5dc",
+    "scratch_sha256": "aa822df83530075667694045a6fbbe2c2565755badb92181ef500d9816d94276",
+    "final_cx": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "extrema_cycle",
+    "prng_call_count": 3000,
+    "prng_outputs_sha256": "71870e059d74bbcf16b454eeb2ddae7fbec1a7e488dcc1dc9bb4f611c3ef121e",
+    "call_samples": [
+      {
+        "index": 0,
+        "record": 0,
+        "component": 0,
+        "di": 12225,
+        "cx": 1000,
+        "return_ip": 39804
+      },
+      {
+        "index": 1,
+        "record": 0,
+        "component": 1,
+        "di": 12227,
+        "cx": 1000,
+        "return_ip": 39813
+      },
+      {
+        "index": 2,
+        "record": 0,
+        "component": 2,
+        "di": 12229,
+        "cx": 1000,
+        "return_ip": 39822
+      },
+      {
+        "index": 2997,
+        "record": 999,
+        "component": 0,
+        "di": 20217,
+        "cx": 1,
+        "return_ip": 39804
+      },
+      {
+        "index": 2998,
+        "record": 999,
+        "component": 1,
+        "di": 20219,
+        "cx": 1,
+        "return_ip": 39813
+      },
+      {
+        "index": 2999,
+        "record": 999,
+        "component": 2,
+        "di": 20221,
+        "cx": 1,
+        "return_ip": 39822
+      }
+    ],
+    "first_record": [
+      0,
+      1,
+      32767,
+      54467
+    ],
+    "last_record": [
+      32768,
+      65533,
+      65534,
+      35963
+    ],
+    "point_cloud_sha256": "fb37111d47ea330344b9b3a5f9fe4bdd3eeb6365ce24844d53d7568648d57bbd",
+    "scratch_sha256": "6066a4687e2ce25435ca78371e92d3cec2b1f927fc9e4dd887b8f0cb4de169cb",
+    "final_cx": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lcg",
+    "prng_call_count": 3000,
+    "prng_outputs_sha256": "e95b49e98f272fbc9aa8b27807f88ebe57f5b71bdca3ae6ea022dfa5bfbaf005",
+    "call_samples": [
+      {
+        "index": 0,
+        "record": 0,
+        "component": 0,
+        "di": 12225,
+        "cx": 1000,
+        "return_ip": 39804
+      },
+      {
+        "index": 1,
+        "record": 0,
+        "component": 1,
+        "di": 12227,
+        "cx": 1000,
+        "return_ip": 39813
+      },
+      {
+        "index": 2,
+        "record": 0,
+        "component": 2,
+        "di": 12229,
+        "cx": 1000,
+        "return_ip": 39822
+      },
+      {
+        "index": 2997,
+        "record": 999,
+        "component": 0,
+        "di": 20217,
+        "cx": 1,
+        "return_ip": 39804
+      },
+      {
+        "index": 2998,
+        "record": 999,
+        "component": 1,
+        "di": 20219,
+        "cx": 1,
+        "return_ip": 39813
+      },
+      {
+        "index": 2999,
+        "record": 999,
+        "component": 2,
+        "di": 20221,
+        "cx": 1,
+        "return_ip": 39822
+      }
+    ],
+    "first_record": [
+      48846,
+      27775,
+      55876,
+      64233
+    ],
+    "last_record": [
+      507,
+      62576,
+      16201,
+      45729
+    ],
+    "point_cloud_sha256": "89dc35abd01b6cc765bed74f118e93dbaf7155eaccf123034fc884351cb66a1d",
+    "scratch_sha256": "bfa06f840f8cf94c1b37bd0ad044bd55c919ed5c588ad1c1e24eb8fa9daaae0d",
+    "final_cx": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

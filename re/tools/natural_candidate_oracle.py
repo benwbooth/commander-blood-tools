@@ -17817,6 +17817,227 @@ def ship_3d_plot_point_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_point_cloud_randomize_vectors() -> list[dict[str, object]]:
+    entry = 0x9B67
+    prng_entry = 0x27E2  # Runtime 01CE:0B02.
+    expected_hash = "8e518bfaaeff24ed55e4ebbdaec0ea0e13b3ee7810410bcd5a1e23d47938df31"
+    if hashlib.sha256(EXE[entry : entry + 49]).hexdigest() != expected_hash:
+        raise AssertionError("0x9b67: recovered 49-byte body changed")
+
+    ramp = [(0x1234 + index * 37) % 0xFFFF for index in range(3000)]
+    extrema_cycle = [0x0000, 0x0001, 0x7FFF, 0x8000, 0xFFFD, 0xFFFE]
+    extrema = [extrema_cycle[index % len(extrema_cycle)] for index in range(3000)]
+    lcg = []
+    state = 0xACE1
+    for _ in range(3000):
+        state = (state * 25173 + 13849) & 0xFFFF
+        lcg.append(state % 0xFFFF)
+    cases = [
+        ("all_zero", [0] * 3000, 0x11),
+        ("ramp", ramp, 0x37),
+        ("extrema_cycle", extrema, 0x5D),
+        ("lcg", lcg, 0x83),
+    ]
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for name, outputs, seed in cases:
+        cloud_before = bytearray(
+            (seed + index * 17) & 0xFF for index in range(1000 * 8)
+        )
+        cloud_expected = bytearray(cloud_before)
+        for record_index in range(1000):
+            struct.pack_into(
+                "<HHH",
+                cloud_expected,
+                record_index * 8,
+                *outputs[record_index * 3 : record_index * 3 + 3],
+            )
+        data_decoy = bytes(
+            (seed + 0x40 + index * 13) & 0xFF for index in range(1000 * 8)
+        )
+        stack_decoy = bytes(
+            (seed + 0x80 + index * 19) & 0xFF for index in range(1000 * 8)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        call_count = 0
+        call_samples = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal call_count
+            if address != prng_entry:
+                return
+            if call_count >= len(outputs):
+                raise AssertionError(f"0x9b67 {name}: too many PRNG calls")
+
+            record_index, component = divmod(call_count, 3)
+            expected_di = 0x2FC1 + record_index * 8 + component * 2
+            expected_return = (0x9B7C, 0x9B85, 0x9B8E)[component]
+            actual_call = {
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+            }
+            expected_call = {
+                "ax": 0xFFFF,
+                "cx": 1000 - record_index,
+                "di": expected_di,
+                "es": game_segment,
+                "cs": 0x01CE,
+                "ip": 0x0B02,
+                "sp": 0xFEF6,
+            }
+            if actual_call != expected_call:
+                raise AssertionError(
+                    f"0x9b67 {name} call {call_count}: "
+                    f"state={actual_call}, expected={expected_call}"
+                )
+            return_words = struct.unpack(
+                "<HH", machine.mem_read(stack_segment * 16 + 0xFEF6, 4)
+            )
+            if return_words != (expected_return, 0):
+                raise AssertionError(
+                    f"0x9b67 {name} call {call_count}: "
+                    f"return={return_words}, expected={(expected_return, 0)}"
+                )
+            for register in ("ebx", "edx", "esi", "ebp", "ds", "fs", "gs", "ss"):
+                if machine.reg_read(REGISTERS[register]) != initial[register]:
+                    raise AssertionError(
+                        f"0x9b67 {name} call {call_count}: changed {register}"
+                    )
+            if call_count < 3 or call_count >= 2997:
+                call_samples.append(
+                    {
+                        "index": call_count,
+                        "record": record_index,
+                        "component": component,
+                        "di": expected_di,
+                        "cx": 1000 - record_index,
+                        "return_ip": expected_return,
+                    }
+                )
+            machine.reg_write(UC_X86_REG_AX, outputs[call_count])
+            call_count += 1
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, prng_entry, b"\xcb"),
+                (game_segment, 0x2FC1, bytes(cloud_before)),
+                (data_segment, 0x2FC1, data_decoy),
+                (stack_segment, 0x2FC1, stack_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=50000,
+        )
+        if call_count != 3000:
+            raise AssertionError(
+                f"0x9b67 {name}: PRNG calls={call_count}, expected=3000"
+            )
+
+        cloud_after = bytes(
+            machine.mem_read(game_segment * 16 + 0x2FC1, len(cloud_expected))
+        )
+        if cloud_after != cloud_expected:
+            raise AssertionError(f"0x9b67 {name}: point cloud mismatch")
+        if bytes(machine.mem_read(data_segment * 16 + 0x2FC1, len(data_decoy))) != data_decoy:
+            raise AssertionError(f"0x9b67 {name}: DS cloud decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x2FC1, len(stack_decoy))) != stack_decoy:
+            raise AssertionError(f"0x9b67 {name}: SS cloud decoy changed")
+        scratch_before = b"".join(
+            cloud_before[index * 8 + 6 : index * 8 + 8] for index in range(1000)
+        )
+        scratch_after = b"".join(
+            cloud_after[index * 8 + 6 : index * 8 + 8] for index in range(1000)
+        )
+        if scratch_after != scratch_before:
+            raise AssertionError(f"0x9b67 {name}: scratch words changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9b67 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9b67 {name}: far return did not restore CS")
+
+        expected_flags = {
+            "cf": False,
+            "pf": False,
+            "af": True,
+            "zf": False,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9b67 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x9b67 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "prng_call_count": call_count,
+                "prng_outputs_sha256": hashlib.sha256(
+                    struct.pack("<3000H", *outputs)
+                ).hexdigest(),
+                "call_samples": call_samples,
+                "first_record": list(struct.unpack("<HHHH", cloud_after[:8])),
+                "last_record": list(struct.unpack("<HHHH", cloud_after[-8:])),
+                "point_cloud_sha256": hashlib.sha256(cloud_after).hexdigest(),
+                "scratch_sha256": hashlib.sha256(scratch_after).hexdigest(),
+                "final_cx": machine.reg_read(UC_X86_REG_CX),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -23650,6 +23871,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b04_natural.json",
         ship_3d_plot_point_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9b67_natural.json",
+        ship_3d_point_cloud_randomize_vectors(),
         args.check,
     )
     update_vector(

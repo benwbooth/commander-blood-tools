@@ -68,7 +68,7 @@ extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_a; /* GS:0x2F71 */
 extern volatile ship_3d_matrix_slot ship_3d_matrix_slots[];
 extern volatile ship_3d_projection_terms CB_GAME_DATA ship_3d_projection_inputs; /* GS:0x2F7D */
 extern volatile ship_3d_projection_context CB_GAME_DATA ship_3d_projection; /* GS:0x2F95 */
-extern volatile ship_3d_point_record ship_3d_point_cloud[]; /* GS:0x2FC1 */
+extern volatile ship_3d_point_record CB_GAME_DATA ship_3d_point_cloud[]; /* GS:0x2FC1 */
 /* Original BP indexing selects SS:0x4F45; GAME_DATA must bind to SS == GS. */
 extern const ship_3d_angle_table_entry CB_GAME_DATA ship_3d_angle_table[];
 extern volatile cb_u32 ship_3d_render_state_block[]; /* GS:0x5251 */
@@ -86,6 +86,7 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
 #pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
+#pragma aux ship_3d_point_cloud_randomize modify exact [ax cx es]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -104,6 +105,7 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
         cb_u16 CB_NEAR *output);              /* 0x00624B */
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
+void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,

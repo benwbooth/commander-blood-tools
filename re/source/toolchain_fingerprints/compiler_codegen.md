@@ -1631,6 +1631,23 @@ the framebuffer's offset. The original's implicit BP context, segment-only ES
 framebuffer, and preserve-all boundary remain integration constraints rather
 than register emulation in the C source.
 
+Point-cloud initializer `0x009B67` sets ES from GS, starts DI at 0x2FC1, and
+performs three far PRNG calls with AX=0xFFFF for each of 1,000 records. STOSW
+writes x/y/z and advances six bytes; ADD DI,2 skips the fourth word. Four
+scripted complete-cloud vectors verify 12,000 PRNG entries across the suite,
+including AX/CX/DI/ES and far-return stack state, then verify all resulting
+component stores, all scratch words, DS/SS decoys, return registers/segments,
+CX=0, final ADD flags, and RETF.
+
+The natural candidate is a typed GAME_DATA pointer-to-end loop. Open Watcom
+`-3 -ox -mm` compiles it without warnings to 20 instructions/57 bytes versus
+22/49 original, retaining the three AX-register far calls, ordered stores, and
+eight-byte stride. It uses BX and an end-pointer CMP, saves BX/DX, and leaves AX
+and ES clobbered rather than using DI/CX/LOOP and restoring AX/DI/ES. Turbo C
+2.01 medium emits 35 instructions because it passes each modulus on the stack
+and carries a four-byte far pointer. This is close natural codegen, but not yet
+a drop-in ABI match.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1703,6 +1720,7 @@ LCS and then mnemonic similarity:
 | `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
 | `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
 | `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
+| `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
