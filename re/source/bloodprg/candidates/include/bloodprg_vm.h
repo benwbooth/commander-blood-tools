@@ -153,6 +153,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_b7_record_op parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_op_b8_record_readwrite parm [si] value [si] modify exact [ax bx si es]
 #pragma aux vm_op_c5_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
+#pragma aux vm_op_c6_record_match parm [si] value [si] modify exact [ax dx si bp es]
 #pragma aux vm_c2_descript_lookup parm [es di] value [ax] modify exact [ax]
 #endif
 
@@ -224,6 +225,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b8_record_readwrite(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006B06 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c5_record_match(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006D18 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c6_record_match(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006D80 */
 int CB_FAR vm_c2_descript_lookup(
     const volatile cb_u8 CB_FAR *record_name); /* 0x007409 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */

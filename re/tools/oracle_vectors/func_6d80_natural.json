@@ -1,0 +1,324 @@
+[
+  {
+    "name": "query_exact_pass",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2560,
+    "operand": 17767,
+    "record_before": [
+      198,
+      17767,
+      39321
+    ],
+    "record_after": [
+      198,
+      17767,
+      39321
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21508,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_value_mismatch_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2592,
+    "operand": 17767,
+    "record_before": [
+      198,
+      30583,
+      39321
+    ],
+    "record_after": [
+      198,
+      30583,
+      39321
+    ],
+    "branch_failed": true,
+    "final_script_offset": 26147,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_kind_mismatch_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2624,
+    "operand": 17767,
+    "record_before": [
+      197,
+      17767,
+      39321
+    ],
+    "record_after": [
+      197,
+      17767,
+      39321
+    ],
+    "branch_failed": true,
+    "final_script_offset": 26182,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_exact_fails",
+    "query_mode_before": 3,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2656,
+    "operand": 17767,
+    "record_before": [
+      198,
+      17767,
+      39321
+    ],
+    "record_after": [
+      198,
+      17767,
+      39321
+    ],
+    "branch_failed": true,
+    "final_script_offset": 26217,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_value_mismatch_pass",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2688,
+    "operand": 17767,
+    "record_before": [
+      198,
+      30583,
+      39321
+    ],
+    "record_after": [
+      198,
+      30583,
+      39321
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21637,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_kind_mismatch_pass",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2720,
+    "operand": 17767,
+    "record_before": [
+      197,
+      17767,
+      39321
+    ],
+    "record_after": [
+      197,
+      17767,
+      39321
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21669,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_script_end",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2752,
+    "operand": 17767,
+    "record_before": [
+      197,
+      17767,
+      39321
+    ],
+    "record_after": [
+      197,
+      17767,
+      39321
+    ],
+    "branch_failed": false,
+    "final_script_offset": 0,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_record_word_at_ffff",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 65535,
+    "operand": 17767,
+    "record_before": [
+      198,
+      17767,
+      39321
+    ],
+    "record_after": [
+      198,
+      17767,
+      39321
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21732,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_overwrites_empty",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2816,
+    "operand": 17767,
+    "record_before": [
+      0,
+      30583,
+      39321
+    ],
+    "record_after": [
+      198,
+      17767,
+      0
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21764,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_overwrites_existing",
+    "query_mode_before": 2,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2848,
+    "operand": 17767,
+    "record_before": [
+      197,
+      43690,
+      48059
+    ],
+    "record_after": [
+      198,
+      17767,
+      0
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21796,
+    "query_mode_after": 2,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_prefixed_overwrite",
+    "query_mode_before": 0,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2880,
+    "operand": 17767,
+    "record_before": [
+      1024,
+      30583,
+      39321
+    ],
+    "record_after": [
+      198,
+      17767,
+      0
+    ],
+    "branch_failed": false,
+    "final_script_offset": 21829,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

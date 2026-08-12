@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c6_record_match
-; label_comment: VM opcode 0xC6 FULL (confirmed same structure as C5): les di,gs:0x6724; lodsw bp record, lodsw operand; gated on [0x67ad]; cmp operand vs es:[bp+2] (id) AND cmp es:[bp] vs 0xC6 (self type-tag). Matches state-table records of type 0xC6. VERIFIES the C-range typed-record pattern (C5->0xc5, C6->0xc6, C8->0xc8) || ALSO RECORDED as `vm_op_c6_state_record`: VM opcode 0xC6: object/line-record state op (same state-table + 0xA1-skip prologue as C5). C-range family member; exact operation not yet fully decoded || ALSO RECORDED as `vm_op_c6_record_entry`: 0xC6 record-entry handler; writes es:[record]={0xc6,operand,0} || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xC6 uses an absolute offset in the segment loaded from GS:0x6724; query mode optionally inverts a {type C6, operand} match, while set mode unconditionally overwrites the record with {C6, operand, 0}.
 ; incoming: vm_opcode_handlers:opcode_0xc6
 ; byte_count: 79
 ; boundary: cfg_blocks_12_terminals_4
