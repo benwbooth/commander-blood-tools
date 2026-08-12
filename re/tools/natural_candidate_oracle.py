@@ -372,6 +372,417 @@ def set_video_mode_saved_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bcd_to_binary_vectors() -> list[dict[str, object]]:
+    vectors = []
+    for value in range(0x100):
+        initial = {
+            "eax": 0xA5A55A00 | value,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+        machine = execute(0x0986, 0x0996, initial, [])
+        expected = ((value >> 4) * 10) + (value & 0x0F)
+        if machine.reg_read(UC_X86_REG_AX) != expected:
+            raise AssertionError(
+                f"0x0986 value={value:#x}: "
+                f"AX={machine.reg_read(UC_X86_REG_AX):#x}, expected={expected:#x}"
+            )
+        for register in ("bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0986 did not preserve {register}")
+        vectors.append({"packed_bcd": value, "binary": expected})
+    return vectors
+
+
+def detect_cdrom_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2800
+    vectors = []
+    for drive_count in (0x0000, 0x0001, 0x0002, 0x7FFF, 0xFFFF):
+        interrupts = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": data_segment,
+            "es": 0x2400,
+            "gs": state_segment,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                (
+                    number,
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_BX),
+                )
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xADAD)
+            machine.reg_write(UC_X86_REG_BX, drive_count)
+
+        machine = execute(
+            0x0B32,
+            0x0B41,
+            initial,
+            [
+                (data_segment, 0x0AE6, b"\xa5"),
+                (state_segment, 0x0AE6, b"\x5a"),
+            ],
+            interrupt_handler=interrupt,
+        )
+        if interrupts != [(0x2F, 0x1500, 0x0000)]:
+            raise AssertionError(
+                f"0x0B32 count={drive_count:#x}: interrupts={interrupts!r}"
+            )
+        expected_present = int(drive_count != 0)
+        actual_present = machine.mem_read(
+            state_segment * 16 + 0x0AE6, 1
+        )[0]
+        if actual_present != expected_present:
+            raise AssertionError(
+                f"0x0B32 count={drive_count:#x}: present={actual_present}"
+            )
+        if machine.mem_read(data_segment * 16 + 0x0AE6, 1) != b"\xa5":
+            raise AssertionError("0x0B32 wrote the DS decoy instead of GS state")
+        if machine.reg_read(UC_X86_REG_AX) != 0xADAD:
+            raise AssertionError("0x0B32 did not retain the interrupt AX result")
+        if machine.reg_read(UC_X86_REG_BX) != drive_count:
+            raise AssertionError("0x0B32 did not retain the MSCDEX drive count")
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "carry": flags & 1,
+            "parity": (flags >> 2) & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "overflow": (flags >> 11) & 1,
+        }
+        expected_flags = {
+            "carry": 0,
+            "parity": int(bin(drive_count & 0xFF).count("1") % 2 == 0),
+            "zero": int(drive_count == 0),
+            "sign": (drive_count >> 15) & 1,
+            "overflow": 0,
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x0B32 count={drive_count:#x}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        for name in ("cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[name]) != initial[name]:
+                raise AssertionError(f"0x0B32 did not preserve {name}")
+
+        vectors.append(
+            {
+                "drive_count": drive_count,
+                "interrupt_ax": interrupts[0][1],
+                "interrupt_bx": interrupts[0][2],
+                "cdrom_present": actual_present,
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+                "result_bx": machine.reg_read(UC_X86_REG_BX),
+                "flags": actual_flags,
+            }
+        )
+    return vectors
+
+
+def keyboard_read_vectors() -> list[dict[str, object]]:
+    cases = [
+        ("empty", False, 0x0000),
+        ("ascii", True, 0x1E61),
+        ("extended", True, 0x4800),
+        ("high", True, 0xFFFF),
+    ]
+    vectors = []
+    for name, available, key_code in cases:
+        interrupts = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            ax = machine.reg_read(UC_X86_REG_AX)
+            interrupts.append((number, ax))
+            if len(interrupts) == 1:
+                if (number, ax) != (0x16, 0x0100):
+                    raise AssertionError(f"0x267D {name}: bad keyboard poll")
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if available:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~0x40)
+                    machine.reg_write(UC_X86_REG_AX, key_code)
+                else:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 0x40)
+                    machine.reg_write(UC_X86_REG_AX, 0xBEEF)
+                return
+            if (number, ax) != (0x16, 0x0000):
+                raise AssertionError(f"0x267D {name}: bad keyboard read")
+            machine.reg_write(UC_X86_REG_AX, key_code)
+
+        machine = execute(
+            0x267D,
+            0x268C,
+            initial,
+            [],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = 2 if available else 1
+        if len(interrupts) != expected_interrupts:
+            raise AssertionError(f"0x267D {name}: interrupts={interrupts!r}")
+        expected_ax = key_code if available else 0
+        if machine.reg_read(UC_X86_REG_AX) != expected_ax:
+            raise AssertionError(f"0x267D {name}: returned the wrong key code")
+        for register in ("bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x267D did not preserve {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "available": available,
+                "key_code": key_code,
+                "interrupts": [list(item) for item in interrupts],
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+            }
+        )
+    return vectors
+
+
+def print_string_dos_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        (0x0100, b""),
+        (0x0100, b"A"),
+        (0x1357, b"DOS$TEXT"),
+        (0xFFFC, bytes([0x80, 0xFE, 0x24, 0x7F])),
+    ]
+    vectors = []
+    for source_offset, payload in cases:
+        source = bytearray(0x10000)
+        for index, value in enumerate(payload + b"\0"):
+            source[(source_offset + index) & 0xFFFF] = value
+        interrupts = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": source_offset,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": data_segment,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            ax = machine.reg_read(UC_X86_REG_AX)
+            dx = machine.reg_read(UC_X86_REG_DX)
+            interrupts.append((number, ax, dx))
+            if number != 0x21 or (ax >> 8) != 2:
+                raise AssertionError("0x0D61 invoked the wrong DOS service")
+            machine.reg_write(UC_X86_REG_AX, (ax & 0xFF00) | (dx & 0xFF))
+
+        machine = execute(
+            0x0D61,
+            0x0D74,
+            initial,
+            [(data_segment, 0, bytes(source))],
+            interrupt_handler=interrupt,
+        )
+        actual_payload = bytes(dx & 0xFF for _number, _ax, dx in interrupts)
+        if actual_payload != payload:
+            raise AssertionError(
+                f"0x0D61 si={source_offset:#x}: output={actual_payload!r}"
+            )
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0D61 did not preserve {register}")
+
+        vectors.append(
+            {
+                "source_offset": source_offset,
+                "payload": list(payload),
+                "dos_calls": len(interrupts),
+                "call_dx": [dx for _number, _ax, dx in interrupts],
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def rtc_time_read_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2800
+    vectors = []
+    for bcd_hour in (0x00, 0x09, 0x12, 0x23, 0x59, 0x99, 0xFF):
+        interrupts = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": data_segment,
+            "es": 0x2400,
+            "gs": state_segment,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append((number, machine.reg_read(UC_X86_REG_AX)))
+            machine.reg_write(UC_X86_REG_CX, (bcd_hour << 8) | 0x5A)
+            machine.reg_write(UC_X86_REG_DX, 0xBEEF)
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+
+        machine = execute(
+            0x093B,
+            0x094F,
+            initial,
+            [
+                (data_segment, 0x0AA6, b"\xa5\xa5"),
+                (state_segment, 0x0AA6, b"\x5a\x5a"),
+            ],
+            interrupt_handler=interrupt,
+        )
+        if interrupts != [(0x1A, 0x0234)]:
+            raise AssertionError(
+                f"0x093B hour={bcd_hour:#x}: interrupts={interrupts!r}"
+            )
+        binary_hour = (((bcd_hour >> 4) * 10) + (bcd_hour & 0x0F)) & 0xFF
+        expected_word = binary_hour if binary_hour < 0x80 else binary_hour | 0xFF00
+        actual_word = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x0AA6, 2)
+        )[0]
+        if actual_word != expected_word:
+            raise AssertionError(
+                f"0x093B hour={bcd_hour:#x}: stored={actual_word:#x}, "
+                f"expected={expected_word:#x}"
+            )
+        if machine.mem_read(data_segment * 16 + 0x0AA6, 2) != b"\xa5\xa5":
+            raise AssertionError("0x093B wrote the DS decoy instead of GS state")
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x093B did not preserve {register}")
+
+        vectors.append(
+            {
+                "bcd_hour": bcd_hour,
+                "binary_byte": binary_hour,
+                "stored_word": actual_word,
+                "interrupt_ax": interrupts[0][1],
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def mouse_set_range_vectors() -> list[dict[str, object]]:
+    cases = [
+        (0x0000, 0x0BB8, 0x0000, 0x00C8),
+        (0x0001, 0x0002, 0x0003, 0x0004),
+        (0xFFFF, 0x8000, 0x7FFF, 0x0000),
+    ]
+    vectors = []
+    for min_x, max_x, min_y, max_y in cases:
+        interrupts = []
+        initial = {
+            "eax": 0xA5A50000 | min_x,
+            "bx": max_x,
+            "cx": min_y,
+            "dx": max_y,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            registers = (
+                number,
+                machine.reg_read(UC_X86_REG_AX),
+                machine.reg_read(UC_X86_REG_BX),
+                machine.reg_read(UC_X86_REG_CX),
+                machine.reg_read(UC_X86_REG_DX),
+            )
+            interrupts.append(registers)
+            if len(interrupts) == 1:
+                machine.reg_write(UC_X86_REG_AX, 0x1111)
+                machine.reg_write(UC_X86_REG_BX, 0x2222)
+                machine.reg_write(UC_X86_REG_CX, 0x3333)
+                machine.reg_write(UC_X86_REG_DX, 0x4444)
+            else:
+                machine.reg_write(UC_X86_REG_AX, 0xAAAA)
+                machine.reg_write(UC_X86_REG_BX, 0xBBBB)
+                machine.reg_write(UC_X86_REG_CX, 0xCCCC)
+                machine.reg_write(UC_X86_REG_DX, 0xDDDD)
+
+        machine = execute(
+            0x0D4A,
+            0x0D60,
+            initial,
+            [],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = [
+            (0x33, 7, max_x, min_x, max_x),
+            (0x33, 8, 0x2222, min_y, max_y),
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(
+                f"0x0D4A {min_x:#x}/{max_x:#x}/{min_y:#x}/{max_y:#x}: "
+                f"interrupts={interrupts!r}"
+            )
+        if machine.reg_read(UC_X86_REG_AX) != min_x:
+            raise AssertionError("0x0D4A did not restore AX")
+        if machine.reg_read(UC_X86_REG_BX) != max_x:
+            raise AssertionError("0x0D4A did not restore BX")
+        if machine.reg_read(UC_X86_REG_CX) != 0xCCCC:
+            raise AssertionError("0x0D4A did not retain second-call CX")
+        if machine.reg_read(UC_X86_REG_DX) != 0xDDDD:
+            raise AssertionError("0x0D4A did not retain second-call DX")
+        for register in ("si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0D4A did not preserve {register}")
+
+        vectors.append(
+            {
+                "min_x": min_x,
+                "max_x": max_x,
+                "min_y": min_y,
+                "max_y": max_y,
+                "interrupts": [list(item) for item in interrupts],
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+                "result_bx": machine.reg_read(UC_X86_REG_BX),
+                "result_cx": machine.reg_read(UC_X86_REG_CX),
+                "result_dx": machine.reg_read(UC_X86_REG_DX),
+            }
+        )
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -4767,9 +5178,29 @@ def main() -> int:
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
     update_vector(
+        VECTOR_ROOT / "func_093b_natural.json", rtc_time_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0986_natural.json", bcd_to_binary_vectors(), args.check
+    )
+    update_vector(
         VECTOR_ROOT / "func_0cc0_natural.json",
         set_video_mode_saved_vectors(),
         args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0b32_natural.json", detect_cdrom_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0d4a_natural.json", mouse_set_range_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0d61_natural.json",
+        print_string_dos_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_267d_natural.json", keyboard_read_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_2dd3_natural.json", cmos_rtc_read_vectors(), args.check

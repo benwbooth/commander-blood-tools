@@ -1,0 +1,1026 @@
+[
+  {
+    "packed_bcd": 0,
+    "binary": 0
+  },
+  {
+    "packed_bcd": 1,
+    "binary": 1
+  },
+  {
+    "packed_bcd": 2,
+    "binary": 2
+  },
+  {
+    "packed_bcd": 3,
+    "binary": 3
+  },
+  {
+    "packed_bcd": 4,
+    "binary": 4
+  },
+  {
+    "packed_bcd": 5,
+    "binary": 5
+  },
+  {
+    "packed_bcd": 6,
+    "binary": 6
+  },
+  {
+    "packed_bcd": 7,
+    "binary": 7
+  },
+  {
+    "packed_bcd": 8,
+    "binary": 8
+  },
+  {
+    "packed_bcd": 9,
+    "binary": 9
+  },
+  {
+    "packed_bcd": 10,
+    "binary": 10
+  },
+  {
+    "packed_bcd": 11,
+    "binary": 11
+  },
+  {
+    "packed_bcd": 12,
+    "binary": 12
+  },
+  {
+    "packed_bcd": 13,
+    "binary": 13
+  },
+  {
+    "packed_bcd": 14,
+    "binary": 14
+  },
+  {
+    "packed_bcd": 15,
+    "binary": 15
+  },
+  {
+    "packed_bcd": 16,
+    "binary": 10
+  },
+  {
+    "packed_bcd": 17,
+    "binary": 11
+  },
+  {
+    "packed_bcd": 18,
+    "binary": 12
+  },
+  {
+    "packed_bcd": 19,
+    "binary": 13
+  },
+  {
+    "packed_bcd": 20,
+    "binary": 14
+  },
+  {
+    "packed_bcd": 21,
+    "binary": 15
+  },
+  {
+    "packed_bcd": 22,
+    "binary": 16
+  },
+  {
+    "packed_bcd": 23,
+    "binary": 17
+  },
+  {
+    "packed_bcd": 24,
+    "binary": 18
+  },
+  {
+    "packed_bcd": 25,
+    "binary": 19
+  },
+  {
+    "packed_bcd": 26,
+    "binary": 20
+  },
+  {
+    "packed_bcd": 27,
+    "binary": 21
+  },
+  {
+    "packed_bcd": 28,
+    "binary": 22
+  },
+  {
+    "packed_bcd": 29,
+    "binary": 23
+  },
+  {
+    "packed_bcd": 30,
+    "binary": 24
+  },
+  {
+    "packed_bcd": 31,
+    "binary": 25
+  },
+  {
+    "packed_bcd": 32,
+    "binary": 20
+  },
+  {
+    "packed_bcd": 33,
+    "binary": 21
+  },
+  {
+    "packed_bcd": 34,
+    "binary": 22
+  },
+  {
+    "packed_bcd": 35,
+    "binary": 23
+  },
+  {
+    "packed_bcd": 36,
+    "binary": 24
+  },
+  {
+    "packed_bcd": 37,
+    "binary": 25
+  },
+  {
+    "packed_bcd": 38,
+    "binary": 26
+  },
+  {
+    "packed_bcd": 39,
+    "binary": 27
+  },
+  {
+    "packed_bcd": 40,
+    "binary": 28
+  },
+  {
+    "packed_bcd": 41,
+    "binary": 29
+  },
+  {
+    "packed_bcd": 42,
+    "binary": 30
+  },
+  {
+    "packed_bcd": 43,
+    "binary": 31
+  },
+  {
+    "packed_bcd": 44,
+    "binary": 32
+  },
+  {
+    "packed_bcd": 45,
+    "binary": 33
+  },
+  {
+    "packed_bcd": 46,
+    "binary": 34
+  },
+  {
+    "packed_bcd": 47,
+    "binary": 35
+  },
+  {
+    "packed_bcd": 48,
+    "binary": 30
+  },
+  {
+    "packed_bcd": 49,
+    "binary": 31
+  },
+  {
+    "packed_bcd": 50,
+    "binary": 32
+  },
+  {
+    "packed_bcd": 51,
+    "binary": 33
+  },
+  {
+    "packed_bcd": 52,
+    "binary": 34
+  },
+  {
+    "packed_bcd": 53,
+    "binary": 35
+  },
+  {
+    "packed_bcd": 54,
+    "binary": 36
+  },
+  {
+    "packed_bcd": 55,
+    "binary": 37
+  },
+  {
+    "packed_bcd": 56,
+    "binary": 38
+  },
+  {
+    "packed_bcd": 57,
+    "binary": 39
+  },
+  {
+    "packed_bcd": 58,
+    "binary": 40
+  },
+  {
+    "packed_bcd": 59,
+    "binary": 41
+  },
+  {
+    "packed_bcd": 60,
+    "binary": 42
+  },
+  {
+    "packed_bcd": 61,
+    "binary": 43
+  },
+  {
+    "packed_bcd": 62,
+    "binary": 44
+  },
+  {
+    "packed_bcd": 63,
+    "binary": 45
+  },
+  {
+    "packed_bcd": 64,
+    "binary": 40
+  },
+  {
+    "packed_bcd": 65,
+    "binary": 41
+  },
+  {
+    "packed_bcd": 66,
+    "binary": 42
+  },
+  {
+    "packed_bcd": 67,
+    "binary": 43
+  },
+  {
+    "packed_bcd": 68,
+    "binary": 44
+  },
+  {
+    "packed_bcd": 69,
+    "binary": 45
+  },
+  {
+    "packed_bcd": 70,
+    "binary": 46
+  },
+  {
+    "packed_bcd": 71,
+    "binary": 47
+  },
+  {
+    "packed_bcd": 72,
+    "binary": 48
+  },
+  {
+    "packed_bcd": 73,
+    "binary": 49
+  },
+  {
+    "packed_bcd": 74,
+    "binary": 50
+  },
+  {
+    "packed_bcd": 75,
+    "binary": 51
+  },
+  {
+    "packed_bcd": 76,
+    "binary": 52
+  },
+  {
+    "packed_bcd": 77,
+    "binary": 53
+  },
+  {
+    "packed_bcd": 78,
+    "binary": 54
+  },
+  {
+    "packed_bcd": 79,
+    "binary": 55
+  },
+  {
+    "packed_bcd": 80,
+    "binary": 50
+  },
+  {
+    "packed_bcd": 81,
+    "binary": 51
+  },
+  {
+    "packed_bcd": 82,
+    "binary": 52
+  },
+  {
+    "packed_bcd": 83,
+    "binary": 53
+  },
+  {
+    "packed_bcd": 84,
+    "binary": 54
+  },
+  {
+    "packed_bcd": 85,
+    "binary": 55
+  },
+  {
+    "packed_bcd": 86,
+    "binary": 56
+  },
+  {
+    "packed_bcd": 87,
+    "binary": 57
+  },
+  {
+    "packed_bcd": 88,
+    "binary": 58
+  },
+  {
+    "packed_bcd": 89,
+    "binary": 59
+  },
+  {
+    "packed_bcd": 90,
+    "binary": 60
+  },
+  {
+    "packed_bcd": 91,
+    "binary": 61
+  },
+  {
+    "packed_bcd": 92,
+    "binary": 62
+  },
+  {
+    "packed_bcd": 93,
+    "binary": 63
+  },
+  {
+    "packed_bcd": 94,
+    "binary": 64
+  },
+  {
+    "packed_bcd": 95,
+    "binary": 65
+  },
+  {
+    "packed_bcd": 96,
+    "binary": 60
+  },
+  {
+    "packed_bcd": 97,
+    "binary": 61
+  },
+  {
+    "packed_bcd": 98,
+    "binary": 62
+  },
+  {
+    "packed_bcd": 99,
+    "binary": 63
+  },
+  {
+    "packed_bcd": 100,
+    "binary": 64
+  },
+  {
+    "packed_bcd": 101,
+    "binary": 65
+  },
+  {
+    "packed_bcd": 102,
+    "binary": 66
+  },
+  {
+    "packed_bcd": 103,
+    "binary": 67
+  },
+  {
+    "packed_bcd": 104,
+    "binary": 68
+  },
+  {
+    "packed_bcd": 105,
+    "binary": 69
+  },
+  {
+    "packed_bcd": 106,
+    "binary": 70
+  },
+  {
+    "packed_bcd": 107,
+    "binary": 71
+  },
+  {
+    "packed_bcd": 108,
+    "binary": 72
+  },
+  {
+    "packed_bcd": 109,
+    "binary": 73
+  },
+  {
+    "packed_bcd": 110,
+    "binary": 74
+  },
+  {
+    "packed_bcd": 111,
+    "binary": 75
+  },
+  {
+    "packed_bcd": 112,
+    "binary": 70
+  },
+  {
+    "packed_bcd": 113,
+    "binary": 71
+  },
+  {
+    "packed_bcd": 114,
+    "binary": 72
+  },
+  {
+    "packed_bcd": 115,
+    "binary": 73
+  },
+  {
+    "packed_bcd": 116,
+    "binary": 74
+  },
+  {
+    "packed_bcd": 117,
+    "binary": 75
+  },
+  {
+    "packed_bcd": 118,
+    "binary": 76
+  },
+  {
+    "packed_bcd": 119,
+    "binary": 77
+  },
+  {
+    "packed_bcd": 120,
+    "binary": 78
+  },
+  {
+    "packed_bcd": 121,
+    "binary": 79
+  },
+  {
+    "packed_bcd": 122,
+    "binary": 80
+  },
+  {
+    "packed_bcd": 123,
+    "binary": 81
+  },
+  {
+    "packed_bcd": 124,
+    "binary": 82
+  },
+  {
+    "packed_bcd": 125,
+    "binary": 83
+  },
+  {
+    "packed_bcd": 126,
+    "binary": 84
+  },
+  {
+    "packed_bcd": 127,
+    "binary": 85
+  },
+  {
+    "packed_bcd": 128,
+    "binary": 80
+  },
+  {
+    "packed_bcd": 129,
+    "binary": 81
+  },
+  {
+    "packed_bcd": 130,
+    "binary": 82
+  },
+  {
+    "packed_bcd": 131,
+    "binary": 83
+  },
+  {
+    "packed_bcd": 132,
+    "binary": 84
+  },
+  {
+    "packed_bcd": 133,
+    "binary": 85
+  },
+  {
+    "packed_bcd": 134,
+    "binary": 86
+  },
+  {
+    "packed_bcd": 135,
+    "binary": 87
+  },
+  {
+    "packed_bcd": 136,
+    "binary": 88
+  },
+  {
+    "packed_bcd": 137,
+    "binary": 89
+  },
+  {
+    "packed_bcd": 138,
+    "binary": 90
+  },
+  {
+    "packed_bcd": 139,
+    "binary": 91
+  },
+  {
+    "packed_bcd": 140,
+    "binary": 92
+  },
+  {
+    "packed_bcd": 141,
+    "binary": 93
+  },
+  {
+    "packed_bcd": 142,
+    "binary": 94
+  },
+  {
+    "packed_bcd": 143,
+    "binary": 95
+  },
+  {
+    "packed_bcd": 144,
+    "binary": 90
+  },
+  {
+    "packed_bcd": 145,
+    "binary": 91
+  },
+  {
+    "packed_bcd": 146,
+    "binary": 92
+  },
+  {
+    "packed_bcd": 147,
+    "binary": 93
+  },
+  {
+    "packed_bcd": 148,
+    "binary": 94
+  },
+  {
+    "packed_bcd": 149,
+    "binary": 95
+  },
+  {
+    "packed_bcd": 150,
+    "binary": 96
+  },
+  {
+    "packed_bcd": 151,
+    "binary": 97
+  },
+  {
+    "packed_bcd": 152,
+    "binary": 98
+  },
+  {
+    "packed_bcd": 153,
+    "binary": 99
+  },
+  {
+    "packed_bcd": 154,
+    "binary": 100
+  },
+  {
+    "packed_bcd": 155,
+    "binary": 101
+  },
+  {
+    "packed_bcd": 156,
+    "binary": 102
+  },
+  {
+    "packed_bcd": 157,
+    "binary": 103
+  },
+  {
+    "packed_bcd": 158,
+    "binary": 104
+  },
+  {
+    "packed_bcd": 159,
+    "binary": 105
+  },
+  {
+    "packed_bcd": 160,
+    "binary": 100
+  },
+  {
+    "packed_bcd": 161,
+    "binary": 101
+  },
+  {
+    "packed_bcd": 162,
+    "binary": 102
+  },
+  {
+    "packed_bcd": 163,
+    "binary": 103
+  },
+  {
+    "packed_bcd": 164,
+    "binary": 104
+  },
+  {
+    "packed_bcd": 165,
+    "binary": 105
+  },
+  {
+    "packed_bcd": 166,
+    "binary": 106
+  },
+  {
+    "packed_bcd": 167,
+    "binary": 107
+  },
+  {
+    "packed_bcd": 168,
+    "binary": 108
+  },
+  {
+    "packed_bcd": 169,
+    "binary": 109
+  },
+  {
+    "packed_bcd": 170,
+    "binary": 110
+  },
+  {
+    "packed_bcd": 171,
+    "binary": 111
+  },
+  {
+    "packed_bcd": 172,
+    "binary": 112
+  },
+  {
+    "packed_bcd": 173,
+    "binary": 113
+  },
+  {
+    "packed_bcd": 174,
+    "binary": 114
+  },
+  {
+    "packed_bcd": 175,
+    "binary": 115
+  },
+  {
+    "packed_bcd": 176,
+    "binary": 110
+  },
+  {
+    "packed_bcd": 177,
+    "binary": 111
+  },
+  {
+    "packed_bcd": 178,
+    "binary": 112
+  },
+  {
+    "packed_bcd": 179,
+    "binary": 113
+  },
+  {
+    "packed_bcd": 180,
+    "binary": 114
+  },
+  {
+    "packed_bcd": 181,
+    "binary": 115
+  },
+  {
+    "packed_bcd": 182,
+    "binary": 116
+  },
+  {
+    "packed_bcd": 183,
+    "binary": 117
+  },
+  {
+    "packed_bcd": 184,
+    "binary": 118
+  },
+  {
+    "packed_bcd": 185,
+    "binary": 119
+  },
+  {
+    "packed_bcd": 186,
+    "binary": 120
+  },
+  {
+    "packed_bcd": 187,
+    "binary": 121
+  },
+  {
+    "packed_bcd": 188,
+    "binary": 122
+  },
+  {
+    "packed_bcd": 189,
+    "binary": 123
+  },
+  {
+    "packed_bcd": 190,
+    "binary": 124
+  },
+  {
+    "packed_bcd": 191,
+    "binary": 125
+  },
+  {
+    "packed_bcd": 192,
+    "binary": 120
+  },
+  {
+    "packed_bcd": 193,
+    "binary": 121
+  },
+  {
+    "packed_bcd": 194,
+    "binary": 122
+  },
+  {
+    "packed_bcd": 195,
+    "binary": 123
+  },
+  {
+    "packed_bcd": 196,
+    "binary": 124
+  },
+  {
+    "packed_bcd": 197,
+    "binary": 125
+  },
+  {
+    "packed_bcd": 198,
+    "binary": 126
+  },
+  {
+    "packed_bcd": 199,
+    "binary": 127
+  },
+  {
+    "packed_bcd": 200,
+    "binary": 128
+  },
+  {
+    "packed_bcd": 201,
+    "binary": 129
+  },
+  {
+    "packed_bcd": 202,
+    "binary": 130
+  },
+  {
+    "packed_bcd": 203,
+    "binary": 131
+  },
+  {
+    "packed_bcd": 204,
+    "binary": 132
+  },
+  {
+    "packed_bcd": 205,
+    "binary": 133
+  },
+  {
+    "packed_bcd": 206,
+    "binary": 134
+  },
+  {
+    "packed_bcd": 207,
+    "binary": 135
+  },
+  {
+    "packed_bcd": 208,
+    "binary": 130
+  },
+  {
+    "packed_bcd": 209,
+    "binary": 131
+  },
+  {
+    "packed_bcd": 210,
+    "binary": 132
+  },
+  {
+    "packed_bcd": 211,
+    "binary": 133
+  },
+  {
+    "packed_bcd": 212,
+    "binary": 134
+  },
+  {
+    "packed_bcd": 213,
+    "binary": 135
+  },
+  {
+    "packed_bcd": 214,
+    "binary": 136
+  },
+  {
+    "packed_bcd": 215,
+    "binary": 137
+  },
+  {
+    "packed_bcd": 216,
+    "binary": 138
+  },
+  {
+    "packed_bcd": 217,
+    "binary": 139
+  },
+  {
+    "packed_bcd": 218,
+    "binary": 140
+  },
+  {
+    "packed_bcd": 219,
+    "binary": 141
+  },
+  {
+    "packed_bcd": 220,
+    "binary": 142
+  },
+  {
+    "packed_bcd": 221,
+    "binary": 143
+  },
+  {
+    "packed_bcd": 222,
+    "binary": 144
+  },
+  {
+    "packed_bcd": 223,
+    "binary": 145
+  },
+  {
+    "packed_bcd": 224,
+    "binary": 140
+  },
+  {
+    "packed_bcd": 225,
+    "binary": 141
+  },
+  {
+    "packed_bcd": 226,
+    "binary": 142
+  },
+  {
+    "packed_bcd": 227,
+    "binary": 143
+  },
+  {
+    "packed_bcd": 228,
+    "binary": 144
+  },
+  {
+    "packed_bcd": 229,
+    "binary": 145
+  },
+  {
+    "packed_bcd": 230,
+    "binary": 146
+  },
+  {
+    "packed_bcd": 231,
+    "binary": 147
+  },
+  {
+    "packed_bcd": 232,
+    "binary": 148
+  },
+  {
+    "packed_bcd": 233,
+    "binary": 149
+  },
+  {
+    "packed_bcd": 234,
+    "binary": 150
+  },
+  {
+    "packed_bcd": 235,
+    "binary": 151
+  },
+  {
+    "packed_bcd": 236,
+    "binary": 152
+  },
+  {
+    "packed_bcd": 237,
+    "binary": 153
+  },
+  {
+    "packed_bcd": 238,
+    "binary": 154
+  },
+  {
+    "packed_bcd": 239,
+    "binary": 155
+  },
+  {
+    "packed_bcd": 240,
+    "binary": 150
+  },
+  {
+    "packed_bcd": 241,
+    "binary": 151
+  },
+  {
+    "packed_bcd": 242,
+    "binary": 152
+  },
+  {
+    "packed_bcd": 243,
+    "binary": 153
+  },
+  {
+    "packed_bcd": 244,
+    "binary": 154
+  },
+  {
+    "packed_bcd": 245,
+    "binary": 155
+  },
+  {
+    "packed_bcd": 246,
+    "binary": 156
+  },
+  {
+    "packed_bcd": 247,
+    "binary": 157
+  },
+  {
+    "packed_bcd": 248,
+    "binary": 158
+  },
+  {
+    "packed_bcd": 249,
+    "binary": 159
+  },
+  {
+    "packed_bcd": 250,
+    "binary": 160
+  },
+  {
+    "packed_bcd": 251,
+    "binary": 161
+  },
+  {
+    "packed_bcd": 252,
+    "binary": 162
+  },
+  {
+    "packed_bcd": 253,
+    "binary": 163
+  },
+  {
+    "packed_bcd": 254,
+    "binary": 164
+  },
+  {
+    "packed_bcd": 255,
+    "binary": 165
+  }
+]

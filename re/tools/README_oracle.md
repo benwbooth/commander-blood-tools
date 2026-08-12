@@ -15,6 +15,13 @@ saved video-mode BIOS call (`0x000CC0`), CMOS seconds read (`0x002DD3`),
 (`0x002FA6`). These cases verify exact port order and values as well as the
 routine's register and memory boundary.
 
+Interrupt-backed platform vectors additionally cover packed-BCD conversion
+(`0x000986`), BIOS RTC hour capture (`0x00093B`), MSCDEX detection
+(`0x000B32`), both-axis mouse range setup (`0x000D4A`), DOS character output
+(`0x000D61`), and BIOS keyboard poll/read (`0x00267D`). The BCD input domain is
+exhaustive; the interrupt cases deliberately vary returned registers and flags
+to expose the wrappers' selective preservation contracts.
+
 Run a single DOS function from BLOODPRG.EXE in isolation on a scriptable 8086 core
 (Unicorn Engine), capture its **return value + memory side effects + I/O**, and diff
 against the Rust port. This is the gold-standard per-function verification.

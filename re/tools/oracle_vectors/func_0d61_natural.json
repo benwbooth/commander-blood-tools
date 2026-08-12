@@ -1,0 +1,62 @@
+[
+  {
+    "source_offset": 256,
+    "payload": [],
+    "dos_calls": 0,
+    "call_dx": [],
+    "preserved_eax": 2779058740
+  },
+  {
+    "source_offset": 256,
+    "payload": [
+      65
+    ],
+    "dos_calls": 1,
+    "call_dx": [
+      21825
+    ],
+    "preserved_eax": 2779058740
+  },
+  {
+    "source_offset": 4951,
+    "payload": [
+      68,
+      79,
+      83,
+      36,
+      84,
+      69,
+      88,
+      84
+    ],
+    "dos_calls": 8,
+    "call_dx": [
+      21828,
+      21839,
+      21843,
+      21796,
+      21844,
+      21829,
+      21848,
+      21844
+    ],
+    "preserved_eax": 2779058740
+  },
+  {
+    "source_offset": 65532,
+    "payload": [
+      128,
+      254,
+      36,
+      127
+    ],
+    "dos_calls": 4,
+    "call_dx": [
+      21888,
+      22014,
+      21796,
+      21887
+    ],
+    "preserved_eax": 2779058740
+  }
+]

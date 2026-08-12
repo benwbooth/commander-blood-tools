@@ -384,6 +384,26 @@ natural `int86` video-mode call to 17 instructions instead of the original six
 with a direct `INT 10h`. These are behaviorally verified natural functions with
 explicit compiler and hardware ABI boundaries, not accepted drop-in bodies.
 
+The adjacent interrupt-wrapper slice covers `0x00093B`, `0x000986`,
+`0x000B32`, `0x000D4A`, `0x000D61`, and `0x00267D`. Its 279 direct vectors
+include exhaustive packed-BCD inputs and exercise RTC, MSCDEX, paired mouse,
+DOS character-output, and BIOS keyboard interrupt contracts. The mouse vectors
+prove that the old `mouse_set_hrange` label is incomplete: AX/BX supply the
+horizontal range, CX/DX supply the vertical range, and the routine invokes
+INT 33h functions 7 and 8 in order.
+
+Open Watcom 1.9 compiles all six actual candidates without warnings. The BCD
+helper's AX-input/AL-output pragma reduces it to 13 instructions/22 bytes,
+versus 9/17 original, and lets the RTC caller avoid a stack argument. The RTC,
+MSCDEX, and mouse candidates are 45, 53, and 69 bytes versus 21, 16, and 23
+original because `int86` marshals a register structure instead of emitting the
+direct interrupt and selective save/restore sequence. The natural DOS string
+loop is close at 15 instructions/29 bytes versus 14/20, but calls `bdos` and
+advances SI. The natural keyboard wrapper is 7 instructions/20 bytes versus
+8/16, but calls and tail-jumps to `_bios_keybrd` instead of consuming BIOS ZF
+around direct INT 16h instructions. These candidates retain recovered logic;
+their remaining differences are explicit runtime and register-ABI boundaries.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

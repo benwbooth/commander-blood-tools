@@ -1,0 +1,51 @@
+[
+  {
+    "bcd_hour": 0,
+    "binary_byte": 0,
+    "stored_word": 0,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 9,
+    "binary_byte": 9,
+    "stored_word": 9,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 18,
+    "binary_byte": 12,
+    "stored_word": 12,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 35,
+    "binary_byte": 23,
+    "stored_word": 23,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 89,
+    "binary_byte": 59,
+    "stored_word": 59,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 153,
+    "binary_byte": 99,
+    "stored_word": 99,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  },
+  {
+    "bcd_hour": 255,
+    "binary_byte": 165,
+    "stored_word": 65445,
+    "interrupt_ax": 564,
+    "preserved_eax": 2779058740
+  }
+]

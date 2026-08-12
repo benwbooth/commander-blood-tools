@@ -1,0 +1,62 @@
+[
+  {
+    "name": "empty",
+    "available": false,
+    "key_code": 0,
+    "interrupts": [
+      [
+        22,
+        256
+      ]
+    ],
+    "result_ax": 0
+  },
+  {
+    "name": "ascii",
+    "available": true,
+    "key_code": 7777,
+    "interrupts": [
+      [
+        22,
+        256
+      ],
+      [
+        22,
+        0
+      ]
+    ],
+    "result_ax": 7777
+  },
+  {
+    "name": "extended",
+    "available": true,
+    "key_code": 18432,
+    "interrupts": [
+      [
+        22,
+        256
+      ],
+      [
+        22,
+        0
+      ]
+    ],
+    "result_ax": 18432
+  },
+  {
+    "name": "high",
+    "available": true,
+    "key_code": 65535,
+    "interrupts": [
+      [
+        22,
+        256
+      ],
+      [
+        22,
+        0
+      ]
+    ],
+    "result_ax": 65535
+  }
+]
