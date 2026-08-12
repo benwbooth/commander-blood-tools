@@ -2869,6 +2869,456 @@ def manu3_api_entry_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_matrix_build_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0270
+    image = load_image(module)
+    expected_hash = "18e03847b76f4b4898b7de6cf8431d4373fba4862f362b1d6aa48395b95b5b89"
+    if hashlib.sha256(image[entry : entry + 729]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 729-byte body changed")
+
+    active_segment = 0x5000
+    extra_segment = 0x6800
+    game_segment = 0x7800
+    stack_segment = 0x9000
+    return_address = 0xF000
+    state_base = 0x2394
+    state_size = 0x005E
+    cases = (
+        ("single_zero_angles", 1, ((0x0000, 0x0000, 0x0000, 0),)),
+        ("single_mixed_angles", 1, ((0x0014, 0x02A0, 0x07FC, 1234),)),
+        ("angle_masking", 1, ((0xF013, 0xA2A3, 0x77FF, -2222),)),
+        ("negative_radial_extreme", 1, ((0x0FFC, 0x0800, 0x0400, -32768),)),
+        ("positive_radial_extreme", 1, ((0x0554, 0x0AA8, 0x0CC0, 32767),)),
+        (
+            "two_state_hierarchy",
+            2,
+            ((0x0100, 0x0200, 0x0300, 511), (0x0444, 0x0888, 0x0CCC, -777)),
+        ),
+        (
+            "two_state_overflow",
+            2,
+            ((0x0FF8, 0x0004, 0x07FC, -1), (0x0ABC, 0x0120, 0x0F00, 1)),
+        ),
+    )
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def read_word(buffer: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return buffer[offset] | (buffer[offset + 1] << 8)
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        offset &= 0xFFFF
+        buffer[offset : offset + 2] = (value & 0xFFFF).to_bytes(2, "little")
+
+    def read_dword(buffer: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return int.from_bytes(buffer[offset : offset + 4], "little")
+
+    def write_dword(buffer: bytearray, offset: int, value: int) -> None:
+        offset &= 0xFFFF
+        buffer[offset : offset + 4] = (value & 0xFFFFFFFF).to_bytes(4, "little")
+
+    def multiply(left: int, right: int) -> int:
+        return ((left & 0xFFFFFFFF) * (right & 0xFFFFFFFF)) & 0xFFFFFFFF
+
+    def add(left: int, right: int) -> int:
+        return (left + right) & 0xFFFFFFFF
+
+    def subtract(left: int, right: int) -> int:
+        return (left - right) & 0xFFFFFFFF
+
+    def negate(value: int) -> int:
+        return (-value) & 0xFFFFFFFF
+
+    def sar(value: int, count: int) -> int:
+        return (signed_dword(value) >> count) & 0xFFFFFFFF
+
+    def trig(buffer: bytearray, angle: int) -> tuple[int, int]:
+        offset = angle & 0x0FFC
+        return (
+            signed_word(read_word(buffer, offset + 0x26)),
+            signed_word(read_word(buffer, offset + 0x28)),
+        )
+
+    def build_rotation(
+        buffer: bytearray, angle_0: int, angle_1: int, angle_2: int
+    ) -> list[list[int]]:
+        angle_0 &= 0x0FFC
+        angle_1 &= 0x0FFC
+        angle_2 &= 0x0FFC
+        matrix = [[0, 0, 0] for _ in range(3)]
+        _a0_component_0, a0_component_1 = trig(buffer, angle_0)
+        matrix[1][2] = negate((a0_component_1 << 1) & 0xFFFFFFFF)
+
+        first = trig(buffer, angle_0 - angle_1 - angle_2)
+        second = trig(buffer, angle_0 + angle_1 + angle_2)
+        base = trig(buffer, angle_1 + angle_2)
+        value_0 = add(sar(subtract(first[0], second[0]), 1), base[1])
+        value_1 = add(sar(add(first[1], second[1]), 1), base[0])
+        matrix[0][1] = value_0
+        matrix[2][0] = negate(value_0)
+        matrix[0][0] = value_1
+        matrix[2][1] = value_1
+
+        first = trig(buffer, angle_0 - angle_1 + angle_2)
+        second = trig(buffer, angle_0 + angle_1 - angle_2)
+        base = trig(buffer, angle_1 - angle_2)
+        value_0 = sar(subtract(first[0], second[0]), 1)
+        value_1 = sar(add(first[1], second[1]), 1)
+        adjustment_0 = subtract(base[1], value_0)
+        adjustment_1 = subtract(base[0], value_1)
+        matrix[0][1] = subtract(matrix[0][1], adjustment_0)
+        matrix[2][0] = subtract(matrix[2][0], adjustment_0)
+        matrix[0][0] = add(matrix[0][0], adjustment_1)
+        matrix[2][1] = subtract(matrix[2][1], adjustment_1)
+
+        first = trig(buffer, angle_2 + angle_0)
+        second = trig(buffer, angle_2 - angle_0)
+        matrix[1][1] = add(first[0], second[0])
+        matrix[1][0] = negate(add(first[1], second[1]))
+
+        first = trig(buffer, angle_1 + angle_0)
+        second = trig(buffer, angle_1 - angle_0)
+        matrix[2][2] = add(first[0], second[0])
+        matrix[0][2] = add(first[1], second[1])
+        return matrix
+
+    def model_state(buffer: bytearray, state_offset: int) -> list[list[int]]:
+        angle_0 = read_word(buffer, state_offset + 0x4E) & 0x0FFC
+        angle_1 = read_word(buffer, state_offset + 0x50) & 0x0FFC
+        angle_2 = read_word(buffer, state_offset + 0x52) & 0x0FFC
+        write_word(buffer, 0x0020, angle_1)
+        write_word(buffer, 0x0022, angle_0)
+        write_word(buffer, 0x0024, angle_2)
+        write_word(buffer, 0x2248, state_offset)
+        rotation = build_rotation(buffer, angle_0, angle_1, angle_2)
+        for row in range(3):
+            for column in range(3):
+                write_dword(buffer, 0x2250 + (row * 3 + column) * 4, rotation[row][column])
+
+        radial = signed_word(read_word(buffer, state_offset + 0x54))
+        for axis, matrix_value in ((0, rotation[0][2]), (2, rotation[2][2])):
+            product = multiply(matrix_value, radial)
+            value = sar(product, 16)
+            write_dword(
+                buffer,
+                state_offset + 0x42 + axis * 4,
+                add(read_dword(buffer, state_offset + 0x42 + axis * 4), value),
+            )
+        product = multiply(rotation[1][2], radial)
+        rounded = add(sar(product, 16), (product >> 15) & 1)
+        write_dword(
+            buffer,
+            state_offset + 0x46,
+            add(read_dword(buffer, state_offset + 0x46), rounded),
+        )
+
+        parent_offset = read_word(buffer, state_offset)
+        local = [
+            signed_word(read_word(buffer, state_offset + 0x42 + axis * 4))
+            for axis in range(3)
+        ]
+        for row in (2, 1, 0):
+            accumulator = 0
+            for column in range(3):
+                accumulator = add(
+                    accumulator,
+                    multiply(
+                        read_dword(buffer, parent_offset + 0x12 + (row * 3 + column) * 4),
+                        local[column],
+                    ),
+                )
+            accumulator = add(
+                accumulator, read_dword(buffer, parent_offset + 0x36 + row * 4)
+            )
+            write_dword(buffer, state_offset + 0x36 + row * 4, accumulator)
+
+        for row in range(3):
+            parent_1 = read_dword(buffer, parent_offset + 0x12 + (row * 3 + 1) * 4)
+            parent_2 = read_dword(buffer, parent_offset + 0x12 + (row * 3 + 2) * 4)
+            for column in range(3):
+                accumulator = multiply(
+                    read_dword(buffer, parent_offset + 0x12 + row * 12),
+                    rotation[0][column],
+                )
+                accumulator = add(
+                    accumulator, multiply(parent_1, rotation[1][column])
+                )
+                accumulator = add(
+                    accumulator, multiply(parent_2, rotation[2][column])
+                )
+                write_dword(
+                    buffer,
+                    state_offset + 0x12 + (row * 3 + column) * 4,
+                    sar(accumulator, 15),
+                )
+        return rotation
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+
+    for case_index, (name, state_count, states) in enumerate(cases):
+        active_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x10000)
+        )
+        for trig_index in range(1024):
+            component_0 = signed_word(trig_index * 197 + case_index * 991 + 17)
+            component_1 = signed_word(trig_index * 389 + case_index * 577 + 91)
+            struct.pack_into(
+                "<hh", active_before, 0x0026 + trig_index * 4, component_0, component_1
+            )
+        write_word(active_before, 0x22F2, state_count)
+
+        parent_offsets = (0x1800, 0x1900)
+        for parent_index, parent_offset in enumerate(parent_offsets):
+            for row in range(3):
+                for column in range(3):
+                    value = signed_dword(
+                        0x10203040
+                        + parent_index * 0x11111111
+                        + row * 0x01020304
+                        - column * 0x00112233
+                    )
+                    write_dword(
+                        active_before,
+                        parent_offset + 0x12 + (row * 3 + column) * 4,
+                        value,
+                    )
+                write_dword(
+                    active_before,
+                    parent_offset + 0x36 + row * 4,
+                    0x70000000 + parent_index * 0x08080808 + row * 0x1234567,
+                )
+
+        state_offsets = []
+        for state_index, (angle_0, angle_1, angle_2, radial) in enumerate(states):
+            state_offset = state_base + state_index * state_size
+            state_offsets.append(state_offset)
+            parent_offset = (
+                state_base if state_index == 1 else parent_offsets[state_index]
+            )
+            write_word(active_before, state_offset, parent_offset)
+            write_word(active_before, state_offset + 0x4E, angle_0)
+            write_word(active_before, state_offset + 0x50, angle_1)
+            write_word(active_before, state_offset + 0x52, angle_2)
+            write_word(active_before, state_offset + 0x54, radial)
+            for axis in range(3):
+                write_dword(
+                    active_before,
+                    state_offset + 0x42 + axis * 4,
+                    (
+                        0x7FFF0001
+                        + state_index * 0x80808080
+                        + axis * 0x1111FFFE
+                    ),
+                )
+
+        active_expected = bytearray(active_before)
+        rotations = []
+        for state_offset in state_offsets:
+            rotations.append(model_state(active_expected, state_offset))
+            remaining = (read_word(active_expected, 0x224A) - 1) & 0xFFFF
+            write_word(active_expected, 0x224A, remaining)
+        write_word(active_expected, 0x224A, 0)
+
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": active_segment,
+            "es": extra_segment,
+            "fs": active_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        active_decoy = bytes(
+            (offset * 11 + case_index * 31 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        phases: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address in (0x0279, 0x0477, 0x0548):
+                phases.append(
+                    {
+                        "address": address,
+                        "di": machine.reg_read(UC_X86_REG_EDI) & 0xFFFF,
+                        "remaining": struct.unpack(
+                            "<H",
+                            machine.mem_read(active_segment * 16 + 0x224A, 2),
+                        )[0],
+                    }
+                )
+
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (active_segment, 0, bytes(active_before)),
+                (extra_segment, 0, active_decoy),
+                (game_segment, 0, active_decoy[::-1]),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=code_handler,
+            max_instructions=10000,
+        )
+
+        actual_active = bytes(machine.mem_read(active_segment * 16, 0x10000))
+        if actual_active != active_expected:
+            for offset, (actual, expected) in enumerate(
+                zip(actual_active, active_expected)
+            ):
+                if actual != expected:
+                    raise AssertionError(
+                        f"{module}:{entry:#x} {name}: active byte {offset:#x} "
+                        f"is {actual:#x}, expected {expected:#x}"
+                    )
+            raise AssertionError(f"{module}:{entry:#x} {name}: active memory differs")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != active_decoy:
+            raise AssertionError(f"{module}:{entry:#x} {name}: ES decoy changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != active_decoy[::-1]:
+            raise AssertionError(f"{module}:{entry:#x} {name}: GS decoy changed")
+
+        final_state = state_offsets[-1]
+        final_parent = read_word(active_expected, final_state)
+        final_rotation = rotations[-1]
+        parent_row_2 = [
+            read_dword(active_expected, final_parent + 0x12 + (2 * 3 + column) * 4)
+            for column in range(3)
+        ]
+        final_accumulator = 0
+        for index in range(3):
+            final_accumulator = add(
+                final_accumulator,
+                multiply(parent_row_2[index], final_rotation[index][2]),
+            )
+        final_result = sar(final_accumulator, 15)
+        final_local_y = signed_word(read_word(active_expected, final_state + 0x46))
+        expected_registers = {
+            "eax": multiply(final_rotation[2][2], parent_row_2[2]),
+            "ebx": parent_row_2[1],
+            "ecx": (0xFFFF0000 if final_local_y < 0 else 0),
+            "edx": parent_row_2[2],
+            "esi": (initial["esi"] & 0xFFFF0000)
+            | ((final_parent + 0x36) & 0xFFFF),
+            "edi": (initial["edi"] & 0xFFFF0000) | final_state,
+            "ebp": final_result,
+            "sp": 0xFF02,
+            "ds": active_segment,
+            "es": extra_segment,
+            "fs": active_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        expected_phases = []
+        for state_index, state_offset in enumerate(state_offsets):
+            expected_phases.extend(
+                (
+                    {
+                        "address": 0x0279,
+                        "di": 0x2336 if state_index == 0 else state_offsets[state_index - 1],
+                        "remaining": state_count - state_index,
+                    },
+                    {
+                        "address": 0x0477,
+                        "di": state_offset,
+                        "remaining": state_count - state_index,
+                    },
+                )
+            )
+        expected_phases.append(
+            {"address": 0x0548, "di": final_state, "remaining": 0}
+        )
+        if phases != expected_phases:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: phases={phases}, "
+                f"expected={expected_phases}"
+            )
+
+        expected_flags = {
+            "cf": final_state + 0x36 > 0xFFFF,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "state_count": state_count,
+                "state_offsets": state_offsets,
+                "internal_transform_fallthroughs": state_count,
+                "back_edges": state_count - 1,
+                "final_rotation_matrix": [
+                    signed_dword(value) for row in final_rotation for value in row
+                ],
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def manu3_init_protocol_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x0121
@@ -5555,6 +6005,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0000_natural.json",
         manu3_api_entry_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0270_natural.json",
+        manu3_matrix_build_vectors(),
         args.check,
     )
     update_vector(

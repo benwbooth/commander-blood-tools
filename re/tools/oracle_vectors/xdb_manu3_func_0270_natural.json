@@ -1,0 +1,228 @@
+[
+  {
+    "name": "single_zero_angles",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 1,
+    "state_offsets": [
+      9108
+    ],
+    "internal_transform_fallthroughs": 1,
+    "back_edges": 0,
+    "final_rotation_matrix": [
+      34,
+      0,
+      182,
+      -182,
+      34,
+      -182,
+      -182,
+      182,
+      34
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "single_mixed_angles",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 1,
+    "state_offsets": [
+      9108
+    ],
+    "internal_transform_fallthroughs": 1,
+    "back_edges": 0,
+    "final_rotation_matrix": [
+      7792,
+      -1434,
+      968,
+      -5678,
+      -58794,
+      -5226,
+      -6482,
+      9952,
+      -62864
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "angle_masking",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 1,
+    "state_offsets": [
+      9108
+    ],
+    "internal_transform_fallthroughs": 1,
+    "back_edges": 0,
+    "final_rotation_matrix": [
+      9774,
+      -1434,
+      2122,
+      -6832,
+      -56812,
+      -5602,
+      -7636,
+      10328,
+      -60882
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_radial_extreme",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 1,
+    "state_offsets": [
+      9108
+    ],
+    "internal_transform_fallthroughs": 1,
+    "back_edges": 0,
+    "final_rotation_matrix": [
+      11100,
+      2560,
+      8764,
+      59332,
+      -24228,
+      -13106,
+      92100,
+      -22222,
+      -54436
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "positive_radial_extreme",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 1,
+    "state_offsets": [
+      9108
+    ],
+    "internal_transform_fallthroughs": 1,
+    "back_edges": 0,
+    "final_rotation_matrix": [
+      17086,
+      3132,
+      11106,
+      20834,
+      62202,
+      -7952,
+      7806,
+      59632,
+      14526
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "two_state_hierarchy",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 2,
+    "state_offsets": [
+      9108,
+      9202
+    ],
+    "internal_transform_fallthroughs": 2,
+    "back_edges": 1,
+    "final_rotation_matrix": [
+      -1748,
+      26282,
+      -28012,
+      -48190,
+      -170,
+      43798,
+      15338,
+      -23704,
+      -37076
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "two_state_overflow",
+    "module": "manu3",
+    "entry": 624,
+    "state_count": 2,
+    "state_offsets": [
+      9108,
+      9202
+    ],
+    "internal_transform_fallthroughs": 2,
+    "back_edges": 1,
+    "final_rotation_matrix": [
+      40294,
+      20144,
+      2706,
+      37566,
+      -8170,
+      -17304,
+      9966,
+      -7912,
+      45414
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

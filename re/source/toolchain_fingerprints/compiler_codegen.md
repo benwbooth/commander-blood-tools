@@ -2131,6 +2131,24 @@ instructions and calls `LDIV@`. The source-level data and control flow are
 verified; the constructor remains a codegen mismatch rather than an assembly
 substitute.
 
+Seven direct vectors prove the complete `0x000270` matrix and tree-transform
+loop. Each 94-byte node supplies three masked byte-offset angles into trig pairs
+rooted at DS:`0x0026`, a signed radial displacement, a local position, and a
+near parent offset. The routine constructs all nine Q15 rotation terms, applies
+the radial adjustment including the original rounded Y term, then composes the
+node's world translation and matrix with its parent. Cases cover zero, mixed,
+masked, and extreme angles, both radial extremes, modular dword overflow, and a
+two-node hierarchy while checking full memory, registers, flags, and segments.
+
+Control-flow captures also prove that labeled `0x000477` is not a callable
+routine: it consumes live `EAX` from `0x000473`, decrements the shared node
+count, and jumps back into `0x000279`. The inventory therefore merges it into
+the 729-byte `0x000270` owner. Watcom medium emits 445 instructions/1237 bytes
+versus 198/729 original, and Turbo C emits 568 instructions. Watcom calls
+`__U4M` for nine products while
+the binary retains inline 386 multiplies. This is a verified natural-C
+translation-unit recovery, not matching compiler codegen.
+
 Fifteen direct vectors prove the complete `0x000549` entity projector. The
 routine walks 94-byte state records and 20-byte geometry vertices, evaluates a
 signed 3x4 fixed-point transform, stores depth shifted right by eight, rejects
@@ -2262,6 +2280,7 @@ LCS and then mnemonic similarity:
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
+| `xdb_manu3_matrix_build` | medium, `-ox -zdp`, register | 198/445 | 0.0051 | 0.6465 | 0.0101 |
 | `xdb_manu3_entity_project` | medium, `-ox -zdp`, register | 104/230 | 0.0096 | 0.5481 | 0.0192 |
 | `xdb_manu3_face_builder_next` | medium, `-ox -zdp`, register | 2/3 | 0.0000 | 1.0000 | 0.0000 |
 | `xdb_manu3_face_bucket_sort` | medium, `-ox -zdp`, register | 47/83 | 0.0000 | 0.6809 | 0.0426 |

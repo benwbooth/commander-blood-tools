@@ -55,6 +55,11 @@ typedef struct xdb_manu3_point3 {
     xdb_i16 z;
 } xdb_manu3_point3;
 
+typedef struct xdb_manu3_trig_pair {
+    xdb_i16 component_0;
+    xdb_i16 component_1;
+} xdb_manu3_trig_pair;
+
 typedef union xdb_manu3_vertex_field_004 {
     xdb_i16 object_x;
     xdb_u16 projection_source_offset;
@@ -80,14 +85,14 @@ typedef struct xdb_manu3_vertex {
 } xdb_manu3_vertex;
 
 typedef struct xdb_manu3_projection_state {
-    xdb_u16 field_000;
+    xdb_u16 parent_offset;
     xdb_u16 vertex_count;
     xdb_u16 field_004;
     xdb_u16 vertex_offset;
     xdb_u8 field_008[0x0A];
     xdb_i32 matrix[3][3];
     xdb_i32 translation[3];
-    xdb_u8 field_042[0x0C];
+    xdb_i32 local_position[3];
     xdb_u16 angle_0;
     xdb_u16 angle_1;
     xdb_u16 angle_2;
@@ -115,6 +120,11 @@ extern volatile xdb_u16 XDB_CODE_DATA
         xdb_manu3_data_segment_delta; /* CS:0x1368 */
 extern volatile xdb_manu3_segment_directory
         xdb_manu3_segments; /* DS/FS:0x0000 */
+extern const volatile xdb_manu3_trig_pair
+        xdb_manu3_trig_table[]; /* DS:0x0026 */
+extern volatile xdb_u16 xdb_manu3_angle_scratch_1; /* DS:0x0020 */
+extern volatile xdb_u16 xdb_manu3_angle_scratch_0; /* DS:0x0022 */
+extern volatile xdb_u16 xdb_manu3_angle_scratch_2; /* DS:0x0024 */
 extern volatile xdb_u16
         xdb_manu3_framebuffer_window_offset; /* SS:0x20CE */
 extern volatile xdb_u16 xdb_manu3_framebuffer_segment; /* DS:0x0018 */
@@ -129,6 +139,8 @@ extern volatile xdb_i32 xdb_manu3_screen_center_x; /* DS:0x223E */
 extern volatile xdb_i32 xdb_manu3_screen_center_y; /* DS:0x2242 */
 extern volatile xdb_u16 xdb_manu3_projection_remaining; /* DS:0x224A */
 extern volatile xdb_u16 xdb_manu3_projection_field_224e; /* DS:0x224E */
+extern volatile xdb_u16 xdb_manu3_current_state_offset; /* DS:0x2248 */
+extern volatile xdb_i32 xdb_manu3_rotation_matrix[3][3]; /* DS:0x2250 */
 extern volatile xdb_u16 xdb_manu3_projection_state_count; /* DS:0x22F2 */
 extern volatile xdb_u16 xdb_manu3_projection_copy_offset; /* DS/FS:0x22FA */
 extern volatile xdb_u16 xdb_manu3_projection_copy_count; /* DS:0x22FE */
