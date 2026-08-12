@@ -12,14 +12,13 @@ import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path[:] = [
-    path for path in sys.path if os.path.abspath(path or os.curdir) != _HERE
-]
+sys.path[:] = [path for path in sys.path if os.path.abspath(path or os.curdir) != _HERE]
 
 import argparse
 import csv
 import json
 import re
+import shutil
 import subprocess
 from collections import Counter
 from pathlib import Path
@@ -29,6 +28,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CORPUS_ROOT = REPO_ROOT / "re" / "compiler_corpus"
 MANIFEST = CORPUS_ROOT / "manifest.tsv"
 DEFAULT_OUT = CORPUS_ROOT / "out"
+DOS_PROBE_SOURCE = "PROBE.C"
+DOS_PROBE_ASSEMBLY = "PROBE.ASM"
+DOS_PROBE_LOG = "COMPILE.TXT"
+DOS_PROBE_OBJECT = "PROBE.OBJ"
 
 FORBIDDEN_SOURCE_TOKENS = [
     "read16_far",
@@ -54,7 +57,7 @@ ASM_SKIP_PREFIXES = (
 )
 
 INSN_RE = re.compile(
-    r"^([0-9a-fA-F]{6}):\s+((?:[0-9a-fA-F]{2}\s+)+)\s*([A-Za-z][A-Za-z0-9]*)\s*(.*)$"
+    r"^([0-9a-fA-F]{4,8}):?\s+((?:[0-9a-fA-F]{2}\s+)+)\s*([A-Za-z][A-Za-z0-9]*)\s*(.*)$"
 )
 
 NUMERIC_RE = re.compile(
@@ -79,7 +82,9 @@ def sample_path(row: dict[str, str]) -> Path:
 
 def asm_path_for_target(target: str) -> Path | None:
     needle = f"func_{int(target, 16):06x}_"
-    matches = sorted((REPO_ROOT / "re" / "assembly" / "bloodprg").glob(f"**/{needle}*.asm"))
+    matches = sorted(
+        (REPO_ROOT / "re" / "assembly" / "bloodprg").glob(f"**/{needle}*.asm")
+    )
     return matches[0] if matches else None
 
 
@@ -178,16 +183,30 @@ def display_path(path: Path) -> str:
 
 
 def normalize_asm_text(text: str) -> list[str]:
+    cleaned = [raw.split(";", 1)[0].strip().lower() for raw in text.splitlines()]
+    has_procedures = any(re.search(r"\bproc\b", line) for line in cleaned)
+    in_procedure = not has_procedures
+    far_procedure = False
     out: list[str] = []
-    for raw in text.splitlines():
-        line = raw.split(";", 1)[0].strip().lower()
+
+    for line in cleaned:
         if not line:
             continue
-        if line.endswith(":"):
+        if re.search(r"\bproc\b", line):
+            in_procedure = True
+            far_procedure = bool(re.search(r"\bproc\s+far\b", line))
+            continue
+        if re.search(r"\bendp\b", line):
+            in_procedure = False
+            far_procedure = False
+            continue
+        if not in_procedure or line.endswith(":"):
             continue
         if any(line.startswith(prefix) for prefix in ASM_SKIP_PREFIXES):
             continue
         line = re.sub(r"\s+", " ", line)
+        if far_procedure and line == "ret":
+            line = "retf"
         out.append(line)
     return out
 
@@ -212,7 +231,9 @@ def read_compiler_asm(path: Path) -> dict[str, object]:
     }
 
 
-def expand_placeholders(value: str, row: dict[str, str], compiler: dict[str, object], outdir: Path) -> str:
+def expand_placeholders(
+    value: str, row: dict[str, str], compiler: dict[str, object], outdir: Path
+) -> str:
     source = sample_path(row)
     return value.format(
         compiler=compiler["name"],
@@ -223,10 +244,277 @@ def expand_placeholders(value: str, row: dict[str, str], compiler: dict[str, obj
     )
 
 
-def command_for(command: object, row: dict[str, str], compiler: dict[str, object], outdir: Path) -> list[str]:
+def command_for(
+    command: object, row: dict[str, str], compiler: dict[str, object], outdir: Path
+) -> list[str]:
     if not isinstance(command, list) or not all(isinstance(x, str) for x in command):
-        raise SystemExit(f"compiler {compiler.get('name')}: command entries must be string lists")
+        raise SystemExit(
+            f"compiler {compiler.get('name')}: command entries must be string lists"
+        )
     return [expand_placeholders(arg, row, compiler, outdir) for arg in command]
+
+
+def parse_named_path(value: str, option: str) -> tuple[str, Path]:
+    if "=" not in value:
+        raise SystemExit(f"{option} must be LABEL=PATH")
+    label, raw_path = value.split("=", 1)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", label) or not raw_path:
+        raise SystemExit(f"{option} must be LABEL=PATH with a filesystem-safe label")
+    path = Path(raw_path).expanduser()
+    return label, path
+
+
+def selected_rows(
+    rows: list[dict[str, str]], samples: list[str] | None
+) -> list[dict[str, str]]:
+    selected = set(samples or [])
+    rows_to_run = [row for row in rows if not selected or row["sample"] in selected]
+    if selected and len(rows_to_run) != len(selected):
+        known = {row["sample"] for row in rows}
+        missing = sorted(selected.difference(known))
+        raise SystemExit(f"unknown sample(s): {', '.join(missing)}")
+    return rows_to_run
+
+
+def run_dosbox_turbo_c(
+    dosbox: Path,
+    toolchain: Path,
+    source: Path,
+    outdir: Path,
+    flags: list[str],
+) -> tuple[list[str], str]:
+    tcc = toolchain / "TC" / "TCC.EXE"
+    include = toolchain / "TC" / "INCLUDE"
+    if not tcc.is_file() or not include.is_dir():
+        raise SystemExit(
+            f"Turbo C toolchain must contain TC/TCC.EXE and TC/INCLUDE: {toolchain}"
+        )
+    if not dosbox.is_file():
+        resolved = shutil.which(str(dosbox))
+        if resolved is None:
+            raise SystemExit(f"DOSBox executable not found: {dosbox}")
+        dosbox = Path(resolved)
+
+    outdir.mkdir(parents=True, exist_ok=True)
+    staged_source = outdir / DOS_PROBE_SOURCE
+    assembly = outdir / DOS_PROBE_ASSEMBLY
+    log = outdir / DOS_PROBE_LOG
+    for stale in (staged_source, assembly, log):
+        if stale.exists():
+            stale.unlink()
+    source_bytes = source.read_bytes()
+    source_bytes = source_bytes.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    staged_source.write_bytes(source_bytes.replace(b"\n", b"\r\n"))
+
+    dos_command = (
+        " ".join([r"C:\TC\TCC.EXE", "-S", r"-IC:\TC\INCLUDE", *flags, DOS_PROBE_SOURCE])
+        + f" > {DOS_PROBE_LOG}"
+    )
+    command = [
+        str(dosbox),
+        "--noprimaryconf",
+        "--nolocalconf",
+        "--exit",
+        "-set",
+        "sdl fullscreen=false",
+        "-set",
+        "sdl output=texture",
+        "-c",
+        f'mount c "{toolchain.resolve()}"',
+        "-c",
+        f'mount d "{outdir.resolve()}"',
+        "-c",
+        r"set PATH=C:\TC",
+        "-c",
+        "d:",
+        "-c",
+        dos_command,
+    ]
+    env = os.environ.copy()
+    env["SDL_AUDIODRIVER"] = "dummy"
+    env["SDL_VIDEODRIVER"] = "offscreen"
+    proc = subprocess.run(command, check=False, capture_output=True, env=env)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"DOSBox exited {proc.returncode}: {proc.stderr.decode(errors='replace')}"
+        )
+    compiler_output = (
+        log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+    )
+    if not assembly.is_file():
+        raise RuntimeError(
+            f"Turbo C did not create {assembly}; compiler output:\n{compiler_output}"
+        )
+    return command, compiler_output.replace("\r", "")
+
+
+def run_turbo_c_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
+    compiler_specs = args.turbo_c or []
+    if not compiler_specs:
+        raise SystemExit("--turbo-c LABEL=PATH is required with --run-turbo-c")
+    flags = args.flag if args.flag is not None else ["-mh", "-O", "-Z"]
+    for flag in flags:
+        if not re.fullmatch(r"-[A-Za-z0-9+_.-]+", flag):
+            raise SystemExit(f"unsafe or malformed Turbo C flag: {flag!r}")
+
+    status = 0
+    for label, toolchain in (
+        parse_named_path(value, "--turbo-c") for value in compiler_specs
+    ):
+        for row in selected_rows(rows, args.sample):
+            outdir = Path(args.out_dir) / label / row["sample"]
+            print(
+                f"+ {label} {row['sample']}: TCC.EXE -S {' '.join(flags)} {DOS_PROBE_SOURCE}"
+            )
+            if args.dry_run:
+                continue
+            try:
+                _, compiler_output = run_dosbox_turbo_c(
+                    Path(args.dosbox),
+                    toolchain,
+                    sample_path(row),
+                    outdir,
+                    flags,
+                )
+            except (OSError, RuntimeError) as error:
+                print(f"ERROR: {label} {row['sample']}: {error}", file=sys.stderr)
+                status = 1
+                continue
+
+            assembly = outdir / DOS_PROBE_ASSEMBLY
+            normalized = normalize_asm_text(
+                assembly.read_text(encoding="utf-8", errors="replace")
+            )
+            normalized_path = outdir / "PROBE.normalized.asm"
+            normalized_path.write_text("\n".join(normalized) + "\n", encoding="utf-8")
+            print(
+                f"generated {display_path(assembly)}; "
+                f"compiler log {len(compiler_output)} byte(s)"
+            )
+    return status
+
+
+def resolve_watcom_tools(path: Path) -> tuple[Path, Path]:
+    if path.is_dir():
+        wcc = path / "wcc"
+        wdis = path / "wdis"
+    else:
+        resolved = shutil.which(str(path))
+        wcc = Path(resolved) if resolved is not None else path
+        wdis = wcc.parent / "wdis"
+    if not wcc.is_file() or not wdis.is_file():
+        raise SystemExit(
+            f"Watcom path must be a bin directory containing wcc and wdis, "
+            f"or the wcc executable: {path}"
+        )
+    return wcc.resolve(), wdis.resolve()
+
+
+def run_watcom_c(
+    wcc: Path,
+    wdis: Path,
+    source: Path,
+    outdir: Path,
+    flags: list[str],
+) -> tuple[list[str], str]:
+    outdir.mkdir(parents=True, exist_ok=True)
+    staged_source = outdir / DOS_PROBE_SOURCE
+    assembly = outdir / DOS_PROBE_ASSEMBLY
+    object_file = outdir / DOS_PROBE_OBJECT
+    log = outdir / DOS_PROBE_LOG
+    normalized = outdir / "PROBE.normalized.asm"
+    for stale in (staged_source, assembly, object_file, log, normalized):
+        if stale.exists():
+            stale.unlink()
+    shutil.copyfile(source, staged_source)
+
+    compile_command = [
+        str(wcc),
+        *flags,
+        f"-fo={DOS_PROBE_OBJECT}",
+        DOS_PROBE_SOURCE,
+    ]
+    compile_proc = subprocess.run(
+        compile_command,
+        cwd=outdir,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    compiler_output = compile_proc.stdout + compile_proc.stderr
+    log.write_text(compiler_output, encoding="utf-8")
+    if compile_proc.returncode != 0 or not object_file.is_file():
+        raise RuntimeError(
+            f"wcc exited {compile_proc.returncode}; compiler output:\n{compiler_output}"
+        )
+
+    disassemble_command = [
+        str(wdis),
+        f"-l={DOS_PROBE_ASSEMBLY}",
+        DOS_PROBE_OBJECT,
+    ]
+    disassemble_proc = subprocess.run(
+        disassemble_command,
+        cwd=outdir,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if disassemble_proc.returncode != 0 or not assembly.is_file():
+        output = disassemble_proc.stdout + disassemble_proc.stderr
+        raise RuntimeError(
+            f"wdis exited {disassemble_proc.returncode}; disassembler output:\n{output}"
+        )
+    return compile_command + ["&&"] + disassemble_command, compiler_output
+
+
+def run_watcom_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
+    compiler_specs = args.watcom or []
+    if not compiler_specs:
+        raise SystemExit("--watcom LABEL=PATH is required with --run-watcom")
+    flags = args.flag if args.flag is not None else ["-3", "-ox", "-mh"]
+    for flag in flags:
+        if not re.fullmatch(r"-[A-Za-z0-9+=_.-]+", flag):
+            raise SystemExit(f"unsafe or malformed Watcom C flag: {flag!r}")
+
+    status = 0
+    for label, path in (
+        parse_named_path(value, "--watcom") for value in compiler_specs
+    ):
+        wcc, wdis = resolve_watcom_tools(path)
+        for row in selected_rows(rows, args.sample):
+            outdir = Path(args.out_dir) / label / row["sample"]
+            print(
+                f"+ {label} {row['sample']}: wcc {' '.join(flags)} "
+                f"-fo={DOS_PROBE_OBJECT} {DOS_PROBE_SOURCE}; wdis"
+            )
+            if args.dry_run:
+                continue
+            try:
+                _, compiler_output = run_watcom_c(
+                    wcc,
+                    wdis,
+                    sample_path(row),
+                    outdir,
+                    flags,
+                )
+            except (OSError, RuntimeError) as error:
+                print(f"ERROR: {label} {row['sample']}: {error}", file=sys.stderr)
+                status = 1
+                continue
+
+            assembly = outdir / DOS_PROBE_ASSEMBLY
+            compiled = read_compiler_asm(assembly)
+            normalized_path = outdir / "PROBE.normalized.asm"
+            normalized_path.write_text(
+                "\n".join(compiled["instructions"]) + "\n",
+                encoding="utf-8",
+            )
+            print(
+                f"generated {display_path(assembly)} with object-code bytes; "
+                f"compiler log {len(compiler_output)} byte(s)"
+            )
+    return status
 
 
 def print_config_template() -> None:
@@ -289,13 +577,17 @@ def check_corpus(rows: list[dict[str, str]]) -> int:
 
 
 def list_samples(rows: list[dict[str, str]]) -> None:
-    fieldnames = list(rows[0].keys()) if rows else [
-        "sample",
-        "source",
-        "target_routine",
-        "question",
-        "candidate_source",
-    ]
+    fieldnames = (
+        list(rows[0].keys())
+        if rows
+        else [
+            "sample",
+            "source",
+            "target_routine",
+            "question",
+            "candidate_source",
+        ]
+    )
     writer = csv.DictWriter(
         sys.stdout,
         fieldnames=fieldnames,
@@ -324,18 +616,65 @@ def original_shapes(rows: list[dict[str, str]]) -> None:
     print(json.dumps(out, indent=2))
 
 
+def scan_library_routines(args: argparse.Namespace) -> int:
+    routines: list[tuple[Path, bytes]] = []
+    assembly_root = REPO_ROOT / "re" / "assembly" / "bloodprg"
+    for asm_path in sorted(assembly_root.glob("**/func_*.asm")):
+        routine = read_original_routine(asm_path)
+        blob = b"".join(bytes.fromhex(byte_line) for byte_line in routine["byte_lines"])
+        if len(blob) >= args.min_routine_bytes:
+            routines.append((asm_path, blob))
+
+    results: list[dict[str, object]] = []
+    status = 0
+    for value in args.scan_library:
+        label, root = parse_named_path(value, "--scan-library")
+        if not root.is_dir():
+            print(f"ERROR: library root is not a directory: {root}", file=sys.stderr)
+            status = 1
+            continue
+        files = sorted(path for path in root.rglob("*") if path.is_file())
+        matches: list[dict[str, object]] = []
+        for file_path in files:
+            try:
+                library_blob = file_path.read_bytes()
+            except OSError as error:
+                print(f"WARN: cannot read {file_path}: {error}", file=sys.stderr)
+                continue
+            for asm_path, routine_blob in routines:
+                offset = library_blob.find(routine_blob)
+                if offset >= 0:
+                    matches.append(
+                        {
+                            "routine": asm_path.stem,
+                            "routine_asm": display_path(asm_path),
+                            "routine_bytes": len(routine_blob),
+                            "library_file": str(file_path),
+                            "library_offset": f"0x{offset:x}",
+                        }
+                    )
+        results.append(
+            {
+                "label": label,
+                "library_root": str(root),
+                "files_scanned": len(files),
+                "routines_scanned": len(routines),
+                "minimum_routine_bytes": args.min_routine_bytes,
+                "exact_match_count": len(matches),
+                "matches": matches,
+            }
+        )
+    print(json.dumps(results, indent=2))
+    return status
+
+
 def run_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
     config = json.loads(Path(args.config).read_text())
     compilers = config.get("compilers", [])
     if not compilers:
         raise SystemExit(f"{args.config}: no compilers configured")
 
-    selected = set(args.sample or [])
-    rows_to_run = [row for row in rows if not selected or row["sample"] in selected]
-    if selected and len(rows_to_run) != len(selected):
-        known = {row["sample"] for row in rows}
-        missing = sorted(selected.difference(known))
-        raise SystemExit(f"unknown sample(s): {', '.join(missing)}")
+    rows_to_run = selected_rows(rows, args.sample)
 
     status = 0
     for compiler in compilers:
@@ -356,7 +695,9 @@ def run_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
                     continue
                 proc = subprocess.run(
                     expanded,
-                    cwd=expand_placeholders(str(compiler.get("workdir", ".")), row, compiler, outdir),
+                    cwd=expand_placeholders(
+                        str(compiler.get("workdir", ".")), row, compiler, outdir
+                    ),
                     check=False,
                 )
                 if proc.returncode != 0:
@@ -371,7 +712,9 @@ def run_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
                 continue
 
             for asm_pattern in compiler.get("asm_outputs", []):
-                asm_path = Path(expand_placeholders(str(asm_pattern), row, compiler, outdir))
+                asm_path = Path(
+                    expand_placeholders(str(asm_pattern), row, compiler, outdir)
+                )
                 if asm_path.exists():
                     normalized = normalize_asm_text(
                         asm_path.read_text(encoding="utf-8", errors="replace")
@@ -380,7 +723,10 @@ def run_compilers(args: argparse.Namespace, rows: list[dict[str, str]]) -> int:
                     norm_path.write_text("\n".join(normalized) + "\n", encoding="utf-8")
                     print(f"normalized {asm_path} -> {norm_path}")
                 elif not args.dry_run:
-                    print(f"WARN: expected asm output missing: {asm_path}", file=sys.stderr)
+                    print(
+                        f"WARN: expected asm output missing: {asm_path}",
+                        file=sys.stderr,
+                    )
 
     return status
 
@@ -402,6 +748,8 @@ def compare_sequences(original: list[str], compiled: list[str]) -> dict[str, obj
     return {
         "original_instruction_count": original_len,
         "compiled_instruction_count": compiled_len,
+        "instruction_count_delta": compiled_len - original_len,
+        "mnemonic_sequence_exact": original_mnemonics == compiled_mnemonics,
         "instruction_lcs": instruction_lcs,
         "instruction_lcs_ratio": round(instruction_lcs / original_len, 4)
         if original_len
@@ -462,9 +810,19 @@ def compare_outputs(args: argparse.Namespace, rows: list[dict[str, str]]) -> int
             sample_dir = compiler_dir / row["sample"]
             if not sample_dir.exists():
                 continue
-            asm_outputs = sorted(sample_dir.glob("*.normalized.asm"))
+            asm_outputs = sorted(
+                path
+                for path in sample_dir.iterdir()
+                if path.is_file()
+                and path.suffix.lower() == ".asm"
+                and not path.name.endswith(".normalized.asm")
+            )
             if not asm_outputs:
-                asm_outputs = sorted(sample_dir.glob("*.asm"))
+                asm_outputs = sorted(
+                    path
+                    for path in sample_dir.iterdir()
+                    if path.is_file() and path.name.endswith(".normalized.asm")
+                )
             for compiled_path in asm_outputs:
                 compiled = read_compiler_asm(compiled_path)
                 seq_scores = compare_sequences(
@@ -498,16 +856,75 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="validate corpus files")
     parser.add_argument("--list", action="store_true", help="list manifest rows")
-    parser.add_argument("--original-shapes", action="store_true", help="emit target routine shapes")
+    parser.add_argument(
+        "--original-shapes", action="store_true", help="emit target routine shapes"
+    )
+    parser.add_argument(
+        "--scan-library",
+        action="append",
+        metavar="LABEL=PATH",
+        help="find exact recovered BLOODPRG routine bytes under a compiler library tree",
+    )
+    parser.add_argument("--min-routine-bytes", type=int, default=8)
     parser.add_argument("--print-config-template", action="store_true")
     parser.add_argument("--config", help="JSON compiler runner config")
     parser.add_argument("--run", action="store_true", help="run configured compilers")
-    parser.add_argument("--compare", action="store_true", help="compare compiler outputs with target routines")
-    parser.add_argument("--dry-run", action="store_true", help="print configured compiler commands")
-    parser.add_argument("--sample", action="append", help="run only this sample; repeatable")
-    parser.add_argument("--compiler", action="append", help="compare only this compiler output directory; repeatable")
+    parser.add_argument(
+        "--run-turbo-c",
+        action="store_true",
+        help="run archived Turbo C directly through DOSBox",
+    )
+    parser.add_argument(
+        "--turbo-c",
+        action="append",
+        metavar="LABEL=PATH",
+        help="installed Turbo C tree; repeatable",
+    )
+    parser.add_argument(
+        "--run-watcom",
+        action="store_true",
+        help="run native Open Watcom C16 and disassemble its OMF objects",
+    )
+    parser.add_argument(
+        "--watcom",
+        action="append",
+        metavar="LABEL=PATH",
+        help="Open Watcom bin directory or wcc executable; repeatable",
+    )
+    parser.add_argument("--dosbox", default="dosbox-staging")
+    parser.add_argument(
+        "--flag",
+        action="append",
+        help="compiler flag; repeatable (Turbo defaults: -mh -O -Z; Watcom: -3 -ox -mh)",
+    )
+    parser.add_argument(
+        "--compare",
+        action="store_true",
+        help="compare compiler outputs with target routines",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="print configured compiler commands"
+    )
+    parser.add_argument(
+        "--sample", action="append", help="run only this sample; repeatable"
+    )
+    parser.add_argument(
+        "--compiler",
+        action="append",
+        help="compare only this compiler output directory; repeatable",
+    )
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT))
     args = parser.parse_args()
+
+    runner_count = sum(
+        (
+            bool(args.config),
+            bool(args.turbo_c) or args.run_turbo_c,
+            bool(args.watcom) or args.run_watcom,
+        )
+    )
+    if runner_count > 1:
+        raise SystemExit("choose one configured, Turbo C, or Watcom compiler runner")
 
     if args.print_config_template:
         print_config_template()
@@ -527,11 +944,33 @@ def main() -> int:
     if args.original_shapes:
         ran_action = True
         original_shapes(rows)
-    if args.run or args.dry_run:
+    if args.scan_library:
+        ran_action = True
+        if args.min_routine_bytes < 1:
+            raise SystemExit("--min-routine-bytes must be positive")
+        rc = scan_library_routines(args)
+        if rc:
+            return rc
+    if args.run:
         ran_action = True
         if not args.config:
-            raise SystemExit("--config is required with --run or --dry-run")
+            raise SystemExit("--config is required with --run")
         return run_compilers(args, rows)
+    if args.run_turbo_c:
+        ran_action = True
+        return run_turbo_c_compilers(args, rows)
+    if args.run_watcom:
+        ran_action = True
+        return run_watcom_compilers(args, rows)
+    if args.dry_run:
+        ran_action = True
+        if args.config:
+            return run_compilers(args, rows)
+        if args.turbo_c:
+            return run_turbo_c_compilers(args, rows)
+        if args.watcom:
+            return run_watcom_compilers(args, rows)
+        raise SystemExit("--config, --turbo-c, or --watcom is required with --dry-run")
     if args.compare:
         ran_action = True
         return compare_outputs(args, rows)

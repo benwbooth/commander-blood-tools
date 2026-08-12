@@ -1,17 +1,18 @@
 # Compiler Corpus Gate
 
-No historical C/C++ compiler is currently installed in this checkout's dev
-environment. On 2026-08-11, the active shell had Wine and `objdump` on PATH,
-but did not have `dosbox`, `dosbox-x`, `bcc`, `tcc`, `wcc`, `wasm`, or `nasm`.
-Use `toolchain_fingerprints/README.md` for the current executable fingerprint
-evidence and local toolchain check.
+The corpus has now been compiled with archived Turbo C 2.00 and 2.01 through
+DOSBox and with Open Watcom C16 1.9. None of the tested natural-C probes was an
+exact machine-code match. Turbo C's stack-oriented lowering was generally a
+poor fit; Open Watcom's default register convention was structurally closer but
+still not an identification. See `toolchain_fingerprints/compiler_codegen.md`
+for the measured results and tool hashes.
 
 Before adding natural C routines, build a small compiler corpus and compare
 codegen against recovered routines:
 
 - Borland/Turbo C++ candidates around 1993-1995.
 - Microsoft C/C++ 7.x/8.x.
-- Watcom C/C++ only if real-mode segmented codegen can be matched.
+- Watcom C/C++ versions capable of real-mode segmented codegen.
 
 Compile tiny programs that exercise:
 

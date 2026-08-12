@@ -23,8 +23,8 @@ For each routine, the expected workflow is:
 2. Recover the likely C-level declarations: structs, globals, arrays, enums,
    and function prototype.
 3. Write the smallest natural source expression of that logic.
-4. Compile with the candidate Borland/Turbo compiler and compare the generated
-   assembly shape against the recovered routine.
+4. Compile with candidate historical compilers and compare the generated
+   assembly shape and bytes against the recovered routine.
 5. Keep the source only when the comparison is close enough to justify it.
 
 The assembly dumps under `re/assembly` remain the evidence. A missing `.c` file

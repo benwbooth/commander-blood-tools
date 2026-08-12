@@ -47,13 +47,12 @@ hit for `Microsoft`. Its relocation order has two backtracks, unlike
 so this file is useful for installer provenance but should not be treated as
 proof of the main game's compiler.
 
-## Current Local Toolchain Check
+## Compiler Experiments
 
-On 2026-08-11 in this shell, `command -v` found Wine and `objdump`, but did not
-find `dosbox`, `dosbox-x`, `bcc`, `tcc`, `wcc`, `wasm`, or `nasm` on PATH. A
-bounded `/home/ben` search for common DOS compiler executables such as
-`TC.EXE`, `TCC.EXE`, `BCC.EXE`, `BCC32.EXE`, `WCL.EXE`, `CL.EXE`, `LINK.EXE`,
-and `TLINK.EXE` completed with no matches.
+Archived Turbo C 2.00 and 2.01 trees were subsequently found outside this
+checkout and run through DOSBox. Open Watcom C16 1.9 is available from Nixpkgs.
+The checked code-generation matrix and executable hashes are recorded in
+`compiler_codegen.md`.
 
 ## Interpretation
 
@@ -65,6 +64,6 @@ facts are structural:
 - it contains many far calls/returns and relocation-derived segment references;
 - it does not expose an obvious runtime/compiler signature string.
 
-The next evidence step is to compile the `re/compiler_corpus` samples with real
-candidate DOS compilers and fingerprint/disassemble those outputs against
-`mz_profiles.json` and the recovered routine assembly.
+The next compiler-identification step is to test additional period-correct
+compiler versions and calling conventions against the same corpus. The current
+Turbo and Watcom results narrow the search but do not identify the toolchain.
