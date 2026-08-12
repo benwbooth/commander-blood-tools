@@ -1092,6 +1092,24 @@ close, but Watcom uses DS globals, AX as the destination cursor, and saved BX/DX
 instead of the original SS:BP destination and AL loop. Turbo C 2.01 medium emits
 42 instructions with mnemonic LCS 26/29.
 
+VM conditional jump handler `0x006830` has nine direct vectors covering clear
+and set flag bit zero, unrelated flag bits, zero and maximum targets, unaligned
+input, and target words spanning `DS:FFFF`. Instruction-phase checks prove both
+paths consume the flag first; the clear path replaces SI directly from the
+following word, while the set path writes query mode, consumes the target,
+writes branch-stack root, and finally sets the top to 2. The vectors also prove
+GS state ownership, DS script ownership, path-specific AX/SI, preservation,
+immutable input, TEST-derived flags, and near return.
+
+The direct-return natural candidate compiles without warnings under Open Watcom
+`-3 -ox -mm` to 12 instructions/30 bytes versus 10/28 original. Watcom retains
+the branch topology, SI input/result, store ordering, and immediate state values,
+but expands LODSB/LODSW to MOV plus pointer arithmetic, duplicates RET, addresses
+globals through DS, and overwrites the odd path's TEST flags with `ADD SI,2`.
+Turbo C 2.01 medium emits 25 instructions. Exact integration therefore needs
+fixed GS placement and the original string-load/shared-return codegen; the
+natural C logic and data flow require no register or memory emulation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1133,6 +1151,7 @@ LCS and then mnemonic similarity:
 | `strlen_b` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
 | `vm_presentation_register_set` | medium, `-ox`, register | 5/7 | 0.2000 | 0.6000 | 0.2000 |
 | `vm_load_string` | medium, `-ox`, register | 29/38 | 0.0690 | 0.8621 | 0.1034 |
+| `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

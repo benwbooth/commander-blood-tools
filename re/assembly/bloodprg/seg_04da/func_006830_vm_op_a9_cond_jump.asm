@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_a9_cond_jump
-; label_comment: VM opcode 0xA9: lodsb al; if bit0 CLEAR, si=[si] (jump to operand). Conditional jump on operand bit0
+; label_comment: VM opcode 0xA9: consume a flag byte; bit0 clear replaces SI from the following word, while bit0 set consumes that word and seeds query mode plus branch-stack root/top
 ; incoming: vm_opcode_handlers:opcode_0xa9
 ; byte_count: 28
 ; boundary: cfg_blocks_4_terminals_2

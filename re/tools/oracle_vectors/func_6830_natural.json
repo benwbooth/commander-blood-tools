@@ -1,0 +1,164 @@
+[
+  {
+    "name": "even_zero_jumps",
+    "start_offset": 13312,
+    "flags_byte": 0,
+    "odd_path": false,
+    "target": 0,
+    "final_script_offset": 0,
+    "query_after": 164,
+    "root_after": 23205,
+    "top_after": 26505,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "even_unrelated_low_bit_clear",
+    "start_offset": 13569,
+    "flags_byte": 2,
+    "odd_path": false,
+    "target": 4660,
+    "final_script_offset": 4660,
+    "query_after": 164,
+    "root_after": 23205,
+    "top_after": 26505,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "even_high_bit_jumps",
+    "start_offset": 13824,
+    "flags_byte": 128,
+    "odd_path": false,
+    "target": 65535,
+    "final_script_offset": 65535,
+    "query_after": 164,
+    "root_after": 23205,
+    "top_after": 26505,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_one_arms_query",
+    "start_offset": 14080,
+    "flags_byte": 1,
+    "odd_path": true,
+    "target": 9320,
+    "final_script_offset": 14083,
+    "query_after": 1,
+    "root_after": 9320,
+    "top_after": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_multiple_bits",
+    "start_offset": 14337,
+    "flags_byte": 3,
+    "odd_path": true,
+    "target": 32769,
+    "final_script_offset": 14340,
+    "query_after": 1,
+    "root_after": 32769,
+    "top_after": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_all_bits",
+    "start_offset": 14592,
+    "flags_byte": 255,
+    "odd_path": true,
+    "target": 48879,
+    "final_script_offset": 14595,
+    "query_after": 1,
+    "root_after": 48879,
+    "top_after": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_high_bit",
+    "start_offset": 14848,
+    "flags_byte": 129,
+    "odd_path": true,
+    "target": 0,
+    "final_script_offset": 14851,
+    "query_after": 1,
+    "root_after": 0,
+    "top_after": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "even_target_crosses_segment_end",
+    "start_offset": 65534,
+    "flags_byte": 126,
+    "odd_path": false,
+    "target": 51966,
+    "final_script_offset": 51966,
+    "query_after": 164,
+    "root_after": 23205,
+    "top_after": 26505,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_target_crosses_segment_end",
+    "start_offset": 65534,
+    "flags_byte": 127,
+    "odd_path": true,
+    "target": 4951,
+    "final_script_offset": 1,
+    "query_after": 1,
+    "root_after": 4951,
+    "top_after": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

@@ -277,7 +277,7 @@
 "0x0065DB","vm_op_a4_jump","VM opcode 0xA4 JUMP: si=[si] (set script PC to the operand address); clear resume state gs:[0x67b1]=0, gs:[0x6764]=0. Unconditional jump"
 "0x0065EB","vm_op_a5_cond_state_array","VM opcode 0xA5: LODSB/CBW makes a signed index and BP=index*2; gs:[0x67ad]&1 selects query mode, while the state word is SS:[BP+0x6ade] (SS=GS at runtime); query branches on nonzero, assignment consumes and stores the following word"
 "0x0067BA","vm_op_a7_set_if_presentation","VM opcode 0xA7: lodsw operand; if gs:[0x67ac]&1 (presentation active) set gs:[0x6770]=operand. Conditional set-state"
-"0x006830","vm_op_a9_cond_jump","VM opcode 0xA9: lodsb al; if bit0 CLEAR, si=[si] (jump to operand). Conditional jump on operand bit0"
+"0x006830","vm_op_a9_cond_jump","VM opcode 0xA9: consume a flag byte; bit0 clear replaces SI from the following target word without advancing past it, while bit0 set consumes the target and writes query=1, branch root=target, and branch top=2"
 "0x006855","vm_op_aa_yield","VM opcode 0xAA: set gs:[0x67b4]=1 - the yield flag the exec loop checks after each handler (0x562a); makes the VM break/yield the current frame. A yield/wait opcode"
 "0x00684C","vm_op_ab_poke_byte","VM opcode 0xAB: lodsb al value; bx=[si] address; [bx]=al; si+=2. Writes a byte to an arbitrary DS address given by the operand - a set-variable/poke op"
 "0x00685C","vm_op_ac_yield","VM opcode 0xAC: set gs:[0x67b4]=1 (yield flag) - alias of 0xAA, yields/breaks the VM frame after this opcode"
