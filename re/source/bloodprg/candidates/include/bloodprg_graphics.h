@@ -4,8 +4,11 @@
 #include "bloodprg_common.h"
 
 extern volatile cb_u8 CB_FAR *graphics_work_surface; /* GS:0x0ABC */
+extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
 extern volatile cb_u8 CB_FAR *graphics_display_buffer; /* GS:0x5221 */
 extern volatile cb_u8 CB_FAR *graphics_back_buffer; /* GS:0x5229 */
+extern volatile cb_u32 render_state_5251_dwords[]; /* GS:0x5251 */
+extern volatile cb_u32 render_state_5851_dwords[]; /* GS:0x5851 */
 extern volatile cb_u16 graphics_band_top_row; /* GS:0x5239 */
 extern volatile cb_u16 graphics_band_bottom_row; /* GS:0x523B */
 
