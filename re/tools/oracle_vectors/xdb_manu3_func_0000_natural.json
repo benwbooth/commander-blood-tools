@@ -1,0 +1,313 @@
+[
+  {
+    "name": "inactive_initializes_overlay",
+    "module": "manu3",
+    "entry": 0,
+    "data_segment": 24576,
+    "work_segments": [
+      26624,
+      30720,
+      36864
+    ],
+    "ordered_callees": [],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "centered_no_selector",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      160,
+      100
+    ],
+    "masked_selector": 0,
+    "framebuffer_segment": 40960,
+    "adjusted_view": [
+      8721,
+      17442
+    ],
+    "restored_view": [
+      8721,
+      17442
+    ],
+    "depth": 1,
+    "screen_center": [
+      160,
+      100
+    ],
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selector_mask_and_translation",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      10,
+      20
+    ],
+    "masked_selector": 3,
+    "framebuffer_segment": 41251,
+    "adjusted_view": [
+      12930,
+      25880
+    ],
+    "restored_view": [
+      13090,
+      26180
+    ],
+    "depth": 1,
+    "screen_center": [
+      -90,
+      -30
+    ],
+    "ordered_callees": [
+      385,
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "matrix_and_signed_coordinates",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      -120,
+      250
+    ],
+    "masked_selector": 31,
+    "framebuffer_segment": 40975,
+    "adjusted_view": [
+      17759,
+      34358
+    ],
+    "restored_view": [
+      17459,
+      34918
+    ],
+    "depth": 2,
+    "screen_center": [
+      -255,
+      226
+    ],
+    "ordered_callees": [
+      385,
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_depth_preserves_centers",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      0,
+      0
+    ],
+    "masked_selector": 0,
+    "framebuffer_segment": 40960,
+    "adjusted_view": [
+      21628,
+      43336
+    ],
+    "restored_view": [
+      21828,
+      43656
+    ],
+    "depth": 0,
+    "screen_center": [
+      372791932,
+      -1917857293
+    ],
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false
+    }
+  },
+  {
+    "name": "negative_depth_preserves_centers",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      32767,
+      -32768
+    ],
+    "masked_selector": 31,
+    "framebuffer_segment": 40961,
+    "adjusted_view": [
+      25997,
+      52072
+    ],
+    "restored_view": [
+      26197,
+      52394
+    ],
+    "depth": -1,
+    "screen_center": [
+      389634941,
+      -1901014284
+    ],
+    "ordered_callees": [
+      385,
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true
+    }
+  },
+  {
+    "name": "cursor_and_camera_wrap",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      -1,
+      -32768
+    ],
+    "masked_selector": 1,
+    "framebuffer_segment": 45055,
+    "adjusted_view": [
+      30366,
+      60810
+    ],
+    "restored_view": [
+      30566,
+      61132
+    ],
+    "depth": 2,
+    "screen_center": [
+      -1,
+      -32768
+    ],
+    "ordered_callees": [
+      385,
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_window_offset",
+    "module": "manu3",
+    "entry": 0,
+    "cursor": [
+      -32768,
+      32767
+    ],
+    "masked_selector": 2,
+    "framebuffer_segment": 45055,
+    "adjusted_view": [
+      34733,
+      4014
+    ],
+    "restored_view": [
+      34935,
+      4334
+    ],
+    "depth": 1,
+    "screen_center": [
+      -32368,
+      33367
+    ],
+    "ordered_callees": [
+      385,
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

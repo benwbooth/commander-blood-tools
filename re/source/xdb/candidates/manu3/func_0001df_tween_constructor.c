@@ -45,7 +45,8 @@ void XDB_NEAR xdb_manu3_tween_constructor(
     if (count != 0u) {
         ++xdb_manu3_tween_phase;
     } else if (active_slot_cursor == xdb_manu3_active_slot_offsets) {
-        xdb_u16 cursor_delta = (xdb_u16)(xdb_manu3_cursor_x - 0x00a0u);
+        xdb_u16 cursor_delta = (xdb_u16)(
+                (xdb_u16)xdb_manu3_cursor.x - 0x00a0u);
 
         cursor_delta = (xdb_u16)(cursor_delta << 1);
         xdb_manu3_finished_yaw = (xdb_u16)(

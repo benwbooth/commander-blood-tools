@@ -38,6 +38,23 @@ typedef struct xdb_manu3_face {
     xdb_u16 vertex_2;
 } xdb_manu3_face;
 
+typedef struct xdb_manu3_cursor_position {
+    xdb_i16 x;
+    xdb_i16 y;
+} xdb_manu3_cursor_position;
+
+typedef struct xdb_manu3_api_request {
+    xdb_manu3_cursor_position cursor;
+    xdb_u16 animation_selector;
+    xdb_u16 framebuffer_window_offset;
+} xdb_manu3_api_request;
+
+typedef struct xdb_manu3_point3 {
+    xdb_i16 x;
+    xdb_i16 y;
+    xdb_i16 z;
+} xdb_manu3_point3;
+
 typedef union xdb_manu3_vertex_field_004 {
     xdb_i16 object_x;
     xdb_u16 projection_source_offset;
@@ -90,7 +107,8 @@ typedef struct xdb_manu3_segment_directory {
     xdb_u16 work_delta_2;
 } xdb_manu3_segment_directory;
 
-extern volatile xdb_u16 xdb_manu3_cursor_x; /* DS:0x001A */
+extern volatile xdb_manu3_cursor_position
+        xdb_manu3_cursor; /* DS:0x001A */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_manu3_data_segment; /* CS:0x136A */
 extern volatile xdb_u16 XDB_CODE_DATA
@@ -123,6 +141,9 @@ extern volatile xdb_manu3_projection_state
         xdb_manu3_projection_states[]; /* DS:0x2394 */
 
 void XDB_FAR xdb_manu3_anim_select_entry(xdb_u16 selector);
+void XDB_FAR xdb_manu3_api_entry(
+        const volatile xdb_manu3_api_request XDB_FAR *request,
+        xdb_u16 code_segment);
 void XDB_FAR xdb_manu3_init_protocol(xdb_u16 code_segment);
 void XDB_FAR xdb_manu3_frame_step(void);
 void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector);

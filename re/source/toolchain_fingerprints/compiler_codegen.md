@@ -2070,6 +2070,25 @@ bytes survive. Empty one-to-one C functions compile under both Open Watcom and
 Turbo C 2.01 to a single `RET`; Watcom's object byte is exactly `C3`. These
 empty functions are accepted recovered behavior rather than stubs.
 
+Eight direct vectors prove the `0x000000` MANU3 far API coordinator. Its caller
+supplies signed cursor x/y, a five-bit animation selector, and a framebuffer
+window through an 8-byte `SS:BP` request. The active path advances tween state,
+temporarily applies cursor-relative yaw and pitch around matrix construction,
+projects geometry point `ES:0x02AC` through state `DS:0x24AE` to derive the two
+screen-center dwords, then dispatches projection and face building. The matrix
+also proves the true inactive jump into `0x000121`, selector masking,
+framebuffer-window extremes, camera wrap/restoration, positive/zero/negative
+depth, signed matrix inputs, call publication timing, registers, flags, stack,
+and all segment owners.
+
+The actual candidate compiles warning-free with Open Watcom. Medium model
+`-3 -ox -mm -zdp` emits 170 instructions/510 bytes versus the original 83/289;
+Turbo C 2.01 medium emits 192 instructions. Watcom calls `__U4M` nine times and
+`__I4D` twice instead of retaining the binary's inline 386 arithmetic. The
+natural C body is behaviorally verified, while current-`CS` input, caller
+`SS:BP` request acquisition, and active `DS`/`ES`/`FS` installation remain a
+narrow far-entry adapter.
+
 The first MANU3 animation chain is recovered as three one-to-one natural C
 functions. Entry `0x00017C` is a far wrapper around near selector `0x000181`;
 four patched-callee vectors prove its BX argument, inner return word, outer far
@@ -2236,6 +2255,7 @@ LCS and then mnemonic similarity:
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
+| `xdb_manu3_api_entry` | medium, `-ox -zdp`, register | 83/170 | 0.0120 | 0.6627 | 0.0602 |
 | `xdb_manu3_anim_select_entry` | medium, `-ox -zdp`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `xdb_manu3_init_protocol` | medium, `-ox -zdp`, register | 14/16 | 0.0000 | 0.7857 | 0.0714 |
 | `xdb_manu3_frame_step` | medium, `-ox -zdp`, register | 17/15 | 0.0588 | 0.6471 | 0.1765 |
