@@ -1,0 +1,6 @@
+scope	evidence	natural_c_implication
+xdb overlays	XDB routines use overlay-local near returns for method-table slots and far returns for overlay entry points	candidate source must track per-overlay near/far boundaries instead of assuming BLOODPRG far-call conventions
+xdb_amer:0x001dd6	body is exactly one near RET byte and is referenced by AMER method-table slots 0/4/5/14	natural candidate exists; acceptance still requires proof that an empty near C function lowers to a one-byte RET in the chosen overlay compiler mode
+xdb_croolis:0x001d27	body is exactly one near RET byte and is referenced by CROOLIS method-table slots 0/5/14	natural candidate exists; acceptance still requires proof that an empty near C function lowers to a one-byte RET in the chosen overlay compiler mode
+xdb_manu3:0x000848	body is exactly one near RET byte at the labeled MANU3 span setup region entry	natural candidate exists; acceptance still requires proof that an empty near C function lowers to a one-byte RET in the chosen overlay compiler mode
+xdb_scrut:0x001de7	body is exactly one near RET byte and is referenced by SCRUT method-table slots 0/5/14	natural candidate exists; acceptance still requires proof that an empty near C function lowers to a one-byte RET in the chosen overlay compiler mode

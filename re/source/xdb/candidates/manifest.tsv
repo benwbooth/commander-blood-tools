@@ -1,0 +1,5 @@
+entry	source	asm_path	function	status	notes
+xdb_amer:0x001dd6	amer/func_001dd6_method_noop.c	re/assembly/xdb/amer/method_table_103a/func_001dd6_routine.asm	xdb_amer_method_noop	natural_candidate_pending_codegen	AMER method-table slots 0/4/5/14 dispatch to a one-byte near return.
+xdb_croolis:0x001d27	croolis/func_001d27_method_noop.c	re/assembly/xdb/croolis/method_table_103a/func_001d27_routine.asm	xdb_croolis_method_noop	natural_candidate_pending_codegen	CROOLIS method-table slots 0/5/14 dispatch to a one-byte near return.
+xdb_manu3:0x000848	manu3/func_000848_manu3_span_setup_next.c	re/assembly/xdb/manu3/manu3_labeled/func_000848_manu3_span_setup_next.asm	manu3_span_setup_next	natural_candidate_pending_codegen	MANU3 span setup region entry is currently a one-byte near return.
+xdb_scrut:0x001de7	scrut/func_001de7_method_noop.c	re/assembly/xdb/scrut/method_table_103a/func_001de7_routine.asm	xdb_scrut_method_noop	natural_candidate_pending_codegen	SCRUT method-table slots 0/5/14 dispatch to a one-byte near return.

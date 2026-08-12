@@ -1,0 +1,19 @@
+#ifndef XDB_COMMON_H
+#define XDB_COMMON_H
+
+typedef unsigned char xdb_u8;
+typedef unsigned int xdb_u16;
+typedef signed char xdb_i8;
+typedef signed int xdb_i16;
+typedef unsigned long xdb_u32;
+typedef signed long xdb_i32;
+
+#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#define XDB_FAR far
+#define XDB_NEAR near
+#else
+#define XDB_FAR
+#define XDB_NEAR
+#endif
+
+#endif
