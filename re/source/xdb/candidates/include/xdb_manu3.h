@@ -6,6 +6,10 @@
 #define XDB_MANU3_ACTIVE_SLOTS_OFFSET 0x1032u
 #define XDB_MANU3_BUCKET_HEADS_OFFSET 0x0686u
 #define XDB_MANU3_MAX_FACE_WIDTH 0x0190u
+#define XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET 0x0964u
+#define XDB_MANU3_ADVANCE_SECONDARY_OFFSET 0x0ccau
+#define XDB_MANU3_ADVANCE_SWITCH_OFFSET 0x0d19u
+#define XDB_MANU3_ADVANCE_REMOVE_OFFSET 0x0d5eu
 
 typedef struct xdb_manu3_tween_spec {
     xdb_u8 count;
@@ -84,6 +88,52 @@ typedef struct xdb_manu3_vertex {
     xdb_u16 clip_flags;
 } xdb_manu3_vertex;
 
+typedef union xdb_manu3_texture_coordinate {
+    xdb_u32 packed;
+    struct {
+        xdb_i16 u;
+        xdb_i16 v;
+    } component;
+} xdb_manu3_texture_coordinate;
+
+typedef struct xdb_manu3_raster_record {
+    xdb_u16 next;
+    xdb_u16 flags;
+    xdb_u16 output_start;
+    xdb_u16 output_end;
+    xdb_i32 edge_0_position;
+    xdb_i32 edge_0_step;
+    xdb_u16 previous;
+    xdb_u8 field_012[6];
+    xdb_i32 edge_1_position;
+    xdb_i32 edge_1_step;
+    xdb_i32 depth_position;
+    xdb_i32 depth_step;
+    xdb_i32 depth_gradient;
+    xdb_u16 advance_offset;
+    xdb_i16 remaining;
+    xdb_i16 secondary_remaining;
+    xdb_i32 secondary_edge_position;
+    xdb_i32 secondary_edge_step;
+    xdb_i32 secondary_depth_position;
+    xdb_i32 secondary_depth_step;
+    xdb_i16 texture_u;
+    xdb_i16 texture_v;
+    xdb_i16 secondary_texture_u;
+    xdb_i16 secondary_texture_v;
+    xdb_i16 texture_u_step;
+    xdb_i16 texture_v_step;
+    xdb_i16 secondary_texture_u_step;
+    xdb_i16 secondary_texture_v_step;
+    xdb_i16 texture_du;
+    xdb_i16 texture_dv;
+    xdb_u16 texture_segment;
+    xdb_u16 sort_next;
+} xdb_manu3_raster_record;
+
+typedef char xdb_manu3_raster_record_size_must_be_0x5a[
+        sizeof(xdb_manu3_raster_record) == 0x5a ? 1 : -1];
+
 typedef struct xdb_manu3_projection_state {
     xdb_u16 parent_offset;
     xdb_u16 vertex_count;
@@ -133,6 +183,8 @@ extern volatile xdb_u16 xdb_manu3_tween_script_offset; /* DS:0x102E */
 extern volatile xdb_u16 xdb_manu3_active_end_offset; /* DS:0x1030 */
 extern volatile xdb_u16 xdb_manu3_active_slot_offsets[]; /* DS:0x1032 */
 extern volatile xdb_u16 xdb_manu3_active_raster_offset; /* DS:0x0908 */
+extern const volatile xdb_i32
+        xdb_manu3_reciprocal_table[]; /* raster DS:0x0000 */
 extern volatile xdb_u16 xdb_manu3_finished_pitch; /* DS:0x223A */
 extern volatile xdb_u16 xdb_manu3_finished_yaw; /* DS:0x223C */
 extern volatile xdb_i32 xdb_manu3_screen_center_x; /* DS:0x223E */
@@ -171,11 +223,6 @@ void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 void XDB_NEAR xdb_manu3_face_activate(
         const volatile xdb_manu3_face XDB_FAR *face);
-void XDB_NEAR xdb_manu3_gradient_setup(
-        xdb_u16 vertex_0,
-        xdb_u16 vertex_1,
-        xdb_u16 vertex_2,
-        volatile void XDB_NEAR *raster);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_manu3_anim_select_entry \

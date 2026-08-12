@@ -1,0 +1,232 @@
+[
+  {
+    "name": "inactive",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "45a6083c04d70894f911c840c778c2749c229c1cf8e88bd12a46d8165c8343b0"
+  },
+  {
+    "name": "backface_rejected",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        25
+      ],
+      [
+        50,
+        100
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": 39,
+    "record_sha256": "f5f00280d729a71cfaa3f06d3c81db016ef884497668e89539f31ce904d3df26"
+  },
+  {
+    "name": "right_edge_switch",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3274,
+    "remaining": 39,
+    "record_sha256": "0c5633b5076088ba74509d2551eb4fd97051c8c792875053b7d6d0ea9a54fa22"
+  },
+  {
+    "name": "right_edge_clipped",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        80,
+        120
+      ],
+      [
+        -20,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3422,
+    "remaining": 79,
+    "record_sha256": "8c26734662fffbadfe2fe058167f8edce6c2d59df56227bc1a3c40f4f6adf184"
+  },
+  {
+    "name": "left_edge_switch",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        50,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3353,
+    "remaining": 39,
+    "record_sha256": "69749f8ce58351f79eb77f1ae56b01ad1044b1a76b4e086674db379f34acdd85"
+  },
+  {
+    "name": "left_edge_clipped",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        -20,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3422,
+    "remaining": 79,
+    "record_sha256": "5f50805a2e1c4e8f4412953a6f885e585f1602e456b44a969c4fdfa6f20cdade"
+  },
+  {
+    "name": "equal_secondary_x",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3422,
+    "remaining": 69,
+    "record_sha256": "37e9150fd43fce374eb20c9a2ebabf44902d99bdcd96b87a1ce7671583389bfd"
+  },
+  {
+    "name": "vertical_first_edge",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 3422,
+    "remaining": 89,
+    "record_sha256": "59793ff62adabc2c4d3e99f357813e6a2800dd51ffe5e85d43bf3fdc5d299a62"
+  },
+  {
+    "name": "zero_second_width_rejected",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        10,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "1f9fbe9fa3e5b5919657647174a3ed4d24361050d15f6e295220542bc032cf9d"
+  },
+  {
+    "name": "vertical_direction_rejected",
+    "module": "manu3",
+    "entry": 3453,
+    "screen": [
+      [
+        10,
+        100
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "c33a80c308a6732c281031fc9ef491b9b53a269b8da46cbeeedac058e45afc2d"
+  }
+]

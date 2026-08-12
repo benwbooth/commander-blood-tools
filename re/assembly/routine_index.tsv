@@ -382,8 +382,7 @@ xdb_manu3	0x000775	manu3_labeled	label:manu3_span_renderer_init | manu3 span ren
 xdb_manu3	0x000848	manu3_labeled	label:manu3_span_setup_next | manu3 span setup region	manu3_span_setup_next	re/assembly/xdb/manu3/manu3_labeled/func_000848_manu3_span_setup_next.asm	cfg_blocks_1_terminals_1
 xdb_manu3	0x000849	manu3_labeled	label:manu3_span_insert | manu3 span insertion routine	manu3_span_insert	re/assembly/xdb/manu3/manu3_labeled/func_000849_manu3_span_insert.asm	cfg_blocks_55_terminals_11
 xdb_manu3	0x000c2a	manu3_labeled	label:manu3_affine_fill | manu3 affine fill routine	manu3_affine_fill	re/assembly/xdb/manu3/manu3_labeled/func_000c2a_manu3_affine_fill.asm	cfg_blocks_7_terminals_2
-xdb_manu3	0x000d7d	manu3_labeled	direct_call_from_0x6f6 | direct_call_from_0x700 | direct_call_from_0x775 | direct_call_from_0x849 | label:manu3_face_activate | manu3 face activation routine	manu3_face_activate	re/assembly/xdb/manu3/manu3_labeled/func_000d7d_manu3_face_activate.asm	cfg_blocks_1_terminals_0
-xdb_manu3	0x000d93	manu3_labeled	label:manu3_gradient_setup | manu3 gradient setup routine	manu3_gradient_setup	re/assembly/xdb/manu3/manu3_labeled/func_000d93_manu3_gradient_setup.asm	cfg_blocks_29_terminals_7
+xdb_manu3	0x000d7d	manu3_labeled	direct_call_from_0x6f6 | direct_call_from_0x700 | internal_label:manu3_gradient_setup | label:manu3_face_activate | manu3 face activation and gradient setup	manu3_face_activate	re/assembly/xdb/manu3/manu3_labeled/func_000d7d_manu3_face_activate.asm	cfg_blocks_30_terminals_7
 xdb_scrut	0x00022a	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/direct_calls/func_00022a_routine.asm	cfg_blocks_22_terminals_5
 xdb_scrut	0x000305	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/direct_calls/func_000305_routine.asm	cfg_blocks_4_terminals_1
 xdb_scrut	0x00034b	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/direct_calls/func_00034b_routine.asm	cfg_blocks_1_terminals_1

@@ -7,11 +7,11 @@ Current measured coverage:
 | `bloodprg` | 318 | 149 | 169 |
 | `xdb_amer` | 25 | 10 | 15 |
 | `xdb_croolis` | 25 | 10 | 15 |
-| `xdb_manu3` | 17 | 13 | 4 |
+| `xdb_manu3` | 16 | 13 | 3 |
 | `xdb_scrut` | 25 | 10 | 15 |
-| total | 410 | 192 | 218 |
+| total | 409 | 192 | 217 |
 
-Overall candidate coverage is 192 of 410 indexed routines, or 46.83 percent.
+Overall candidate coverage is 192 of 409 indexed routines, or 46.94 percent.
 All current candidates point at indexed routines.
 
 Generate the live report, including the missing routine list, with:

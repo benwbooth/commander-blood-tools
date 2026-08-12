@@ -5661,6 +5661,555 @@ def manu3_face_activate_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def _manu3_gradient_reference(
+    screen: tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
+    texture: tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
+    depth: tuple[int, int, int],
+    work_segment: int,
+) -> tuple[bool, dict[int, int]]:
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def u32(value: int) -> int:
+        return value & 0xFFFFFFFF
+
+    def i32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    def add32(left: int, right: int) -> int:
+        return i32(left + right)
+
+    def sub32(left: int, right: int) -> int:
+        return i32(left - right)
+
+    def mul_low(left: int, right: int) -> int:
+        return i32(left * right)
+
+    def mul_q16(left: int, right: int) -> int:
+        return i32(i32(left) * i32(right) >> 16)
+
+    def divide(left: int, right: int) -> int:
+        quotient = abs(left) // abs(right)
+        if (left < 0) != (right < 0):
+            quotient = -quotient
+        return i32(quotient)
+
+    def reciprocal(width: int) -> int:
+        return (1 << 24) // width
+
+    def packed(pair: tuple[int, int]) -> int:
+        return u16(pair[0]) | (u16(pair[1]) << 16)
+
+    def word_base(value: int) -> int:
+        return u16(value << 8)
+
+    def word_add(left: int, right: int) -> int:
+        return i16(u16(left) + u16(right))
+
+    values: dict[int, int] = {}
+
+    def put16(offset: int, value: int) -> None:
+        values[offset] = u16(value)
+
+    def put32(offset: int, value: int) -> None:
+        values[offset] = u32(value)
+
+    screen_value = tuple(packed(pair) for pair in screen)
+    texture_value = tuple(packed(pair) for pair in texture)
+    x_0, x_1, x_2 = (u16(pair[0]) for pair in screen)
+    width_1 = u16(x_1 - x_0)
+    width_2 = u16(x_2 - x_0)
+    clipping_mode = 0
+
+    if width_1 == 0:
+        if width_2 == 0 or width_2 >= 0x0190:
+            return False, values
+        vertical_span = u16(screen[1][1] - screen[0][1])
+        if i16(vertical_span) <= 0 or vertical_span >= 0x0190:
+            return False, values
+
+        reciprocal_1 = reciprocal(vertical_span)
+        reciprocal_2 = reciprocal(width_2)
+        remaining = i16(width_2 - 1)
+        edge_0_step = mul_low(i16(screen[2][1] - screen[0][1]), reciprocal_2)
+        edge_0_position = add32(i32(screen_value[0] & 0xFFFF0000), edge_0_step >> 1)
+        edge_1_step = mul_low(i16(screen[2][1] - screen[1][1]), reciprocal_2)
+        edge_1_position = add32(i32(screen_value[1] & 0xFFFF0000), edge_1_step >> 1)
+
+        delta_1 = mul_low(i16(texture[1][0] - texture[0][0]), reciprocal_1)
+        delta_2 = mul_low(i16(texture[2][0] - texture[0][0]), reciprocal_2)
+        texture_du = i16(delta_1 >> 8)
+        texture_u_step = i16(delta_2 >> 8)
+        texture_u = word_add(word_base(texture[0][0]), texture_u_step >> 1)
+
+        delta_1 = mul_low(u16(texture[1][1]) - u16(texture[0][1]), reciprocal_1)
+        delta_2 = mul_low(u16(texture[2][1]) - u16(texture[0][1]), reciprocal_2)
+        texture_dv = i16(delta_1 >> 8)
+        texture_v_step = i16(delta_2 >> 8)
+        texture_v = word_add(word_base(texture[0][1]), texture_v_step >> 1)
+
+        depth_step = mul_q16(sub32(depth[2], depth[0]), reciprocal_2)
+        depth_position = add32(depth[0], depth_step >> 1)
+        depth_gradient = mul_q16(sub32(depth[1], depth[0]), reciprocal_1)
+        advance_offset = 0x0D5E
+    else:
+        if width_2 == 0:
+            return False, values
+
+        reciprocal_1 = reciprocal(width_1)
+        reciprocal_2 = reciprocal(width_2)
+        remaining = i16(width_2 - 1)
+        put16(0x2E, remaining)
+        edge_1_step = mul_low(i16(screen[1][1] - screen[0][1]), reciprocal_1)
+        edge_0_step = mul_low(i16(screen[2][1] - screen[0][1]), reciprocal_2)
+        area = sub32(edge_0_step, edge_1_step)
+        if area >= 0:
+            return False, values
+        denominator = -(area >> 8)
+        edge_0_position = add32(i32(screen_value[0] & 0xFFFF0000), edge_0_step >> 1)
+        edge_1_position = add32(i32(screen_value[0] & 0xFFFF0000), edge_1_step >> 1)
+
+        delta_1 = mul_low(i16(texture[1][0] - texture[0][0]), reciprocal_1)
+        delta_2 = mul_low(i16(texture[2][0] - texture[0][0]), reciprocal_2)
+        texture_du = i16(divide(sub32(delta_1, delta_2), denominator))
+        texture_u_step = i16(delta_2 >> 8)
+        texture_u = word_add(word_base(texture[0][0]), texture_u_step >> 1)
+
+        delta_1 = mul_low(u16(texture[1][1]) - u16(texture[0][1]), reciprocal_1)
+        delta_2 = mul_low(u16(texture[2][1]) - u16(texture[0][1]), reciprocal_2)
+        texture_dv = i16(divide(sub32(delta_1, delta_2), denominator))
+        texture_v_step = i16(delta_2 >> 8)
+        texture_v = word_add(word_base(texture[0][1]), texture_v_step >> 1)
+
+        depth_step = mul_q16(sub32(depth[2], depth[0]), reciprocal_2)
+        depth_position = add32(depth[0], depth_step >> 1)
+        delta_1 = mul_low(sub32(depth[1], depth[0]), reciprocal_1)
+        delta_2 = mul_low(sub32(depth[2], depth[0]), reciprocal_2)
+        depth_gradient = divide(sub32(delta_1, delta_2), denominator) >> 8
+
+        x_difference = i16(x_1 - x_2)
+        if x_difference > 0:
+            secondary_width = u16(x_1 - x_2)
+            secondary_reciprocal = reciprocal(secondary_width)
+            if i16(x_2) < 0:
+                clipped_columns = u16(-x_2)
+                remaining = i16(x_1 - 1)
+                texture_u_step = i16(
+                    mul_low(
+                        i16(texture[1][0] - texture[2][0]),
+                        secondary_reciprocal,
+                    )
+                    >> 8
+                )
+                texture_v_step = i16(
+                    mul_low(
+                        i16(texture[1][1] - texture[2][1]),
+                        secondary_reciprocal,
+                    )
+                    >> 8
+                )
+                texture_u = word_add(
+                    word_base(texture[2][0]),
+                    u16(texture_u_step) * clipped_columns,
+                )
+                texture_v = word_add(
+                    word_base(texture[2][1]),
+                    u16(texture_v_step) * clipped_columns,
+                )
+                edge_0_step = mul_low(
+                    i16(screen[1][1] - screen[2][1]),
+                    secondary_reciprocal,
+                )
+                edge_0_position = add32(
+                    i32(screen_value[2] & 0xFFFF0000),
+                    mul_low(edge_0_step, clipped_columns),
+                )
+                depth_step = mul_q16(sub32(depth[1], depth[2]), secondary_reciprocal)
+                depth_position = add32(depth[2], mul_low(depth_step, clipped_columns))
+                clipped_columns = u16(-x_0)
+                edge_1_position = add32(
+                    edge_1_position, mul_low(edge_1_step, clipped_columns)
+                )
+                advance_offset = 0x0D5E
+                clipping_mode = 1
+            else:
+                put16(0x30, secondary_width - 1)
+                secondary_texture_u_step = i16(
+                    mul_low(
+                        i16(texture[1][0] - texture[2][0]),
+                        secondary_reciprocal,
+                    )
+                    >> 8
+                )
+                secondary_texture_v_step = i16(
+                    mul_low(
+                        i16(texture[1][1] - texture[2][1]),
+                        secondary_reciprocal,
+                    )
+                    >> 8
+                )
+                put16(
+                    0x46,
+                    word_add(
+                        word_base(texture[2][0]),
+                        secondary_texture_u_step >> 1,
+                    ),
+                )
+                put16(
+                    0x48,
+                    word_add(
+                        word_base(texture[2][1]),
+                        secondary_texture_v_step >> 1,
+                    ),
+                )
+                put16(0x4E, secondary_texture_u_step)
+                put16(0x50, secondary_texture_v_step)
+                secondary_edge_step = mul_low(
+                    i16(screen[1][1] - screen[2][1]),
+                    secondary_reciprocal,
+                )
+                put32(0x36, secondary_edge_step)
+                put32(
+                    0x32,
+                    add32(
+                        i32(screen_value[2] & 0xFFFF0000),
+                        secondary_edge_step >> 1,
+                    ),
+                )
+                secondary_depth_step = mul_q16(
+                    sub32(depth[1], depth[2]), secondary_reciprocal
+                )
+                put32(0x3E, secondary_depth_step)
+                put32(0x3A, add32(depth[2], secondary_depth_step >> 1))
+                advance_offset = 0x0CCA
+        elif x_difference < 0:
+            secondary_width = u16(x_2 - x_1)
+            secondary_reciprocal = reciprocal(secondary_width)
+            if i16(x_1) < 0:
+                clipped_columns = u16(-x_1)
+                edge_1_step = mul_low(
+                    i16(screen[2][1] - screen[1][1]),
+                    secondary_reciprocal,
+                )
+                edge_1_position = add32(
+                    i32(screen_value[1] & 0xFFFF0000),
+                    mul_low(edge_1_step, clipped_columns),
+                )
+                advance_offset = 0x0D5E
+                clipping_mode = 2
+            else:
+                remaining = i16(u16(remaining) - secondary_width)
+                put16(0x30, secondary_width - 1)
+                secondary_edge_step = mul_low(
+                    i16(screen[2][1] - screen[1][1]),
+                    secondary_reciprocal,
+                )
+                put32(0x36, secondary_edge_step)
+                put32(
+                    0x32,
+                    add32(
+                        i32(screen_value[1] & 0xFFFF0000),
+                        secondary_edge_step >> 1,
+                    ),
+                )
+                advance_offset = 0x0D19
+        else:
+            advance_offset = 0x0D5E
+
+    texture_segment = u16(work_segment + ((texture_value[0] >> 24) << 12))
+    if i16(x_0) < 0 and clipping_mode != 1:
+        clipped_columns = u16(-x_0)
+        remaining = i16(u16(remaining) - clipped_columns)
+        edge_0_position = add32(edge_0_position, mul_low(edge_0_step, clipped_columns))
+        if clipping_mode != 2:
+            edge_1_position = add32(
+                edge_1_position, mul_low(edge_1_step, clipped_columns)
+            )
+        depth_position = add32(depth_position, mul_low(depth_step, clipped_columns))
+        texture_u = word_add(texture_u, u16(texture_u_step) * clipped_columns)
+        texture_v = word_add(texture_v, u16(texture_v_step) * clipped_columns)
+
+    put32(0x08, edge_0_position)
+    put32(0x0C, edge_0_step)
+    put32(0x18, edge_1_position)
+    put32(0x1C, edge_1_step)
+    put32(0x20, depth_position)
+    put32(0x24, depth_step)
+    put32(0x28, depth_gradient)
+    put16(0x2C, advance_offset)
+    put16(0x2E, remaining)
+    put16(0x42, texture_u)
+    put16(0x44, texture_v)
+    put16(0x4A, texture_u_step)
+    put16(0x4C, texture_v_step)
+    put16(0x52, texture_du)
+    put16(0x54, texture_dv)
+    put16(0x56, texture_segment)
+    return True, values
+
+
+def manu3_face_gradient_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0D7D
+    image = load_image(module)
+    expected_hash = "823c014f74d7371b875944a9ae293253654327074a745ec5605fdea15c3aa1a5"
+    if hashlib.sha256(image[entry:0x1367]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered gradient body changed")
+
+    cases = (
+        {
+            "name": "inactive",
+            "active": False,
+            "screen": ((10, 20), (80, 100), (50, 30)),
+        },
+        {
+            "name": "backface_rejected",
+            "screen": ((10, 20), (80, 25), (50, 100)),
+        },
+        {
+            "name": "right_edge_switch",
+            "screen": ((10, 20), (80, 100), (50, 30)),
+            "list_mode": "after_existing",
+        },
+        {
+            "name": "right_edge_clipped",
+            "screen": ((-100, 20), (80, 120), (-20, 30)),
+        },
+        {
+            "name": "left_edge_switch",
+            "screen": ((10, 20), (50, 100), (100, 30)),
+        },
+        {
+            "name": "left_edge_clipped",
+            "screen": ((-100, 20), (-20, 100), (80, 30)),
+        },
+        {
+            "name": "equal_secondary_x",
+            "screen": ((10, 20), (80, 100), (80, 30)),
+        },
+        {
+            "name": "vertical_first_edge",
+            "screen": ((10, 20), (10, 100), (100, 30)),
+        },
+        {
+            "name": "zero_second_width_rejected",
+            "screen": ((10, 20), (80, 100), (10, 30)),
+        },
+        {
+            "name": "vertical_direction_rejected",
+            "screen": ((10, 100), (10, 20), (100, 30)),
+        },
+    )
+    texture = ((0x0123, 0x1234), (0x2345, 0x3456), (0x4567, 0x5678))
+    depth = (0x10203040, -0x1234567, 0x30405060)
+    data_segment = 0x4000
+    geometry_segment = 0x6000
+    globals_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0xF000
+    face_offset = 0x1000
+    vertex_offsets = (0x1100, 0x1200, 0x1300)
+    raster_offset = 0x2000
+    free_offset = 0x205A
+    head_offset = 0x0964
+    tail_offset = 0x0A18
+    existing_offset = 0x2100
+    work_segment = 0x3210
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        screen = case["screen"]
+        active = bool(case.get("active", True))
+        accepted, writes = _manu3_gradient_reference(
+            screen, texture, depth, work_segment
+        )
+        if not active:
+            accepted = False
+            writes = {}
+
+        data_before = bytearray(
+            ((offset * 37 + case_index * 11 + 5) & 0xFF) for offset in range(0x10000)
+        )
+        geometry_before = bytearray(
+            ((offset * 13 + case_index * 17 + 7) & 0xFF) for offset in range(0x10000)
+        )
+        globals_before = bytearray(
+            ((offset * 19 + case_index * 23 + 3) & 0xFF) for offset in range(0x10000)
+        )
+        struct.pack_into("<HHHH", geometry_before, face_offset, 0, *vertex_offsets)
+        for vertex_offset, position, coordinate, depth_value in zip(
+            vertex_offsets, screen, texture, depth
+        ):
+            struct.pack_into(
+                "<HH", geometry_before, vertex_offset, coordinate[0], coordinate[1]
+            )
+            struct.pack_into(
+                "<I",
+                geometry_before,
+                vertex_offset + 0x0A,
+                (position[0] & 0xFFFF) | ((position[1] & 0xFFFF) << 16),
+            )
+            struct.pack_into(
+                "<I", geometry_before, vertex_offset + 0x0E, depth_value & 0xFFFFFFFF
+            )
+
+        for width in range(1, 0x0190):
+            struct.pack_into("<I", data_before, width * 4, (1 << 24) // width)
+        struct.pack_into("<H", data_before, 0x0908, raster_offset if active else 0)
+        struct.pack_into("<H", data_before, raster_offset, free_offset)
+        struct.pack_into("<H", data_before, head_offset, tail_offset)
+        struct.pack_into("<I", data_before, tail_offset + 0x08, 0x7FFFFFFF)
+        struct.pack_into("<I", data_before, tail_offset + 0x0C, 0x7FFFFFFF)
+        struct.pack_into("<H", data_before, tail_offset + 0x10, head_offset)
+        if accepted and case.get("list_mode") == "after_existing":
+            struct.pack_into("<H", data_before, head_offset, existing_offset)
+            struct.pack_into("<H", data_before, existing_offset, tail_offset)
+            struct.pack_into("<H", data_before, existing_offset + 0x10, head_offset)
+            struct.pack_into(
+                "<I", data_before, existing_offset + 0x08, writes[0x08] - 1
+            )
+            struct.pack_into("<I", data_before, existing_offset + 0x0C, 0)
+            struct.pack_into("<H", data_before, tail_offset + 0x10, existing_offset)
+        struct.pack_into("<H", globals_before, 0x0004, work_segment)
+
+        record_expected = bytearray(data_before[raster_offset : raster_offset + 0x5A])
+        for offset, value in writes.items():
+            if offset in {
+                0x08,
+                0x0C,
+                0x18,
+                0x1C,
+                0x20,
+                0x24,
+                0x28,
+                0x32,
+                0x36,
+                0x3A,
+                0x3E,
+            }:
+                struct.pack_into("<I", record_expected, offset, value)
+            else:
+                struct.pack_into("<H", record_expected, offset, value)
+        expected_active = raster_offset if active else 0
+        expected_head = tail_offset
+        expected_tail_previous = head_offset
+        expected_existing_next = struct.unpack_from("<H", data_before, existing_offset)[
+            0
+        ]
+        if accepted:
+            expected_active = free_offset
+            expected_head = raster_offset
+            expected_tail_previous = raster_offset
+            struct.pack_into("<H", record_expected, 0x00, tail_offset)
+            struct.pack_into("<H", record_expected, 0x10, head_offset)
+            if case.get("list_mode") == "after_existing":
+                expected_head = existing_offset
+                expected_existing_next = raster_offset
+                struct.pack_into("<H", record_expected, 0x10, existing_offset)
+
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            {
+                "esi": 0xA5A50000 | face_offset,
+                "sp": 0xFF00,
+                "ds": data_segment,
+                "es": geometry_segment,
+                "fs": globals_segment,
+                "gs": 0x7800,
+                "ss": stack_segment,
+                "flags": 0x0202,
+            },
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (globals_segment, 0, bytes(globals_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + bytes.fromhex("5aa59669"),
+                ),
+            ],
+            max_instructions=5000,
+        )
+
+        actual_record = bytes(machine.mem_read(data_segment * 16 + raster_offset, 0x5A))
+        if actual_record != bytes(record_expected):
+            differing = [
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_record, record_expected)
+                )
+                if actual != expected
+            ]
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: raster differs at "
+                f"{differing[:16]}"
+            )
+        actual_active = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0908, 2)
+        )[0]
+        actual_head = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + head_offset, 2)
+        )[0]
+        actual_tail_previous = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + tail_offset + 0x10, 2)
+        )[0]
+        actual_existing_next = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + existing_offset, 2)
+        )[0]
+        if (
+            actual_active,
+            actual_head,
+            actual_tail_previous,
+            actual_existing_next,
+        ) != (
+            expected_active,
+            expected_head,
+            expected_tail_previous,
+            expected_existing_next,
+        ):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: list state "
+                f"{(actual_active, actual_head, actual_tail_previous, actual_existing_next)} != "
+                f"{(expected_active, expected_head, expected_tail_previous, expected_existing_next)}"
+            )
+        if bytes(machine.mem_read(geometry_segment * 16, 0x10000)) != bytes(
+            geometry_before
+        ):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: geometry memory changed"
+            )
+        if bytes(machine.mem_read(globals_segment * 16, 0x10000)) != bytes(
+            globals_before
+        ):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: FS globals changed"
+            )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "screen": [list(pair) for pair in screen],
+                "accepted": accepted,
+                "advance_offset": writes.get(0x2C),
+                "remaining": writes.get(0x2E),
+                "record_sha256": hashlib.sha256(actual_record).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def _signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
     quotient = abs(dividend) // divisor
     if dividend < 0:
@@ -6060,6 +6609,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0d7d_natural.json",
         manu3_face_activate_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0d7d_gradient_natural.json",
+        manu3_face_gradient_vectors(),
         args.check,
     )
     for module, entry in (

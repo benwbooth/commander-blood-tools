@@ -2167,17 +2167,25 @@ and decisions are verified; the original `ES` geometry and `DS`/`FS` active
 data ownership remain a narrow integration adapter rather than natural C
 codegen.
 
-Six direct vectors prove the `0x000D7D` face-activation prelude. It reads three
-vertex offsets from an `ES:SI` face, loads the active raster at DS:`0x0908`,
-returns through the shared `0x000848` `RET` when that raster is zero, and
-otherwise enters gradient setup at `0x000D93` with the original
-`BX/DI/BP/SI` contract. The cases include wrapped face fields and zero,
-high-bit, and maximum raster offsets while checking segment ownership, memory,
-stack, and `OR` flags. Watcom emits 12 instructions/28 bytes versus the
-original 6/22, while Turbo C emits 25 instructions. Watcom cannot name `BP` in
-a C parameter pragma without rejecting the function, so the typed gradient
-call deliberately uses the compiler convention and records the original call
-boundary for a later narrow ABI adapter.
+Six entry-boundary vectors and ten complete raw-overlay vectors prove the
+merged `0x000D7D..0x001366` face activation and gradient routine. `0x000D93`
+has no incoming call: the prelude either jumps to the shared `0x000848` return
+for an empty free list or falls through with the three vertex offsets and
+raster record live. The full matrix covers backface and degenerate rejection,
+the vertical-first-edge special case, all three `x1`/`x2` orderings, both
+negative-X clipping paths, texture/depth fixed-point equations, texture-bank
+segment selection, the 90-byte record layout, free-list pop, and active-list
+insertion. The oracle compares every externally retained record byte and link
+against an independent arithmetic model; it caught and corrected a first-pass
+double-clipping error in the natural C.
+
+The complete candidate compiles warning-free with Open Watcom medium model
+`-3 -ox -mm -zdp`. The main function is 803 instructions/2349 bytes, plus a
+50-instruction/115-byte natural fixed-point multiply helper, versus the
+original 424 instructions/1514 bytes. The generated size reflects stack-frame
+temporaries and compiler multiply helpers; the recovered control flow and
+record effects are verified. Exact integration still needs the original
+`ES` geometry, raster `DS`, and directory `FS` contract installed at entry.
 
 Seven patched-callee vectors prove the `0x000150` no-cursor frame coordinator.
 It gates on the relocated data segment at CS:`0x136A`, installs that segment in
