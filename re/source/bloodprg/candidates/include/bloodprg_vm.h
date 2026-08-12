@@ -3,6 +3,16 @@
 
 #include "bloodprg_common.h"
 
+typedef union bloodprg_vm_ui_state {
+    cb_u16 word;
+    struct {
+        cb_u8 flags;
+        cb_u8 auxiliary;
+    } bytes;
+} bloodprg_vm_ui_state;
+
+#define vm_ui_flags (vm_ui_state.bytes.flags)
+
 extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
 extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
 extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
@@ -10,7 +20,9 @@ extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
-extern volatile cb_u8 vm_ui_flags;           /* GS:0x2793 */
+extern volatile bloodprg_vm_ui_state vm_ui_state; /* GS:0x2793 */
+extern volatile cb_i16 vm_bridge_view_frame; /* GS:0x2795 */
+extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
 extern volatile char vm_load_string_buffer[]; /* GS:0x2120 */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
@@ -18,6 +30,7 @@ extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
 extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
+extern volatile cb_u8 CB_FAR *vm_script_image; /* GS:0x671C */
 extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
@@ -84,6 +97,7 @@ int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 void CB_NEAR object_heap_access(void);       /* 0x00149B */
+void CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
@@ -95,5 +109,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
+void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
+void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
 
 #endif

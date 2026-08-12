@@ -13,24 +13,40 @@ typedef unsigned long u32;
 
 u16 FAR_FN u32_sqrt_newton_probe(u32 value)
 {
+    u16 low;
+    u16 high;
     u16 estimate;
-    u16 next;
 
-    if (value == 0) {
-        return 0;
-    }
+    low = (u16)value;
+    high = (u16)(value >> 16);
 
-    if ((value >> 16) != 0) {
-        estimate = ((value >> 24) != 0) ? 0xffffu : 0x0fffu;
+    if (high != 0) {
+        estimate = 0x0fffu;
+        if ((high & 0xff00u) != 0) {
+            estimate = 0xffffu;
+            if (high >= 0xfffeu) {
+                return low;
+            }
+        }
     } else {
-        estimate = ((value >> 8) != 0) ? 0x00ffu : 0x000fu;
+        if (low == 0) {
+            return low;
+        }
+        estimate = 0x000fu;
+        if ((low & 0xff00u) != 0) {
+            estimate = 0x00ffu;
+        }
     }
 
     for (;;) {
-        next = (u16)(((u16)(value / estimate) + estimate) >> 1);
-        if (next >= estimate) {
-            return estimate;
+        u16 quotient;
+        u16 candidate;
+
+        quotient = (u16)(value / estimate);
+        candidate = (u16)(((u32)quotient + estimate) >> 1);
+        if (candidate >= estimate) {
+            return candidate;
         }
-        estimate = next;
+        estimate = candidate;
     }
 }

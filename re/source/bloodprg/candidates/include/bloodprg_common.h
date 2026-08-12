@@ -16,4 +16,6 @@ typedef signed long cb_i32;
 #define CB_NEAR
 #endif
 
+cb_u16 CB_FAR bloodprg_strlen(const volatile char CB_FAR *text); /* 0x002665 */
+
 #endif
