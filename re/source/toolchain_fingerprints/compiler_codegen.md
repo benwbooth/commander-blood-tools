@@ -459,6 +459,25 @@ does reproduce the binary's DI callback argument and preserve-all contract. The
 binary instead packs the range through EBP, owns state in GS and dispatch
 scratch in CS, and performs two `MOVSD` copies.
 
+The first real dispatch target, raw-transparent blitter `0x004536`, has eight
+direct framebuffer vectors. They prove direct nonzero source copies, transparent
+zero skips, destination-as-index remapping through both `GS:0x5F11` and
+`GS:0x6011`, signed clipping on every edge, all flip combinations, and complete
+register preservation. They also lock down a non-obvious pointer dependency:
+vertical clipping advances `SI`, and the horizontal setup subsequently reloads
+the x-origin from `[SI+4]` at that advanced address. The natural source keeps
+that mutable cursor instead of replacing it with an immutable frame-header
+access.
+
+Open Watcom compiles the actual `0x004536` candidate without warnings; `-3 -ox
+-mm` emits 417 bytes versus 384 original. Standalone 8086/286/386 probes emit
+161/154/157 instructions and 427/410/422 bytes versus 166/384. Their far-pointer
+normalization keeps slot state and globals in DS while loading frame data in ES;
+the binary enters with DS=ES=GS, retains the slot in ES/GS, and loads frame data
+into DS. The original also receives its already-computed rectangle in
+AX/BX/DX/BP and uses register-shaped row loops, while the natural function
+derives that context from the typed slot.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

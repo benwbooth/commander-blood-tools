@@ -1,0 +1,736 @@
+[
+  {
+    "name": "transparent_zero_direct_copy",
+    "flags": 1,
+    "flip_x": false,
+    "flip_y": false,
+    "draw": [
+      5,
+      6
+    ],
+    "extent": [
+      4,
+      3
+    ],
+    "frame_origin_offset": [
+      1,
+      2
+    ],
+    "dirty_rect": [
+      6,
+      10,
+      8,
+      11
+    ],
+    "frame_stride": 4,
+    "clipped_extent": [
+      4,
+      3
+    ],
+    "source_start_pixel": 0,
+    "destination_start": [
+      6,
+      8
+    ],
+    "selected_remap_offset": 0,
+    "changed_pixels": [
+      [
+        2567,
+        98,
+        18,
+        18
+      ],
+      [
+        2568,
+        111,
+        35,
+        35
+      ],
+      [
+        2569,
+        124,
+        52,
+        52
+      ],
+      [
+        2886,
+        149,
+        30,
+        30
+      ],
+      [
+        2887,
+        162,
+        47,
+        47
+      ],
+      [
+        2888,
+        175,
+        64,
+        64
+      ],
+      [
+        3206,
+        213,
+        59,
+        59
+      ],
+      [
+        3207,
+        226,
+        76,
+        76
+      ],
+      [
+        3209,
+        252,
+        110,
+        110
+      ]
+    ]
+  },
+  {
+    "name": "destination_remap_5f11",
+    "flags": 257,
+    "flip_x": false,
+    "flip_y": false,
+    "draw": [
+      20,
+      12
+    ],
+    "extent": [
+      3,
+      2
+    ],
+    "frame_origin_offset": [
+      0,
+      0
+    ],
+    "dirty_rect": [
+      20,
+      23,
+      12,
+      14
+    ],
+    "frame_stride": 5,
+    "clipped_extent": [
+      3,
+      2
+    ],
+    "source_start_pixel": 0,
+    "destination_start": [
+      20,
+      12
+    ],
+    "selected_remap_offset": 24337,
+    "changed_pixels": [
+      [
+        3860,
+        42,
+        14,
+        213
+      ],
+      [
+        3861,
+        55,
+        31,
+        200
+      ],
+      [
+        3862,
+        68,
+        48,
+        187
+      ],
+      [
+        4180,
+        106,
+        43,
+        149
+      ],
+      [
+        4181,
+        119,
+        60,
+        136
+      ]
+    ]
+  },
+  {
+    "name": "destination_remap_6011_mode3",
+    "flags": 769,
+    "flip_x": false,
+    "flip_y": false,
+    "draw": [
+      30,
+      18
+    ],
+    "extent": [
+      4,
+      2
+    ],
+    "frame_origin_offset": [
+      0,
+      0
+    ],
+    "dirty_rect": [
+      30,
+      34,
+      18,
+      20
+    ],
+    "frame_stride": 6,
+    "clipped_extent": [
+      4,
+      2
+    ],
+    "source_start_pixel": 0,
+    "destination_start": [
+      30,
+      18
+    ],
+    "selected_remap_offset": 24593,
+    "changed_pixels": [
+      [
+        5790,
+        75,
+        27,
+        236
+      ],
+      [
+        5791,
+        88,
+        44,
+        19
+      ],
+      [
+        5793,
+        114,
+        78,
+        97
+      ],
+      [
+        6110,
+        139,
+        56,
+        172
+      ],
+      [
+        6112,
+        165,
+        90,
+        250
+      ],
+      [
+        6113,
+        178,
+        107,
+        33
+      ]
+    ]
+  },
+  {
+    "name": "clip_all_edges",
+    "flags": 1,
+    "flip_x": false,
+    "flip_y": false,
+    "draw": [
+      10,
+      10
+    ],
+    "extent": [
+      6,
+      5
+    ],
+    "frame_origin_offset": [
+      -2,
+      1
+    ],
+    "dirty_rect": [
+      10,
+      13,
+      12,
+      15
+    ],
+    "frame_stride": 8,
+    "clipped_extent": [
+      5,
+      3
+    ],
+    "source_start_pixel": 8,
+    "destination_start": [
+      12,
+      12
+    ],
+    "selected_remap_offset": 0,
+    "changed_pixels": [
+      [
+        3853,
+        13,
+        86,
+        86
+      ],
+      [
+        3854,
+        26,
+        103,
+        103
+      ],
+      [
+        3855,
+        39,
+        120,
+        120
+      ],
+      [
+        4172,
+        64,
+        98,
+        98
+      ],
+      [
+        4173,
+        77,
+        115,
+        115
+      ],
+      [
+        4174,
+        90,
+        132,
+        132
+      ],
+      [
+        4176,
+        116,
+        166,
+        166
+      ],
+      [
+        4492,
+        128,
+        127,
+        127
+      ],
+      [
+        4493,
+        141,
+        144,
+        144
+      ],
+      [
+        4495,
+        167,
+        178,
+        178
+      ],
+      [
+        4496,
+        180,
+        195,
+        195
+      ]
+    ]
+  },
+  {
+    "name": "horizontal_flip_with_clipping",
+    "flags": 1,
+    "flip_x": true,
+    "flip_y": false,
+    "draw": [
+      10,
+      10
+    ],
+    "extent": [
+      6,
+      5
+    ],
+    "frame_origin_offset": [
+      -2,
+      1
+    ],
+    "dirty_rect": [
+      10,
+      13,
+      11,
+      15
+    ],
+    "frame_stride": 8,
+    "clipped_extent": [
+      3,
+      4
+    ],
+    "source_start_pixel": 1,
+    "destination_start": [
+      12,
+      11
+    ],
+    "selected_remap_offset": 0,
+    "changed_pixels": [
+      [
+        3532,
+        223,
+        70,
+        70
+      ],
+      [
+        3531,
+        210,
+        87,
+        87
+      ],
+      [
+        3530,
+        197,
+        104,
+        104
+      ],
+      [
+        3852,
+        31,
+        99,
+        99
+      ],
+      [
+        3851,
+        18,
+        116,
+        116
+      ],
+      [
+        4172,
+        95,
+        128,
+        128
+      ],
+      [
+        4170,
+        69,
+        162,
+        162
+      ],
+      [
+        4491,
+        146,
+        174,
+        174
+      ],
+      [
+        4490,
+        133,
+        191,
+        191
+      ]
+    ]
+  },
+  {
+    "name": "vertical_flip_with_clipping",
+    "flags": 1,
+    "flip_x": false,
+    "flip_y": true,
+    "draw": [
+      10,
+      10
+    ],
+    "extent": [
+      6,
+      5
+    ],
+    "frame_origin_offset": [
+      -2,
+      1
+    ],
+    "dirty_rect": [
+      8,
+      14,
+      12,
+      16
+    ],
+    "frame_stride": 8,
+    "clipped_extent": [
+      6,
+      4
+    ],
+    "source_start_pixel": 0,
+    "destination_start": [
+      8,
+      15
+    ],
+    "selected_remap_offset": 0,
+    "changed_pixels": [
+      [
+        4808,
+        202,
+        66,
+        66
+      ],
+      [
+        4809,
+        215,
+        83,
+        83
+      ],
+      [
+        4810,
+        228,
+        100,
+        100
+      ],
+      [
+        4812,
+        254,
+        134,
+        134
+      ],
+      [
+        4813,
+        11,
+        151,
+        151
+      ],
+      [
+        4488,
+        138,
+        95,
+        95
+      ],
+      [
+        4489,
+        151,
+        112,
+        112
+      ],
+      [
+        4491,
+        177,
+        146,
+        146
+      ],
+      [
+        4492,
+        190,
+        163,
+        163
+      ],
+      [
+        4493,
+        203,
+        180,
+        180
+      ],
+      [
+        4168,
+        74,
+        124,
+        124
+      ],
+      [
+        4170,
+        100,
+        158,
+        158
+      ],
+      [
+        4171,
+        113,
+        175,
+        175
+      ],
+      [
+        4172,
+        126,
+        192,
+        192
+      ],
+      [
+        3849,
+        23,
+        170,
+        170
+      ],
+      [
+        3850,
+        36,
+        187,
+        187
+      ],
+      [
+        3851,
+        49,
+        204,
+        204
+      ],
+      [
+        3853,
+        75,
+        238,
+        238
+      ]
+    ]
+  },
+  {
+    "name": "both_flips_and_remap_6011",
+    "flags": 513,
+    "flip_x": true,
+    "flip_y": true,
+    "draw": [
+      42,
+      24
+    ],
+    "extent": [
+      5,
+      4
+    ],
+    "frame_origin_offset": [
+      -1,
+      -1
+    ],
+    "dirty_rect": [
+      42,
+      45,
+      24,
+      26
+    ],
+    "frame_stride": 7,
+    "clipped_extent": [
+      4,
+      2
+    ],
+    "source_start_pixel": 8,
+    "destination_start": [
+      45,
+      25
+    ],
+    "selected_remap_offset": 24593,
+    "changed_pixels": [
+      [
+        8044,
+        61,
+        142,
+        194
+      ],
+      [
+        8043,
+        48,
+        159,
+        155
+      ],
+      [
+        8042,
+        35,
+        176,
+        116
+      ],
+      [
+        7725,
+        10,
+        154,
+        41
+      ],
+      [
+        7724,
+        253,
+        171,
+        2
+      ],
+      [
+        7723,
+        240,
+        188,
+        219
+      ]
+    ]
+  },
+  {
+    "name": "signed_negative_frame_origin",
+    "flags": 1,
+    "flip_x": false,
+    "flip_y": false,
+    "draw": [
+      1,
+      2
+    ],
+    "extent": [
+      5,
+      4
+    ],
+    "frame_origin_offset": [
+      -3,
+      -1
+    ],
+    "dirty_rect": [
+      0,
+      3,
+      1,
+      5
+    ],
+    "frame_stride": 6,
+    "clipped_extent": [
+      3,
+      4
+    ],
+    "source_start_pixel": 2,
+    "destination_start": [
+      0,
+      1
+    ],
+    "selected_remap_offset": 0,
+    "changed_pixels": [
+      [
+        320,
+        32,
+        126,
+        126
+      ],
+      [
+        321,
+        45,
+        143,
+        143
+      ],
+      [
+        322,
+        58,
+        160,
+        160
+      ],
+      [
+        640,
+        96,
+        155,
+        155
+      ],
+      [
+        641,
+        109,
+        172,
+        172
+      ],
+      [
+        960,
+        160,
+        184,
+        184
+      ],
+      [
+        962,
+        186,
+        218,
+        218
+      ],
+      [
+        1281,
+        237,
+        230,
+        230
+      ],
+      [
+        1282,
+        250,
+        247,
+        247
+      ]
+    ]
+  }
+]

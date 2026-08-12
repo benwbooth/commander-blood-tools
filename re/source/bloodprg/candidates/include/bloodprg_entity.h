@@ -24,11 +24,18 @@ typedef struct bloodprg_dirty_rect {
     cb_u16 bottom;
 } bloodprg_dirty_rect;
 
+typedef struct bloodprg_sprite_frame {
+    cb_u16 stride;
+    cb_u16 height;
+    cb_i16 x_offset;
+    cb_i16 y_offset;
+    cb_u8 pixels[1];
+} bloodprg_sprite_frame;
+
 typedef struct bloodprg_entity_record {
     cb_u16 flags;
     cb_u16 field_02;
-    cb_u16 data_offset;
-    cb_u16 data_segment;
+    const volatile bloodprg_sprite_frame CB_FAR *frame;
     cb_u16 draw_x;
     cb_u16 draw_y;
     cb_u16 extent_width;
@@ -56,6 +63,10 @@ extern bloodprg_sprite_blitter *bloodprg_sprite_blitter_table[8]; /* CS:0x1592 *
 extern bloodprg_sprite_blitter *bloodprg_selected_sprite_blitter; /* CS:0x15A2 */
 extern volatile cb_u8 bloodprg_sprite_flip_x; /* CS:0x14DF */
 extern volatile cb_u8 bloodprg_sprite_flip_y; /* CS:0x14E0 */
+extern volatile cb_u8 CB_FAR *bloodprg_display_buffer; /* GS:0x5221 */
+extern volatile cb_u8 bloodprg_sprite_remap_5f11[256]; /* GS:0x5F11 */
+extern volatile cb_u8 bloodprg_sprite_remap_6011[256]; /* GS:0x6011 */
+extern volatile cb_u8 CB_NEAR *bloodprg_selected_sprite_remap; /* GS:0x524B */
 
 void CB_FAR entity_flag_state_transition(cb_u16 object_id); /* 0x0299:0x1241 */
 void CB_FAR sprite_slot_position_update(cb_u16 object_id,
@@ -72,6 +83,8 @@ void CB_FAR sprite_slot_commit_dirty_range(cb_u16 first_object_id,
         cb_u16 last_object_id); /* 0x0299:0x1467 */
 void CB_FAR sprite_slot_dirty_range_render(cb_u16 first_object_id,
         cb_u16 last_object_id); /* 0x0299:0x14E1 */
+void CB_NEAR sprite_blit_raw_transparent(
+        volatile bloodprg_entity_record *record); /* 0x0299:0x15A6 */
 
 void CB_FAR entity_record_setter(cb_u16 entity_id,
         const volatile void CB_FAR *resource,
@@ -87,6 +100,7 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux sprite_slot_range_mark_dirty parm [ax] [bx]
 #pragma aux sprite_slot_commit_dirty_range parm [ax] [bx]
 #pragma aux sprite_slot_dirty_range_render parm [ax] [bx]
+#pragma aux sprite_blit_raw_transparent parm [di] modify exact []
 #endif
 
 #endif

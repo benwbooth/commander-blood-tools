@@ -2102,7 +2102,10 @@ Named targets that are already tied to code behavior:
   `GS:0x6011`.
   - mode 0 -> `0x0299:0x15A6` (`sprite_blit_raw_transparent`): uncompressed
     transparent blit; source zero skips the destination, nonzero source pixels
-    copy or trigger the selected destination-palette remap.
+    copy or trigger the selected destination-palette remap. Direct execution
+    additionally proves the DS=ES=GS entry contract and a literal mutable-source
+    dependency: vertical clipping advances `SI` before the later horizontal
+    x-origin reload from `[SI+4]`.
   - mode 1 -> `0x0299:0x172C` (`sprite_blit_rle_transparent`): RLE
     transparent blit with the same zero-skip/remap semantics as mode 0.
   - mode 2 -> `0x0299:0x1C18` (`sprite_blit_raw_opaque`): uncompressed opaque
