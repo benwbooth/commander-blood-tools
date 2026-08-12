@@ -123,7 +123,7 @@
 "0x00B610","ship_3d_snd_bank_restore_call","restores sn\tb.snd after the temporary 3D.snd presentation path"
 "0x00B692","ship_3d_transition_state_update","updates ship 3D transition state DS:0x2531/0x252F/0x2530"
 "0x00B6DD","ship_3d_plane_band_copy","gated VGA planar page-band copy into framebuffer for ship/procedural-3D path"
-"0x00B75C","ship_3d_depth_scroll_step","moves DS:0x2527 toward the active target using step DS:0x2531"
+"0x00B75C","ship_3d_depth_scroll_step","opening takes precedence and adds DS:0x2531 only to the low byte of DS:0x2527 before a signed-word clamp at 0x41; closing subtracts only from the low byte and clamps to zero from the byte SUB sign flag"
 "DS:0x250B","ship_3d_target_list","word list/pointer consumed by ship target selector before fallback DS:0x2537"
 "DS:0x251B","ship_3d_current_target","current ship/navigation target record pointer"
 "DS:0x253B","ship_3d_navigation_trigger_target_list","word list used by 0xB34E target-list layout branch"

@@ -18038,6 +18038,230 @@ def ship_3d_point_cloud_randomize_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_depth_scroll_step_vectors() -> list[dict[str, object]]:
+    entry = 0xB75C
+    expected_hash = "7b169cde9fa6c63a0388539519b45c9d087b3079b8bfc60fe27c28ade04553dd"
+    if hashlib.sha256(EXE[entry : entry + 76]).hexdigest() != expected_hash:
+        raise AssertionError("0xb75c: recovered 76-byte body changed")
+
+    cases = [
+        ("inactive_nonzero_bits", 0x2345, 0x02, 0xFE, 0x19, 0x2345, 0x02, 0xFE, "inactive"),
+        ("opening_precedes_closing", 0x0010, 0x03, 0xA1, 0x02, 0x0012, 0x03, 0xA1, "open_store"),
+        ("opening_complete", 0x0041, 0xA1, 0xC3, 0x17, 0x0041, 0x00, 0xC3, "open_clear"),
+        ("opening_progress", 0x0030, 0x01, 0x00, 0x05, 0x0035, 0x01, 0x00, "open_store"),
+        ("opening_reaches_target", 0x003F, 0x01, 0x00, 0x02, 0x0041, 0x01, 0x00, "open_store"),
+        ("opening_overshoots", 0x0040, 0x01, 0x00, 0x02, 0x0041, 0x01, 0x00, "open_store"),
+        ("opening_low_byte_wrap", 0x00FE, 0x01, 0x00, 0x03, 0x0001, 0x01, 0x00, "open_store"),
+        ("opening_positive_high_byte", 0x0100, 0x01, 0x00, 0x01, 0x0041, 0x01, 0x00, "open_store"),
+        ("opening_signed_negative", 0xFFFE, 0x01, 0x00, 0x03, 0xFF01, 0x01, 0x00, "open_store"),
+        ("opening_zero_step", 0x0040, 0x01, 0x00, 0x00, 0x0040, 0x01, 0x00, "open_store"),
+        ("closing_with_opening_high_bits", 0x0020, 0x02, 0x03, 0x03, 0x001D, 0x02, 0x03, "close_store"),
+        ("closing_complete", 0x0000, 0x00, 0xA1, 0x07, 0x0000, 0x00, 0x00, "close_clear"),
+        ("closing_reaches_zero", 0x0003, 0x00, 0x01, 0x03, 0x0000, 0x00, 0x01, "close_store"),
+        ("closing_underflow", 0x0002, 0x00, 0x01, 0x03, 0x0000, 0x00, 0x01, "close_store_zero"),
+        ("closing_signed_wrap", 0x007F, 0x00, 0x01, 0xFF, 0x0000, 0x00, 0x01, "close_store_zero"),
+        ("closing_high_byte_preserved", 0x0105, 0x00, 0x01, 0x03, 0x0102, 0x00, 0x01, "close_store"),
+        ("closing_zero_step_signed", 0x0080, 0x00, 0x01, 0x00, 0x0000, 0x00, 0x01, "close_store_zero"),
+    ]
+    data_segment = 0x4000
+    game_segment = 0x2C00
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    def logic_flags(result: int, sign_mask: int) -> dict[str, bool]:
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & sign_mask),
+            "of": False,
+        }
+
+    def subtract_flags(left: int, right: int, mask: int) -> dict[str, bool]:
+        result = (left - right) & mask
+        sign_mask = (mask + 1) >> 1
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": bool((left ^ right ^ result) & 0x10),
+            "zf": result == 0,
+            "sf": bool(result & sign_mask),
+            "of": bool(((left ^ right) & (left ^ result)) & sign_mask),
+        }
+
+    for (
+        name,
+        depth,
+        opening,
+        closing,
+        step,
+        expected_depth,
+        expected_opening,
+        expected_closing,
+        path,
+    ) in cases:
+        state_before = bytearray((0x51 + index * 23) & 0xFF for index in range(11))
+        struct.pack_into("<H", state_before, 0, depth)
+        state_before[8:11] = bytes((opening, closing, step))
+        state_expected = bytearray(state_before)
+        struct.pack_into("<H", state_expected, 0, expected_depth)
+        state_expected[8] = expected_opening
+        state_expected[9] = expected_closing
+        game_decoy = bytes((0xA3 + index * 17) & 0xFF for index in range(11))
+        extra_decoy = bytes((0x39 + index * 31) & 0xFF for index in range(11))
+        stack_decoy = bytes((0xC7 + index * 11) & 0xFF for index in range(11))
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address in (0xB765, 0xB779, 0xB77E, 0xB785, 0xB78C, 0xB79B, 0xB7A0, 0xB7A5):
+                phase = {"address": address}
+                if address in (0xB779, 0xB77E, 0xB79B, 0xB7A0):
+                    phase["ax"] = machine.reg_read(UC_X86_REG_AX)
+                phases.append(phase)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x2527, bytes(state_before)),
+                (game_segment, 0x2527, game_decoy),
+                (extra_segment, 0x2527, extra_decoy),
+                (stack_segment, 0x2527, stack_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if path == "inactive":
+            expected_phases = [{"address": 0xB785}, {"address": 0xB7A5}]
+            expected_flags = logic_flags(closing & 1, 0x80)
+        elif path == "open_clear":
+            expected_phases = [
+                {"address": 0xB765},
+                {"address": 0xB77E, "ax": depth},
+                {"address": 0xB7A5},
+            ]
+            expected_flags = subtract_flags(depth, 0x41, 0xFFFF)
+        elif path == "open_store":
+            compared = (depth & 0xFF00) | (((depth & 0xFF) + step) & 0xFF)
+            stored = compared if compared & 0x8000 or compared < 0x41 else 0x41
+            expected_phases = [
+                {"address": 0xB765},
+                {"address": 0xB779, "ax": stored},
+                {"address": 0xB7A5},
+            ]
+            expected_flags = subtract_flags(compared, 0x41, 0xFFFF)
+        elif path == "close_clear":
+            expected_phases = [
+                {"address": 0xB785},
+                {"address": 0xB78C},
+                {"address": 0xB7A0, "ax": depth},
+                {"address": 0xB7A5},
+            ]
+            expected_flags = logic_flags(depth, 0x8000)
+        else:
+            low = ((depth & 0xFF) - step) & 0xFF
+            stored = 0 if low & 0x80 else (depth & 0xFF00) | low
+            expected_phases = [
+                {"address": 0xB785},
+                {"address": 0xB78C},
+                {"address": 0xB79B, "ax": stored},
+                {"address": 0xB7A5},
+            ]
+            expected_flags = (
+                logic_flags(0, 0x8000)
+                if path == "close_store_zero"
+                else subtract_flags(depth & 0xFF, step, 0xFF)
+            )
+
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0xb75c {name}: phases={phases}, expected={expected_phases}"
+            )
+        state_after = bytes(machine.mem_read(data_segment * 16 + 0x2527, 11))
+        if state_after != state_expected:
+            raise AssertionError(
+                f"0xb75c {name}: state={state_after.hex()}, "
+                f"expected={state_expected.hex()}"
+            )
+        for segment_name, segment, expected in (
+            ("GS", game_segment, game_decoy),
+            ("ES", extra_segment, extra_decoy),
+            ("SS", stack_segment, stack_decoy),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + 0x2527, 11))
+            if actual != expected:
+                raise AssertionError(f"0xb75c {name}: {segment_name} decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb75c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb75c {name}: near return changed CS")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask)
+            for flag, mask in flag_masks.items()
+            if flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xb75c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xb75c {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "depth_before": depth,
+                "opening_before": opening,
+                "closing_before": closing,
+                "step": step,
+                "depth_after": expected_depth,
+                "opening_after": expected_opening,
+                "closing_after": expected_closing,
+                "path": path,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -23876,6 +24100,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b67_natural.json",
         ship_3d_point_cloud_randomize_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b75c_natural.json",
+        ship_3d_depth_scroll_step_vectors(),
         args.check,
     )
     update_vector(

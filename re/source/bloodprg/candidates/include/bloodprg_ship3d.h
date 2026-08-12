@@ -57,10 +57,10 @@ typedef struct ship_3d_position_field {
     cb_u16 y;
 } ship_3d_position_field;
 
-extern volatile cb_u16 ship_3d_depth_offset; /* GS:0x2527 */
-extern volatile cb_u8 ship_3d_depth_opening; /* GS:0x252F */
-extern volatile cb_u8 ship_3d_depth_closing; /* GS:0x2530 */
-extern volatile cb_u8 ship_3d_depth_step;    /* GS:0x2531 */
+extern volatile cb_u16 ship_3d_depth_offset; /* DS:0x2527 */
+extern volatile cb_u8 ship_3d_depth_opening; /* DS:0x252F */
+extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
+extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_b; /* GS:0x2F6D */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_c; /* GS:0x2F6F */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_a; /* GS:0x2F71 */
@@ -87,6 +87,7 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #pragma aux ship_3d_point_cloud_randomize modify exact [ax cx es]
+#pragma aux ship_3d_depth_scroll_step modify exact [ax]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -106,6 +107,7 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
 void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
+void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,

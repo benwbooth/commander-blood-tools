@@ -1648,6 +1648,27 @@ and ES clobbered rather than using DI/CX/LOOP and restoring AX/DI/ES. Turbo C
 and carries a four-byte far pointer. This is close natural codegen, but not yet
 a drop-in ABI match.
 
+Depth-scroll step `0x00B75C` gives opening bit zero precedence over closing bit
+zero. It changes only the low byte of the depth word: opening then compares the
+whole signed word with 0x41, while closing branches directly on the sign flag
+from the byte subtraction. Seventeen direct vectors cover inactive flag high
+bits, precedence, completion, progress/equality/overshoot, low-byte wrap with
+AH preserved, signed high words, zero steps, and both closing clamp outcomes.
+They also prove DS ownership against GS/ES/SS decoys, untouched adjacent bytes,
+all-register preservation, path-specific defined flags, and near return.
+
+Representing the local as a natural little-endian word/byte union is materially
+closer than splitting and recombining a word and byte. Open Watcom `-3 -ox -mm`
+compiles the actual candidate without warnings to 27 instructions/75 bytes
+versus 29/76 original and emits the exact `ADD AL,[step]` and `SUB AL,[step]`
+operations. It still leaves AX clobbered, emits separate returns instead of the
+original AX/BX-preserving shared epilogue, uses an immediate clamp store, and
+inserts `TEST AL,AL` before the closing branch, changing final flags from the
+original SUB. Turbo C 2.01 medium emits 36 instructions with a stack-resident
+union. The sole caller immediately invokes `0x00B6DD` and does not branch on
+the returned flags, so these are integration boundaries rather than missing
+game-state logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1721,6 +1742,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
 | `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
+| `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

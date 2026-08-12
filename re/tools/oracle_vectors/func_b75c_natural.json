@@ -1,0 +1,320 @@
+[
+  {
+    "name": "inactive_nonzero_bits",
+    "depth_before": 9029,
+    "opening_before": 2,
+    "closing_before": 254,
+    "step": 25,
+    "depth_after": 9029,
+    "opening_after": 2,
+    "closing_after": 254,
+    "path": "inactive",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_precedes_closing",
+    "depth_before": 16,
+    "opening_before": 3,
+    "closing_before": 161,
+    "step": 2,
+    "depth_after": 18,
+    "opening_after": 3,
+    "closing_after": 161,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_complete",
+    "depth_before": 65,
+    "opening_before": 161,
+    "closing_before": 195,
+    "step": 23,
+    "depth_after": 65,
+    "opening_after": 0,
+    "closing_after": 195,
+    "path": "open_clear",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_progress",
+    "depth_before": 48,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 5,
+    "depth_after": 53,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_reaches_target",
+    "depth_before": 63,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 2,
+    "depth_after": 65,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_overshoots",
+    "depth_before": 64,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 2,
+    "depth_after": 65,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_low_byte_wrap",
+    "depth_before": 254,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 3,
+    "depth_after": 1,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_positive_high_byte",
+    "depth_before": 256,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 1,
+    "depth_after": 65,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_signed_negative",
+    "depth_before": 65534,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 3,
+    "depth_after": 65281,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "opening_zero_step",
+    "depth_before": 64,
+    "opening_before": 1,
+    "closing_before": 0,
+    "step": 0,
+    "depth_after": 64,
+    "opening_after": 1,
+    "closing_after": 0,
+    "path": "open_store",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_with_opening_high_bits",
+    "depth_before": 32,
+    "opening_before": 2,
+    "closing_before": 3,
+    "step": 3,
+    "depth_after": 29,
+    "opening_after": 2,
+    "closing_after": 3,
+    "path": "close_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_complete",
+    "depth_before": 0,
+    "opening_before": 0,
+    "closing_before": 161,
+    "step": 7,
+    "depth_after": 0,
+    "opening_after": 0,
+    "closing_after": 0,
+    "path": "close_clear",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_reaches_zero",
+    "depth_before": 3,
+    "opening_before": 0,
+    "closing_before": 1,
+    "step": 3,
+    "depth_after": 0,
+    "opening_after": 0,
+    "closing_after": 1,
+    "path": "close_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_underflow",
+    "depth_before": 2,
+    "opening_before": 0,
+    "closing_before": 1,
+    "step": 3,
+    "depth_after": 0,
+    "opening_after": 0,
+    "closing_after": 1,
+    "path": "close_store_zero",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_signed_wrap",
+    "depth_before": 127,
+    "opening_before": 0,
+    "closing_before": 1,
+    "step": 255,
+    "depth_after": 0,
+    "opening_after": 0,
+    "closing_after": 1,
+    "path": "close_store_zero",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_high_byte_preserved",
+    "depth_before": 261,
+    "opening_before": 0,
+    "closing_before": 1,
+    "step": 3,
+    "depth_after": 258,
+    "opening_after": 0,
+    "closing_after": 1,
+    "path": "close_store",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "closing_zero_step_signed",
+    "depth_before": 128,
+    "opening_before": 0,
+    "closing_before": 1,
+    "step": 0,
+    "depth_after": 0,
+    "opening_after": 0,
+    "closing_after": 1,
+    "path": "close_store_zero",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

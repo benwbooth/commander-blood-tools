@@ -7,7 +7,7 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph
 ; label: ship_3d_depth_scroll_step
-; label_comment: moves DS:0x2527 toward the active target using step DS:0x2531
+; label_comment: opening takes precedence and adds DS:0x2531 only to AL before a signed-word clamp at 0x41; closing subtracts only from AL and clamps on the byte SUB sign flag
 ; byte_count: 76
 ; boundary: cfg_blocks_13_terminals_4
 ; terminal: jmp 0xb7a5:3, ret:1
