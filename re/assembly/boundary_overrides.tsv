@@ -1,0 +1,2 @@
+module	entry	disposition	owner	evidence
+bloodprg	0x009fa2	merged_into_owner	0x009f8e	The owner pushes EAX at 0x009f8e and reaches the sole matching POP EAX/RET at 0x00a0c0/0x00a0c2. Entering at 0x009fa2 has no matching four-byte push. Its apparent caller at 0x00a2d9 is unindexed raw-byte code with no static caller and is itself stack-invalid for this target.

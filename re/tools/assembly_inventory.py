@@ -20,6 +20,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ROUTINE_INDEX = REPO_ROOT / "re" / "assembly" / "routine_index.tsv"
+BOUNDARY_OVERRIDES = REPO_ROOT / "re" / "assembly" / "boundary_overrides.tsv"
 
 DIRECT_CALLEE_RE = re.compile(r"^; direct_callees: (.+)$", re.MULTILINE)
 ARTIFACT_RE = re.compile(r"^; artifact: (.+)$", re.MULTILINE)
@@ -32,6 +33,11 @@ SHA_RE = re.compile(r"^; routine_bytes_sha256: ([0-9a-f]+)$", re.MULTILINE)
 
 def load_index() -> list[dict[str, str]]:
     with ROUTINE_INDEX.open(newline="") as fh:
+        return list(csv.DictReader(fh, delimiter="\t"))
+
+
+def load_boundary_overrides() -> list[dict[str, str]]:
+    with BOUNDARY_OVERRIDES.open(newline="") as fh:
         return list(csv.DictReader(fh, delimiter="\t"))
 
 
@@ -55,9 +61,8 @@ def parse_metadata(path: Path) -> tuple[Path, str, int, int, str]:
         missing.append("artifact")
     if artifact_sha is None:
         missing.append("artifact_sha256")
-    if file_offset is None:
-        if overlay_offset is None:
-            missing.append("file_offset or overlay_offset")
+    if file_offset is None and overlay_offset is None:
+        missing.append("file_offset or overlay_offset")
     if byte_count is None:
         missing.append("byte_count")
     if sha is None:
@@ -148,6 +153,51 @@ def check_direct_callees(rows: list[dict[str, str]]) -> list[str]:
     return errors
 
 
+def check_boundary_overrides(
+    rows: list[dict[str, str]], overrides: list[dict[str, str]]
+) -> list[str]:
+    indexed = indexed_entries(rows)
+    row_by_key = {
+        (row["module"], int(row["entry"], 16)): row
+        for row in rows
+    }
+    errors = []
+    seen = set()
+
+    for override in overrides:
+        module = override["module"]
+        entry = int(override["entry"], 16)
+        owner = int(override["owner"], 16)
+        key = (module, entry)
+        if key in seen:
+            errors.append(f"duplicate boundary override {module}:{entry:#08x}")
+        seen.add(key)
+        if override["disposition"] != "merged_into_owner":
+            errors.append(
+                f"{module}:{entry:#08x}: unknown boundary disposition "
+                f"{override['disposition']}"
+            )
+        if entry in indexed.get(module, set()):
+            errors.append(f"{module}:{entry:#08x}: merged entry remains indexed")
+        owner_row = row_by_key.get((module, owner))
+        if owner_row is None:
+            errors.append(f"{module}:{entry:#08x}: owner {owner:#08x} is not indexed")
+            continue
+        owner_path = REPO_ROOT / owner_row["asm_path"]
+        try:
+            _artifact, _artifact_sha, start, byte_count, _sha = parse_metadata(owner_path)
+        except ValueError as exc:
+            errors.append(f"{module}:{entry:#08x}: invalid owner metadata: {exc}")
+            continue
+        if not start <= entry < start + byte_count:
+            errors.append(
+                f"{module}:{entry:#08x}: outside owner {owner:#08x} "
+                f"range {start:#08x}..{start + byte_count:#08x}"
+            )
+
+    return errors
+
+
 def module_counts(rows: list[dict[str, str]]) -> list[tuple[str, int]]:
     counts: dict[str, int] = {}
     for row in rows:
@@ -165,10 +215,12 @@ def main() -> int:
         return 0
 
     rows = load_index()
+    overrides = load_boundary_overrides()
     errors = []
     errors.extend(check_index_paths(rows))
     errors.extend(check_hashes(rows))
     errors.extend(check_direct_callees(rows))
+    errors.extend(check_boundary_overrides(rows, overrides))
 
     if errors:
         for error in errors:
@@ -180,6 +232,7 @@ def main() -> int:
         print(f"OK: {module}: {count} routine(s)")
     print("OK: routine byte hashes match source artifacts")
     print("OK: direct callee targets are indexed")
+    print(f"OK: {len(overrides)} reviewed boundary override(s)")
     return 0
 
 

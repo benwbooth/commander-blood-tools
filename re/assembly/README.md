@@ -11,9 +11,14 @@ These dumps are the evidence used by the handwritten C source recovery under
 `re/source`. They are not generated C/C++ and no longer point at the retired
 emulator-style translation scaffold.
 
+`boundary_overrides.tsv` records reviewed corrections to recursive-graph seeds.
+The inventory checker requires every merged entry to be absent from the index,
+its owner to remain indexed, and its address to fall inside the owner's byte
+range.
+
 Routine counts:
 
-- `bloodprg`: 308
+- `bloodprg`: 318
 - `xdb_amer`: 25
 - `xdb_croolis`: 25
 - `xdb_manu3`: 18
