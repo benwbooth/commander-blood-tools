@@ -953,6 +953,23 @@ observable memory order match. Exact integration needs fixed GS/SS placement
 and the original BP allocation, but no register or memory emulation belongs in
 the recovered C.
 
+VM branch-stack pop `0x006572` has seven direct vectors covering the empty base
+top, ordinary and odd tops, underflow from zero and one, signed overflow from
+`0x8000`, and the maximum top. They prove query mode clears before the top read,
+top 2 performs no write, every nonempty path performs one wrapped decrement, GS
+owns both globals, AX returns the old top, flags come from CMP or SUB by path,
+all unrelated state is preserved, and the routine near-returns.
+
+The natural C reads the volatile top once for comparison and return, exposes
+that old top as the function result, and uses one compound volatile decrement.
+Open Watcom `-3 -ox -mm` emits 7 instructions/20 bytes versus 6/22 original and
+keeps the result in AX, but canonicalizes the memory subtraction to `ADD
+0xFFFE`, which differs in carry and overflow on edge cases. Turbo C 2.01 medium
+emits 9 instructions, preserves the original memory SUB and final flags, and
+moves its saved SI local to AX before return. Exact codegen therefore needs a
+narrow compiler/register-allocation decision; the recovered C logic itself is
+complete and contains no synthetic flag handling.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -986,6 +1003,7 @@ LCS and then mnemonic similarity:
 | `vm_tagged_word_compare` | medium, `-ox`, register | 17/17 | 0.0588 | 0.5294 | 0.2941 |
 | `vm_tagged_byte_pair_compare` | medium, `-ox`, register | 28/27 | 0.0357 | 0.7500 | 0.1071 |
 | `vm_branch_stack_push` | medium, `-ox`, register | 8/9 | 0.1250 | 0.7500 | 0.1250 |
+| `vm_branch_stack_pop` | medium, `-ox`, register | 6/7 | 0.1667 | 0.6667 | 0.1667 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

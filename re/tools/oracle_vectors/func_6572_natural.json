@@ -1,0 +1,107 @@
+[
+  {
+    "name": "empty_stack_is_unchanged",
+    "initial_top_byte_offset": 2,
+    "final_top_byte_offset": 2,
+    "top_write_performed": false,
+    "query_mode_before": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "pop_first_word",
+    "initial_top_byte_offset": 4,
+    "final_top_byte_offset": 2,
+    "top_write_performed": true,
+    "query_mode_before": 255,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_top_is_byte_granular",
+    "initial_top_byte_offset": 3,
+    "final_top_byte_offset": 1,
+    "top_write_performed": true,
+    "query_mode_before": 127,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "top_wraps_below_zero",
+    "initial_top_byte_offset": 0,
+    "final_top_byte_offset": 65534,
+    "top_write_performed": true,
+    "query_mode_before": 128,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_top_wraps",
+    "initial_top_byte_offset": 1,
+    "final_top_byte_offset": 65535,
+    "top_write_performed": true,
+    "query_mode_before": 85,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_overflow",
+    "initial_top_byte_offset": 32768,
+    "final_top_byte_offset": 32766,
+    "top_write_performed": true,
+    "query_mode_before": 170,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "maximum_top",
+    "initial_top_byte_offset": 65535,
+    "final_top_byte_offset": 65533,
+    "top_write_performed": true,
+    "query_mode_before": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]
