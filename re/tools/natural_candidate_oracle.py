@@ -1140,6 +1140,117 @@ def mem_copy_words_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def flag_gated_copy_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x4000
+    render_segment = 0x6000
+    copy_size = 0x60 * 4
+    cases = [
+        ("clear_zero", 0x00),
+        ("clear_other_bits", 0xFE),
+        ("set_one", 0x01),
+        ("set_all_bits", 0xFF),
+    ]
+    source = bytes((index * 43 + 17) & 0xFF for index in range(copy_size))
+    destination = bytes((index * 19 + 7) & 0xFF for index in range(copy_size))
+    vectors = []
+
+    for name, state in cases:
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": render_segment,
+            "gs": state_segment,
+            "flags": 0x0293,
+        }
+        render_memory = bytearray(0x800)
+        render_memory[:] = bytes((index * 29 + 3) & 0xFF for index in range(0x800))
+        source_index = 0x5251 - 0x5200
+        destination_index = 0x5851 - 0x5200
+        render_memory[source_index : source_index + copy_size] = source
+        render_memory[destination_index : destination_index + copy_size] = destination
+        data_decoy = bytes((index * 7 + 5) & 0xFF for index in range(0x800))
+        state_decoy = bytes((index * 11 + 9) & 0xFF for index in range(0x800))
+
+        machine = execute(
+            0xA117,
+            0xA133,
+            initial,
+            [
+                (data_segment, 0x5200, data_decoy),
+                (state_segment, 0x2751, bytes([state])),
+                (state_segment, 0x5200, state_decoy),
+                (render_segment, 0x5200, bytes(render_memory)),
+            ],
+        )
+
+        expected_render = bytearray(render_memory)
+        copied = (state & 1) == 0
+        if copied:
+            expected_render[
+                destination_index : destination_index + copy_size
+            ] = source
+        actual_render = bytes(machine.mem_read(render_segment * 16 + 0x5200, 0x800))
+        if actual_render != bytes(expected_render):
+            raise AssertionError(f"0xA117 {name} produced unexpected ES memory")
+        if machine.mem_read(data_segment * 16 + 0x5200, 0x800) != data_decoy:
+            raise AssertionError(f"0xA117 {name} changed DS decoy memory")
+        if machine.mem_read(state_segment * 16 + 0x5200, 0x800) != state_decoy:
+            raise AssertionError(f"0xA117 {name} changed GS decoy memory")
+        actual_state = machine.mem_read(state_segment * 16 + 0x2751, 1)[0]
+        if actual_state != state:
+            raise AssertionError(f"0xA117 {name} changed the gate byte")
+
+        expected_registers = dict(initial)
+        if copied:
+            expected_registers["cx"] = 0
+            expected_registers["di"] = 0x5851 + copy_size
+        for register, value in expected_registers.items():
+            if register == "flags":
+                continue
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0xA117 {name} {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_zero = int((state & 1) == 0)
+        zero_flag = (flags >> 6) & 1
+        parity_flag = (flags >> 2) & 1
+        if zero_flag != expected_zero or parity_flag != expected_zero:
+            raise AssertionError(
+                f"0xA117 {name} ZF/PF={zero_flag}/{parity_flag}, "
+                f"expected={expected_zero}"
+            )
+        if flags & ((1 << 0) | (1 << 7) | (1 << 11)):
+            raise AssertionError(f"0xA117 {name} did not clear CF/SF/OF")
+        if flags & (1 << 9) != initial["flags"] & (1 << 9):
+            raise AssertionError(f"0xA117 {name} changed IF")
+
+        vectors.append(
+            {
+                "name": name,
+                "state": state,
+                "copied_384_bytes": copied,
+                "result_cx": expected_registers["cx"],
+                "result_di": expected_registers["di"],
+                "preserved_si": expected_registers["si"],
+                "preserved_ds": expected_registers["ds"],
+                "result_zero_flag": zero_flag,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1189,6 +1300,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a7e6_natural.json", mem_copy_words_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a117_natural.json", flag_gated_copy_vectors(), args.check
     )
     return 0
 

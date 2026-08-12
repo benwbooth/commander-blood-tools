@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: flag_gated_2751
-; label_comment: flag-gated routine: test byte gs:[0x2751],1; if set jump, else ds=es and continue. Branches on the 0x2751 state bit (a render/update enable flag)
+; label_comment: when GS:0x2751 bit 0 is clear, copy 384 bytes from caller ES:0x5251 to ES:0x5851 with REP MOVSD; DS/SI are restored, CX/DI remain advanced
 ; byte_count: 29
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1

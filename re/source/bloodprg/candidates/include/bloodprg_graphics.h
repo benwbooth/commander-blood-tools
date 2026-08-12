@@ -9,8 +9,8 @@ extern volatile cb_u8 live_palette[768]; /* DS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
 extern volatile cb_u8 CB_FAR *graphics_display_buffer; /* GS:0x5221 */
 extern volatile cb_u8 CB_FAR *graphics_back_buffer; /* GS:0x5229 */
-extern volatile cb_u32 render_state_5251_dwords[]; /* GS:0x5251 */
-extern volatile cb_u32 render_state_5851_dwords[]; /* GS:0x5851 */
+extern cb_u32 render_state_5251_dwords[]; /* caller ES:0x5251 */
+extern cb_u32 render_state_5851_dwords[]; /* caller ES:0x5851 */
 extern volatile cb_u16 graphics_band_top_row; /* GS:0x5239 */
 extern volatile cb_u16 graphics_band_bottom_row; /* GS:0x523B */
 extern const cb_u8 square_caps_character_map[]; /* GS:0x7362 */
@@ -37,5 +37,6 @@ void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
         int use_main_font); /* 0x0030CD */
 void CB_NEAR selected_mask_overlay(void); /* 0x007CB4 */
+void CB_NEAR flag_gated_2751(void);       /* 0x00A117 */
 
 #endif

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "clear_zero",
+    "state": 0,
+    "copied_384_bytes": true,
+    "result_cx": 0,
+    "result_di": 22993,
+    "preserved_si": 21845,
+    "preserved_ds": 8192,
+    "result_zero_flag": 1
+  },
+  {
+    "name": "clear_other_bits",
+    "state": 254,
+    "copied_384_bytes": true,
+    "result_cx": 0,
+    "result_di": 22993,
+    "preserved_si": 21845,
+    "preserved_ds": 8192,
+    "result_zero_flag": 1
+  },
+  {
+    "name": "set_one",
+    "state": 1,
+    "copied_384_bytes": false,
+    "result_cx": 13107,
+    "result_di": 26214,
+    "preserved_si": 21845,
+    "preserved_ds": 8192,
+    "result_zero_flag": 0
+  },
+  {
+    "name": "set_all_bits",
+    "state": 255,
+    "copied_384_bytes": false,
+    "result_cx": 13107,
+    "result_di": 26214,
+    "preserved_si": 21845,
+    "preserved_ds": 8192,
+    "result_zero_flag": 0
+  }
+]

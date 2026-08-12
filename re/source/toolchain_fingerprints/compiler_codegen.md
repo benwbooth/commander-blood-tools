@@ -87,6 +87,21 @@ respectively, versus the original 26, and do not reproduce its compact
 LODSW/XCHG/shift-until-zero/LOOP form or register effects. The natural source is
 therefore behaviorally verified but remains a codegen mismatch.
 
+For `0x00A117`, four direct-execution cases confirm the GS bit-0 gate and the
+exact 384-byte copy from caller ES:0x5251 to ES:0x5851 under the C ABI's clear
+direction flag. Separate DS and GS decoy buffers prove the copy is ES-local.
+The cases also verify restored DS/SI, copied-path CX=0 and DI=0x59D1, the other
+preserved registers and segments, and the final TEST flags. Open Watcom 1.9
+medium recognizes a fixed 384-byte aggregate assignment as an inline string
+copy. Its size-optimized 386 build emits guarded `REP MOVSW` in 25 bytes and
+uses `PUSH DS` / `POP ES`. Its 27-byte speed build has the exact original
+13-mnemonic sequence, but with different operands: it saves ES, sets ES through
+AX, copies 192 words, and restores CX/DI. The original is 29 bytes and instead
+temporarily sets DS from the caller's ES, uses 96 iterations of `REP MOVSD`,
+preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
+`SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
+and register ABI boundary, not an exact compiler match.
+
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
 results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,
