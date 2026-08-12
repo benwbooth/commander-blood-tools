@@ -479,6 +479,23 @@ into DS. The original also receives its already-computed rectangle in
 AX/BX/DX/BP and uses register-shaped row loops, while the natural function
 derives that context from the typed slot.
 
+RLE-transparent blitter `0x0046BC` has ten direct framebuffer vectors. They
+prove direct-copy and both destination-remap tables including selector 3, zero
+repeat/literal transparency, repeat and literal runs independently crossing
+either clip boundary, complete encoded-row skipping in both vertical directions,
+ordinary and noncanonical flips, the post-skip `[SI-4]` x-origin reload, CS and
+remap scratch, source/framebuffer ownership, and complete register preservation.
+The vectors remain within the same one-token clip-span contract as mode 3.
+
+Open Watcom compiles the actual `0x0046BC` candidate without warnings; `-3 -ox
+-mm` emits 673 bytes versus 1260 original. Standalone 8086/286/386 probes emit
+257/249/244 instructions and 679/665/673 bytes versus 603/1260, while Turbo C
+2.01 emits 297 instructions. The natural function shares one streaming decoder
+and one optional-remap write loop. The binary instead duplicates leading skip,
+visible decode, trailing skip, and row traversal across direct/remapped and
+forward/reverse paths, using `XLATB`, `REP STOSB`, and scalar direction-specific
+copies.
+
 Raw-opaque blitter `0x004BA8` has ten direct framebuffer vectors over the
 same clipping geometry. They prove that source zeroes overwrite the destination,
 high-byte remap selectors leave `GS:0x524B` unchanged, and the forward path's

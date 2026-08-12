@@ -2163,7 +2163,9 @@ def sprite_blit_raw_opaque_vectors() -> list[dict[str, object]]:
     return _sprite_blit_raw_vectors(0x4BA8, 0x4CD5, opaque=True)
 
 
-def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
+def _sprite_blit_rle_vectors(
+    entry: int, stop: int, opaque: bool
+) -> list[dict[str, object]]:
     state_segment = 0x2600
     frame_segment = 0x3200
     frame_offset = 0x0200
@@ -2172,8 +2174,12 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
     initial_selected_remap = 0x7777
     cases = [
         {
-            "name": "mixed_runs_copy_zero_opaquely",
-            "flags": 0x0301,
+            "name": (
+                "mixed_runs_copy_zero_opaquely"
+                if opaque
+                else "mixed_runs_skip_zero_directly"
+            ),
+            "flags": 0x0301 if opaque else 0x0001,
             "flip_x": 0,
             "flip_y": 0,
             "draw": [5, 6],
@@ -2395,7 +2401,9 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
                     decoded.extend(encoded[position : position + run_length])
                     position += run_length
             if len(decoded) != stride:
-                raise AssertionError(f"0x4cd6 {name}: malformed generated row")
+                raise AssertionError(
+                    f"{entry:#06x} {name}: malformed generated row"
+                )
             return bytes(decoded), position
 
         slot_id = 13 + case_index
@@ -2415,6 +2423,21 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
             for index in range(64000)
         )
         expected_framebuffer = bytearray(framebuffer)
+        remap_5f11 = bytes((255 - index) & 0xFF for index in range(256))
+        remap_6011 = bytes((index * 3 + 11) & 0xFF for index in range(256))
+        remap_mode = (flags >> 8) & 3
+        if opaque:
+            expected_remap_offset = initial_selected_remap
+            remap_table = None
+        elif remap_mode == 0:
+            expected_remap_offset = 0
+            remap_table = None
+        elif remap_mode == 1:
+            expected_remap_offset = 0x5F11
+            remap_table = remap_5f11
+        else:
+            expected_remap_offset = 0x6011
+            remap_table = remap_6011
 
         sprite_top = signed_word(draw_y + y_offset)
         sprite_right = signed_word(draw_x + extent_width + x_offset)
@@ -2474,10 +2497,17 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
             )
             for source_pixel in selected:
                 before = expected_framebuffer[destination_cursor]
-                expected_framebuffer[destination_cursor] = source_pixel
-                changed_pixels.append(
-                    [destination_cursor, before, source_pixel]
-                )
+                if opaque or source_pixel != 0:
+                    after = (
+                        source_pixel
+                        if opaque or remap_table is None
+                        else remap_table[before]
+                    )
+                    expected_framebuffer[destination_cursor] = after
+                    change = [destination_cursor, before, source_pixel]
+                    if not opaque:
+                        change.append(after)
+                    changed_pixels.append(change)
                 destination_cursor = (
                     destination_cursor + (-1 if flip_x != 0 else 1)
                 ) & 0xFFFF
@@ -2500,8 +2530,8 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
         initial_scratch = bytes.fromhex("a1b2c3d4e5f6")
         try:
             machine = execute(
-                0x4CD6,
-                0x4F61,
+                entry,
+                stop,
                 initial,
                 [
                     (state_segment, record_offset, bytes(record)),
@@ -2518,6 +2548,8 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
                         0x524B,
                         struct.pack("<H", initial_selected_remap),
                     ),
+                    (state_segment, 0x5F11, remap_5f11),
+                    (state_segment, 0x6011, remap_6011),
                     (0, 0x14DF, bytes([flip_x, flip_y])),
                     (0, 0x1726, initial_scratch),
                     (
@@ -2528,7 +2560,7 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
                 ],
             )
         except RuntimeError as error:
-            raise RuntimeError(f"0x4cd6 {name}: {error}") from error
+            raise RuntimeError(f"{entry:#06x} {name}: {error}") from error
 
         actual_framebuffer = bytes(
             machine.mem_read(
@@ -2544,7 +2576,7 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
                 if actual != expected
             )
             raise AssertionError(
-                f"0x4cd6 {name}: framebuffer[{mismatch:#x}]="
+                f"{entry:#06x} {name}: framebuffer[{mismatch:#x}]="
                 f"{actual_framebuffer[mismatch]:#x}, "
                 f"expected={expected_framebuffer[mismatch]:#x}"
             )
@@ -2552,49 +2584,69 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
         expected_scratch = struct.pack("<HHH", stride, left_clip, right_clip)
         if actual_scratch != expected_scratch:
             raise AssertionError(
-                f"0x4cd6 {name}: scratch={actual_scratch.hex()}, "
+                f"{entry:#06x} {name}: scratch={actual_scratch.hex()}, "
                 f"expected={expected_scratch.hex()}"
             )
         actual_remap = struct.unpack(
             "<H", machine.mem_read(state_segment * 16 + 0x524B, 2)
         )[0]
-        if actual_remap != initial_selected_remap:
-            raise AssertionError(f"0x4cd6 {name}: changed remap scratch")
+        if actual_remap != expected_remap_offset:
+            raise AssertionError(
+                f"{entry:#06x} {name}: remap={actual_remap:#x}, "
+                f"expected={expected_remap_offset:#x}"
+            )
+        if bytes(
+            machine.mem_read(state_segment * 16 + 0x5F11, 256)
+        ) != remap_5f11:
+            raise AssertionError(f"{entry:#06x} {name}: changed first remap table")
+        if bytes(
+            machine.mem_read(state_segment * 16 + 0x6011, 256)
+        ) != remap_6011:
+            raise AssertionError(f"{entry:#06x} {name}: changed second remap table")
         if bytes(machine.mem_read(state_segment * 16 + record_offset, 32)) != bytes(
             record
         ):
-            raise AssertionError(f"0x4cd6 {name}: slot record changed")
+            raise AssertionError(f"{entry:#06x} {name}: slot record changed")
         if bytes(
             machine.mem_read(frame_segment * 16 + frame_offset, len(frame))
         ) != frame:
-            raise AssertionError(f"0x4cd6 {name}: source frame changed")
+            raise AssertionError(f"{entry:#06x} {name}: source frame changed")
         for register, value in initial.items():
             actual_register = machine.reg_read(REGISTERS[register])
             if actual_register != value:
-                raise AssertionError(f"0x4cd6 {name}: changed {register}")
+                raise AssertionError(f"{entry:#06x} {name}: changed {register}")
 
-        vectors.append(
-            {
-                "name": name,
-                "flags": flags,
-                "flip_bytes": [flip_x, flip_y],
-                "draw": [draw_x, draw_y],
-                "extent": [extent_width, extent_height],
-                "frame_origin_offset": [x_offset, y_offset],
-                "dirty_rect": dirty,
-                "row_kind": case["row_kind"],
-                "encoded_bytes": len(encoded),
-                "skipped_rows": skipped_rows,
-                "cursor_x_offset": cursor_x_offset,
-                "clipped_extent": [draw_width, draw_height],
-                "source_clips": [left_clip, right_clip],
-                "destination_start": [destination_x, destination_y],
-                "rendered_rows": rendered_rows,
-                "changed_pixels": changed_pixels,
-            }
-        )
+        vector = {
+            "name": name,
+            "flags": flags,
+            "flip_bytes": [flip_x, flip_y],
+            "draw": [draw_x, draw_y],
+            "extent": [extent_width, extent_height],
+            "frame_origin_offset": [x_offset, y_offset],
+            "dirty_rect": dirty,
+            "row_kind": case["row_kind"],
+            "encoded_bytes": len(encoded),
+            "skipped_rows": skipped_rows,
+            "cursor_x_offset": cursor_x_offset,
+            "clipped_extent": [draw_width, draw_height],
+            "source_clips": [left_clip, right_clip],
+            "destination_start": [destination_x, destination_y],
+            "rendered_rows": rendered_rows,
+            "changed_pixels": changed_pixels,
+        }
+        if not opaque:
+            vector["selected_remap_offset"] = expected_remap_offset
+        vectors.append(vector)
 
     return vectors
+
+
+def sprite_blit_rle_transparent_vectors() -> list[dict[str, object]]:
+    return _sprite_blit_rle_vectors(0x46BC, 0x4BA7, opaque=False)
+
+
+def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
+    return _sprite_blit_rle_vectors(0x4CD6, 0x4F61, opaque=True)
 
 
 def sprite_blit_scaled_transparent_vectors() -> list[dict[str, object]]:
@@ -7398,6 +7450,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_4536_natural.json",
         sprite_blit_raw_transparent_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_46bc_natural.json",
+        sprite_blit_rle_transparent_vectors(),
         args.check,
     )
     update_vector(

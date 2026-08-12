@@ -2107,7 +2107,13 @@ Named targets that are already tied to code behavior:
     dependency: vertical clipping advances `SI` before the later horizontal
     x-origin reload from `[SI+4]`.
   - mode 1 -> `0x0299:0x172C` (`sprite_blit_rle_transparent`): RLE
-    transparent blit with the same zero-skip/remap semantics as mode 0.
+    transparent blit with the same zero-skip/remap semantics as mode 0. Ten
+    direct vectors prove zero repeat/literal skips, direct copies, both remap
+    tables including selector 3, every clip boundary, complete encoded-row
+    skipping, ordinary/noncanonical flips, CS/remap scratch, and the mutable
+    post-skip x-origin. The natural C shares one streaming decoder; Watcom
+    `-3 -ox -mm` emits 673 bytes versus the original 1260-byte four-way
+    direct/remapped and forward/reverse specialization.
   - mode 2 -> `0x0299:0x1C18` (`sprite_blit_raw_opaque`): uncompressed opaque
     copy with no zero transparency or remap. Ten direct vectors prove that
     source zeroes overwrite the destination, all three forward width classes
