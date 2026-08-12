@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph
 ; label: ship_3d_plot_point
-; label_comment: Point-cloud PLOT. Signed clip against DS:0x5235/0x5237 (x) and DS:0x5239/0x523B (y) with JL/JGE. Address = y*320 built as XCHG BH,BL (y*256) + SHL DI,6 (y*64), then + x. OCCLUSION: MOV AL,es:[di] / OR AL,AL / JNE -- a point is written ONLY where the pixel is still zero, so nearer points drawn first win. Shade = 0xEF - (depth >> 12) via SHR AX,0xC / NEG AL / ADD AL,0xEF. Ported exactly as ship3d.rs plot_ship_3d_projected_point + ship_3d_projected_point_shade/offset || ALSO RECORDED as `ship_3d_projected_point_plot`: clips projected point against DS:0x5235..0x523B and writes depth shade into ES framebuffer if empty || MERGED 2026-07-25 (#186): one address, several names, folded by union.
+; label_comment: plot SS:BP projection fields +0x24/+0x26/+0x28 into the zero-offset ES framebuffer after signed DS:0x5235..0x523b clipping; the byte-swapped-y formula is y*320 for shipped rows 0..199, occupied pixels win, and depth shades are 0xef-(depth>>12)
 ; byte_count: 68
 ; boundary: cfg_blocks_7_terminals_1
 ; terminal: ret:1

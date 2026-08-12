@@ -1,6 +1,7 @@
 #include "../include/bloodprg_ship3d.h"
 
-void CB_NEAR ship_3d_plot_point(volatile ship_3d_projection_context *projection,
+void CB_NEAR ship_3d_plot_point(
+        const volatile ship_3d_projection_context CB_GAME_DATA *projection,
         volatile cb_u8 CB_FAR *framebuffer)
 {
     cb_i16 x;

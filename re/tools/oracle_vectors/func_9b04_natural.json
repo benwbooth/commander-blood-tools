@@ -1,0 +1,365 @@
+[
+  {
+    "name": "x_below_left",
+    "x": -1,
+    "y": 50,
+    "depth": 0,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "x_low",
+    "machine_offset": null,
+    "natural_offset": null,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "x_at_left",
+    "x": 0,
+    "y": 50,
+    "depth": 0,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "draw",
+    "machine_offset": 16000,
+    "natural_offset": 16000,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 239,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "x_at_right_minus_one",
+    "x": 319,
+    "y": 199,
+    "depth": 65535,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "draw",
+    "machine_offset": 63999,
+    "natural_offset": 63999,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 224,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "x_at_right",
+    "x": 320,
+    "y": 50,
+    "depth": 4096,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "x_high",
+    "machine_offset": null,
+    "natural_offset": null,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "y_below_top",
+    "x": 100,
+    "y": 34,
+    "depth": 8192,
+    "clip": [
+      0,
+      320,
+      35,
+      165
+    ],
+    "outcome": "y_low",
+    "machine_offset": null,
+    "natural_offset": null,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "y_at_top",
+    "x": 100,
+    "y": 35,
+    "depth": 12288,
+    "clip": [
+      0,
+      320,
+      35,
+      165
+    ],
+    "outcome": "draw",
+    "machine_offset": 11300,
+    "natural_offset": 11300,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 236,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "y_at_bottom_minus_one",
+    "x": 200,
+    "y": 164,
+    "depth": 28672,
+    "clip": [
+      0,
+      320,
+      35,
+      165
+    ],
+    "outcome": "draw",
+    "machine_offset": 52680,
+    "natural_offset": 52680,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 232,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "y_at_bottom",
+    "x": 200,
+    "y": 165,
+    "depth": 32768,
+    "clip": [
+      0,
+      320,
+      35,
+      165
+    ],
+    "outcome": "y_high",
+    "machine_offset": null,
+    "natural_offset": null,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "occupied_pixel",
+    "x": 160,
+    "y": 100,
+    "depth": 36864,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "occupied",
+    "machine_offset": 32160,
+    "natural_offset": 32160,
+    "natural_offset_matches": true,
+    "pixel_before": 90,
+    "pixel_after": 90,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "depth_one",
+    "x": 17,
+    "y": 23,
+    "depth": 4096,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "draw",
+    "machine_offset": 7377,
+    "natural_offset": 7377,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 238,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "depth_fifteen",
+    "x": 18,
+    "y": 24,
+    "depth": 64188,
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "outcome": "draw",
+    "machine_offset": 7698,
+    "natural_offset": 7698,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 224,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_x_wrap",
+    "x": -1,
+    "y": 0,
+    "depth": 16384,
+    "clip": [
+      -2,
+      2,
+      0,
+      1
+    ],
+    "outcome": "draw",
+    "machine_offset": 65535,
+    "natural_offset": 65535,
+    "natural_offset_matches": true,
+    "pixel_before": 0,
+    "pixel_after": 235,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "high_row_formula",
+    "x": 0,
+    "y": 256,
+    "depth": 20480,
+    "clip": [
+      0,
+      1,
+      0,
+      300
+    ],
+    "outcome": "draw",
+    "machine_offset": 16385,
+    "natural_offset": 16384,
+    "natural_offset_matches": false,
+    "pixel_before": 0,
+    "pixel_after": 234,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_row_formula",
+    "x": 0,
+    "y": -1,
+    "depth": 24576,
+    "clip": [
+      0,
+      1,
+      -2,
+      1
+    ],
+    "outcome": "draw",
+    "machine_offset": 65471,
+    "natural_offset": 65216,
+    "natural_offset_matches": false,
+    "pixel_before": 0,
+    "pixel_after": 233,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

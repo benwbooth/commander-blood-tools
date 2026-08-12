@@ -1612,6 +1612,25 @@ Watcom calls `__I4M` and implements each arithmetic shift as a 15-iteration
 the C declaration exposes those clobbers for a full rebuild; a drop-in binary
 replacement would still require a narrow preservation boundary.
 
+Point plotter `0x009B04` reads projected x/y/depth through SS:BP, compares
+against signed DS clip bounds, and addresses a normalized ES framebuffer. Its
+row calculation byte-swaps the y word to obtain y*256 and adds y*64+x. Fourteen
+direct vectors cover both sides of all four clip edges, occupied-pixel
+rejection, depth nibbles 0/1/15, 16-bit offset wrap, every path's defined flags,
+segment isolation, full preservation, and near return. Deliberately admitted
+rows -1 and 256 prove the machine formula differs from natural y*320 there;
+the live-verified game viewport [0,320]x[0,200] keeps every shipped row in the
+equivalent 0..255 domain.
+
+Open Watcom `-3 -ox -mm` compiles the game-data context plus far-framebuffer
+candidate without warnings to 39 instructions/98 bytes versus 30/68 original;
+Turbo C 2.01 medium emits 54 instructions. Watcom performs the same signed
+clipping, zero test, offset, and shade but takes the context in AX and the far
+framebuffer in CX:BX, switches ES between both based objects, and accounts for
+the framebuffer's offset. The original's implicit BP context, segment-only ES
+framebuffer, and preserve-all boundary remain integration constraints rather
+than register emulation in the C source.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1683,6 +1702,7 @@ LCS and then mnemonic similarity:
 | `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
 | `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
 | `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
+| `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

@@ -17575,6 +17575,248 @@ def ship_3d_projection_matrix_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_plot_point_vectors() -> list[dict[str, object]]:
+    entry = 0x9B04
+    expected_hash = "ac19f28f8de11959599f3709ac9a949cf4c83428d206d71a312b3cba58fd68a2"
+    if hashlib.sha256(EXE[entry : entry + 68]).hexdigest() != expected_hash:
+        raise AssertionError("0x9b04: recovered 68-byte body changed")
+
+    cases = [
+        ("x_below_left", -1, 50, 0x0000, (0, 320, 0, 200), 0, "x_low"),
+        ("x_at_left", 0, 50, 0x0000, (0, 320, 0, 200), 0, "draw"),
+        ("x_at_right_minus_one", 319, 199, 0xFFFF, (0, 320, 0, 200), 0, "draw"),
+        ("x_at_right", 320, 50, 0x1000, (0, 320, 0, 200), 0, "x_high"),
+        ("y_below_top", 100, 34, 0x2000, (0, 320, 35, 165), 0, "y_low"),
+        ("y_at_top", 100, 35, 0x3000, (0, 320, 35, 165), 0, "draw"),
+        ("y_at_bottom_minus_one", 200, 164, 0x7000, (0, 320, 35, 165), 0, "draw"),
+        ("y_at_bottom", 200, 165, 0x8000, (0, 320, 35, 165), 0, "y_high"),
+        ("occupied_pixel", 160, 100, 0x9000, (0, 320, 0, 200), 0x5A, "occupied"),
+        ("depth_one", 17, 23, 0x1000, (0, 320, 0, 200), 0, "draw"),
+        ("depth_fifteen", 18, 24, 0xFABC, (0, 320, 0, 200), 0, "draw"),
+        ("negative_x_wrap", -1, 0, 0x4000, (-2, 2, 0, 1), 0, "draw"),
+        ("high_row_formula", 0, 256, 0x5000, (0, 1, 0, 300), 0, "draw"),
+        ("negative_row_formula", 0, -1, 0x6000, (0, 1, -2, 1), 0, "draw"),
+    ]
+    data_segment = 0x4000
+    game_segment = 0x2C00
+    stack_segment = 0x6800
+    framebuffer_segment = 0xA000
+    return_address = 0x6F00
+    vectors = []
+
+    def compare_flags(lhs: int, rhs: int) -> dict[str, bool]:
+        lhs &= 0xFFFF
+        rhs &= 0xFFFF
+        result = (lhs - rhs) & 0xFFFF
+        return {
+            "cf": lhs < rhs,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": bool((lhs ^ rhs ^ result) & 0x10),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((lhs ^ rhs) & (lhs ^ result)) & 0x8000),
+        }
+
+    for name, x, y, depth, clip, pixel_before, outcome in cases:
+        left, right, top, bottom = clip
+        x_word = x & 0xFFFF
+        y_word = y & 0xFFFF
+        swapped_y = ((y_word & 0xFF) << 8) | (y_word >> 8)
+        machine_offset = (((y_word << 6) & 0xFFFF) + swapped_y + x_word) & 0xFFFF
+        natural_offset = (y_word * 320 + x_word) & 0xFFFF
+        framebuffer_before = bytearray(
+            (0x31 + index * 29) & 0xFF for index in range(0x10000)
+        )
+        framebuffer_before[machine_offset] = pixel_before
+        framebuffer_expected = bytearray(framebuffer_before)
+        shade = (0xEF - (depth >> 12)) & 0xFF
+        if outcome == "draw":
+            framebuffer_expected[machine_offset] = shade
+
+        context = bytes((0xA5 + index * 7) & 0xFF for index in range(36))
+        context += struct.pack("<HHH", x_word, y_word, depth)
+        context_decoy = bytes((0x59 + index * 11) & 0xFF for index in range(42))
+        clip_words = struct.pack(
+            "<HHHH", left & 0xFFFF, right & 0xFFFF, top & 0xFFFF, bottom & 0xFFFF
+        )
+        clip_decoy = bytes.fromhex("5aa596698778c33c")
+        stack_sentinel = bytes.fromhex("69965aa5c33c")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97972F95,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": framebuffer_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x9B30:
+                phases.append(
+                    {
+                        "address": address,
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == 0x9B41:
+                phases.append(
+                    {
+                        "address": address,
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "al": machine.reg_read(UC_X86_REG_AX) & 0xFF,
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == 0x9B44:
+                phases.append({"address": address})
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (stack_segment, 0x2F95, context),
+                (data_segment, 0x2F95, context_decoy),
+                (game_segment, 0x2F95, context_decoy[::-1]),
+                (data_segment, 0x5235, clip_words),
+                (game_segment, 0x5235, clip_decoy),
+                (stack_segment, 0x5235, clip_decoy[::-1]),
+                (framebuffer_segment, 0, bytes(framebuffer_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if outcome in ("draw", "occupied"):
+            expected_phases = [
+                {
+                    "address": 0x9B30,
+                    "di": machine_offset,
+                    "es": framebuffer_segment,
+                }
+            ]
+            if outcome == "draw":
+                expected_phases.append(
+                    {
+                        "address": 0x9B41,
+                        "di": machine_offset,
+                        "al": shade,
+                        "es": framebuffer_segment,
+                    }
+                )
+            expected_phases.append({"address": 0x9B44})
+        else:
+            expected_phases = [{"address": 0x9B44}]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x9b04 {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        framebuffer_after = bytes(
+            machine.mem_read(framebuffer_segment * 16, len(framebuffer_expected))
+        )
+        if framebuffer_after != framebuffer_expected:
+            raise AssertionError(f"0x9b04 {name}: framebuffer mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x2F95, 42)) != context:
+            raise AssertionError(f"0x9b04 {name}: SS context changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x2F95, 42)) != context_decoy:
+            raise AssertionError(f"0x9b04 {name}: DS context decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x2F95, 42)) != context_decoy[::-1]:
+            raise AssertionError(f"0x9b04 {name}: GS context decoy changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5235, 8)) != clip_words:
+            raise AssertionError(f"0x9b04 {name}: DS clip changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5235, 8)) != clip_decoy:
+            raise AssertionError(f"0x9b04 {name}: GS clip decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x5235, 8)) != clip_decoy[::-1]:
+            raise AssertionError(f"0x9b04 {name}: SS clip decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9b04 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9b04 {name}: near return changed CS")
+
+        if outcome == "x_low":
+            expected_flags = compare_flags(x_word, left)
+        elif outcome == "x_high":
+            expected_flags = compare_flags(x_word, right)
+        elif outcome == "y_low":
+            expected_flags = compare_flags(y_word, top)
+        elif outcome == "y_high":
+            expected_flags = compare_flags(y_word, bottom)
+        elif outcome == "occupied":
+            expected_flags = {
+                "cf": False,
+                "pf": pixel_before.bit_count() % 2 == 0,
+                "zf": False,
+                "sf": bool(pixel_before & 0x80),
+                "of": False,
+            }
+        else:
+            add_lhs = (-((depth >> 12) & 0xFF)) & 0xFF
+            expected_flags = {
+                "cf": add_lhs + 0xEF > 0xFF,
+                "pf": shade.bit_count() % 2 == 0,
+                "af": bool((add_lhs ^ 0xEF ^ shade) & 0x10),
+                "zf": shade == 0,
+                "sf": bool(shade & 0x80),
+                "of": False,
+            }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask)
+            for flag, mask in masks.items()
+            if flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9b04 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x9b04 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "x": x,
+                "y": y,
+                "depth": depth,
+                "clip": list(clip),
+                "outcome": outcome,
+                "machine_offset": machine_offset if outcome in ("draw", "occupied") else None,
+                "natural_offset": natural_offset if outcome in ("draw", "occupied") else None,
+                "natural_offset_matches": machine_offset == natural_offset,
+                "pixel_before": pixel_before,
+                "pixel_after": framebuffer_after[machine_offset],
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -23403,6 +23645,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_98b9_natural.json",
         ship_3d_projection_matrix_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9b04_natural.json",
+        ship_3d_plot_point_vectors(),
         args.check,
     )
     update_vector(
