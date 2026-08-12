@@ -1,0 +1,32 @@
+[
+  {
+    "saved_mode": 0,
+    "interrupt": 16,
+    "interrupt_ax": 0,
+    "restored_ax": 4660
+  },
+  {
+    "saved_mode": 3,
+    "interrupt": 16,
+    "interrupt_ax": 3,
+    "restored_ax": 4660
+  },
+  {
+    "saved_mode": 19,
+    "interrupt": 16,
+    "interrupt_ax": 19,
+    "restored_ax": 4660
+  },
+  {
+    "saved_mode": 127,
+    "interrupt": 16,
+    "interrupt_ax": 127,
+    "restored_ax": 4660
+  },
+  {
+    "saved_mode": 255,
+    "interrupt": 16,
+    "interrupt_ax": 255,
+    "restored_ax": 4660
+  }
+]

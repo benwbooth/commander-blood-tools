@@ -362,6 +362,28 @@ and 25 bytes in the complete original span. The close size does not make the
 code drop-in: the natural form materializes a Boolean instead of performing a
 nonlocal stack unwind.
 
+For the four hardware leaves at `0x000CC0`, `0x002DD3`, `0x002F90`, and
+`0x002FA6`, 19 direct-execution vectors now hook the actual `INT`, `IN`, and
+`OUT` instructions. They verify the saved video-mode BIOS argument, every CMOS
+transaction and duplicated-byte store, the complete 768-byte palette stream
+including a 64 KiB SI wrap, all 768 DAC-clear writes, and the recovered
+register boundaries. The candidates use normal DOS `int86`, `inportb`, and
+`outportb` facilities rather than modeled registers or memory.
+
+Open Watcom 1.9 targeting 8086 medium model compiles the four actual candidate
+files without warnings at 38, 25, 30, and 23 bytes, versus 11, 15, 22, and 21
+bytes in the original routines. A source-level pragma gives the palette writer
+its recovered DS:SI argument, but natural indexed C remains an 18-instruction
+scalar loop rather than `REP OUTSB`. The DAC clear reaches the original
+14-instruction count in both Watcom and Turbo C 2.01, but both choose BX plus
+`DEC/JNE`, reload port 0x3C9, and clobber AX instead of preserving AX/CX/DX
+around a CX plus `LOOP` body. The RTC candidate inlines real port operations,
+but Watcom uses DX-selected ports, DS storage, and 13 instructions instead of
+the immediate-port, CS-store 8-instruction original. Both compilers lower the
+natural `int86` video-mode call to 17 instructions instead of the original six
+with a direct `INT 10h`. These are behaviorally verified natural functions with
+explicit compiler and hardware ABI boundaries, not accepted drop-in bodies.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

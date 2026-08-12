@@ -2,6 +2,7 @@
 #define BLOODPRG_GRAPHICS_H
 
 #include "bloodprg_common.h"
+#include "bloodprg_hardware.h"
 
 extern volatile cb_u8 CB_FAR *graphics_work_surface; /* GS:0x0ABC */
 extern volatile cb_u8 palette_dirty; /* game data:0x5B55 */
@@ -39,7 +40,6 @@ void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
 void CB_FAR blit_coord_guard_c(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0CDC */
 void CB_FAR video_retrace_wait(void); /* 0x0000:0x05D7 */
-void CB_FAR vga_palette_write(const volatile cb_u8 *palette); /* 0x0299:0x0000 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
         int use_main_font); /* 0x0030CD */

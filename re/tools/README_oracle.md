@@ -8,6 +8,13 @@ those committed vectors directly against `BLOODPRG.EXE` with:
 nix develop -c python3 re/tools/natural_candidate_oracle.py --check
 ```
 
+The natural-candidate oracle also hooks x86 `IN`, `OUT`, and software
+interrupt instructions directly. Current hardware-leaf vectors cover the
+saved video-mode BIOS call (`0x000CC0`), CMOS seconds read (`0x002DD3`),
+768-byte VGA palette upload (`0x002F90`), and 768-byte VGA DAC clear
+(`0x002FA6`). These cases verify exact port order and values as well as the
+routine's register and memory boundary.
+
 Run a single DOS function from BLOODPRG.EXE in isolation on a scriptable 8086 core
 (Unicorn Engine), capture its **return value + memory side effects + I/O**, and diff
 against the Rust port. This is the gold-standard per-function verification.

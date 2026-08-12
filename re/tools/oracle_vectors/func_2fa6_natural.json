@@ -1,0 +1,26 @@
+[
+  {
+    "initial_eax": 2779058740,
+    "initial_cx": 13980,
+    "initial_dx": 21930,
+    "write_count": 769,
+    "zero_data_writes": 768,
+    "preserved_eax": 2779058740
+  },
+  {
+    "initial_eax": 1515913215,
+    "initial_cx": 0,
+    "initial_dx": 968,
+    "write_count": 769,
+    "zero_data_writes": 768,
+    "preserved_eax": 1515913215
+  },
+  {
+    "initial_eax": 305397760,
+    "initial_cx": 65535,
+    "initial_dx": 969,
+    "write_count": 769,
+    "zero_data_writes": 768,
+    "preserved_eax": 305397760
+  }
+]

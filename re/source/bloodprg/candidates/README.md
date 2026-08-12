@@ -10,6 +10,9 @@ Candidate rules:
 - Use named globals, data declarations, and calls.
 - Do not model CPU registers, flags, segments, or byte-addressed machine memory
   as C objects.
+- DOS compiler intrinsics such as `inportb`, `outportb`, and `int86` are allowed
+  when the recovered routine directly performs that hardware or BIOS operation.
+  They express the target platform rather than simulate it.
 - Keep register/carry-return routines pending until their ABI can be expressed
   naturally or isolated behind a small assembly boundary.
 - Promote a candidate only after a candidate DOS compiler emits a close assembly

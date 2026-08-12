@@ -1,0 +1,146 @@
+[
+  {
+    "seconds": 0,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 0,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 1,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 257,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 9,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 2313,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 16,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 4112,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 89,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 22873,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 128,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 32896,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 254,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 65278,
+    "preserved_eax": 2779058740
+  },
+  {
+    "seconds": 255,
+    "port_writes": [
+      [
+        112,
+        1,
+        0
+      ]
+    ],
+    "port_reads": [
+      [
+        113,
+        1
+      ]
+    ],
+    "stored_word": 65535,
+    "preserved_eax": 2779058740
+  }
+]

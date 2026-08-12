@@ -12,13 +12,23 @@ sys.path[:] = [
 ]
 
 import argparse
+import hashlib
 import json
 import struct
 from collections.abc import Callable
 from pathlib import Path
 
-from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_MODE_16, Uc
+from unicorn import (
+    UC_ARCH_X86,
+    UC_HOOK_CODE,
+    UC_HOOK_INSN,
+    UC_HOOK_INTR,
+    UC_MODE_16,
+    Uc,
+)
 from unicorn.x86_const import (
+    UC_X86_INS_IN,
+    UC_X86_INS_OUT,
     UC_X86_REG_AX,
     UC_X86_REG_BP,
     UC_X86_REG_BX,
@@ -65,6 +75,8 @@ def execute(
     memory: list[tuple[int, int, bytes]],
     interrupt_handler: Callable[[Uc, int], None] | None = None,
     code_handler: Callable[[Uc, int, int], None] | None = None,
+    input_handler: Callable[[Uc, int, int], int] | None = None,
+    output_handler: Callable[[Uc, int, int, int], None] | None = None,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -96,12 +108,268 @@ def execute(
             interrupt_handler(machine, number)
 
         machine.hook_add(UC_HOOK_INTR, handle_interrupt)
+    if input_handler is not None:
+
+        def handle_input(
+            machine: Uc, port: int, size: int, _data: object
+        ) -> int:
+            return input_handler(machine, port, size)
+
+        machine.hook_add(
+            UC_HOOK_INSN, handle_input, None, 1, 0, UC_X86_INS_IN
+        )
+    if output_handler is not None:
+
+        def handle_output(
+            machine: Uc, port: int, size: int, value: int, _data: object
+        ) -> None:
+            output_handler(machine, port, size, value)
+
+        machine.hook_add(
+            UC_HOOK_INSN, handle_output, None, 1, 0, UC_X86_INS_OUT
+        )
     # The stop address is a global execution boundary in Unicorn, so it cannot
     # be the routine's RET when a nested call targets a higher address.
     machine.emu_start(entry, 0x2ffff0, count=20000)
     if not returned:
         raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
     return machine
+
+
+def cmos_rtc_read_vectors() -> list[dict[str, object]]:
+    vectors = []
+    for seconds in (0x00, 0x01, 0x09, 0x10, 0x59, 0x80, 0xFE, 0xFF):
+        inputs = []
+        outputs = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def input_port(_machine: Uc, port: int, size: int) -> int:
+            inputs.append((port, size))
+            if (port, size) != (0x71, 1):
+                raise AssertionError(f"0x2DD3 read unexpected port {port:#x}/{size}")
+            return seconds
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            0x2DD3,
+            0x2DE1,
+            initial,
+            [(0, 0x0AEE, b"\x5a\xa5")],
+            input_handler=input_port,
+            output_handler=output_port,
+        )
+        if inputs != [(0x71, 1)]:
+            raise AssertionError(f"0x2DD3 seconds={seconds:#x}: unexpected reads")
+        if outputs != [(0x70, 1, 0)]:
+            raise AssertionError(f"0x2DD3 seconds={seconds:#x}: unexpected writes")
+        expected_word = seconds | (seconds << 8)
+        actual_word = struct.unpack("<H", machine.mem_read(0x0AEE, 2))[0]
+        if actual_word != expected_word:
+            raise AssertionError(
+                f"0x2DD3 seconds={seconds:#x}: stored {actual_word:#x}, "
+                f"expected {expected_word:#x}"
+            )
+        if machine.reg_read(UC_X86_REG_EAX) != initial["eax"]:
+            raise AssertionError(f"0x2DD3 seconds={seconds:#x}: did not preserve EAX")
+        for name in ("bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[name]) != initial[name]:
+                raise AssertionError(f"0x2DD3 did not preserve {name}")
+
+        vectors.append(
+            {
+                "seconds": seconds,
+                "port_writes": [list(item) for item in outputs],
+                "port_reads": [list(item) for item in inputs],
+                "stored_word": actual_word,
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def vga_palette_write_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    vectors = []
+    for source_offset, seed in ((0x0000, 3), (0x1357, 29), (0xFE80, 101)):
+        source = bytes((index * 37 + seed) & 0xFF for index in range(0x10000))
+        expected_palette = bytes(
+            source[(source_offset + index) & 0xFFFF] for index in range(768)
+        )
+        outputs = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": source_offset,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": data_segment,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            0x2F90,
+            0x2FA5,
+            initial,
+            [(data_segment, 0, source)],
+            output_handler=output_port,
+        )
+        if outputs[:1] != [(0x3C8, 1, 0)]:
+            raise AssertionError(f"0x2F90 si={source_offset:#x}: bad DAC index write")
+        actual_palette = bytes(value for port, size, value in outputs[1:])
+        if len(outputs) != 769 or any(
+            (port, size) != (0x3C9, 1) for port, size, _value in outputs[1:]
+        ):
+            raise AssertionError(f"0x2F90 si={source_offset:#x}: bad DAC data writes")
+        if actual_palette != expected_palette:
+            raise AssertionError(f"0x2F90 si={source_offset:#x}: bad palette payload")
+        for name in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[name]) != initial[name]:
+                raise AssertionError(f"0x2F90 did not preserve {name}")
+
+        vectors.append(
+            {
+                "source_offset": source_offset,
+                "write_count": len(outputs),
+                "palette_head": list(actual_palette[:12]),
+                "palette_tail": list(actual_palette[-12:]),
+                "palette_sha256": hashlib.sha256(actual_palette).hexdigest(),
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def vga_dac_clear_vectors() -> list[dict[str, object]]:
+    vectors = []
+    for eax, cx, dx in (
+        (0xA5A51234, 0x369C, 0x55AA),
+        (0x5A5AFFFF, 0x0000, 0x03C8),
+        (0x12340000, 0xFFFF, 0x03C9),
+    ):
+        outputs = []
+        initial = {
+            "eax": eax,
+            "bx": 0x2468,
+            "cx": cx,
+            "dx": dx,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "gs": 0x2800,
+        }
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            0x2FA6,
+            0x2FBA,
+            initial,
+            [],
+            output_handler=output_port,
+        )
+        if outputs[:1] != [(0x3C8, 1, 0)]:
+            raise AssertionError("0x2FA6 produced a bad DAC index write")
+        if len(outputs) != 769 or any(
+            item != (0x3C9, 1, 0) for item in outputs[1:]
+        ):
+            raise AssertionError("0x2FA6 did not clear all 768 DAC bytes")
+        for name in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[name]) != initial[name]:
+                raise AssertionError(f"0x2FA6 did not preserve {name}")
+
+        vectors.append(
+            {
+                "initial_eax": eax,
+                "initial_cx": cx,
+                "initial_dx": dx,
+                "write_count": len(outputs),
+                "zero_data_writes": len(outputs) - 1,
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def set_video_mode_saved_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    video_segment = 0x2800
+    vectors = []
+    for mode in (0x00, 0x03, 0x13, 0x7F, 0xFF):
+        interrupts = []
+        initial = {
+            "eax": 0xA5A51234,
+            "bx": 0x2468,
+            "cx": 0x369C,
+            "dx": 0x55AA,
+            "si": 0x6789,
+            "di": 0x789A,
+            "bp": 0x1357,
+            "ds": data_segment,
+            "es": 0x2400,
+            "gs": video_segment,
+        }
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append((number, machine.reg_read(UC_X86_REG_AX)))
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+
+        machine = execute(
+            0x0CC0,
+            0x0CCA,
+            initial,
+            [
+                (data_segment, 0x5232, bytes([mode ^ 0xFF])),
+                (video_segment, 0x5232, bytes([mode])),
+            ],
+            interrupt_handler=interrupt,
+        )
+        if interrupts != [(0x10, mode)]:
+            raise AssertionError(
+                f"0x0CC0 mode={mode:#x}: interrupts={interrupts!r}"
+            )
+        if machine.reg_read(UC_X86_REG_AX) != (initial["eax"] & 0xFFFF):
+            raise AssertionError(f"0x0CC0 mode={mode:#x}: did not restore AX")
+        for name in ("bx", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            if machine.reg_read(REGISTERS[name]) != initial[name]:
+                raise AssertionError(f"0x0CC0 did not preserve {name}")
+
+        vectors.append(
+            {
+                "saved_mode": mode,
+                "interrupt": interrupts[0][0],
+                "interrupt_ax": interrupts[0][1],
+                "restored_ax": machine.reg_read(UC_X86_REG_AX),
+            }
+        )
+    return vectors
 
 
 def text_width_vectors() -> list[dict[str, object]]:
@@ -4498,6 +4766,22 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    update_vector(
+        VECTOR_ROOT / "func_0cc0_natural.json",
+        set_video_mode_saved_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2dd3_natural.json", cmos_rtc_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2f90_natural.json",
+        vga_palette_write_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2fa6_natural.json", vga_dac_clear_vectors(), args.check
+    )
     update_vector(
         VECTOR_ROOT / "func_30cd_natural.json", text_width_vectors(), args.check
     )
