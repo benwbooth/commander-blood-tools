@@ -2597,6 +2597,365 @@ def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def sprite_blit_scaled_transparent_vectors() -> list[dict[str, object]]:
+    state_segment = 0x2600
+    frame_segment = 0x3200
+    frame_offset = 0x0200
+    framebuffer_segment = 0x5000
+    framebuffer_offset = 0x0100
+    initial_selected_remap = 0x7777
+    initial_scratch = bytes.fromhex("a1b2c3d4e5f6")
+    cases = [
+        {
+            "name": "zero_destination_width_returns",
+            "flags": 0x0301,
+            "flip": [1, 2],
+            "draw": [10, 12],
+            "extent": [0, 4],
+            "source": [5, 3],
+            "frame_offset": [-17, 29],
+            "dirty": [0, 320, 0, 200],
+        },
+        {
+            "name": "zero_destination_height_returns",
+            "flags": 0x0201,
+            "flip": [2, 1],
+            "draw": [10, 12],
+            "extent": [4, 0],
+            "source": [5, 3],
+            "frame_offset": [31, -23],
+            "dirty": [0, 320, 0, 200],
+        },
+        {
+            "name": "one_to_one_transparent_zero",
+            "flags": 0x0101,
+            "flip": [0, 0],
+            "draw": [10, 20],
+            "extent": [4, 3],
+            "source": [4, 3],
+            "frame_offset": [0, 0],
+            "dirty": [10, 14, 20, 23],
+        },
+        {
+            "name": "fractional_upscale",
+            "flags": 0x0301,
+            "flip": [1, 1],
+            "draw": [24, 30],
+            "extent": [7, 5],
+            "source": [3, 2],
+            "frame_offset": [-101, 97],
+            "dirty": [24, 31, 30, 35],
+        },
+        {
+            "name": "fractional_downscale",
+            "flags": 0x0201,
+            "flip": [2, 129],
+            "draw": [41, 16],
+            "extent": [3, 2],
+            "source": [8, 6],
+            "frame_offset": [1234, -2345],
+            "dirty": [41, 44, 16, 18],
+        },
+        {
+            "name": "all_edges_clipped_advance_fixed_point",
+            "flags": 0x0101,
+            "flip": [255, 254],
+            "draw": [5, 6],
+            "extent": [10, 8],
+            "source": [8, 6],
+            "frame_offset": [-300, 400],
+            "dirty": [7, 13, 8, 12],
+        },
+        {
+            "name": "signed_negative_origin_clipped",
+            "flags": 0x0301,
+            "flip": [128, 127],
+            "draw": [0xFFFD, 0xFFFE],
+            "extent": [8, 6],
+            "source": [6, 4],
+            "frame_offset": [2047, -2048],
+            "dirty": [0, 5, 0, 4],
+        },
+        {
+            "name": "horizontal_clip_rejects_negative_width",
+            "flags": 0x0201,
+            "flip": [1, 1],
+            "draw": [10, 10],
+            "extent": [4, 3],
+            "source": [7, 5],
+            "frame_offset": [13, 17],
+            "dirty": [15, 20, 10, 13],
+        },
+        {
+            "name": "frame_offsets_flips_and_remap_are_ignored",
+            "flags": 0x03FF,
+            "flip": [0xFE, 0x81],
+            "draw": [70, 40],
+            "extent": [6, 4],
+            "source": [5, 3],
+            "frame_offset": [-32768, 32767],
+            "dirty": [71, 75, 41, 44],
+        },
+        {
+            "name": "zero_source_dimensions_repeat_first_pixel",
+            "flags": 0x01A5,
+            "flip": [3, 4],
+            "draw": [90, 50],
+            "extent": [4, 3],
+            "source": [0, 0],
+            "frame_offset": [2222, -3333],
+            "dirty": [90, 94, 50, 53],
+            "first_pixel": 0xA7,
+        },
+    ]
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if (value & 0x8000) != 0 else value
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        flags = int(case["flags"])
+        flip_x, flip_y = (int(value) for value in case["flip"])
+        draw_x, draw_y = (int(value) for value in case["draw"])
+        extent_width, extent_height = (
+            int(value) for value in case["extent"]
+        )
+        source_width, source_height = (
+            int(value) for value in case["source"]
+        )
+        x_offset, y_offset = (
+            int(value) for value in case["frame_offset"]
+        )
+        dirty = [int(value) for value in case["dirty"]]
+
+        pixels = bytearray()
+        for row in range(source_height):
+            for column in range(source_width):
+                value = (
+                    row * 53 + column * 29 + case_index * 17 + 1
+                ) & 0xFF
+                if (row * 3 + column + case_index) % 4 == 0:
+                    value = 0
+                pixels.append(value)
+        if not pixels:
+            pixels.append(int(case.get("first_pixel", 0xA7)))
+        frame = struct.pack(
+            "<HHHH",
+            source_width,
+            source_height,
+            x_offset & 0xFFFF,
+            y_offset & 0xFFFF,
+        ) + bytes(pixels)
+
+        slot_id = 23 + case_index
+        record_offset = 0x6212 + slot_id * 32
+        record = bytearray(
+            (byte_index * 19 + case_index * 23) & 0xFF
+            for byte_index in range(32)
+        )
+        record[0:2] = struct.pack("<H", flags)
+        record[4:8] = struct.pack("<HH", frame_offset, frame_segment)
+        record[8:16] = struct.pack(
+            "<HHHH", draw_x, draw_y, extent_width, extent_height
+        )
+        record[24:32] = struct.pack("<HHHH", *dirty)
+
+        framebuffer = bytearray(
+            (index * 13 + case_index * 31 + 7) & 0xFF
+            for index in range(64000)
+        )
+        expected_framebuffer = bytearray(framebuffer)
+        remap_5f11 = bytes((255 - index) & 0xFF for index in range(256))
+        remap_6011 = bytes((index * 3 + 11) & 0xFF for index in range(256))
+
+        x_step = None
+        y_step = None
+        x_start = 0
+        y_start = 0
+        destination_x = signed_word(draw_x)
+        destination_y = signed_word(draw_y)
+        draw_width = extent_width & 0xFFFF
+        draw_height = extent_height & 0xFFFF
+        sampled_pixels = []
+        changed_pixels = []
+
+        if extent_width != 0:
+            x_step = ((source_width << 16) // extent_width) & 0xFFFFFFFF
+        if extent_width != 0 and extent_height != 0:
+            y_step = ((source_height << 16) // extent_height) & 0xFFFFFFFF
+
+            if destination_y < signed_word(dirty[2]):
+                clipped = signed_word(dirty[2]) - destination_y
+                draw_height = (draw_height - clipped) & 0xFFFF
+                y_start = (clipped * y_step) & 0xFFFFFFFF
+                destination_y = signed_word(dirty[2])
+            bottom = signed_word(draw_y + extent_height)
+            if bottom >= signed_word(dirty[3]):
+                clipped = bottom - signed_word(dirty[3])
+                draw_height = (draw_height - clipped) & 0xFFFF
+
+            if destination_x < signed_word(dirty[0]):
+                clipped = signed_word(dirty[0]) - destination_x
+                draw_width = (draw_width - clipped) & 0xFFFF
+                x_start = (clipped * x_step) & 0xFFFFFFFF
+                destination_x = signed_word(dirty[0])
+            right = signed_word(draw_x + extent_width)
+            if right >= signed_word(dirty[1]):
+                clipped = right - signed_word(dirty[1])
+                draw_width = (draw_width - clipped) & 0xFFFF
+
+            if signed_word(draw_width) > 0 and signed_word(draw_height) > 0:
+                y_position = y_start
+                for row in range(draw_height):
+                    source_y = (y_position >> 16) & 0xFFFF
+                    x_position = x_start
+                    for column in range(draw_width):
+                        source_x = (x_position >> 16) & 0xFFFF
+                        source_index = (
+                            source_y * source_width + source_x
+                        ) & 0xFFFF
+                        source_pixel = pixels[source_index]
+                        destination_index = (
+                            ((destination_y + row) & 0xFFFF) * 320
+                            + ((destination_x + column) & 0xFFFF)
+                        ) & 0xFFFF
+                        before = expected_framebuffer[destination_index]
+                        after = before
+                        if source_pixel != 0:
+                            after = source_pixel
+                            expected_framebuffer[destination_index] = after
+                        sampled_pixels.append(
+                            [
+                                destination_index,
+                                source_x,
+                                source_y,
+                                source_pixel,
+                                before,
+                                after,
+                            ]
+                        )
+                        if source_pixel != 0:
+                            changed_pixels.append(
+                                [destination_index, before, after]
+                            )
+                        x_position = (x_position + x_step) & 0xFFFFFFFF
+                    y_position = (y_position + y_step) & 0xFFFFFFFF
+
+        right = (draw_x + extent_width) & 0xFFFF
+        bottom = (draw_y + extent_height) & 0xFFFF
+        initial = {
+            "eax": 0xA1A10000 | (draw_x & 0xFFFF),
+            "ebx": 0xB2B20000 | (draw_y & 0xFFFF),
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D40000 | right,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | record_offset,
+            "ebp": 0x97970000 | bottom,
+            "ds": state_segment,
+            "es": state_segment,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x4F62,
+            0x5099,
+            initial,
+            [
+                (state_segment, record_offset, bytes(record)),
+                (frame_segment, frame_offset, frame),
+                (
+                    state_segment,
+                    0x5221,
+                    struct.pack("<HH", framebuffer_offset, framebuffer_segment),
+                ),
+                (
+                    state_segment,
+                    0x524B,
+                    struct.pack("<H", initial_selected_remap),
+                ),
+                (state_segment, 0x5F11, remap_5f11),
+                (state_segment, 0x6011, remap_6011),
+                (0, 0x14DF, bytes([flip_x, flip_y])),
+                (0, 0x1726, initial_scratch),
+                (
+                    framebuffer_segment,
+                    framebuffer_offset,
+                    bytes(framebuffer),
+                ),
+            ],
+        )
+
+        actual_framebuffer = bytes(
+            machine.mem_read(
+                framebuffer_segment * 16 + framebuffer_offset, 64000
+            )
+        )
+        if actual_framebuffer != bytes(expected_framebuffer):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_framebuffer, expected_framebuffer)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x4f62 {name}: framebuffer[{mismatch:#x}]="
+                f"{actual_framebuffer[mismatch]:#x}, "
+                f"expected={expected_framebuffer[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(0x1726, 6)) != initial_scratch:
+            raise AssertionError(f"0x4f62 {name}: changed RLE scratch")
+        if struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x524B, 2)
+        )[0] != initial_selected_remap:
+            raise AssertionError(f"0x4f62 {name}: changed remap selector")
+        if bytes(
+            machine.mem_read(state_segment * 16 + 0x5F11, 256)
+        ) != remap_5f11:
+            raise AssertionError(f"0x4f62 {name}: changed first remap table")
+        if bytes(
+            machine.mem_read(state_segment * 16 + 0x6011, 256)
+        ) != remap_6011:
+            raise AssertionError(f"0x4f62 {name}: changed second remap table")
+        if bytes(machine.mem_read(0x14DF, 2)) != bytes([flip_x, flip_y]):
+            raise AssertionError(f"0x4f62 {name}: changed flip bytes")
+        if bytes(machine.mem_read(state_segment * 16 + record_offset, 32)) != bytes(
+            record
+        ):
+            raise AssertionError(f"0x4f62 {name}: slot record changed")
+        if bytes(
+            machine.mem_read(frame_segment * 16 + frame_offset, len(frame))
+        ) != frame:
+            raise AssertionError(f"0x4f62 {name}: source frame changed")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x4f62 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "flags": flags,
+                "flip_bytes": [flip_x, flip_y],
+                "draw": [draw_x, draw_y],
+                "extent": [extent_width, extent_height],
+                "source_extent": [source_width, source_height],
+                "frame_origin_offset": [x_offset, y_offset],
+                "dirty_rect": dirty,
+                "x_step_16_16": x_step,
+                "y_step_16_16": y_step,
+                "fixed_start_16_16": [x_start, y_start],
+                "clipped_extent": [draw_width, draw_height],
+                "destination_start": [destination_x, destination_y],
+                "sampled_pixels": sampled_pixels,
+                "changed_pixels": changed_pixels,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -7049,6 +7408,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_4cd6_natural.json",
         sprite_blit_rle_opaque_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4f62_natural.json",
+        sprite_blit_scaled_transparent_vectors(),
         args.check,
     )
     update_vector(

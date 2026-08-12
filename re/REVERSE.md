@@ -2127,7 +2127,12 @@ Named targets that are already tied to code behavior:
     clip at once; the natural C's interval intersection is defined for that
     malformed/adversarial case as well.
   - mode 4 -> `0x0299:0x1FD2` (`sprite_blit_scaled_transparent`): fixed-point
-    scaled transparent blit; source zero skips the destination.
+    scaled transparent blit; source zero skips the destination. Ten direct
+    vectors prove exact, fractional-upscale, and fractional-downscale sampling,
+    signed/all-edge clipping with accumulator advancement, both zero-destination
+    exits, zero source dimensions, and complete state/register preservation.
+    They also prove that frame origin offsets, flip bytes, remap state, and RLE
+    scratch are ignored by this mode.
   - modes 5..7 -> `0x0299:0x210A..0x210C`: unused single-byte near-return
     handlers. Direct execution proves complete no-op behavior, and Open Watcom
     reproduces each exact `C3` body from a typed empty callback.
@@ -2139,8 +2144,11 @@ Named targets that are already tied to code behavior:
   decoded pixels opaquely.
   Mode 4 reads `source_width` and `source_height` from the first two frame-header
   words, computes 16.16 source steps as `(source_dim << 16) / dest_dim`, clips by
-  advancing the source accumulators, samples with floor/nearest semantics, and
-  ignores the flip/remap/origin-offset paths used by other blitters.
+  advancing the source accumulators, and samples nearest-neighbor pixels by the
+  integer part of each accumulator. Its natural one-function C candidate is
+  direct-oracle verified; Watcom `-3 -ox -mm` emits 407 bytes versus the
+  original 312 because it uses unsigned-long runtime helpers and a normalized
+  typed-slot ABI instead of inline 32-bit arithmetic and register-fed bounds.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
   into primary framebuffer `GS:0x5221`.

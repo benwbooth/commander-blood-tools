@@ -514,6 +514,22 @@ one run-interval decoder across directions. The binary duplicates leading-skip,
 visible-copy, and trailing-skip state machines and uses `REP STOSB`, `REP MOVSB`,
 and reverse scalar copies, in addition to its CS scratch and register-fed bounds.
 
+Scaled-transparent blitter `0x004F62` has ten direct framebuffer vectors. They
+prove separate zero-width and zero-height exits, one-to-one and fractional
+up/down scaling, zero-key transparency, all-edge fixed-point clip advancement,
+signed-negative origins, zero source dimensions, source/framebuffer ownership,
+and complete register preservation. Nonzero frame offsets, arbitrary flip bytes,
+remap selectors/tables, and RLE scratch remain unchanged, proving this mode does
+not consume the metadata used by the other blitters.
+
+Open Watcom compiles the actual `0x004F62` candidate without warnings; `-3 -ox
+-mm` emits 407 bytes versus 312 original. Standalone 8086/286/386 probes emit
+152/146/147 instructions and 409/398/407 bytes versus 128/312, while Turbo C
+2.01 emits 183 instructions. The original uses inline operand-size-prefixed
+32-bit `DIV`/`MUL`, splits each fixed-point accumulator into register words, and
+receives draw bounds in AX/BX/DX/BP. Watcom instead calls unsigned-long runtime
+helpers and derives the normalized bounds from the typed slot.
+
 Dispatch modes 5, 6, and 7 at `0x00509A..0x00509C` are exact one-byte no-ops.
 The direct oracle executes each `RET` with a synthetic near return address and
 proves that only SP advances by two; all general registers including their upper

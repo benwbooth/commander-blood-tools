@@ -92,6 +92,8 @@ void CB_NEAR sprite_blit_raw_opaque(
         volatile bloodprg_entity_record *record); /* 0x0299:0x1C18 */
 void CB_NEAR sprite_blit_rle_opaque(
         volatile bloodprg_entity_record *record); /* 0x0299:0x1D46 */
+void CB_NEAR sprite_blit_scaled_transparent(
+        volatile bloodprg_entity_record *record); /* 0x0299:0x1FD2 */
 void CB_NEAR sprite_blitter_noop_5(
         volatile bloodprg_entity_record *record); /* 0x0299:0x210A */
 void CB_NEAR sprite_blitter_noop_6(
@@ -116,6 +118,7 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux sprite_blit_raw_transparent parm [di] modify exact []
 #pragma aux sprite_blit_raw_opaque parm [di] modify exact []
 #pragma aux sprite_blit_rle_opaque parm [di] modify exact []
+#pragma aux sprite_blit_scaled_transparent parm [di] modify exact []
 #pragma aux sprite_blitter_noop_5 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_6 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_7 parm [di] modify exact []
