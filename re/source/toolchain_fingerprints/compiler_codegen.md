@@ -1435,6 +1435,20 @@ instructions/69 bytes versus 24/42 original. It selects `rep movsw` plus a byte
 tail and emits generic based-segment loads, so it is not code-shape exact. Turbo
 C 2.01 medium emits 32 instructions and a near library `_fmemcpy` call.
 
+Presentation mode selector `0x009510` has fifteen direct vectors covering the
+bit-1 bypass, signed minimum/maximum, and both sides of frame thresholds 22,
+67, 112, and 157. They prove that only DS:0x2793/0x2795 are accessed, mode bits
+4..7 are replaced while the high byte and unrelated low bits survive, and the
+new state is returned in AX with BX/DX restored. This AX result changed the
+natural signature from `void` to `uint16_t`; the known caller discards it, but
+it remains part of the recovered routine contract.
+
+Open Watcom `-3 -ox -mm` compiles that candidate without warnings to the same
+25-instruction count and 59 bytes versus 58 original. It uses byte-sized
+mask/test operations, constant mode assignments, and swaps the internal BX/DX
+roles, so the shape is close but not exact. Turbo C 2.01 medium emits 41
+instructions.
+
 Byte-parser opcode-07 handler `0x007684` contains a stale-flag dependency that
 the earlier candidate misread as an asset-id sign test. Its `CBW` sign-extends
 the source byte but does not change flags; the sole proven caller's dispatch
@@ -1627,6 +1641,7 @@ LCS and then mnemonic similarity:
 | `nav_choice_handler_0` | medium, `-ox`, register | 7/8 | 0.1429 | 0.8571 | 0.1429 |
 | `nav_choice_handler_3` | medium, `-ox`, register | 10/14 | 0.1000 | 0.8000 | 0.2000 |
 | `back_buffer_copy_from` | medium, `-ox`, register | 24/34 | 0.2083 | 0.7917 | 0.2500 |
+| `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

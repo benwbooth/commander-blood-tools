@@ -6,8 +6,8 @@
 ; seg_off: 071e:1d30
 ; group: seg_071e
 ; provenance: recursive_graph
-; label: presentation_mode_check
-; label_comment: presentation-mode gate: ax=[0x2793]; and 0xff0f; test 2 -> branch on the presentation-active bit of [0x2793]
+; label: presentation_mode_bits_update
+; label_comment: clears DS:0x2793 mode bits 4..7, returns the new word in AX, and selects mode 0x10/0x20/0x40/0x80 from signed DS:0x2795 frame bands unless state bit 1 is set
 ; byte_count: 58
 ; boundary: cfg_blocks_8_terminals_1
 ; terminal: ret:1

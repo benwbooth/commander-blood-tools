@@ -22,8 +22,8 @@ extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
-extern volatile bloodprg_vm_ui_state vm_ui_state; /* GS:0x2793 */
-extern volatile cb_i16 vm_bridge_view_frame; /* GS:0x2795 */
+extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
+extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
@@ -238,7 +238,11 @@ int CB_FAR vm_c2_descript_lookup(
     const volatile cb_u8 CB_FAR *record_name); /* 0x007409 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c9_clear_record_full(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006FB9 */
-void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
+cb_u16 CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
+
+#if defined(__WATCOMC__)
+#pragma aux presentation_mode_bits_update value [ax] modify exact [ax]
+#endif
 
 #endif

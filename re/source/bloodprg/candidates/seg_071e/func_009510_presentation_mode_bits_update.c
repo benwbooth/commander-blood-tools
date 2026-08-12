@@ -1,6 +1,6 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR presentation_mode_bits_update(void)
+cb_u16 CB_NEAR presentation_mode_bits_update(void)
 {
     cb_u16 flags;
     cb_u16 mode;
@@ -23,4 +23,5 @@ void CB_NEAR presentation_mode_bits_update(void)
     }
 
     vm_ui_state.word = flags;
+    return flags;
 }

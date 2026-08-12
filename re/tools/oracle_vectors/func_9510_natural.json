@@ -1,0 +1,242 @@
+[
+  {
+    "name": "gate_set_clears_modes",
+    "state_before": 42482,
+    "signed_frame": -32768,
+    "bit_one_gate_set": true,
+    "selected_mode": 0,
+    "state_after": 42242,
+    "ax_result": 42242,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_set_preserves_other_bits",
+    "state_before": 23054,
+    "signed_frame": 4660,
+    "bit_one_gate_set": true,
+    "selected_mode": 0,
+    "state_after": 23054,
+    "ax_result": 23054,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_minimum",
+    "state_before": 33009,
+    "signed_frame": -32768,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 32785,
+    "ax_result": 32785,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_one",
+    "state_before": 265,
+    "signed_frame": -1,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 281,
+    "ax_result": 281,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero",
+    "state_before": 0,
+    "signed_frame": 0,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 16,
+    "ax_result": 16,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "below_lower_boundary",
+    "state_before": 17409,
+    "signed_frame": 21,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 17425,
+    "ax_result": 17425,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lower_boundary",
+    "state_before": 8708,
+    "signed_frame": 22,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 8724,
+    "ax_result": 8724,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_band_start",
+    "state_before": 13064,
+    "signed_frame": 23,
+    "bit_one_gate_set": false,
+    "selected_mode": 32,
+    "state_after": 13096,
+    "ax_result": 13096,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_band_end",
+    "state_before": 4609,
+    "signed_frame": 67,
+    "bit_one_gate_set": false,
+    "selected_mode": 32,
+    "state_after": 4641,
+    "ax_result": 4641,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_band_start",
+    "state_before": 9220,
+    "signed_frame": 68,
+    "bit_one_gate_set": false,
+    "selected_mode": 64,
+    "state_after": 9284,
+    "ax_result": 9284,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_band_end",
+    "state_before": 13832,
+    "signed_frame": 112,
+    "bit_one_gate_set": false,
+    "selected_mode": 64,
+    "state_after": 13896,
+    "ax_result": 13896,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "third_band_start",
+    "state_before": 18433,
+    "signed_frame": 113,
+    "bit_one_gate_set": false,
+    "selected_mode": 128,
+    "state_after": 18561,
+    "ax_result": 18561,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "third_band_end",
+    "state_before": 23044,
+    "signed_frame": 157,
+    "bit_one_gate_set": false,
+    "selected_mode": 128,
+    "state_after": 23172,
+    "ax_result": 23172,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "above_upper_boundary",
+    "state_before": 27656,
+    "signed_frame": 158,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 27672,
+    "ax_result": 27672,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_maximum",
+    "state_before": 32257,
+    "signed_frame": 32767,
+    "bit_one_gate_set": false,
+    "selected_mode": 16,
+    "state_after": 32273,
+    "ax_result": 32273,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

@@ -16862,6 +16862,210 @@ def back_buffer_copy_from_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_mode_bits_update_vectors() -> list[dict[str, object]]:
+    entry = 0x9510
+    expected_hash = "e392b2ee6954a3ddd813ed580b630c89d89ae7d30c5c2a6b645972a2e84425c4"
+    if hashlib.sha256(EXE[entry : entry + 58]).hexdigest() != expected_hash:
+        raise AssertionError("0x9510: recovered 58-byte body changed")
+
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("gate_set_clears_modes", 0xA5F2, -0x8000),
+        ("gate_set_preserves_other_bits", 0x5A0E, 0x1234),
+        ("signed_minimum", 0x80F1, -0x8000),
+        ("negative_one", 0x0109, -1),
+        ("zero", 0x0000, 0),
+        ("below_lower_boundary", 0x4401, 21),
+        ("lower_boundary", 0x2204, 22),
+        ("first_band_start", 0x3308, 23),
+        ("first_band_end", 0x1201, 67),
+        ("second_band_start", 0x2404, 68),
+        ("second_band_end", 0x3608, 112),
+        ("third_band_start", 0x4801, 113),
+        ("third_band_end", 0x5A04, 157),
+        ("above_upper_boundary", 0x6C08, 158),
+        ("signed_maximum", 0x7E01, 0x7FFF),
+    ]
+    vectors = []
+
+    for name, state_before, frame in cases:
+        masked_state = state_before & 0xFF0F
+        gate_set = (masked_state & 2) != 0
+        if gate_set or frame <= 22 or frame > 157:
+            mode = 0 if gate_set else 0x10
+        elif frame <= 67:
+            mode = 0x20
+        elif frame <= 112:
+            mode = 0x40
+        else:
+            mode = 0x80
+        expected_state = masked_state | mode
+        frame_word = frame & 0xFFFF
+        stack_sentinel = bytes.fromhex("5aa59669")
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0ED7,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x951D, 0x953F, 0x9544):
+                return
+            phases.append(
+                {
+                    "address": address,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x2793, struct.pack("<H", state_before)),
+                (data_segment, 0x2795, struct.pack("<H", frame_word)),
+                (game_segment, 0x2793, b"\x5a\xa5"),
+                (game_segment, 0x2795, b"\x69\x96"),
+                (extra_segment, 0x2793, b"\x87\x78"),
+                (extra_segment, 0x2795, b"\xc3\x3c"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if gate_set:
+            expected_phases = [
+                {
+                    "address": 0x9544,
+                    "ax": masked_state,
+                    "bx": initial["ebx"] & 0xFFFF,
+                    "dx": initial["edx"] & 0xFFFF,
+                }
+            ]
+        else:
+            expected_phases = [
+                {
+                    "address": 0x951D,
+                    "ax": masked_state,
+                    "bx": initial["ebx"] & 0xFFFF,
+                    "dx": initial["edx"] & 0xFFFF,
+                },
+                {
+                    "address": 0x953F,
+                    "ax": masked_state,
+                    "bx": mode >> 4,
+                    "dx": frame_word,
+                },
+                {
+                    "address": 0x9544,
+                    "ax": expected_state,
+                    "bx": mode,
+                    "dx": frame_word,
+                },
+            ]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x9510 {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        actual_state = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x2793, 2)
+        )[0]
+        actual_frame = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x2795, 2)
+        )[0]
+        if actual_state != expected_state or actual_frame != frame_word:
+            raise AssertionError(
+                f"0x9510 {name}: state={actual_state:#x}, frame={actual_frame:#x}, "
+                f"expected={expected_state:#x}/{frame_word:#x}"
+            )
+        for segment, offset, expected in (
+            (game_segment, 0x2793, b"\x5a\xa5"),
+            (game_segment, 0x2795, b"\x69\x96"),
+            (extra_segment, 0x2793, b"\x87\x78"),
+            (extra_segment, 0x2795, b"\xc3\x3c"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9510 {name}: decoy {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_state
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9510 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9510 {name}: near return changed CS")
+
+        flag_result = 2 if gate_set else expected_state
+        expected_flags = {
+            "cf": False,
+            "pf": (flag_result & 0xFF).bit_count() % 2 == 0,
+            "zf": flag_result == 0,
+            "sf": bool(flag_result & 0x8000),
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9510 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x9510 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "state_before": state_before,
+                "signed_frame": frame,
+                "bit_one_gate_set": gate_set,
+                "selected_mode": mode,
+                "state_after": actual_state,
+                "ax_result": machine.reg_read(UC_X86_REG_AX),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -22675,6 +22879,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_933a_natural.json",
         back_buffer_copy_from_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9510_natural.json",
+        presentation_mode_bits_update_vectors(),
         args.check,
     )
     update_vector(
