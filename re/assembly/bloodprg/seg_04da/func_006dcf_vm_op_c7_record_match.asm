@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c7_record_match
-; label_comment: VM opcode 0xC7: matches state-table records tagged 0xC7 (cmp es:[bp] vs 0xc7). Confirms the typed-record pattern across C5/C6/C7/C8 - all four verified || ALSO RECORDED as `vm_op_c7_state_record`: VM opcode 0xC7: object/line-record state op (state-table + 0xA1-skip prologue). C-range family; exact field op partial || ALSO RECORDED as `vm_op_c7_record_entry`: 0xC7 record-entry handler; writes es:[record]={0xc7,related,0} when related record is active || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xC7 uses absolute offsets in the segment loaded from GS:0x6724; query mode optionally inverts a {type C7, operand} match, while set mode writes {C7, related, 0} only when the related record is active and the destination type is zero or C4.
 ; incoming: vm_opcode_handlers:opcode_0xc7
 ; byte_count: 101
 ; boundary: cfg_blocks_15_terminals_4

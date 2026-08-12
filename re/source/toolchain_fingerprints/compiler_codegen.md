@@ -1299,6 +1299,25 @@ for the operand, AX for inversion, SET-like Boolean comparison control, DS
 globals, a saved BX, and duplicate returns. Exact integration still needs fixed
 segment placement and the original BP/DL/AX allocation.
 
+VM opcode-C7 handler `0x006DCF` uses absolute destination and related offsets
+in the segment loaded from GS:0x6724. Query mode optionally inverts a type-C7
+and operand match. Set mode ignores inversion, requires only related byte `+2`
+bit zero (the related type is not inspected), then reads destination type once
+and accepts zero or C4 before writing `{0x00C7, related offset, 0}`. Fifteen
+direct vectors prove every query and guard outcome, ignored related type,
+single destination-type read, no partial writes, the real branch helper,
+ignored base-offset decoys, boundaries, segments, registers, flags, and return.
+They corrected both the old candidate's base-relative pointers and its repeated
+volatile destination-type expression.
+
+The corrected one-to-one candidate directly returns the cursor or branch
+target. Open Watcom `-3 -ox -mm` compiles it without warnings to 49
+instructions/123 bytes versus 39/101 original; Turbo C 2.01 medium emits 66
+instructions. Watcom introduces a two-byte frame, retains segment state in a
+local, reallocates destination/related/inversion, materializes query truth,
+addresses globals through DS, and duplicates returns. Exact integration still
+needs fixed segment placement and the original compact BP/BX/AX/DL allocation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1351,6 +1370,7 @@ LCS and then mnemonic similarity:
 | `vm_b8_record_pair` | medium, `-ox`, register | 26/37 | 0.1154 | 0.7308 | 0.1154 |
 | `vm_c5_record_match` | medium, `-ox`, register | 40/41 | 0.0750 | 0.5750 | 0.1000 |
 | `vm_c6_record_match` | medium, `-ox`, register | 31/32 | 0.0323 | 0.5806 | 0.0323 |
+| `vm_c7_record_match` | medium, `-ox`, register | 39/49 | 0.0769 | 0.6154 | 0.1026 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
