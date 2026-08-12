@@ -8222,6 +8222,308 @@ def vm_script_jump_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_cond_state_array_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "assign_first_word",
+            "start": 0x1000,
+            "index": 0x00,
+            "query": 0x00,
+            "state": 0xA55A,
+            "operand": 0x1234,
+            "top": 4,
+            "target": 0x7100,
+        },
+        {
+            "name": "assign_high_positive_index",
+            "start": 0x1101,
+            "index": 0x7F,
+            "query": 0xFE,
+            "state": 0x0000,
+            "operand": 0xBEEF,
+            "top": 6,
+            "target": 0x7211,
+        },
+        {
+            "name": "assign_signed_minus_one",
+            "start": 0x1200,
+            "index": 0xFF,
+            "query": 0x80,
+            "state": 0x1357,
+            "operand": 0x8001,
+            "top": 2,
+            "target": 0x7322,
+        },
+        {
+            "name": "assign_operand_crosses_segment_end",
+            "start": 0xFFFE,
+            "index": 0x80,
+            "query": 0x02,
+            "state": 0x2468,
+            "operand": 0xCAFE,
+            "top": 8,
+            "target": 0x7433,
+        },
+        {
+            "name": "query_zero_continues",
+            "start": 0x1300,
+            "index": 0x03,
+            "query": 0x01,
+            "state": 0x0000,
+            "operand": 0x5AA5,
+            "top": 4,
+            "target": 0x7544,
+        },
+        {
+            "name": "query_signed_negative_zero_continues",
+            "start": 0x1401,
+            "index": 0xFE,
+            "query": 0xFF,
+            "state": 0x0000,
+            "operand": 0xA55A,
+            "top": 6,
+            "target": 0x7655,
+        },
+        {
+            "name": "query_nonzero_branches",
+            "start": 0x1500,
+            "index": 0x05,
+            "query": 0x03,
+            "state": 0x8000,
+            "operand": 0x9696,
+            "top": 4,
+            "target": 0x7766,
+        },
+        {
+            "name": "query_signed_minimum_odd_stack_branches",
+            "start": 0x1600,
+            "index": 0x80,
+            "query": 0xA5,
+            "state": 0x0001,
+            "operand": 0x6969,
+            "top": 3,
+            "target": 0x7877,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        start = int(case["start"])
+        index_byte = int(case["index"])
+        query_mode = int(case["query"])
+        state_before = int(case["state"])
+        operand = int(case["operand"])
+        top = int(case["top"])
+        target = int(case["target"])
+        signed_index = index_byte if index_byte < 0x80 else index_byte - 0x100
+        scaled_index = (signed_index * 2) & 0xFFFF
+        state_offset = (0x6ADE + scaled_index) & 0xFFFF
+        query_path = bool(query_mode & 1)
+        branch_taken = query_path and state_before != 0
+        final_script = (start + (1 if query_path else 3)) & 0xFFFF
+        final_top = (top - 2) & 0xFFFF if branch_taken else top
+        branch_offset = (0x6820 + ((top - 2) & 0xFFFF)) & 0xFFFF
+        script = bytes([index_byte]) + struct.pack("<H", operand)
+        state_bytes = struct.pack("<H", state_before)
+        state_after = state_before if query_path else operand
+        data_state_decoy = struct.pack("<H", state_before ^ 0xFFFF)
+        game_state_decoy = struct.pack("<H", state_before ^ 0x5A5A)
+        data_query_decoy = query_mode ^ 0xFF
+        stack_query_decoy = query_mode ^ 0xA5
+        target_bytes = struct.pack("<H", target)
+        memory = [
+            (game_segment, 0x67AD, bytes([query_mode])),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (game_segment, 0x6884, struct.pack("<H", top)),
+            (stack_segment, state_offset, state_bytes),
+            (data_segment, state_offset, data_state_decoy),
+            (game_segment, state_offset, game_state_decoy),
+            (stack_segment, branch_offset, target_bytes),
+            (data_segment, branch_offset, struct.pack("<H", target ^ 0xFFFF)),
+            (game_segment, branch_offset, struct.pack("<H", target ^ 0x5A5A)),
+        ]
+        immutable = []
+        for byte_index, byte in enumerate(script):
+            offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+            memory.append((0x4800, offset, b"\x5a"))
+            memory.append((game_segment, offset, b"\xa5"))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        branch_calls = []
+        phases = []
+
+        def capture_path(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x65ED:
+                phases.append(
+                    (
+                        "sign_extended",
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+            elif address == 0x6462:
+                branch_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BP),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+
+        machine = execute(
+            0x65EB,
+            0x660B,
+            initial,
+            memory,
+            code_handler=capture_path,
+        )
+
+        sign_extended = signed_index & 0xFFFF
+        expected_phases = [("sign_extended", sign_extended, (start + 1) & 0xFFFF)]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x65eb {name}: phases={phases}, expected={expected_phases}"
+            )
+        expected_branch_calls = (
+            [(scaled_index, scaled_index, (start + 1) & 0xFFFF)]
+            if branch_taken
+            else []
+        )
+        if branch_calls != expected_branch_calls:
+            raise AssertionError(
+                f"0x65eb {name}: branch calls={branch_calls}, "
+                f"expected={expected_branch_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_ax = final_top if branch_taken else (scaled_index if query_path else operand)
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | expected_ax
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | (target if branch_taken else final_script)
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | scaled_index
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x65eb {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_state = struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + state_offset, 2)
+        )[0]
+        if actual_state != state_after:
+            raise AssertionError(
+                f"0x65eb {name}: state={actual_state:#x}, expected={state_after:#x}"
+            )
+        if machine.mem_read(data_segment * 16 + state_offset, 2) != data_state_decoy:
+            raise AssertionError(f"0x65eb {name}: DS state decoy changed")
+        if machine.mem_read(game_segment * 16 + state_offset, 2) != game_state_decoy:
+            raise AssertionError(f"0x65eb {name}: GS state decoy changed")
+        expected_query = 0 if branch_taken else query_mode
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        if actual_query != expected_query:
+            raise AssertionError(
+                f"0x65eb {name}: query={actual_query:#x}, expected={expected_query:#x}"
+            )
+        if machine.mem_read(data_segment * 16 + 0x67AD, 1)[0] != data_query_decoy:
+            raise AssertionError(f"0x65eb {name}: DS query decoy changed")
+        if machine.mem_read(stack_segment * 16 + 0x67AD, 1)[0] != stack_query_decoy:
+            raise AssertionError(f"0x65eb {name}: SS query decoy changed")
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        if actual_top != final_top:
+            raise AssertionError(
+                f"0x65eb {name}: top={actual_top:#x}, expected={final_top:#x}"
+            )
+        if machine.mem_read(stack_segment * 16 + branch_offset, 2) != target_bytes:
+            raise AssertionError(f"0x65eb {name}: branch target changed")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x65eb {name}: script input changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if branch_taken:
+            expected_flags = {
+                "cf": top < 2,
+                "pf": (final_top & 0xFF).bit_count() % 2 == 0,
+                "af": (top & 0x0F) < 2,
+                "zf": final_top == 0,
+                "sf": bool(final_top & 0x8000),
+                "of": bool(((top ^ 2) & (top ^ final_top)) & 0x8000),
+            }
+        else:
+            tested = state_before if query_path else 0
+            expected_flags = {
+                "cf": False,
+                "pf": (tested & 0xFF).bit_count() % 2 == 0,
+                "zf": tested == 0,
+                "sf": bool(tested & 0x8000),
+                "of": False,
+            }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x65eb {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x660B] != 0xC3:
+            raise AssertionError("0x65eb: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "signed_index": signed_index,
+                "state_offset": state_offset,
+                "query_mode_before": query_mode,
+                "state_before": state_before,
+                "operand_word": None if query_path else operand,
+                "branch_taken": branch_taken,
+                "final_script_offset": target if branch_taken else final_script,
+                "final_state": state_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -12847,6 +13149,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_65db_natural.json",
         vm_script_jump_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_65eb_natural.json",
+        vm_cond_state_array_vectors(),
         args.check,
     )
     update_vector(

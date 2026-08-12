@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_a5_cond_state_array
-; label_comment: VM opcode 0xA5: lodsb index; bp=index*2; gated on gs:[0x67ad]&1; test word gs:[bp+0x6ade] (the state_word_array) - conditional branch on a state-array flag
+; label_comment: VM opcode 0xA5: LODSB/CBW makes a signed index, BP=index*2; gs:[0x67ad]&1 selects query mode, while the state word is addressed through SS:[BP+0x6ade] (SS=GS at runtime); query branches on nonzero, assignment consumes and stores the following word
 ; incoming: vm_opcode_handlers:opcode_0xa5
 ; byte_count: 33
 ; boundary: cfg_blocks_5_terminals_2

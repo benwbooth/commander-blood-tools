@@ -1024,6 +1024,21 @@ input and AX return, but uses immediate stores and therefore preserves flags.
 The C logic is complete; exact integration needs Watcom's register ABI combined
 with Turbo-like immediate stores or a narrow codegen boundary.
 
+VM conditional-state handler `0x0065EB` has eight direct vectors proving that
+the operand byte is signed: `CBW` maps `0xFF` and `0x80` to state words before
+SS:0x6ADE, rather than to unsigned entries 255 and 128. The vectors also prove
+that GS:0x67AD bit zero selects a one-byte query path, while its clear path
+consumes a following word; state storage is through SS:BP, script input through
+DS:SI, and a nonzero query calls the real branch helper. Path-specific AX, BP,
+SI, flags, stack/query effects, and a word crossing `DS:FFFF` are covered.
+
+Open Watcom `-3 -ox -mm` preserves SI as the pointer input/result but emits 18
+instructions/39 bytes versus 13/33 original, using `MOVSX` and saved BX for the
+index plus DS globals. Turbo C 2.01 medium emits 28 instructions under its stack
+ABI; it does retain the natural source's byte load followed by `CBW`. The
+logical C is complete, but exact integration still needs SS state placement and
+the original AX-to-BP allocation with string loads.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1061,6 +1076,7 @@ LCS and then mnemonic similarity:
 | `vm_random_branch` | medium, `-ox`, register | 6/6 | 0.1667 | 0.3333 | 0.1667 |
 | `vm_conditional_block` | medium, `-ox`, register | 29/32 | 0.0690 | 0.6897 | 0.1034 |
 | `vm_script_jump` | medium, `-ox`, register | 4/8 | 0.2500 | 1.0000 | 0.5000 |
+| `vm_cond_state_array` | medium, `-ox`, register | 13/18 | 0.0769 | 0.4615 | 0.0769 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
