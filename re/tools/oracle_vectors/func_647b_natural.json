@@ -1,0 +1,142 @@
+[
+  {
+    "name": "immediate_zero",
+    "start_offset": 4096,
+    "count": 0,
+    "final_ax": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "immediate_minus_one",
+    "start_offset": 4352,
+    "count": 0,
+    "final_ax": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "immediate_signed_minimum",
+    "start_offset": 4608,
+    "count": 0,
+    "final_ax": 32768,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_positive_then_zero",
+    "start_offset": 4864,
+    "count": 1,
+    "final_ax": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "three_positive_then_negative",
+    "start_offset": 5120,
+    "count": 3,
+    "final_ax": 32768,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "count_sets_auxiliary_flag",
+    "start_offset": 5376,
+    "count": 15,
+    "final_ax": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_wraps",
+    "start_offset": 65532,
+    "count": 2,
+    "final_ax": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unaligned_cursor",
+    "start_offset": 65533,
+    "count": 1,
+    "final_ax": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "count_sets_overflow_flag",
+    "start_offset": 0,
+    "count": 32767,
+    "final_ax": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "loop_counter_exhausts",
+    "start_offset": 0,
+    "count": 65535,
+    "final_ax": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

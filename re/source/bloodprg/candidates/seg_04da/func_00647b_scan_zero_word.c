@@ -1,6 +1,6 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR scan_zero_word(const cb_i16 *script_words)
+void CB_NEAR scan_zero_word(const cb_i16 CB_NEAR *script_words)
 {
     cb_u16 count;
 

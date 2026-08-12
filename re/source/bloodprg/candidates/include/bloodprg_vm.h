@@ -109,6 +109,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
 #pragma aux vm_condition_5 parm [cx] [es di] [si] value [ax] modify exact [ax bx dx]
 #pragma aux vm_branch_fail value [si] modify exact [ax si]
+#pragma aux scan_zero_word parm [si] modify exact [ax]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -128,6 +129,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         const cb_u8 *script_bytes);          /* 0x006339 */
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
+void CB_NEAR scan_zero_word(const cb_i16 CB_NEAR *script_words); /* 0x00647B */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */

@@ -95,6 +95,7 @@ def execute(
     code_handler: Callable[[Uc, int, int], None] | None = None,
     input_handler: Callable[[Uc, int, int], int] | None = None,
     output_handler: Callable[[Uc, int, int, int], None] | None = None,
+    instruction_count: int = 20000,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -149,7 +150,7 @@ def execute(
     # The stop address is a global execution boundary in Unicorn, so it cannot
     # be the routine's RET when a nested call targets a higher address.
     try:
-        machine.emu_start(entry, 0x2ffff0, count=20000)
+        machine.emu_start(entry, 0x2ffff0, count=instruction_count)
     except UcError as error:
         raise RuntimeError(
             f"{entry:#x}: execution failed at "
@@ -5910,6 +5911,151 @@ def vm_branch_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def scan_zero_word_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("immediate_zero", 0x1000, [0x0000], 0, 0x0000),
+        ("immediate_minus_one", 0x1100, [0xFFFF], 0, 0xFFFF),
+        ("immediate_signed_minimum", 0x1200, [0x8000], 0, 0x8000),
+        ("one_positive_then_zero", 0x1300, [0x0001, 0x0000], 1, 0x0000),
+        (
+            "three_positive_then_negative",
+            0x1400,
+            [0x0001, 0x7FFF, 0x0002, 0x8000],
+            3,
+            0x8000,
+        ),
+        ("count_sets_auxiliary_flag", 0x1500, [1] * 15 + [0], 15, 0),
+        ("cursor_wraps", 0xFFFC, [0x0001, 0x7FFF, 0x0000], 2, 0x0000),
+        ("unaligned_cursor", 0xFFFD, [0x0001, 0xFFFF], 1, 0xFFFF),
+        ("count_sets_overflow_flag", 0x0000, None, 0x7FFF, 0x0000),
+        ("loop_counter_exhausts", 0x0000, None, 0xFFFF, 0x0001),
+    ]
+    vectors = []
+
+    for name, start, words, expected_count, expected_ax in cases:
+        memory = [
+            (game_segment, 0x27CF, struct.pack("<H", 0xA55A)),
+            (stack_segment, 0x27CF, struct.pack("<H", 0x5AA5)),
+        ]
+        immutable = []
+        instruction_count = 20000
+        if words is None:
+            if expected_count == 0xFFFF:
+                input_bytes = b"\x01\x00" * 0x8000
+                instruction_count = 350000
+            else:
+                input_bytes = (
+                    b"\x01\x00" * expected_count + struct.pack("<H", expected_ax)
+                )
+                instruction_count = 180000
+            memory.append((data_segment, 0, input_bytes))
+            immutable.append((data_segment, 0, input_bytes))
+        else:
+            for index, word in enumerate(words):
+                offset = (start + index * 2) & 0xFFFF
+                encoded = struct.pack("<H", word)
+                memory.append((data_segment, offset, encoded))
+                immutable.append((data_segment, offset, encoded))
+
+            data_count_decoy = struct.pack("<H", 0xC33C)
+            memory.append((data_segment, 0x27CF, data_count_decoy))
+            immutable.append((data_segment, 0x27CF, data_count_decoy))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+
+        machine = execute(
+            0x647B,
+            0x6493,
+            initial,
+            memory,
+            instruction_count=instruction_count,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_ax
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x647b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_count = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x27CF, 2)
+        )[0]
+        if actual_count != expected_count:
+            raise AssertionError(
+                f"0x647b {name}: count={actual_count:#x}, "
+                f"expected={expected_count:#x}"
+            )
+        stack_decoy = struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + 0x27CF, 2)
+        )[0]
+        if stack_decoy != 0x5AA5:
+            raise AssertionError(f"0x647b {name}: SS count decoy changed")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x647b {name}: input memory changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": expected_count != 0xFFFF,
+            "pf": (expected_count & 0xFF).bit_count() % 2 == 0,
+            "af": (expected_count & 0x0F) == 0x0F,
+            "zf": expected_count == 0,
+            "sf": bool(expected_count & 0x8000),
+            "of": expected_count == 0x7FFF,
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x647b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6493] != 0xC3:
+            raise AssertionError("0x647b: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "count": expected_count,
+                "final_ax": expected_ax,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -10470,6 +10616,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_6462_natural.json", vm_branch_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_647b_natural.json", scan_zero_word_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check
