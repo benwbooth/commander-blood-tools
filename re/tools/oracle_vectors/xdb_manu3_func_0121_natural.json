@@ -1,0 +1,188 @@
+[
+  {
+    "name": "ordinary",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 4096,
+    "data_delta": 8192,
+    "data_segment": 12288,
+    "work_deltas": [
+      8192,
+      8192,
+      8192
+    ],
+    "work_segments": [
+      20480,
+      28672,
+      36864
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "zero_work_deltas",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 8192,
+    "data_delta": 12288,
+    "data_segment": 20480,
+    "work_deltas": [
+      0,
+      0,
+      0
+    ],
+    "work_segments": [
+      20480,
+      20480,
+      20480
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "data_segment_wrap",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 57344,
+    "data_delta": 20480,
+    "data_segment": 12288,
+    "work_deltas": [
+      8192,
+      8192,
+      8192
+    ],
+    "work_segments": [
+      20480,
+      28672,
+      36864
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "cumulative_wrap",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 16384,
+    "data_delta": 20480,
+    "data_segment": 36864,
+    "work_deltas": [
+      24576,
+      12288,
+      24576
+    ],
+    "work_segments": [
+      61440,
+      8192,
+      32768
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "maximum_deltas",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 24576,
+    "data_delta": 12288,
+    "data_segment": 36864,
+    "work_deltas": [
+      65535,
+      65535,
+      65535
+    ],
+    "work_segments": [
+      36863,
+      36862,
+      36861
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "final_zero_segment",
+    "module": "manu3",
+    "entry": 289,
+    "code_segment": 32768,
+    "data_delta": 20480,
+    "data_segment": 53248,
+    "work_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "work_segments": [
+      57344,
+      61440,
+      0
+    ],
+    "span_continuation_offset": 2784,
+    "data_segment_restored": true,
+    "far_stack_bytes_consumed": 6,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

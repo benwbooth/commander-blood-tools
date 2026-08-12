@@ -36,9 +36,23 @@ typedef struct xdb_manu3_face {
     xdb_u16 vertex_2;
 } xdb_manu3_face;
 
+typedef struct xdb_manu3_segment_directory {
+    xdb_u16 field_000;
+    xdb_u16 work_segment_0;
+    xdb_u16 work_segment_1;
+    xdb_u16 work_segment_2;
+    xdb_u16 field_008;
+    xdb_u16 field_00a;
+    xdb_u16 work_delta_0;
+    xdb_u16 work_delta_1;
+    xdb_u16 work_delta_2;
+} xdb_manu3_segment_directory;
+
 extern volatile xdb_u16 xdb_manu3_cursor_x; /* DS:0x001A */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_manu3_data_segment; /* CS:0x136A */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_manu3_data_segment_delta; /* CS:0x1368 */
 extern volatile xdb_u16
         xdb_manu3_framebuffer_window_offset; /* SS:0x20CE */
 extern volatile xdb_u16 xdb_manu3_framebuffer_segment; /* DS:0x0018 */
@@ -54,6 +68,7 @@ extern volatile xdb_u16 xdb_manu3_view_yaw; /* DS:0x23E4 */
 extern volatile xdb_u16 xdb_manu3_sequence_table_offset; /* DS:0x2306 */
 
 void XDB_FAR xdb_manu3_anim_select_entry(xdb_u16 selector);
+void XDB_FAR xdb_manu3_init_protocol(xdb_u16 code_segment);
 void XDB_FAR xdb_manu3_frame_step(void);
 void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector);
 void XDB_NEAR xdb_manu3_tween_step(void);
@@ -73,6 +88,8 @@ void XDB_NEAR xdb_manu3_gradient_setup(
 #if defined(__WATCOMC__)
 #pragma aux xdb_manu3_anim_select_entry \
         parm [bx] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_init_protocol \
+        parm [ax] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_frame_step \
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_anim_select \

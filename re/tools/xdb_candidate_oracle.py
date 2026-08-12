@@ -103,11 +103,16 @@ def execute(
     input_handler: object | None = None,
     output_handler: object | None = None,
     code_handler: object | None = None,
+    code_segment: int = 0,
+    return_segment: int | None = None,
 ) -> Uc:
+    if return_segment is None:
+        return_segment = code_segment
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
-    machine.mem_write(0, image)
-    machine.reg_write(UC_X86_REG_CS, 0)
+    code_base = code_segment * 16
+    machine.mem_write(code_base, image)
+    machine.reg_write(UC_X86_REG_CS, code_segment)
     for name, value in registers.items():
         machine.reg_write(REGISTERS[name], value)
     for segment, offset, data in memory:
@@ -118,7 +123,7 @@ def execute(
     def stop_at_return(
         machine: Uc, address: int, _size: int, _data: object
     ) -> None:
-        if address == return_address:
+        if address == return_segment * 16 + return_address:
             returned.append(address)
             machine.emu_stop()
 
@@ -148,7 +153,7 @@ def execute(
             UC_HOOK_INSN, handle_output, None, 1, 0, UC_X86_INS_OUT
         )
     try:
-        machine.emu_start(entry, 0x2FFFF0, count=max_instructions)
+        machine.emu_start(code_base + entry, 0x2FFFF0, count=max_instructions)
     except UcError as error:
         raise RuntimeError(
             f"{entry:#x}: execution failed at "
@@ -2289,6 +2294,209 @@ def near_noop_vectors(module: str, entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_init_protocol_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0121
+    image = load_image(module)
+    expected_hash = "53ee04799c1a04e8fa75a5da3c3003e16a4c3de7a8b51ec0ab5c519b9363a0f7"
+    if hashlib.sha256(image[entry : entry + 47]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 47-byte body changed")
+
+    cases = (
+        ("ordinary", 0x1000, 0x2000, (0x2000, 0x2000, 0x2000)),
+        ("zero_work_deltas", 0x2000, 0x3000, (0x0000, 0x0000, 0x0000)),
+        ("data_segment_wrap", 0xE000, 0x5000, (0x2000, 0x2000, 0x2000)),
+        ("cumulative_wrap", 0x4000, 0x5000, (0x6000, 0x3000, 0x6000)),
+        ("maximum_deltas", 0x6000, 0x3000, (0xFFFF, 0xFFFF, 0xFFFF)),
+        ("final_zero_segment", 0x8000, 0x5000, (0x1000, 0x1000, 0x1000)),
+    )
+    initial_data_segment = 0x0100
+    initial_extra_segment = 0x0200
+    initial_fs_segment = 0x0300
+    game_segment = 0x0400
+    stack_segment = 0xA000
+    return_segment = 0xF000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (
+        name,
+        code_segment,
+        data_delta,
+        work_deltas,
+    ) in enumerate(cases):
+        data_segment = (code_segment + data_delta) & 0xFFFF
+        work_segments = []
+        segment = data_segment
+        for delta in work_deltas:
+            segment = (segment + delta) & 0xFFFF
+            work_segments.append(segment)
+        final_segment = work_segments[-1]
+
+        directory_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(18)
+        )
+        struct.pack_into("<HHH", directory_before, 0x0C, *work_deltas)
+        directory_expected = bytearray(directory_before)
+        struct.pack_into("<HHH", directory_expected, 0x02, *work_segments)
+        continuation_before = bytes.fromhex("a1b2c3d4e5f60718")
+        continuation_expected = (
+            continuation_before[:2]
+            + struct.pack("<H", 0x0AE0)
+            + continuation_before[4:]
+        )
+
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFEFE,
+            "ds": initial_data_segment,
+            "es": initial_extra_segment,
+            "fs": initial_fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        decoys = (
+            bytes.fromhex("1021324354657687"),
+            bytes.fromhex("89a9bacbdcedfe0f"),
+            bytes.fromhex("f0e0d0c0b0a09080"),
+        )
+        code_window = bytearray(image[0x1360:0x1370])
+        struct.pack_into("<H", code_window, 0x08, data_delta)
+        struct.pack_into("<H", code_window, 0x0A, data_segment)
+
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (code_segment, 0x1368, struct.pack("<HH", data_delta, 0xA55A)),
+                (return_segment, return_address, b"\xcc"),
+                (data_segment, 0, bytes(directory_before)),
+                (final_segment, 0x067C, continuation_before),
+                (initial_data_segment, 0x8000, decoys[0]),
+                (initial_extra_segment, 0x8000, decoys[1]),
+                (initial_fs_segment, 0x8000, decoys[2]),
+                (
+                    stack_segment,
+                    0xFEFE,
+                    struct.pack(
+                        "<HHH",
+                        initial_data_segment,
+                        return_address,
+                        return_segment,
+                    )
+                    + stack_sentinel,
+                ),
+            ],
+            code_segment=code_segment,
+            return_segment=return_segment,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | final_segment
+        expected_registers["es"] = final_segment
+        expected_registers["fs"] = data_segment
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != return_segment:
+            raise AssertionError(f"{module}:{entry:#x} {name}: far return CS differs")
+
+        actual_directory = bytes(machine.mem_read(data_segment * 16, 18))
+        if actual_directory != directory_expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: relocation directory differs"
+            )
+        actual_continuation = bytes(
+            machine.mem_read(final_segment * 16 + 0x067C, 8)
+        )
+        if actual_continuation != continuation_expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: span continuation differs"
+            )
+        actual_code_window = bytes(
+            machine.mem_read(code_segment * 16 + 0x1360, 16)
+        )
+        if actual_code_window != code_window:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code globals differ"
+            )
+        for segment_value, expected_decoy in zip(
+            (initial_data_segment, initial_extra_segment, initial_fs_segment),
+            decoys,
+        ):
+            actual_decoy = bytes(
+                machine.mem_read(segment_value * 16 + 0x8000, 8)
+            )
+            if actual_decoy != expected_decoy:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment decoy changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        expected_flags = add_flags_16(
+            work_segments[-2], work_deltas[-1], initial_flags
+        )
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "code_segment": code_segment,
+                "data_delta": data_delta,
+                "data_segment": data_segment,
+                "work_deltas": list(work_deltas),
+                "work_segments": work_segments,
+                "span_continuation_offset": 0x0AE0,
+                "data_segment_restored": True,
+                "far_stack_bytes_consumed": 6,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def manu3_frame_step_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x0150
@@ -3681,6 +3889,11 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0121_natural.json",
+        manu3_init_protocol_vectors(),
+        args.check,
+    )
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0150_natural.json",
         manu3_frame_step_vectors(),

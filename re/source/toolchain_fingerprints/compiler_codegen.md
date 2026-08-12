@@ -2136,6 +2136,20 @@ emits 14 instructions. The natural body retains the gate, calculation, and
 call graph; exact integration still needs a narrow adapter for the `CS`/`SS`
 inputs and `DS`/`ES`/`FS` installation.
 
+Six relocated-code vectors prove the `0x000121` MANU3 initialization block.
+They execute the original image at multiple nonzero `CS` values and verify
+`data = CS + CS:[0x1368]`, publication at CS:`0x136A`, then three cumulative
+segment additions from data offsets `0x000C/0x000E/0x0010` into
+`0x0002/0x0004/0x0006`. The final work segment receives continuation `0x0AE0`
+at offset `0x067E`. Cases cover data and cumulative wrap, zero and maximum
+deltas, and a final zero segment while checking `FS`/`ES`, saved `DS`, flags,
+memory ownership, and the shared far-return epilogue. Watcom emits 16
+instructions/50 bytes versus the original 14/47 and keeps the core chained
+adds and stores; Turbo C emits 36 instructions. The natural function exposes
+the hidden current-`CS` value as a typed argument. Exact integration still
+needs that tiny input adapter, segment installation, and the original jump
+through its caller's saved-`DS` epilogue.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2175,6 +2189,7 @@ LCS and then mnemonic similarity:
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
 | `xdb_manu3_anim_select_entry` | medium, `-ox -zdp`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `xdb_manu3_init_protocol` | medium, `-ox -zdp`, register | 14/16 | 0.0000 | 0.7857 | 0.0714 |
 | `xdb_manu3_frame_step` | medium, `-ox -zdp`, register | 17/15 | 0.0588 | 0.6471 | 0.1765 |
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
