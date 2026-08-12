@@ -7,6 +7,7 @@ extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
 extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
 extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
+extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
 extern volatile cb_u8 vm_ui_flags;           /* GS:0x2793 */
@@ -40,6 +41,8 @@ extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
 #define BLOODPRG_VM_OBJECT_ACCESS_MASK 0x0118u
+#define BLOODPRG_VM_RECORD_C4 0x00c4u
+#define BLOODPRG_VM_RECIPROCAL_SELECTOR 0x0013u
 
 typedef struct bloodprg_vm_directory_entry {
     char name[16];
@@ -58,6 +61,12 @@ typedef struct bloodprg_vm_object_record {
     cb_u8 reserved_03[17];
     cb_u8 access_count;
 } bloodprg_vm_object_record;
+
+typedef struct bloodprg_vm_record_triple {
+    cb_u16 kind;
+    cb_u16 related;
+    cb_u16 value;
+} bloodprg_vm_record_triple;
 
 typedef struct bloodprg_dic_lookup_result {
     cb_u16 object_offset;
@@ -78,5 +87,6 @@ cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
+void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 
 #endif
