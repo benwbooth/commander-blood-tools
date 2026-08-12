@@ -1,36 +1,48 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR vm_op_c8_record_match(const cb_u8 **script_bytes)
+#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#include <dos.h>
+#define VM_C8_RECORD_AT(base, offset) \
+    ((volatile cb_u8 CB_FAR *)MK_FP(FP_SEG(base), (offset)))
+#else
+#define VM_C8_RECORD_AT(base, offset) ((base) + (offset))
+#endif
+
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c8_record_match(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     int inverted;
     cb_u16 record_offset;
     cb_u16 operand;
-    const cb_u16 *script_words;
+    volatile cb_u8 CB_FAR *record_base;
     volatile cb_u16 CB_FAR *record;
     int matches;
 
+    record_base = vm_record_base;
     inverted = 0;
-    if (**script_bytes == 0xa1u) {
+    if (*script_bytes == 0xa1u) {
         inverted = 1;
-        ++*script_bytes;
+        ++script_bytes;
     }
 
-    script_words = (const cb_u16 *)*script_bytes;
-    record_offset = *script_words++;
-    operand = *script_words++;
-    *script_bytes = (const cb_u8 *)script_words;
+    record_offset = *(const cb_u16 CB_NEAR *)script_bytes;
+    script_bytes += sizeof(cb_u16);
+    operand = *(const cb_u16 CB_NEAR *)script_bytes;
+    script_bytes += sizeof(cb_u16);
 
-    record = (volatile cb_u16 CB_FAR *)(vm_record_base + record_offset);
+    record = (volatile cb_u16 CB_FAR *)VM_C8_RECORD_AT(
+        record_base, record_offset);
     if ((vm_query_mode & 1u) != 0) {
         matches = record[1] == operand && record[0] == 0x00c8u;
         if (matches == inverted) {
-            vm_branch_fail();
+            return (const cb_u8 CB_NEAR *)vm_branch_fail();
         }
     } else if (record[0] == 0) {
         record[0] = 0x00c8u;
         record[1] = 0;
         record[2] = 0;
     } else {
-        vm_branch_fail();
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
+    return script_bytes;
 }
