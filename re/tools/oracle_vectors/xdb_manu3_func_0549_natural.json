@@ -1,0 +1,443 @@
+[
+  {
+    "name": "ordinary_centered",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 110,
+        "screen_y": 55,
+        "depth": 1,
+        "clip_flags": 0
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_depth_rejected",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": -19546,
+        "screen_y": -12864,
+        "depth": 0,
+        "clip_flags": 32768
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_depth_rejected",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": -12093,
+        "screen_y": -5411,
+        "depth": -1,
+        "clip_flags": 32768
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_clip",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": -1,
+        "screen_y": 0,
+        "depth": 1,
+        "clip_flags": 1
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "left_clamp",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": -39,
+        "screen_y": 0,
+        "depth": 1,
+        "clip_flags": 1
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_clip",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 320,
+        "screen_y": 0,
+        "depth": 1,
+        "clip_flags": 2
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "right_clamp",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 359,
+        "screen_y": 0,
+        "depth": 1,
+        "clip_flags": 2
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "top_clip",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 0,
+        "screen_y": -1,
+        "depth": 1,
+        "clip_flags": 4
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "top_clamp",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 0,
+        "screen_y": -99,
+        "depth": 1,
+        "clip_flags": 4
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "bottom_clip",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 0,
+        "screen_y": 200,
+        "depth": 1,
+        "clip_flags": 8
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "bottom_clamp",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 0,
+        "screen_y": 299,
+        "depth": 1,
+        "clip_flags": 8
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "matrix_vertex_traversal",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 3,
+    "iterations": 3,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 10,
+        "screen_y": 20,
+        "depth": 1,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4116,
+        "screen_x": 319,
+        "screen_y": 199,
+        "depth": 1,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4136,
+        "screen_x": -1,
+        "screen_y": -1,
+        "depth": 1,
+        "clip_flags": 5
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "two_projection_states",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 2,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 10,
+        "screen_y": 12,
+        "depth": 1,
+        "clip_flags": 0
+      },
+      {
+        "offset": 5120,
+        "screen_x": 20,
+        "screen_y": 22,
+        "depth": 2,
+        "clip_flags": 0
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "copy_tail_two_vertices",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 1,
+    "iterations": 1,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": 3842,
+        "screen_y": 10524,
+        "depth": 0,
+        "clip_flags": 32768
+      }
+    ],
+    "copy_count": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_vertex_count_wraps_65536_iterations",
+    "module": "manu3",
+    "entry": 1353,
+    "state_count": 1,
+    "vertex_count": 0,
+    "iterations": 65536,
+    "projected_vertices": [
+      {
+        "offset": 4096,
+        "screen_x": -1,
+        "screen_y": -1,
+        "depth": -32768,
+        "clip_flags": 65535
+      }
+    ],
+    "copy_count": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

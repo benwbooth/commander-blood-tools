@@ -3363,6 +3363,496 @@ def manu3_tween_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_entity_project_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0549
+    image = load_image(module)
+    expected_hash = "b8b58b8148911c130bebdc2455fea987390e6c8f291d8521527f58596dbb41f7"
+    if hashlib.sha256(image[entry : entry + 368]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 368-byte body changed")
+
+    zero_matrix = ((0, 0, 0), (0, 0, 0), (0, 0, 0))
+    cases = (
+        ("ordinary_centered", (10, 5), zero_matrix, (100, -50, 256), ((0, 0, 0),)),
+        ("zero_depth_rejected", (0, 0), zero_matrix, (20, 30, 0), ((1, 2, 3),)),
+        (
+            "negative_depth_rejected",
+            (0, 0),
+            zero_matrix,
+            (20, 30, -256),
+            ((-1, -2, -3),),
+        ),
+        ("left_clip", (0, 0), zero_matrix, (-1, 0, 256), ((0, 0, 0),)),
+        ("left_clamp", (0, 0), zero_matrix, (-40, 0, 256), ((0, 0, 0),)),
+        ("right_clip", (0, 0), zero_matrix, (320, 0, 256), ((0, 0, 0),)),
+        ("right_clamp", (0, 0), zero_matrix, (360, 0, 256), ((0, 0, 0),)),
+        ("top_clip", (0, 0), zero_matrix, (0, 1, 256), ((0, 0, 0),)),
+        ("top_clamp", (0, 0), zero_matrix, (0, 100, 256), ((0, 0, 0),)),
+        ("bottom_clip", (0, 0), zero_matrix, (0, -200, 256), ((0, 0, 0),)),
+        ("bottom_clamp", (0, 0), zero_matrix, (0, -300, 256), ((0, 0, 0),)),
+        (
+            "matrix_vertex_traversal",
+            (0, 0),
+            ((1, 0, 0), (0, 1, 0), (0, 0, 0)),
+            (0, 0, 256),
+            ((10, -20, 7), (319, -199, -8), (-1, 1, 9)),
+        ),
+    )
+    active_segment = 0x6000
+    geometry_segment = 0x4400
+    extra_segment = 0x7000
+    game_segment = 0x7800
+    stack_segment = 0x9000
+    return_address = 0xF000
+    state_offset = 0x2394
+    vectors = []
+
+    def read_word(buffer: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return buffer[offset] | (buffer[offset + 1] << 8)
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        offset &= 0xFFFF
+        buffer[offset] = value & 0xFF
+        buffer[offset + 1] = (value >> 8) & 0xFF
+
+    def read_dword(buffer: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return int.from_bytes(buffer[offset : offset + 4], "little")
+
+    def write_dword(buffer: bytearray, offset: int, value: int) -> None:
+        offset &= 0xFFFF
+        buffer[offset : offset + 4] = (value & 0xFFFFFFFF).to_bytes(4, "little")
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def multiply_dword(left: int, right: int) -> int:
+        return ((left & 0xFFFFFFFF) * (right & 0xFFFFFFFF)) & 0xFFFFFFFF
+
+    def divide_signed(dividend: int, divisor: int) -> tuple[int, int]:
+        left = signed_dword(dividend)
+        right = signed_dword(divisor)
+        quotient = abs(left) // abs(right)
+        if (left < 0) != (right < 0):
+            quotient = -quotient
+        remainder = left - quotient * right
+        return quotient & 0xFFFFFFFF, remainder & 0xFFFFFFFF
+
+    def model_project(
+        active: bytearray,
+        geometry: bytearray,
+        initial: dict[str, int],
+    ) -> tuple[dict[str, int], dict[str, bool]]:
+        eax = initial["eax"]
+        ebx = initial["ebx"]
+        ecx = initial["ecx"]
+        edx = initial["edx"]
+        esi = initial["esi"]
+        edi = (initial["edi"] & 0xFFFF0000) | 0x2336
+        ebp = initial["ebp"]
+        outer_count = read_word(active, 0x22F2)
+        ecx = (ecx & 0xFFFF0000) | outer_count
+        outer_iterations = outer_count if outer_count != 0 else 0x10000
+        final_vertex_add_left = 0
+
+        for _state_index in range(outer_iterations):
+            saved_outer_count = ecx & 0xFFFF
+            edi = (edi & 0xFFFF0000) | (((edi & 0xFFFF) + 0x005E) & 0xFFFF)
+            current_state = edi & 0xFFFF
+            inner_count = read_word(active, current_state + 2)
+            ecx = (ecx & 0xFFFF0000) | inner_count
+            esi = (esi & 0xFFFF0000) | read_word(active, current_state + 6)
+            write_word(active, 0x224A, inner_count)
+            write_word(active, 0x224E, 0)
+            inner_iterations = inner_count if inner_count != 0 else 0x10000
+
+            for _vertex_index in range(inner_iterations):
+                vertex = esi & 0xFFFF
+                write_word(geometry, vertex + 0x12, 0x8000)
+                ebx = signed_word(read_word(geometry, vertex + 4)) & 0xFFFFFFFF
+                ecx = signed_word(read_word(geometry, vertex + 6)) & 0xFFFFFFFF
+                edx = signed_word(read_word(geometry, vertex + 8)) & 0xFFFFFFFF
+
+                eax = multiply_dword(read_dword(active, current_state + 0x2A), ebx)
+                ebp = eax
+                eax = multiply_dword(read_dword(active, current_state + 0x2E), ecx)
+                ebp = (ebp + eax) & 0xFFFFFFFF
+                eax = multiply_dword(read_dword(active, current_state + 0x32), edx)
+                ebp = (ebp + eax) & 0xFFFFFFFF
+                ebp = (
+                    ebp + read_dword(active, current_state + 0x3E)
+                ) & 0xFFFFFFFF
+                ebp = (signed_dword(ebp) >> 8) & 0xFFFFFFFF
+                write_dword(geometry, vertex + 0x0E, ebp)
+
+                if signed_dword(ebp) > 0:
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x1E), ebx
+                    )
+                    dot = eax
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x22), ecx
+                    )
+                    dot = (dot + eax) & 0xFFFFFFFF
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x26), edx
+                    )
+                    saved_screen_y = (
+                        eax + read_dword(active, current_state + 0x3A) + dot
+                    ) & 0xFFFFFFFF
+
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x12), ebx
+                    )
+                    dot = eax
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x16), ecx
+                    )
+                    dot = (dot + eax) & 0xFFFFFFFF
+                    eax = multiply_dword(
+                        read_dword(active, current_state + 0x1A), edx
+                    )
+                    eax = (
+                        eax + read_dword(active, current_state + 0x36) + dot
+                    ) & 0xFFFFFFFF
+                    ecx &= 0xFFFF0000
+                    eax, edx = divide_signed(eax, ebp)
+                    ebx = eax
+                    eax, edx = divide_signed(saved_screen_y, ebp)
+                    eax = (-eax) & 0xFFFFFFFF
+                    ebx = (ebx + read_dword(active, 0x223E)) & 0xFFFFFFFF
+
+                    if signed_dword(ebx) < 0:
+                        ecx = (ecx & 0xFFFFFF00) | 0x01
+                        if signed_dword(ebx) <= -40:
+                            ebx = (ebx & 0xFFFF0000) | 0xFFD9
+                    if signed_dword(ebx) >= 320:
+                        ecx = (ecx & 0xFFFFFF00) | 0x02
+                        if signed_dword(ebx) >= 360:
+                            ebx = (ebx & 0xFFFF0000) | 0x0167
+
+                    eax = (eax + read_dword(active, 0x2242)) & 0xFFFFFFFF
+                    if signed_dword(eax) < 0:
+                        ecx = (ecx & 0xFFFFFF00) | ((ecx | 0x04) & 0xFF)
+                        if signed_dword(eax) <= -100:
+                            eax = (eax & 0xFFFF0000) | 0xFF9D
+                    if signed_dword(eax) >= 200:
+                        ecx = (ecx & 0xFFFFFF00) | ((ecx | 0x08) & 0xFF)
+                        if signed_dword(eax) >= 300:
+                            eax = (eax & 0xFFFF0000) | 0x012B
+
+                    write_word(geometry, vertex + 0x12, ecx)
+                    write_word(geometry, vertex + 0x0A, ebx)
+                    write_word(geometry, vertex + 0x0C, eax)
+
+                final_vertex_add_left = esi & 0xFFFF
+                esi = (esi & 0xFFFF0000) | (
+                    ((esi & 0xFFFF) + 0x0014) & 0xFFFF
+                )
+                remaining = (read_word(active, 0x224A) - 1) & 0xFFFF
+                write_word(active, 0x224A, remaining)
+
+            ecx = (ecx & 0xFFFF0000) | saved_outer_count
+            outer_count = ((ecx & 0xFFFF) - 1) & 0xFFFF
+            ecx = (ecx & 0xFFFF0000) | outer_count
+
+        copy_count = read_word(active, 0x22FE)
+        ecx = (ecx & 0xFFFF0000) | copy_count
+        final_copy_add_left = 0
+        data_segment = active_segment
+        if copy_count != 0:
+            data_segment = geometry_segment
+            edi = (edi & 0xFFFF0000) | read_word(active, 0x22FA)
+            for _copy_index in range(copy_count):
+                destination = edi & 0xFFFF
+                esi = (esi & 0xFFFF0000) | read_word(geometry, destination + 4)
+                source = esi & 0xFFFF
+                eax = read_dword(geometry, source + 0x0A)
+                ebx = read_dword(geometry, source + 0x0E)
+                edx = (edx & 0xFFFF0000) | read_word(geometry, source + 0x12)
+                write_dword(geometry, destination + 0x0A, eax)
+                write_dword(geometry, destination + 0x0E, ebx)
+                write_word(geometry, destination + 0x12, edx)
+                final_copy_add_left = destination
+                edi = (edi & 0xFFFF0000) | ((destination + 0x14) & 0xFFFF)
+                ecx = (ecx & 0xFFFF0000) | (((ecx & 0xFFFF) - 1) & 0xFFFF)
+
+        expected_registers = {
+            "eax": eax,
+            "ebx": ebx,
+            "ecx": ecx,
+            "edx": edx,
+            "esi": esi,
+            "edi": edi,
+            "ebp": ebp,
+            "sp": 0xFF02,
+            "ds": data_segment,
+            "es": geometry_segment,
+            "fs": active_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        if copy_count != 0:
+            expected_flags = add_flags_16(
+                final_copy_add_left, 0x14, initial["flags"]
+            )
+        else:
+            expected_flags = {
+                "cf": final_vertex_add_left + 0x14 > 0xFFFF,
+                "pf": True,
+                "af": False,
+                "zf": True,
+                "sf": False,
+                "if": bool(initial["flags"] & 0x0200),
+                "df": bool(initial["flags"] & 0x0400),
+                "of": False,
+            }
+        return expected_registers, expected_flags
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+
+    def run_case(
+        name: str,
+        case_index: int,
+        center: tuple[int, int],
+        matrix: tuple[tuple[int, int, int], ...],
+        translation: tuple[int, int, int],
+        vertices: tuple[tuple[int, int, int], ...],
+        vertex_count: int | None = None,
+        max_instructions: int = 10000,
+        copy_count: int = 0,
+        additional_state: tuple[
+            tuple[tuple[int, int, int], ...],
+            tuple[int, int, int],
+            tuple[tuple[int, int, int], ...],
+        ]
+        | None = None,
+    ) -> dict[str, object]:
+        active_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x10000)
+        )
+        geometry_before = bytearray(
+            ((offset * 13 + case_index * 29 + 7) & 0xFF)
+            for offset in range(0x10020)
+        )
+        state_specs = [(matrix, translation, vertices)]
+        if additional_state is not None:
+            state_specs.append(additional_state)
+        projected_offsets = []
+        write_word(active_before, 0x0002, geometry_segment)
+        write_dword(active_before, 0x223E, center[0])
+        write_dword(active_before, 0x2242, center[1])
+        write_word(active_before, 0x22F2, len(state_specs))
+        write_word(active_before, 0x22FA, 0x3000)
+        write_word(active_before, 0x22FE, copy_count)
+        for state_index, (state_matrix, state_translation, state_vertices) in enumerate(
+            state_specs
+        ):
+            current_state = state_offset + state_index * 0x005E
+            vertex_base = 0x1000 + state_index * 0x0400
+            current_count = len(state_vertices)
+            if state_index == 0 and vertex_count is not None:
+                current_count = vertex_count
+            write_word(active_before, current_state + 2, current_count)
+            write_word(active_before, current_state + 6, vertex_base)
+            for row in range(3):
+                for column in range(3):
+                    write_dword(
+                        active_before,
+                        current_state + 0x12 + row * 0x0C + column * 4,
+                        state_matrix[row][column],
+                    )
+            for component, value in enumerate(state_translation):
+                write_dword(
+                    active_before,
+                    current_state + 0x36 + component * 4,
+                    value,
+                )
+            for vertex_index, coordinates in enumerate(state_vertices):
+                offset = vertex_base + vertex_index * 0x14
+                projected_offsets.append(offset)
+                for component, value in enumerate(coordinates):
+                    write_word(
+                        geometry_before, offset + 4 + component * 2, value
+                    )
+        if copy_count:
+            for copy_index in range(copy_count):
+                destination = 0x3000 + copy_index * 0x14
+                source = 0x4000 + copy_index * 0x20
+                write_word(geometry_before, destination + 4, source)
+                write_dword(
+                    geometry_before,
+                    source + 0x0A,
+                    0x22001100 + copy_index * 0x01010101,
+                )
+                write_dword(
+                    geometry_before, source + 0x0E, 0x12345678 + copy_index
+                )
+                write_word(geometry_before, source + 0x12, 0x0041 + copy_index)
+
+        active_expected = bytearray(active_before)
+        geometry_expected = bytearray(geometry_before)
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4567 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | ((0x5678 + case_index) & 0xFFFF),
+            "edi": 0xF6F60000 | ((0x6789 + case_index) & 0xFFFF),
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": active_segment,
+            "es": extra_segment,
+            "fs": active_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        expected_registers, expected_flags = model_project(
+            active_expected, geometry_expected, initial
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        decoy = bytes.fromhex("112233445566778899aabbccddeeff00")
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (active_segment, 0, bytes(active_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (extra_segment, 0x0100, decoy),
+                (game_segment, 0x0100, decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=max_instructions,
+        )
+        for segment, expected, label in (
+            (active_segment, active_expected, "active"),
+            (geometry_segment, geometry_expected, "geometry"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, len(expected)))
+            if actual != bytes(expected):
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(len(expected))
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: {label} differs at {differences}"
+                )
+        for segment in (extra_segment, game_segment):
+            if bytes(machine.mem_read(segment * 16 + 0x0100, len(decoy))) != decoy:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy {segment:#x} changed"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        return {
+            "name": name,
+            "module": module,
+            "entry": entry,
+            "state_count": len(state_specs),
+            "vertex_count": len(vertices) if vertex_count is None else vertex_count,
+            "iterations": (
+                len(vertices)
+                if vertex_count is None
+                else vertex_count if vertex_count != 0 else 0x10000
+            ),
+            "projected_vertices": [
+                {
+                    "offset": offset,
+                    "screen_x": signed_word(read_word(geometry_expected, offset + 0x0A)),
+                    "screen_y": signed_word(read_word(geometry_expected, offset + 0x0C)),
+                    "depth": signed_dword(read_dword(geometry_expected, offset + 0x0E)),
+                    "clip_flags": read_word(geometry_expected, offset + 0x12),
+                }
+                for offset in projected_offsets
+            ],
+            "copy_count": copy_count,
+            "defined_flags": expected_flags,
+        }
+
+    for case_index, (name, center, matrix, translation, vertices) in enumerate(cases):
+        vectors.append(
+            run_case(name, case_index, center, matrix, translation, vertices)
+        )
+    vectors.append(
+        run_case(
+            "two_projection_states",
+            len(cases),
+            (3, 4),
+            zero_matrix,
+            (7, -8, 256),
+            ((0, 0, 0),),
+            additional_state=(zero_matrix, (34, -36, 512), ((0, 0, 0),)),
+        )
+    )
+    vectors.append(
+        run_case(
+            "copy_tail_two_vertices",
+            len(cases) + 1,
+            (0, 0),
+            zero_matrix,
+            (0, 0, 0),
+            ((0, 0, 0),),
+            copy_count=2,
+        )
+    )
+    vectors.append(
+        run_case(
+            "zero_vertex_count_wraps_65536_iterations",
+            len(cases) + 2,
+            (0, 0),
+            zero_matrix,
+            (0, 0, -256),
+            ((0, 0, 0),),
+            vertex_count=0,
+            max_instructions=2000000,
+        )
+    )
+    return vectors
+
+
 def manu3_face_builder_next_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x06F6
@@ -4515,6 +5005,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_01df_natural.json",
         manu3_tween_constructor_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0549_natural.json",
+        manu3_entity_project_vectors(),
         args.check,
     )
     update_vector(

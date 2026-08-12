@@ -36,9 +36,9 @@ void XDB_NEAR xdb_manu3_face_bucket_sort(
         common_clip &= vertex_1->clip_flags;
         common_clip &= vertex_2->clip_flags;
         if (common_clip == 0u) {
-            xdb_i16 x_0 = vertex_0->screen_x;
-            xdb_i16 x_1 = vertex_1->screen_x;
-            xdb_i16 x_2 = vertex_2->screen_x;
+            xdb_i16 x_0 = vertex_0->screen.position.x;
+            xdb_i16 x_1 = vertex_1->screen.position.x;
+            xdb_i16 x_2 = vertex_2->screen.position.x;
             xdb_u16 span_1;
             xdb_u16 span_2;
 

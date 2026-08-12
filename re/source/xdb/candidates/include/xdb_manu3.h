@@ -38,12 +38,45 @@ typedef struct xdb_manu3_face {
     xdb_u16 vertex_2;
 } xdb_manu3_face;
 
+typedef union xdb_manu3_vertex_field_004 {
+    xdb_i16 object_x;
+    xdb_u16 projection_source_offset;
+} xdb_manu3_vertex_field_004;
+
+typedef union xdb_manu3_screen_position {
+    xdb_u32 packed;
+    struct {
+        xdb_i16 x;
+        xdb_i16 y;
+    } position;
+} xdb_manu3_screen_position;
+
 typedef struct xdb_manu3_vertex {
-    xdb_u8 field_000[0x0A];
-    xdb_i16 screen_x;
-    xdb_u8 field_00c[0x06];
+    xdb_u16 link;
+    xdb_u16 field_002;
+    xdb_manu3_vertex_field_004 field_004;
+    xdb_i16 object_y;
+    xdb_i16 object_z;
+    xdb_manu3_screen_position screen;
+    xdb_i32 depth;
     xdb_u16 clip_flags;
 } xdb_manu3_vertex;
+
+typedef struct xdb_manu3_projection_state {
+    xdb_u16 field_000;
+    xdb_u16 vertex_count;
+    xdb_u16 field_004;
+    xdb_u16 vertex_offset;
+    xdb_u8 field_008[0x0A];
+    xdb_i32 matrix[3][3];
+    xdb_i32 translation[3];
+    xdb_u8 field_042[0x0C];
+    xdb_u16 angle_0;
+    xdb_u16 angle_1;
+    xdb_u16 angle_2;
+    xdb_i16 radial_offset;
+    xdb_u8 field_056[0x08];
+} xdb_manu3_projection_state;
 
 typedef struct xdb_manu3_segment_directory {
     xdb_u16 field_000;
@@ -74,11 +107,20 @@ extern volatile xdb_u16 xdb_manu3_active_slot_offsets[]; /* DS:0x1032 */
 extern volatile xdb_u16 xdb_manu3_active_raster_offset; /* DS:0x0908 */
 extern volatile xdb_u16 xdb_manu3_finished_pitch; /* DS:0x223A */
 extern volatile xdb_u16 xdb_manu3_finished_yaw; /* DS:0x223C */
+extern volatile xdb_i32 xdb_manu3_screen_center_x; /* DS:0x223E */
+extern volatile xdb_i32 xdb_manu3_screen_center_y; /* DS:0x2242 */
+extern volatile xdb_u16 xdb_manu3_projection_remaining; /* DS:0x224A */
+extern volatile xdb_u16 xdb_manu3_projection_field_224e; /* DS:0x224E */
+extern volatile xdb_u16 xdb_manu3_projection_state_count; /* DS:0x22F2 */
+extern volatile xdb_u16 xdb_manu3_projection_copy_offset; /* DS/FS:0x22FA */
+extern volatile xdb_u16 xdb_manu3_projection_copy_count; /* DS:0x22FE */
 extern volatile xdb_u16 xdb_manu3_view_pitch; /* DS:0x23E2 */
 extern volatile xdb_u16 xdb_manu3_view_yaw; /* DS:0x23E4 */
 extern volatile xdb_u16 xdb_manu3_face_list_offset; /* DS/FS:0x2300 */
 extern volatile xdb_u16 xdb_manu3_face_count; /* DS/FS:0x2304 */
 extern volatile xdb_u16 xdb_manu3_sequence_table_offset; /* DS:0x2306 */
+extern volatile xdb_manu3_projection_state
+        xdb_manu3_projection_states[]; /* DS:0x2394 */
 
 void XDB_FAR xdb_manu3_anim_select_entry(xdb_u16 selector);
 void XDB_FAR xdb_manu3_init_protocol(xdb_u16 code_segment);
@@ -112,6 +154,8 @@ void XDB_NEAR xdb_manu3_gradient_setup(
 #pragma aux xdb_manu3_anim_select \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_step \
+        modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_entity_project \
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_builder_next \
         modify exact [ax bx cx dx si di bp]
