@@ -64,7 +64,7 @@ extern volatile char resource_path_buffer[];        /* game data:0x0259 */
 #pragma aux path_builder_gs_relative parm [dx] value [bx] modify [bx cx dx]
 #endif
 
-cb_u32 CB_FAR resource_file_load(const volatile char *path,
+cb_u32 CB_FAR resource_file_load(const volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
 void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */

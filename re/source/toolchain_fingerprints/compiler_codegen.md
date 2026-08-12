@@ -1490,6 +1490,26 @@ Watcom preserves the natural operations, but its register saves and named
 segment reloads do not reproduce the original ambient ES/GS/FS setup or string
 instruction allocation.
 
+Presentation-line helper `0x007E1C` is entered with its 24-byte record at
+SS:BP and returns completion in carry. Twelve direct vectors prove its busy
+early return, loaded and unloaded paths, modulo-16-bit resource-name indexing,
+resource header read, forward and reverse initialization/advancement, zero and
+wrapping frame edges, completion state, SS record versus DS globals and FS
+names, preserved registers, final flags, and carry result. Isolated `RETF`
+boundaries additionally prove the resource loader receives DS:SI at
+`FS:0x0C04 + (resource_id << 4)` and ES:DI from DS:0x0A80, while the entity
+setter receives AX=4, the same ES:DI, BX/CX coordinates, and the frame in BP.
+
+The natural typed candidate now represents the filename as a real far pointer;
+Watcom consequently emits a segment relocation instead of treating the FS
+table as near DS data. Open Watcom `-3 -ox -mm` compiles the actual candidate
+without warnings to 59 instructions/161 bytes versus 60/152 original; Turbo C
+2.01 medium emits 78 instructions. The similar counts are not an ABI match:
+Watcom uses AX for the record pointer, ordinary helper-call conventions, and AX
+for the logical Boolean result. An attempted BP parameter pragma is rejected
+by Watcom with E1122, so BP input and carry output remain narrow integration
+boundaries rather than inline-assembly code in the candidate.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned
@@ -1526,7 +1546,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `vm_condition_5` | medium, `-ox`, register | 104/142 | 0.0577 | 0.5096 | 0.0769 |
-| `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
+| `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
 | `segment_global_gate` | medium, `-ox`, register | 4/3 | 0.2500 | 0.5000 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | compact, unoptimized, register | 35/51 | 0.1714 | 0.7714 | 0.2286 |

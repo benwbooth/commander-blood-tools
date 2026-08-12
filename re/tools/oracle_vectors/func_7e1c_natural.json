@@ -1,0 +1,325 @@
+[
+  {
+    "name": "busy_gate",
+    "busy_gate": true,
+    "loaded_before": false,
+    "resource_id": 2,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": null,
+    "terminal_frame_after": 5,
+    "frame_after": 3,
+    "ui_before": 168,
+    "ui_after": 168,
+    "reverse_before": 1,
+    "reverse_after": 1,
+    "completed_cf": false,
+    "helper_calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "loaded_forward_progress",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 3,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 1,
+    "terminal_frame_after": 4,
+    "frame_after": 2,
+    "ui_before": 32,
+    "ui_after": 32,
+    "reverse_before": 0,
+    "reverse_after": 0,
+    "completed_cf": false,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "loaded_forward_complete",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 4,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 3,
+    "terminal_frame_after": 3,
+    "frame_after": 3,
+    "ui_before": 36,
+    "ui_after": 32,
+    "reverse_before": 0,
+    "reverse_after": 0,
+    "completed_cf": true,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "loaded_reverse_progress",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 5,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 2,
+    "terminal_frame_after": 6,
+    "frame_after": 1,
+    "ui_before": 64,
+    "ui_after": 64,
+    "reverse_before": 3,
+    "reverse_after": 3,
+    "completed_cf": false,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "loaded_reverse_complete",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 6,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 0,
+    "terminal_frame_after": 6,
+    "frame_after": 0,
+    "ui_before": 196,
+    "ui_after": 192,
+    "reverse_before": 1,
+    "reverse_after": 0,
+    "completed_cf": true,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "unloaded_forward",
+    "busy_gate": false,
+    "loaded_before": false,
+    "resource_id": 2,
+    "resource_name_offset": 3108,
+    "loaded_terminal_frame": 4,
+    "frame_drawn": 0,
+    "terminal_frame_after": 4,
+    "frame_after": 1,
+    "ui_before": 16,
+    "ui_after": 20,
+    "reverse_before": 2,
+    "reverse_after": 0,
+    "completed_cf": false,
+    "helper_calls": [
+      "resource_load",
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "unloaded_reverse",
+    "busy_gate": false,
+    "loaded_before": false,
+    "resource_id": 7,
+    "resource_name_offset": 3188,
+    "loaded_terminal_frame": 4,
+    "frame_drawn": 3,
+    "terminal_frame_after": 4,
+    "frame_after": 2,
+    "ui_before": 1,
+    "ui_after": 5,
+    "reverse_before": 3,
+    "reverse_after": 3,
+    "completed_cf": false,
+    "helper_calls": [
+      "resource_load",
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "unloaded_forward_terminal_zero",
+    "busy_gate": false,
+    "loaded_before": false,
+    "resource_id": 8,
+    "resource_name_offset": 3204,
+    "loaded_terminal_frame": 0,
+    "frame_drawn": 0,
+    "terminal_frame_after": 0,
+    "frame_after": 0,
+    "ui_before": 21,
+    "ui_after": 17,
+    "reverse_before": 0,
+    "reverse_after": 0,
+    "completed_cf": true,
+    "helper_calls": [
+      "resource_load",
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unloaded_reverse_terminal_zero",
+    "busy_gate": false,
+    "loaded_before": false,
+    "resource_id": 9,
+    "resource_name_offset": 3220,
+    "loaded_terminal_frame": 0,
+    "frame_drawn": 65535,
+    "terminal_frame_after": 0,
+    "frame_after": 65534,
+    "ui_before": 2,
+    "ui_after": 6,
+    "reverse_before": 1,
+    "reverse_after": 1,
+    "completed_cf": false,
+    "helper_calls": [
+      "resource_load",
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "unloaded_resource_index_wrap",
+    "busy_gate": false,
+    "loaded_before": false,
+    "resource_id": 4096,
+    "resource_name_offset": 3076,
+    "loaded_terminal_frame": 2,
+    "frame_drawn": 0,
+    "terminal_frame_after": 2,
+    "frame_after": 1,
+    "ui_before": 0,
+    "ui_after": 4,
+    "reverse_before": 0,
+    "reverse_after": 0,
+    "completed_cf": false,
+    "helper_calls": [
+      "resource_load",
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "loaded_forward_frame_wrap",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 10,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 65535,
+    "terminal_frame_after": 0,
+    "frame_after": 0,
+    "ui_before": 128,
+    "ui_after": 128,
+    "reverse_before": 0,
+    "reverse_after": 0,
+    "completed_cf": false,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "af": true
+    }
+  },
+  {
+    "name": "loaded_reverse_overflow",
+    "busy_gate": false,
+    "loaded_before": true,
+    "resource_id": 11,
+    "resource_name_offset": null,
+    "loaded_terminal_frame": null,
+    "frame_drawn": 32768,
+    "terminal_frame_after": 36864,
+    "frame_after": 32767,
+    "ui_before": 0,
+    "ui_after": 0,
+    "reverse_before": 1,
+    "reverse_after": 1,
+    "completed_cf": false,
+    "helper_calls": [
+      "entity_setter"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": true,
+      "af": true
+    }
+  }
+]

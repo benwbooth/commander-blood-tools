@@ -16335,6 +16335,458 @@ def byte_parser_stream_0f18_append_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_line_helper_vectors() -> list[dict[str, object]]:
+    entry = 0x7E1C
+    resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
+    entity_setter_entry = 0x3B4E  # Runtime 0299:11BE.
+    data_segment = 0x4400
+    resource_segment = 0x5000
+    resource_offset = 0x3200
+    fs_segment = 0x5400
+    game_segment = 0x2C00
+    extra_segment = 0x4800
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    cases = [
+        {
+            "name": "busy_gate",
+            "ui": 0xA8,
+            "flags": 0x80,
+            "resource_id": 2,
+            "terminal": 5,
+            "frame": 3,
+            "reverse": 1,
+            "loaded_terminal": 7,
+        },
+        {
+            "name": "loaded_forward_progress",
+            "ui": 0x20,
+            "flags": 0x84,
+            "resource_id": 3,
+            "terminal": 4,
+            "frame": 1,
+            "reverse": 0,
+            "loaded_terminal": 9,
+        },
+        {
+            "name": "loaded_forward_complete",
+            "ui": 0x24,
+            "flags": 0x04,
+            "resource_id": 4,
+            "terminal": 3,
+            "frame": 3,
+            "reverse": 0,
+            "loaded_terminal": 8,
+        },
+        {
+            "name": "loaded_reverse_progress",
+            "ui": 0x40,
+            "flags": 0x44,
+            "resource_id": 5,
+            "terminal": 6,
+            "frame": 2,
+            "reverse": 3,
+            "loaded_terminal": 10,
+        },
+        {
+            "name": "loaded_reverse_complete",
+            "ui": 0xC4,
+            "flags": 0x14,
+            "resource_id": 6,
+            "terminal": 6,
+            "frame": 0,
+            "reverse": 1,
+            "loaded_terminal": 11,
+        },
+        {
+            "name": "unloaded_forward",
+            "ui": 0x10,
+            "flags": 0x80,
+            "resource_id": 2,
+            "terminal": 0x7777,
+            "frame": 0x8888,
+            "reverse": 2,
+            "loaded_terminal": 4,
+        },
+        {
+            "name": "unloaded_reverse",
+            "ui": 0x01,
+            "flags": 0x08,
+            "resource_id": 7,
+            "terminal": 0x7777,
+            "frame": 0x8888,
+            "reverse": 3,
+            "loaded_terminal": 4,
+        },
+        {
+            "name": "unloaded_forward_terminal_zero",
+            "ui": 0x15,
+            "flags": 0x01,
+            "resource_id": 8,
+            "terminal": 0x7777,
+            "frame": 0x8888,
+            "reverse": 0,
+            "loaded_terminal": 0,
+        },
+        {
+            "name": "unloaded_reverse_terminal_zero",
+            "ui": 0x02,
+            "flags": 0x20,
+            "resource_id": 9,
+            "terminal": 0x7777,
+            "frame": 0x8888,
+            "reverse": 1,
+            "loaded_terminal": 0,
+        },
+        {
+            "name": "unloaded_resource_index_wrap",
+            "ui": 0,
+            "flags": 0,
+            "resource_id": 0x1000,
+            "terminal": 0x7777,
+            "frame": 0x8888,
+            "reverse": 0,
+            "loaded_terminal": 2,
+        },
+        {
+            "name": "loaded_forward_frame_wrap",
+            "ui": 0x80,
+            "flags": 0x04,
+            "resource_id": 10,
+            "terminal": 0,
+            "frame": 0xFFFF,
+            "reverse": 0,
+            "loaded_terminal": 12,
+        },
+        {
+            "name": "loaded_reverse_overflow",
+            "ui": 0x08,
+            "flags": 0x04,
+            "resource_id": 11,
+            "terminal": 0x9000,
+            "frame": 0x8000,
+            "reverse": 1,
+            "loaded_terminal": 13,
+            "ui_override": 0,
+        },
+    ]
+    expected_hash = "73adf983beab60796f0f8075ee37a5e5d0a7ecc96c48979cbca01418d70bce6a"
+    if hashlib.sha256(EXE[entry : entry + 152]).hexdigest() != expected_hash:
+        raise AssertionError("0x7e1c: recovered 152-byte body changed")
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui_before = int(case.get("ui_override", case["ui"]))
+        flags_before = int(case["flags"])
+        resource_id = int(case["resource_id"])
+        terminal_before = int(case["terminal"])
+        frame_before = int(case["frame"])
+        reverse_before = int(case["reverse"])
+        loaded_terminal = int(case["loaded_terminal"])
+        pad_01 = 0xA0 + case_index
+        pad_04 = 0xB000 + case_index
+        pad_0a = bytes((0xC0 + case_index + index) & 0xFF for index in range(10))
+        draw_x = (0x1100 + case_index * 0x101) & 0xFFFF
+        draw_y = (0x2200 + case_index * 0x111) & 0xFFFF
+        record_before = struct.pack(
+            "<BBHHHH10sHH",
+            flags_before,
+            pad_01,
+            resource_id,
+            pad_04,
+            terminal_before,
+            frame_before,
+            pad_0a,
+            draw_x,
+            draw_y,
+        )
+        resource_before = bytes.fromhex("ccdd") + struct.pack(
+            "<H", loaded_terminal
+        ) + bytes.fromhex("a55a6996")
+        name_offset = (0x0C04 + ((resource_id << 4) & 0xFFFF)) & 0xFFFF
+        resource_name = (
+            f"LINE{case_index:02d}.RES".encode("ascii") + b"\x00"
+        ).ljust(16, b"\xcc")
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (0, resource_loader_entry, b"\xcb"),
+            (0, entity_setter_entry, b"\xcb"),
+            (data_segment, 0x2793, bytes([ui_before])),
+            (data_segment, 0x27E4, bytes([reverse_before])),
+            (
+                data_segment,
+                0x0A80,
+                struct.pack("<HH", resource_offset, resource_segment),
+            ),
+            (resource_segment, resource_offset, resource_before),
+            (fs_segment, name_offset, resource_name),
+            (stack_segment, line_offset, record_before),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x27E4, b"\xa5"),
+            (game_segment, 0x0A80, b"\x69\x96\x87\x78"),
+            (extra_segment, 0x2793, b"\x3c"),
+            (extra_segment, 0x27E4, b"\xc3"),
+            (data_segment, name_offset, bytes([0x87]) * 16),
+            (data_segment, line_offset, bytes([0x78]) * len(record_before)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == resource_loader_entry:
+                calls.append(
+                    {
+                        "kind": "resource_load",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                    }
+                )
+            elif address == entity_setter_entry:
+                calls.append(
+                    {
+                        "kind": "entity_setter",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bx": machine.reg_read(UC_X86_REG_BX),
+                        "cx": machine.reg_read(UC_X86_REG_CX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        busy = (ui_before & 0x08) != 0
+        loaded = (flags_before & 0x04) != 0
+        expected_flags_byte = flags_before
+        expected_terminal = terminal_before
+        expected_frame = frame_before
+        expected_ui = ui_before
+        expected_reverse = reverse_before
+        completed = False
+        frame_drawn = None
+        if busy:
+            expected_calls = []
+            flag_source = "busy_test"
+            flag_value = ui_before & 0x08
+        else:
+            if not loaded:
+                expected_ui |= 0x04
+                expected_terminal = loaded_terminal
+                expected_frame = (loaded_terminal - 1) & 0xFFFF
+                if (reverse_before & 1) == 0:
+                    expected_frame = 0
+                    expected_reverse = 0
+                expected_flags_byte |= 0x04
+            frame_drawn = expected_frame
+            if (expected_reverse & 1) != 0:
+                if expected_frame == 0:
+                    completed = True
+                else:
+                    decrement_input = expected_frame
+                    expected_frame = (expected_frame - 1) & 0xFFFF
+                    flag_source = "decrement"
+                    flag_value = expected_frame
+            elif expected_frame == expected_terminal:
+                completed = True
+            else:
+                increment_input = expected_frame
+                expected_frame = (expected_frame + 1) & 0xFFFF
+                flag_source = "increment"
+                flag_value = expected_frame
+            if completed:
+                expected_reverse = 0
+                expected_ui &= 0xFB
+                flag_source = "completion_and"
+                flag_value = expected_ui
+
+            expected_calls = []
+            if not loaded:
+                expected_calls.append(
+                    {
+                        "kind": "resource_load",
+                        "ax": (resource_id << 4) & 0xFFFF,
+                        "ds": fs_segment,
+                        "si": name_offset,
+                        "es": resource_segment,
+                        "di": resource_offset,
+                        "sp": 0xFEF0,
+                        "cs": 0x01CE,
+                    }
+                )
+            expected_calls.append(
+                {
+                    "kind": "entity_setter",
+                    "ax": 4,
+                    "bx": draw_x,
+                    "cx": draw_y,
+                    "bp": frame_drawn,
+                    "ds": data_segment,
+                    "es": resource_segment,
+                    "di": resource_offset,
+                    "sp": 0xFEF0,
+                    "cs": 0x0299,
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x7e1c {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_record = struct.pack(
+            "<BBHHHH10sHH",
+            expected_flags_byte,
+            pad_01,
+            resource_id,
+            pad_04,
+            expected_terminal,
+            expected_frame,
+            pad_0a,
+            draw_x,
+            draw_y,
+        )
+        actual_record = bytes(
+            machine.mem_read(stack_segment * 16 + line_offset, len(record_before))
+        )
+        if actual_record != expected_record:
+            raise AssertionError(
+                f"0x7e1c {name}: record={actual_record.hex()}, "
+                f"expected={expected_record.hex()}"
+            )
+        actual_ui = machine.mem_read(data_segment * 16 + 0x2793, 1)[0]
+        actual_reverse = machine.mem_read(data_segment * 16 + 0x27E4, 1)[0]
+        if (actual_ui, actual_reverse) != (expected_ui, expected_reverse):
+            raise AssertionError(
+                f"0x7e1c {name}: state={(actual_ui, actual_reverse)}, "
+                f"expected={(expected_ui, expected_reverse)}"
+            )
+        for segment, offset, expected in (
+            (resource_segment, resource_offset, resource_before),
+            (fs_segment, name_offset, resource_name),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x27E4, b"\xa5"),
+            (game_segment, 0x0A80, b"\x69\x96\x87\x78"),
+            (extra_segment, 0x2793, b"\x3c"),
+            (extra_segment, 0x27E4, b"\xc3"),
+            (data_segment, name_offset, bytes([0x87]) * 16),
+            (data_segment, line_offset, bytes([0x78]) * len(record_before)),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7e1c {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if not busy:
+            expected_registers["edi"] = (
+                initial["edi"] & 0xFFFF0000
+            ) | resource_offset
+            expected_registers["es"] = resource_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7e1c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x7e1c {name}: far call did not restore CS")
+
+        parity = (flag_value & 0xFF).bit_count() % 2 == 0
+        expected_status = {
+            "cf": completed,
+            "pf": parity,
+            "zf": flag_value == 0,
+            "sf": bool(flag_value & (0x80 if flag_source.endswith("test") or flag_source.endswith("and") else 0x8000)),
+            "of": False,
+        }
+        if flag_source == "increment":
+            expected_status["af"] = (increment_input & 0x0F) == 0x0F
+            expected_status["of"] = increment_input == 0x7FFF
+        elif flag_source == "decrement":
+            expected_status["af"] = (decrement_input & 0x0F) == 0
+            expected_status["of"] = decrement_input == 0x8000
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        actual_status = {
+            flag: bool(flags_after & masks[flag]) for flag in expected_status
+        }
+        if actual_status != expected_status:
+            raise AssertionError(
+                f"0x7e1c {name}: flags={actual_status}, expected={expected_status}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x7e1c {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "busy_gate": busy,
+                "loaded_before": loaded,
+                "resource_id": resource_id,
+                "resource_name_offset": name_offset if not loaded and not busy else None,
+                "loaded_terminal_frame": loaded_terminal if not loaded and not busy else None,
+                "frame_drawn": frame_drawn,
+                "terminal_frame_after": expected_terminal,
+                "frame_after": expected_frame,
+                "ui_before": ui_before,
+                "ui_after": actual_ui,
+                "reverse_before": reverse_before,
+                "reverse_after": actual_reverse,
+                "completed_cf": completed,
+                "helper_calls": [call["kind"] for call in calls],
+                "defined_flags": expected_status,
+            }
+        )
+    return vectors
+
+
 def fs_name_area_read_vectors() -> list[dict[str, object]]:
     entry = 0x7788
     data_segment = 0x4400
@@ -21676,6 +22128,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77a9_natural.json",
         music_voc_name_patcher_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7e1c_natural.json",
+        presentation_line_helper_vectors(),
         args.check,
     )
     update_vector(

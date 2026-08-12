@@ -37,9 +37,9 @@ typedef struct line_record {
 extern volatile u8 ui_flags;
 extern volatile u8 reverse_playback;
 extern volatile u8 FAR *resource_buffer;
-extern const volatile char resource_names[][16];
+extern const volatile char FAR resource_names[][16];
 
-unsigned long FAR resource_file_load_probe(const volatile char *path,
+unsigned long FAR resource_file_load_probe(const volatile char FAR *path,
         volatile u8 FAR *destination);
 void FAR entity_record_setter_probe(u16 entity_id,
         const volatile void FAR *resource,

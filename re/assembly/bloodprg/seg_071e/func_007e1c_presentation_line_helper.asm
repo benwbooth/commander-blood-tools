@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: direct_call_target, label_csv_target, manual_binary_boundary
 ; label: presentation_line_helper
-; label_comment: presentation/dialogue helper gated by [0x2793]&8 and record flag bit 2; advances or completes a presentation line record and returns status in CF
+; label_comment: steps an SS:BP presentation-line record unless DS:0x2793 bit 3 is set; lazily loads FS:0x0c04+resource_id*16 into the far buffer at DS:0x0a80, draws entity 4 at the current frame, advances according to DS:0x27e4 bit 0, and returns completion in CF
 ; incoming: call@0x007ee9->0x007e1c
 ; incoming: call@0x007f6c->0x007e1c
 ; incoming: call@0x007fd4->0x007e1c
