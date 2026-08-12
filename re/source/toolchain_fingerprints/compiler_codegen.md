@@ -989,6 +989,25 @@ instead of OR, and tail-branches to the helper. These are function-level
 equivalences because the PRNG preserves SI and logical TEST/OR flags agree;
 exact codegen still needs original LODSW scheduling and CALL/shared-RET control.
 
+VM conditional block `0x006596` has twelve direct vectors covering immediate and
+later token-special scans, optional zero padding, scan-bit masking, ordinary and
+inverted equality/mismatch, zero-match failure, default versus resume match
+selection, and target words spanning the segment end with and without an A1
+prefix. They prove the scan path calls `0x006293` with AX zero, not the positive
+word scanner; the selected match is read through SS:BP at `0x6762` or `0x6764`;
+and failed comparisons call the real branch helper. Cursor results,
+branch-stack/query effects, AX/BP/DL/SI, path flags, DI preservation, segmented
+decoys, and immutable input are all checked.
+
+Replacing the pointer-to-pointer API and Boolean expression with direct cursor
+returns and explicit inverted/noninverted branches gives Open Watcom `-3 -ox
+-mm` 32 instructions/68 bytes versus 29/69 original; Turbo C 2.01 medium emits
+48 instructions. Watcom preserves the control structure and both helper calls,
+but keeps target in saved BX and match in AX, while the binary leaves target in
+AX and the selected offset in BP. Exact integration therefore needs the runtime
+SS=GS alias, fixed globals, and narrow AX/BP compatibility, not a different C
+algorithm.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1024,6 +1043,7 @@ LCS and then mnemonic similarity:
 | `vm_branch_stack_push` | medium, `-ox`, register | 8/9 | 0.1250 | 0.7500 | 0.1250 |
 | `vm_branch_stack_pop` | medium, `-ox`, register | 6/7 | 0.1667 | 0.6667 | 0.1667 |
 | `vm_random_branch` | medium, `-ox`, register | 6/6 | 0.1667 | 0.3333 | 0.1667 |
+| `vm_conditional_block` | medium, `-ox`, register | 29/32 | 0.0690 | 0.6897 | 0.1034 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

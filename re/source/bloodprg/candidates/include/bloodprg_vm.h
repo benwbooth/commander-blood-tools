@@ -34,9 +34,9 @@ extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u8 CB_FAR *vm_script_image; /* GS:0x671C */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
-extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
+extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
-extern volatile cb_u16 vm_block_match_value; /* GS:0x6762 */
+extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
 extern volatile cb_u16 vm_blood_history_ring_index; /* GS:0x6744 */
 extern volatile cb_u16 CB_FAR *vm_blood_history_words; /* GS:0x6746 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
@@ -120,6 +120,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_a0_push parm [si] value [si] modify exact [ax bp si]
 #pragma aux vm_op_a1_pop value [ax] modify exact [ax]
 #pragma aux vm_op_a2_cond_call parm [si] value [si] modify exact [ax si]
+#pragma aux vm_op_a3_block parm [si] value [si] modify exact [ax bp dx si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -157,6 +158,8 @@ const cb_u16 CB_NEAR *CB_NEAR vm_op_a0_push(
 cb_u16 CB_NEAR vm_op_a1_pop(void);            /* 0x006572 */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_a2_cond_call(
     const cb_u16 CB_NEAR *script_words);      /* 0x006588 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a3_block(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006596 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */

@@ -7640,6 +7640,420 @@ def vm_random_branch_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_conditional_block_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "scan_immediate_zero_with_pad",
+            "start": 0x1000,
+            "scan_flags": 1,
+            "script": b"\x00\x00\x00",
+            "scan_final": 0x1003,
+            "scan_pad": 0,
+            "scan_steps": 1,
+        },
+        {
+            "name": "scan_to_later_zero_without_pad",
+            "start": 0x1101,
+            "scan_flags": 0xFF,
+            "script": b"\x12\x34\x56\x00\x00\x7f",
+            "scan_final": 0x1106,
+            "scan_pad": 0x7F,
+            "scan_steps": 4,
+        },
+        {
+            "name": "default_equal_continues",
+            "start": 0x1200,
+            "scan_flags": 0,
+            "target": 0x1234,
+            "block_match": 0x1234,
+            "continue": True,
+        },
+        {
+            "name": "default_mismatch_branches",
+            "start": 0x1300,
+            "scan_flags": 0,
+            "target": 0x1234,
+            "block_match": 0x1235,
+            "top": 4,
+            "branch_target": 0x7133,
+            "continue": False,
+        },
+        {
+            "name": "zero_match_always_branches",
+            "start": 0x1400,
+            "scan_flags": 0,
+            "target": 0x4321,
+            "block_match": 0,
+            "top": 0,
+            "branch_target": 0x7244,
+            "continue": False,
+        },
+        {
+            "name": "inverted_equal_branches",
+            "start": 0x1500,
+            "scan_flags": 0,
+            "inverted": True,
+            "target": 0x2345,
+            "block_match": 0x2345,
+            "top": 0x8000,
+            "branch_target": 0x7355,
+            "continue": False,
+        },
+        {
+            "name": "inverted_mismatch_continues",
+            "start": 0x1600,
+            "scan_flags": 0,
+            "inverted": True,
+            "target": 0x2345,
+            "block_match": 0x2346,
+            "continue": True,
+        },
+        {
+            "name": "resume_value_equal_continues",
+            "start": 0x1700,
+            "scan_flags": 0,
+            "resume_state": 2,
+            "target": 0x3456,
+            "block_match": 0xA55A,
+            "resume_value": 0x3456,
+            "continue": True,
+        },
+        {
+            "name": "resume_value_mismatch_branches",
+            "start": 0x1800,
+            "scan_flags": 0,
+            "resume_state": 0xFF,
+            "target": 0x3456,
+            "block_match": 0x3456,
+            "resume_value": 0x3457,
+            "top": 3,
+            "branch_target": 0x7466,
+            "continue": False,
+        },
+        {
+            "name": "only_scan_bit_zero_is_used",
+            "start": 0x1900,
+            "scan_flags": 0xFE,
+            "target": 0x4567,
+            "block_match": 0x4567,
+            "continue": True,
+        },
+        {
+            "name": "target_word_crosses_segment_end",
+            "start": 0xFFFF,
+            "scan_flags": 0,
+            "target": 0x5678,
+            "block_match": 0x5678,
+            "continue": True,
+        },
+        {
+            "name": "inverted_target_crosses_segment_end",
+            "start": 0xFFFE,
+            "scan_flags": 0,
+            "inverted": True,
+            "target": 0x6789,
+            "block_match": 0x678A,
+            "continue": True,
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        start = int(case["start"])
+        scan_flags = int(case["scan_flags"])
+        scan_path = bool(scan_flags & 1)
+        resume_state = int(case.get("resume_state", 0))
+        block_match = int(case.get("block_match", 0x1357))
+        resume_value = int(case.get("resume_value", 0x2468))
+        inverted = bool(case.get("inverted", False))
+        target = int(case.get("target", 0))
+        top = int(case.get("top", 4))
+        branch_target = int(case.get("branch_target", 0x7600 + case_index * 0x31))
+        query_mode = (0x80 + case_index * 7) & 0xFF
+
+        if scan_path:
+            script = bytes(case["script"])
+            operand_cursor = start
+            continue_path = True
+            branch_taken = False
+            final_script = int(case["scan_final"])
+            selected_offset = None
+            selected_match = None
+        else:
+            script = (b"\xa1" if inverted else b"") + struct.pack("<H", target)
+            operand_cursor = (start + int(inverted)) & 0xFFFF
+            continue_path = bool(case["continue"])
+            branch_taken = not continue_path
+            final_script = (operand_cursor + 2) & 0xFFFF
+            selected_offset = 0x6764 if resume_state & 2 else 0x6762
+            selected_match = resume_value if resume_state & 2 else block_match
+
+        final_top = (top - 2) & 0xFFFF if branch_taken else top
+        stack_target_offset = (0x6820 + ((top - 2) & 0xFFFF)) & 0xFFFF
+        branch_target_bytes = struct.pack("<H", branch_target)
+        game_stack_decoy = struct.pack("<H", branch_target ^ 0xFFFF)
+        data_stack_decoy = struct.pack("<H", branch_target ^ 0x5A5A)
+        memory = [
+            (game_segment, 0x67B2, bytes([scan_flags])),
+            (game_segment, 0x67B1, bytes([resume_state])),
+            (stack_segment, 0x6762, struct.pack("<H", block_match)),
+            (stack_segment, 0x6764, struct.pack("<H", resume_value)),
+            (game_segment, 0x6762, struct.pack("<H", block_match ^ 0xFFFF)),
+            (game_segment, 0x6764, struct.pack("<H", resume_value ^ 0xFFFF)),
+            (data_segment, 0x6762, struct.pack("<H", block_match ^ 0xA5A5)),
+            (data_segment, 0x6764, struct.pack("<H", resume_value ^ 0xA5A5)),
+            (data_segment, 0x67B2, bytes([scan_flags ^ 0xFF])),
+            (stack_segment, 0x67B2, bytes([scan_flags ^ 0xA5])),
+            (data_segment, 0x67B1, bytes([resume_state ^ 0xFF])),
+            (stack_segment, 0x67B1, bytes([resume_state ^ 0xA5])),
+            (game_segment, 0x6884, struct.pack("<H", top)),
+            (game_segment, 0x67AD, bytes([query_mode])),
+            (stack_segment, stack_target_offset, branch_target_bytes),
+            (game_segment, stack_target_offset, game_stack_decoy),
+            (data_segment, stack_target_offset, data_stack_decoy),
+        ]
+        immutable = []
+        for byte_index, byte in enumerate(script):
+            offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+            memory.append((0x4800, offset, b"\x5a"))
+            memory.append((game_segment, offset, b"\xa5"))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        token_calls = []
+        branch_calls = []
+
+        def capture_calls(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6293:
+                token_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_SP),
+                    )
+                )
+            elif address == 0x6462:
+                branch_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_SP),
+                    )
+                )
+
+        machine = execute(
+            0x6596,
+            0x65DA,
+            initial,
+            memory,
+            code_handler=capture_calls,
+        )
+
+        expected_token_calls = (
+            [
+                (0, (start + step) & 0xFFFF, 0xFEFC)
+                for step in range(int(case["scan_steps"]))
+            ]
+            if scan_path
+            else []
+        )
+        if token_calls != expected_token_calls:
+            raise AssertionError(
+                f"0x6596 {name}: token calls={token_calls}, "
+                f"expected={expected_token_calls}"
+            )
+        expected_branch_calls = (
+            [(target, final_script, 0xFEFC)] if branch_taken else []
+        )
+        if branch_calls != expected_branch_calls:
+            raise AssertionError(
+                f"0x6596 {name}: branch calls={branch_calls}, "
+                f"expected={expected_branch_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        if scan_path:
+            expected_registers["eax"] = initial["eax"] & 0xFFFF0000
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | final_script
+        else:
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFFFF00
+            ) | int(inverted)
+            expected_registers["ebp"] = (
+                initial["ebp"] & 0xFFFF0000
+            ) | int(selected_offset)
+            if branch_taken:
+                expected_registers["eax"] = (
+                    initial["eax"] & 0xFFFF0000
+                ) | final_top
+                expected_registers["esi"] = (
+                    initial["esi"] & 0xFFFF0000
+                ) | branch_target
+            else:
+                expected_registers["eax"] = (
+                    initial["eax"] & 0xFFFF0000
+                ) | target
+                expected_registers["esi"] = (
+                    initial["esi"] & 0xFFFF0000
+                ) | final_script
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6596 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        if actual_top != final_top:
+            raise AssertionError(
+                f"0x6596 {name}: top={actual_top:#x}, expected={final_top:#x}"
+            )
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        expected_query = 0 if branch_taken else query_mode
+        if actual_query != expected_query:
+            raise AssertionError(
+                f"0x6596 {name}: query={actual_query:#x}, expected={expected_query:#x}"
+            )
+        if (
+            machine.mem_read(stack_segment * 16 + stack_target_offset, 2)
+            != branch_target_bytes
+        ):
+            raise AssertionError(f"0x6596 {name}: branch target changed")
+        if (
+            machine.mem_read(game_segment * 16 + stack_target_offset, 2)
+            != game_stack_decoy
+        ):
+            raise AssertionError(f"0x6596 {name}: GS stack decoy changed")
+        if (
+            machine.mem_read(data_segment * 16 + stack_target_offset, 2)
+            != data_stack_decoy
+        ):
+            raise AssertionError(f"0x6596 {name}: DS stack decoy changed")
+        for offset, value, label in (
+            (0x6762, block_match, "block match"),
+            (0x6764, resume_value, "resume value"),
+        ):
+            actual = struct.unpack(
+                "<H", machine.mem_read(stack_segment * 16 + offset, 2)
+            )[0]
+            if actual != value:
+                raise AssertionError(f"0x6596 {name}: {label} changed")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x6596 {name}: script input changed")
+        for byte_index in range(len(script)):
+            offset = start + byte_index
+            if machine.mem_read(0x4800 * 16 + offset, 1) != b"\x5a":
+                raise AssertionError(f"0x6596 {name}: ES script decoy changed")
+            if machine.mem_read(game_segment * 16 + offset, 1) != b"\xa5":
+                raise AssertionError(f"0x6596 {name}: GS script decoy changed")
+
+        if branch_taken:
+            result = final_top
+            expected_flags = {
+                "cf": top < 2,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "af": (top & 0x0F) < 2,
+                "zf": result == 0,
+                "sf": bool(result & 0x8000),
+                "of": bool(((top ^ 2) & (top ^ result)) & 0x8000),
+            }
+        elif scan_path:
+            scan_pad = int(case["scan_pad"])
+            if scan_pad == 0:
+                before_increment = (final_script - 1) & 0xFFFF
+                expected_flags = {
+                    "cf": False,
+                    "pf": (final_script & 0xFF).bit_count() % 2 == 0,
+                    "af": (before_increment & 0x0F) == 0x0F,
+                    "zf": final_script == 0,
+                    "sf": bool(final_script & 0x8000),
+                    "of": before_increment == 0x7FFF,
+                }
+            else:
+                result = (-scan_pad) & 0xFF
+                expected_flags = {
+                    "cf": True,
+                    "pf": result.bit_count() % 2 == 0,
+                    "af": (scan_pad & 0x0F) != 0,
+                    "zf": False,
+                    "sf": bool(result & 0x80),
+                    "of": scan_pad == 0x80,
+                }
+        else:
+            result = int(inverted)
+            expected_flags = {
+                "cf": False,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "zf": result == 0,
+                "sf": False,
+                "of": False,
+            }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6596 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x65DA] != 0xC3:
+            raise AssertionError("0x6596: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "scan_path": scan_path,
+                "scan_flags": scan_flags,
+                "resume_state": resume_state if not scan_path else None,
+                "inverted": inverted if not scan_path else None,
+                "target": target if not scan_path else None,
+                "selected_match_offset": selected_offset,
+                "selected_match": selected_match,
+                "branch_taken": branch_taken,
+                "final_script_offset": branch_target if branch_taken else final_script,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -12255,6 +12669,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6588_natural.json",
         vm_random_branch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6596_natural.json",
+        vm_conditional_block_vectors(),
         args.check,
     )
     update_vector(
