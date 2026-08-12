@@ -1,0 +1,212 @@
+[
+  {
+    "name": "dispatch_ui_busy_empty",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 1,
+    "handler_entry_sf": false,
+    "stored_id": 3543,
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "ui_state": 1,
+    "ems_handle": 4660,
+    "xms_handle": 9029,
+    "helper_called": null,
+    "final_source_offset": 25090,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_ui_busy_id_ff",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 255,
+    "handler_entry_sf": false,
+    "stored_id": 3511,
+    "copied_hex": "4e4547",
+    "stopping_byte": 128,
+    "ui_state": 42243,
+    "ems_handle": 4660,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 25221,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_ems_path_call",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 2,
+    "handler_entry_sf": false,
+    "stored_id": 3559,
+    "copied_hex": "46494c452e42494e",
+    "stopping_byte": 0,
+    "ui_state": 0,
+    "ems_handle": 4660,
+    "xms_handle": -1,
+    "helper_called": "path",
+    "final_source_offset": 25354,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_ems_preferred_over_xms",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 3,
+    "handler_entry_sf": false,
+    "stored_id": 3575,
+    "copied_hex": "41",
+    "stopping_byte": 31,
+    "ui_state": 0,
+    "ems_handle": 0,
+    "xms_handle": 9029,
+    "helper_called": "path",
+    "final_source_offset": 25475,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_xms_file_call",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 4,
+    "handler_entry_sf": false,
+    "stored_id": 3591,
+    "copied_hex": "41535345542e444154",
+    "stopping_byte": 0,
+    "ui_state": 0,
+    "ems_handle": -1,
+    "xms_handle": 9029,
+    "helper_called": "file",
+    "final_source_offset": 25611,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_no_backend",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 0,
+    "handler_entry_sf": false,
+    "stored_id": 3527,
+    "copied_hex": "7f",
+    "stopping_byte": 0,
+    "ui_state": 0,
+    "ems_handle": -1,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 25731,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_source_wrap_id_80",
+    "entry_mode": "real_dispatcher",
+    "asset_id": 128,
+    "handler_entry_sf": false,
+    "stored_id": 1479,
+    "copied_hex": "41",
+    "stopping_byte": 0,
+    "ui_state": 1,
+    "ems_handle": -1,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_sf_clear_id_ff",
+    "entry_mode": "direct",
+    "asset_id": 255,
+    "handler_entry_sf": false,
+    "stored_id": 3511,
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "ui_state": 1,
+    "ems_handle": -1,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 25985,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_sf_set_id_ff",
+    "entry_mode": "direct",
+    "asset_id": 255,
+    "handler_entry_sf": true,
+    "stored_id": 65535,
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "ui_state": 1,
+    "ems_handle": -1,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 26113,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_sf_set_id_01",
+    "entry_mode": "direct",
+    "asset_id": 1,
+    "handler_entry_sf": true,
+    "stored_id": 1,
+    "copied_hex": "42",
+    "stopping_byte": 0,
+    "ui_state": 1,
+    "ems_handle": -1,
+    "xms_handle": -1,
+    "helper_called": null,
+    "final_source_offset": 26242,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

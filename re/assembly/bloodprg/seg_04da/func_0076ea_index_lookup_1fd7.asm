@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: index_lookup_1fd7
-; label_comment: index-table lookup: di=0x1fd7; lodsb operand; cbw (signed index). Indexes a table at DS:0x1fd7 by the script operand
+; label_comment: Byte-parser opcode 0x0B stores a transformed signed id at ES:0x1FD7 and copies bytes 0x20..0x7F to ES:0x213A without consuming the stop. CBW leaves flags unchanged; the sole proven dispatch caller leaves SF clear for opcode 0x0B, so normal execution always stores 0x0DD7+(id-1)*16 modulo 16 bits (0xFF -> 0x0DB7), while only out-of-contract SF-set entry bypasses the arithmetic. If GS:0x2793 bit0 is clear, an EMS handle at GS:0x0A58 selects path_build_call_2693 with DS:SI=GS:0x2137; otherwise an XMS handle at GS:0x0A56 selects file_open_wrapper with the same path and ES:DI loaded from GS:0x5229. Both call paths restore the parser cursor and clear EAX.
 ; incoming: byte_parser_dispatch_74e5:byte_0x0b
 ; byte_count: 106
 ; boundary: cfg_blocks_12_terminals_3
@@ -21,7 +21,7 @@
 0076EC:  57                           push     di
 0076ED:  BF D7 1F                     mov      di, 0x1fd7
 0076F0:  AC                           lodsb    al, byte ptr [si]
-0076F1:  98                           cwde    
+0076F1:  98                           cbw
 0076F2:  78 07                        js       0x76fb
 0076F4:  48                           dec      ax
 0076F5:  C1 E0 04                     shl      ax, 4

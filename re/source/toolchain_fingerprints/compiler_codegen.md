@@ -1425,6 +1425,31 @@ loads/stores rather than the original ambient ES=GS and string instructions.
 The out-of-contract incoming-SF branch remains a documented machine-level ABI
 fact rather than an artificial flag parameter in the natural C function.
 
+Byte-parser opcode-0B handler `0x0076EA` has the same stale-SF shape before a
+larger path-selection tail. Seven real-dispatch vectors and three direct-entry
+controls prove that normal execution always applies the signed-id offset
+arithmetic, including 0xFF -> 0x0DB7, while only artificial SF-set entry stores
+the sign-extended id unchanged. They also prove the printable copy and
+unconsumed stop, source wrap, ES destination versus GS state ownership, EMS
+preference over XMS, XMS fallback, no-backend path, restored parser state,
+path-dependent full-EAX clearing, final flags, and near return.
+
+The helper bodies are separately recovered routines, so the call vectors place
+a single `RETF` at each runtime helper entry. This preserves the original
+handler and far-call stack mechanics while isolating its boundary: the EMS path
+enters `01CE:0712` with DS:SI=GS:0x2137; the XMS path enters `01CE:0621` with
+that same path and ES:DI loaded from GS:0x5229. These vectors verify caller ABI
+and cleanup, not the helper bodies' independent behavior.
+
+Open Watcom `-3 -ox -mm` compiles the direct-SI, named-game-data candidate
+without warnings to 44 instructions/117 bytes versus 47/106 original; Turbo C
+2.01 medium emits 72 instructions. Watcom preserves the logic in fewer
+instructions than the original, but its natural far calls pass the path offset
+in AX and the destination in CX:BX. Drop-in linkage therefore needs two narrow
+adapters to the game's DS:SI and ES:DI helper conventions. Watcom's 16-bit
+`#pragma aux` also rejects EAX as a clobber name, so the original call-only
+`XOR EAX,EAX` remains an explicit machine-ABI boundary.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned
@@ -1500,6 +1525,7 @@ LCS and then mnemonic similarity:
 | `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
 | `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/24 | 0.0909 | 0.4091 | 0.1818 |
 | `dlg_line_asset_table_fill` | medium, `-ox`, register | 22/35 | 0.0909 | 0.5455 | 0.1818 |
+| `index_lookup_1fd7` | medium, `-ox`, register | 47/44 | 0.0851 | 0.4043 | 0.1064 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

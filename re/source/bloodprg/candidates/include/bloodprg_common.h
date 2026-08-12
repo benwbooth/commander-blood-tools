@@ -16,6 +16,12 @@ typedef signed long cb_i32;
 #define CB_NEAR
 #endif
 
+#if defined(__WATCOMC__)
+#define CB_GAME_DATA __based(__segname("GAME_DATA"))
+#else
+#define CB_GAME_DATA CB_FAR
+#endif
+
 cb_u16 CB_FAR bloodprg_strlen(const volatile char CB_FAR *text); /* 0x002665 */
 cb_u8 CB_NEAR bcd_to_binary(cb_u8 value);                        /* 0x000986 */
 void CB_NEAR mem_copy_words(cb_u16 *dst, const cb_u16 *src);      /* 0x00A7E6 */

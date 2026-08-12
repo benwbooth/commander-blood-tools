@@ -12,8 +12,8 @@ typedef struct bloodprg_xms_read_request {
 } bloodprg_xms_read_request;
 
 extern volatile cb_u8 ems_transfer_mode; /* GS:0x0B9F */
-extern volatile cb_i16 resource_xms_handle; /* game data:0x0A56 */
-extern volatile cb_i16 resource_ems_handle; /* game data:0x0A58 */
+extern volatile cb_i16 CB_GAME_DATA resource_xms_handle; /* GS:0x0A56 */
+extern volatile cb_i16 CB_GAME_DATA resource_ems_handle; /* GS:0x0A58 */
 extern volatile bloodprg_xms_read_request
         resource_xms_read_request; /* game data:0x0A6C */
 extern volatile cb_u8 CB_FAR ems_page_frame[]; /* segment at GS:0x0A66 */

@@ -15562,6 +15562,447 @@ def dlg_line_asset_table_fill_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def index_lookup_1fd7_vectors() -> list[dict[str, object]]:
+    entry = 0x76EA
+    dispatcher_entry = 0x74DD
+    dispatcher_return = 0x74ED
+    direct_return = 0x6F00
+    path_helper_entry = 0x23F2  # Runtime 01CE:0712.
+    file_helper_entry = 0x2301  # Runtime 01CE:0621.
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    back_buffer_segment = 0x4C00
+    stack_segment = 0x9000
+    back_buffer_offset = 0x5200
+    cases = [
+        {
+            "name": "dispatch_ui_busy_empty",
+            "id": 0x01,
+            "detail": b"\x00",
+            "ui_state": 0x0001,
+            "ems_handle": 0x1234,
+            "xms_handle": 0x2345,
+            "call": None,
+        },
+        {
+            "name": "dispatch_ui_busy_id_ff",
+            "id": 0xFF,
+            "detail": b"NEG\x80",
+            "ui_state": 0xA503,
+            "ems_handle": 0x1234,
+            "xms_handle": -1,
+            "call": None,
+        },
+        {
+            "name": "dispatch_ems_path_call",
+            "id": 0x02,
+            "detail": b"FILE.BIN\x00",
+            "ui_state": 0,
+            "ems_handle": 0x1234,
+            "xms_handle": -1,
+            "call": "path",
+        },
+        {
+            "name": "dispatch_ems_preferred_over_xms",
+            "id": 0x03,
+            "detail": b"A\x1f",
+            "ui_state": 0,
+            "ems_handle": 0,
+            "xms_handle": 0x2345,
+            "call": "path",
+        },
+        {
+            "name": "dispatch_xms_file_call",
+            "id": 0x04,
+            "detail": b"ASSET.DAT\x00",
+            "ui_state": 0,
+            "ems_handle": -1,
+            "xms_handle": 0x2345,
+            "call": "file",
+        },
+        {
+            "name": "dispatch_no_backend",
+            "id": 0x00,
+            "detail": b"\x7f\x00",
+            "ui_state": 0,
+            "ems_handle": -1,
+            "xms_handle": -1,
+            "call": None,
+        },
+        {
+            "name": "dispatch_source_wrap_id_80",
+            "id": 0x80,
+            "detail": b"A\x00",
+            "ui_state": 1,
+            "ems_handle": -1,
+            "xms_handle": -1,
+            "call": None,
+            "start": 0xFFFD,
+        },
+        {
+            "name": "direct_sf_clear_id_ff",
+            "id": 0xFF,
+            "detail": b"\x00",
+            "ui_state": 1,
+            "ems_handle": -1,
+            "xms_handle": -1,
+            "call": None,
+            "direct": True,
+            "flags": 0x0002,
+        },
+        {
+            "name": "direct_sf_set_id_ff",
+            "id": 0xFF,
+            "detail": b"\x00",
+            "ui_state": 1,
+            "ems_handle": -1,
+            "xms_handle": -1,
+            "call": None,
+            "direct": True,
+            "flags": 0x0082,
+        },
+        {
+            "name": "direct_sf_set_id_01",
+            "id": 0x01,
+            "detail": b"B\x00",
+            "ui_state": 1,
+            "ems_handle": -1,
+            "xms_handle": -1,
+            "call": None,
+            "direct": True,
+            "flags": 0x0883,
+        },
+    ]
+    expected_hash = "ac97646e8463df2225f218348fcdd1694f485651b279fa2fc29b56d8efff43b7"
+    if hashlib.sha256(EXE[entry : entry + 106]).hexdigest() != expected_hash:
+        raise AssertionError("0x76ea: recovered 106-byte body changed")
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        asset_id = int(case["id"])
+        detail = bytes(case["detail"])
+        ui_state = int(case["ui_state"])
+        ems_handle = int(case["ems_handle"])
+        xms_handle = int(case["xms_handle"])
+        expected_call = case["call"]
+        direct = bool(case.get("direct", False))
+        start = int(case.get("start", 0x6200 + case_index * 0x80))
+        flags_before = int(case.get("flags", 0x0AD7))
+        stop_index = next(
+            index
+            for index, byte in enumerate(detail)
+            if byte < 0x20 or byte >= 0x80
+        )
+        copied = detail[:stop_index]
+        stop_byte = detail[stop_index]
+        stream = bytes([asset_id]) + detail if direct else bytes([0x0B, asset_id]) + detail
+        id_offset = start if direct else (start + 1) & 0xFFFF
+        stop_offset = (id_offset + 1 + stop_index) & 0xFFFF
+
+        signed_id = asset_id if asset_id < 0x80 else asset_id - 0x100
+        sign_extended_id = signed_id & 0xFFFF
+        handler_sf = bool(flags_before & 0x80) if direct else False
+        if handler_sf:
+            stored_id = sign_extended_id
+        else:
+            stored_id = (
+                ((sign_extended_id - 1) << 4) + 0x0DD7
+            ) & 0xFFFF
+
+        index_before = b"\xcc\xcc"
+        text_before = bytes([0xDD]) * (len(copied) + 3)
+        game_path = b"fd\\SOURCE.DAT\x00"
+        back_pointer = struct.pack("<HH", back_buffer_offset, back_buffer_segment)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            # The helper bodies are separate recovered routines. A RETF at each
+            # runtime entry isolates this caller while preserving far-call stack flow.
+            (0, path_helper_entry, b"\xcb"),
+            (0, file_helper_entry, b"\xcb"),
+            (destination_segment, 0x1FD7, index_before),
+            (destination_segment, 0x213A, text_before),
+            (game_segment, 0x1FD7, b"\x5a\xa5"),
+            (game_segment, 0x2137, game_path),
+            (game_segment, 0x2793, struct.pack("<H", ui_state)),
+            (game_segment, 0x0A58, struct.pack("<h", ems_handle)),
+            (game_segment, 0x0A56, struct.pack("<h", xms_handle)),
+            (game_segment, 0x5229, back_pointer),
+            (data_segment, 0x1FD7, b"\x69\x96"),
+            (data_segment, 0x2137, bytes([0xA5]) * len(game_path)),
+            (data_segment, 0x2793, b"\x87\x78"),
+            (data_segment, 0x0A58, b"\x34\x12"),
+            (data_segment, 0x0A56, b"\x78\x56"),
+            (data_segment, 0x5229, b"\x00\x11\x22\x33"),
+            (back_buffer_segment, back_buffer_offset, b"\xde\xad\xbe\xef"),
+            (0, direct_return, b"\xcc"),
+        ]
+        immutable_source = []
+        for index, byte in enumerate(stream):
+            source_offset = (start + index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            immutable_source.append((source_offset, encoded))
+
+        if direct:
+            memory.append(
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", direct_return) + stack_sentinel,
+                )
+            )
+            run_entry = entry
+            stop_address = direct_return
+            expected_sp = 0xFF02
+            initial_eax = 0xA1A1BEEF
+            expected_call_sp = 0xFEF4
+        else:
+            memory.extend(
+                [
+                    (0, 0x2192, struct.pack("<H", entry)),
+                    (stack_segment, 0xFEFC, b"\x13\x57"),
+                    (stack_segment, 0xFF00, stack_sentinel),
+                ]
+            )
+            run_entry = dispatcher_entry
+            stop_address = dispatcher_return
+            expected_sp = 0xFF00
+            initial_eax = 0x0000BEEF
+            expected_call_sp = 0xFEF2
+
+        initial = {
+            "eax": initial_eax,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        phases = []
+        calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address in (0x76EA, 0x76F2, 0x76FB):
+                phases.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x80),
+                    )
+                )
+            if address not in (path_helper_entry, file_helper_entry):
+                return
+            calls.append(
+                {
+                    "kind": "path" if address == path_helper_entry else "file",
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                }
+            )
+
+        machine = execute(
+            run_entry,
+            stop_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+        handler_entries = [phase for phase in phases if phase[0] == 0x76EA]
+        if len(handler_entries) != 1 or handler_entries[0][2] != handler_sf:
+            raise AssertionError(
+                f"0x76ea {name}: handler entry={handler_entries}, "
+                f"expected SF={handler_sf}"
+            )
+        cbw_phases = [phase for phase in phases if phase[0] == 0x76F2]
+        if (
+            len(cbw_phases) != 1
+            or cbw_phases[0][1] != sign_extended_id
+            or cbw_phases[0][2] != handler_sf
+        ):
+            raise AssertionError(
+                f"0x76ea {name}: CBW phase={cbw_phases}, "
+                f"expected AX={sign_extended_id:#x}, SF={handler_sf}"
+            )
+        store_phases = [phase for phase in phases if phase[0] == 0x76FB]
+        if len(store_phases) != 1 or store_phases[0][1] != stored_id:
+            raise AssertionError(
+                f"0x76ea {name}: store phase={store_phases}, "
+                f"expected AX={stored_id:#x}"
+            )
+
+        if expected_call is None:
+            expected_calls = []
+        elif expected_call == "path":
+            expected_calls = [
+                {
+                    "kind": "path",
+                    "ax": game_segment,
+                    "ds": game_segment,
+                    "si": 0x2137,
+                    "es": destination_segment,
+                    "di": 0x213A + len(copied),
+                    "sp": expected_call_sp,
+                    "cs": 0x01CE,
+                }
+            ]
+        else:
+            expected_calls = [
+                {
+                    "kind": "file",
+                    "ax": game_segment,
+                    "ds": game_segment,
+                    "si": 0x2137,
+                    "es": back_buffer_segment,
+                    "di": back_buffer_offset,
+                    "sp": expected_call_sp,
+                    "cs": 0x01CE,
+                }
+            ]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x76ea {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        actual_index = bytes(
+            machine.mem_read(destination_segment * 16 + 0x1FD7, 2)
+        )
+        if actual_index != struct.pack("<H", stored_id):
+            raise AssertionError(
+                f"0x76ea {name}: index={actual_index.hex()}, "
+                f"expected={stored_id:#x}"
+            )
+        actual_text = bytes(
+            machine.mem_read(
+                destination_segment * 16 + 0x213A,
+                len(text_before),
+            )
+        )
+        expected_text = copied + b"\x00" + text_before[len(copied) + 1 :]
+        if actual_text != expected_text:
+            raise AssertionError(
+                f"0x76ea {name}: text={actual_text!r}, expected={expected_text!r}"
+            )
+        for source_offset, expected in immutable_source:
+            actual = bytes(machine.mem_read(data_segment * 16 + source_offset, 1))
+            if actual != expected:
+                raise AssertionError(f"0x76ea {name}: source changed")
+        immutable_memory = [
+            (game_segment, 0x1FD7, b"\x5a\xa5"),
+            (game_segment, 0x2137, game_path),
+            (game_segment, 0x2793, struct.pack("<H", ui_state)),
+            (game_segment, 0x0A58, struct.pack("<h", ems_handle)),
+            (game_segment, 0x0A56, struct.pack("<h", xms_handle)),
+            (game_segment, 0x5229, back_pointer),
+            (data_segment, 0x1FD7, b"\x69\x96"),
+            (data_segment, 0x2137, bytes([0xA5]) * len(game_path)),
+            (data_segment, 0x2793, b"\x87\x78"),
+            (data_segment, 0x0A58, b"\x34\x12"),
+            (data_segment, 0x0A56, b"\x78\x56"),
+            (data_segment, 0x5229, b"\x00\x11\x22\x33"),
+            (back_buffer_segment, back_buffer_offset, b"\xde\xad\xbe\xef"),
+        ]
+        for segment, offset, expected in immutable_memory:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x76ea {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        if expected_call is None:
+            expected_eax = (
+                (initial_eax & 0xFFFF0000) | (stored_id & 0xFF00) | stop_byte
+            )
+        else:
+            expected_eax = 0
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": expected_eax,
+                "esi": (initial["esi"] & 0xFFFF0000) | stop_offset,
+                "sp": expected_sp,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x76ea {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x76ea {name}: far call did not restore CS")
+
+        if expected_call is not None or (ui_state & 1) != 0:
+            expected_flags = {
+                "cf": False,
+                "pf": expected_call is not None,
+                "zf": expected_call is not None,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x76ea {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if direct:
+            if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+                raise AssertionError(f"0x76ea {name}: direct stack sentinel changed")
+        else:
+            if struct.unpack(
+                "<H", machine.mem_read(stack_segment * 16 + 0xFEFE, 2)
+            )[0] != dispatcher_return:
+                raise AssertionError(f"0x76ea {name}: dispatcher return was not pushed")
+            if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, 4)) != stack_sentinel:
+                raise AssertionError(f"0x76ea {name}: dispatcher stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "entry_mode": "direct" if direct else "real_dispatcher",
+                "asset_id": asset_id,
+                "handler_entry_sf": handler_sf,
+                "stored_id": stored_id,
+                "copied_hex": copied.hex(),
+                "stopping_byte": stop_byte,
+                "ui_state": ui_state,
+                "ems_handle": ems_handle,
+                "xms_handle": xms_handle,
+                "helper_called": expected_call,
+                "final_source_offset": stop_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def byte_parser_store_word_1fa5_vectors() -> list[dict[str, object]]:
     entry = 0x76BA
     data_segment = 0x4400
@@ -20521,6 +20962,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_76d5_natural.json",
         byte_parser_copy_printable_vectors(0x76D5, 0x247A, 0x0A),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_76ea_natural.json",
+        index_lookup_1fd7_vectors(),
         args.check,
     )
     update_vector(
