@@ -1,0 +1,164 @@
+[
+  {
+    "name": "no_children",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 1,
+    "output_base": 256,
+    "output_offsets": [],
+    "final_output_offset": 256,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "one_child",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 1,
+    "output_base": 256,
+    "output_offsets": [
+      4096
+    ],
+    "final_output_offset": 258,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "two_siblings",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 2,
+    "output_base": 256,
+    "output_offsets": [
+      4096,
+      4352
+    ],
+    "final_output_offset": 260,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "depth_first_child_before_sibling",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 3,
+    "output_base": 256,
+    "output_offsets": [
+      4096,
+      4352,
+      4608
+    ],
+    "final_output_offset": 262,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_field_offset_is_skipped",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 2,
+    "output_base": 256,
+    "output_offsets": [
+      4352
+    ],
+    "final_output_offset": 258,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "next_inactive_entry_stops_scan",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 1,
+    "output_base": 256,
+    "output_offsets": [
+      4096
+    ],
+    "final_output_offset": 258,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "output_cursor_wrap",
+    "target_offset": 20480,
+    "directory_offset": 512,
+    "processed_entry_count": 2,
+    "output_base": 65532,
+    "output_offsets": [
+      4096,
+      4352
+    ],
+    "final_output_offset": 0,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_and_object_field_wrap",
+    "target_offset": 20480,
+    "directory_offset": 65528,
+    "processed_entry_count": 1,
+    "output_base": 256,
+    "output_offsets": [
+      65534
+    ],
+    "final_output_offset": 258,
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

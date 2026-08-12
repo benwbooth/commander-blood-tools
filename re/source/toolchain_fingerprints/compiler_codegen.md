@@ -748,6 +748,23 @@ scan, but loads the far directory pointer through DS rather than GS and returns
 the Boolean in AX. The binary instead restores AX and exposes only carry, so
 exact integration requires a narrow carry-result adapter around the natural C.
 
+Ship 3D navigation-source builder `0x00624B` has eight direct vectors covering
+no children, one child, two siblings, nested depth-first output, a zero selector
+offset, an inactive next entry, output-cursor wrap, and wrapped directory/object
+fields. They prove GS ownership of the directory and selector table, SS
+ownership of the output against a DS decoy, preservation of ES:DI and every
+register/segment other than the advanced BP cursor, the far recursion/return
+boundary, and flags from the outer terminating directory-kind comparison.
+
+The natural candidate is one recursive C function over a far object pointer and
+a returned near output cursor. Open Watcom `-3 -ox -mm` cannot bind BP as a
+pragma-aux parameter or result, so the codegen probe binds the real ES:DI target
+and substitutes BX for the cursor. It emits 51 instructions/113 bytes versus
+34/72 original, with mnemonic multiset overlap 0.9118; Turbo C 2.01 medium emits
+54 instructions. Exact integration needs GS data placement, the recovered
+runtime SS=DS alias, and a narrow BP/BX adapter, but no register emulation is
+present in the recovered algorithm.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -766,6 +783,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/46 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
+| `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |

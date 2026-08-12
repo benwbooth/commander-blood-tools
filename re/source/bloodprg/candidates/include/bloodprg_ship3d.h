@@ -69,6 +69,9 @@ extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
 #pragma aux ship_3d_position_distance parm [si] [di] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_position_field_resolve parm [si] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_object_table_bit_test_full parm [ax] [si] value [ax] modify exact [ax]
+/* Open Watcom C16 reserves BP, so the natural-C boundary uses BX for the
+ * output cursor; an integration adapter must translate the binary's BP ABI. */
+#pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -82,5 +85,8 @@ ship_3d_position_field_resolve(
         cb_u16 kind100_compare_word);        /* 0x0061A6 */
 int CB_NEAR ship_3d_object_table_bit_test_full(cb_u16 object_offset,
         const volatile cb_u8 CB_NEAR *bitset_base); /* 0x006210 */
+cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
+        const volatile bloodprg_vm_object_header CB_FAR *target,
+        cb_u16 CB_NEAR *output);              /* 0x00624B */
 
 #endif

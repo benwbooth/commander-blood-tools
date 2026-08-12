@@ -157,9 +157,16 @@ def execute(
             f"{machine.reg_read(UC_X86_REG_IP):#x}"
         ) from error
     if not returned:
+        stack_pointer = machine.reg_read(UC_X86_REG_SP)
+        stack_segment = machine.reg_read(UC_X86_REG_SS)
+        stack_bytes = bytes(
+            machine.mem_read(stack_segment * 16 + stack_pointer, 8)
+        ).hex()
         raise RuntimeError(
             f"{entry:#x}: did not reach return at {return_address:#x}; "
-            f"stopped at {machine.reg_read(UC_X86_REG_IP):#x}"
+            f"stopped at {machine.reg_read(UC_X86_REG_CS):#x}:"
+            f"{machine.reg_read(UC_X86_REG_IP):#x}; "
+            f"sp={stack_pointer:#x} stack={stack_bytes}"
         )
     return machine
 
@@ -4785,6 +4792,290 @@ def ship_3d_object_table_bit_test_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_nav_source_list_build_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    directory_segment = 0x4800
+    object_segment = 0x4C00
+    cases = [
+        {
+            "name": "no_children",
+            "target": 0x5000,
+            "entries": [(0x1000, 0x0002, 0x6000, 0x0002, 1)],
+            "sentinel_kind": 0,
+            "output_base": 0x0100,
+            "expected": [],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "one_child",
+            "target": 0x5000,
+            "entries": [(0x1000, 0x0002, 0x5000, 0x0002, 1)],
+            "sentinel_kind": 2,
+            "output_base": 0x0100,
+            "expected": [0x1000],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "two_siblings",
+            "target": 0x5000,
+            "entries": [
+                (0x1000, 0x0002, 0x5000, 0x0002, 1),
+                (0x1100, 0x0004, 0x5000, 0x0004, 1),
+            ],
+            "sentinel_kind": 0xFFFF,
+            "output_base": 0x0100,
+            "expected": [0x1000, 0x1100],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "depth_first_child_before_sibling",
+            "target": 0x5000,
+            "entries": [
+                (0x1000, 0x0002, 0x5000, 0x0002, 1),
+                (0x1100, 0x0004, 0x1000, 0x0004, 1),
+                (0x1200, 0x0008, 0x5000, 0x0006, 1),
+            ],
+            "sentinel_kind": 7,
+            "output_base": 0x0100,
+            "expected": [0x1000, 0x1100, 0x1200],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "zero_field_offset_is_skipped",
+            "target": 0x5000,
+            "entries": [
+                (0x1000, 0x0020, 0x5000, 0x0000, 1),
+                (0x1100, 0x0002, 0x5000, 0x0002, 1),
+            ],
+            "sentinel_kind": 0,
+            "output_base": 0x0100,
+            "expected": [0x1100],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "next_inactive_entry_stops_scan",
+            "target": 0x5000,
+            "entries": [
+                (0x1000, 0x0002, 0x5000, 0x0002, 1),
+                (0x1100, 0x0004, 0x5000, 0x0004, 0),
+            ],
+            "sentinel_kind": 1,
+            "output_base": 0x0100,
+            "expected": [0x1000],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "output_cursor_wrap",
+            "target": 0x5000,
+            "entries": [
+                (0x1000, 0x0002, 0x5000, 0x0002, 1),
+                (0x1100, 0x0004, 0x5000, 0x0004, 1),
+            ],
+            "sentinel_kind": 0,
+            "output_base": 0xFFFC,
+            "expected": [0x1000, 0x1100],
+            "directory_base": 0x0200,
+        },
+        {
+            "name": "directory_and_object_field_wrap",
+            "target": 0x5000,
+            "entries": [(0xFFFE, 0x0002, 0x5000, 0x0002, 1)],
+            "sentinel_kind": 2,
+            "output_base": 0x0100,
+            "expected": [0xFFFE],
+            "directory_base": 0xFFF8,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        target = int(case["target"])
+        entries = list(case["entries"])
+        sentinel_kind = int(case["sentinel_kind"])
+        output_base = int(case["output_base"])
+        expected_output = list(case["expected"])
+        directory_base = int(case["directory_base"])
+        memory = [
+            # A direct far-call wrapper stops only after all recursive RETF
+            # frames have unwound to the outer caller.
+            (0, 0x5C00, b"\x9a\x4b\x62\x00\x00\x90"),
+            (
+                game_segment,
+                0x672C,
+                struct.pack("<HH", directory_base, directory_segment),
+            ),
+            (data_segment, 0x672C, struct.pack("<HH", 0x1234, 0x5678)),
+        ]
+        immutable_fields = []
+        table_fields = set()
+
+        for index, (
+            object_offset,
+            kind,
+            parent,
+            field_offset,
+            entry_kind,
+        ) in enumerate(entries):
+            directory_offset = (directory_base + index * 20) & 0xFFFF
+            for offset, value in (
+                ((directory_offset + 0x10) & 0xFFFF, object_offset),
+                ((directory_offset + 0x12) & 0xFFFF, entry_kind),
+            ):
+                encoded = struct.pack("<H", value)
+                memory.append((directory_segment, offset, encoded))
+                immutable_fields.append((directory_segment, offset, encoded))
+
+            kind_bytes = struct.pack("<H", kind)
+            memory.append((object_segment, object_offset, kind_bytes))
+            memory.append(
+                (data_segment, object_offset, struct.pack("<H", kind ^ 0x5555))
+            )
+            immutable_fields.append((object_segment, object_offset, kind_bytes))
+            if field_offset != 0:
+                parent_offset = (object_offset + field_offset) & 0xFFFF
+                parent_bytes = struct.pack("<H", parent)
+                memory.append((object_segment, parent_offset, parent_bytes))
+                immutable_fields.append((object_segment, parent_offset, parent_bytes))
+
+            column = (kind & -kind).bit_length() - 1
+            table_offset = (0x6D60 + 0x11 * 16 + column) & 0xFFFF
+            table_fields.add((table_offset, field_offset & 0xFF))
+
+        stop_index = next(
+            (index for index in range(1, len(entries)) if int(entries[index][4]) != 1),
+            len(entries),
+        )
+        stop_kind = (
+            int(entries[stop_index][4]) if stop_index < len(entries) else sentinel_kind
+        )
+        stop_offset = (directory_base + stop_index * 20 + 0x12) & 0xFFFF
+        stop_bytes = struct.pack("<H", stop_kind)
+        memory.append((directory_segment, stop_offset, stop_bytes))
+        immutable_fields.append((directory_segment, stop_offset, stop_bytes))
+
+        for table_offset, field_offset in table_fields:
+            memory.append((game_segment, table_offset, bytes([field_offset])))
+            memory.append((data_segment, table_offset, bytes([field_offset ^ 0x3F])))
+            immutable_fields.append((game_segment, table_offset, bytes([field_offset])))
+
+        output_words = len(expected_output) + 3
+        for index in range(-1, output_words):
+            offset = (output_base + index * 2) & 0xFFFF
+            value = (0xA500 + index) & 0xFFFF
+            memory.append((0x9000, offset, struct.pack("<H", value)))
+            memory.append((data_segment, offset, struct.pack("<H", value ^ 0xFFFF)))
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | target,
+            "ebp": 0x97970000 | output_base,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": object_segment,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        entries_and_terminators = []
+
+        def capture_recursion(_machine: Uc, address: int, _size: int) -> None:
+            if address in {0x624B, 0x6289}:
+                entries_and_terminators.append(address)
+
+        machine = execute(
+            0x5C00,
+            0x5C05,
+            initial,
+            memory,
+            code_handler=capture_recursion,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        final_output_offset = (output_base + len(expected_output) * 2) & 0xFFFF
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | final_output_offset
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x624b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_output = [
+            struct.unpack(
+                "<H",
+                machine.mem_read(0x9000 * 16 + ((output_base + index * 2) & 0xFFFF), 2),
+            )[0]
+            for index in range(len(expected_output) + 1)
+        ]
+        if actual_output != expected_output + [0xFFFF]:
+            raise AssertionError(
+                f"0x624b {name}: output={actual_output}, "
+                f"expected={expected_output + [0xFFFF]}, "
+                f"trace={entries_and_terminators}"
+            )
+        for index in range(len(expected_output) + 1):
+            offset = (output_base + index * 2) & 0xFFFF
+            expected_decoy = ((0xA500 + index) & 0xFFFF) ^ 0xFFFF
+            actual_decoy = struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+            if actual_decoy != expected_decoy:
+                raise AssertionError(f"0x624b {name}: DS output decoy changed")
+        for segment, offset, expected_bytes in immutable_fields:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected_bytes)))
+            if actual != expected_bytes:
+                raise AssertionError(f"0x624b {name}: input memory changed")
+
+        result = (stop_kind - 1) & 0xFFFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": stop_kind < 1,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (stop_kind & 0xF) < 1,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((stop_kind ^ 1) & (stop_kind ^ result)) & 0x8000),
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x624b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6292] != 0xCB:
+            raise AssertionError("0x624b: expected far RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "target_offset": target,
+                "directory_offset": directory_base,
+                "processed_entry_count": stop_index,
+                "output_base": output_base,
+                "output_offsets": expected_output,
+                "final_output_offset": final_output_offset,
+                "terminator": 0xFFFF,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -9327,6 +9618,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6210_natural.json",
         ship_3d_object_table_bit_test_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_624b_natural.json",
+        ship_3d_nav_source_list_build_vectors(),
         args.check,
     )
     update_vector(
