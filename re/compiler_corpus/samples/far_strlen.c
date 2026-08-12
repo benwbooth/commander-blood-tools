@@ -12,14 +12,24 @@ typedef unsigned int u16;
 #define FAR_FN
 #endif
 
+u16 FAR_FN far_strlen_probe(const char FAR *s);
+
+#if defined(__WATCOMC__)
+#pragma aux far_strlen_probe parm [es di] value [ax] modify exact [ax]
+#endif
+
 u16 FAR_FN far_strlen_probe(const char FAR *s)
 {
-    const char FAR *p;
+    u16 length;
 
-    p = s;
-    while (*p != '\0') {
-        ++p;
+    length = 0;
+    while (length != 0xffffu) {
+        if (*s == '\0') {
+            return length;
+        }
+        ++s;
+        ++length;
     }
 
-    return (u16)(p - s);
+    return 0xfffeu;
 }

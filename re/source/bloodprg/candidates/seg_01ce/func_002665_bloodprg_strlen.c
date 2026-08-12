@@ -2,12 +2,16 @@
 
 cb_u16 CB_FAR bloodprg_strlen(const volatile char CB_FAR *text)
 {
-    const volatile char CB_FAR *end;
+    cb_u16 length;
 
-    end = text;
-    while (*end != '\0') {
-        ++end;
+    length = 0;
+    while (length != 0xffffu) {
+        if (*text == '\0') {
+            return length;
+        }
+        ++text;
+        ++length;
     }
 
-    return (cb_u16)(end - text);
+    return 0xfffeu;
 }

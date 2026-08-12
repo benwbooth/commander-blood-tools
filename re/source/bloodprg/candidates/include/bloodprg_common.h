@@ -29,6 +29,7 @@ cb_u8 CB_NEAR bcd_to_binary(cb_u8 value);                        /* 0x000986 */
 void CB_NEAR mem_copy_words(cb_u16 *dst, const cb_u16 *src);      /* 0x00A7E6 */
 
 #if defined(__WATCOMC__)
+#pragma aux bloodprg_strlen parm [es di] value [ax] modify exact [ax]
 #pragma aux bcd_to_binary parm [ax] value [al] modify [ax]
 #endif
 

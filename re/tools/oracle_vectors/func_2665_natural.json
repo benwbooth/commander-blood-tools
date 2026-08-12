@@ -1,0 +1,164 @@
+[
+  {
+    "name": "empty",
+    "start_offset": 4096,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 1,
+    "last_probe_offset": 4096,
+    "return_length": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_byte",
+    "start_offset": 4352,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 2,
+    "last_probe_offset": 4353,
+    "return_length": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "punctuation",
+    "start_offset": 4609,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 11,
+    "last_probe_offset": 4619,
+    "return_length": 10,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bytes",
+    "start_offset": 4864,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 4,
+    "last_probe_offset": 4867,
+    "return_length": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wraps_segment_offset",
+    "start_offset": 65533,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 5,
+    "last_probe_offset": 1,
+    "return_length": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "length_254",
+    "start_offset": 8192,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 255,
+    "last_probe_offset": 8446,
+    "return_length": 254,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_scannable_length",
+    "start_offset": 0,
+    "direction": "ascending",
+    "terminated": true,
+    "probe_count": 65535,
+    "last_probe_offset": 65534,
+    "return_length": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unterminated_scan_bound",
+    "start_offset": 0,
+    "direction": "ascending",
+    "terminated": false,
+    "probe_count": 65535,
+    "last_probe_offset": 65534,
+    "return_length": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "descending",
+    "start_offset": 12290,
+    "direction": "descending",
+    "terminated": true,
+    "probe_count": 3,
+    "last_probe_offset": 12288,
+    "return_length": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": true,
+      "of": false
+    }
+  }
+]

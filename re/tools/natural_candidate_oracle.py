@@ -2425,6 +2425,155 @@ def string_compare_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bloodprg_strlen_vectors() -> list[dict[str, object]]:
+    entry = 0x2665
+    expected_hash = "6e2373a08942d4b119e6d1336777d439d7ffb47d63f83afd33cf4113382e2718"
+    if hashlib.sha256(EXE[entry : entry + 19]).hexdigest() != expected_hash:
+        raise AssertionError("0x2665: recovered 19-byte body changed")
+
+    cases = [
+        ("empty", 0x1000, b"", True, False),
+        ("one_byte", 0x1100, b"A", True, False),
+        ("punctuation", 0x1201, b"Commander!", True, False),
+        ("high_bytes", 0x1300, bytes([0x80, 0xFE, 0xFF]), True, False),
+        ("wraps_segment_offset", 0xFFFD, b"WRAP", True, False),
+        ("length_254", 0x2000, b"X" * 254, True, False),
+        ("maximum_scannable_length", 0x0000, b"Y" * 0xFFFE, True, False),
+        ("unterminated_scan_bound", 0x0000, b"Z" * 0x10000, False, False),
+        ("descending", 0x3002, b"AB", True, True),
+    ]
+    text_segment = 0x7000
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (
+        name,
+        start,
+        payload,
+        terminated,
+        direction_set,
+    ) in enumerate(cases):
+        step = -1 if direction_set else 1
+        encoded = payload + (b"\0" if terminated else b"")
+        text_memory = [
+            (
+                text_segment,
+                (start + step * byte_index) & 0xFFFF,
+                bytes([byte]),
+            )
+            for byte_index, byte in enumerate(encoded)
+        ]
+        decoy_memory = []
+        if len(encoded) < 0x1000:
+            for byte_index, byte in enumerate(encoded):
+                offset = (start + step * byte_index) & 0xFFFF
+                decoy_memory.append((data_segment, offset, bytes([byte ^ 0x5A])))
+                decoy_memory.append((game_segment, offset, bytes([byte ^ 0xA5])))
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | start,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": text_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if direction_set else 0),
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                *text_memory,
+                *decoy_memory,
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            instruction_count=100000,
+        )
+
+        result = len(payload) if terminated else 0xFFFE
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | result
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2665 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2665 {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x2665 {name}: stack sentinel changed")
+
+        for segment, offset, value in text_memory + decoy_memory:
+            actual = bytes(machine.mem_read(segment * 16 + offset, 1))
+            if actual != value:
+                raise AssertionError(f"0x2665 {name}: input memory changed")
+
+        before_sub = (result + 2) & 0xFFFF
+        expected_flags = {
+            "cf": before_sub < 2,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (before_sub & 0x0F) < 2,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "df": direction_set,
+            "of": bool(((before_sub ^ 2) & (before_sub ^ result)) & 0x8000),
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x2665 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        probe_count = len(payload) + 1 if terminated else 0xFFFF
+        last_probe = (start + step * (probe_count - 1)) & 0xFFFF
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "direction": "descending" if direction_set else "ascending",
+                "terminated": terminated,
+                "probe_count": probe_count,
+                "last_probe_offset": last_probe,
+                "return_length": result,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -25669,6 +25818,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_25a4_natural.json",
         string_compare_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2665_natural.json",
+        bloodprg_strlen_vectors(),
         args.check,
     )
     update_vector(

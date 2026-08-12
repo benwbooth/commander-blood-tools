@@ -1851,6 +1851,26 @@ that preserves incoming AX. Turbo C 2.01 medium emits 22 instructions with
 stack arguments. Exact binary integration therefore needs a small
 Boolean-to-carry/AX-preservation adapter; the C logic itself is complete.
 
+Far string-length helper `0x002665` is a bounded routine rather than an
+ordinary unbounded library `strlen`. It probes at most `0xFFFF` bytes through
+ES:DI. A terminator can therefore yield lengths zero through `0xFFFE`; if all
+`0xFFFF` probes are nonzero, the routine also returns `0xFFFE`. Nine direct
+vectors cover both indistinguishable boundary outcomes, empty and high-byte
+strings, ascending offset wrap, ES ownership against segment decoys, immutable
+input, register and segment preservation, final `SUB` flags, and `RETF`. A
+descending vector records that the binary inherits DF and walks backward,
+which is outside the normal clear-DF DOS C ABI contract.
+
+The corrected natural candidate uses a `0xFFFF`-bounded length loop and the
+recovered ES:DI argument plus AX result declaration. Open Watcom `-3 -ox -mm`
+compiles both the probe and actual candidate without warnings to 11
+instructions/21 bytes, versus 11/19 original. It preserves DI, leaves CX
+untouched, and emits the far return, but uses a scalar `CMP`/`INC` loop instead
+of `REPNE SCASB`. Turbo C 2.01 medium emits 18 instructions with a stack far
+pointer. The natural logic is complete for conforming C callers; reproducing
+the inherited-DF path would require an assembly boundary and is not appropriate
+inside this C function.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1862,7 +1882,7 @@ LCS and then mnemonic similarity:
 
 | probe | best configuration | original/generated instructions | instruction LCS | mnemonic LCS | byte-line LCS |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `far_strlen` | compact, unoptimized, register | 11/15 | 0.0909 | 0.6364 | 0.0909 |
+| `far_strlen` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
 | `field_offset` | compact, `-ox`, register | 8/23 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
