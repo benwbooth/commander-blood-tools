@@ -1968,6 +1968,19 @@ an equivalent-result `ADD word,-15` at state `+0xB0`, then adds `0x5E` to
 `SI`. Memory and `SI` match, but the reordered final arithmetic flags do not.
 Turbo C emits a 16-instruction stack-argument wrapper.
 
+The AMER `0x001BEA`, CROOLIS `0x001B46`, and SCRUT `0x001BFB` slot-13
+methods implement a resume-state dispatcher. Six raw-overlay vectors per
+method prove that a nonzero near callback at context `+0x36` is tail-jumped
+with the caller's original stack frame and `DI` context, while zero installs
+the overlay-specific resume offset and clears context `+0x38/+0x3A`. Open
+Watcom compiles each actual natural callback candidate without warnings to 9
+instructions/22 bytes versus 8/25 original. The initializer has the correct
+memory result, but generated callback dispatch uses `AX` and nested `CALL; RET`
+instead of `BX` and tail `JMP`; callback-entry `SP` therefore differs. Turbo C
+2.01 emits a 19-instruction stack-argument implementation. Exact overlay
+integration needs a narrow tail-call adapter, while the natural C control flow
+is sufficient for a consistently recompiled caller/callback set.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -2007,6 +2020,7 @@ LCS and then mnemonic similarity:
 | `xdb_anchor_state` | medium, `-ox`, register | 5/5 | 0.2000 | 0.8000 | 0.6000 |
 | `xdb_apply_delta` | medium, `-ox`, register | 6/9 | 0.1667 | 0.6667 | 0.3333 |
 | `xdb_lower_state` | medium, `-ox`, register | 4/4 | 0.2500 | 0.7500 | 0.7500 |
+| `xdb_resume_or_init` | medium, `-ox`, register | 8/9 | 0.1250 | 0.6250 | 0.1250 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

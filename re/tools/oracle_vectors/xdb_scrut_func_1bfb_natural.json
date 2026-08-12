@@ -1,0 +1,140 @@
+[
+  {
+    "name": "initialize",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 4096,
+    "resume_before": 0,
+    "resume_after": 7237,
+    "resume_step_before": 4369,
+    "resume_step_after": 0,
+    "resume_value_before": 8738,
+    "resume_value_after": 0,
+    "tail_dispatched": false,
+    "callback_stack_pointer": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "initialize_extremes",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 4608,
+    "resume_before": 0,
+    "resume_after": 7237,
+    "resume_step_before": 65535,
+    "resume_step_after": 0,
+    "resume_value_before": 32768,
+    "resume_value_after": 0,
+    "tail_dispatched": false,
+    "callback_stack_pointer": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "initialize_offset_wrap",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 65480,
+    "resume_before": 0,
+    "resume_after": 7237,
+    "resume_step_before": 13107,
+    "resume_step_after": 0,
+    "resume_value_before": 17476,
+    "resume_value_after": 0,
+    "tail_dispatched": false,
+    "callback_stack_pointer": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_low",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 5120,
+    "resume_before": 28673,
+    "resume_after": 28673,
+    "resume_step_before": 21845,
+    "resume_step_after": 21845,
+    "resume_value_before": 26214,
+    "resume_value_after": 26214,
+    "tail_dispatched": true,
+    "callback_stack_pointer": 65280,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_signed",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 5376,
+    "resume_before": 32769,
+    "resume_after": 32769,
+    "resume_step_before": 30583,
+    "resume_step_after": 30583,
+    "resume_value_before": 34952,
+    "resume_value_after": 34952,
+    "tail_dispatched": true,
+    "callback_stack_pointer": 65280,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dispatch_high",
+    "module": "scrut",
+    "entry": 7163,
+    "context_offset": 5632,
+    "resume_before": 61697,
+    "resume_after": 61697,
+    "resume_step_before": 39321,
+    "resume_step_after": 39321,
+    "resume_value_before": 43690,
+    "resume_value_after": 43690,
+    "tail_dispatched": true,
+    "callback_stack_pointer": 65280,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

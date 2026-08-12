@@ -16,10 +16,19 @@ typedef struct xdb_alien_state {
     xdb_i16 field_0b0;
 } xdb_alien_state;
 
-typedef struct xdb_alien_method_context {
+typedef struct xdb_alien_method_context xdb_alien_method_context;
+typedef void XDB_NEAR xdb_alien_resume_function(
+        xdb_alien_method_context XDB_NEAR *context);
+typedef xdb_alien_resume_function XDB_NEAR *xdb_alien_resume_callback;
+
+struct xdb_alien_method_context {
     xdb_u8 field_00[0x16];
     volatile xdb_alien_state XDB_NEAR *state;
-} xdb_alien_method_context;
+    xdb_u8 field_018[0x1e];
+    xdb_alien_resume_callback resume;
+    xdb_u16 resume_step;
+    xdb_u16 resume_value;
+};
 
 typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 
@@ -43,14 +52,31 @@ xdb_i16 XDB_NEAR xdb_croolis_method_slot_12_apply_delta(
         const xdb_alien_method_context XDB_NEAR *context);
 volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_scrut_method_slot_12_lower_state(
         const xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_slot_13_resume_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_13_resume_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_13_resume_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+
+void XDB_NEAR xdb_amer_resume_1c34(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_resume_1b85(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_resume_1c45(
+        xdb_alien_method_context XDB_NEAR *context);
 
 #if defined(__WATCOMC__)
+#pragma aux xdb_alien_resume_function parm [di]
 #pragma aux xdb_amer_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_croolis_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_scrut_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_amer_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
 #pragma aux xdb_croolis_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
 #pragma aux xdb_scrut_method_slot_12_lower_state parm [di] value [si] modify exact [si]
+#pragma aux xdb_amer_method_slot_13_resume_or_init parm [di]
+#pragma aux xdb_croolis_method_slot_13_resume_or_init parm [di]
+#pragma aux xdb_scrut_method_slot_13_resume_or_init parm [di]
 #endif
 
 #endif

@@ -636,6 +636,221 @@ def lower_state_vectors(module: str, entry: int, cursor_offset: int) -> list[dic
     return vectors
 
 
+def resume_or_init_vectors(
+    module: str, entry: int, initial_resume: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    routine_hashes = {
+        "amer": "9d298b17dbf20f335fe135f28ed40e81110af1973e9628dd3ab5d420b60e9eed",
+        "croolis": "efadb9db7ca5a5948b626039dc5b44f96b1eb61b8ad6ebe0e2758ec249323a81",
+        "scrut": "b1a0b8943aaa5f76c2091d91bb198b2df18d4e3ffd989a47b3cc8bafc61b41d6",
+    }
+    if hashlib.sha256(image[entry : entry + 25]).hexdigest() != routine_hashes[module]:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 25-byte body changed")
+
+    cases = [
+        ("initialize", 0x1000, 0x0000, 0x1111, 0x2222),
+        ("initialize_extremes", 0x1200, 0x0000, 0xFFFF, 0x8000),
+        ("initialize_offset_wrap", 0xFFC8, 0x0000, 0x3333, 0x4444),
+        ("dispatch_low", 0x1400, 0x7001, 0x5555, 0x6666),
+        ("dispatch_signed", 0x1500, 0x8001, 0x7777, 0x8888),
+        ("dispatch_high", 0x1600, 0xF101, 0x9999, 0xAAAA),
+    ]
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0xF000
+    capture_offset = 0x7000
+    vectors = []
+
+    for case_index, (
+        name,
+        context_offset,
+        resume_before,
+        step_before,
+        value_before,
+    ) in enumerate(cases):
+        resume_offset = (context_offset + 0x36) & 0xFFFF
+        step_offset = (context_offset + 0x38) & 0xFFFF
+        value_offset = (context_offset + 0x3A) & 0xFFFF
+        padding_before_offset = (context_offset + 0x34) & 0xFFFF
+        padding_after_offset = (context_offset + 0x3C) & 0xFFFF
+        dispatched = resume_before != 0
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        capture_sentinel = bytes.fromhex("a1b2c3d4e5f6")
+        callback_ax = (0x4A00 + case_index) & 0xFFFF
+        callback_stub = (
+            b"\xb8"
+            + struct.pack("<H", callback_ax)
+            + bytes.fromhex("893e007089260270891e0470c3")
+        )
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        field_values = [
+            (resume_offset, resume_before),
+            (step_offset, step_before),
+            (value_offset, value_before),
+        ]
+        immutable = [
+            (data_segment, padding_before_offset, bytes.fromhex("5aa5")),
+            (data_segment, padding_after_offset, bytes.fromhex("9669")),
+        ]
+        for segment, xor_mask in (
+            (extra_segment, 0x5A5A),
+            (game_segment, 0xA5A5),
+        ):
+            immutable.extend(
+                (segment, offset, struct.pack("<H", value ^ xor_mask))
+                for offset, value in field_values
+            )
+        memory = [
+            (0, return_address, b"\xcc"),
+            *immutable,
+            *(
+                (data_segment, offset, struct.pack("<H", value))
+                for offset, value in field_values
+            ),
+            (data_segment, capture_offset, capture_sentinel),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        if dispatched:
+            memory.append((0, resume_before, callback_stub))
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            memory,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ebx"] = (
+            initial["ebx"] & 0xFFFF0000
+        ) | resume_before
+        if dispatched:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | callback_ax
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        expected_fields = (
+            (resume_before, step_before, value_before)
+            if dispatched
+            else (initial_resume, 0, 0)
+        )
+        for (offset, _before), expected in zip(field_values, expected_fields):
+            actual = struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: context field at {offset:#x} "
+                    f"is {actual:#x}, expected {expected:#x}"
+                )
+        for segment, offset, value in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: padding or decoy changed"
+                )
+
+        actual_capture = bytes(
+            machine.mem_read(data_segment * 16 + capture_offset, 6)
+        )
+        if dispatched:
+            expected_capture = struct.pack(
+                "<HHH", context_offset, 0xFF00, resume_before
+            )
+        else:
+            expected_capture = capture_sentinel
+        if actual_capture != expected_capture:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: capture={actual_capture.hex()}, "
+                f"expected={expected_capture.hex()}"
+            )
+
+        flag_value = resume_before
+        expected_flags = {
+            "cf": False,
+            "pf": (flag_value & 0xFF).bit_count() % 2 == 0,
+            "zf": flag_value == 0,
+            "sf": bool(flag_value & 0x8000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": False,
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "context_offset": context_offset,
+                "resume_before": resume_before,
+                "resume_after": expected_fields[0],
+                "resume_step_before": step_before,
+                "resume_step_after": expected_fields[1],
+                "resume_value_before": value_before,
+                "resume_value_after": expected_fields[2],
+                "tail_dispatched": dispatched,
+                "callback_stack_pointer": 0xFF00 if dispatched else None,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def near_noop_vectors(module: str, entry: int) -> list[dict[str, object]]:
     image = load_image(module)
     if image[entry : entry + 1] != b"\xc3":
@@ -772,6 +987,16 @@ def main() -> int:
         lower_state_vectors("scrut", 0x0B65, 0x1BE3),
         args.check,
     )
+    for module, entry, initial_resume in (
+        ("amer", 0x1BEA, 0x1C34),
+        ("croolis", 0x1B46, 0x1B85),
+        ("scrut", 0x1BFB, 0x1C45),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            resume_or_init_vectors(module, entry, initial_resume),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x1DD6),
         ("croolis", 0x1D27),
