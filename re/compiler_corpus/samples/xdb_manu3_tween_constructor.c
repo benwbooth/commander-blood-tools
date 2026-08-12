@@ -19,11 +19,19 @@ typedef struct tween_spec {
     i16 end_value;
 } tween_spec;
 
+typedef union q16_value {
+    u32 raw;
+    struct {
+        u16 fraction;
+        i16 whole;
+    } parts;
+} q16_value;
+
 typedef struct tween_record {
-    u16 counter;
+    i16 counter;
     u16 field_002;
     u16 target_offset;
-    i32 accumulator;
+    q16_value accumulator;
     i32 step;
 } tween_record;
 
@@ -77,8 +85,8 @@ void NEAR xdb_manu3_tween_constructor_probe(
                 (u32)((i32)current * 65536L) + (u32)step);
 
         record->step = step;
-        record->counter = count - 1u;
-        record->accumulator = accumulator;
+        record->counter = (i16)(count - 1u);
+        record->accumulator.raw = (u32)accumulator;
         ++spec;
     }
 

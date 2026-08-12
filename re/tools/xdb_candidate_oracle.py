@@ -2541,6 +2541,370 @@ def _signed_16(value: int) -> int:
     return value - 0x10000 if value & 0x8000 else value
 
 
+def _logical_flags_16(result: int, initial_flags: int) -> dict[str, bool]:
+    result &= 0xFFFF
+    return {
+        "cf": False,
+        "pf": (result & 0xFF).bit_count() % 2 == 0,
+        "zf": result == 0,
+        "sf": bool(result & 0x8000),
+        "if": bool(initial_flags & 0x0200),
+        "df": bool(initial_flags & 0x0400),
+        "of": False,
+    }
+
+
+def manu3_tween_step_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x019B
+    constructor = 0x01DF
+    image = load_image(module)
+    expected_hash = "9072490ce643cd0fb2f7f955bf33ac5ffd75d4d3be30942b725a43991855a42d"
+    if hashlib.sha256(image[entry : entry + 163]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 163-byte body changed")
+
+    patched_image = bytearray(image)
+    patched_image[constructor] = 0xC3
+    cases = (
+        {
+            "name": "paused_high_phase",
+            "phase": 0x0107,
+            "records": (
+                (0x4000, 3, 0x5000, 0x12345678, 0x00102030, 0xA55A),
+            ),
+        },
+        {
+            "name": "paused_negative_high_phase",
+            "phase": 0xFF00,
+            "records": (
+                (0x4020, 0, 0x5010, 0x87654321, 0xFFEEDDCC, 0x5AA5),
+            ),
+        },
+        {"name": "empty", "phase": 0x0007, "records": ()},
+        {
+            "name": "one_live_wrapping_accumulator",
+            "phase": 0x00A5,
+            "records": (
+                (0x4040, 1, 0x5020, 0xFFFE8000, 0x00018001, 0x1357),
+            ),
+        },
+        {
+            "name": "one_expired",
+            "phase": 0x0001,
+            "records": (
+                (0x4060, 0, 0x5030, 0x80011234, 0x7FFFFFFF, 0x2468),
+            ),
+        },
+        {
+            "name": "first_expired_last_swapped_and_live",
+            "phase": 0x0002,
+            "records": (
+                (0x4080, 0, 0x5040, 0x11112222, 0x33334444, 0xAAAA),
+                (0x40A0, 2, 0x5050, 0xFFFF0001, 0x0001FFFF, 0xBBBB),
+            ),
+        },
+        {
+            "name": "last_expired_after_live",
+            "phase": 0x0003,
+            "records": (
+                (0x40C0, 0x8000, 0x5060, 0x7FFF8000, 0x80010000, 0xCCCC),
+                (0x40E0, 0, 0x5070, 0xFEDCBA98, 0x01020304, 0xDDDD),
+            ),
+        },
+        {
+            "name": "middle_expired_replacement_processed",
+            "phase": 0x0004,
+            "records": (
+                (0x4100, 1, 0x5080, 0x0000FFFF, 0x00000002, 0x1111),
+                (0x4120, 0, 0x5090, 0xFFFF8000, 0x11111111, 0x2222),
+                (0x4140, 0x7FFF, 0x50A0, 0x80000000, 0xFFFFFFFF, 0x3333),
+            ),
+        },
+    )
+    data_segment = 0x4400
+    initial_data_segment = 0x6000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0xF000
+    active_base = 0x1032
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        data_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x10000)
+        )
+        records = case["records"]
+        phase = int(case["phase"])
+        active_end = active_base + len(records) * 2
+        struct.pack_into("<H", data_before, 0x102C, phase)
+        struct.pack_into("<H", data_before, 0x1030, active_end)
+        for record_index, record_values in enumerate(records):
+            (
+                record_offset,
+                counter,
+                target_offset,
+                accumulator,
+                step,
+                target_before,
+            ) = record_values
+            struct.pack_into(
+                "<HHHII",
+                data_before,
+                record_offset,
+                counter,
+                0x9000 + record_index,
+                target_offset,
+                accumulator,
+                step,
+            )
+            struct.pack_into("<H", data_before, target_offset, target_before)
+            struct.pack_into(
+                "<H", data_before, active_base + record_index * 2, record_offset
+            )
+
+        data_expected = bytearray(data_before)
+        slot_values = [int(record[0]) for record in records]
+        record_metadata = {
+            int(record[0]): {
+                "counter_before": int(record[1]),
+                "target_offset": int(record[2]),
+                "accumulator_before": int(record[3]),
+                "step": int(record[4]),
+            }
+            for record in records
+        }
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": initial_data_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": 0x7800,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ds"] = data_segment
+        expected_registers["sp"] = 0xFF02
+        constructor_expected: list[dict[str, int]] = []
+        record_results = []
+
+        if phase & 0xFF00:
+            expected_flags = _logical_flags_16(phase & 0xFF00, initial_flags)
+        else:
+            cursor_index = 0
+            end_index = len(slot_values)
+            eax = initial["eax"]
+            edi = initial["edi"]
+            ebp = initial["ebp"]
+            while cursor_index != end_index:
+                record_offset = slot_values[cursor_index]
+                metadata = record_metadata[record_offset]
+                counter_before = struct.unpack_from(
+                    "<H", data_expected, record_offset
+                )[0]
+                accumulator_before = struct.unpack_from(
+                    "<I", data_expected, record_offset + 6
+                )[0]
+                target_offset = int(metadata["target_offset"])
+                value = (accumulator_before >> 16) & 0xFFFF
+                struct.pack_into("<H", data_expected, target_offset, value)
+                counter_after = (counter_before - 1) & 0xFFFF
+                struct.pack_into("<H", data_expected, record_offset, counter_after)
+                edi = (edi & 0xFFFF0000) | record_offset
+                ebp = (ebp & 0xFFFF0000) | target_offset
+                eax = (eax & 0xFFFF0000) | value
+                expired = bool(counter_after & 0x8000)
+
+                if expired:
+                    end_index -= 1
+                    replacement = slot_values[end_index]
+                    slot_values[end_index] = record_offset
+                    slot_values[cursor_index] = replacement
+                    struct.pack_into(
+                        "<H",
+                        data_expected,
+                        active_base + end_index * 2,
+                        record_offset,
+                    )
+                    struct.pack_into(
+                        "<H",
+                        data_expected,
+                        active_base + cursor_index * 2,
+                        replacement,
+                    )
+                    edi = (edi & 0xFFFF0000) | replacement
+                    accumulator_after = accumulator_before
+                else:
+                    step = int(metadata["step"])
+                    accumulator_after = (accumulator_before + step) & 0xFFFFFFFF
+                    struct.pack_into(
+                        "<I", data_expected, record_offset + 6, accumulator_after
+                    )
+                    eax = step
+                    cursor_index += 1
+
+                record_results.append(
+                    {
+                        "record_offset": record_offset,
+                        "target_offset": target_offset,
+                        "published_value": _signed_16(value),
+                        "counter_before": counter_before,
+                        "counter_after": counter_after,
+                        "accumulator_before": accumulator_before,
+                        "accumulator_after": accumulator_after,
+                        "expired": expired,
+                    }
+                )
+
+            final_cursor = active_base + cursor_index * 2
+            final_end = active_base + end_index * 2
+            expected_registers["eax"] = eax
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | final_end
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | final_cursor
+            expected_registers["edi"] = edi
+            expected_registers["ebp"] = ebp
+            expected_flags = sub_flags_16(final_cursor, final_end, initial_flags)
+            constructor_expected = [
+                {
+                    "bx": final_end,
+                    "si": final_cursor,
+                    "sp": 0xFF00,
+                    "ds": data_segment,
+                }
+            ]
+
+        decoy = bytes(
+            ((offset * 13 + case_index * 29 + 7) & 0xFF)
+            for offset in range(0x10000)
+        )
+        constructor_entries: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == constructor:
+                constructor_entries.append(
+                    {
+                        "bx": machine.reg_read(UC_X86_REG_EBX) & 0xFFFF,
+                        "si": machine.reg_read(UC_X86_REG_ESI) & 0xFFFF,
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                    }
+                )
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (initial_data_segment, 0, decoy),
+                (extra_segment, 0, decoy),
+                (data_segment, 0, bytes(data_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=code_handler,
+        )
+        if constructor_entries != constructor_expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: constructor entries="
+                f"{constructor_entries}, expected={constructor_expected}"
+            )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != data_expected:
+            difference = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, data_expected)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: data differs at "
+                f"{difference:#06x}: actual={actual_data[difference]:#04x}, "
+                f"expected={data_expected[difference]:#04x}"
+            )
+        if bytes(machine.mem_read(initial_data_segment * 16, 0x10000)) != decoy:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: initial DS decoy changed"
+            )
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != decoy:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: ES decoy changed"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: stack sentinel changed"
+            )
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "phase": phase,
+                "active_end_before": active_end,
+                "constructor_active_end": (
+                    constructor_expected[0]["bx"] if constructor_expected else None
+                ),
+                "active_slots_after": slot_values,
+                "record_steps": record_results,
+                "ds_loaded_from_fs": True,
+                "constructor_tail_jump": bool(constructor_expected),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def _signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
     quotient = abs(dividend) // divisor
     if dividend < 0:
@@ -2890,6 +3254,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0181_natural.json",
         manu3_anim_select_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_019b_natural.json",
+        manu3_tween_step_vectors(),
         args.check,
     )
     update_vector(

@@ -34,8 +34,8 @@ void XDB_NEAR xdb_manu3_tween_constructor(
                 (xdb_u32)((xdb_i32)current * 65536L) + (xdb_u32)step);
 
         record->step = step;
-        record->counter = count - 1u;
-        record->accumulator = accumulator;
+        record->counter = (xdb_i16)(count - 1u);
+        record->accumulator.raw = (xdb_u32)accumulator;
         ++spec;
     }
 

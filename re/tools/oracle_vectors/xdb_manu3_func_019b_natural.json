@@ -1,0 +1,289 @@
+[
+  {
+    "name": "paused_high_phase",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 263,
+    "active_end_before": 4148,
+    "constructor_active_end": null,
+    "active_slots_after": [
+      16384
+    ],
+    "record_steps": [],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "paused_negative_high_phase",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 65280,
+    "active_end_before": 4148,
+    "constructor_active_end": null,
+    "active_slots_after": [
+      16416
+    ],
+    "record_steps": [],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "empty",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 7,
+    "active_end_before": 4146,
+    "constructor_active_end": 4146,
+    "active_slots_after": [],
+    "record_steps": [],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_live_wrapping_accumulator",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 165,
+    "active_end_before": 4148,
+    "constructor_active_end": 4148,
+    "active_slots_after": [
+      16448
+    ],
+    "record_steps": [
+      {
+        "record_offset": 16448,
+        "target_offset": 20512,
+        "published_value": -2,
+        "counter_before": 1,
+        "counter_after": 0,
+        "accumulator_before": 4294868992,
+        "accumulator_after": 1,
+        "expired": false
+      }
+    ],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "one_expired",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 1,
+    "active_end_before": 4148,
+    "constructor_active_end": 4146,
+    "active_slots_after": [
+      16480
+    ],
+    "record_steps": [
+      {
+        "record_offset": 16480,
+        "target_offset": 20528,
+        "published_value": -32767,
+        "counter_before": 0,
+        "counter_after": 65535,
+        "accumulator_before": 2147553844,
+        "accumulator_after": 2147553844,
+        "expired": true
+      }
+    ],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_expired_last_swapped_and_live",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 2,
+    "active_end_before": 4150,
+    "constructor_active_end": 4148,
+    "active_slots_after": [
+      16544,
+      16512
+    ],
+    "record_steps": [
+      {
+        "record_offset": 16512,
+        "target_offset": 20544,
+        "published_value": 4369,
+        "counter_before": 0,
+        "counter_after": 65535,
+        "accumulator_before": 286335522,
+        "accumulator_after": 286335522,
+        "expired": true
+      },
+      {
+        "record_offset": 16544,
+        "target_offset": 20560,
+        "published_value": -1,
+        "counter_before": 2,
+        "counter_after": 1,
+        "accumulator_before": 4294901761,
+        "accumulator_after": 65536,
+        "expired": false
+      }
+    ],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "last_expired_after_live",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 3,
+    "active_end_before": 4150,
+    "constructor_active_end": 4148,
+    "active_slots_after": [
+      16576,
+      16608
+    ],
+    "record_steps": [
+      {
+        "record_offset": 16576,
+        "target_offset": 20576,
+        "published_value": 32767,
+        "counter_before": 32768,
+        "counter_after": 32767,
+        "accumulator_before": 2147450880,
+        "accumulator_after": 32768,
+        "expired": false
+      },
+      {
+        "record_offset": 16608,
+        "target_offset": 20592,
+        "published_value": -292,
+        "counter_before": 0,
+        "counter_after": 65535,
+        "accumulator_before": 4275878552,
+        "accumulator_after": 4275878552,
+        "expired": true
+      }
+    ],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "middle_expired_replacement_processed",
+    "module": "manu3",
+    "entry": 411,
+    "phase": 4,
+    "active_end_before": 4152,
+    "constructor_active_end": 4150,
+    "active_slots_after": [
+      16640,
+      16704,
+      16672
+    ],
+    "record_steps": [
+      {
+        "record_offset": 16640,
+        "target_offset": 20608,
+        "published_value": 0,
+        "counter_before": 1,
+        "counter_after": 0,
+        "accumulator_before": 65535,
+        "accumulator_after": 65537,
+        "expired": false
+      },
+      {
+        "record_offset": 16672,
+        "target_offset": 20624,
+        "published_value": -1,
+        "counter_before": 0,
+        "counter_after": 65535,
+        "accumulator_before": 4294934528,
+        "accumulator_after": 4294934528,
+        "expired": true
+      },
+      {
+        "record_offset": 16704,
+        "target_offset": 20640,
+        "published_value": -32768,
+        "counter_before": 32767,
+        "counter_after": 32766,
+        "accumulator_before": 2147483648,
+        "accumulator_after": 2147483647,
+        "expired": false
+      }
+    ],
+    "ds_loaded_from_fs": true,
+    "constructor_tail_jump": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

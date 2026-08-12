@@ -2086,6 +2086,20 @@ bytes versus 8/26 original. It retains every original mnemonic class but uses a
 normal `CALL`/`RET` pair and different table-index temporaries. Turbo C emits 21
 instructions with a stack argument.
 
+Eight patched-constructor vectors prove the `0x00019B` per-frame stepper. It
+loads DS from FS, honors both forms of a nonzero phase high byte, publishes the
+signed integer half of each Q16 accumulator, decrements its counter, performs a
+defined modular add for live records, and swap-removes expired records before
+tail-jumping to the constructor with BX at the reduced active-list end. The
+cases cover empty input, accumulator wrap, counter values 0, 1, `0x7FFF`, and
+`0x8000`, and removal from first, middle, and last positions. Watcom emits 30
+instructions/75 bytes versus the 26 listed instructions/69 unique bytes outside
+the shared constructor block, and naturally retains the final tail `JMP`.
+Turbo C emits 44 instructions. Watcom omits the original defensive DS-from-FS
+adapter, uses different scratch registers, splits the dword add, and inserts a
+counter comparison after decrement; the source is therefore a verified logical
+match with a documented segment adapter, not exact code shape.
+
 Eight direct vectors prove the complete `0x0001DF` constructor: count/phase
 gates over packed 8-byte specs; 14-byte records containing counter, target,
 Q16 accumulator, and Q16 step; 16-bit wrapped signed deltas; truncating signed
@@ -2138,6 +2152,7 @@ LCS and then mnemonic similarity:
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
 | `xdb_manu3_anim_select_entry` | medium, `-ox -zdp`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
+| `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |

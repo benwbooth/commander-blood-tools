@@ -8,16 +8,24 @@
 typedef struct xdb_manu3_tween_spec {
     xdb_u8 count;
     xdb_u8 phase;
-    xdb_u16 flags;
+    xdb_u16 field_002;
     xdb_u16 target_offset;
     xdb_i16 end_value;
 } xdb_manu3_tween_spec;
 
+typedef union xdb_manu3_q16 {
+    xdb_u32 raw;
+    struct {
+        xdb_u16 fraction;
+        xdb_i16 whole;
+    } parts;
+} xdb_manu3_q16;
+
 typedef struct xdb_manu3_tween_record {
-    xdb_u16 counter;
+    xdb_i16 counter;
     xdb_u16 field_002;
     xdb_u16 target_offset;
-    xdb_i32 accumulator;
+    xdb_manu3_q16 accumulator;
     xdb_i32 step;
 } xdb_manu3_tween_record;
 
@@ -34,6 +42,7 @@ extern volatile xdb_u16 xdb_manu3_sequence_table_offset; /* DS:0x2306 */
 
 void XDB_FAR xdb_manu3_anim_select_entry(xdb_u16 selector);
 void XDB_NEAR xdb_manu3_anim_select(xdb_u16 selector);
+void XDB_NEAR xdb_manu3_tween_step(void);
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 
@@ -42,6 +51,8 @@ void XDB_NEAR xdb_manu3_tween_constructor(
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_anim_select \
         parm [bx] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_tween_step \
+        modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #endif
