@@ -12,6 +12,10 @@ typedef unsigned int u16;
 
 extern volatile u16 special_slots[16];
 
+#if defined(__WATCOMC__)
+#pragma aux vm_special_slot_insert_probe parm [ax] value [ax] modify exact [ax]
+#endif
+
 int NEAR vm_special_slot_insert_probe(u16 owner)
 {
     unsigned i;

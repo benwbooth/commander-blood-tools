@@ -630,6 +630,23 @@ Its C16 pragma parser rejects EAX register names, so exact integration needs a
 narrow FS/EAX adapter rather than contaminating the natural field getter with
 inline assembly.
 
+VM special-slot helpers `0x005FD8` and `0x005FF6` have six removal and seven
+insertion vectors. They prove absent, first/middle/last, duplicate, full-list,
+and zero-owner paths; first-match removal; duplicate-before-empty insertion;
+exact mutations; carry-only status; near-return boundaries; and complete
+register/segment preservation. Distinct arrays placed at `SS:0x6D3E`,
+`DS:0x6D3E`, and `GS:0x6D3E` prove these BP-based helpers touch SS only. Other
+SI-based consumers use DS for the same array, establishing an `SS=DS` runtime
+alias rather than GS ownership.
+
+Open Watcom compiles both actual candidates without warnings; `-3 -ox -mm`
+emits 21 instructions/40 bytes for removal versus 15/30 original and 29/60 for
+insertion versus 21/45 original. The 8086/286/386 outputs have the same counts;
+Turbo C 2.01 emits 22 and 32 instructions. The natural C preserves the exact
+list algorithms, but emits DS-symbol accesses and Boolean results in AX. Exact
+binary integration therefore needs a narrow carry adapter that preserves the
+input AX plus the recovered `SS=DS` placement contract.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

@@ -2835,7 +2835,12 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       @0x69C2). Rust now also mirrors the 0x6946 write-side sentinel bookkeeping
       for fields assigned to `blood`/`0xFFFF`: helper `0x5FD8` removes an owner
       object from the 16-word list at `DS:0x6D3E`, and helper `0x5FF6` inserts it
-      before storing `0xFFFF`.
+      before storing `0xFFFF`. Thirteen direct vectors prove first-match removal,
+      duplicate-before-empty insertion, full and zero-owner edges, carry results,
+      and preservation. Both helpers address through BP and therefore SS, while
+      SI-based consumers address the same offset through DS; distinct-segment
+      vectors establish the required `SS=DS` runtime alias and disprove GS
+      ownership.
 - [x] Ported the 0x6946 mode-1 special-object compare. Script metadata init at
       file `0x549a..0x54a1` matches the DEB object name `blood` (built-in string
       `DS:0x67BE`) and stores its object offset in `gs:0x674E`. The 0x6946 mode-1

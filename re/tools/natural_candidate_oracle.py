@@ -79,6 +79,7 @@ REGISTERS = {
     "es": UC_X86_REG_ES,
     "fs": UC_X86_REG_FS,
     "gs": UC_X86_REG_GS,
+    "ss": UC_X86_REG_SS,
     "flags": UC_X86_REG_EFLAGS,
 }
 
@@ -3713,6 +3714,165 @@ def resource_get_field4_vectors() -> list[dict[str, object]]:
         )
 
     return vectors
+
+
+def vm_special_slot_remove_vectors() -> list[dict[str, object]]:
+    cases = [
+        ("absent_owner", list(range(1, 17)), 0x7777, None),
+        ("remove_first", [0x1111, *range(2, 17)], 0x1111, 0),
+        ("remove_middle", [*range(1, 8), 0x2222, *range(9, 17)], 0x2222, 7),
+        ("remove_last", [*range(1, 16), 0x3333], 0x3333, 15),
+        (
+            "remove_only_first_duplicate",
+            [1, 2, 3, 0x4444, 5, 6, 7, 8, 0x4444, 10, 11, 12, 13, 14, 15, 16],
+            0x4444,
+            3,
+        ),
+        ("zero_owner_matches_empty_slot", [1, 2, 0, *range(4, 17)], 0, 2),
+    ]
+    vectors = []
+
+    for case_index, (name, slots, owner, removed_index) in enumerate(cases):
+        expected_slots = list(slots)
+        if removed_index is not None:
+            expected_slots[removed_index] = 0
+        vectors.append(
+            vm_special_slot_vector(
+                0x5FD8,
+                0x5FF5,
+                name,
+                case_index,
+                owner,
+                slots,
+                expected_slots,
+                removed_index is not None,
+            )
+        )
+
+    return vectors
+
+
+def vm_special_slot_insert_vectors() -> list[dict[str, object]]:
+    cases = [
+        ("duplicate_first", [0x1111, *range(2, 17)], 0x1111, None, True),
+        (
+            "duplicate_after_earlier_empty",
+            [1, 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0x2222],
+            0x2222,
+            None,
+            True,
+        ),
+        ("insert_first_empty", [0, *range(2, 17)], 0x3333, 0, True),
+        ("insert_middle_empty", [*range(1, 8), 0, *range(9, 17)], 0x4444, 7, True),
+        ("insert_last_empty", [*range(1, 16), 0], 0x5555, 15, True),
+        ("full_list_fails", list(range(1, 17)), 0x7777, None, False),
+        ("zero_owner_matches_empty", [1, 2, 0, *range(4, 17)], 0, None, True),
+    ]
+    vectors = []
+
+    for case_index, (name, slots, owner, inserted_index, success) in enumerate(cases):
+        expected_slots = list(slots)
+        if inserted_index is not None:
+            expected_slots[inserted_index] = owner
+        vectors.append(
+            vm_special_slot_vector(
+                0x5FF6,
+                0x6022,
+                name,
+                case_index,
+                owner,
+                slots,
+                expected_slots,
+                success,
+            )
+        )
+
+    return vectors
+
+
+def vm_special_slot_vector(
+    entry: int,
+    return_address: int,
+    name: str,
+    case_index: int,
+    owner: int,
+    slots: list[int],
+    expected_slots: list[int],
+    success: bool,
+) -> dict[str, object]:
+    slot_offset = 0x6D3E
+    stack_segment = 0x9000
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    slot_bytes = struct.pack("<16H", *slots)
+    expected_slot_bytes = struct.pack("<16H", *expected_slots)
+    ds_decoy = bytes((index * 17 + case_index * 29 + 3) & 0xFF for index in range(32))
+    gs_decoy = bytes((index * 31 + case_index * 13 + 7) & 0xFF for index in range(32))
+    initial = {
+        "eax": 0xA1A10000 | owner,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C33456,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F66789,
+        "ebp": 0x9797789A,
+        "sp": 0xFF00,
+        "ds": data_segment,
+        "es": 0x2800,
+        "fs": 0x3800,
+        "gs": game_segment,
+        "ss": stack_segment,
+        "flags": 0x0AD6,
+    }
+    machine = execute(
+        entry,
+        return_address,
+        initial,
+        [
+            (stack_segment, slot_offset, slot_bytes),
+            (data_segment, slot_offset, ds_decoy),
+            (game_segment, slot_offset, gs_decoy),
+        ],
+    )
+
+    for register, value in initial.items():
+        if register == "flags":
+            continue
+        actual_register = machine.reg_read(REGISTERS[register])
+        if actual_register != value:
+            raise AssertionError(
+                f"{entry:#x} {name}: {register}={actual_register:#x}, "
+                f"expected={value:#x}"
+            )
+    actual_slot_bytes = bytes(
+        machine.mem_read(stack_segment * 16 + slot_offset, len(slot_bytes))
+    )
+    if actual_slot_bytes != expected_slot_bytes:
+        raise AssertionError(f"{entry:#x} {name}: SS slot list mismatch")
+    if bytes(
+        machine.mem_read(data_segment * 16 + slot_offset, len(ds_decoy))
+    ) != ds_decoy:
+        raise AssertionError(f"{entry:#x} {name}: DS decoy changed")
+    if bytes(
+        machine.mem_read(game_segment * 16 + slot_offset, len(gs_decoy))
+    ) != gs_decoy:
+        raise AssertionError(f"{entry:#x} {name}: GS decoy changed")
+    actual_success = bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+    if actual_success != success:
+        raise AssertionError(
+            f"{entry:#x} {name}: carry={actual_success}, expected={success}"
+        )
+    if EXE[return_address] != 0xC3:
+        raise AssertionError(f"{entry:#x}: expected near RET boundary")
+
+    return {
+        "name": name,
+        "owner": owner,
+        "slots_before": slots,
+        "slots_after": expected_slots,
+        "success_carry": success,
+        "storage_segment": "ss",
+    }
 
 
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
@@ -8217,6 +8377,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_533c_natural.json",
         resource_get_field4_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5fd8_natural.json",
+        vm_special_slot_remove_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5ff6_natural.json",
+        vm_special_slot_insert_vectors(),
         args.check,
     )
     update_vector(

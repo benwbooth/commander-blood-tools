@@ -7139,9 +7139,11 @@ impl VmMachine {
     }
 
     /// Insert an owner into the special-slot list — `vm_special_slot_insert`
-    /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set
-    /// if already present (`0x5FFE..0x601F`); otherwise scan for a ZERO slot and
-    /// store there (`0x600E..0x601C`); if neither, `clc` — the list is full.
+    /// `0x5FF6`: scan the 16 words at offset `0x6D3E` for the owner and return CF
+    /// set if already present (`0x5FFE..0x601F`); otherwise scan for a ZERO slot
+    /// and store there (`0x600E..0x601C`); if neither, `clc` — the list is full.
+    /// These BP-based accesses use SS; SI-based consumers use DS, so the runtime
+    /// aliases SS and DS for this shared array.
     fn special_slot_insert(&mut self, owner: u16) -> bool {
         if self.ship_slots.contains(&owner) {
             return true;

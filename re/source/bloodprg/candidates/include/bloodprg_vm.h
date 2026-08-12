@@ -54,7 +54,7 @@ extern volatile cb_u16 vm_presentation_word_buffer[]; /* GS:0x67F8 */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
 extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
-extern volatile cb_u16 vm_special_slots[16]; /* GS:0x6D3E */
+extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; DS alias */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
@@ -100,6 +100,11 @@ typedef struct bloodprg_dic_lookup_result {
 
 extern const volatile bloodprg_vm_directory_entry CB_FAR *vm_record_directory; /* GS:0x672C */
 extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
+
+#if defined(__WATCOMC__)
+#pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
+#pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
+#endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
