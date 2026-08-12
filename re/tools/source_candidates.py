@@ -45,7 +45,7 @@ def load_manifest() -> list[dict[str, str]]:
 def function_pattern(name: str) -> re.Pattern[str]:
     return re.compile(
         r"\b(?:void|int|unsigned|signed|cb_u8|cb_u16|char|short|long)\s+"
-        r"(?:CB_NEAR\s+)?"
+        r"(?:(?:CB_NEAR|CB_FAR)\s+)?"
         + re.escape(name)
         + r"\s*\(",
         re.MULTILINE,

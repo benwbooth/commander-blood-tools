@@ -1,0 +1,31 @@
+#ifndef BLOODPRG_SHIP3D_H
+#define BLOODPRG_SHIP3D_H
+
+#include "bloodprg_common.h"
+
+typedef struct ship_3d_projection_context {
+    cb_i32 matrix[9];
+    cb_u16 projected_x;
+    cb_u16 projected_y;
+    cb_u16 projected_depth;
+} ship_3d_projection_context;
+
+typedef struct ship_3d_point_record {
+    cb_u16 x;
+    cb_u16 y;
+    cb_u16 z;
+    cb_u16 scratch;
+} ship_3d_point_record;
+
+extern volatile cb_u16 ship_3d_depth_offset; /* GS:0x2527 */
+extern volatile cb_u8 ship_3d_depth_opening; /* GS:0x252F */
+extern volatile cb_u8 ship_3d_depth_closing; /* GS:0x2530 */
+extern volatile cb_u8 ship_3d_depth_step;    /* GS:0x2531 */
+extern volatile ship_3d_projection_context ship_3d_projection; /* GS:0x2F95 */
+extern volatile ship_3d_point_record ship_3d_point_cloud[]; /* GS:0x2FC1 */
+extern volatile cb_i16 ship_3d_clip_left;    /* GS:0x5235 */
+extern volatile cb_i16 ship_3d_clip_right;   /* GS:0x5237 */
+extern volatile cb_i16 ship_3d_clip_top;     /* GS:0x5239 */
+extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
+
+#endif
