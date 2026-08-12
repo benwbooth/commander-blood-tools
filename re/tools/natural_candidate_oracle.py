@@ -595,6 +595,172 @@ def queue_wrap_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def queue_room_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        {
+            "name": "ordinary_room",
+            "head": 0x0500,
+            "tail": 0x0100,
+            "byte_count": 0x0100,
+            "wrap_limit": 0x0200,
+            "request": 0x0020,
+        },
+        {
+            "name": "gap_too_small",
+            "head": 0x0100,
+            "tail": 0x0120,
+            "byte_count": 0x0010,
+            "wrap_limit": 0x1000,
+            "request": 0x0010,
+        },
+        {
+            "name": "gap_exactly_large_enough",
+            "head": 0x0100,
+            "tail": 0x0122,
+            "byte_count": 0x0010,
+            "wrap_limit": 0x0040,
+            "request": 0x0010,
+        },
+        {
+            "name": "total_exceeds_wrap_limit",
+            "head": 0x0500,
+            "tail": 0x0100,
+            "byte_count": 0x0100,
+            "wrap_limit": 0x0129,
+            "request": 0x0020,
+        },
+        {
+            "name": "total_second_add_carry",
+            "head": 0x0500,
+            "tail": 0x0100,
+            "byte_count": 0xFFF0,
+            "wrap_limit": 0xFFFF,
+            "request": 0x0010,
+        },
+        {
+            "name": "count_plus_ten_carry_is_discarded",
+            "head": 0x0500,
+            "tail": 0x0100,
+            "byte_count": 0xFFFC,
+            "wrap_limit": 0x0007,
+            "request": 0x0001,
+        },
+        {
+            "name": "head_plus_request_carry_is_discarded",
+            "head": 0xFFF0,
+            "tail": 0xFFF5,
+            "byte_count": 0x0000,
+            "wrap_limit": 0x002A,
+            "request": 0x0020,
+        },
+        {
+            "name": "head_plus_padding_carry_is_discarded",
+            "head": 0xFFF0,
+            "tail": 0xFFF5,
+            "byte_count": 0x0000,
+            "wrap_limit": 0x000A,
+            "request": 0x0000,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        head = int(case["head"])
+        tail = int(case["tail"])
+        byte_count = int(case["byte_count"])
+        wrap_limit = int(case["wrap_limit"])
+        request = int(case["request"])
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": request,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x8888,
+        }
+        globals_before = struct.pack("<HHHH", head, tail, byte_count, wrap_limit)
+        machine = execute(
+            0xA3AD,
+            0xA3CF,
+            initial,
+            [
+                (data_segment, 0x0D8C, struct.pack("<H", head)),
+                (data_segment, 0x0D90, struct.pack("<H", tail)),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+                (data_segment, 0x0D98, struct.pack("<H", wrap_limit)),
+            ],
+        )
+
+        gap_needed = ((head + request) & 0xFFFF) + 0x12
+        gap_needed &= 0xFFFF
+        early_failure = head < tail < gap_needed
+        total_base = (byte_count + 0x0A) & 0xFFFF
+        total_sum = total_base + request
+        total_needed = total_sum & 0xFFFF
+        total_carry = total_sum > 0xFFFF
+        if early_failure:
+            result_ax = gap_needed
+            insufficient_room = True
+        else:
+            result_ax = total_needed
+            insufficient_room = total_carry or wrap_limit < total_needed
+
+        actual_ax = machine.reg_read(UC_X86_REG_AX)
+        actual_bx = machine.reg_read(UC_X86_REG_BX)
+        actual_carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if actual_ax != result_ax:
+            raise AssertionError(
+                f"0xA3AD {case['name']} AX={actual_ax:#x}, expected={result_ax:#x}"
+            )
+        if actual_bx != tail:
+            raise AssertionError(
+                f"0xA3AD {case['name']} BX={actual_bx:#x}, expected={tail:#x}"
+            )
+        if actual_carry != int(insufficient_room):
+            raise AssertionError(
+                f"0xA3AD {case['name']} carry={actual_carry}, "
+                f"expected={int(insufficient_room)}"
+            )
+        for name in ("cx", "dx", "si", "di", "bp"):
+            actual_register = machine.reg_read(REGISTERS[name])
+            if actual_register != initial[name]:
+                raise AssertionError(f"0xA3AD did not preserve {name}")
+
+        globals_after = struct.pack(
+            "<HHHH",
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D8C, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D90, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D98, 2)
+            )[0],
+        )
+        if globals_after != globals_before:
+            raise AssertionError(f"0xA3AD {case['name']} changed queue globals")
+
+        vectors.append(
+            {
+                **case,
+                "early_gap_failure": early_failure,
+                "result_needed": result_ax,
+                "has_room": not insufficient_room,
+                "result_carry": actual_carry,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -626,6 +792,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a38e_natural.json", queue_wrap_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a3ad_natural.json", queue_room_vectors(), args.check
     )
     return 0
 

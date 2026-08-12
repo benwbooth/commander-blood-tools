@@ -1,0 +1,98 @@
+[
+  {
+    "name": "ordinary_room",
+    "head": 1280,
+    "tail": 256,
+    "byte_count": 256,
+    "wrap_limit": 512,
+    "request": 32,
+    "early_gap_failure": false,
+    "result_needed": 298,
+    "has_room": true,
+    "result_carry": 0
+  },
+  {
+    "name": "gap_too_small",
+    "head": 256,
+    "tail": 288,
+    "byte_count": 16,
+    "wrap_limit": 4096,
+    "request": 16,
+    "early_gap_failure": true,
+    "result_needed": 290,
+    "has_room": false,
+    "result_carry": 1
+  },
+  {
+    "name": "gap_exactly_large_enough",
+    "head": 256,
+    "tail": 290,
+    "byte_count": 16,
+    "wrap_limit": 64,
+    "request": 16,
+    "early_gap_failure": false,
+    "result_needed": 42,
+    "has_room": true,
+    "result_carry": 0
+  },
+  {
+    "name": "total_exceeds_wrap_limit",
+    "head": 1280,
+    "tail": 256,
+    "byte_count": 256,
+    "wrap_limit": 297,
+    "request": 32,
+    "early_gap_failure": false,
+    "result_needed": 298,
+    "has_room": false,
+    "result_carry": 1
+  },
+  {
+    "name": "total_second_add_carry",
+    "head": 1280,
+    "tail": 256,
+    "byte_count": 65520,
+    "wrap_limit": 65535,
+    "request": 16,
+    "early_gap_failure": false,
+    "result_needed": 10,
+    "has_room": false,
+    "result_carry": 1
+  },
+  {
+    "name": "count_plus_ten_carry_is_discarded",
+    "head": 1280,
+    "tail": 256,
+    "byte_count": 65532,
+    "wrap_limit": 7,
+    "request": 1,
+    "early_gap_failure": false,
+    "result_needed": 7,
+    "has_room": true,
+    "result_carry": 0
+  },
+  {
+    "name": "head_plus_request_carry_is_discarded",
+    "head": 65520,
+    "tail": 65525,
+    "byte_count": 0,
+    "wrap_limit": 42,
+    "request": 32,
+    "early_gap_failure": false,
+    "result_needed": 42,
+    "has_room": true,
+    "result_carry": 0
+  },
+  {
+    "name": "head_plus_padding_carry_is_discarded",
+    "head": 65520,
+    "tail": 65525,
+    "byte_count": 0,
+    "wrap_limit": 10,
+    "request": 0,
+    "early_gap_failure": false,
+    "result_needed": 10,
+    "has_room": true,
+    "result_carry": 0
+  }
+]

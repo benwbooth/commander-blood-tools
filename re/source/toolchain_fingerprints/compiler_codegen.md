@@ -97,6 +97,15 @@ XOR/XCHG head clear. Turbo C 2.01 medium emits 21 instructions and uses stack
 arguments. Keeping the iteration-count word non-volatile avoids a duplicate
 Watcom store while retaining the original store-before-increment order.
 
+For `0x00A3AD`, eight direct-execution cases establish a carry-clear queue-room
+predicate and disprove the older empty-check label. Open Watcom 1.9 medium
+preserves 13 of the original 14 mnemonics in order and reproduces every branch
+and arithmetic operation in the natural C body. Its complete function is 26
+instructions and 53 bytes versus the original 14 instructions and 35 bytes,
+because it moves the request from AX, saves registers, and materializes the
+Boolean result with SETBE/XOR instead of returning the final comparison flags.
+Turbo C 2.01 medium emits 38 instructions with a stack argument and frame.
+
 For `0x00A3D0`, eight direct-execution boundary cases confirm the natural
 queue-consumption source, including the distinction between discarded overflow
 from `tail + 2` and wrapping overflow from the following entry-size add. Turbo C

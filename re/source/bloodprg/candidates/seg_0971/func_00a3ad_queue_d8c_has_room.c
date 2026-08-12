@@ -1,6 +1,6 @@
 #include "../include/bloodprg_list.h"
 
-int CB_NEAR queue_d8c_empty_check(cb_u16 byte_count)
+int CB_NEAR queue_d8c_has_room(cb_u16 byte_count)
 {
     cb_u16 head;
     cb_u16 tail;

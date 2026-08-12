@@ -6,8 +6,8 @@
 ; seg_off: 0971:069d
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: queue_d8c_empty_check
-; label_comment: queue empty/full check (2 calls): ax=[0xd8c] head, bx=[0xd90] tail; cmp -> the gs:0xd8c queue is a ring buffer, head vs tail determines empty. Confirms 0xd8c = a variable-length RING-BUFFER QUEUE (head 0xd8c, tail 0xd90, count 0xd9a, wrap [0x5233])
+; label: queue_d8c_has_room
+; label_comment: carry-clear capacity check (2 calls): rejects a head/tail gap below requested bytes+0x12, then rejects total queued bytes+requested bytes+0x0a above the wrap limit
 ; byte_count: 35
 ; boundary: cfg_blocks_5_terminals_1
 ; terminal: ret:1
