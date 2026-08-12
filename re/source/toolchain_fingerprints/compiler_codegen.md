@@ -496,6 +496,24 @@ forward/reverse traversal, but normalizes segment ownership and emits scalar
 far-pointer copies. The binary instead receives AX/BX/DX/BP bounds from its
 caller and specializes forward rows with `REP MOVSD` plus `REP MOVSB`.
 
+RLE-opaque blitter `0x004CD6` has ten direct framebuffer vectors. They prove
+opaque zero writes, repeat and literal runs independently crossing either clip
+boundary, complete encoded-row skipping in both vertical directions, ordinary
+and noncanonical flips, the post-skip `[SI-4]` x-origin reload, CS stride/clip
+scratch, source/framebuffer ownership, and complete register preservation. An
+adversarial token spanning both clips and the entire visible interval exposed
+an original state-machine assumption; the natural run/viewport intersection is
+defined for that case, but the acceptance vectors stay within the binary's
+valid-stream contract.
+
+Open Watcom compiles the actual `0x004CD6` candidate without warnings; `-3 -ox
+-mm` emits 589 bytes versus 652 original. Standalone 8086/286/386 probes emit
+228/225/219 instructions and 600/599/589 bytes versus 307/652, while Turbo C
+2.01 emits 320 instructions. The natural function is shorter because it shares
+one run-interval decoder across directions. The binary duplicates leading-skip,
+visible-copy, and trailing-skip state machines and uses `REP STOSB`, `REP MOVSB`,
+and reverse scalar copies, in addition to its CS scratch and register-fed bounds.
+
 Dispatch modes 5, 6, and 7 at `0x00509A..0x00509C` are exact one-byte no-ops.
 The direct oracle executes each `RET` with a synthetic near return address and
 proves that only SP advances by two; all general registers including their upper

@@ -46,6 +46,7 @@ from unicorn.x86_const import (
     UC_X86_REG_EFLAGS,
     UC_X86_REG_ES,
     UC_X86_REG_GS,
+    UC_X86_REG_IP,
     UC_X86_REG_SI,
     UC_X86_REG_ESI,
     UC_X86_REG_SP,
@@ -144,7 +145,10 @@ def execute(
     # be the routine's RET when a nested call targets a higher address.
     machine.emu_start(entry, 0x2ffff0, count=20000)
     if not returned:
-        raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
+        raise RuntimeError(
+            f"{entry:#x}: did not reach return at {return_address:#x}; "
+            f"stopped at {machine.reg_read(UC_X86_REG_IP):#x}"
+        )
     return machine
 
 
@@ -2157,6 +2161,440 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
 
 def sprite_blit_raw_opaque_vectors() -> list[dict[str, object]]:
     return _sprite_blit_raw_vectors(0x4BA8, 0x4CD5, opaque=True)
+
+
+def sprite_blit_rle_opaque_vectors() -> list[dict[str, object]]:
+    state_segment = 0x2600
+    frame_segment = 0x3200
+    frame_offset = 0x0200
+    framebuffer_segment = 0x5000
+    framebuffer_offset = 0x0100
+    initial_selected_remap = 0x7777
+    cases = [
+        {
+            "name": "mixed_runs_copy_zero_opaquely",
+            "flags": 0x0301,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [5, 6],
+            "extent": [8, 3],
+            "frame_offset": [1, 2],
+            "dirty": [6, 14, 8, 11],
+            "row_kind": "mixed",
+        },
+        {
+            "name": "left_clip_splits_repeat_run",
+            "flags": 0x0201,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [8, 2],
+            "frame_offset": [0, 0],
+            "dirty": [12, 18, 10, 12],
+            "row_kind": "repeat_prefix",
+        },
+        {
+            "name": "left_clip_splits_literal_run",
+            "flags": 0x0101,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [8, 2],
+            "frame_offset": [0, 0],
+            "dirty": [12, 18, 10, 12],
+            "row_kind": "literal_prefix",
+        },
+        {
+            "name": "right_clip_splits_repeat_run",
+            "flags": 0x0301,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [8, 2],
+            "frame_offset": [0, 0],
+            "dirty": [10, 16, 10, 12],
+            "row_kind": "repeat_suffix",
+        },
+        {
+            "name": "right_clip_splits_literal_run",
+            "flags": 0x0201,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [8, 2],
+            "frame_offset": [0, 0],
+            "dirty": [10, 16, 10, 12],
+            "row_kind": "literal_suffix",
+        },
+        {
+            "name": "horizontal_flip_swaps_source_clips",
+            "flags": 0x0101,
+            "flip_x": 1,
+            "flip_y": 0,
+            "draw": [10, 10],
+            "extent": [8, 3],
+            "frame_offset": [-1, 0],
+            "dirty": [11, 15, 10, 13],
+            "row_kind": "mixed",
+        },
+        {
+            "name": "top_clip_skips_encoded_row_and_reloads_x",
+            "flags": 0x0301,
+            "flip_x": 0,
+            "flip_y": 0,
+            "draw": [20, 10],
+            "extent": [8, 4],
+            "frame_offset": [-2, -1],
+            "dirty": [21, 25, 10, 13],
+            "row_kind": "split_literal",
+            "advanced_x_offset": 1,
+        },
+        {
+            "name": "vertical_flip_bottom_clip_skips_encoded_row",
+            "flags": 0x0201,
+            "flip_x": 0,
+            "flip_y": 1,
+            "draw": [20, 10],
+            "extent": [8, 4],
+            "frame_offset": [-1, 0],
+            "dirty": [20, 27, 10, 13],
+            "row_kind": "split_literal",
+            "advanced_x_offset": 0,
+        },
+        {
+            "name": "both_flips_and_all_edges",
+            "flags": 0x0101,
+            "flip_x": 1,
+            "flip_y": 1,
+            "draw": [42, 24],
+            "extent": [8, 4],
+            "frame_offset": [-1, -1],
+            "dirty": [43, 48, 24, 26],
+            "row_kind": "split_literal",
+            "advanced_x_offset": -1,
+        },
+        {
+            "name": "noncanonical_flip_bytes_split_bit_and_direction",
+            "flags": 0x0301,
+            "flip_x": 2,
+            "flip_y": 2,
+            "draw": [12, 10],
+            "extent": [8, 4],
+            "frame_offset": [-2, -1],
+            "dirty": [12, 17, 10, 13],
+            "row_kind": "split_literal",
+            "advanced_x_offset": 0,
+        },
+    ]
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if (value & 0x8000) != 0 else value
+
+    def encode_literal(values: list[int]) -> bytes:
+        return bytes([len(values) - 1, *values])
+
+    def encode_repeat(length: int, value: int) -> bytes:
+        return bytes([(1 - length) & 0xFF, value & 0xFF])
+
+    def make_row(
+        kind: str,
+        row: int,
+        stride: int,
+        case_index: int,
+        advanced_x_offset: int | None,
+    ) -> tuple[bytes, bytes]:
+        values = [
+            (row * 37 + column * 19 + case_index * 11 + 1) & 0xFF
+            for column in range(stride)
+        ]
+        for column in range(stride):
+            if (row + column + case_index) % 5 == 0:
+                values[column] = 0
+        if advanced_x_offset is not None:
+            values[stride - 4 : stride - 2] = struct.pack(
+                "<H", advanced_x_offset & 0xFFFF
+            )
+
+        if kind == "literal":
+            encoded = encode_literal(values)
+        elif kind == "split_literal":
+            encoded = encode_literal(values[:4]) + encode_literal(values[4:])
+        elif kind == "mixed":
+            values[1] = values[0]
+            values[2] = values[0]
+            encoded = encode_repeat(3, values[0]) + encode_literal(values[3:])
+        elif kind == "repeat_prefix":
+            values[1:4] = [values[0]] * 3
+            encoded = encode_repeat(4, values[0]) + encode_literal(values[4:])
+        elif kind == "literal_prefix":
+            values[5:8] = [values[4]] * 3
+            encoded = encode_literal(values[:4]) + encode_repeat(4, values[4])
+        elif kind == "repeat_suffix":
+            values[5:8] = [values[4]] * 3
+            encoded = encode_literal(values[:4]) + encode_repeat(4, values[4])
+        elif kind == "literal_suffix":
+            values[1:4] = [values[0]] * 3
+            encoded = encode_repeat(4, values[0]) + encode_literal(values[4:])
+        else:
+            raise AssertionError(f"unknown RLE row kind {kind}")
+        return encoded, bytes(values)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        flags = int(case["flags"])
+        flip_x = int(case["flip_x"])
+        flip_y = int(case["flip_y"])
+        draw_x, draw_y = (int(value) for value in case["draw"])
+        extent_width, extent_height = (
+            int(value) for value in case["extent"]
+        )
+        x_offset, y_offset = (
+            int(value) for value in case["frame_offset"]
+        )
+        dirty = [int(value) for value in case["dirty"]]
+        stride = extent_width
+        frame_height = max(extent_height + 2, 6)
+        encoded = bytearray()
+        decoded_rows = []
+        for row in range(frame_height):
+            row_encoded, row_decoded = make_row(
+                str(case["row_kind"]),
+                row,
+                stride,
+                case_index,
+                (
+                    int(case["advanced_x_offset"])
+                    if "advanced_x_offset" in case
+                    else None
+                ),
+            )
+            encoded.extend(row_encoded)
+            decoded_rows.append(row_decoded)
+        frame = struct.pack(
+            "<HHHH",
+            stride,
+            frame_height,
+            x_offset & 0xFFFF,
+            y_offset & 0xFFFF,
+        ) + bytes(encoded)
+
+        def decode_row(position: int) -> tuple[bytes, int]:
+            decoded = bytearray()
+            while len(decoded) < stride:
+                control = encoded[position]
+                position += 1
+                if (control & 0x80) != 0:
+                    run_length = ((-control) & 0xFF) + 1
+                    pixel = encoded[position]
+                    position += 1
+                    decoded.extend([pixel] * run_length)
+                else:
+                    run_length = control + 1
+                    decoded.extend(encoded[position : position + run_length])
+                    position += run_length
+            if len(decoded) != stride:
+                raise AssertionError(f"0x4cd6 {name}: malformed generated row")
+            return bytes(decoded), position
+
+        slot_id = 13 + case_index
+        record_offset = 0x6212 + slot_id * 32
+        record = bytearray(
+            (byte_index * 19 + case_index * 23) & 0xFF
+            for byte_index in range(32)
+        )
+        record[0:2] = struct.pack("<H", flags)
+        record[4:8] = struct.pack("<HH", frame_offset, frame_segment)
+        record[8:16] = struct.pack(
+            "<HHHH", draw_x, draw_y, extent_width, extent_height
+        )
+        record[24:32] = struct.pack("<HHHH", *dirty)
+        framebuffer = bytearray(
+            (index * 13 + case_index * 31 + 7) & 0xFF
+            for index in range(64000)
+        )
+        expected_framebuffer = bytearray(framebuffer)
+
+        sprite_top = signed_word(draw_y + y_offset)
+        sprite_right = signed_word(draw_x + extent_width + x_offset)
+        sprite_bottom = signed_word(draw_y + extent_height + y_offset)
+        destination_y = sprite_top
+        draw_width = extent_width
+        draw_height = extent_height
+        source_position = 0
+        skipped_rows = 0
+        if sprite_top < signed_word(dirty[2]):
+            clipped = (signed_word(dirty[2]) - sprite_top) & 0xFFFF
+            draw_height = (draw_height - clipped) & 0xFFFF
+            if (flip_y & 1) == 0:
+                for _ in range(clipped):
+                    _decoded, source_position = decode_row(source_position)
+                    skipped_rows += 1
+            destination_y = signed_word(dirty[2])
+        if sprite_bottom > signed_word(dirty[3]):
+            clipped = (sprite_bottom - signed_word(dirty[3])) & 0xFFFF
+            draw_height = (draw_height - clipped) & 0xFFFF
+            if (flip_y & 1) != 0:
+                for _ in range(clipped):
+                    _decoded, source_position = decode_row(source_position)
+                    skipped_rows += 1
+
+        cursor_x_offset = signed_word(
+            struct.unpack(
+                "<H", frame[4 + source_position : 6 + source_position]
+            )[0]
+        )
+        sprite_left = signed_word(draw_x + cursor_x_offset)
+        destination_x = sprite_left
+        left_clip = 0
+        right_clip = 0
+        if sprite_left < signed_word(dirty[0]):
+            left_clip = (signed_word(dirty[0]) - sprite_left) & 0xFFFF
+            draw_width = (draw_width - left_clip) & 0xFFFF
+            destination_x = signed_word(dirty[0])
+        if sprite_right >= signed_word(dirty[1]):
+            right_clip = (sprite_right - signed_word(dirty[1])) & 0xFFFF
+            draw_width = (draw_width - right_clip) & 0xFFFF
+
+        if (flip_y & 1) != 0:
+            destination_y = signed_word(destination_y + draw_height - 1)
+        if flip_x != 0:
+            destination_x = signed_word(destination_x + draw_width - 1)
+        visible_start = right_clip if flip_x != 0 else left_clip
+        changed_pixels = []
+        row_y = destination_y
+        rendered_rows = []
+        for _ in range(draw_height):
+            decoded, source_position = decode_row(source_position)
+            selected = decoded[visible_start : visible_start + draw_width]
+            rendered_rows.append(list(selected))
+            destination_cursor = (
+                ((row_y & 0xFFFF) * 320 + (destination_x & 0xFFFF)) & 0xFFFF
+            )
+            for source_pixel in selected:
+                before = expected_framebuffer[destination_cursor]
+                expected_framebuffer[destination_cursor] = source_pixel
+                changed_pixels.append(
+                    [destination_cursor, before, source_pixel]
+                )
+                destination_cursor = (
+                    destination_cursor + (-1 if flip_x != 0 else 1)
+                ) & 0xFFFF
+            row_y = signed_word(row_y + (-1 if flip_y != 0 else 1))
+
+        right = (draw_x + extent_width) & 0xFFFF
+        bottom = (draw_y + extent_height) & 0xFFFF
+        initial = {
+            "eax": 0xA1A10000 | (draw_x & 0xFFFF),
+            "ebx": 0xB2B20000 | (draw_y & 0xFFFF),
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D40000 | right,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | record_offset,
+            "ebp": 0x97970000 | bottom,
+            "ds": state_segment,
+            "es": state_segment,
+            "gs": state_segment,
+        }
+        initial_scratch = bytes.fromhex("a1b2c3d4e5f6")
+        try:
+            machine = execute(
+                0x4CD6,
+                0x4F61,
+                initial,
+                [
+                    (state_segment, record_offset, bytes(record)),
+                    (frame_segment, frame_offset, frame),
+                    (
+                        state_segment,
+                        0x5221,
+                        struct.pack(
+                            "<HH", framebuffer_offset, framebuffer_segment
+                        ),
+                    ),
+                    (
+                        state_segment,
+                        0x524B,
+                        struct.pack("<H", initial_selected_remap),
+                    ),
+                    (0, 0x14DF, bytes([flip_x, flip_y])),
+                    (0, 0x1726, initial_scratch),
+                    (
+                        framebuffer_segment,
+                        framebuffer_offset,
+                        bytes(framebuffer),
+                    ),
+                ],
+            )
+        except RuntimeError as error:
+            raise RuntimeError(f"0x4cd6 {name}: {error}") from error
+
+        actual_framebuffer = bytes(
+            machine.mem_read(
+                framebuffer_segment * 16 + framebuffer_offset, 64000
+            )
+        )
+        if actual_framebuffer != bytes(expected_framebuffer):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_framebuffer, expected_framebuffer)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x4cd6 {name}: framebuffer[{mismatch:#x}]="
+                f"{actual_framebuffer[mismatch]:#x}, "
+                f"expected={expected_framebuffer[mismatch]:#x}"
+            )
+        actual_scratch = bytes(machine.mem_read(0x1726, 6))
+        expected_scratch = struct.pack("<HHH", stride, left_clip, right_clip)
+        if actual_scratch != expected_scratch:
+            raise AssertionError(
+                f"0x4cd6 {name}: scratch={actual_scratch.hex()}, "
+                f"expected={expected_scratch.hex()}"
+            )
+        actual_remap = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x524B, 2)
+        )[0]
+        if actual_remap != initial_selected_remap:
+            raise AssertionError(f"0x4cd6 {name}: changed remap scratch")
+        if bytes(machine.mem_read(state_segment * 16 + record_offset, 32)) != bytes(
+            record
+        ):
+            raise AssertionError(f"0x4cd6 {name}: slot record changed")
+        if bytes(
+            machine.mem_read(frame_segment * 16 + frame_offset, len(frame))
+        ) != frame:
+            raise AssertionError(f"0x4cd6 {name}: source frame changed")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x4cd6 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "flags": flags,
+                "flip_bytes": [flip_x, flip_y],
+                "draw": [draw_x, draw_y],
+                "extent": [extent_width, extent_height],
+                "frame_origin_offset": [x_offset, y_offset],
+                "dirty_rect": dirty,
+                "row_kind": case["row_kind"],
+                "encoded_bytes": len(encoded),
+                "skipped_rows": skipped_rows,
+                "cursor_x_offset": cursor_x_offset,
+                "clipped_extent": [draw_width, draw_height],
+                "source_clips": [left_clip, right_clip],
+                "destination_start": [destination_x, destination_y],
+                "rendered_rows": rendered_rows,
+                "changed_pixels": changed_pixels,
+            }
+        )
+
+    return vectors
 
 
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
@@ -6606,6 +7044,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_4ba8_natural.json",
         sprite_blit_raw_opaque_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4cd6_natural.json",
+        sprite_blit_rle_opaque_vectors(),
         args.check,
     )
     update_vector(

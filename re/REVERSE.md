@@ -2118,7 +2118,14 @@ Named targets that are already tied to code behavior:
     signed clipping, DS=ES=GS entry contract, and advanced-source x-origin
     reload.
   - mode 3 -> `0x0299:0x1D46` (`sprite_blit_rle_opaque`): RLE opaque decode
-    and copy with no destination remap.
+    and copy with no destination remap. Ten direct vectors prove repeat and
+    literal runs crossing either clip boundary, complete encoded-row skipping
+    for top/bottom clipping, forward/reverse output, opaque zero writes,
+    `CS:0x1726..0x172A` stride/clip scratch, and the mutable x-origin reload
+    from `[SI-4]`. The original split-run state machine assumes one token does
+    not span the leading clip, the entire visible interval, and the trailing
+    clip at once; the natural C's interval intersection is defined for that
+    malformed/adversarial case as well.
   - mode 4 -> `0x0299:0x1FD2` (`sprite_blit_scaled_transparent`): fixed-point
     scaled transparent blit; source zero skips the destination.
   - modes 5..7 -> `0x0299:0x210A..0x210C`: unused single-byte near-return

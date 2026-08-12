@@ -67,6 +67,9 @@ extern volatile cb_u8 CB_FAR *bloodprg_display_buffer; /* GS:0x5221 */
 extern volatile cb_u8 bloodprg_sprite_remap_5f11[256]; /* GS:0x5F11 */
 extern volatile cb_u8 bloodprg_sprite_remap_6011[256]; /* GS:0x6011 */
 extern volatile cb_u8 CB_NEAR *bloodprg_selected_sprite_remap; /* GS:0x524B */
+extern volatile cb_u16 bloodprg_rle_stride; /* CS:0x1726 */
+extern volatile cb_u16 bloodprg_rle_left_clip; /* CS:0x1728 */
+extern volatile cb_u16 bloodprg_rle_right_clip; /* CS:0x172A */
 
 void CB_FAR entity_flag_state_transition(cb_u16 object_id); /* 0x0299:0x1241 */
 void CB_FAR sprite_slot_position_update(cb_u16 object_id,
@@ -87,6 +90,8 @@ void CB_NEAR sprite_blit_raw_transparent(
         volatile bloodprg_entity_record *record); /* 0x0299:0x15A6 */
 void CB_NEAR sprite_blit_raw_opaque(
         volatile bloodprg_entity_record *record); /* 0x0299:0x1C18 */
+void CB_NEAR sprite_blit_rle_opaque(
+        volatile bloodprg_entity_record *record); /* 0x0299:0x1D46 */
 void CB_NEAR sprite_blitter_noop_5(
         volatile bloodprg_entity_record *record); /* 0x0299:0x210A */
 void CB_NEAR sprite_blitter_noop_6(
@@ -110,6 +115,7 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux sprite_slot_dirty_range_render parm [ax] [bx]
 #pragma aux sprite_blit_raw_transparent parm [di] modify exact []
 #pragma aux sprite_blit_raw_opaque parm [di] modify exact []
+#pragma aux sprite_blit_rle_opaque parm [di] modify exact []
 #pragma aux sprite_blitter_noop_5 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_6 parm [di] modify exact []
 #pragma aux sprite_blitter_noop_7 parm [di] modify exact []
