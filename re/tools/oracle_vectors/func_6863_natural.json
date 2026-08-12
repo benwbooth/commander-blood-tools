@@ -1,0 +1,415 @@
+[
+  {
+    "name": "query_ne_pass",
+    "query_mode_before": 1,
+    "operation": 240,
+    "rhs_mode": 17,
+    "current_before": 1,
+    "resolved_rhs": 2,
+    "field_after": 1,
+    "branch_failed": false,
+    "final_script_offset": 12294,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_ne_fail",
+    "query_mode_before": 3,
+    "operation": 240,
+    "rhs_mode": 17,
+    "current_before": 2,
+    "resolved_rhs": 2,
+    "field_after": 2,
+    "branch_failed": true,
+    "final_script_offset": 20529,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_le_signed_pass",
+    "query_mode_before": 1,
+    "operation": 243,
+    "rhs_mode": 17,
+    "current_before": 32768,
+    "resolved_rhs": 32767,
+    "field_after": 32768,
+    "branch_failed": false,
+    "final_script_offset": 12358,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_le_signed_fail",
+    "query_mode_before": 1,
+    "operation": 243,
+    "rhs_mode": 17,
+    "current_before": 32767,
+    "resolved_rhs": 32768,
+    "field_after": 32767,
+    "branch_failed": true,
+    "final_script_offset": 20627,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_ge_signed_pass",
+    "query_mode_before": 1,
+    "operation": 244,
+    "rhs_mode": 17,
+    "current_before": 32767,
+    "resolved_rhs": 65535,
+    "field_after": 32767,
+    "branch_failed": false,
+    "final_script_offset": 12422,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_ge_signed_fail",
+    "query_mode_before": 1,
+    "operation": 244,
+    "rhs_mode": 17,
+    "current_before": 32768,
+    "resolved_rhs": 0,
+    "field_after": 32768,
+    "branch_failed": true,
+    "final_script_offset": 20725,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_lt_signed_pass",
+    "query_mode_before": 1,
+    "operation": 241,
+    "rhs_mode": 17,
+    "current_before": 65535,
+    "resolved_rhs": 0,
+    "field_after": 65535,
+    "branch_failed": false,
+    "final_script_offset": 12486,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_lt_signed_fail",
+    "query_mode_before": 1,
+    "operation": 241,
+    "rhs_mode": 17,
+    "current_before": 0,
+    "resolved_rhs": 65535,
+    "field_after": 0,
+    "branch_failed": true,
+    "final_script_offset": 20823,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_gt_signed_pass",
+    "query_mode_before": 1,
+    "operation": 242,
+    "rhs_mode": 17,
+    "current_before": 1,
+    "resolved_rhs": 65535,
+    "field_after": 1,
+    "branch_failed": false,
+    "final_script_offset": 12550,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_gt_signed_fail",
+    "query_mode_before": 1,
+    "operation": 242,
+    "rhs_mode": 17,
+    "current_before": 65535,
+    "resolved_rhs": 1,
+    "field_after": 65535,
+    "branch_failed": true,
+    "final_script_offset": 20921,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 32766,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "query_eq_c0_pass",
+    "query_mode_before": 1,
+    "operation": 245,
+    "rhs_mode": 192,
+    "current_before": 9320,
+    "resolved_rhs": 9320,
+    "field_after": 9320,
+    "branch_failed": false,
+    "final_script_offset": 12614,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_eq_c2_fail",
+    "query_mode_before": 1,
+    "operation": 245,
+    "rhs_mode": 194,
+    "current_before": 4951,
+    "resolved_rhs": 9320,
+    "field_after": 4951,
+    "branch_failed": true,
+    "final_script_offset": 21019,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65533,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_unknown_fails",
+    "query_mode_before": 1,
+    "operation": 224,
+    "rhs_mode": 17,
+    "current_before": 4369,
+    "resolved_rhs": 4369,
+    "field_after": 4369,
+    "branch_failed": true,
+    "final_script_offset": 21068,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_add",
+    "query_mode_before": 0,
+    "operation": 246,
+    "rhs_mode": 17,
+    "current_before": 4660,
+    "resolved_rhs": 4369,
+    "field_after": 9029,
+    "branch_failed": false,
+    "final_script_offset": 12710,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_add_wrap",
+    "query_mode_before": 2,
+    "operation": 246,
+    "rhs_mode": 17,
+    "current_before": 65535,
+    "resolved_rhs": 1,
+    "field_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 12742,
+    "query_mode_after": 2,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_sub_c0_underflow",
+    "query_mode_before": 0,
+    "operation": 247,
+    "rhs_mode": 192,
+    "current_before": 0,
+    "resolved_rhs": 1,
+    "field_after": 65535,
+    "branch_failed": false,
+    "final_script_offset": 12774,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_assign_c2",
+    "query_mode_before": 0,
+    "operation": 245,
+    "rhs_mode": 194,
+    "current_before": 4660,
+    "resolved_rhs": 48879,
+    "field_after": 48879,
+    "branch_failed": false,
+    "final_script_offset": 12806,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_unknown_rewrites",
+    "query_mode_before": 0,
+    "operation": 224,
+    "rhs_mode": 17,
+    "current_before": 17767,
+    "resolved_rhs": 4369,
+    "field_after": 17767,
+    "branch_failed": false,
+    "final_script_offset": 12838,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "segment_end_query_eq",
+    "query_mode_before": 1,
+    "operation": 245,
+    "rhs_mode": 17,
+    "current_before": 42330,
+    "resolved_rhs": 42330,
+    "field_after": 42330,
+    "branch_failed": false,
+    "final_script_offset": 0,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "record_offsets_wrap",
+    "query_mode_before": 0,
+    "operation": 246,
+    "rhs_mode": 192,
+    "current_before": 2,
+    "resolved_rhs": 3,
+    "field_after": 5,
+    "branch_failed": false,
+    "final_script_offset": 12902,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

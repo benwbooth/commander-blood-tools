@@ -10219,6 +10219,353 @@ def vm_yield_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def vm_shared_state_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    record_segment = 0x5200
+    stack_segment = 0x9000
+    cases = [
+        {"name": "query_ne_pass", "query": 1, "op": 0xF0, "current": 1, "rhs": 2, "pass": True},
+        {"name": "query_ne_fail", "query": 3, "op": 0xF0, "current": 2, "rhs": 2, "pass": False},
+        {"name": "query_le_signed_pass", "query": 1, "op": 0xF3, "current": 0x8000, "rhs": 0x7FFF, "pass": True},
+        {"name": "query_le_signed_fail", "query": 1, "op": 0xF3, "current": 0x7FFF, "rhs": 0x8000, "pass": False},
+        {"name": "query_ge_signed_pass", "query": 1, "op": 0xF4, "current": 0x7FFF, "rhs": 0xFFFF, "pass": True},
+        {"name": "query_ge_signed_fail", "query": 1, "op": 0xF4, "current": 0x8000, "rhs": 0, "pass": False},
+        {"name": "query_lt_signed_pass", "query": 1, "op": 0xF1, "current": 0xFFFF, "rhs": 0, "pass": True},
+        {"name": "query_lt_signed_fail", "query": 1, "op": 0xF1, "current": 0, "rhs": 0xFFFF, "pass": False},
+        {"name": "query_gt_signed_pass", "query": 1, "op": 0xF2, "current": 1, "rhs": 0xFFFF, "pass": True},
+        {"name": "query_gt_signed_fail", "query": 1, "op": 0xF2, "current": 0xFFFF, "rhs": 1, "pass": False},
+        {"name": "query_eq_c0_pass", "query": 1, "op": 0xF5, "mode": 0xC0, "current": 0x2468, "rhs_value": 0x2468, "pass": True},
+        {"name": "query_eq_c2_fail", "query": 1, "op": 0xF5, "mode": 0xC2, "current": 0x1357, "rhs_value": 0x2468, "pass": False},
+        {"name": "query_unknown_fails", "query": 1, "op": 0xE0, "current": 0x1111, "rhs": 0x1111, "pass": False},
+        {"name": "set_add", "query": 0, "op": 0xF6, "current": 0x1234, "rhs": 0x1111},
+        {"name": "set_add_wrap", "query": 2, "op": 0xF6, "current": 0xFFFF, "rhs": 1},
+        {"name": "set_sub_c0_underflow", "query": 0, "op": 0xF7, "mode": 0xC0, "current": 0, "rhs_value": 1},
+        {"name": "set_assign_c2", "query": 0, "op": 0xF5, "mode": 0xC2, "current": 0x1234, "rhs_value": 0xBEEF},
+        {"name": "set_unknown_rewrites", "query": 0, "op": 0xE0, "current": 0x4567, "rhs": 0x1111},
+        {"name": "segment_end_query_eq", "query": 1, "op": 0xF5, "current": 0xA55A, "rhs": 0xA55A, "pass": True, "start": 0xFFFA},
+        {"name": "record_offsets_wrap", "query": 0, "op": 0xF6, "mode": 0xC0, "current": 2, "rhs_value": 3, "base": 0xFFF0, "field_offset": 0x0030, "rhs_offset": 0x0040},
+    ]
+    failure_tops = [2, 1, 0, 5, 0x8000, 0xFFFF]
+    vectors = []
+
+    def logic_flags_8(value: int) -> dict[str, bool]:
+        result = value & 0xFF
+        return {
+            "cf": False,
+            "pf": result.bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": False,
+        }
+
+    def add_flags_16(left: int, right: int) -> dict[str, bool]:
+        full_result = left + right
+        result = full_result & 0xFFFF
+        return {
+            "cf": full_result > 0xFFFF,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0x0F) + (right & 0x0F) > 0x0F,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool((~(left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    def sub_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    def cmp_flags_8(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": result.bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    failure_index = 0
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        query_before = int(case["query"])
+        query_path = bool(query_before & 1)
+        op = int(case["op"])
+        mode = int(case.get("mode", 0x11))
+        current = int(case["current"])
+        base_offset = int(case.get("base", 0x1000))
+        field_offset = int(case.get("field_offset", 0x0200 + case_index * 4))
+        rhs_operand = int(case.get("rhs_offset", case.get("rhs", 0x0600 + case_index * 4)))
+        rhs = int(case.get("rhs_value", rhs_operand))
+        start = int(case.get("start", 0x3000 + case_index * 0x20))
+        field_effective = (base_offset + field_offset) & 0xFFFF
+        rhs_effective = (base_offset + rhs_operand) & 0xFFFF
+        script = struct.pack("<HBBH", field_offset, op, mode, rhs_operand)
+        final_script = (start + len(script)) & 0xFFFF
+        branch_failed = query_path and not bool(case.get("pass", False))
+        if branch_failed:
+            top_before = failure_tops[failure_index % len(failure_tops)]
+            failure_index += 1
+            top_after = (top_before - 2) & 0xFFFF
+            branch_target = (0x5000 + case_index * 0x31) & 0xFFFF
+            branch_stack_effective = (0x6820 + top_after) & 0xFFFF
+        else:
+            top_before = 0x2468
+            top_after = top_before
+            branch_target = 0x5AA5
+            branch_stack_effective = 0x681E
+
+        if query_path:
+            field_after = current
+        elif op == 0xF6:
+            field_after = (current + rhs) & 0xFFFF
+        elif op == 0xF7:
+            field_after = (current - rhs) & 0xFFFF
+        elif op == 0xF5:
+            field_after = rhs
+        else:
+            field_after = current
+
+        pointer = struct.pack("<HH", base_offset, record_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x2222, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x3333, stack_segment)
+        data_query_decoy = query_before ^ 0x55
+        stack_query_decoy = query_before ^ 0xAA
+        data_top_decoy = top_before ^ 0xFFFF
+        stack_top_decoy = top_before ^ 0x5A5A
+        field_decoy = current ^ 0xFFFF
+        memory = [
+            (game_segment, 0x6724, pointer),
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (game_segment, 0x67AD, bytes([query_before])),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (game_segment, 0x6884, struct.pack("<H", top_before)),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (stack_segment, 0x6884, struct.pack("<H", stack_top_decoy)),
+            (record_segment, field_effective, struct.pack("<H", current)),
+            (data_segment, field_effective, struct.pack("<H", field_decoy)),
+            (game_segment, field_effective, struct.pack("<H", field_decoy ^ 0xA5A5)),
+            (stack_segment, field_effective, struct.pack("<H", field_decoy ^ 0x5A5A)),
+            (stack_segment, branch_stack_effective, struct.pack("<H", branch_target)),
+            (game_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xFFFF)),
+            (data_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xA5A5)),
+            (data_segment, start, script),
+            (extra_segment, start, b"\x5a" * len(script)),
+            (game_segment, start, b"\xa5" * len(script)),
+        ]
+        if mode in (0xC0, 0xC2):
+            memory.extend(
+                [
+                    (record_segment, rhs_effective, struct.pack("<H", rhs)),
+                    (data_segment, rhs_effective, struct.pack("<H", rhs ^ 0xFFFF)),
+                    (game_segment, rhs_effective, struct.pack("<H", rhs ^ 0xA5A5)),
+                    (stack_segment, rhs_effective, struct.pack("<H", rhs ^ 0x5A5A)),
+                ]
+            )
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        parse_phases = []
+        terminal_phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address in (0x6869, 0x686E, 0x6875, 0x6886, 0x6889):
+                parse_phases.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address == 0x6900:
+                terminal_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        struct.unpack(
+                            "<H",
+                            machine.mem_read(record_segment * 16 + field_effective, 2),
+                        )[0],
+                        machine.mem_read(game_segment * 16 + 0x67AD, 1)[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            0x6863,
+            0x6901,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        packed_ax = (op << 8) | mode
+        expected_parse = [
+            (0x6869, initial["eax"] & 0xFFFF, initial["ebx"] & 0xFFFF, initial["ecx"] & 0xFFFF, initial["edx"] & 0xFFFF, start, base_offset, record_segment),
+            (0x686E, initial["eax"] & 0xFFFF, field_offset, current, initial["edx"] & 0xFFFF, start, base_offset, record_segment),
+            (0x6875, packed_ax, field_offset, current, initial["edx"] & 0xFFFF, (start + 4) & 0xFFFF, base_offset, record_segment),
+            (0x6886, packed_ax, field_offset, current, rhs, (start + 4) & 0xFFFF, base_offset, record_segment),
+            (0x6889, packed_ax, field_offset, current, rhs, final_script, base_offset, record_segment),
+        ]
+        if parse_phases != expected_parse:
+            raise AssertionError(
+                f"0x6863 {name}: parse={parse_phases}, expected={expected_parse}"
+            )
+
+        if query_path and not branch_failed:
+            expected_ax = (op << 8) | 1
+            expected_si = final_script
+            query_after = query_before
+            expected_flags = logic_flags_8(1)
+        elif branch_failed:
+            expected_ax = top_after
+            expected_si = branch_target
+            query_after = 0
+            expected_flags = sub_flags_16(top_before, 2)
+        else:
+            expected_ax = packed_ax
+            expected_si = final_script
+            query_after = query_before
+            if op == 0xF6:
+                expected_flags = add_flags_16(current, rhs)
+            elif op == 0xF7:
+                expected_flags = sub_flags_16(current, rhs)
+            else:
+                expected_flags = cmp_flags_8(op, 0xF5)
+
+        expected_terminal = [
+            (
+                expected_ax,
+                field_offset,
+                field_after,
+                rhs,
+                expected_si,
+                base_offset,
+                record_segment,
+                field_after,
+                query_after,
+                top_after,
+            )
+        ]
+        if terminal_phases != expected_terminal:
+            raise AssertionError(
+                f"0x6863 {name}: terminal={terminal_phases}, "
+                f"expected={expected_terminal}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | expected_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | field_offset
+        expected_registers["ecx"] = (initial["ecx"] & 0xFFFF0000) | field_after
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | rhs
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | expected_si
+        expected_registers["es"] = record_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6863 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_field = struct.unpack(
+            "<H", machine.mem_read(record_segment * 16 + field_effective, 2)
+        )[0]
+        if actual_field != field_after:
+            raise AssertionError(
+                f"0x6863 {name}: field={actual_field:#x}, expected={field_after:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + start, len(script))) != script:
+            raise AssertionError(f"0x6863 {name}: script input changed")
+        if machine.mem_read(extra_segment * 16 + start, len(script)) != b"\x5a" * len(script):
+            raise AssertionError(f"0x6863 {name}: ES script decoy changed")
+        if machine.mem_read(game_segment * 16 + start, len(script)) != b"\xa5" * len(script):
+            raise AssertionError(f"0x6863 {name}: GS script decoy changed")
+        decoys = [
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (stack_segment, 0x6884, struct.pack("<H", stack_top_decoy)),
+            (data_segment, field_effective, struct.pack("<H", field_decoy)),
+            (game_segment, field_effective, struct.pack("<H", field_decoy ^ 0xA5A5)),
+            (stack_segment, field_effective, struct.pack("<H", field_decoy ^ 0x5A5A)),
+        ]
+        for segment, offset, expected in decoys:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x6863 {name}: segment decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 0x0001, "pf": 0x0004, "af": 0x0010, "zf": 0x0040, "sf": 0x0080, "of": 0x0800}
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6863 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6901] != 0xC3:
+            raise AssertionError("0x6863: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "query_mode_before": query_before,
+                "operation": op,
+                "rhs_mode": mode,
+                "current_before": current,
+                "resolved_rhs": rhs,
+                "field_after": field_after,
+                "branch_failed": branch_failed,
+                "final_script_offset": expected_si,
+                "query_mode_after": query_after,
+                "branch_stack_top_after": top_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -14889,6 +15236,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_685c_natural.json",
         vm_yield_vectors(0x685C),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6863_natural.json",
+        vm_shared_state_vectors(),
         args.check,
     )
     update_vector(

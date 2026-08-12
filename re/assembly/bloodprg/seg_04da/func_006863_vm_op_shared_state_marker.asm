@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_shared_state_marker
-; label_comment: VM opcode SHARED handler for 0xB1/0xB4/0xB5/0xB6/0xBE/0xBF/0xC0 (7 opcodes -> same handler): les di,gs:[0x6724]; bx=[si] offset; cx=es:[bx+di] read record field; lodsb ah + lodsb al operands; cmp al vs opcode markers 0xc0/0xc2. Reads a state-table record field + branches on following opcode markers. Grouped opcodes performing the same state-table op; exact op partially decoded
+; label_comment: Shared B1/B4/B5/B6/BE/BF/C0 handler: read a record word, resolve an immediate or C0/C2 record-backed RHS, then perform signed query comparisons or wrapping add/subtract/assignment
 ; incoming: vm_opcode_handlers:opcode_0xb1
 ; incoming: vm_opcode_handlers:opcode_0xb4
 ; incoming: vm_opcode_handlers:opcode_0xb5

@@ -1142,6 +1142,25 @@ bytes versus 7 original; the sole structural difference is the missing GS
 override because an ordinary external global is addressed through DS. Exact
 integration is therefore a data-placement/linker problem, not missing C logic.
 
+Shared VM state handler `0x006863` serves dispatch opcodes B1, B4, B5, B6, BE,
+BF, and C0. Twenty direct vectors cover all six query relations, signed boundary
+cases, unknown-query failure, immediate and C0/C2 record-backed RHS values,
+wrapping add/subtract, assignment, and the unchanged-field write performed for
+unknown set operations. They also prove parse and dereference order, GS far-base
+and query/top ownership, ES record ownership, DS script ownership, SS branch
+stack ownership, offset and script-segment wrap, real branch-helper effects,
+path registers, final flags, and near return.
+
+The corrected natural candidate returns either the six-byte-advanced cursor or
+the branch helper's replacement cursor directly. Open Watcom `-3 -ox -mm`
+compiles it without warnings to 87 instructions/198 bytes versus 69/159
+original; Turbo C 2.01 medium emits 111 instructions. Watcom retains all signed
+SETcc relations and the SI result, but creates a frame and integer Boolean,
+keeps current in AX and markers in BL/CL instead of CX and AH/AL, and addresses
+the far-base/query globals through DS rather than fixed GS. Exact integration
+needs the original segmented placement and narrow register allocation, not a
+different algorithm or an emulation layer.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1186,6 +1205,7 @@ LCS and then mnemonic similarity:
 | `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
 | `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
 | `vm_yield` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `vm_shared_state` | medium, `-ox`, register | 69/87 | 0.1304 | 0.7971 | 0.2464 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
