@@ -441,6 +441,24 @@ load/store pairs where the binary uses two dword copies. GS data placement,
 packed-EBP range transport, and the original save/restore sets remain explicit
 ABI boundaries.
 
+The dirty-range renderer at `0x004471` adds six direct vectors. They prove that
+the first signed-negative dirty-list edge exits immediately; otherwise slots
+are visited from `BX` down through `AX`, inactive slots still lose dirty bit 1,
+and active slots copy and test every rectangle using signed exclusive edges.
+The vectors also corrected an earlier transcription error: the dispatch mode is
+`(flags >> 2) & 7` (state bits 2..4), while bit 1 is the dirty flag. Flip flags
+come from bits 5/6, and the indirect call sequence follows descending slot
+order.
+
+Open Watcom 1.9 compiles the actual candidate without warnings. Its closest
+tested `-3 -ox -mm` probe has 77 instructions/190 bytes versus 75/177 original;
+the 8086 and 286 probes have 88/201 and 85/197. Watcom retains the descending
+pointer, signed comparisons, sentinel loop, and dispatch structure, but uses
+stack locals, default-DS globals, and `REP MOVSW`. A typed function convention
+does reproduce the binary's DI callback argument and preserve-all contract. The
+binary instead packs the range through EBP, owns state in GS and dispatch
+scratch in CS, and performs two `MOVSD` copies.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

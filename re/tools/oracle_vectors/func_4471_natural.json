@@ -1,0 +1,200 @@
+[
+  {
+    "name": "empty_dirty_list",
+    "first_object_id": 2,
+    "last_object_id": 4,
+    "input_flags": [
+      3,
+      35,
+      67
+    ],
+    "output_flags": [
+      3,
+      35,
+      67
+    ],
+    "dirty_rects": [],
+    "slot_geometry": [
+      10,
+      20,
+      8,
+      9
+    ],
+    "blitter_modes_called": [],
+    "selected_mode_after": null,
+    "flip_x_after": 165,
+    "flip_y_after": 90
+  },
+  {
+    "name": "inactive_range_walks_backward",
+    "first_object_id": 4,
+    "last_object_id": 6,
+    "input_flags": [
+      2,
+      34,
+      42342
+    ],
+    "output_flags": [
+      0,
+      32,
+      42340
+    ],
+    "dirty_rects": [
+      [
+        5,
+        25,
+        15,
+        35
+      ]
+    ],
+    "slot_geometry": [
+      10,
+      20,
+      8,
+      9
+    ],
+    "blitter_modes_called": [],
+    "selected_mode_after": null,
+    "flip_x_after": 165,
+    "flip_y_after": 90
+  },
+  {
+    "name": "nonintersecting_range_walks_backward",
+    "first_object_id": 7,
+    "last_object_id": 9,
+    "input_flags": [
+      3,
+      35,
+      67
+    ],
+    "output_flags": [
+      1,
+      33,
+      65
+    ],
+    "dirty_rects": [
+      [
+        100,
+        120,
+        100,
+        120
+      ]
+    ],
+    "slot_geometry": [
+      10,
+      20,
+      5,
+      5
+    ],
+    "blitter_modes_called": [],
+    "selected_mode_after": 0,
+    "flip_x_after": 0,
+    "flip_y_after": 0
+  },
+  {
+    "name": "reverse_dispatch_order",
+    "first_object_id": 10,
+    "last_object_id": 12,
+    "input_flags": [
+      1,
+      41,
+      79
+    ],
+    "output_flags": [
+      1,
+      41,
+      77
+    ],
+    "dirty_rects": [
+      [
+        5,
+        25,
+        15,
+        35
+      ]
+    ],
+    "slot_geometry": [
+      10,
+      20,
+      10,
+      10
+    ],
+    "blitter_modes_called": [
+      3,
+      2,
+      0
+    ],
+    "selected_mode_after": 0,
+    "flip_x_after": 0,
+    "flip_y_after": 0
+  },
+  {
+    "name": "multiple_intersecting_rectangles",
+    "first_object_id": 14,
+    "last_object_id": 14,
+    "input_flags": [
+      33
+    ],
+    "output_flags": [
+      33
+    ],
+    "dirty_rects": [
+      [
+        0,
+        15,
+        0,
+        15
+      ],
+      [
+        15,
+        30,
+        15,
+        30
+      ]
+    ],
+    "slot_geometry": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "blitter_modes_called": [
+      0,
+      0
+    ],
+    "selected_mode_after": 0,
+    "flip_x_after": 1,
+    "flip_y_after": 0
+  },
+  {
+    "name": "signed_wrapping_geometry",
+    "first_object_id": 17,
+    "last_object_id": 17,
+    "input_flags": [
+      69
+    ],
+    "output_flags": [
+      69
+    ],
+    "dirty_rects": [
+      [
+        0,
+        16,
+        0,
+        16
+      ]
+    ],
+    "slot_geometry": [
+      65520,
+      2,
+      48,
+      8
+    ],
+    "blitter_modes_called": [
+      1
+    ],
+    "selected_mode_after": 1,
+    "flip_x_after": 0,
+    "flip_y_after": 1
+  }
+]

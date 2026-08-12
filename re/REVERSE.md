@@ -1221,16 +1221,20 @@ intersection loop at `0x0299:0x14E1` is now modeled as
 dirty-rect list starts with a negative/sentinel word, walks the requested slot
 range in descending order, skips inactive slots for drawing, uses signed-word
 exclusive-edge rectangle tests, selects the internal blitter dispatch as
-`(slot_state >> 1) & 7`, extracts destination-remap selector `slot_state>>8 & 3`,
+`(slot_state >> 2) & 7`, extracts destination-remap selector `slot_state>>8 & 3`,
 extracts horizontal/vertical flip from state bits 5/6, and clears dirty bit
 `0x0002` after each visited slot. The dispatched call is `call cs:[0x15A2]`,
 selected from the 8-entry near-pointer table at `cs:0x1592` (file `0x4522`,
-segment `0x0299`) indexed by `(slot_state>>1)&0x0E`: RECOVERED as
+segment `0x0299`) indexed by `(slot_state>>1)&0x0E`, equivalently
+`((slot_state >> 2) & 7) * 2` as a word-table byte offset: RECOVERED as
 `[0x15A6, 0x172C, 0x1C18, 0x1D46, 0x1FD2, 0x210A, 0x210B, 0x210C]` — entries 0..4
 are five distinct real blitters (raw/RLE transparent+opaque, scaled) and 5..7 all
 point at consecutive `ret` (`0xC3`) stubs (no-op). This matches
 `ship_3d_sprite_slot_frame_for_dispatch`'s `Some(0..=4)`/`None(5..=7)` boundary
 byte-exact (verified by `tests::sprite_blitter_dispatch_table_matches_binary`).
+The current Rust command collector still uses the older `flags >> 1` selector
+and therefore remains a known port mismatch; the direct `0x004471` C oracle is
+the authoritative behavior until that separate production path is corrected.
 `blit_ship_3d_sprite_slot_command_indexed()`
 now connects those recovered commands to the Rust ports of the dispatch table's
 raw/RLE/scaled sprite blitters, and
@@ -2090,7 +2094,7 @@ Named targets that are already tied to code behavior:
   dirty-rectangle list at `GS:0x6612`, dispatches the selected internal blitter
   from the slot state word, and clears the slot dirty bit after processing.
 - The internal sprite blitter table lives at `0x0299:0x1592` (file `0x4522`).
-  `sprite_slot_dirty_range_render` uses `(slot_state >> 1) & 7` as the table
+  `sprite_slot_dirty_range_render` uses `(slot_state >> 2) & 7` as the table
   selector. Original slot-state bit 5 sets the horizontal-flip flag and bit 6
   sets the vertical-flip flag. Slot byte `+1 & 3` selects the transparent-mode
   destination remap behavior: `0` copies nonzero source pixels directly, `1`
@@ -2905,7 +2909,7 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
 - [x] Decode sprite blitter dispatch modes:
       `bloodprg-sprite-blitters.tsv` and
       `inspect-bloodprg.sprite_blitter_dispatch` expose the table at
-      `0x0299:0x1592`, selected by `(slot_state >> 1) & 7`, with raw/RLE
+      `0x0299:0x1592`, selected by `(slot_state >> 2) & 7`, with raw/RLE
       transparent, raw/RLE opaque, scaled transparent, and no-op modes named.
       The remaining work is Rust-porting the pixel loops and checking them
       against oracle captures instead of guessing sprite composition.
@@ -3195,12 +3199,14 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       `commit_ship_3d_global_clip_snapshot()`, including the `DS:0x5249` flag,
       clip words `DS:0x5235..0x523B`, dirty-rect list base `DS:0x6612`, and
       `0xFFFF` sentinel.
-- [x] Port ship 3D dirty-rectangle sprite-slot render selection:
+- [ ] Correct ship 3D dirty-rectangle sprite-slot render selection:
       `collect_ship_3d_dirty_sprite_slot_render_commands()` models the
       `0x0299:0x14E1` slot walk through dirty rectangles, including descending
       slot order, active-slot gate, signed exclusive-edge intersection checks,
-      dispatch selector `(state >> 1) & 7`, destination-remap selector
-      `(state >> 8) & 3`, flip bits, and dirty-bit clearing.
+      dispatch selector `(state >> 2) & 7`, destination-remap selector
+      `(state >> 8) & 3`, flip bits, and dirty-bit clearing. Its current Rust
+      selector is still the stale `(state >> 1) & 7` and must be corrected and
+      revalidated against the new direct vectors.
 - [x] Bridge ship 3D dirty sprite commands to recovered pixel blitters:
       `blit_ship_3d_sprite_slot_command_indexed()` maps the recovered
       `Ship3dSpriteSlotRenderCommand` stream into the Rust ports of dispatch

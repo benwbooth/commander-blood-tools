@@ -31,6 +31,7 @@ from unicorn.x86_const import (
     UC_X86_INS_OUT,
     UC_X86_REG_AX,
     UC_X86_REG_BP,
+    UC_X86_REG_EBP,
     UC_X86_REG_BX,
     UC_X86_REG_CS,
     UC_X86_REG_CX,
@@ -60,6 +61,7 @@ REGISTERS = {
     "si": UC_X86_REG_SI,
     "di": UC_X86_REG_DI,
     "bp": UC_X86_REG_BP,
+    "ebp": UC_X86_REG_EBP,
     "sp": UC_X86_REG_SP,
     "ds": UC_X86_REG_DS,
     "es": UC_X86_REG_ES,
@@ -1303,7 +1305,7 @@ def sprite_slot_commit_dirty_range_vectors() -> list[dict[str, object]]:
             "dx": 0x4567,
             "si": 0x5678,
             "di": 0x6789,
-            "bp": 0x89AB,
+            "ebp": 0xD3D389AB,
             "ds": data_segment,
             "es": 0x2800,
             "gs": state_segment,
@@ -1386,6 +1388,240 @@ def sprite_slot_commit_dirty_range_vectors() -> list[dict[str, object]]:
                 "clip_bounds": clip,
                 "committed_geometry_after": output_geometry,
                 "wrote_clip_snapshot": (snapshot_flags & 1) != 0,
+            }
+        )
+
+    return vectors
+
+
+def sprite_slot_dirty_range_render_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    stub_offsets = [0x7000 + index * 0x10 for index in range(8)]
+    cases = [
+        {
+            "name": "empty_dirty_list",
+            "first_id": 2,
+            "flags": [0x0003, 0x0023, 0x0043],
+            "geometry": [10, 20, 8, 9],
+            "dirty_rects": [],
+            "sentinel_left": 0xFFFF,
+        },
+        {
+            "name": "inactive_range_walks_backward",
+            "first_id": 4,
+            "flags": [0x0002, 0x0022, 0xA566],
+            "geometry": [10, 20, 8, 9],
+            "dirty_rects": [[5, 25, 15, 35]],
+            "sentinel_left": 0xFFFF,
+        },
+        {
+            "name": "nonintersecting_range_walks_backward",
+            "first_id": 7,
+            "flags": [0x0003, 0x0023, 0x0043],
+            "geometry": [10, 20, 5, 5],
+            "dirty_rects": [[100, 120, 100, 120]],
+            "sentinel_left": 0xFFFF,
+        },
+        {
+            "name": "reverse_dispatch_order",
+            "first_id": 10,
+            "flags": [0x0001, 0x0029, 0x004F],
+            "geometry": [10, 20, 10, 10],
+            "dirty_rects": [[5, 25, 15, 35]],
+            "sentinel_left": 0xFFFF,
+        },
+        {
+            "name": "multiple_intersecting_rectangles",
+            "first_id": 14,
+            "flags": [0x0021],
+            "geometry": [10, 10, 10, 10],
+            "dirty_rects": [[0, 15, 0, 15], [15, 30, 15, 30]],
+            "sentinel_left": 0xFFFF,
+        },
+        {
+            "name": "signed_wrapping_geometry",
+            "first_id": 17,
+            "flags": [0x0045],
+            "geometry": [0xFFF0, 2, 0x30, 8],
+            "dirty_rects": [[0, 0x10, 0, 0x10]],
+            "sentinel_left": 0x8000,
+        },
+    ]
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if (value & 0x8000) != 0 else value
+
+    for case in cases:
+        name = str(case["name"])
+        first_id = int(case["first_id"])
+        input_flags = [int(value) for value in case["flags"]]
+        geometry = [int(value) for value in case["geometry"]]
+        dirty_rects = [
+            [int(value) for value in rect] for rect in case["dirty_rects"]
+        ]
+        last_id = first_id + len(input_flags) - 1
+        records = bytearray()
+        for index, flags in enumerate(input_flags):
+            object_id = first_id + index
+            record = bytearray(
+                (byte_index * 37 + object_id * 11) & 0xFF
+                for byte_index in range(32)
+            )
+            record[0:2] = struct.pack("<H", flags)
+            record[8:16] = struct.pack("<HHHH", *geometry)
+            records.extend(record)
+
+        dirty_list = bytearray()
+        for rect in dirty_rects:
+            dirty_list.extend(struct.pack("<HHHH", *rect))
+        dirty_list.extend(
+            struct.pack(
+                "<HHHH", int(case["sentinel_left"]), 0x1357, 0x2468, 0x369C
+            )
+        )
+        record_offset = 0x6212 + first_id * 32
+        decoy_records = bytes(byte ^ 0xA6 for byte in records)
+        decoy_dirty_list = bytes(byte ^ 0x69 for byte in dirty_list)
+        initial_selected = 0x6F00
+        initial_flip_x = 0xA5
+        initial_flip_y = 0x5A
+        initial = {
+            "eax": 0xD4D40000 | first_id,
+            "bx": last_id,
+            "cx": 0x3456,
+            "dx": 0x4567,
+            "si": 0x5678,
+            "di": 0x6789,
+            "ebp": 0xE5E589AB,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        stub_bytes = bytearray(0x80)
+        for index in range(8):
+            stub_bytes[index * 0x10] = 0xC3
+        calls = []
+
+        def record_blitter_call(
+            _machine: Uc, address: int, _size: int
+        ) -> None:
+            if address in stub_offsets:
+                calls.append(stub_offsets.index(address))
+
+        machine = execute(
+            0x4471,
+            0x4521,
+            initial,
+            [
+                (state_segment, record_offset, bytes(records)),
+                (data_segment, record_offset, decoy_records),
+                (state_segment, 0x6612, bytes(dirty_list)),
+                (data_segment, 0x6612, decoy_dirty_list),
+                (0, 0x1592, struct.pack("<8H", *stub_offsets)),
+                (0, 0x15A2, struct.pack("<H", initial_selected)),
+                (0, 0x14DF, bytes([initial_flip_x, initial_flip_y])),
+                (0, 0x7000, bytes(stub_bytes)),
+            ],
+            code_handler=record_blitter_call,
+        )
+
+        expected_records = bytearray(records)
+        expected_calls = []
+        expected_selected = initial_selected
+        expected_flip_x = initial_flip_x
+        expected_flip_y = initial_flip_y
+        if dirty_rects:
+            for index in range(len(input_flags) - 1, -1, -1):
+                record_start = index * 32
+                flags = input_flags[index]
+                if (flags & 1) != 0:
+                    mode = (flags >> 2) & 7
+                    expected_selected = stub_offsets[mode]
+                    expected_flip_x = 1 if (flags & 0x20) != 0 else 0
+                    expected_flip_y = 1 if (flags & 0x40) != 0 else 0
+                    slot_right = (geometry[0] + geometry[2]) & 0xFFFF
+                    slot_bottom = (geometry[1] + geometry[3]) & 0xFFFF
+                    for rect in dirty_rects:
+                        expected_records[record_start + 24 : record_start + 32] = (
+                            struct.pack("<HHHH", *rect)
+                        )
+                        intersects = (
+                            signed_word(geometry[0]) < signed_word(rect[1])
+                            and signed_word(geometry[1]) < signed_word(rect[3])
+                            and signed_word(slot_right) > signed_word(rect[0])
+                            and signed_word(slot_bottom) > signed_word(rect[2])
+                        )
+                        if intersects:
+                            expected_calls.append(mode)
+                flags &= ~2
+                expected_records[record_start : record_start + 2] = struct.pack(
+                    "<H", flags
+                )
+
+        actual_records = bytes(
+            machine.mem_read(state_segment * 16 + record_offset, len(records))
+        )
+        if actual_records != bytes(expected_records):
+            raise AssertionError(
+                f"0x4471 {name}: records={actual_records.hex()}, "
+                f"expected={expected_records.hex()}"
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x4471 {name}: calls={calls}, expected={expected_calls}"
+            )
+        actual_selected = struct.unpack("<H", machine.mem_read(0x15A2, 2))[0]
+        if actual_selected != expected_selected:
+            raise AssertionError(
+                f"0x4471 {name}: selected={actual_selected:#x}, "
+                f"expected={expected_selected:#x}"
+            )
+        actual_flip_x, actual_flip_y = machine.mem_read(0x14DF, 2)
+        if (actual_flip_x, actual_flip_y) != (expected_flip_x, expected_flip_y):
+            raise AssertionError(
+                f"0x4471 {name}: flips={(actual_flip_x, actual_flip_y)}, "
+                f"expected={(expected_flip_x, expected_flip_y)}"
+            )
+        actual_decoy_records = bytes(
+            machine.mem_read(data_segment * 16 + record_offset, len(records))
+        )
+        if actual_decoy_records != decoy_records:
+            raise AssertionError(f"0x4471 {name}: DS decoy records changed")
+        actual_decoy_dirty = bytes(
+            machine.mem_read(data_segment * 16 + 0x6612, len(dirty_list))
+        )
+        if actual_decoy_dirty != decoy_dirty_list:
+            raise AssertionError(f"0x4471 {name}: DS decoy dirty list changed")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x4471 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "first_object_id": first_id,
+                "last_object_id": last_id,
+                "input_flags": input_flags,
+                "output_flags": [
+                    struct.unpack(
+                        "<H", expected_records[index * 32 : index * 32 + 2]
+                    )[0]
+                    for index in range(len(input_flags))
+                ],
+                "dirty_rects": dirty_rects,
+                "slot_geometry": geometry,
+                "blitter_modes_called": expected_calls,
+                "selected_mode_after": (
+                    stub_offsets.index(expected_selected)
+                    if expected_selected in stub_offsets
+                    else None
+                ),
+                "flip_x_after": expected_flip_x,
+                "flip_y_after": expected_flip_y,
             }
         )
 
@@ -5774,6 +6010,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_43f7_natural.json",
         sprite_slot_commit_dirty_range_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4471_natural.json",
+        sprite_slot_dirty_range_render_vectors(),
         args.check,
     )
     update_vector(
