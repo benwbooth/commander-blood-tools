@@ -819,6 +819,191 @@ def mouse_set_range_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def layout_offset_calc_vectors() -> list[dict[str, object]]:
+    entry = 0x0E62
+    fill_entry = 0x299 * 16 + 0x0CDC
+    outline_entry = 0x299 * 16 + 0x0BB5
+    expected_hash = "06775dcb53246fa18107ed636ffeff0a99507c238bca6cebbf4f75db05f27007"
+    if hashlib.sha256(EXE[entry : entry + 71]).hexdigest() != expected_hash:
+        raise AssertionError("0x0e62: recovered 71-byte body changed")
+
+    cases = [
+        ("zero", 0x0000, 0x0000),
+        ("one", 0x0001, 0x0001),
+        ("small", 0x000A, 0x0003),
+        ("exact_screen_width", 0x004F, 0x0020),
+        ("oversize", 0x0050, 0x0021),
+        ("quarter_wrap", 0x3FFF, 0x2AAA),
+        ("high_bit", 0x4000, 0x8000),
+        ("signed_max", 0x7FFF, 0x7FFF),
+        ("signed_min", 0x8000, 0x8000),
+        ("all_bits", 0xFFFF, 0xFFFF),
+        ("mixed", 0x1234, 0xABCD),
+        ("wrapped_dimensions", 0x50CF, 0x0022),
+    ]
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (name, columns, rows) in enumerate(cases):
+        width = (columns * 4 + 4) & 0xFFFF
+        height = (rows * 6 + 4) & 0xFFFF
+        x = ((320 - width) & 0xFFFF) >> 1
+        y = ((200 - height) & 0xFFFF) >> 1
+        result_x = (x + 2) & 0xFFFF
+        result_y = (y + 2) & 0xFFFF
+        initial = {
+            "eax": 0xA1A10000 | columns,
+            "ebx": 0xB2B20000 | rows,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (case_index & 1),
+        }
+        helper_calls = []
+        stack_sentinel = bytes.fromhex("5aa596698778")
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (fill_entry, outline_entry):
+                return
+            color = 0 if address == fill_entry else 0x0F
+            return_ip = 0x0E93 if address == fill_entry else 0x0E9B
+            actual_call = {
+                "address": address,
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ebp": machine.reg_read(UC_X86_REG_EBP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_call = dict(initial)
+            del expected_call["flags"]
+            expected_call["eax"] = (initial["eax"] & 0xFFFF0000) | color
+            expected_call["ebx"] = (initial["ebx"] & 0xFFFF0000) | x
+            expected_call["ecx"] = (initial["ecx"] & 0xFFFF0000) | y
+            expected_call["edx"] = (initial["edx"] & 0xFFFF0000) | width
+            expected_call["ebp"] = (initial["ebp"] & 0xFFFF0000) | height
+            expected_call["sp"] = 0xFEF6
+            expected_call["address"] = address
+            expected_call["cs"] = 0x0299
+            expected_call["ip"] = 0x0CDC if address == fill_entry else 0x0BB5
+            if actual_call != expected_call:
+                raise AssertionError(
+                    f"0x0e62 {name}: call={actual_call}, expected={expected_call}"
+                )
+            stack_words = struct.unpack(
+                "<HHHHHHH",
+                machine.mem_read(stack_segment * 16 + 0xFEF6, 14),
+            )
+            expected_stack = (
+                return_ip,
+                0,
+                initial["ebp"] & 0xFFFF,
+                initial["edx"] & 0xFFFF,
+                initial["ecx"] & 0xFFFF,
+                return_address,
+                0,
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x0e62 {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            helper_calls.append(address)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0x0299, 0x0CDC, b"\xcb"),
+                (0x0299, 0x0BB5, b"\xcb"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+        expected_calls = [fill_entry, outline_entry]
+        if helper_calls != expected_calls:
+            raise AssertionError(
+                f"0x0e62 {name}: calls={helper_calls}, expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | result_x
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | result_y
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x0e62 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x0e62 {name}: far return did not restore CS")
+
+        add_result = result_y
+        expected_flags = {
+            "cf": y + 2 > 0xFFFF,
+            "pf": (add_result & 0xFF).bit_count() % 2 == 0,
+            "af": bool((y ^ 2 ^ add_result) & 0x10),
+            "zf": add_result == 0,
+            "sf": bool(add_result & 0x8000),
+            "of": bool((~(y ^ 2) & (y ^ add_result)) & 0x8000),
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x0e62 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x0e62 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "columns": columns,
+                "rows": rows,
+                "outer": {"x": x, "y": y, "width": width, "height": height},
+                "fill_color": 0,
+                "outline_color": 0x0F,
+                "result": {"x": result_x, "y": result_y},
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -24028,6 +24213,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0d61_natural.json",
         print_string_dos_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0e62_natural.json",
+        layout_offset_calc_vectors(),
         args.check,
     )
     update_vector(

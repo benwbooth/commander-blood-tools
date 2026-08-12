@@ -1706,6 +1706,27 @@ saves an otherwise unnecessary DX copy of ES, and duplicates the epilogue.
 Turbo C 2.01 medium emits 32 instructions; although it branches directly from
 each decrement, its stack parameters do not reproduce the live AX/ES:DI ABI.
 
+Centered-layout helper `0x000E62` consumes columns in AX and rows in BX. It
+computes `width = columns*4+4` and `height = rows*6+4` with 16-bit wrapping,
+then centers that rectangle with logical right shifts after wrapping unsigned
+subtractions from 320 and 200. It calls the black-fill helper at
+`0x0299:0x0CDC` and the color-15 outline helper at `0x0299:0x0BB5`; both receive
+AX=color, BX=x, CX=y, DX=width, and BP=height. The routine returns the two-pixel
+inset coordinate in AX/BX. Twelve direct vectors prove wrapped dimensions,
+oversized unsigned centering, both complete helper call frames, the result,
+register preservation, final ADD flags, and RETF.
+
+The natural candidate returns one packed 32-bit value, with x in its low word
+and y in its high word, allowing a Watcom pragma to expose the original BX:AX
+result without a struct-return buffer. Open Watcom `-3 -ox -mm` emits 35
+instructions/76 bytes versus 32/71 original and preserves CX/DX/BP. Its first
+four helper arguments are exact, but height is pushed on the stack: Watcom
+forbids BP as a modified custom-ABI register in a 16-bit small-data model.
+Turbo C 2.01 medium emits 46 instructions with all parameters on the stack and
+returns the packed value through DX:AX. The remaining BP argument is an ABI
+integration boundary; the C arithmetic and call semantics need no emulator or
+synthetic wrapper.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1782,6 +1803,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |
+| `layout_offset_calc` | medium, `-ox`, register | 32/35 | 0.1875 | 0.5938 | 0.2812 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

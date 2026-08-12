@@ -7,7 +7,7 @@
 ; group: seg_0000
 ; provenance: direct_call_target, label_csv_target, manual_binary_boundary
 ; label: layout_offset_calc
-; label_comment: offset/layout helper used by set_vga_segment; computes centered screen positions and draws two helper primitives
+; label_comment: centers a columns*4+4 by rows*6+4 rectangle in 320x200, draws black fill plus color-15 outline, and returns the inner x/y
 ; incoming: call@0x000da2->0x000e62
 ; incoming: call@0x000dcb->0x000e62
 ; incoming: call@0x000dfb->0x000e62

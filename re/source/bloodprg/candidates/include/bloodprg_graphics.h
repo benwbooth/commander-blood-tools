@@ -34,10 +34,8 @@ void CB_FAR *CB_NEAR _fmemcpy(
 #pragma intrinsic(_fmemcpy)
 #endif
 
-typedef struct bloodprg_layout_offset_result {
-    cb_u16 x;
-    cb_u16 y;
-} bloodprg_layout_offset_result;
+/* Low word is x; high word is y. */
+typedef cb_u32 bloodprg_layout_offset_result;
 
 typedef struct bloodprg_gfx_scanline_state {
     cb_u16 row_width;
@@ -64,6 +62,10 @@ void CB_NEAR back_buffer_copy_from(
         cb_u16 x, cb_u16 y, cb_u16 width); /* 0x00933A */
 
 #if defined(__WATCOMC__)
+#pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
+/* Watcom reserves BP, so the fifth helper argument remains stack-passed. */
+#pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
+#pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #endif
 
