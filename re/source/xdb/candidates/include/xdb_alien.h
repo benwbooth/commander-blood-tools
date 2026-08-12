@@ -7,8 +7,13 @@
 #define XDB_ALIEN_FIELD_DELTA 0x000fu
 
 typedef struct xdb_alien_biased_state {
-    xdb_u8 field_000[0x52];
+    xdb_u8 field_000[0x42];
+    xdb_i32 position_x;
+    xdb_i32 position_y;
+    xdb_i32 position_z;
+    xdb_u8 field_04e[0x04];
     xdb_i16 field_052;
+    xdb_u8 field_054[0x0a];
 } xdb_alien_biased_state;
 
 typedef struct xdb_alien_state {
@@ -29,7 +34,8 @@ typedef xdb_alien_resume_function XDB_NEAR *xdb_alien_resume_callback;
 struct xdb_alien_method_context {
     xdb_u8 field_00[0x16];
     volatile xdb_alien_state XDB_NEAR *state;
-    xdb_u8 field_018[0x04];
+    xdb_u8 field_018[0x02];
+    xdb_u16 state_count;
     xdb_u16 object_offset;
     xdb_u16 field_01e;
     xdb_u16 object_count;
@@ -52,6 +58,9 @@ typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
 extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
+extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
+extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
+extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -89,6 +98,12 @@ xdb_i16 XDB_NEAR xdb_croolis_method_slot_9_apply_scaled_sample_delta(
         xdb_alien_method_context XDB_NEAR *context);
 xdb_i16 XDB_NEAR xdb_scrut_method_slot_9_apply_scaled_sample_delta(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_slot_6_wrap_positions(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_6_wrap_positions(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_6_wrap_positions(
+        xdb_alien_method_context XDB_NEAR *context);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
@@ -120,6 +135,12 @@ void XDB_NEAR xdb_scrut_resume_1c45(
         parm [di] value [ax] modify exact [ax bx cx si]
 #pragma aux xdb_scrut_method_slot_9_apply_scaled_sample_delta \
         parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_amer_method_slot_6_wrap_positions \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_croolis_method_slot_6_wrap_positions \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_scrut_method_slot_6_wrap_positions \
+        parm [di] modify exact [ax bx cx dx si di bp]
 #endif
 
 #endif

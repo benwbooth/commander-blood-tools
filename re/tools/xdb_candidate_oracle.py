@@ -527,6 +527,467 @@ def add_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
     }
 
 
+def sub_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+    result = (left - right) & 0xFFFF
+    return {
+        "cf": left < right,
+        "pf": (result & 0xFF).bit_count() % 2 == 0,
+        "af": bool((left ^ right ^ result) & 0x0010),
+        "zf": result == 0,
+        "sf": bool(result & 0x8000),
+        "if": bool(initial_flags & 0x0200),
+        "df": bool(initial_flags & 0x0400),
+        "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+    }
+
+
+def wrap_position(value: int, origin: int) -> tuple[int, int]:
+    relative = (value + origin) & 0xFFFF
+    windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
+    windowed = (windowed - 0x4000) & 0xFFFF
+    return (windowed - origin) & 0xFFFF, windowed
+
+
+def wrap_positions_zero_count_vector(
+    image: bytes, module: str, entry: int
+) -> dict[str, object]:
+    data_segment = 0x4200
+    extra_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    context_offset = 0x3000
+    state_base = 0x2000
+    return_address = 0xF000
+    initial_flags = 0x0693
+    data_before = bytearray(
+        ((offset * 37 + 11) & 0xFF) for offset in range(0x10002)
+    )
+    struct.pack_into("<H", data_before, context_offset + 0x16, state_base)
+    struct.pack_into("<H", data_before, context_offset + 0x1A, 0)
+    for offset, origin in zip(
+        (0x22EC, 0x22F0, 0x22F4), (0x1357, 0x8001, 0xFEDC)
+    ):
+        struct.pack_into("<H", data_before, offset, origin)
+    data_expected = bytearray(data_before)
+
+    state_cursor = state_base
+    final_words = [0, 0, 0]
+    final_windowed_z = 0
+    final_origin_z = 0
+    for _ in range(0x10000):
+        state_cursor = (state_cursor + 0x005E) & 0xFFFF
+        origins = [
+            struct.unpack_from("<H", data_expected, offset)[0]
+            for offset in (0x22EC, 0x22F0, 0x22F4)
+        ]
+        coordinate_offsets = [
+            (state_cursor + field_offset) & 0xFFFF
+            for field_offset in (0x42, 0x46, 0x4A)
+        ]
+        positions = [
+            struct.unpack_from("<H", data_expected, offset)[0]
+            for offset in coordinate_offsets
+        ]
+        wrapped = [
+            wrap_position(value, origin)
+            for value, origin in zip(positions, origins)
+        ]
+        final_words = [result for result, _windowed in wrapped]
+        final_windowed_z = wrapped[2][1]
+        final_origin_z = origins[2]
+        for offset, value in zip(coordinate_offsets, final_words):
+            signed_dword = value | (0xFFFF0000 if value & 0x8000 else 0)
+            struct.pack_into("<I", data_expected, offset, signed_dword)
+
+    extra_before = bytes((offset * 13 + 5) & 0xFF for offset in range(0x10000))
+    game_before = bytes((offset * 7 + 9) & 0xFF for offset in range(0x10000))
+    initial = {
+        "eax": 0xA1A1BEEF,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C30000,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F60000 | context_offset,
+        "ebp": 0x9797789A,
+        "sp": 0xFF00,
+        "ds": data_segment,
+        "es": extra_segment,
+        "fs": 0x8000,
+        "gs": game_segment,
+        "ss": stack_segment,
+        "flags": initial_flags,
+    }
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    machine = execute(
+        image,
+        entry,
+        return_address,
+        initial,
+        [
+            (0, return_address, b"\xcc"),
+            (data_segment, 0, bytes(data_before)),
+            (extra_segment, 0, extra_before),
+            (game_segment, 0, game_before),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+        max_instructions=2000000,
+    )
+
+    actual_data = bytes(machine.mem_read(data_segment * 16, 0x10002))
+    if actual_data != bytes(data_expected):
+        differences = [
+            (offset, actual_data[offset], data_expected[offset])
+            for offset in range(0x10002)
+            if actual_data[offset] != data_expected[offset]
+        ][:8]
+        raise AssertionError(
+            f"{module}:{entry:#x} zero_count: data differs at {differences}"
+        )
+    for segment, expected in (
+        (extra_segment, extra_before),
+        (game_segment, game_before),
+    ):
+        actual = bytes(machine.mem_read(segment * 16, 0x10000))
+        if actual != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} zero_count: decoy segment {segment:#x} changed"
+            )
+
+    expected_registers = dict(initial)
+    del expected_registers["flags"]
+    expected_registers["eax"] = final_words[0] | (
+        0xFFFF0000 if final_words[0] & 0x8000 else 0
+    )
+    expected_registers["ebx"] = final_words[1] | (
+        0xFFFF0000 if final_words[1] & 0x8000 else 0
+    )
+    expected_registers["ecx"] &= 0xFFFF0000
+    expected_registers["edx"] = final_words[2] | (
+        0xFFFF0000 if final_words[2] & 0x8000 else 0
+    )
+    expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | state_base
+    expected_registers["edi"] = (initial["edi"] & 0xFFFF0000) | 0x4000
+    expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | 0x7FFF
+    expected_registers["sp"] = 0xFF02
+    for register, expected in expected_registers.items():
+        actual = machine.reg_read(REGISTERS[register])
+        if actual != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} zero_count: "
+                f"{register}={actual:#x}, expected={expected:#x}"
+            )
+    if machine.reg_read(UC_X86_REG_CS) != 0:
+        raise AssertionError(f"{module}:{entry:#x} zero_count: near return CS changed")
+    if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+        raise AssertionError(f"{module}:{entry:#x} zero_count: stack sentinel changed")
+
+    expected_flags = sub_flags_16(
+        final_windowed_z, final_origin_z, initial_flags
+    )
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+    flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+    actual_flags = {
+        flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+    }
+    if actual_flags != expected_flags:
+        raise AssertionError(
+            f"{module}:{entry:#x} zero_count: "
+            f"flags={actual_flags}, expected={expected_flags}"
+        )
+
+    return {
+        "name": "zero_count",
+        "module": module,
+        "entry": entry,
+        "context_offset": context_offset,
+        "state_base": state_base,
+        "state_count": 0,
+        "effective_iterations": 0x10000,
+        "final_state_offset": state_cursor,
+        "final_output_words": final_words,
+        "checked_bytes_from_ds_base": 0x10002,
+        "data_segment_sha256": hashlib.sha256(data_expected).hexdigest(),
+        "defined_flags": expected_flags,
+    }
+
+
+def wrap_positions_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "440aacc88cf7b7f15e7fd49e6827fa3b922943ad509d3437e5f71510515f1928"
+    if hashlib.sha256(image[entry : entry + 92]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 92-byte body changed")
+
+    cases = [
+        (
+            "ordinary",
+            0x4000,
+            (0x0000, 0x0000, 0x0000),
+            [(0x12345678, 0x89ABCDEF, 0x00000000)],
+        ),
+        (
+            "positive_boundary",
+            0x4200,
+            (0x0000, 0x0000, 0x0000),
+            [(0xAAAA3FFF, 0xBBBB4000, 0xCCCC7FFF)],
+        ),
+        (
+            "negative_boundary",
+            0x4400,
+            (0x0000, 0x0000, 0x0000),
+            [(0xDDDDC000, 0xEEEEBFFF, 0xFFFF8000)],
+        ),
+        (
+            "large_origins",
+            0x4600,
+            (0x7FFF, 0x8000, 0xFFFF),
+            [(0x11118001, 0x22227FFF, 0x3333C001)],
+        ),
+        (
+            "high_words_replaced",
+            0x4800,
+            (0x1357, 0x2468, 0xA55A),
+            [(0x12348000, 0x56783FFF, 0x9ABCC000)],
+        ),
+        (
+            "three_states",
+            0x4A00,
+            (0x0102, 0x7F00, 0x8001),
+            [
+                (0x11110001, 0x2222FFFE, 0x33334000),
+                (0x44443FFE, 0x55558001, 0x6666C001),
+                (0x77747FFF, 0x88888000, 0x9999FFFF),
+            ],
+        ),
+        (
+            "state_pointer_wrap",
+            0xFFA0,
+            (0x4000, 0xC000, 0x1234),
+            [
+                (0xAAAA0000, 0xBBBB3FFF, 0xCCCC4000),
+                (0xDDDD7FFF, 0xEEEE8000, 0xFFFFC000),
+            ],
+        ),
+    ]
+    data_segment = 0x4000
+    extra_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    context_offset = 0x3000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (name, state_base, origins, positions) in enumerate(cases):
+        data_before = bytearray(
+            ((offset * 29 + case_index * 17) & 0xFF)
+            for offset in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        struct.pack_into("<H", data_before, context_offset + 0x16, state_base)
+        struct.pack_into("<H", data_before, context_offset + 0x1A, len(positions))
+        for offset, origin in zip((0x22EC, 0x22F0, 0x22F4), origins):
+            struct.pack_into("<H", data_before, offset, origin)
+        data_expected[:] = data_before
+
+        state_cursor = state_base
+        state_results = []
+        last_windowed_z = 0
+        for position_x, position_y, position_z in positions:
+            state_cursor = (state_cursor + 0x005E) & 0xFFFF
+            offsets = tuple(
+                (state_cursor + field_offset) & 0xFFFF
+                for field_offset in (0x42, 0x46, 0x4A)
+            )
+            for offset, value in zip(offsets, (position_x, position_y, position_z)):
+                struct.pack_into("<I", data_before, offset, value)
+                struct.pack_into("<I", data_expected, offset, value)
+
+            wrapped = []
+            windowed = []
+            for value, origin in zip(
+                (position_x, position_y, position_z), origins
+            ):
+                result, value_before_origin = wrap_position(value & 0xFFFF, origin)
+                wrapped.append(result)
+                windowed.append(value_before_origin)
+            for offset, value in zip(offsets, wrapped):
+                signed_dword = value | (0xFFFF0000 if value & 0x8000 else 0)
+                struct.pack_into("<I", data_expected, offset, signed_dword)
+
+            last_windowed_z = windowed[2]
+            state_results.append(
+                {
+                    "state_offset": state_cursor,
+                    "coordinate_offsets": list(offsets),
+                    "input_low_words": [
+                        position_x & 0xFFFF,
+                        position_y & 0xFFFF,
+                        position_z & 0xFFFF,
+                    ],
+                    "output_words": wrapped,
+                    "output_dwords": [
+                        value | (0xFFFF0000 if value & 0x8000 else 0)
+                        for value in wrapped
+                    ],
+                }
+            )
+
+        extra_before = bytes(
+            ((offset * 13 + case_index * 23 + 1) & 0xFF)
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            ((offset * 7 + case_index * 31 + 3) & 0xFF)
+            for offset in range(0x10000)
+        )
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x8000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=1000,
+        )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (game_segment, game_before),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy segment {segment:#x} changed"
+                )
+
+        final_words = state_results[-1]["output_words"]
+        assert isinstance(final_words, list)
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = final_words[0] | (
+            0xFFFF0000 if final_words[0] & 0x8000 else 0
+        )
+        expected_registers["ebx"] = final_words[1] | (
+            0xFFFF0000 if final_words[1] & 0x8000 else 0
+        )
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["edx"] = final_words[2] | (
+            0xFFFF0000 if final_words[2] & 0x8000 else 0
+        )
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | state_cursor
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | 0x4000
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | 0x7FFF
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        expected_flags = sub_flags_16(last_windowed_z, origins[2], initial_flags)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "context_offset": context_offset,
+                "state_base": state_base,
+                "state_count": len(positions),
+                "view_origin_words": list(origins),
+                "states": state_results,
+                "final_state_offset": state_cursor,
+                "data_segment_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    vectors.append(wrap_positions_zero_count_vector(image, module, entry))
+    return vectors
+
+
 def sample_delta_vectors(
     module: str, entry: int, scaled: bool
 ) -> list[dict[str, object]]:
@@ -1857,6 +2318,16 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             mouse_position_vectors(module, entry),
+            args.check,
+        )
+    for module, entry in (
+        ("amer", 0x0958),
+        ("croolis", 0x0999),
+        ("scrut", 0x0999),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            wrap_positions_vectors(module, entry),
             args.check,
         )
     for module, entry, cursor_offset in (

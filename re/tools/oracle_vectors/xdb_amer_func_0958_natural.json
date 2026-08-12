@@ -1,0 +1,448 @@
+[
+  {
+    "name": "ordinary",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 16384,
+    "state_count": 1,
+    "view_origin_words": [
+      0,
+      0,
+      0
+    ],
+    "states": [
+      {
+        "state_offset": 16478,
+        "coordinate_offsets": [
+          16544,
+          16548,
+          16552
+        ],
+        "input_low_words": [
+          22136,
+          52719,
+          0
+        ],
+        "output_words": [
+          54904,
+          52719,
+          0
+        ],
+        "output_dwords": [
+          4294956664,
+          4294954479,
+          0
+        ]
+      }
+    ],
+    "final_state_offset": 16478,
+    "data_segment_sha256": "bf4a425c9cbcf1157cc05eda674abe17a48312a82c71f6a2d4d8a69fda4b41ad",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "positive_boundary",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 16896,
+    "state_count": 1,
+    "view_origin_words": [
+      0,
+      0,
+      0
+    ],
+    "states": [
+      {
+        "state_offset": 16990,
+        "coordinate_offsets": [
+          17056,
+          17060,
+          17064
+        ],
+        "input_low_words": [
+          16383,
+          16384,
+          32767
+        ],
+        "output_words": [
+          16383,
+          49152,
+          65535
+        ],
+        "output_dwords": [
+          16383,
+          4294950912,
+          4294967295
+        ]
+      }
+    ],
+    "final_state_offset": 16990,
+    "data_segment_sha256": "4f6d4adc69b6764a8e25371321c06f028a873eec0a6fb9f8719ecc93eb87e0de",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_boundary",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 17408,
+    "state_count": 1,
+    "view_origin_words": [
+      0,
+      0,
+      0
+    ],
+    "states": [
+      {
+        "state_offset": 17502,
+        "coordinate_offsets": [
+          17568,
+          17572,
+          17576
+        ],
+        "input_low_words": [
+          49152,
+          49151,
+          32768
+        ],
+        "output_words": [
+          49152,
+          16383,
+          0
+        ],
+        "output_dwords": [
+          4294950912,
+          16383,
+          0
+        ]
+      }
+    ],
+    "final_state_offset": 17502,
+    "data_segment_sha256": "e4f8ee0bd0cf99dafac04387bbef1c4b8e3cddd99e7554a9460a9792ef4a2434",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "large_origins",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 17920,
+    "state_count": 1,
+    "view_origin_words": [
+      32767,
+      32768,
+      65535
+    ],
+    "states": [
+      {
+        "state_offset": 18014,
+        "coordinate_offsets": [
+          18080,
+          18084,
+          18088
+        ],
+        "input_low_words": [
+          32769,
+          32767,
+          49153
+        ],
+        "output_words": [
+          32769,
+          32767,
+          49153
+        ],
+        "output_dwords": [
+          4294934529,
+          32767,
+          4294950913
+        ]
+      }
+    ],
+    "final_state_offset": 18014,
+    "data_segment_sha256": "013e4ef58d59f08b0baa6e93e6852a8e6cb624faa47f9692aa8b240ea8840acb",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "high_words_replaced",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 18432,
+    "state_count": 1,
+    "view_origin_words": [
+      4951,
+      9320,
+      42330
+    ],
+    "states": [
+      {
+        "state_offset": 18526,
+        "coordinate_offsets": [
+          18592,
+          18596,
+          18600
+        ],
+        "input_low_words": [
+          32768,
+          16383,
+          49152
+        ],
+        "output_words": [
+          0,
+          49151,
+          16384
+        ],
+        "output_dwords": [
+          0,
+          4294950911,
+          16384
+        ]
+      }
+    ],
+    "final_state_offset": 18526,
+    "data_segment_sha256": "650fb99ef2a7136f2e33969a2cd06b54158b672a6643a4ff7d2ceb111d440801",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "three_states",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 18944,
+    "state_count": 3,
+    "view_origin_words": [
+      258,
+      32512,
+      32769
+    ],
+    "states": [
+      {
+        "state_offset": 19038,
+        "coordinate_offsets": [
+          19104,
+          19108,
+          19112
+        ],
+        "input_low_words": [
+          1,
+          65534,
+          16384
+        ],
+        "output_words": [
+          1,
+          32766,
+          16384
+        ],
+        "output_dwords": [
+          1,
+          32766,
+          16384
+        ]
+      },
+      {
+        "state_offset": 19132,
+        "coordinate_offsets": [
+          19198,
+          19202,
+          19206
+        ],
+        "input_low_words": [
+          16382,
+          32769,
+          49153
+        ],
+        "output_words": [
+          49150,
+          32769,
+          16385
+        ],
+        "output_dwords": [
+          4294950910,
+          4294934529,
+          16385
+        ]
+      },
+      {
+        "state_offset": 19226,
+        "coordinate_offsets": [
+          19292,
+          19296,
+          19300
+        ],
+        "input_low_words": [
+          32767,
+          32768,
+          65535
+        ],
+        "output_words": [
+          65535,
+          32768,
+          32767
+        ],
+        "output_dwords": [
+          4294967295,
+          4294934528,
+          32767
+        ]
+      }
+    ],
+    "final_state_offset": 19226,
+    "data_segment_sha256": "63ffbd72dae215c8848ce4a6a76a62fbc7d5533e5dc86794781180382f9b7e7f",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "state_pointer_wrap",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 65440,
+    "state_count": 2,
+    "view_origin_words": [
+      16384,
+      49152,
+      4660
+    ],
+    "states": [
+      {
+        "state_offset": 65534,
+        "coordinate_offsets": [
+          64,
+          68,
+          72
+        ],
+        "input_low_words": [
+          0,
+          16383,
+          16384
+        ],
+        "output_words": [
+          32768,
+          16383,
+          49152
+        ],
+        "output_dwords": [
+          4294934528,
+          16383,
+          4294950912
+        ]
+      },
+      {
+        "state_offset": 92,
+        "coordinate_offsets": [
+          158,
+          162,
+          166
+        ],
+        "input_low_words": [
+          32767,
+          32768,
+          49152
+        ],
+        "output_words": [
+          65535,
+          0,
+          49152
+        ],
+        "output_dwords": [
+          4294967295,
+          0,
+          4294950912
+        ]
+      }
+    ],
+    "final_state_offset": 92,
+    "data_segment_sha256": "6d10045496eb72ae5108037be128d5feffea146d5f29f22ec7e6c98c01f56e21",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_count",
+    "module": "amer",
+    "entry": 2392,
+    "context_offset": 12288,
+    "state_base": 8192,
+    "state_count": 0,
+    "effective_iterations": 65536,
+    "final_state_offset": 8192,
+    "final_output_words": [
+      65535,
+      65535,
+      0
+    ],
+    "checked_bytes_from_ds_base": 65538,
+    "data_segment_sha256": "6ce3bad2cb19768871ec665bdae6a018ef2fd3aa48e6b575b5f9a0a080a3f2c5",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

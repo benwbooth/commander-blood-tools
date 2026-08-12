@@ -2005,6 +2005,27 @@ original `PUSH CX`/`POP DX`; the natural semantics are otherwise complete.
 Turbo C 2.01 emits a 12-instruction stack-argument implementation with the
 same two interrupt operations.
 
+The byte-identical AMER `0x000958`, CROOLIS `0x000999`, and SCRUT `0x000999`
+slot-6 methods wrap all three position coordinates for each 94-byte alien
+state. Eight raw-overlay vectors per sibling cover the positive and negative
+window boundaries, large view origins, input dwords with unrelated high words,
+multiple states, wrapped near-state pointers, full `DS` integrity, sign-extended
+32-bit stores, scratch outputs, final subtraction flags, and near return. The
+method uses only each input dword's low word, maps `position + origin` into
+`[-0x4000,0x3FFF]`, then subtracts the origin and sign-extends the resulting
+word. The natural unsigned modular arithmetic and `do/while` loop preserve that
+logic. The count-zero vector directly proves all 65,536 original `LOOP`
+iterations and compares 65,538 bytes from the `DS` base, including the two bytes
+written past offset `0xFFFF` by a dword store beginning at `0xFFFE`.
+
+Open Watcom `-3 -ox -mm -zdp` compiles the probe and all three actual candidates
+without warnings to 34 instructions/97 bytes versus 31/92 original. Pegging
+`DS` to DGROUP matches the overlay entry invariant and avoids inappropriate
+`SS` overrides. Watcom keeps the low-word loads and stores, modular windowing,
+sign extension, 94-byte traversal, and decrement loop, but uses `BX`, `CWD`,
+split word stores, and `DEC/JNE`; scratch registers and final flags therefore
+differ. Turbo C 2.01 medium emits 56 instructions with a stack argument.
+
 The byte-identical AMER `0x0002F0`, CROOLIS `0x000305`, and SCRUT `0x000305`
 VGA helpers are recovered as natural counted palette and framebuffer clears,
 two page-global assignments, two word-sized VGA control writes, and two
@@ -2083,6 +2104,7 @@ LCS and then mnemonic similarity:
 | `xdb_resume_or_init` | medium, `-ox`, register | 8/9 | 0.1250 | 0.6250 | 0.1250 |
 | `xdb_mouse_position_set` | medium, `-ox`, register | 5/5 | 0.4000 | 1.0000 | 0.6000 |
 | `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
+| `xdb_wrap_positions` | medium, `-ox -zdp`, register | 31/34 | 0.0323 | 0.5484 | 0.0645 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
