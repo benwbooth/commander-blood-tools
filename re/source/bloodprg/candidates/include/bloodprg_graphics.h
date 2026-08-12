@@ -6,5 +6,7 @@
 extern volatile cb_u8 CB_FAR *graphics_work_surface; /* GS:0x0ABC */
 extern volatile cb_u8 CB_FAR *graphics_display_buffer; /* GS:0x5221 */
 extern volatile cb_u8 CB_FAR *graphics_back_buffer; /* GS:0x5229 */
+extern volatile cb_u16 graphics_band_top_row; /* GS:0x5239 */
+extern volatile cb_u16 graphics_band_bottom_row; /* GS:0x523B */
 
 #endif
