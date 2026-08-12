@@ -1068,6 +1068,17 @@ a scalar increment/count loop instead of `REPNE SCASB`, so return values and
 the malformed-input bound match while final flags do not. Turbo C 2.01 medium
 uses a stack far pointer and emits 18 instructions.
 
+VM presentation-register handler `0x0067BA` has six direct vectors proving that
+the DS:SI word load and SI advance precede the gate, only bit zero of
+GS:0x67AC matters, and GS:0x6770 is written only on the active path. Unaligned
+and segment-end operands, AX/SI outputs, segmented decoys, preservation, and
+TEST-derived flags are covered.
+
+Open Watcom `-3 -ox -mm` preserves SI input/result, AX operand, the bit test,
+conditional store, and final flags in 7 instructions/17 bytes versus 5/14
+original. It uses MOV/ADD instead of LODSW and duplicates RET around an inverted
+branch. Turbo C 2.01 medium uses a stack argument and emits 16 instructions.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1107,6 +1118,7 @@ LCS and then mnemonic similarity:
 | `vm_script_jump` | medium, `-ox`, register | 4/8 | 0.2500 | 1.0000 | 0.5000 |
 | `vm_cond_state_array` | medium, `-ox`, register | 13/18 | 0.0769 | 0.4615 | 0.0769 |
 | `strlen_b` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
+| `vm_presentation_register_set` | medium, `-ox`, register | 5/7 | 0.2000 | 0.6000 | 0.2000 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
