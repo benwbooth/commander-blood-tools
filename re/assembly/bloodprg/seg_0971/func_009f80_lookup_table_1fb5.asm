@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: lookup_table_1fb5
-; label_comment: 4-byte-record table accessor (5 calls): bx=0x1fb5 + ax*4 (add bx,ax x4); return word [bx]. Indexes a table of 4-byte records at DS:0x1fb5 by AX, returning the first word. A data-structure lookup helper
+; label_comment: Presentation-line index lookup (5 calls): AX selects a 4-byte DS:0x1fb5 entry and BX receives its first word, a near pointer to the line record. The four ADDs preserve AX and wrap the table offset to 16 bits.
 ; byte_count: 14
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1

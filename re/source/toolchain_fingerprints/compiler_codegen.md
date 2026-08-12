@@ -114,6 +114,22 @@ bytes exactly. Open Watcom 1.9 also emits 21 bytes, but reverses the branch and
 tail-jumps to the close helper instead of retaining the original call/return
 shape.
 
+For `0x009F80`, eight direct-execution cases confirm that AX is an unsigned
+index into the four-byte table at DS:0x1FB5 and BX receives the entry's first
+word, a near presentation-line record pointer. The cases cover 16-bit table
+offset wrap, DS selection against ES/GS decoys, preservation of AX and every
+other register, and all six arithmetic flags left by the fourth ADD. Each of
+the five callers immediately consumes BX; their next instructions are MOV,
+TEST, AND, AND, and PUSH, so none depends on the incidental flags. Open Watcom
+1.9 medium targeting 8086, with a source-level `#pragma aux` declaration for
+the recovered AX-argument/BX-result ABI, emits `MOV BX,AX; SHL BX,1; SHL BX,1;
+MOV BX,[table+BX]; RET`: five instructions and 11 bytes versus the original
+seven instructions and 14 bytes. The function body remains the natural
+`table[index].record` expression. Turbo C 2.01 medium instead passes the index
+on the stack and returns the pointer in AX. The natural source is therefore a
+drop-in logical match under the Watcom ABI declaration, but not an exact code
+shape or an isolated Borland replacement.
+
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
 results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,

@@ -1358,6 +1358,102 @@ def presentation_queue_finish_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_line_lookup_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("first_entry", 0x0000, 0x2069),
+        ("second_entry", 0x0001, 0x207F),
+        ("ordinary_index_nine", 0x0009, 0x1357),
+        ("highest_reachable_word_start", 0x3812, 0x2468),
+        ("stride_wraps_to_first", 0x4000, 0x369C),
+        ("signed_high_bit", 0x8000, 0x48AD),
+        ("addition_overflow", 0x2000, 0x5ABE),
+        ("maximum_index", 0xFFFF, 0x6BCF),
+    ]
+    vectors = []
+
+    def parity_even(value: int) -> int:
+        return int((value & 0xFF).bit_count() % 2 == 0)
+
+    for name, index, record_offset in cases:
+        table_offset = (0x1FB5 + index * 4) & 0xFFFF
+        before_final_add = (0x1FB5 + index * 3) & 0xFFFF
+        full_sum = before_final_add + index
+        initial = {
+            "ax": index,
+            "bx": 0xA55A,
+            "cx": 0x1357,
+            "dx": 0x2468,
+            "si": 0x369C,
+            "di": 0x48AD,
+            "bp": 0x5ABE,
+            "ds": data_segment,
+            "es": 0x3000,
+            "gs": 0x4000,
+            "flags": 0x0ED7,
+        }
+        machine = execute(
+            0x9F80,
+            0x9F8D,
+            initial,
+            [
+                (data_segment, table_offset, struct.pack("<H", record_offset)),
+                (initial["es"], table_offset, struct.pack("<H", 0xDEAD)),
+                (initial["gs"], table_offset, struct.pack("<H", 0xBEEF)),
+            ],
+        )
+
+        actual_bx = machine.reg_read(UC_X86_REG_BX)
+        if actual_bx != record_offset:
+            raise AssertionError(
+                f"0x9F80 {name} bx={actual_bx:#x}, expected={record_offset:#x}"
+            )
+        for register in ("ax", "cx", "dx", "si", "di", "bp", "ds", "es", "gs"):
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != initial[register]:
+                raise AssertionError(f"0x9F80 did not preserve {register}")
+
+        result = full_sum & 0xFFFF
+        expected_flags = {
+            "carry": int(full_sum > 0xFFFF),
+            "parity": parity_even(result),
+            "auxiliary_carry": int(
+                ((before_final_add & 0xF) + (index & 0xF)) > 0xF
+            ),
+            "zero": int(result == 0),
+            "sign": int(bool(result & 0x8000)),
+            "overflow": int(
+                bool((~(before_final_add ^ index) & (before_final_add ^ result)) & 0x8000)
+            ),
+        }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "carry": (flags >> 0) & 1,
+            "parity": (flags >> 2) & 1,
+            "auxiliary_carry": (flags >> 4) & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "overflow": (flags >> 11) & 1,
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9F80 {name} flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "index": index,
+                "table_offset": table_offset,
+                "record_offset": record_offset,
+                "result_bx": actual_bx,
+                "flags_from_final_add": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1414,6 +1510,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a2dd_natural.json",
         presentation_queue_finish_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9f80_natural.json",
+        presentation_line_lookup_vectors(),
         args.check,
     )
     return 0

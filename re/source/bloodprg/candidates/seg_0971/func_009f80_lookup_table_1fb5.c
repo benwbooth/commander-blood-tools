@@ -1,13 +1,21 @@
 #include "../include/bloodprg_common.h"
 
-typedef struct lookup_table_1fb5_entry {
-    cb_u16 value;
-    cb_u16 unknown_02;
-} lookup_table_1fb5_entry;
+typedef struct presentation_line_record {
+    cb_u16 flags;
+} presentation_line_record;
 
-extern const volatile lookup_table_1fb5_entry lookup_table_1fb5_records[]; /* DS:0x1FB5 */
+typedef struct presentation_line_index_entry {
+    presentation_line_record *record;
+    cb_u16 asset_name_offset;
+} presentation_line_index_entry;
 
-cb_u16 CB_NEAR lookup_table_1fb5(cb_u16 index)
+extern volatile presentation_line_index_entry presentation_line_index[]; /* DS:0x1FB5 */
+
+#if defined(__WATCOMC__)
+#pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
+#endif
+
+presentation_line_record *CB_NEAR lookup_table_1fb5(cb_u16 index)
 {
-    return lookup_table_1fb5_records[index].value;
+    return presentation_line_index[index].record;
 }
