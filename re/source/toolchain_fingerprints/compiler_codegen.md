@@ -780,6 +780,23 @@ relocations. Turbo C 2.01 medium emits 19 instructions because it uses stack
 arguments. This candidate can be linked directly without an ABI adapter or
 inline assembly.
 
+VM condition helper `0x006339` has fifteen direct vectors covering random-gate
+pass and short circuit; equality, signed-greater, and inverted signed field
+comparisons; both history algorithms; zero-sentinel failure; isolated mode and
+copy side effects; and a combined cursor-flow case. The duplicate-history case
+exposed and corrected a real pending-C bug: the binary keeps scanning all eight
+history slots after a match, so duplicate slots can satisfy multiple required
+hits for one operand.
+
+The vectors also prove CX, ES:DI, and DS:SI inputs; GS ownership of the field
+table and mode flags; an ES history base; presentation output through
+SS:0x67F8 against GS/DS decoys; CF-only success; immutable inputs; and
+CX/SI/DI/BP plus segment preservation. The natural candidate is now exactly one
+C function. Open Watcom `-3 -ox -mm` binds the three input locations and emits
+142 instructions/355 bytes versus 104/250 original; Turbo C 2.01 medium emits
+179 instructions. Exact integration still needs fixed segment placement, the
+runtime SS=GS alias, and a narrow Boolean-to-carry result adapter.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -800,6 +817,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
+| `vm_condition_5` | medium, `-ox`, register | 104/142 | 0.0577 | 0.5096 | 0.0769 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |

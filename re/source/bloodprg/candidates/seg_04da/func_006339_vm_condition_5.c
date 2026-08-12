@@ -1,26 +1,11 @@
 #include "../include/bloodprg_vm.h"
 
-static cb_u16 vm_condition_word(const cb_u8 *bytes)
-{
-    return *(const cb_u16 *)bytes;
-}
-
-static int vm_condition_word_in_list(cb_u16 word, const cb_u16 *list)
-{
-    while (*list != 0) {
-        if (*list == word) {
-            return 1;
-        }
-        ++list;
-    }
-    return 0;
-}
-
 int CB_NEAR vm_condition_5(cb_u16 flags,
         const volatile cb_u8 CB_FAR *record,
         const cb_u8 *script_bytes)
 {
     const cb_u8 *cursor;
+    const cb_u16 *candidate;
     const cb_u16 *words;
     volatile cb_u16 *out;
     cb_u8 control;
@@ -46,7 +31,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         field_offset = (cb_u8)vm_field_offset_table[
             ((((cb_u16)detail >> 1) & 7u) + 1u) * 16u + 1u];
         record_word = *(const volatile cb_u16 CB_FAR *)(record + field_offset);
-        operand = vm_condition_word(cursor);
+        operand = *(const cb_u16 *)cursor;
         cursor += 2;
 
         if ((control & 0x80u) != 0) {
@@ -75,7 +60,11 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
                 ring_offset = (cb_u8)((vm_blood_history_ring_index - 2u) & 0x0fu);
                 while (count != 0) {
                     history_word = vm_blood_history_words[ring_offset >> 1];
-                    if (!vm_condition_word_in_list(history_word, words)) {
+                    candidate = words;
+                    while (*candidate != history_word && *candidate != 0) {
+                        ++candidate;
+                    }
+                    if (*candidate == 0) {
                         return 0;
                     }
                     ring_offset = (cb_u8)((ring_offset - 2u) & 0x0fu);
@@ -84,7 +73,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
             }
         } else {
             for (;;) {
-                operand = vm_condition_word(cursor);
+                operand = *(const cb_u16 *)cursor;
                 cursor += 2;
                 if (operand == 0 || operand == 0xffffu) {
                     return 0;
@@ -93,7 +82,9 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
                 for (i = 0; i != 8u; ++i) {
                     if (operand == vm_blood_history_words[i]) {
                         --required;
-                        break;
+                        if (required == 0) {
+                            break;
+                        }
                     }
                 }
                 if (required == 0) {
@@ -112,7 +103,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
         cursor = vm_token_special(0xffffu, cursor);
         vm_yield_flag = 1;
         do {
-            *out = vm_condition_word(cursor);
+            *out = *(const cb_u16 *)cursor;
             cursor += 2;
             ++out;
         } while (out[-1] != 0);

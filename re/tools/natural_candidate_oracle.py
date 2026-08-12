@@ -5229,6 +5229,313 @@ def vm_token_special_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_condition_5_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    script_segment = 0x4400
+    record_segment = 0x4800
+    stack_segment = 0x5000
+    record_offset = 0x0800
+    history_offset = 0x2000
+    field_offset = 0x0006
+    cases = [
+        {
+            "name": "no_conditions_succeeds",
+            "control": 0x00,
+            "detail": 0x00,
+            "script": b"\x5a",
+            "success": True,
+        },
+        {
+            "name": "random_gate_zero_succeeds",
+            "control": 0x02,
+            "detail": 0x00,
+            "prng": 0,
+            "script": b"\x5a",
+            "success": True,
+        },
+        {
+            "name": "random_gate_nonzero_short_circuits",
+            "control": 0x32,
+            "detail": 0x00,
+            "prng": 1,
+            "script": b"\xff\xff\x34\x12\x00\x00",
+            "success": False,
+        },
+        {
+            "name": "field_equality_succeeds",
+            "control": 0x04,
+            "detail": 0x01,
+            "record_word": 0x1234,
+            "script": struct.pack("<H", 0x1234),
+            "success": True,
+        },
+        {
+            "name": "field_equality_fails",
+            "control": 0x04,
+            "detail": 0x01,
+            "record_word": 0x1234,
+            "script": struct.pack("<H", 0x5678),
+            "success": False,
+        },
+        {
+            "name": "field_signed_greater_succeeds",
+            "control": 0x04,
+            "detail": 0x00,
+            "record_word": 0x0000,
+            "script": struct.pack("<H", 0xFFFF),
+            "success": True,
+        },
+        {
+            "name": "field_signed_greater_fails",
+            "control": 0x04,
+            "detail": 0x00,
+            "record_word": 0xFFFF,
+            "script": struct.pack("<H", 0x0000),
+            "success": False,
+        },
+        {
+            "name": "field_inverted_order_succeeds",
+            "control": 0x84,
+            "detail": 0x00,
+            "record_word": 0x0000,
+            "script": struct.pack("<H", 0xFFFF),
+            "success": True,
+        },
+        {
+            "name": "history_list_accepts_recent_words",
+            "control": 0x40,
+            "detail": 0x00,
+            "script": b"\xaa\xff\xff" + struct.pack("<3H", 0x1111, 0x2222, 0),
+            "history": [0x2222, 0x1111, 3, 4, 5, 6, 7, 8],
+            "ring_index": 4,
+            "success": True,
+        },
+        {
+            "name": "history_list_rejects_missing_recent_word",
+            "control": 0x40,
+            "detail": 0x00,
+            "script": b"\xaa\xff\xff" + struct.pack("<3H", 0x1111, 0x2222, 0),
+            "history": [0x9999, 0x1111, 3, 4, 5, 6, 7, 8],
+            "ring_index": 4,
+            "success": False,
+        },
+        {
+            "name": "duplicate_history_slots_satisfy_required_count",
+            "control": 0x40,
+            "detail": 0x02,
+            "script": b"\xbb\xff\xff" + struct.pack("<2H", 0x3333, 0),
+            "history": [0x3333, 0x3333, 3, 4, 5, 6, 7, 8],
+            "success": True,
+        },
+        {
+            "name": "required_history_hits_zero_sentinel",
+            "control": 0x40,
+            "detail": 0x03,
+            "script": b"\xbb\xff\xff" + struct.pack("<2H", 0x1111, 0),
+            "history": [0x1111, 2, 3, 4, 5, 6, 7, 8],
+            "success": False,
+        },
+        {
+            "name": "text_word_mode_is_set",
+            "control": 0x20,
+            "detail": 0x00,
+            "script": b"\x5a",
+            "text_mode": 1,
+            "success": True,
+        },
+        {
+            "name": "presentation_words_copy_to_stack_segment",
+            "control": 0x10,
+            "detail": 0x00,
+            "script": b"\xaa\xff\xff" + struct.pack("<3H", 0x1234, 0x5678, 0),
+            "yield_flag": 1,
+            "output": [0x1234, 0x5678, 0],
+            "success": True,
+        },
+        {
+            "name": "combined_cursor_and_side_effect_paths",
+            "control": 0x74,
+            "detail": 0x01,
+            "record_word": 0x2222,
+            "script": (
+                struct.pack("<H", 0x2222)
+                + b"\x99\xff\xff\xff"
+                + struct.pack("<H", 0x3333)
+                + b"\x88\xff\xff\xff"
+                + struct.pack("<2H", 0x4444, 0)
+            ),
+            "history": [0x3333, 2, 3, 4, 5, 6, 7, 8],
+            "text_mode": 1,
+            "yield_flag": 1,
+            "output": [0x4444, 0],
+            "success": True,
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        control = int(case["control"])
+        detail = int(case["detail"])
+        script = bytes(case["script"])
+        script_offset = 0x1000 + case_index * 0x0100
+        history = list(case.get("history", [1, 2, 3, 4, 5, 6, 7, 8]))
+        ring_index = int(case.get("ring_index", 0))
+        record_word = int(case.get("record_word", 0xA55A))
+        prng_result = int(case.get("prng", 0))
+        table_index = ((((detail >> 1) & 7) + 1) * 16 + 1) & 0xFFFF
+        table_offset = (0x6D60 + table_index) & 0xFFFF
+        history_bytes = struct.pack("<8H", *history)
+        initial_stack_output = bytes([0xA5]) * 32
+        initial_game_output = bytes([0xC3]) * 32
+        initial_data_output = bytes([0xD4]) * 32
+        memory = [
+            (0, 0x27E2, b"\xb8" + struct.pack("<H", prng_result) + b"\xcb"),
+            (script_segment, script_offset, script),
+            (
+                record_segment,
+                record_offset + field_offset,
+                struct.pack("<H", record_word),
+            ),
+            (record_segment, history_offset, history_bytes),
+            (game_segment, 0x6744, struct.pack("<H", ring_index)),
+            (
+                game_segment,
+                0x6746,
+                struct.pack("<HH", history_offset, record_segment),
+            ),
+            (game_segment, table_offset, bytes([field_offset])),
+            (script_segment, table_offset, bytes([field_offset ^ 0x3F])),
+            (game_segment, 0x67B9, b"\x00"),
+            (game_segment, 0x67B4, b"\x00"),
+            (stack_segment, 0x67F8, initial_stack_output),
+            (game_segment, 0x67F8, initial_game_output),
+            (script_segment, 0x67F8, initial_data_output),
+        ]
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C30000 | (detail << 8) | control,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | script_offset,
+            "edi": 0xF6F60000 | record_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": script_segment,
+            "es": record_segment,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        prng_calls = []
+
+        def capture_prng(_machine: Uc, address: int, _size: int) -> None:
+            if address == 0x27E2:
+                prng_calls.append(address)
+
+        machine = execute(
+            0x6339,
+            0x6432,
+            initial,
+            memory,
+            code_handler=capture_prng,
+        )
+
+        expected_prng_calls = 1 if control & 0x02 else 0
+        if len(prng_calls) != expected_prng_calls:
+            raise AssertionError(
+                f"0x6339 {name}: prng calls={len(prng_calls)}, "
+                f"expected={expected_prng_calls}"
+            )
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        success = bool(flags & 0x0001)
+        if success != bool(case["success"]):
+            raise AssertionError(
+                f"0x6339 {name}: success={success}, expected={case['success']}"
+            )
+
+        for register in (
+            "ecx",
+            "esi",
+            "edi",
+            "ebp",
+            "sp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+            "ss",
+        ):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(f"0x6339 {name}: changed {register}")
+
+        expected_text_mode = int(case.get("text_mode", 0))
+        expected_yield_flag = int(case.get("yield_flag", 0))
+        if machine.mem_read(game_segment * 16 + 0x67B9, 1)[0] != expected_text_mode:
+            raise AssertionError(f"0x6339 {name}: text-word mode mismatch")
+        if machine.mem_read(game_segment * 16 + 0x67B4, 1)[0] != expected_yield_flag:
+            raise AssertionError(f"0x6339 {name}: yield flag mismatch")
+
+        expected_output_words = list(case.get("output", []))
+        expected_stack_output = bytearray(initial_stack_output)
+        for index, value in enumerate(expected_output_words):
+            struct.pack_into("<H", expected_stack_output, index * 2, value)
+        actual_stack_output = bytes(
+            machine.mem_read(stack_segment * 16 + 0x67F8, 32)
+        )
+        if actual_stack_output != bytes(expected_stack_output):
+            raise AssertionError(f"0x6339 {name}: stack output mismatch")
+        if (
+            bytes(machine.mem_read(game_segment * 16 + 0x67F8, 32))
+            != initial_game_output
+        ):
+            raise AssertionError(f"0x6339 {name}: GS output decoy changed")
+        if (
+            bytes(machine.mem_read(script_segment * 16 + 0x67F8, 32))
+            != initial_data_output
+        ):
+            raise AssertionError(f"0x6339 {name}: DS output decoy changed")
+
+        if (
+            bytes(
+                machine.mem_read(script_segment * 16 + script_offset, len(script))
+            )
+            != script
+        ):
+            raise AssertionError(f"0x6339 {name}: script changed")
+        if (
+            bytes(machine.mem_read(record_segment * 16 + history_offset, 16))
+            != history_bytes
+        ):
+            raise AssertionError(f"0x6339 {name}: history changed")
+        if machine.mem_read(
+            record_segment * 16 + record_offset + field_offset, 2
+        ) != struct.pack("<H", record_word):
+            raise AssertionError(f"0x6339 {name}: record changed")
+        if EXE[0x6432] != 0xC3:
+            raise AssertionError("0x6339: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "control": control,
+                "detail": detail,
+                "prng_result": prng_result if control & 0x02 else None,
+                "script_offset": script_offset,
+                "record_word": record_word if control & 0x04 else None,
+                "history_words": history if control & 0x40 else None,
+                "text_word_list_mode": expected_text_mode,
+                "yield_flag": expected_yield_flag,
+                "presentation_words": expected_output_words,
+                "success_carry": success,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -9780,6 +10087,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_6293_natural.json", vm_token_special_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6339_natural.json", vm_condition_5_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

@@ -50,7 +50,7 @@ extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
-extern volatile cb_u16 vm_presentation_word_buffer[]; /* GS:0x67F8 */
+extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
 extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
@@ -107,6 +107,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
+#pragma aux vm_condition_5 parm [cx] [es di] [si] value [ax] modify exact [ax bx dx]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
