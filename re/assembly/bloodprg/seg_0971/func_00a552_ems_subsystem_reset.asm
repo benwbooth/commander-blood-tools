@@ -6,8 +6,8 @@
 ; seg_off: 0971:0842
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: ems_subsystem_reset
-; label_comment: reset the EMS-banked resource subsystem (2 calls): gs:[0xaa0]=0; gs:[0xdba]=0; [0xd9c]=0xffff. Clears the banked-list active/state pointers to their empty values
+; label: list_d8c_activate_entry
+; label_comment: activate and parse one D8C queue entry from ES:SI with AX=extent and BP=storage segment. Resets entry-local state, handles sd/pl/mm record markers, stores the active far pointer at 0xd94:0xd96, and may consume rejected entries through queue_d8c_consume.
 ; byte_count: 208
 ; boundary: cfg_blocks_24_terminals_5
 ; terminal: jmp 0xa3d0:1, jmp 0xa578:1, jmp 0xa615:1, ret:2

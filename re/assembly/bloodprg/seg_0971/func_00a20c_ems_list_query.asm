@@ -6,8 +6,8 @@
 ; seg_off: 0971:04fc
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: ems_list_query
-; label_comment: query the banked list (2 calls): cmp [0xd96],0 (active ptr); cx=[0xd9a] (count); stc. Reads the list's active/count state for iteration/bounds
+; label: list_d8c_activate_ready
+; label_comment: report carry clear when an entry is already active, or activate the tail entry when queued bytes contain its complete extent. A 0x6d6d link marker bypasses the extent-size check. Calls 0xa552 with AX=extent, ES:SI=payload, and BP selected from 0x0abe or 0x0da8 by resource flag 0x40.
 ; byte_count: 52
 ; boundary: cfg_blocks_8_terminals_1
 ; terminal: ret:1

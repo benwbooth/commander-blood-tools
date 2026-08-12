@@ -104,6 +104,16 @@ preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
 `SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
 and register ABI boundary, not an exact compiler match.
 
+For `0x00A20C`, seven direct cases cover an existing active entry, an empty
+queue, ordinary incomplete/exact/excess extents, the `0x6D6D` link-marker
+bypass, both storage-segment choices, and far-pointer offset wrap. The patched
+activation boundary receives exactly the original AX extent, ES:SI payload
+pointer, and BP storage segment. Open Watcom 1.9 medium emits 32 instructions
+and 79 bytes; Turbo C 2.01 medium emits 56 instructions, versus 18 instructions
+and 52 bytes in the original. The natural far-pointer decision tree is
+verified, but Boolean materialization and typed parameter passing replace the
+original carry result and register-call boundary.
+
 For `0x00A2DD`, six direct-execution cases confirm the unconditional queue-state
 bit 0 update, the zero-count-only bit 1 update and close-helper call, preservation
 of the other state bits and storage, helper-derived BX/CX effects, and final

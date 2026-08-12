@@ -17,7 +17,8 @@ extern volatile cb_u16 list_d8c_head_segment;      /* GS:0x0D8E */
 extern volatile cb_u16 list_d8c_tail_offset;       /* GS:0x0D90 */
 extern volatile cb_u16 list_d8c_tail_segment;      /* GS:0x0D92 */
 extern volatile cb_u16 CB_FAR *list_d8c_tail_pointer; /* DS:0x0D90 */
-extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D96 */
+extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D94 */
+extern volatile cb_u16 list_d8c_active_segment;    /* GS:0x0D96 */
 extern volatile cb_u16 list_d8c_wrap_limit;        /* GS:0x0D98 */
 extern volatile cb_u16 list_d8c_byte_count;        /* game data:0x0D9A */
 extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
@@ -25,10 +26,16 @@ extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */
 extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
 extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
 extern volatile cb_u8 CB_FAR list_d8c_buffer[];    /* segment at 0x0A7E */
+extern volatile cb_u16 list_d8c_default_entry_segment; /* GS:0x0ABE */
+extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
 
 void CB_NEAR close_file_d5b(void);              /* 0x00A141 */
 volatile cb_u8 CB_FAR *CB_NEAR resource_palette_blocks_apply(
         volatile cb_u8 CB_FAR *stream);          /* 0x00A0C3 */
+int CB_NEAR list_d8c_activate_ready(void);      /* 0x00A20C */
+void CB_NEAR list_d8c_activate_entry(cb_u16 entry_extent,
+        volatile cb_u16 CB_FAR *entry,
+        cb_u16 storage_segment);                /* 0x00A552 */
 void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
 int CB_NEAR list_d8c_read(cb_u16 *entry_extent,
         cb_u16 *cursor_offset);                  /* 0x00A622 */

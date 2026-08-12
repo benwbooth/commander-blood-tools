@@ -1248,6 +1248,240 @@ def list_read_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_activate_ready_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    buffer_segment = 0x3000
+    cases = [
+        {
+            "name": "already_active",
+            "active_segment": 0x3456,
+            "queued": 0,
+            "extent": 0x1111,
+            "marker": 0x2222,
+            "tail": 0x0100,
+            "flags": 0,
+            "activate": False,
+            "ready": True,
+        },
+        {
+            "name": "empty_queue",
+            "active_segment": 0,
+            "queued": 0,
+            "extent": 0x1111,
+            "marker": 0x2222,
+            "tail": 0x0200,
+            "flags": 0,
+            "activate": False,
+            "ready": False,
+        },
+        {
+            "name": "ordinary_incomplete",
+            "active_segment": 0,
+            "queued": 19,
+            "extent": 20,
+            "marker": 0x1234,
+            "tail": 0x0300,
+            "flags": 0,
+            "activate": False,
+            "ready": False,
+        },
+        {
+            "name": "ordinary_exact_default_storage",
+            "active_segment": 0,
+            "queued": 20,
+            "extent": 20,
+            "marker": 0x1234,
+            "tail": 0x0400,
+            "flags": 0,
+            "activate": True,
+            "ready": True,
+        },
+        {
+            "name": "ordinary_extra_alternate_storage",
+            "active_segment": 0,
+            "queued": 21,
+            "extent": 20,
+            "marker": 0x4321,
+            "tail": 0x0500,
+            "flags": 0x40,
+            "activate": True,
+            "ready": True,
+        },
+        {
+            "name": "link_marker_bypasses_extent_check",
+            "active_segment": 0,
+            "queued": 2,
+            "extent": 0x1000,
+            "marker": 0x6D6D,
+            "tail": 0x0600,
+            "flags": 0x40,
+            "activate": True,
+            "ready": True,
+        },
+        {
+            "name": "tail_offset_wrap",
+            "active_segment": 0,
+            "queued": 8,
+            "extent": 8,
+            "marker": 0x6D6D,
+            "tail": 0xFFFE,
+            "flags": 0,
+            "activate": True,
+            "ready": True,
+        },
+    ]
+    vectors = []
+    default_segment = 0x4567
+    alternate_segment = 0x5678
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        active_segment = int(case["active_segment"])
+        queued = int(case["queued"])
+        extent = int(case["extent"])
+        marker = int(case["marker"])
+        tail = int(case["tail"])
+        resource_flags = int(case["flags"])
+        should_activate = bool(case["activate"])
+        ready = bool(case["ready"])
+        calls: list[dict[str, int | str]] = []
+        initial = {
+            "eax": 0xA5A50000 | case_index,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000,
+            "gs": data_segment,
+            "flags": 0x0202,
+        }
+        buffer = bytearray([0xCC]) * 0x10000
+        struct.pack_into("<H", buffer, tail, extent)
+        struct.pack_into("<H", buffer, (tail + 2) & 0xFFFF, marker)
+
+        def code_handler(
+            machine: Uc,
+            address: int,
+            _size: int,
+            call_log: list[dict[str, int | str]] = calls,
+        ) -> None:
+            if address == 0xA23A:
+                call_log.append(
+                    {
+                        "call": "activate",
+                        "extent": machine.reg_read(UC_X86_REG_AX),
+                        "entry_segment": machine.reg_read(UC_X86_REG_ES),
+                        "entry_offset": machine.reg_read(UC_X86_REG_SI),
+                        "storage_segment": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+
+        machine = execute(
+            0xA20C,
+            0xA23F,
+            initial,
+            [
+                (0, 0xA23A, b"\x90" * 3),
+                (data_segment, 0x0ABE, struct.pack("<H", default_segment)),
+                (data_segment, 0x0D76, struct.pack("<H", resource_flags)),
+                (data_segment, 0x0D90, struct.pack("<HH", tail, buffer_segment)),
+                (data_segment, 0x0D94, struct.pack("<H", 0x2468)),
+                (data_segment, 0x0D96, struct.pack("<H", active_segment)),
+                (data_segment, 0x0D9A, struct.pack("<H", queued)),
+                (data_segment, 0x0DA8, struct.pack("<H", alternate_segment)),
+                (buffer_segment, 0, bytes(buffer)),
+            ],
+            code_handler=code_handler,
+        )
+
+        expected_calls = []
+        if should_activate:
+            expected_calls.append(
+                {
+                    "call": "activate",
+                    "extent": extent,
+                    "entry_segment": buffer_segment,
+                    "entry_offset": (tail + 2) & 0xFFFF,
+                    "storage_segment": (
+                        alternate_segment
+                        if resource_flags & 0x40
+                        else default_segment
+                    ),
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0xA20C {name} calls={calls}, expected={expected_calls}"
+            )
+
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not ready):
+            raise AssertionError(
+                f"0xA20C {name} carry={carry}, expected={int(not ready)}"
+            )
+        expected_ax = initial["eax"]
+        expected_cx = initial["cx"]
+        expected_es = initial["es"]
+        expected_si = initial["si"]
+        expected_bp = initial["bp"]
+        if active_segment == 0:
+            expected_cx = queued
+            if queued != 0:
+                expected_ax = (initial["eax"] & 0xFFFF0000) | (
+                    0 if should_activate else extent
+                )
+                expected_es = buffer_segment
+                expected_si = (tail + 2) & 0xFFFF
+                if should_activate:
+                    expected_bp = expected_calls[0]["storage_segment"]
+        expected_registers = {
+            "eax": expected_ax,
+            "bx": initial["bx"],
+            "cx": expected_cx,
+            "dx": initial["dx"],
+            "si": expected_si,
+            "di": initial["di"],
+            "bp": expected_bp,
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": expected_es,
+            "gs": initial["gs"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xA20C {name} {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        if machine.mem_read(
+            buffer_segment * 16, 0x10000
+        ) != bytes(buffer):
+            raise AssertionError(f"0xA20C {name} modified the queue buffer")
+
+        vectors.append(
+            {
+                "name": name,
+                "ready": ready,
+                "active_segment": active_segment,
+                "queued_bytes": queued,
+                "entry_extent": extent,
+                "entry_marker": marker,
+                "resource_flags": resource_flags,
+                "calls": calls,
+                "result_carry": carry,
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+            }
+        )
+
+    return vectors
+
+
 def banked_list_load_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     buffer_segment = 0x3000
@@ -3744,6 +3978,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a622_natural.json", list_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a20c_natural.json",
+        list_d8c_activate_ready_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_a642_natural.json",

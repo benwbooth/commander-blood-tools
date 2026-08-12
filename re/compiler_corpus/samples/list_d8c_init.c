@@ -17,7 +17,7 @@ extern volatile u16 list_d8c_tail_offset;
 extern volatile u16 list_d8c_tail_segment;
 extern volatile u16 list_d8c_byte_count;
 extern u16 list_d8c_iteration_count;
-extern volatile u16 list_d8c_active_offset;
+extern volatile u16 list_d8c_active_segment;
 extern volatile u16 list_d8c_wrap_limit;
 extern volatile u16 list_d8c_buffer_end_offset;
 
@@ -33,6 +33,6 @@ void FAR list_d8c_init_probe(void)
     list_d8c_tail_offset = 0;
     list_d8c_byte_count = 0;
     list_d8c_iteration_count = 0;
-    list_d8c_active_offset = 0;
+    list_d8c_active_segment = 0;
     list_d8c_wrap_limit = list_d8c_buffer_end_offset;
 }

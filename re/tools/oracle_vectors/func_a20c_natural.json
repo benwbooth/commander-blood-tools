@@ -1,0 +1,118 @@
+[
+  {
+    "name": "already_active",
+    "ready": true,
+    "active_segment": 13398,
+    "queued_bytes": 0,
+    "entry_extent": 4369,
+    "entry_marker": 8738,
+    "resource_flags": 0,
+    "calls": [],
+    "result_carry": 0,
+    "result_ax": 0
+  },
+  {
+    "name": "empty_queue",
+    "ready": false,
+    "active_segment": 0,
+    "queued_bytes": 0,
+    "entry_extent": 4369,
+    "entry_marker": 8738,
+    "resource_flags": 0,
+    "calls": [],
+    "result_carry": 1,
+    "result_ax": 1
+  },
+  {
+    "name": "ordinary_incomplete",
+    "ready": false,
+    "active_segment": 0,
+    "queued_bytes": 19,
+    "entry_extent": 20,
+    "entry_marker": 4660,
+    "resource_flags": 0,
+    "calls": [],
+    "result_carry": 1,
+    "result_ax": 20
+  },
+  {
+    "name": "ordinary_exact_default_storage",
+    "ready": true,
+    "active_segment": 0,
+    "queued_bytes": 20,
+    "entry_extent": 20,
+    "entry_marker": 4660,
+    "resource_flags": 0,
+    "calls": [
+      {
+        "call": "activate",
+        "extent": 20,
+        "entry_segment": 12288,
+        "entry_offset": 1026,
+        "storage_segment": 17767
+      }
+    ],
+    "result_carry": 0,
+    "result_ax": 0
+  },
+  {
+    "name": "ordinary_extra_alternate_storage",
+    "ready": true,
+    "active_segment": 0,
+    "queued_bytes": 21,
+    "entry_extent": 20,
+    "entry_marker": 17185,
+    "resource_flags": 64,
+    "calls": [
+      {
+        "call": "activate",
+        "extent": 20,
+        "entry_segment": 12288,
+        "entry_offset": 1282,
+        "storage_segment": 22136
+      }
+    ],
+    "result_carry": 0,
+    "result_ax": 0
+  },
+  {
+    "name": "link_marker_bypasses_extent_check",
+    "ready": true,
+    "active_segment": 0,
+    "queued_bytes": 2,
+    "entry_extent": 4096,
+    "entry_marker": 28013,
+    "resource_flags": 64,
+    "calls": [
+      {
+        "call": "activate",
+        "extent": 4096,
+        "entry_segment": 12288,
+        "entry_offset": 1538,
+        "storage_segment": 22136
+      }
+    ],
+    "result_carry": 0,
+    "result_ax": 0
+  },
+  {
+    "name": "tail_offset_wrap",
+    "ready": true,
+    "active_segment": 0,
+    "queued_bytes": 8,
+    "entry_extent": 8,
+    "entry_marker": 28013,
+    "resource_flags": 0,
+    "calls": [
+      {
+        "call": "activate",
+        "extent": 8,
+        "entry_segment": 12288,
+        "entry_offset": 0,
+        "storage_segment": 17767
+      }
+    ],
+    "result_carry": 0,
+    "result_ax": 0
+  }
+]
