@@ -6,6 +6,8 @@
 ; seg_off: 04da:21b7
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_op_04_mark_b16
+; label_comment: Byte-parser opcode 0x04 sets GS:0x0B16 to one and returns without changing registers or flags. It is byte-identical to the handlers for opcodes 0x01, 0x02, and 0x0F.
 ; incoming: byte_parser_dispatch_74e5:byte_0x04
 ; byte_count: 7
 ; boundary: cfg_blocks_1_terminals_1

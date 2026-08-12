@@ -1,0 +1,24 @@
+[
+  {
+    "name": "already_set",
+    "entry": "0x007542",
+    "dispatch_opcode": "0x01",
+    "flag_before": 1,
+    "flag_after": 1,
+    "code_bytes": "65c606160b01c3",
+    "stack_pointer_before": 65280,
+    "stack_pointer_after": 65282,
+    "registers_and_flags_preserved": true
+  },
+  {
+    "name": "overwrite_marker",
+    "entry": "0x007542",
+    "dispatch_opcode": "0x01",
+    "flag_before": 165,
+    "flag_after": 1,
+    "code_bytes": "65c606160b01c3",
+    "stack_pointer_before": 65280,
+    "stack_pointer_after": 65282,
+    "registers_and_flags_preserved": true
+  }
+]

@@ -1337,6 +1337,20 @@ instead of DI plus STOSW, and addresses globals through DS. Exact integration
 still needs fixed GS placement and the original frameless AX/BX/CX/DI
 allocation.
 
+Byte-parser handlers `0x007542`, `0x007549`, `0x007550`, and `0x007557` are
+byte-identical entry points for opcodes 0x01, 0x02, 0x0F, and 0x04. Two direct
+vectors per entry execute through RET and prove the exact seven-byte body,
+constant overwrite of GS:0x0B16, DS and SS decoy preservation, unchanged
+registers, segments, and flags, and the two-byte near-return stack advance.
+
+Each one-to-one candidate is the same natural volatile assignment. Open Watcom
+`-3 -ox -mm` compiles all four without warnings to the same two instructions
+and six bytes; Turbo C 2.01 medium emits the same two mnemonics. The original's
+seventh byte is the GS override, while both standalone probes address the
+unresolved global through DS. The C logic and instruction shape are settled,
+but direct integration requires a GS-qualified data mechanism or a minimal
+one-instruction boundary because DS owns the parser stream at these entries.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1392,6 +1406,7 @@ LCS and then mnemonic similarity:
 | `vm_c7_record_match` | medium, `-ox`, register | 39/49 | 0.0769 | 0.6154 | 0.1026 |
 | `vm_c8_record_match` | medium, `-ox`, register | 34/32 | 0.0294 | 0.5294 | 0.0294 |
 | `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
+| `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 

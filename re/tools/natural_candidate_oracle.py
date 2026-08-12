@@ -14586,6 +14586,86 @@ def vm_c9_clear_record_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def byte_parser_mark_b16_vectors(entry: int, opcode: int) -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    expected_code = bytes.fromhex("65c606160b01c3")
+    vectors = []
+
+    if EXE[entry : entry + len(expected_code)] != expected_code:
+        raise AssertionError(f"{entry:#x}: unexpected handler bytes")
+
+    for name, initial_flag in (("already_set", 1), ("overwrite_marker", 0xA5)):
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        stack_sentinel = bytes.fromhex("5aa59669")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0x0B16, bytes([initial_flag])),
+                (data_segment, 0x0B16, b"\x5a"),
+                (stack_segment, 0x0B16, b"\xa5"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+                (0, return_address, b"\xcc"),
+            ],
+        )
+
+        if machine.mem_read(game_segment * 16 + 0x0B16, 1) != b"\x01":
+            raise AssertionError(f"{entry:#x} {name}: GS flag was not set")
+        if machine.mem_read(data_segment * 16 + 0x0B16, 1) != b"\x5a":
+            raise AssertionError(f"{entry:#x} {name}: DS decoy changed")
+        if machine.mem_read(stack_segment * 16 + 0x0B16, 1) != b"\xa5":
+            raise AssertionError(f"{entry:#x} {name}: SS decoy changed")
+        for register, expected in initial.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{entry:#x} {name}: near RET did not consume return word")
+        actual_sentinel = bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4))
+        if actual_sentinel != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "entry": f"0x{entry:06x}",
+                "dispatch_opcode": f"0x{opcode:02x}",
+                "flag_before": initial_flag,
+                "flag_after": 1,
+                "code_bytes": expected_code.hex(),
+                "stack_pointer_before": 0xFF00,
+                "stack_pointer_after": 0xFF02,
+                "registers_and_flags_preserved": True,
+            }
+        )
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -19311,6 +19391,26 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6fb9_natural.json",
         vm_c9_clear_record_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7542_natural.json",
+        byte_parser_mark_b16_vectors(0x7542, 0x01),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7549_natural.json",
+        byte_parser_mark_b16_vectors(0x7549, 0x02),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7550_natural.json",
+        byte_parser_mark_b16_vectors(0x7550, 0x0F),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7557_natural.json",
+        byte_parser_mark_b16_vectors(0x7557, 0x04),
         args.check,
     )
     update_vector(

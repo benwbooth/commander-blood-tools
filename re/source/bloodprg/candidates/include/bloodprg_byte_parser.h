@@ -30,6 +30,18 @@ extern volatile char *byte_parser_table_131a_cursor; /* GS:0x131A */
 extern volatile cb_u8 byte_parser_table_131e_count; /* GS:0x131E */
 extern volatile char *byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
 
+#if defined(__WATCOMC__)
+#pragma aux byte_parser_op_01_mark_b16 modify exact []
+#pragma aux byte_parser_op_02_mark_b16 modify exact []
+#pragma aux byte_parser_op_0f_mark_b16 modify exact []
+#pragma aux byte_parser_op_04_mark_b16 modify exact []
+#endif
+
+void CB_NEAR byte_parser_op_01_mark_b16(void); /* 0x007542 */
+void CB_NEAR byte_parser_op_02_mark_b16(void); /* 0x007549 */
+void CB_NEAR byte_parser_op_0f_mark_b16(void); /* 0x007550 */
+void CB_NEAR byte_parser_op_04_mark_b16(void); /* 0x007557 */
+
 void CB_FAR path_build_call_2693(const volatile char *path); /* 0x01CE:0712 */
 void CB_FAR file_open_wrapper(const volatile char *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0621 */
