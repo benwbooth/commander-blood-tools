@@ -50,6 +50,7 @@ REGISTERS = {
     "ds": UC_X86_REG_DS,
     "es": UC_X86_REG_ES,
     "gs": UC_X86_REG_GS,
+    "flags": UC_X86_REG_EFLAGS,
 }
 
 
@@ -976,6 +977,96 @@ def list_init_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def mem_copy_words_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("disjoint", 0x0100, 0x0200),
+        ("same_pointer", 0x0100, 0x0100),
+        ("forward_overlap", 0x0100, 0x0102),
+        ("backward_overlap", 0x0102, 0x0100),
+        ("source_offset_wrap", 0xFFFC, 0x0200),
+        ("destination_offset_wrap", 0x0100, 0xFFFC),
+    ]
+    vectors = []
+
+    def read_word(buffer: bytearray, offset: int) -> int:
+        low = buffer[offset]
+        high = buffer[(offset + 1) & 0xFFFF]
+        return low | high << 8
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        buffer[offset] = value & 0xFF
+        buffer[(offset + 1) & 0xFFFF] = value >> 8
+
+    for name, source_offset, destination_offset in cases:
+        initial_memory = bytearray((index * 37 + 11) & 0xFF for index in range(0x10000))
+        source_words = (0x1122, 0x3344, 0x5566, 0x7788)
+        for index, value in enumerate(source_words):
+            write_word(initial_memory, (source_offset + index * 2) & 0xFFFF, value)
+
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": source_offset,
+            "di": destination_offset,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": 0x2C00,
+            "flags": 0x0AD7,
+        }
+        machine = execute(
+            0xA7E6,
+            0xA7EC,
+            initial,
+            [(data_segment, 0, bytes(initial_memory))],
+        )
+
+        expected_memory = bytearray(initial_memory)
+        copied_words = []
+        for index in range(4):
+            source = (source_offset + index * 2) & 0xFFFF
+            destination = (destination_offset + index * 2) & 0xFFFF
+            value = read_word(expected_memory, source)
+            copied_words.append(value)
+            write_word(expected_memory, destination, value)
+        actual_memory = bytes(
+            machine.mem_read(data_segment * 16, len(expected_memory))
+        )
+        if actual_memory != bytes(expected_memory):
+            raise AssertionError(f"0xA7E6 {name} produced unexpected memory")
+
+        expected_registers = dict(initial)
+        expected_registers["si"] = (source_offset + 8) & 0xFFFF
+        expected_registers["di"] = (destination_offset + 8) & 0xFFFF
+        expected_registers["es"] = data_segment
+        for register, value in expected_registers.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(
+                        f"0xA7E6 {name} {register}={actual_register:#x}, "
+                        f"expected={value:#x}"
+                    )
+
+        vectors.append(
+            {
+                "name": name,
+                "source_offset": source_offset,
+                "destination_offset": destination_offset,
+                "copied_words_in_order": copied_words,
+                "result_source_offset": expected_registers["si"],
+                "result_destination_offset": expected_registers["di"],
+                "result_es": data_segment,
+                "preserved_flags": expected_registers["flags"],
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1019,6 +1110,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a757_natural.json", list_init_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a7e6_natural.json", mem_copy_words_vectors(), args.check
     )
     return 0
 

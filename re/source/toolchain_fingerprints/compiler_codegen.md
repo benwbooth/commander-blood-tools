@@ -144,6 +144,22 @@ callers execute PUSH CS before a near CALL, independently confirming the
 natural candidate's far-return declaration. Turbo C 2.01 emits 13 instructions
 because it saves SI for the base-segment temporary.
 
+For `0x00A7E6`, six direct-execution cases under the C ABI's clear direction
+flag confirm four sequential forward word copies, deterministic overlap
+behavior, 16-bit SI/DI offset wrapping, ES=DS, preserved AX/BX/CX/DX/BP, and
+preserved flags. The caller at `0x00A32F` immediately
+executes `MOVSB`, proving that the helper's eight-byte pointer advancement is
+part of its assembly boundary and forms a nine-byte record copy there. Open
+Watcom 1.9 medium with an explicit DI/SI ABI declaration emits a fixed eight-byte
+structure assignment as seven instructions and 12 bytes using `REP MOVSW`.
+Targeting 8086 for speed with stack checks disabled instead emits four unrolled
+`MOVSW` instructions and a near return in nine bytes. That is the closest tested
+natural formulation, but its four-byte `MOV AX,DS` / `MOV ES,AX` setup replaces
+the original two-byte `PUSH DS` / `POP ES` pair and clobbers AX. Turbo C 2.01
+medium calls its far `SCOPY@` runtime. The routine is therefore classified as a
+fixed-record compiler/helper boundary with a behaviorally verified natural C
+body, not as exact compiler-generated source.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

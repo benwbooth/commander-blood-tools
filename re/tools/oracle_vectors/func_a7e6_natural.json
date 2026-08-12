@@ -1,0 +1,92 @@
+[
+  {
+    "name": "disjoint",
+    "source_offset": 256,
+    "destination_offset": 512,
+    "copied_words_in_order": [
+      4386,
+      13124,
+      21862,
+      30600
+    ],
+    "result_source_offset": 264,
+    "result_destination_offset": 520,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  },
+  {
+    "name": "same_pointer",
+    "source_offset": 256,
+    "destination_offset": 256,
+    "copied_words_in_order": [
+      4386,
+      13124,
+      21862,
+      30600
+    ],
+    "result_source_offset": 264,
+    "result_destination_offset": 264,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  },
+  {
+    "name": "forward_overlap",
+    "source_offset": 256,
+    "destination_offset": 258,
+    "copied_words_in_order": [
+      4386,
+      4386,
+      4386,
+      4386
+    ],
+    "result_source_offset": 264,
+    "result_destination_offset": 266,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  },
+  {
+    "name": "backward_overlap",
+    "source_offset": 258,
+    "destination_offset": 256,
+    "copied_words_in_order": [
+      4386,
+      13124,
+      21862,
+      30600
+    ],
+    "result_source_offset": 266,
+    "result_destination_offset": 264,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  },
+  {
+    "name": "source_offset_wrap",
+    "source_offset": 65532,
+    "destination_offset": 512,
+    "copied_words_in_order": [
+      4386,
+      13124,
+      21862,
+      30600
+    ],
+    "result_source_offset": 4,
+    "result_destination_offset": 520,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  },
+  {
+    "name": "destination_offset_wrap",
+    "source_offset": 256,
+    "destination_offset": 65532,
+    "copied_words_in_order": [
+      4386,
+      13124,
+      21862,
+      30600
+    ],
+    "result_source_offset": 264,
+    "result_destination_offset": 4,
+    "result_es": 8192,
+    "preserved_flags": 2775
+  }
+]

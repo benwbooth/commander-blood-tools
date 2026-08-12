@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: mem_copy_words
-; label_comment: word-block copy (2 calls): rep-style movsw es:[di]<-[si]. Copies N words between buffers
+; label_comment: four-word forward-copy helper (2 calls): ES=DS, then four MOVSW operations copy DS:SI to ES:DI and advance SI/DI by 8
 ; byte_count: 7
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1
