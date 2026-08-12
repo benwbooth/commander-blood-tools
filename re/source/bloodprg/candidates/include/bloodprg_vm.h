@@ -15,8 +15,10 @@ extern volatile char vm_load_string_buffer[]; /* GS:0x2120 */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
 extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
+extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
+extern volatile cb_u8 CB_FAR *vm_secondary_record; /* GS:0x6752 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
@@ -32,6 +34,7 @@ extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
+cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_branch_fail(void);           /* 0x006462 */
 
 #endif
