@@ -4,9 +4,18 @@
 #include "bloodprg_common.h"
 
 extern volatile cb_u8 byte_parser_b16_flag;  /* GS:0x0B16 */
+extern volatile char byte_parser_table_2460[]; /* GS:0x2460 */
+extern volatile char byte_parser_table_247a[]; /* GS:0x247A */
+extern volatile char byte_parser_line_name[]; /* GS:0x24C6 */
 extern volatile char byte_parser_text_20b8[]; /* GS:0x20B8 */
 extern volatile char credit_text_buffer[];   /* GS:0x0E18 */
 extern volatile cb_u8 credit_reveal_active;  /* GS:0x5E64 */
 extern volatile cb_u16 credit_reveal_timer;  /* GS:0x5E58 */
+extern volatile cb_u16 byte_parser_word_1fa5; /* GS:0x1FA5 */
+extern volatile char *byte_parser_detail_cursor; /* GS:0x1FAD */
+extern volatile cb_u16 *byte_parser_asset_cursor; /* GS:0x1FAF */
+extern volatile char *byte_parser_table_131a_cursor; /* GS:0x131A */
+extern volatile cb_u8 byte_parser_table_131e_count; /* GS:0x131E */
+extern volatile char *byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
 
 #endif
