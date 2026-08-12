@@ -39,12 +39,36 @@ configuration was unoptimized huge model with its default register convention.
 Its main positive signal is ABI shape: simple functions naturally receive
 arguments in registers and can omit a stack frame.
 
-Turbo C produced the same four-mnemonic sequence as the trivial
+In the initial ten-probe matrix, Turbo C produced the same four-mnemonic sequence as the trivial
 `segment_global_gate` probe in 11 configurations, but only one of four
 canonicalized instructions matched because the segment/global operand and call
 target form differed. No other probe supplied a close instruction match. Turbo
 C's `-S` output does not include encoded bytes, so byte equality was not scored
 for those listings.
+
+## Recovered-source follow-up
+
+Two later recovered functions provide a stronger positive result for Turbo C
+2.01 in the medium memory model with `-O -Z`:
+
+| routine | source operations | original bytes | Turbo OMF result |
+| --- | ---: | ---: | --- |
+| `0x00A73E list_d8c_bounds_init` | four direct word stores plus `ret` | 25 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, 14, and 20 |
+| `0x00A744 list_d8c_wrap_bounds_reset` | three direct word stores plus `ret` | 19 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, and 14 |
+
+The object payloads contain zero placeholders where the original has
+`0x0D60`, `0x0D62`, `0x0D64`, and `0x0D66`; the adjacent FIXUPP records cover
+exactly those words. Binding the four external globals to their recovered data
+offsets therefore supplies the original instruction bytes. The two entrypoints
+share the tail beginning at `0x00A744`, so reproducing their overlapping linked
+layout remains a separate translation-unit/linker problem.
+
+Open Watcom 1.9 medium instead materializes zero and `0xFFFF` in AX before
+storing, producing 18-byte and 15-byte routines that clobber AX and flags. It
+does not match these routines. Turbo C and Watcom medium both preserve the core
+signed subtract/compare order of the `0x008269` and `0x008295` hit tests, but
+neither reproduces their live SI/BP pointer ABI or the latter routine's carry
+return from ordinary C declarations.
 
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
@@ -70,9 +94,11 @@ LCS and then mnemonic similarity:
 
 ## Interpretation
 
-These results reject Turbo C 2.00/2.01 as the default assumed compiler for the
-tested natural-C formulations and ABI shapes. They do not prove that no code in
-the executable came from Turbo C or from hand-written assembly.
+The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
+tested formulations and ABI shapes. The exact medium-model initializer results
+show that Turbo C 2.01 remains a viable generator for at least some recovered
+translation units. They do not identify the whole executable's compiler or
+exclude hand-written assembly.
 
 Open Watcom 1.9 is a better structural lead because its default register ABI
 resembles many recovered entry conventions, but it is not an exact match and is

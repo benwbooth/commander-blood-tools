@@ -6,6 +6,9 @@
 ; seg_off: 0971:0a34
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: list_d8c_wrap_bounds_reset
+; label_comment: shared tail of list_d8c_bounds_init; independently called at 0xa304 to reset the write-wrap count and both read-wrap limits while preserving AX
+; incoming: call@0x00a304->0971:0a34
 ; byte_count: 19
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1
