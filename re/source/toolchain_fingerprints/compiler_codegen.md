@@ -914,6 +914,27 @@ instead of LODSW and CALL/shared-RET. Exact integration needs fixed GS placement
 and the original call boundary, but the comparison logic and register data flow
 need no assembly.
 
+VM tagged-byte-pair comparison `0x006510` has eighteen direct vectors covering
+every F1 lexicographic signed-greater path, every F2 signed-less path, default
+pair equality and mismatch, strict equal boundaries, signed overflow in either
+component, unaligned input, and a padding-word read spanning the segment end.
+They prove the packed low/high byte order, five-byte DS:SI consumption, separate
+GS comparison globals at `0x0AA8` and `0x0AAA`, the real branch-helper effects,
+pass-path AX/BX/DL/SI and flags, failure-path helper outputs, preservation,
+immutable input, and near return.
+
+A natural two-byte union plus explicit high-then-low branches avoids shifts and
+duplicate comparisons. Open Watcom `-3 -ox -mm` emits 27 instructions/81 bytes
+versus 28/73 original, including DL tag retention, direct signed AH/AL compares,
+and the same decision topology; Turbo C 2.01 medium emits 48 instructions. The
+remaining data-flow difference is bounded: optimizing C skips the otherwise
+unused padding load and therefore retains the pair in AX, while the binary loads
+the pair into BX and padding into AX. Both VM dispatchers observe SI after the
+handler and overwrite AL/BX before their next use. Exact integration still
+needs fixed GS placement and the original CALL/shared-RET boundary; reproducing
+the incidental padding load would require an ABI adapter or a non-natural
+volatile read, so it is intentionally not hidden inside the C logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -945,6 +966,7 @@ LCS and then mnemonic similarity:
 | `vm_clear_state` | medium, `-ox`, register | 3/5 | 0.3333 | 1.0000 | 0.3333 |
 | `vm_record_string_copy` | medium, `-ox`, register | 13/20 | 0.2308 | 0.6923 | 0.3846 |
 | `vm_tagged_word_compare` | medium, `-ox`, register | 17/17 | 0.0588 | 0.5294 | 0.2941 |
+| `vm_tagged_byte_pair_compare` | medium, `-ox`, register | 28/27 | 0.0357 | 0.7500 | 0.1071 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

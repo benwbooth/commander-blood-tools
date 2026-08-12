@@ -1,46 +1,54 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR vm_op_cb_compare_byte(const cb_u8 **script_bytes)
+typedef union bloodprg_vm_compare_pair {
+    cb_u16 word;
+    struct {
+        cb_i8 low;
+        cb_i8 high;
+    } bytes;
+} bloodprg_vm_compare_pair;
+
+const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
+    const cb_u8 CB_NEAR *script_bytes)
 {
     cb_u8 tag;
-    cb_u16 pair;
-    cb_i8 high;
-    cb_i8 low;
-    cb_i8 compare_high;
-    cb_i8 compare_low;
-    int pass;
+    bloodprg_vm_compare_pair pair;
 
-    tag = **script_bytes;
-    ++*script_bytes;
-    pair = *(const cb_u16 *)*script_bytes;
-    *script_bytes += 4;
-
-    high = (cb_i8)(pair >> 8);
-    low = (cb_i8)(pair & 0xffu);
-    compare_high = vm_compare_pair_high;
-    compare_low = vm_compare_pair_low;
+    tag = *script_bytes++;
+    pair.word = *(const cb_u16 CB_NEAR *)script_bytes;
+    script_bytes += 4;
 
     if (tag == 0xf1u) {
-        if (high > compare_high) {
-            pass = 1;
-        } else if (high < compare_high) {
-            pass = 0;
-        } else {
-            pass = low > compare_low;
+        if (pair.bytes.high < vm_compare_pair_high) {
+            goto failed;
         }
+        if (pair.bytes.high > vm_compare_pair_high) {
+            return script_bytes;
+        }
+        if (pair.bytes.low <= vm_compare_pair_low) {
+            goto failed;
+        }
+        return script_bytes;
     } else if (tag == 0xf2u) {
-        if (high < compare_high) {
-            pass = 1;
-        } else if (high > compare_high) {
-            pass = 0;
-        } else {
-            pass = low < compare_low;
+        if (pair.bytes.high > vm_compare_pair_high) {
+            goto failed;
         }
+        if (pair.bytes.high < vm_compare_pair_high) {
+            return script_bytes;
+        }
+        if (pair.bytes.low >= vm_compare_pair_low) {
+            goto failed;
+        }
+        return script_bytes;
     } else {
-        pass = high == compare_high && low == compare_low;
+        if (pair.bytes.high != vm_compare_pair_high) {
+            goto failed;
+        }
+        if (pair.bytes.low == vm_compare_pair_low) {
+            return script_bytes;
+        }
     }
 
-    if (!pass) {
-        vm_branch_fail();
-    }
+failed:
+    return (const cb_u8 CB_NEAR *)vm_branch_fail();
 }

@@ -116,6 +116,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_d1_cond_branch modify exact [ax si]
 #pragma aux vm_op_cc_set_record_byte parm [si] value [si] modify exact [ax si]
 #pragma aux vm_op_ca_compare_var parm [si] value [si] modify exact [ax dx si]
+#pragma aux vm_op_cb_compare_byte parm [si] value [si] modify exact [ax bx dx si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -146,6 +147,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x0064CE */
 const cb_u16 CB_NEAR *CB_NEAR vm_op_ca_compare_var(
     const cb_u16 CB_NEAR *script_words);      /* 0x0064E5 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_cb_compare_byte(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006510 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */
