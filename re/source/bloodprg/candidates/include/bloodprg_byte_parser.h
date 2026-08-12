@@ -8,9 +8,14 @@ extern volatile char byte_parser_table_2460[]; /* GS:0x2460 */
 extern volatile char byte_parser_table_247a[]; /* GS:0x247A */
 extern volatile char byte_parser_line_name[]; /* GS:0x24C6 */
 extern volatile char byte_parser_text_20b8[]; /* GS:0x20B8 */
+extern volatile char fs_resource_name_area[]; /* FS:0x0C74 */
 extern volatile char credit_text_buffer[];   /* GS:0x0E18 */
 extern volatile cb_u8 credit_reveal_active;  /* GS:0x5E64 */
 extern volatile cb_u16 credit_reveal_timer;  /* GS:0x5E58 */
+extern volatile cb_u8 fs_name_area_dirty;    /* GS:0x27E8 */
+extern volatile char music_voc_name_field[]; /* GS:0x0D30 */
+extern volatile cb_u8 music_voc_name_unchanged; /* GS:0x0BA0 */
+extern volatile cb_u8 music_voc_name_changed; /* GS:0x0BA1 */
 extern volatile cb_u16 byte_parser_word_1fa5; /* GS:0x1FA5 */
 extern volatile char *byte_parser_detail_cursor; /* GS:0x1FAD */
 extern volatile cb_u16 *byte_parser_asset_cursor; /* GS:0x1FAF */
