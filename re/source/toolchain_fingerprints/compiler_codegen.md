@@ -1351,6 +1351,22 @@ unresolved global through DS. The C logic and instruction shape are settled,
 but direct integration requires a GS-qualified data mechanism or a minimal
 one-instruction boundary because DS owns the parser stream at these entries.
 
+Byte-parser opcode-05 handler `0x007612` copies a NUL-terminated DS:SI string,
+including and consuming the terminator, to ES:0x0E18. The dispatcher has set
+ES=GS before switching DS to the script segment. After the copy, the handler
+sets GS:0x5E64 and then clears GS:0x5E58. Five direct vectors prove empty,
+ordinary, high-byte, and segment-wrapped sources; distinct DS, ES, and GS
+ownership; exact state-write order; registers, segments, flags, source
+immutability, and near-return stack behavior.
+
+The corrected candidate returns the advanced SI cursor directly and places the
+destination and state symbols in one named based segment. Open Watcom
+`-3 -ox -mm` compiles it without warnings to 19 instructions/38 bytes versus 8/23
+original; Turbo C 2.01 medium emits 27 instructions. Watcom loads `GAME_DATA`
+into ES, saves BX/DX/ES, emits a scalar indexed copy, and zero-extends the final
+AL through AH before storing the timer. Exact integration needs the original
+ambient ES=GS contract, DI allocation, LODSB/STOSB loop, and GS state accesses.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1407,6 +1423,7 @@ LCS and then mnemonic similarity:
 | `vm_c8_record_match` | medium, `-ox`, register | 34/32 | 0.0294 | 0.5294 | 0.0294 |
 | `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
 | `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 

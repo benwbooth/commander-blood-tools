@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: credit_presenter_b_cryo
-; label_comment: CRYO credit presenter: copies SI->gs:0xe18, sets 5e64=1 5e58=0 (arms clean reveal). NEVER dispatched (linear 0x8a32 confirmed via exec_watch_linear)
+; label_comment: Byte-parser opcode 0x05 copies a NUL-terminated DS:SI string, including its terminator, to ES:0x0E18. The dispatcher establishes ES=GS before switching DS to the script segment. It then sets GS:0x5E64 to one and clears GS:0x5E58, arming a clean reveal.
 ; incoming: byte_parser_dispatch_74e5:byte_0x05
 ; byte_count: 23
 ; boundary: cfg_blocks_3_terminals_1

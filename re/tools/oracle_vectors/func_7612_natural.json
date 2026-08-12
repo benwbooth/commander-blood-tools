@@ -1,0 +1,92 @@
+[
+  {
+    "name": "empty",
+    "source_offset": 26624,
+    "input_hex": "00",
+    "destination_offset": 3608,
+    "final_source_offset": 26625,
+    "final_destination_offset": 3609,
+    "reveal_active_after": 1,
+    "reveal_timer_after": 0,
+    "registers_and_segments_verified": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "single",
+    "source_offset": 26656,
+    "input_hex": "5800",
+    "destination_offset": 3608,
+    "final_source_offset": 26658,
+    "final_destination_offset": 3610,
+    "reveal_active_after": 1,
+    "reveal_timer_after": 0,
+    "registers_and_segments_verified": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "cryo_text",
+    "source_offset": 26688,
+    "input_hex": "4352594f2070726573656e747300",
+    "destination_offset": 3608,
+    "final_source_offset": 26702,
+    "final_destination_offset": 3622,
+    "reveal_active_after": 1,
+    "reveal_timer_after": 0,
+    "registers_and_segments_verified": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bytes",
+    "source_offset": 26752,
+    "input_hex": "80ff0100",
+    "destination_offset": 3608,
+    "final_source_offset": 26756,
+    "final_destination_offset": 3612,
+    "reveal_active_after": 1,
+    "reveal_timer_after": 0,
+    "registers_and_segments_verified": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "script_wrap",
+    "source_offset": 65534,
+    "input_hex": "414200",
+    "destination_offset": 3608,
+    "final_source_offset": 1,
+    "final_destination_offset": 3611,
+    "reveal_active_after": 1,
+    "reveal_timer_after": 0,
+    "registers_and_segments_verified": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

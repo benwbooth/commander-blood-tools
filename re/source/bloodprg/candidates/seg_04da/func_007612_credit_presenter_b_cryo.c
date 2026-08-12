@@ -1,18 +1,18 @@
 #include "../include/bloodprg_byte_parser.h"
 
-void CB_NEAR credit_presenter_b_cryo(const char **script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR credit_presenter_b_cryo(
+    const cb_u8 CB_NEAR *script_bytes)
 {
-    volatile char *dst;
-    char ch;
+    char CB_GAME_DATA *dst;
+    cb_u8 ch;
 
     dst = credit_text_buffer;
     do {
-        ch = **script_bytes;
-        ++*script_bytes;
-        *dst = ch;
-        ++dst;
+        ch = *script_bytes++;
+        *dst++ = (char)ch;
     } while (ch != '\0');
 
     credit_reveal_active = 1;
     credit_reveal_timer = 0;
+    return script_bytes;
 }
