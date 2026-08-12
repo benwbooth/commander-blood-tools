@@ -6460,6 +6460,176 @@ def vm_clear_state_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_record_string_copy_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("first_slot_empty", 0x1000, 0x01, b"\x00", 0xA5),
+        ("second_slot_one_character", 0x1100, 0x02, b"A\x00", 0x5A),
+        ("slot_byte_zero_selects_minus_one", 0x1200, 0x00, b"NEG\x00", 0xCC),
+        ("decrement_precedes_sign_extension", 0x1300, 0x80, b"MAX\x00", 0x33),
+        ("signed_minimum_slot", 0x1400, 0x81, b"MIN\x00", 0x77),
+        ("raw_high_bytes", 0x1500, 0xFF, b"\x80\xfe\x00", 0x42),
+        ("source_cursor_wraps", 0xFFFD, 0x01, b"X\x00", 0x55),
+        ("copy_is_not_slot_bounded", 0x1600, 0x01, b"ABCDEFGHIJKLMNOPQ\x00", 0x99),
+        ("source_cursor_signed_overflow", 0x7FFD, 0x01, b"\x00", 0x11),
+    ]
+    vectors = []
+
+    for name, start, slot_byte, string_bytes, pad_byte in cases:
+        decremented = (slot_byte - 1) & 0xFF
+        signed_slot = decremented if decremented < 0x80 else decremented - 0x100
+        slot_shift = (signed_slot * 16) & 0xFFFF
+        destination_start = (0x6CDE + slot_shift) & 0xFFFF
+        script = bytes([slot_byte]) + string_bytes + bytes([pad_byte])
+        final_source = (start + len(script)) & 0xFFFF
+        final_destination = (destination_start + len(string_bytes)) & 0xFFFF
+        memory = []
+        immutable = []
+
+        for index, value in enumerate(script):
+            offset = (start + index) & 0xFFFF
+            encoded = bytes([value])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+            memory.append((game_segment, offset, b"\xa5"))
+
+        output_offsets = [
+            (destination_start - 1) & 0xFFFF,
+            *[
+                (destination_start + index) & 0xFFFF
+                for index in range(len(string_bytes) + 1)
+            ],
+        ]
+        stack_before = {}
+        game_decoys = {}
+        data_decoys = {}
+        for index, offset in enumerate(output_offsets):
+            stack_value = (0x30 + index) & 0xFF
+            game_value = (0x80 + index) & 0xFF
+            data_value = (0xC0 + index) & 0xFF
+            stack_before[offset] = stack_value
+            game_decoys[offset] = game_value
+            data_decoys[offset] = data_value
+            memory.append((stack_segment, offset, bytes([stack_value])))
+            memory.append((game_segment, offset, bytes([game_value])))
+            memory.append((data_segment, offset, bytes([data_value])))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+
+        machine = execute(0x64CE, 0x64E4, initial, memory)
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | (slot_shift & 0xFF00)
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | final_source
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | final_destination
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x64ce {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_output = bytes(
+            machine.mem_read(stack_segment * 16 + destination_start, len(string_bytes))
+        )
+        if actual_output != string_bytes:
+            raise AssertionError(
+                f"0x64ce {name}: output={actual_output!r}, expected={string_bytes!r}"
+            )
+        before_offset = (destination_start - 1) & 0xFFFF
+        after_offset = (destination_start + len(string_bytes)) & 0xFFFF
+        if (
+            machine.mem_read(stack_segment * 16 + before_offset, 1)[0]
+            != stack_before[before_offset]
+        ):
+            raise AssertionError(f"0x64ce {name}: byte before output changed")
+        if (
+            machine.mem_read(stack_segment * 16 + after_offset, 1)[0]
+            != stack_before[after_offset]
+        ):
+            raise AssertionError(f"0x64ce {name}: pad leaked into output")
+        for offset in output_offsets:
+            if (
+                machine.mem_read(game_segment * 16 + offset, 1)[0]
+                != game_decoys[offset]
+            ):
+                raise AssertionError(f"0x64ce {name}: GS output decoy changed")
+            if (
+                machine.mem_read(data_segment * 16 + offset, 1)[0]
+                != data_decoys[offset]
+            ):
+                raise AssertionError(f"0x64ce {name}: DS output decoy changed")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x64ce {name}: script input changed")
+
+        before_final_increment = (final_source - 1) & 0xFFFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": False,
+            "pf": (final_source & 0xFF).bit_count() % 2 == 0,
+            "af": (before_final_increment & 0x0F) == 0x0F,
+            "zf": final_source == 0,
+            "sf": bool(final_source & 0x8000),
+            "of": before_final_increment == 0x7FFF,
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x64ce {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x64E4] != 0xC3:
+            raise AssertionError("0x64ce: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "slot_byte": slot_byte,
+                "signed_slot_after_decrement": signed_slot,
+                "destination_start": destination_start,
+                "copied_byte_count": len(string_bytes),
+                "final_source_offset": final_source,
+                "final_destination_offset": final_destination,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -11046,6 +11216,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_64c0_natural.json", vm_clear_state_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64ce_natural.json",
+        vm_record_string_copy_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

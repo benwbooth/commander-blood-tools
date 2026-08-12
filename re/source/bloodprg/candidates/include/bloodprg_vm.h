@@ -53,7 +53,7 @@ extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
-extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
+extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
 extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; DS alias */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
@@ -114,6 +114,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_ce_cond_branch modify exact [ax si]
 #pragma aux vm_op_d0_cond_branch modify exact [ax si]
 #pragma aux vm_op_d1_cond_branch modify exact [ax si]
+#pragma aux vm_op_cc_set_record_byte parm [si] value [si] modify exact [ax si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -140,6 +141,8 @@ void CB_NEAR vm_op_d1_cond_branch(void);      /* 0x0064AC */
 const cb_i8 CB_NEAR *CB_NEAR vm_op_d2_script_profile_request(
     const cb_i8 CB_NEAR *script_bytes);       /* 0x0064B8 */
 void CB_NEAR vm_op_cf_clear_state(void);      /* 0x0064C0 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x0064CE */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */

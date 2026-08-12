@@ -1,0 +1,164 @@
+[
+  {
+    "name": "first_slot_empty",
+    "start_offset": 4096,
+    "slot_byte": 1,
+    "signed_slot_after_decrement": 0,
+    "destination_start": 27870,
+    "copied_byte_count": 1,
+    "final_source_offset": 4099,
+    "final_destination_offset": 27871,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_slot_one_character",
+    "start_offset": 4352,
+    "slot_byte": 2,
+    "signed_slot_after_decrement": 1,
+    "destination_start": 27886,
+    "copied_byte_count": 2,
+    "final_source_offset": 4356,
+    "final_destination_offset": 27888,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "slot_byte_zero_selects_minus_one",
+    "start_offset": 4608,
+    "slot_byte": 0,
+    "signed_slot_after_decrement": -1,
+    "destination_start": 27854,
+    "copied_byte_count": 4,
+    "final_source_offset": 4614,
+    "final_destination_offset": 27858,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "decrement_precedes_sign_extension",
+    "start_offset": 4864,
+    "slot_byte": 128,
+    "signed_slot_after_decrement": 127,
+    "destination_start": 29902,
+    "copied_byte_count": 4,
+    "final_source_offset": 4870,
+    "final_destination_offset": 29906,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_minimum_slot",
+    "start_offset": 5120,
+    "slot_byte": 129,
+    "signed_slot_after_decrement": -128,
+    "destination_start": 25822,
+    "copied_byte_count": 4,
+    "final_source_offset": 5126,
+    "final_destination_offset": 25826,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "raw_high_bytes",
+    "start_offset": 5376,
+    "slot_byte": 255,
+    "signed_slot_after_decrement": -2,
+    "destination_start": 27838,
+    "copied_byte_count": 3,
+    "final_source_offset": 5381,
+    "final_destination_offset": 27841,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_cursor_wraps",
+    "start_offset": 65533,
+    "slot_byte": 1,
+    "signed_slot_after_decrement": 0,
+    "destination_start": 27870,
+    "copied_byte_count": 2,
+    "final_source_offset": 1,
+    "final_destination_offset": 27872,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "copy_is_not_slot_bounded",
+    "start_offset": 5632,
+    "slot_byte": 1,
+    "signed_slot_after_decrement": 0,
+    "destination_start": 27870,
+    "copied_byte_count": 18,
+    "final_source_offset": 5652,
+    "final_destination_offset": 27888,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_cursor_signed_overflow",
+    "start_offset": 32765,
+    "slot_byte": 1,
+    "signed_slot_after_decrement": 0,
+    "destination_start": 27870,
+    "copied_byte_count": 1,
+    "final_source_offset": 32768,
+    "final_destination_offset": 27871,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

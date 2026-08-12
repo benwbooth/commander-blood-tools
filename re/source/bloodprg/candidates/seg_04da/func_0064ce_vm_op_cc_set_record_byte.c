@@ -1,21 +1,20 @@
 #include "../include/bloodprg_vm.h"
 
-void CB_NEAR vm_op_cc_set_record_byte(const cb_i8 **script_bytes)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_cc_set_record_byte(
+    const cb_u8 CB_NEAR *script_bytes)
 {
-    int slot;
-    volatile char *dst;
-    char ch;
+    cb_i8 slot;
+    volatile char CB_NEAR *destination;
+    cb_u8 character;
 
-    slot = (int)**script_bytes - 1;
-    ++*script_bytes;
-    dst = &vm_record_string_slots[slot][0];
+    slot = (cb_i8)(cb_u8)(*script_bytes++ - 1u);
+    destination = (volatile char CB_NEAR *)vm_record_string_slots
+        + (cb_i16)slot * 16;
 
     do {
-        ch = (char)**script_bytes;
-        ++*script_bytes;
-        *dst = ch;
-        ++dst;
-    } while (ch != '\0');
+        character = *script_bytes++;
+        *destination++ = (char)character;
+    } while (character != 0);
 
-    ++*script_bytes;
+    return script_bytes + 1;
 }

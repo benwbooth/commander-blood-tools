@@ -877,6 +877,24 @@ instructions/11 bytes versus 3/14 original by zeroing AX first, which changes AX
 and flags. The two natural assignments are complete; exact integration needs GS
 placement and favors the Turbo C lowering for this routine.
 
+VM record-string copy `0x0064CE` has nine direct vectors covering the first and
+second slots, operand zero, the `0x80`/`0x81` signed boundary, raw high bytes,
+source-cursor wrap and signed overflow, and a copy extending beyond the nominal
+16-byte slot. They prove that the raw slot byte is decremented before signed
+extension, the signed slot is scaled by 16, DS owns the source, SS owns the
+destination, the NUL is copied, one pad byte is skipped, no slot-length bound is
+enforced, AX/SI/BP and final INC flags match, unrelated state is preserved, and
+the routine near-returns. This exposed a real pending-C bug: converting operand
+`0x80` to signed before decrement produced -129 instead of the binary's +127.
+
+The corrected natural C uses explicit 8-bit wrap, a flat destination pointer, a
+do-while NUL copy, and a returned near source cursor. Open Watcom `-3 -ox -mm`
+emits 20 instructions/32 bytes versus 13/23 original and preserves the critical
+DEC/CBW/SHL arithmetic; Turbo C 2.01 medium emits 31 instructions. Watcom uses
+AX for the destination and leaves BP unchanged, while the binary writes through
+SS:BP and returns advanced BP. Exact integration therefore needs the runtime
+SS=GS alias and a narrow BP boundary, not additional string-copy logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -906,6 +924,7 @@ LCS and then mnemonic similarity:
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
 | `vm_clear_state` | medium, `-ox`, register | 3/5 | 0.3333 | 1.0000 | 0.3333 |
+| `vm_record_string_copy` | medium, `-ox`, register | 13/20 | 0.2308 | 0.6923 | 0.3846 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
