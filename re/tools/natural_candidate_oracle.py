@@ -5754,6 +5754,162 @@ def dic_word_lookup_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_branch_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    stack_segment = 0x9000
+    cases = [
+        ("pop_first_word", 0x0002, 0x1234, 0x01),
+        ("pop_second_word", 0x0004, 0x5678, 0xFF),
+        ("top_wraps_below_zero", 0x0000, 0x9ABC, 0x80),
+        ("odd_top_remains_byte_granular", 0x0003, 0xDEF0, 0x7F),
+        ("odd_top_wraps", 0x0001, 0x1357, 0x55),
+        ("signed_overflow", 0x8000, 0x2468, 0xAA),
+        ("stack_effective_offset_wraps", 0x97E2, 0xBEEF, 0x02),
+    ]
+    vectors = []
+
+    for name, top, target, query_mode in cases:
+        new_top = (top - 2) & 0xFFFF
+        target_offset = (0x6820 + new_top) & 0xFFFF
+        stack_top_decoy = top ^ 0xFFFF
+        stack_query_decoy = query_mode ^ 0xFF
+        game_target_decoy = target ^ 0xFFFF
+        data_target_decoy = target ^ 0x5A5A
+        target_bytes = struct.pack("<H", target)
+        game_target_bytes = struct.pack("<H", game_target_decoy)
+        data_target_bytes = struct.pack("<H", data_target_decoy)
+        memory = [
+            (game_segment, 0x6884, struct.pack("<H", top)),
+            (game_segment, 0x67AD, bytes([query_mode])),
+            (stack_segment, target_offset, target_bytes),
+            (game_segment, target_offset, game_target_bytes),
+            (data_segment, target_offset, data_target_bytes),
+            (stack_segment, 0x6884, struct.pack("<H", stack_top_decoy)),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        pre_clear_state = []
+
+        def capture_pre_clear(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6473:
+                pre_clear_state.append(
+                    (
+                        machine.reg_read(UC_X86_REG_ESI) & 0xFFFF,
+                        machine.mem_read(game_segment * 16 + 0x67AD, 1)[0],
+                    )
+                )
+
+        machine = execute(
+            0x6462,
+            0x647A,
+            initial,
+            memory,
+            code_handler=capture_pre_clear,
+        )
+
+        if pre_clear_state != [(target, query_mode)]:
+            raise AssertionError(
+                f"0x6462 {name}: pre-clear state={pre_clear_state}, "
+                f"expected={[(target, query_mode)]}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | new_top
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | target
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6462 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        if actual_top != new_top:
+            raise AssertionError(
+                f"0x6462 {name}: top={actual_top:#x}, expected={new_top:#x}"
+            )
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        if actual_query != 0:
+            raise AssertionError(f"0x6462 {name}: query mode was not cleared")
+        if machine.mem_read(stack_segment * 16 + target_offset, 2) != target_bytes:
+            raise AssertionError(f"0x6462 {name}: branch target changed")
+        if (
+            machine.mem_read(game_segment * 16 + target_offset, 2)
+            != game_target_bytes
+        ):
+            raise AssertionError(f"0x6462 {name}: GS stack decoy changed")
+        if (
+            machine.mem_read(data_segment * 16 + target_offset, 2)
+            != data_target_bytes
+        ):
+            raise AssertionError(f"0x6462 {name}: DS stack decoy changed")
+        actual_stack_top = struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + 0x6884, 2)
+        )[0]
+        if actual_stack_top != stack_top_decoy:
+            raise AssertionError(f"0x6462 {name}: SS top decoy changed")
+        actual_stack_query = machine.mem_read(stack_segment * 16 + 0x67AD, 1)[0]
+        if actual_stack_query != stack_query_decoy:
+            raise AssertionError(f"0x6462 {name}: SS query decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": top < 2,
+            "pf": (new_top & 0xFF).bit_count() % 2 == 0,
+            "af": (top & 0x0F) < 2,
+            "zf": new_top == 0,
+            "sf": bool(new_top & 0x8000),
+            "of": bool(((top ^ 2) & (top ^ new_top)) & 0x8000),
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6462 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x647A] != 0xC3:
+            raise AssertionError("0x6462: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "initial_top_byte_offset": top,
+                "final_top_byte_offset": new_top,
+                "target_effective_offset": target_offset,
+                "target": target,
+                "query_mode_before": query_mode,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -10311,6 +10467,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_6433_natural.json", dic_word_lookup_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6462_natural.json", vm_branch_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

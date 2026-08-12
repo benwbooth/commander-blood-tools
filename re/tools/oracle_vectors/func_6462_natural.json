@@ -1,0 +1,114 @@
+[
+  {
+    "name": "pop_first_word",
+    "initial_top_byte_offset": 2,
+    "final_top_byte_offset": 0,
+    "target_effective_offset": 26656,
+    "target": 4660,
+    "query_mode_before": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "pop_second_word",
+    "initial_top_byte_offset": 4,
+    "final_top_byte_offset": 2,
+    "target_effective_offset": 26658,
+    "target": 22136,
+    "query_mode_before": 255,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "top_wraps_below_zero",
+    "initial_top_byte_offset": 0,
+    "final_top_byte_offset": 65534,
+    "target_effective_offset": 26654,
+    "target": 39612,
+    "query_mode_before": 128,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_top_remains_byte_granular",
+    "initial_top_byte_offset": 3,
+    "final_top_byte_offset": 1,
+    "target_effective_offset": 26657,
+    "target": 57072,
+    "query_mode_before": 127,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_top_wraps",
+    "initial_top_byte_offset": 1,
+    "final_top_byte_offset": 65535,
+    "target_effective_offset": 26655,
+    "target": 4951,
+    "query_mode_before": 85,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_overflow",
+    "initial_top_byte_offset": 32768,
+    "final_top_byte_offset": 32766,
+    "target_effective_offset": 59422,
+    "target": 9320,
+    "query_mode_before": 170,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "stack_effective_offset_wraps",
+    "initial_top_byte_offset": 38882,
+    "final_top_byte_offset": 38880,
+    "target_effective_offset": 0,
+    "target": 48879,
+    "query_mode_before": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

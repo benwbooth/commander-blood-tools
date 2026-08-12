@@ -33,7 +33,7 @@ extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u8 CB_FAR *vm_script_image; /* GS:0x671C */
-extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
+extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762 */
@@ -108,6 +108,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
 #pragma aux vm_condition_5 parm [cx] [es di] [si] value [ax] modify exact [ax bx dx]
+#pragma aux vm_branch_fail value [si] modify exact [ax si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
