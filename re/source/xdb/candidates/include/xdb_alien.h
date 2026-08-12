@@ -18,12 +18,30 @@ typedef struct xdb_alien_state {
 
 typedef struct xdb_alien_method_context {
     xdb_u8 field_00[0x16];
-    volatile xdb_alien_state *state;
+    volatile xdb_alien_state XDB_NEAR *state;
 } xdb_alien_method_context;
 
-extern volatile xdb_i16 xdb_alien_method_delta; /* CS:0x0099 */
-extern volatile xdb_u8 *xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
-extern volatile xdb_u8 *xdb_croolis_slot11_cursor; /* CROOLIS CS:0x1B2E */
-extern volatile xdb_u8 *xdb_scrut_slot11_cursor; /* SCRUT CS:0x1BE3 */
+typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
+
+extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_croolis_slot11_cursor; /* CROOLIS CS:0x1B2E */
+extern xdb_alien_cursor XDB_CODE_DATA
+        xdb_scrut_slot11_cursor; /* SCRUT CS:0x1BE3 */
+
+volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_amer_method_slot_11_anchor_state(
+        const xdb_alien_method_context XDB_NEAR *context);
+volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_croolis_method_slot_11_anchor_state(
+        const xdb_alien_method_context XDB_NEAR *context);
+volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_scrut_method_slot_11_anchor_state(
+        const xdb_alien_method_context XDB_NEAR *context);
+
+#if defined(__WATCOMC__)
+#pragma aux xdb_amer_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
+#pragma aux xdb_croolis_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
+#pragma aux xdb_scrut_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
+#endif
 
 #endif

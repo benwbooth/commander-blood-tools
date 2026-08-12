@@ -16,4 +16,10 @@ typedef signed long xdb_i32;
 #define XDB_NEAR
 #endif
 
+#if defined(__WATCOMC__)
+#define XDB_CODE_DATA __based(__segname("_CODE"))
+#else
+#define XDB_CODE_DATA XDB_FAR
+#endif
+
 #endif

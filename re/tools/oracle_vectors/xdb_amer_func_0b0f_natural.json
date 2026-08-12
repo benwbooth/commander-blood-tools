@@ -1,0 +1,149 @@
+[
+  {
+    "name": "zero",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 4096,
+    "state_offset": 8192,
+    "biased_offset": 8286,
+    "field_offset": 8368,
+    "field_before": 0,
+    "field_after": 65521,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "delta_exact",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 4353,
+    "state_offset": 8451,
+    "biased_offset": 8545,
+    "field_offset": 8627,
+    "field_before": 15,
+    "field_after": 0,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "positive",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 4608,
+    "state_offset": 12288,
+    "biased_offset": 12382,
+    "field_offset": 12464,
+    "field_before": 32767,
+    "field_after": 32752,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_wrap",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 4864,
+    "state_offset": 16384,
+    "biased_offset": 16478,
+    "field_offset": 16560,
+    "field_before": 32768,
+    "field_after": 32753,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "word_wrap",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 5120,
+    "state_offset": 20480,
+    "biased_offset": 20574,
+    "field_offset": 20656,
+    "field_before": 65535,
+    "field_after": 65520,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "context_offset_wrap",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 65520,
+    "state_offset": 24576,
+    "biased_offset": 24670,
+    "field_offset": 24752,
+    "field_before": 4660,
+    "field_after": 4645,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "state_bias_wrap",
+    "module": "amer",
+    "entry": 2831,
+    "context_offset": 5376,
+    "state_offset": 65472,
+    "biased_offset": 30,
+    "field_offset": 112,
+    "field_before": 48879,
+    "field_after": 48864,
+    "cursor_offset": 7106,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

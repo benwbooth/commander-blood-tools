@@ -1934,6 +1934,21 @@ MOVSB` tail and assumes the standard clear-DF C ABI. Turbo C 2.01 medium emits a
 library. The data operation is fully represented in natural C; direct `REP
 MOVSD` and unconditional CLD remain narrow integration/codegen differences.
 
+Three sibling XDB alien slot-11 methods are independently proven state anchors:
+AMER `0x000B0F`, CROOLIS `0x000B50`, and SCRUT `0x000B55`. Seven direct
+raw-overlay vectors per entry verify the `DI` near-context input, the `DS`
+state pointer load, 16-bit `+0x5E` pointer bias, signed-word mutation at the
+original state's `+0xB0`, overlay-specific `CS` cursor publication, `SI`
+pointer result, modulo wrapping, preservation, `SUB` flags, and near return.
+Open Watcom `-3 -ox -mm` compiles each actual candidate without warnings to
+the same five instructions and 16 bytes as the original. A named `_CODE`
+segment data object produces the required `CS` override. Watcom's one
+remaining semantic codegen mismatch is `ADD word,-15` instead of `SUB word,15`:
+the stored word is identical, but the arithmetic flags differ. The cursor
+symbol also remains a relocation that the overlay linker must place at
+`0x1BC2`, `0x1B2E`, or `0x1BE3`. Turbo C 2.01 medium emits a 19-instruction
+stack-argument wrapper and accesses the cursor as far data.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -1970,6 +1985,7 @@ LCS and then mnemonic similarity:
 | `graphics_band_fill` | medium, `-ox`, register | 30/52 | 0.1667 | 0.7667 | 0.2000 |
 | `fullscreen_copy` | medium, `-ox`, register | 13/35 | 0.5385 | 0.9231 | 0.5385 |
 | `xdb_near_noop` | medium, `-ox`, register | 1/1 | 1.0000 | 1.0000 | 1.0000 |
+| `xdb_anchor_state` | medium, `-ox`, register | 5/5 | 0.2000 | 0.8000 | 0.6000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
