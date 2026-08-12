@@ -765,6 +765,21 @@ and substitutes BX for the cursor. It emits 51 instructions/113 bytes versus
 runtime SS=DS alias, and a narrow BP/BX adapter, but no register emulation is
 present in the recovered algorithm.
 
+VM token scanner `0x006293` has nine direct vectors covering immediate,
+aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
+`0xFFFF`; post-match addition wrap; and optional-increment wrap and signed
+overflow. They prove the terminator in AX, the near cursor in DS:SI, DS ownership
+against ES/GS decoys, preservation of AX and every register/segment other than
+the returned SI cursor, immutable input, the near-return boundary, and flags
+from the final byte comparison or increment.
+
+Changing the pending pointer-to-pointer API to a natural pointer return exposes
+the original data flow directly. Open Watcom `-3 -ox -mm` with AX/SI pragma-aux
+inputs and an SI result emits the exact nine instructions and 16 bytes, with no
+relocations. Turbo C 2.01 medium emits 19 instructions because it uses stack
+arguments. This candidate can be linked directly without an ABI adapter or
+inline assembly.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -784,6 +799,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/46 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
+| `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |

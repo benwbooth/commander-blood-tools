@@ -7,7 +7,7 @@ void CB_NEAR vm_op_a3_block(const cb_u8 **script_bytes)
     cb_u16 match;
 
     if ((vm_block_scan_flags & 1u) != 0) {
-        vm_token_special(script_bytes, 0);
+        *script_bytes = vm_token_special(0, *script_bytes);
         return;
     }
 

@@ -106,6 +106,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
+#pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -118,7 +119,8 @@ int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
-void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
+const cb_u8 CB_NEAR *CB_NEAR vm_token_special(cb_u16 terminator,
+        const cb_u8 CB_NEAR *script_bytes); /* 0x006293 */
 int CB_NEAR vm_condition_5(cb_u16 flags,
         const volatile cb_u8 CB_FAR *record,
         const cb_u8 *script_bytes);          /* 0x006339 */

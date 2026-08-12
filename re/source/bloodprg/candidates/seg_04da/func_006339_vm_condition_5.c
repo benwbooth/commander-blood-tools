@@ -63,7 +63,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
     }
 
     if ((control & 0x40u) != 0) {
-        vm_token_special(&cursor, 0xffffu);
+        cursor = vm_token_special(0xffffu, cursor);
         required = (cb_u8)(detail & 7u);
         if (required == 0) {
             words = (const cb_u16 *)cursor;
@@ -109,7 +109,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
 
     if ((control & 0x10u) != 0) {
         out = vm_presentation_word_buffer;
-        vm_token_special(&cursor, 0xffffu);
+        cursor = vm_token_special(0xffffu, cursor);
         vm_yield_flag = 1;
         do {
             *out = vm_condition_word(cursor);

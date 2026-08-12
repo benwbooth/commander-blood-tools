@@ -1,0 +1,164 @@
+[
+  {
+    "name": "immediate_with_extra_byte",
+    "terminator": 48879,
+    "start_offset": 4096,
+    "scan_byte_count": 0,
+    "match_offset": 4096,
+    "trailing_byte": 239,
+    "extra_byte_consumed": true,
+    "final_offset": 4099,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "immediate_without_extra_byte",
+    "terminator": 48879,
+    "start_offset": 4352,
+    "scan_byte_count": 0,
+    "match_offset": 4352,
+    "trailing_byte": 241,
+    "extra_byte_consumed": false,
+    "final_offset": 4354,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "aligned_match_after_six_bytes",
+    "terminator": 4660,
+    "start_offset": 4608,
+    "scan_byte_count": 6,
+    "match_offset": 4614,
+    "trailing_byte": 52,
+    "extra_byte_consumed": true,
+    "final_offset": 4617,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unaligned_match_after_five_bytes",
+    "terminator": 4660,
+    "start_offset": 4864,
+    "scan_byte_count": 5,
+    "match_offset": 4869,
+    "trailing_byte": 56,
+    "extra_byte_consumed": false,
+    "final_offset": 4871,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "scan_cursor_wraps_to_one",
+    "terminator": 41394,
+    "start_offset": 65533,
+    "scan_byte_count": 4,
+    "match_offset": 1,
+    "trailing_byte": 178,
+    "extra_byte_consumed": true,
+    "final_offset": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "match_word_crosses_offset_end",
+    "terminator": 51966,
+    "start_offset": 65535,
+    "scan_byte_count": 0,
+    "match_offset": 65535,
+    "trailing_byte": 4,
+    "extra_byte_consumed": false,
+    "final_offset": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "post_match_add_wraps",
+    "terminator": 4951,
+    "start_offset": 65534,
+    "scan_byte_count": 0,
+    "match_offset": 65534,
+    "trailing_byte": 94,
+    "extra_byte_consumed": false,
+    "final_offset": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "optional_increment_wraps",
+    "terminator": 9320,
+    "start_offset": 65533,
+    "scan_byte_count": 0,
+    "match_offset": 65533,
+    "trailing_byte": 104,
+    "extra_byte_consumed": true,
+    "final_offset": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "optional_increment_signed_overflow",
+    "terminator": 255,
+    "start_offset": 32765,
+    "scan_byte_count": 0,
+    "match_offset": 32765,
+    "trailing_byte": 255,
+    "extra_byte_consumed": true,
+    "final_offset": 32768,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

@@ -5076,6 +5076,159 @@ def ship_3d_nav_source_list_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_token_special_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    cases = [
+        ("immediate_with_extra_byte", 0x1000, 0xBEEF, 0, True),
+        ("immediate_without_extra_byte", 0x1100, 0xBEEF, 0, False),
+        ("aligned_match_after_six_bytes", 0x1200, 0x1234, 6, True),
+        ("unaligned_match_after_five_bytes", 0x1300, 0x1234, 5, False),
+        ("scan_cursor_wraps_to_one", 0xFFFD, 0xA1B2, 4, True),
+        ("match_word_crosses_offset_end", 0xFFFF, 0xCAFE, 0, False),
+        ("post_match_add_wraps", 0xFFFE, 0x1357, 0, False),
+        ("optional_increment_wraps", 0xFFFD, 0x2468, 0, True),
+        ("optional_increment_signed_overflow", 0x7FFD, 0x00FF, 0, True),
+    ]
+    vectors = []
+
+    for case_index, (name, start, terminator, scan_count, trailing_equal) in enumerate(
+        cases
+    ):
+        bytes_by_linear_offset = {}
+        for step in range(scan_count + 1):
+            cursor = (start + step) & 0xFFFF
+            bytes_by_linear_offset.setdefault(cursor, 0x55)
+            bytes_by_linear_offset.setdefault(cursor + 1, 0x55)
+
+        match_offset = (start + scan_count) & 0xFFFF
+        bytes_by_linear_offset[match_offset] = terminator & 0xFF
+        bytes_by_linear_offset[match_offset + 1] = terminator >> 8
+        trailing_offset = (match_offset + 2) & 0xFFFF
+        trailing = terminator & 0xFF
+        if not trailing_equal:
+            trailing = (trailing + 1 + case_index) & 0xFF
+        bytes_by_linear_offset[trailing_offset] = trailing
+
+        for step in range(scan_count):
+            cursor = (start + step) & 0xFFFF
+            scanned_word = (
+                bytes_by_linear_offset[cursor]
+                | (bytes_by_linear_offset[cursor + 1] << 8)
+            )
+            if scanned_word == terminator:
+                raise AssertionError(f"0x6293 {name}: accidental early match")
+
+        memory = [
+            (data_segment, offset, bytes([value]))
+            for offset, value in sorted(bytes_by_linear_offset.items())
+        ]
+        decoy = struct.pack("<H", terminator) + bytes([terminator & 0xFF])
+        memory.extend(
+            [
+                (0x4800, start, decoy),
+                (0x4C00, start, decoy),
+            ]
+        )
+        initial = {
+            "eax": 0xA1A10000 | terminator,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x3800,
+            "gs": 0x4C00,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+
+        machine = execute(0x6293, 0x62A2, initial, memory)
+
+        post_match_offset = (match_offset + 2) & 0xFFFF
+        final_offset = (
+            (post_match_offset + 1) & 0xFFFF
+            if trailing_equal
+            else post_match_offset
+        )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["esi"] = (
+            (initial["esi"] & 0xFFFF0000) | final_offset
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6293 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        if trailing_equal:
+            result = final_offset
+            expected_flags = {
+                "cf": False,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "af": (post_match_offset & 0x0F) == 0x0F,
+                "zf": result == 0,
+                "sf": bool(result & 0x8000),
+                "of": post_match_offset == 0x7FFF,
+            }
+        else:
+            left = terminator & 0xFF
+            result = (left - trailing) & 0xFF
+            expected_flags = {
+                "cf": left < trailing,
+                "pf": result.bit_count() % 2 == 0,
+                "af": (left & 0x0F) < (trailing & 0x0F),
+                "zf": result == 0,
+                "sf": bool(result & 0x80),
+                "of": bool(((left ^ trailing) & (left ^ result)) & 0x80),
+            }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6293 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        for offset, expected in bytes_by_linear_offset.items():
+            actual = machine.mem_read(data_segment * 16 + offset, 1)[0]
+            if actual != expected:
+                raise AssertionError(f"0x6293 {name}: input memory changed")
+        if machine.mem_read(0x4800 * 16 + start, 3) != decoy:
+            raise AssertionError(f"0x6293 {name}: ES decoy changed")
+        if machine.mem_read(0x4C00 * 16 + start, 3) != decoy:
+            raise AssertionError(f"0x6293 {name}: GS decoy changed")
+        if EXE[0x62A2] != 0xC3:
+            raise AssertionError("0x6293: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "terminator": terminator,
+                "start_offset": start,
+                "scan_byte_count": scan_count,
+                "match_offset": match_offset,
+                "trailing_byte": trailing,
+                "extra_byte_consumed": trailing_equal,
+                "final_offset": final_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -9624,6 +9777,9 @@ def main() -> int:
         VECTOR_ROOT / "func_624b_natural.json",
         ship_3d_nav_source_list_build_vectors(),
         args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6293_natural.json", vm_token_special_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check
