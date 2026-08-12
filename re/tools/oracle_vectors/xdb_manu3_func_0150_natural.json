@@ -1,0 +1,178 @@
+[
+  {
+    "name": "inactive",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 0,
+    "framebuffer_window_offset": 4660,
+    "framebuffer_segment": null,
+    "ordered_callees": [],
+    "segments_installed": false,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_offset",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 9216,
+    "framebuffer_window_offset": 0,
+    "framebuffer_segment": 40960,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "subparagraph",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 17408,
+    "framebuffer_window_offset": 15,
+    "framebuffer_segment": 40960,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_paragraph",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 25600,
+    "framebuffer_window_offset": 16,
+    "framebuffer_segment": 40961,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "high_offset",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 33792,
+    "framebuffer_window_offset": 65520,
+    "framebuffer_segment": 45055,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_offset",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 41984,
+    "framebuffer_window_offset": 65535,
+    "framebuffer_segment": 45055,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bit_segment",
+    "module": "manu3",
+    "entry": 336,
+    "active_data_segment": 50176,
+    "framebuffer_window_offset": 42330,
+    "framebuffer_segment": 43605,
+    "ordered_callees": [
+      411,
+      624,
+      1353,
+      1782
+    ],
+    "segments_installed": true,
+    "far_stack_bytes_consumed": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

@@ -2124,6 +2124,18 @@ a C parameter pragma without rejecting the function, so the typed gradient
 call deliberately uses the compiler convention and records the original call
 boundary for a later narrow ABI adapter.
 
+Seven patched-callee vectors prove the `0x000150` no-cursor frame coordinator.
+It gates on the relocated data segment at CS:`0x136A`, installs that segment in
+`DS`, `ES`, and `FS`, converts the SS:`0x20CE` byte-window offset to
+`0xA000 + (offset >> 4)` at DS:`0x0018`, then calls tween step, matrix build,
+entity projection, and face builder in that exact order. The vectors separate
+all five segment owners, cover low-nibble truncation and high offsets, and
+verify call return IPs, publication timing, flags, saved `DS`, and far return.
+Watcom emits 15 instructions/37 bytes versus the original 17/44, while Turbo C
+emits 14 instructions. The natural body retains the gate, calculation, and
+call graph; exact integration still needs a narrow adapter for the `CS`/`SS`
+inputs and `DS`/`ES`/`FS` installation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2163,6 +2175,7 @@ LCS and then mnemonic similarity:
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
 | `xdb_manu3_anim_select_entry` | medium, `-ox -zdp`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `xdb_manu3_frame_step` | medium, `-ox -zdp`, register | 17/15 | 0.0588 | 0.6471 | 0.1765 |
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |

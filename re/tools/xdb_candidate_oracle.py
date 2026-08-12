@@ -530,6 +530,21 @@ def add_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
     }
 
 
+def add_flags_8(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+    total = left + right
+    result = total & 0xFF
+    return {
+        "cf": total > 0xFF,
+        "pf": result.bit_count() % 2 == 0,
+        "af": ((left & 0xF) + (right & 0xF)) > 0xF,
+        "zf": result == 0,
+        "sf": bool(result & 0x80),
+        "if": bool(initial_flags & 0x0200),
+        "df": bool(initial_flags & 0x0400),
+        "of": bool((~(left ^ right) & (left ^ result) & 0x80)),
+    }
+
+
 def sub_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
     result = (left - right) & 0xFFFF
     return {
@@ -2274,6 +2289,241 @@ def near_noop_vectors(module: str, entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_frame_step_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0150
+    callees = (0x019B, 0x0270, 0x0549, 0x06F6)
+    return_ips = (0x0171, 0x0174, 0x0177, 0x017A)
+    image = load_image(module)
+    expected_hash = "5b722c6d62fdc873ebb82a18e20efcbd82febab4f0e954f6bdfab7b805fc09af"
+    if hashlib.sha256(image[entry : entry + 44]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 44-byte body changed")
+
+    patched_image = bytearray(image)
+    for callee in callees:
+        patched_image[callee] = 0xC3
+
+    cases = (
+        ("inactive", 0x0000, 0x1234),
+        ("zero_offset", 0x2400, 0x0000),
+        ("subparagraph", 0x4400, 0x000F),
+        ("one_paragraph", 0x6400, 0x0010),
+        ("high_offset", 0x8400, 0xFFF0),
+        ("maximum_offset", 0xA400, 0xFFFF),
+        ("high_bit_segment", 0xC400, 0xA55A),
+    )
+    initial_data_segment = 0xE400
+    initial_extra_segment = 0x1400
+    initial_fs_segment = 0xF400
+    stack_segment = 0xD400
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (name, active_segment, window_offset) in enumerate(cases):
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        active_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x10000)
+        )
+        active_expected = bytearray(active_before)
+        framebuffer_segment = (0xA000 + (window_offset >> 4)) & 0xFFFF
+        if active_segment != 0:
+            struct.pack_into("<H", active_expected, 0x0018, framebuffer_segment)
+
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": initial_data_segment,
+            "es": initial_extra_segment,
+            "fs": initial_fs_segment,
+            "gs": 0x3400,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        initial_data_before = bytes.fromhex("1021324354657687")
+        initial_extra_before = bytes.fromhex("89a9bacbdcedfe0f")
+        initial_fs_before = bytes.fromhex("f0e0d0c0b0a09080")
+        call_entries: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address in callees:
+                call_index = callees.index(address)
+                call_entries.append(
+                    {
+                        "callee": address,
+                        "return_ip": struct.unpack(
+                            "<H",
+                            machine.mem_read(stack_segment * 16 + 0xFEFC, 2),
+                        )[0],
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "fs": machine.reg_read(UC_X86_REG_FS),
+                        "framebuffer_segment": struct.unpack(
+                            "<H",
+                            machine.mem_read(active_segment * 16 + 0x0018, 2),
+                        )[0],
+                        "call_index": call_index,
+                    }
+                )
+
+        memory = [
+            (0, 0x136A, struct.pack("<H", active_segment)),
+            (0, return_address, b"\xcc"),
+            (initial_data_segment, 0x0018, initial_data_before),
+            (initial_extra_segment, 0x0018, initial_extra_before),
+            (initial_fs_segment, 0x0018, initial_fs_before),
+            (stack_segment, 0x20CE, struct.pack("<H", window_offset)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<HH", return_address, 0) + stack_sentinel,
+            ),
+        ]
+        if active_segment != 0:
+            memory.append((active_segment, 0, bytes(active_before)))
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=code_handler,
+        )
+
+        if active_segment == 0:
+            expected_calls: list[dict[str, int]] = []
+        else:
+            expected_calls = [
+                {
+                    "callee": callee,
+                    "return_ip": return_ips[call_index],
+                    "sp": 0xFEFC,
+                    "ds": active_segment,
+                    "es": active_segment,
+                    "fs": active_segment,
+                    "framebuffer_segment": framebuffer_segment,
+                    "call_index": call_index,
+                }
+                for call_index, callee in enumerate(callees)
+            ]
+        if call_entries != expected_calls:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: calls={call_entries}, "
+                f"expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ecx"] = (
+            initial["ecx"] & 0xFFFF0000
+        ) | active_segment
+        expected_registers["sp"] = 0xFF04
+        if active_segment == 0:
+            expected_flags = _logical_flags_16(0, initial_flags)
+        else:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | framebuffer_segment
+            expected_registers["es"] = active_segment
+            expected_registers["fs"] = active_segment
+            expected_flags = add_flags_8(
+                window_offset >> 12, 0xA0, initial_flags
+            )
+
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: far return CS changed")
+
+        if active_segment != 0:
+            actual_active = bytes(machine.mem_read(active_segment * 16, 0x10000))
+            if actual_active != active_expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: active data segment changed"
+                )
+        if (
+            bytes(machine.mem_read(initial_data_segment * 16 + 0x0018, 8))
+            != initial_data_before
+        ):
+            raise AssertionError(f"{module}:{entry:#x} {name}: initial DS changed")
+        if (
+            bytes(machine.mem_read(initial_extra_segment * 16 + 0x0018, 8))
+            != initial_extra_before
+        ):
+            raise AssertionError(f"{module}:{entry:#x} {name}: initial ES changed")
+        if (
+            bytes(machine.mem_read(initial_fs_segment * 16 + 0x0018, 8))
+            != initial_fs_before
+        ):
+            raise AssertionError(f"{module}:{entry:#x} {name}: initial FS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+        if (
+            struct.unpack(
+                "<H", machine.mem_read(stack_segment * 16 + 0x20CE, 2)
+            )[0]
+            != window_offset
+        ):
+            raise AssertionError(f"{module}:{entry:#x} {name}: SS input changed")
+        if struct.unpack("<H", machine.mem_read(0x136A, 2))[0] != active_segment:
+            raise AssertionError(f"{module}:{entry:#x} {name}: CS segment word changed")
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "active_data_segment": active_segment,
+                "framebuffer_window_offset": window_offset,
+                "framebuffer_segment": (
+                    framebuffer_segment if active_segment != 0 else None
+                ),
+                "ordered_callees": list(callees) if active_segment != 0 else [],
+                "segments_installed": active_segment != 0,
+                "far_stack_bytes_consumed": 4,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def manu3_anim_select_entry_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x017C
@@ -3431,6 +3681,11 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0150_natural.json",
+        manu3_frame_step_vectors(),
+        args.check,
+    )
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_017c_natural.json",
         manu3_anim_select_entry_vectors(),
