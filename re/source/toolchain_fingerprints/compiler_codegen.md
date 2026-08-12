@@ -161,6 +161,19 @@ on the stack and returns the pointer in AX. The natural source is therefore a
 drop-in logical match under the Watcom ABI declaration, but not an exact code
 shape or an isolated Borland replacement.
 
+For `0x00A0C3`, five direct-execution cases confirm the complete palette-block
+loop, including immediate termination, a nonterminating zero-count block,
+multiple destination ranges, the nested `0x00A117` render-state copy, 16-bit
+metric underflow, and the source/destination segment split. Open Watcom 1.9
+medium targeting 8086 emits 60 instructions and 131 bytes from the natural
+far-pointer form; Turbo C 2.01 medium also emits 60 instructions, versus 44
+instructions and 84 bytes in the original. Both compilers preserve the logical
+loop but use conventional far-pointer arguments and explicit byte copies. They
+do not reproduce the original ES:SI stream input/result, DS/ES swap, LODSW,
+REP MOVSB, or register-preservation boundary. This is therefore accepted as a
+behaviorally verified natural C body with a confirmed assembly ABI boundary,
+not as exact compiler-generated source.
+
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
 results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,

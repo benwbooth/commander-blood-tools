@@ -91,7 +91,9 @@ def execute(
             interrupt_handler(machine, number)
 
         machine.hook_add(UC_HOOK_INTR, handle_interrupt)
-    machine.emu_start(entry, return_address + 1, count=20000)
+    # The stop address is a global execution boundary in Unicorn, so it cannot
+    # be the routine's RET when a nested call targets a higher address.
+    machine.emu_start(entry, 0x2ffff0, count=20000)
     if not returned:
         raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
     return machine
@@ -1830,6 +1832,218 @@ def close_file_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_palette_blocks_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    stream_segment = 0x3000
+    state_segment = 0x4000
+    stream_offset = 0x1000
+    cases = [
+        ("immediate_terminator", [], 1, 0x1234, False),
+        ("zero_count", [(7, b"")], 2, 0x5678, False),
+        (
+            "single_block_render_copy",
+            [(2, bytes([0x3F, 0x20, 0x01, 0x02, 0x03, 0x04]))],
+            3,
+            0x9ABC,
+            True,
+        ),
+        (
+            "multiple_blocks_metric",
+            [(1, bytes([9, 8, 7])), (5, bytes([1, 3, 5, 7, 9, 11]))],
+            0,
+            0x0040,
+            False,
+        ),
+        ("metric_underflow", [(10, bytes([0xAA, 0xBB, 0xCC]))], 0, 3, True),
+    ]
+    vectors = []
+
+    def parity_even(value: int) -> int:
+        return int((value & 0xFF).bit_count() % 2 == 0)
+
+    for name, blocks, wrap_index, initial_metric, copy_render_state in cases:
+        stream = bytearray()
+        for palette_start, payload in blocks:
+            if len(payload) % 3 != 0:
+                raise AssertionError(f"0xA0C3 {name} payload is not RGB-aligned")
+            stream.extend((palette_start, len(payload) // 3))
+            stream.extend(payload)
+        stream.extend(b"\xff\xff")
+        consumed = len(stream)
+
+        palette = bytearray((index * 17 + 5) & 0xFF for index in range(768))
+        expected_palette = bytearray(palette)
+        for palette_start, payload in blocks:
+            destination = palette_start * 3
+            expected_palette[destination : destination + len(payload)] = payload
+
+        render_destination = bytes(
+            (index * 29 + 7) & 0xFF for index in range(0x180)
+        )
+        expected_render_destination = (
+            bytes(expected_palette[:0x180])
+            if copy_render_state
+            else render_destination
+        )
+        stream_palette_decoy = bytes(
+            (index * 31 + 11) & 0xFF for index in range(768)
+        )
+        data_stream_decoy = bytes(
+            (index * 13 + 3) & 0xFF for index in range(len(stream))
+        )
+
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": stream_offset,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": stream_segment,
+            "gs": state_segment,
+            "flags": 0x0293,
+        }
+        machine = execute(
+            0xA0C3,
+            0xA116,
+            initial,
+            [
+                (data_segment, stream_offset, data_stream_decoy),
+                (data_segment, 0x5251, bytes(palette)),
+                (data_segment, 0x5851, render_destination),
+                (stream_segment, stream_offset, bytes(stream)),
+                (stream_segment, 0x5251, stream_palette_decoy),
+                (
+                    state_segment,
+                    0x2751,
+                    bytes([0 if copy_render_state else 1]),
+                ),
+                (state_segment, 0x0D60, struct.pack("<H", wrap_index)),
+                (state_segment, 0x0DAF, struct.pack("<H", initial_metric)),
+                (state_segment, 0x5B55, b"\xA5"),
+            ],
+        )
+
+        actual_palette = bytes(
+            machine.mem_read(data_segment * 16 + 0x5251, len(palette))
+        )
+        if actual_palette != bytes(expected_palette):
+            raise AssertionError(f"0xA0C3 {name} produced an unexpected palette")
+        actual_render_destination = bytes(
+            machine.mem_read(data_segment * 16 + 0x5851, 0x180)
+        )
+        if actual_render_destination != expected_render_destination:
+            raise AssertionError(
+                f"0xA0C3 {name} produced an unexpected render-state copy"
+            )
+        if (
+            machine.mem_read(stream_segment * 16 + 0x5251, 768)
+            != stream_palette_decoy
+        ):
+            raise AssertionError(f"0xA0C3 {name} changed the stream-segment decoy")
+        if (
+            machine.mem_read(data_segment * 16 + stream_offset, len(stream))
+            != data_stream_decoy
+        ):
+            raise AssertionError(f"0xA0C3 {name} read the data-segment decoy stream")
+        if machine.mem_read(state_segment * 16 + 0x5B55, 1) != b"\x01":
+            raise AssertionError(f"0xA0C3 {name} did not set the palette dirty flag")
+
+        expected_metric = initial_metric
+        if wrap_index == 0:
+            remaining = (initial_metric - consumed) & 0xFFFF
+            expected_metric = ((remaining >> 2) - 2) & 0xFFFF
+        actual_metric = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x0DAF, 2)
+        )[0]
+        if actual_metric != expected_metric:
+            raise AssertionError(
+                f"0xA0C3 {name} metric={actual_metric:#x}, "
+                f"expected={expected_metric:#x}"
+            )
+
+        expected_di = initial["di"]
+        if blocks:
+            last_start, last_payload = blocks[-1]
+            expected_di = 0x5251 + last_start * 3 + len(last_payload)
+        if copy_render_state:
+            expected_di = 0x5851 + 0x180
+        expected_registers = {
+            "ax": initial["ax"],
+            "bx": initial["bx"],
+            "cx": initial["cx"],
+            "dx": initial["dx"],
+            "si": (stream_offset + consumed) & 0xFFFF,
+            "di": expected_di & 0xFFFF,
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": initial["es"],
+            "gs": initial["gs"],
+        }
+        for register, value in expected_registers.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0xA0C3 {name} {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+
+        if wrap_index == 0:
+            shifted = ((initial_metric - consumed) & 0xFFFF) >> 2
+            flag_result = (shifted - 2) & 0xFFFF
+            carry = int(shifted < 2)
+        else:
+            flag_result = wrap_index
+            carry = 0
+        expected_flags = {
+            "carry": carry,
+            "parity": parity_even(flag_result),
+            "zero": int(flag_result == 0),
+            "sign": (flag_result >> 15) & 1,
+            "overflow": 0,
+            "interrupt": 1,
+            "direction": 0,
+        }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "carry": (flags >> 0) & 1,
+            "parity": (flags >> 2) & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "overflow": (flags >> 11) & 1,
+            "interrupt": (flags >> 9) & 1,
+            "direction": (flags >> 10) & 1,
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xA0C3 {name} flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "blocks": [
+                    {"start": start, "payload": list(payload)}
+                    for start, payload in blocks
+                ],
+                "consumed_bytes": consumed,
+                "copied_render_state": copy_render_state,
+                "initial_wrap_index": wrap_index,
+                "initial_metric": initial_metric,
+                "result_metric": actual_metric,
+                "result_stream_offset": expected_registers["si"],
+                "result_di": expected_registers["di"],
+                "final_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1901,6 +2115,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a141_natural.json",
         close_file_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a0c3_natural.json",
+        resource_palette_blocks_vectors(),
         args.check,
     )
     return 0
