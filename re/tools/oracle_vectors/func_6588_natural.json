@@ -1,0 +1,132 @@
+[
+  {
+    "name": "modulus_one_zero_continues",
+    "start_offset": 4096,
+    "modulus": 1,
+    "prng_result": 0,
+    "branch_taken": false,
+    "initial_top_byte_offset": 4,
+    "final_top_byte_offset": 4,
+    "query_mode_before": 165,
+    "final_script_offset": 4098,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "modulus_zero_zero_continues",
+    "start_offset": 4353,
+    "modulus": 0,
+    "prng_result": 0,
+    "branch_taken": false,
+    "initial_top_byte_offset": 6,
+    "final_top_byte_offset": 6,
+    "query_mode_before": 90,
+    "final_script_offset": 4355,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "result_one_branches",
+    "start_offset": 4608,
+    "modulus": 5,
+    "prng_result": 1,
+    "branch_taken": true,
+    "initial_top_byte_offset": 4,
+    "final_top_byte_offset": 2,
+    "query_mode_before": 255,
+    "final_script_offset": 29474,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_result_branches",
+    "start_offset": 4864,
+    "modulus": 65535,
+    "prng_result": 65535,
+    "branch_taken": true,
+    "initial_top_byte_offset": 2,
+    "final_top_byte_offset": 0,
+    "query_mode_before": 128,
+    "final_script_offset": 29747,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bit_result_branches",
+    "start_offset": 5120,
+    "modulus": 7,
+    "prng_result": 32768,
+    "branch_taken": true,
+    "initial_top_byte_offset": 32768,
+    "final_top_byte_offset": 32766,
+    "query_mode_before": 127,
+    "final_script_offset": 30020,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "odd_branch_stack_top",
+    "start_offset": 5376,
+    "modulus": 3,
+    "prng_result": 2,
+    "branch_taken": true,
+    "initial_top_byte_offset": 3,
+    "final_top_byte_offset": 1,
+    "query_mode_before": 51,
+    "final_script_offset": 30293,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "script_word_crosses_segment_end",
+    "start_offset": 65535,
+    "modulus": 9,
+    "prng_result": 0,
+    "branch_taken": false,
+    "initial_top_byte_offset": 8,
+    "final_top_byte_offset": 8,
+    "query_mode_before": 1,
+    "final_script_offset": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

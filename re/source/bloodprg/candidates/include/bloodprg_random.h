@@ -10,4 +10,8 @@ extern volatile cb_u8 blood_prng_counter;    /* CS:0x0AF2 */
 
 cb_u16 CB_FAR blood_prng_next(cb_u16 modulus); /* 0x002DE2 */
 
+#if defined(__WATCOMC__)
+#pragma aux blood_prng_next parm [ax] value [ax] modify exact [ax]
+#endif
+
 #endif

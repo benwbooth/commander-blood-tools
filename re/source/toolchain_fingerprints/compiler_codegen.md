@@ -970,6 +970,25 @@ moves its saved SI local to AX before return. Exact codegen therefore needs a
 narrow compiler/register-allocation decision; the recovered C logic itself is
 complete and contains no synthetic flag handling.
 
+VM random branch `0x006588` has seven direct vectors using a deterministic
+`MOV AX,result; RETF` stub at the original PRNG target. This isolates the opcode
+handler while the PRNG algorithm remains covered by its own 300-vector oracle.
+The A2 vectors prove that modulus 0, 1, 3, 5, 7, 9, and `0xFFFF` arrive in AX,
+SI is advanced at far-call entry, CS is `0x01CE`, SP reflects a far call, zero
+always continues, and nonzero results including `0x8000` and `0xFFFF` invoke the
+real branch helper. They also cover script wrap, odd and overflowed branch-stack
+tops, query/top effects, path-specific AX/SI and flags, restored CS/SP,
+preservation, and immutable input.
+
+The natural candidate now returns the DS:SI cursor directly, and the shared
+PRNG declaration records its recovered AX parameter/result ABI. Open Watcom
+`-3 -ox -mm` emits exactly 6 instructions/17 bytes versus 6/14 original;
+Turbo C 2.01 medium emits 20 instructions because it uses a stack argument.
+Watcom emits a real far call but schedules SI advancement after it, uses TEST
+instead of OR, and tail-branches to the helper. These are function-level
+equivalences because the PRNG preserves SI and logical TEST/OR flags agree;
+exact codegen still needs original LODSW scheduling and CALL/shared-RET control.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1004,6 +1023,7 @@ LCS and then mnemonic similarity:
 | `vm_tagged_byte_pair_compare` | medium, `-ox`, register | 28/27 | 0.0357 | 0.7500 | 0.1071 |
 | `vm_branch_stack_push` | medium, `-ox`, register | 8/9 | 0.1250 | 0.7500 | 0.1250 |
 | `vm_branch_stack_pop` | medium, `-ox`, register | 6/7 | 0.1667 | 0.6667 | 0.1667 |
+| `vm_random_branch` | medium, `-ox`, register | 6/6 | 0.1667 | 0.3333 | 0.1667 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
