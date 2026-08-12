@@ -3,6 +3,7 @@
  * This is not recovered game source.
  */
 typedef unsigned char u8;
+typedef unsigned int u16;
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define NEAR near
@@ -11,7 +12,12 @@ typedef unsigned char u8;
 #endif
 
 extern u8 presentation_flags;
-void NEAR vm_branch_probe(void);
+u16 NEAR vm_branch_probe(void);
+
+#if defined(__WATCOMC__)
+#pragma aux vm_branch_probe value [si] modify exact [ax si]
+#pragma aux vm_op_ce_gate_probe modify exact [ax si]
+#endif
 
 void NEAR vm_op_ce_gate_probe(void)
 {

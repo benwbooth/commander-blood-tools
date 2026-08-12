@@ -846,6 +846,37 @@ and returns comparison flags rather than the binary's terminal word and final
 count flags. Exact integration needs GS placement and a narrow AX/flag boundary;
 the scan algorithm itself requires no assembly.
 
+VM conditional gates `0x006494`, `0x0064A0`, and `0x0064AC` each have four
+direct vectors for flag values zero, an unrelated-bit-only value, bit zero, and
+all bits. The twelve vectors prove GS ownership of the distinct gate bytes,
+calls through the real `0x006462` branch helper only when bit zero is clear,
+branch-stack and query effects, conditional AX/SI outputs, TEST flags on the
+continue path, SUB flags on the branch path, preservation, and near return.
+Turbo C 2.01 medium emits the exact four-mnemonic TEST/JNE/CALL/RET shape for
+the representative natural gate. Watcom `-3 -ox -mm` emits an equivalent
+three-instruction conditional tail branch after the outer AX/SI clobber contract
+is declared. Exact integration still needs fixed GS placement and the recovered
+branch-helper ABI.
+
+VM script-profile request `0x0064B8` has six direct vectors covering signed byte
+values `0x00`, `0x01`, `0x7F`, `0x80`, and `0xFF`, plus SI wrap. They prove DS
+script ownership, GS output ownership, AX sign-extension/decrement result, SI
+cursor return, preserved incoming carry, all DEC-defined flags, immutable input,
+preservation, and near return. Replacing the pointer-to-pointer API with a
+natural pointer return exposes the binary data flow. A separate local request
+value is semantically ordinary and prevents Watcom from duplicating the volatile
+store. Watcom then emits 5 instructions/9 bytes versus 5/8 original, using an
+equivalent MOVSX/INC pair instead of LODSB/CBW; Turbo C medium emits 16
+instructions. Only fixed GS placement and opcode selection remain mismatched.
+
+VM clear-state handler `0x0064C0` has four vectors proving that the GS byte clear
+precedes the GS word clear, DS/SS decoys remain unchanged, all registers,
+segments, and flags are preserved, and the routine near-returns. Turbo C 2.01
+medium emits the exact three-mnemonic MOV/MOV/RET shape. Watcom emits 5
+instructions/11 bytes versus 3/14 original by zeroing AX first, which changes AX
+and flags. The two natural assignments are complete; exact integration needs GS
+placement and favors the Turbo C lowering for this routine.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -868,11 +899,13 @@ LCS and then mnemonic similarity:
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
 | `vm_condition_5` | medium, `-ox`, register | 104/142 | 0.0577 | 0.5096 | 0.0769 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
-| `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
+| `segment_global_gate` | medium, `-ox`, register | 4/3 | 0.2500 | 0.5000 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | compact, unoptimized, register | 35/51 | 0.1714 | 0.7714 | 0.2286 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
+| `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
+| `vm_clear_state` | medium, `-ox`, register | 3/5 | 0.3333 | 1.0000 | 0.3333 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

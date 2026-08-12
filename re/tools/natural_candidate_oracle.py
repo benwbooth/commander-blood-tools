@@ -6056,6 +6056,410 @@ def scan_zero_word_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_conditional_branch_vectors(
+    entry: int, return_address: int, flag_offset: int
+) -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    stack_segment = 0x9000
+    cases = [
+        ("zero_branches", 0x00),
+        ("unrelated_bit_branches", 0xFE),
+        ("bit_zero_set_continues", 0x01),
+        ("all_bits_set_continues", 0xFF),
+    ]
+    vectors = []
+
+    for index, (name, flag_value) in enumerate(cases):
+        branch_taken = (flag_value & 1) == 0
+        top = 4
+        new_top = 2
+        target = 0x7100 + index * 0x111
+        target_offset = 0x6820 + new_top
+        query_mode = 0xA5
+        target_bytes = struct.pack("<H", target)
+        game_target_decoy = struct.pack("<H", target ^ 0xFFFF)
+        data_target_decoy = struct.pack("<H", target ^ 0x5A5A)
+        memory = [
+            (game_segment, flag_offset, bytes([flag_value])),
+            (data_segment, flag_offset, b"\x5a"),
+            (stack_segment, flag_offset, b"\xa5"),
+            (game_segment, 0x6884, struct.pack("<H", top)),
+            (game_segment, 0x67AD, bytes([query_mode])),
+            (stack_segment, target_offset, target_bytes),
+            (game_segment, target_offset, game_target_decoy),
+            (data_segment, target_offset, data_target_decoy),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        branch_calls = []
+
+        def capture_branch(_machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6462:
+                branch_calls.append(address)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture_branch,
+        )
+
+        expected_calls = [0x6462] if branch_taken else []
+        if branch_calls != expected_calls:
+            raise AssertionError(
+                f"{entry:#x} {name}: branch calls={branch_calls}, "
+                f"expected={expected_calls}"
+            )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        if branch_taken:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | new_top
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | target
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        expected_top = new_top if branch_taken else top
+        if actual_top != expected_top:
+            raise AssertionError(
+                f"{entry:#x} {name}: top={actual_top:#x}, "
+                f"expected={expected_top:#x}"
+            )
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        expected_query = 0 if branch_taken else query_mode
+        if actual_query != expected_query:
+            raise AssertionError(
+                f"{entry:#x} {name}: query={actual_query:#x}, "
+                f"expected={expected_query:#x}"
+            )
+        if machine.mem_read(stack_segment * 16 + target_offset, 2) != target_bytes:
+            raise AssertionError(f"{entry:#x} {name}: branch target changed")
+        if machine.mem_read(game_segment * 16 + flag_offset, 1)[0] != flag_value:
+            raise AssertionError(f"{entry:#x} {name}: tested flag changed")
+        if machine.mem_read(data_segment * 16 + flag_offset, 1) != b"\x5a":
+            raise AssertionError(f"{entry:#x} {name}: DS flag decoy changed")
+        if machine.mem_read(stack_segment * 16 + flag_offset, 1) != b"\xa5":
+            raise AssertionError(f"{entry:#x} {name}: SS flag decoy changed")
+        if (
+            machine.mem_read(game_segment * 16 + target_offset, 2)
+            != game_target_decoy
+        ):
+            raise AssertionError(f"{entry:#x} {name}: GS target decoy changed")
+        if (
+            machine.mem_read(data_segment * 16 + target_offset, 2)
+            != data_target_decoy
+        ):
+            raise AssertionError(f"{entry:#x} {name}: DS target decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if branch_taken:
+            result = new_top
+            expected_flags = {
+                "cf": False,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "af": False,
+                "zf": result == 0,
+                "sf": bool(result & 0x8000),
+                "of": False,
+            }
+            actual_flags = {
+                "cf": bool(flags & 0x0001),
+                "pf": bool(flags & 0x0004),
+                "af": bool(flags & 0x0010),
+                "zf": bool(flags & 0x0040),
+                "sf": bool(flags & 0x0080),
+                "of": bool(flags & 0x0800),
+            }
+        else:
+            result = flag_value & 1
+            expected_flags = {
+                "cf": False,
+                "pf": result.bit_count() % 2 == 0,
+                "zf": result == 0,
+                "sf": False,
+                "of": False,
+            }
+            actual_flags = {
+                "cf": bool(flags & 0x0001),
+                "pf": bool(flags & 0x0004),
+                "zf": bool(flags & 0x0040),
+                "sf": bool(flags & 0x0080),
+                "of": bool(flags & 0x0800),
+            }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        if EXE[return_address] != 0xC3:
+            raise AssertionError(f"{entry:#x}: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "flag_offset": flag_offset,
+                "flag_value": flag_value,
+                "branch_taken": branch_taken,
+                "final_stack_top": expected_top,
+                "final_script_offset": target if branch_taken else initial["esi"] & 0xFFFF,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def vm_script_profile_request_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("zero_becomes_minus_one", 0x1000, 0x00, 0x0AD6),
+        ("one_becomes_zero", 0x1100, 0x01, 0x0AD7),
+        ("signed_maximum", 0x1200, 0x7F, 0x0246),
+        ("signed_minimum", 0x1300, 0x80, 0x0247),
+        ("minus_one_becomes_minus_two", 0x1400, 0xFF, 0x08D6),
+        ("cursor_wraps", 0xFFFF, 0x42, 0x08D7),
+    ]
+    vectors = []
+
+    for name, start, operand, initial_flags in cases:
+        signed_operand = operand if operand < 0x80 else operand - 0x100
+        before_decrement = signed_operand & 0xFFFF
+        result = (before_decrement - 1) & 0xFFFF
+        memory = [
+            (data_segment, start, bytes([operand])),
+            (0x4800, start, b"\x5a"),
+            (game_segment, start, b"\xa5"),
+            (game_segment, 0x6780, struct.pack("<H", 0xBEEF)),
+            (data_segment, 0x6780, struct.pack("<H", 0xA55A)),
+            (stack_segment, 0x6780, struct.pack("<H", 0x5AA5)),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+
+        machine = execute(0x64B8, 0x64BF, initial, memory)
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | result
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | ((start + 1) & 0xFFFF)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x64b8 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_request = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6780, 2)
+        )[0]
+        if actual_request != result:
+            raise AssertionError(
+                f"0x64b8 {name}: request={actual_request:#x}, expected={result:#x}"
+            )
+        if machine.mem_read(data_segment * 16 + start, 1)[0] != operand:
+            raise AssertionError(f"0x64b8 {name}: script byte changed")
+        if machine.mem_read(0x4800 * 16 + start, 1) != b"\x5a":
+            raise AssertionError(f"0x64b8 {name}: ES script decoy changed")
+        if machine.mem_read(game_segment * 16 + start, 1) != b"\xa5":
+            raise AssertionError(f"0x64b8 {name}: GS script decoy changed")
+        data_decoy = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x6780, 2)
+        )[0]
+        stack_decoy = struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + 0x6780, 2)
+        )[0]
+        if data_decoy != 0xA55A or stack_decoy != 0x5AA5:
+            raise AssertionError(f"0x64b8 {name}: output decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": bool(initial_flags & 0x0001),
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (before_decrement & 0x0F) == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": before_decrement == 0x8000,
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x64b8 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x64BF] != 0xC3:
+            raise AssertionError("0x64b8: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "operand_byte": operand,
+                "stored_request": result,
+                "final_script_offset": (start + 1) & 0xFFFF,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def vm_clear_state_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    stack_segment = 0x9000
+    cases = [
+        ("already_clear", 0x00, 0x0000),
+        ("all_bits_set", 0xFF, 0xFFFF),
+        ("mixed_values", 0x80, 0x1234),
+        ("low_bits", 0x01, 0x0001),
+    ]
+    vectors = []
+
+    for name, resume_state, resume_value in cases:
+        memory = [
+            (game_segment, 0x67B1, bytes([resume_state])),
+            (game_segment, 0x6764, struct.pack("<H", resume_value)),
+            (data_segment, 0x67B1, b"\x5a"),
+            (data_segment, 0x6764, struct.pack("<H", 0xA55A)),
+            (stack_segment, 0x67B1, b"\xa5"),
+            (stack_segment, 0x6764, struct.pack("<H", 0x5AA5)),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        before_second_store = []
+
+        def capture_store_order(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x64C6:
+                before_second_store.append(
+                    (
+                        machine.mem_read(game_segment * 16 + 0x67B1, 1)[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x6764, 2)
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            0x64C0,
+            0x64CD,
+            initial,
+            memory,
+            code_handler=capture_store_order,
+        )
+
+        if before_second_store != [(0, resume_value)]:
+            raise AssertionError(
+                f"0x64c0 {name}: store order={before_second_store}, "
+                f"expected={[(0, resume_value)]}"
+            )
+        for register, expected in initial.items():
+            if register == "flags":
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(f"0x64c0 {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_EFLAGS) != initial["flags"]:
+            raise AssertionError(f"0x64c0 {name}: changed flags")
+        if machine.mem_read(game_segment * 16 + 0x67B1, 1)[0] != 0:
+            raise AssertionError(f"0x64c0 {name}: resume state not cleared")
+        if struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6764, 2)
+        )[0] != 0:
+            raise AssertionError(f"0x64c0 {name}: resume value not cleared")
+        if machine.mem_read(data_segment * 16 + 0x67B1, 1) != b"\x5a":
+            raise AssertionError(f"0x64c0 {name}: DS state decoy changed")
+        if struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x6764, 2)
+        )[0] != 0xA55A:
+            raise AssertionError(f"0x64c0 {name}: DS value decoy changed")
+        if machine.mem_read(stack_segment * 16 + 0x67B1, 1) != b"\xa5":
+            raise AssertionError(f"0x64c0 {name}: SS state decoy changed")
+        if struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + 0x6764, 2)
+        )[0] != 0x5AA5:
+            raise AssertionError(f"0x64c0 {name}: SS value decoy changed")
+        if EXE[0x64CD] != 0xC3:
+            raise AssertionError("0x64c0: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "resume_state_before": resume_state,
+                "resume_value_before": resume_value,
+                "resume_state_after": 0,
+                "resume_value_after": 0,
+                "flags_preserved": True,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -10619,6 +11023,29 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_647b_natural.json", scan_zero_word_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6494_natural.json",
+        vm_conditional_branch_vectors(0x6494, 0x649F, 0x2793),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64a0_natural.json",
+        vm_conditional_branch_vectors(0x64A0, 0x64AB, 0x252A),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64ac_natural.json",
+        vm_conditional_branch_vectors(0x64AC, 0x64B7, 0x274F),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64b8_natural.json",
+        vm_script_profile_request_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64c0_natural.json", vm_clear_state_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

@@ -1,0 +1,64 @@
+[
+  {
+    "name": "zero_branches",
+    "flag_offset": 9514,
+    "flag_value": 0,
+    "branch_taken": true,
+    "final_stack_top": 2,
+    "final_script_offset": 28928,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unrelated_bit_branches",
+    "flag_offset": 9514,
+    "flag_value": 254,
+    "branch_taken": true,
+    "final_stack_top": 2,
+    "final_script_offset": 29201,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "bit_zero_set_continues",
+    "flag_offset": 9514,
+    "flag_value": 1,
+    "branch_taken": false,
+    "final_stack_top": 4,
+    "final_script_offset": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "all_bits_set_continues",
+    "flag_offset": 9514,
+    "flag_value": 255,
+    "branch_taken": false,
+    "final_stack_top": 4,
+    "final_script_offset": 22136,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

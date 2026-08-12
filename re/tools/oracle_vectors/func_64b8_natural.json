@@ -1,0 +1,92 @@
+[
+  {
+    "name": "zero_becomes_minus_one",
+    "start_offset": 4096,
+    "operand_byte": 0,
+    "stored_request": 65535,
+    "final_script_offset": 4097,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "one_becomes_zero",
+    "start_offset": 4352,
+    "operand_byte": 1,
+    "stored_request": 0,
+    "final_script_offset": 4353,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_maximum",
+    "start_offset": 4608,
+    "operand_byte": 127,
+    "stored_request": 126,
+    "final_script_offset": 4609,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_minimum",
+    "start_offset": 4864,
+    "operand_byte": 128,
+    "stored_request": 65407,
+    "final_script_offset": 4865,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "minus_one_becomes_minus_two",
+    "start_offset": 5120,
+    "operand_byte": 255,
+    "stored_request": 65534,
+    "final_script_offset": 5121,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_wraps",
+    "start_offset": 65535,
+    "operand_byte": 66,
+    "stored_request": 65,
+    "final_script_offset": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
