@@ -150,6 +150,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_shared_ae_b0_state parm [si] value [si] modify exact [ax bx dx si es]
 #pragma aux vm_op_shared_record_wildcard parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_op_cd_state_gated parm [si] value [si] modify exact [ax bx cx dx si bp]
+#pragma aux vm_op_b7_record_op parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_c2_descript_lookup parm [es di] value [ax] modify exact [ax]
 #endif
 
@@ -215,6 +216,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_record_wildcard(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006946 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_cd_state_gated(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x0069C7 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006AA7 */
 int CB_FAR vm_c2_descript_lookup(
     const volatile cb_u8 CB_FAR *record_name); /* 0x007409 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */

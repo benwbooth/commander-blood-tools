@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_b7_record_op
-; label_comment: VM opcode 0xB7: les di,gs:[0x6724] (object/line-record state table); optional 0xA1(POP) skip; lodsw index/offset + lodsb value -> read/write a field in the state-table record. An object/line-record manipulation opcode || NARROWER EARLIER READING `vm_bit_set_test_6aa7`: 0xB7 high-bit-first byte flag set/clear/test handler || MERGED 2026-07-25 (audit-fixes #133): one address, two names, the shorter describing a prologue or a single facet. Kept because a narrow reading records a true observation; renamed away because it is not what the routine IS.
+; label_comment: VM opcode 0xB7: loads the record base, consumes optional A1 plus a word offset and byte bit index, then queries or updates the addressed high-bit-first record bit; A1 inverts queries and selects clear instead of set.
 ; incoming: vm_opcode_handlers:opcode_0xb7
 ; byte_count: 95
 ; boundary: cfg_blocks_12_terminals_4
