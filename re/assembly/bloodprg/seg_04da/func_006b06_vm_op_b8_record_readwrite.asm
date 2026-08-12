@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_b8_record_readwrite
-; label_comment: VM opcode 0xB8 (shared B8/B9/BD): les di,gs:0x6724; di+=operand record offset; lodsw bx, lodsw ax (two values). If gs:[0x67ad]&1 (QUERY mode): cmp bx vs es:[di] AND ax vs es:[di+2]; both match -> continue, else vm_branch. If NOT query (SET mode): es:[di]=bx, es:[di+2]=ax (WRITE both). A dual-mode record read/write of a 2-word record field pair || ALSO RECORDED as `vm_op_b8_record_compare`: VM opcode 0xB8: les di,gs:[0x6724]; di += operand (record offset); lodsw compare-value bx; lodsw; if gs:[0x67ad]&1, cmp bx vs es:[di] (record field) - conditional on a state-table record field. Record-field compare/branch || ALSO RECORDED as `vm_pair_record_6b06`: B8/B9/BD pair-record assignment/compare handler || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: Shared B8/B9/BD handler: compares or writes a two-word pair at record-base.offset + operand; set mode resolves that effective offset through the directory and clears a matching link at absolute record offset GS:0x6752 + 0x16.
 ; incoming: vm_opcode_handlers:opcode_0xb8
 ; incoming: vm_opcode_handlers:opcode_0xb9
 ; incoming: vm_opcode_handlers:opcode_0xbd

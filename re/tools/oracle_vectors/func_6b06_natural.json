@@ -1,0 +1,352 @@
+[
+  {
+    "name": "query_exact_pass",
+    "query_mode_before": 1,
+    "record_base_offset": 4608,
+    "script_record_offset": 768,
+    "effective_record_offset": 5376,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      4369,
+      8738
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": false,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": false,
+    "final_script_offset": 18950,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_first_mismatch_fails",
+    "query_mode_before": 1,
+    "record_base_offset": 4608,
+    "script_record_offset": 800,
+    "effective_record_offset": 5408,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      13107,
+      8738
+    ],
+    "pair_after": [
+      13107,
+      8738
+    ],
+    "owner_lookup_called": false,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": true,
+    "final_script_offset": 24107,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_second_mismatch_fails",
+    "query_mode_before": 1,
+    "record_base_offset": 4608,
+    "script_record_offset": 832,
+    "effective_record_offset": 5440,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      4369,
+      17476
+    ],
+    "pair_after": [
+      4369,
+      17476
+    ],
+    "owner_lookup_called": false,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": true,
+    "final_script_offset": 24150,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_odd_mode_three_pass",
+    "query_mode_before": 3,
+    "record_base_offset": 4608,
+    "script_record_offset": 864,
+    "effective_record_offset": 5472,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      4369,
+      8738
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": false,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": false,
+    "final_script_offset": 19046,
+    "query_mode_after": 3,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_script_segment_end",
+    "query_mode_before": 1,
+    "record_base_offset": 4608,
+    "script_record_offset": 896,
+    "effective_record_offset": 5504,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      4369,
+      8738
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": false,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": false,
+    "final_script_offset": 0,
+    "query_mode_after": 1,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_clear_matching_link",
+    "query_mode_before": 0,
+    "record_base_offset": 4608,
+    "script_record_offset": 928,
+    "effective_record_offset": 5536,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      42405,
+      23130
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": true,
+    "owner": 1911,
+    "secondary_link_before": 1911,
+    "secondary_link_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 19110,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_preserve_mismatched_link",
+    "query_mode_before": 0,
+    "record_base_offset": 4608,
+    "script_record_offset": 960,
+    "effective_record_offset": 5568,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      42405,
+      23130
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": true,
+    "owner": 1911,
+    "secondary_link_before": 39321,
+    "secondary_link_after": 39321,
+    "branch_failed": false,
+    "final_script_offset": 19142,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_even_nonzero_mode",
+    "query_mode_before": 2,
+    "record_base_offset": 4608,
+    "script_record_offset": 992,
+    "effective_record_offset": 5600,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      42405,
+      23130
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": true,
+    "owner": 1911,
+    "secondary_link_before": 1911,
+    "secondary_link_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 19174,
+    "query_mode_after": 2,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_effective_offset_wrap",
+    "query_mode_before": 0,
+    "record_base_offset": 65520,
+    "script_record_offset": 32,
+    "effective_record_offset": 16,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      42405,
+      23130
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": true,
+    "owner": 1911,
+    "secondary_link_before": 1911,
+    "secondary_link_after": 0,
+    "branch_failed": false,
+    "final_script_offset": 19206,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_pair_first_word_at_ffff",
+    "query_mode_before": 0,
+    "record_base_offset": 65520,
+    "script_record_offset": 15,
+    "effective_record_offset": 65535,
+    "requested_pair": [
+      4369,
+      8738
+    ],
+    "pair_before": [
+      42405,
+      23130
+    ],
+    "pair_after": [
+      4369,
+      8738
+    ],
+    "owner_lookup_called": true,
+    "owner": 1911,
+    "secondary_link_before": 34952,
+    "secondary_link_after": 34952,
+    "branch_failed": false,
+    "final_script_offset": 19238,
+    "query_mode_after": 0,
+    "branch_stack_top_after": 9320,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

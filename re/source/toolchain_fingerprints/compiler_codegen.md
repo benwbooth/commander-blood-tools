@@ -1240,6 +1240,28 @@ materializes query truth with SETNE/CMP, addresses globals through DS, and
 duplicates returns. Exact integration needs fixed segment placement and the
 original narrow register allocation, not a different algorithm.
 
+Shared VM pair handler `0x006B06` serves opcodes B8, B9, and BD. It loads the
+far record base, adds the script record offset to the loaded pointer offset,
+and consumes two values. Query mode compares both record words and branches on
+either mismatch. Set mode writes both words, passes the effective segment
+offset to the threshold directory helper, then loads GS:0x6752 as an absolute
+record-segment offset and clears its `+0x16` link when it matches the resolved
+owner. Ten direct vectors prove both comparison failures, writes, link match
+and mismatch, nonzero mode bits, the real helpers, nonzero base offsets,
+effective-address and script wrap, segmented ownership, registers, flags, and
+near return. They exposed and corrected the old candidate's offset-only helper
+argument and incorrectly base-relative secondary link.
+
+The corrected one-to-one candidate computes the effective 16-bit segment
+offset explicitly and directly returns the parsed cursor or branch target.
+Open Watcom `-3 -ox -mm` compiles it without warnings to 37 instructions/91
+bytes versus 26/70 original; Turbo C 2.01 medium emits 63 instructions. Watcom
+preserves the essential far loads, pair tests/writes, helper call, and absolute
+link access, but materializes the far pointer in AX/CX, keeps the effective
+offset in BX, allocates the pair to AX/DX, saves CX/DX/DI, addresses globals
+through DS, and duplicates returns. Exact integration needs fixed segment
+placement and the original compact register allocation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1289,6 +1311,7 @@ LCS and then mnemonic similarity:
 | `vm_record_wildcard` | medium, `-ox`, register | 55/56 | 0.0545 | 0.5455 | 0.1273 |
 | `vm_cd_record_triple` | medium, `-ox`, register | 82/86 | 0.0366 | 0.6341 | 0.0732 |
 | `vm_b7_record_bit` | medium, `-ox`, register | 43/51 | 0.0698 | 0.5116 | 0.0930 |
+| `vm_b8_record_pair` | medium, `-ox`, register | 26/37 | 0.1154 | 0.7308 | 0.1154 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

@@ -12169,6 +12169,460 @@ def vm_b7_record_bit_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_b8_record_pair_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    record_segment = 0x5200
+    directory_segment = 0x5800
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "query_exact_pass",
+            "query": 1,
+            "stored": (0x1111, 0x2222),
+        },
+        {
+            "name": "query_first_mismatch_fails",
+            "query": 1,
+            "stored": (0x3333, 0x2222),
+        },
+        {
+            "name": "query_second_mismatch_fails",
+            "query": 1,
+            "stored": (0x1111, 0x4444),
+        },
+        {
+            "name": "query_odd_mode_three_pass",
+            "query": 3,
+            "stored": (0x1111, 0x2222),
+        },
+        {
+            "name": "query_script_segment_end",
+            "query": 1,
+            "stored": (0x1111, 0x2222),
+            "start": 0xFFFA,
+        },
+        {
+            "name": "set_clear_matching_link",
+            "query": 0,
+            "link_matches": True,
+        },
+        {
+            "name": "set_preserve_mismatched_link",
+            "query": 0,
+            "link": 0x9999,
+        },
+        {
+            "name": "set_even_nonzero_mode",
+            "query": 2,
+            "link_matches": True,
+        },
+        {
+            "name": "set_effective_offset_wrap",
+            "query": 0,
+            "base": 0xFFF0,
+            "offset": 0x0020,
+            "link_matches": True,
+        },
+        {
+            "name": "set_pair_first_word_at_ffff",
+            "query": 0,
+            "base": 0xFFF0,
+            "offset": 0x000F,
+        },
+    ]
+    failure_tops = [2, 0, 1, 5]
+    vectors = []
+
+    def sub_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    failure_index = 0
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        query_before = int(case["query"])
+        query_path = bool(query_before & 1)
+        base_offset = int(case.get("base", 0x1200))
+        offset = int(case.get("offset", 0x0300 + case_index * 0x20))
+        record_offset = (base_offset + offset) & 0xFFFF
+        first = 0x1111
+        second = 0x2222
+        stored_first, stored_second = case.get("stored", (0xA5A5, 0x5A5A))
+        start = int(case.get("start", 0x4A00 + case_index * 0x20))
+        script = struct.pack("<HHH", offset, first, second)
+        final_script = (start + len(script)) & 0xFFFF
+        branch_failed = query_path and (
+            stored_first != first or stored_second != second
+        )
+        if branch_failed:
+            top_before = failure_tops[failure_index % len(failure_tops)]
+            failure_index += 1
+            top_after = (top_before - 2) & 0xFFFF
+            branch_target = (0x5E00 + case_index * 0x2B) & 0xFFFF
+            branch_stack_effective = (0x6820 + top_after) & 0xFFFF
+        else:
+            top_before = 0x2468
+            top_after = top_before
+            branch_target = 0x5AA5
+            branch_stack_effective = 0x681E
+
+        owner = 0x0777
+        secondary_offset = 0x0900
+        secondary_link_offset = secondary_offset + 0x16
+        link_before = (
+            owner if bool(case.get("link_matches", False)) else int(case.get("link", 0x8888))
+        )
+        relative_link_offset = (base_offset + secondary_link_offset) & 0xFFFF
+        relative_link_decoy = link_before ^ 0xFFFF
+        if query_path:
+            pair_after = (stored_first, stored_second)
+            link_after = link_before
+            owner_called = False
+        else:
+            pair_after = (first, second)
+            link_after = 0 if link_before == owner else link_before
+            owner_called = True
+
+        pointer = struct.pack("<HH", base_offset, record_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x2222, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x3333, stack_segment)
+        data_query_decoy = query_before ^ 0x55
+        stack_query_decoy = query_before ^ 0xAA
+        data_top_decoy = top_before ^ 0xFFFF
+        directory_offset = 0x2000
+        directory_pointer = struct.pack("<HH", directory_offset, directory_segment)
+        decoy_directory_pointer = struct.pack("<HH", 0x2400, extra_segment)
+        memory = [
+            (game_segment, 0x6724, pointer),
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (game_segment, 0x672C, directory_pointer),
+            (data_segment, 0x672C, decoy_directory_pointer),
+            (directory_segment, directory_offset - 4, struct.pack("<H", owner)),
+            (directory_segment, directory_offset + 0x10, b"\xff\xff"),
+            (game_segment, 0x6752, struct.pack("<H", secondary_offset)),
+            (data_segment, 0x6752, struct.pack("<H", secondary_offset ^ 0xFFFF)),
+            (stack_segment, 0x6752, struct.pack("<H", secondary_offset ^ 0x5A5A)),
+            (game_segment, 0x67AD, bytes([query_before])),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (game_segment, 0x6884, struct.pack("<H", top_before)),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (record_segment, record_offset, struct.pack("<H", stored_first)),
+            (
+                record_segment,
+                (record_offset + 2) & 0xFFFF,
+                struct.pack("<H", stored_second),
+            ),
+            (record_segment, secondary_link_offset, struct.pack("<H", link_before)),
+            (
+                record_segment,
+                relative_link_offset,
+                struct.pack("<H", relative_link_decoy),
+            ),
+            (data_segment, record_offset, b"\xad\xde\xad\xde"),
+            (game_segment, record_offset, b"\xa5\xa5\xa5\xa5"),
+            (stack_segment, record_offset, b"\x5a\x5a\x5a\x5a"),
+            (stack_segment, branch_stack_effective, struct.pack("<H", branch_target)),
+            (
+                game_segment,
+                branch_stack_effective,
+                struct.pack("<H", branch_target ^ 0xFFFF),
+            ),
+            (
+                data_segment,
+                branch_stack_effective,
+                struct.pack("<H", branch_target ^ 0xA5A5),
+            ),
+        ]
+        immutable_script = []
+        for byte_index, byte in enumerate(script):
+            script_offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, script_offset, encoded))
+            memory.append((extra_segment, script_offset, b"\x5a"))
+            memory.append((game_segment, script_offset, b"\xa5"))
+            immutable_script.append((script_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        base_phases = []
+        parse_phases = []
+        helper_events = []
+        terminal_phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6B0C:
+                base_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+            elif address == 0x6B13:
+                parse_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address in (0x6462, 0x6034):
+                helper_events.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address == 0x6B4A:
+                terminal_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        struct.unpack(
+                            "<H",
+                            machine.mem_read(record_segment * 16 + record_offset, 2),
+                        )[0],
+                        struct.unpack(
+                            "<H",
+                            machine.mem_read(
+                                record_segment * 16
+                                + ((record_offset + 2) & 0xFFFF),
+                                2,
+                            ),
+                        )[0],
+                        struct.unpack(
+                            "<H",
+                            machine.mem_read(
+                                record_segment * 16 + secondary_link_offset, 2
+                            ),
+                        )[0],
+                        machine.mem_read(game_segment * 16 + 0x67AD, 1)[0],
+                        struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            0x6B06,
+            0x6B4B,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        expected_base = [(base_offset, record_segment, start)]
+        if base_phases != expected_base:
+            raise AssertionError(
+                f"0x6b06 {name}: base={base_phases}, expected={expected_base}"
+            )
+        expected_parse = [
+            (second, first, final_script, record_offset, record_segment)
+        ]
+        if parse_phases != expected_parse:
+            raise AssertionError(
+                f"0x6b06 {name}: parse={parse_phases}, expected={expected_parse}"
+            )
+
+        if branch_failed:
+            expected_ax = top_after
+            expected_si = branch_target
+            query_after = 0
+            expected_helpers = [
+                (0x6462, second, first, final_script, record_offset, record_segment)
+            ]
+            expected_flags = sub_flags_16(top_before, 2)
+            terminal_di = record_offset
+        elif query_path:
+            expected_ax = second
+            expected_si = final_script
+            query_after = query_before
+            expected_helpers = []
+            expected_flags = sub_flags_16(second, stored_second)
+            terminal_di = record_offset
+        else:
+            expected_ax = owner
+            expected_si = final_script
+            query_after = query_before
+            expected_helpers = [
+                (0x6034, record_offset, first, final_script, record_offset, record_segment)
+            ]
+            expected_flags = sub_flags_16(owner, link_before)
+            terminal_di = secondary_offset
+
+        if helper_events != expected_helpers:
+            raise AssertionError(
+                f"0x6b06 {name}: helpers={helper_events}, expected={expected_helpers}"
+            )
+        expected_terminal = [
+            (
+                expected_ax,
+                first,
+                expected_si,
+                terminal_di,
+                record_segment,
+                pair_after[0],
+                pair_after[1],
+                link_after,
+                query_after,
+                top_after,
+            )
+        ]
+        if terminal_phases != expected_terminal:
+            raise AssertionError(
+                f"0x6b06 {name}: terminal={terminal_phases}, "
+                f"expected={expected_terminal}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | first
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | expected_si
+        expected_registers["es"] = record_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6b06 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_pair = (
+            struct.unpack(
+                "<H", machine.mem_read(record_segment * 16 + record_offset, 2)
+            )[0],
+            struct.unpack(
+                "<H",
+                machine.mem_read(
+                    record_segment * 16 + ((record_offset + 2) & 0xFFFF), 2
+                ),
+            )[0],
+        )
+        if actual_pair != pair_after:
+            raise AssertionError(
+                f"0x6b06 {name}: pair={actual_pair}, expected={pair_after}"
+            )
+        actual_link = struct.unpack(
+            "<H",
+            machine.mem_read(record_segment * 16 + secondary_link_offset, 2),
+        )[0]
+        if actual_link != link_after:
+            raise AssertionError(
+                f"0x6b06 {name}: link={actual_link:#x}, expected={link_after:#x}"
+            )
+        actual_relative_decoy = struct.unpack(
+            "<H",
+            machine.mem_read(record_segment * 16 + relative_link_offset, 2),
+        )[0]
+        if actual_relative_decoy != relative_link_decoy:
+            raise AssertionError(f"0x6b06 {name}: relative link decoy changed")
+        for script_offset, expected in immutable_script:
+            actual = bytes(machine.mem_read(data_segment * 16 + script_offset, 1))
+            if actual != expected:
+                raise AssertionError(f"0x6b06 {name}: script input changed")
+            if machine.mem_read(extra_segment * 16 + script_offset, 1) != b"\x5a":
+                raise AssertionError(f"0x6b06 {name}: ES script decoy changed")
+            if machine.mem_read(game_segment * 16 + script_offset, 1) != b"\xa5":
+                raise AssertionError(f"0x6b06 {name}: GS script decoy changed")
+        decoys = [
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (data_segment, 0x672C, decoy_directory_pointer),
+            (data_segment, 0x6752, struct.pack("<H", secondary_offset ^ 0xFFFF)),
+            (stack_segment, 0x6752, struct.pack("<H", secondary_offset ^ 0x5A5A)),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+        ]
+        for segment, decoy_offset, expected in decoys:
+            actual = bytes(
+                machine.mem_read(segment * 16 + decoy_offset, len(expected))
+            )
+            if actual != expected:
+                raise AssertionError(f"0x6b06 {name}: segment decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6b06 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6B4B] != 0xC3:
+            raise AssertionError("0x6b06: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "query_mode_before": query_before,
+                "record_base_offset": base_offset,
+                "script_record_offset": offset,
+                "effective_record_offset": record_offset,
+                "requested_pair": [first, second],
+                "pair_before": [stored_first, stored_second],
+                "pair_after": list(pair_after),
+                "owner_lookup_called": owner_called,
+                "owner": owner,
+                "secondary_link_before": link_before,
+                "secondary_link_after": link_after,
+                "branch_failed": branch_failed,
+                "final_script_offset": expected_si,
+                "query_mode_after": query_after,
+                "branch_stack_top_after": top_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -16864,6 +17318,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6aa7_natural.json",
         vm_b7_record_bit_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6b06_natural.json",
+        vm_b8_record_pair_vectors(),
         args.check,
     )
     update_vector(
