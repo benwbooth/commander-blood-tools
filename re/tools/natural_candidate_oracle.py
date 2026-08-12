@@ -17230,6 +17230,351 @@ def matrix_table_clear_2a1b_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_projection_matrix_build_vectors() -> list[dict[str, object]]:
+    entry = 0x98B9
+    expected_hash = "ee9cefae7bb3c3bcc0acfa72dd6f6f3731e166b91b2e15c3d3e62eee82653bb5"
+    if hashlib.sha256(EXE[entry : entry + 343]).hexdigest() != expected_hash:
+        raise AssertionError("0x98b9: recovered 343-byte body changed")
+
+    def signed32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    def multiply32(lhs: int, rhs: int) -> int:
+        return signed32(lhs * rhs)
+
+    def add32(lhs: int, rhs: int) -> int:
+        return signed32(lhs + rhs)
+
+    def subtract32(lhs: int, rhs: int) -> int:
+        return signed32(lhs - rhs)
+
+    def negate32(value: int) -> int:
+        return signed32(-value)
+
+    def shift15(value: int) -> int:
+        return signed32(value) >> 15
+
+    cases = [
+        ("zero", 0, 1, 2, (0, 0), (0, 0), (0, 0)),
+        ("identity", 3, 4, 5, (16384, 0), (16384, 0), (16384, 0)),
+        ("quarter_turn_mix", 6, 7, 8, (0, 16384), (16384, 0), (0, -16384)),
+        (
+            "mixed_signs",
+            17,
+            63,
+            121,
+            (12345, -23456),
+            (-16384, 8192),
+            (24576, -12288),
+        ),
+        (
+            "signed_extremes",
+            31,
+            95,
+            159,
+            (32767, -32768),
+            (-32768, 32767),
+            (32767, 32767),
+        ),
+        (
+            "negative_extremes",
+            32,
+            96,
+            160,
+            (-32768, -32768),
+            (-32768, -1),
+            (-1, -32768),
+        ),
+        ("small_values", 10, 11, 12, (1, -1), (2, -3), (4, -5)),
+        (
+            "overflow_products",
+            40,
+            80,
+            120,
+            (30000, 30000),
+            (28000, -29000),
+            (-31000, 32000),
+        ),
+        (
+            "angle_boundaries",
+            180,
+            179,
+            178,
+            (16384, 0),
+            (-16384, 0),
+            (0, 16384),
+        ),
+        ("repeated_angle", 90, 90, 90, (11585, 11585), (11585, 11585), (11585, 11585)),
+        (
+            "asymmetric_large",
+            45,
+            135,
+            179,
+            (-30001, 12345),
+            (22222, -11111),
+            (-23456, 31415),
+        ),
+        (
+            "final_negative",
+            71,
+            143,
+            29,
+            (8192, -24576),
+            (24576, 16384),
+            (-24576, 8192),
+        ),
+    ]
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    store_addresses = [
+        0x9951,
+        0x9963,
+        0x9986,
+        0x99A9,
+        0x99BB,
+        0x99DE,
+        0x99ED,
+        0x99F3,
+        0x9A01,
+    ]
+    vectors = []
+
+    for name, angle_a, angle_b, angle_c, pair_a, pair_b, pair_c in cases:
+        table = bytearray(181 * 4)
+        for index in range(181):
+            cosine = ((index * 193 + 17) & 0xFFFF) - 0x8000
+            sine = ((index * 389 + 91) & 0xFFFF) - 0x8000
+            struct.pack_into("<hh", table, index * 4, cosine, sine)
+        for angle, pair in (
+            (angle_a, pair_a),
+            (angle_b, pair_b),
+            (angle_c, pair_c),
+        ):
+            struct.pack_into("<hh", table, angle * 4, *pair)
+
+        a_cos = signed32(pair_a[0] * 2)
+        a_sin = signed32(pair_a[1] * 2)
+        b_cos = signed32(pair_b[0] * 2)
+        b_sin = signed32(pair_b[1] * 2)
+        c_cos = signed32(pair_c[0] * 2)
+        c_sin = signed32(pair_c[1] * 2)
+        b_sin_c_sin = shift15(multiply32(b_sin, c_sin))
+        c_sin_b_cos = shift15(multiply32(c_sin, b_cos))
+        matrix = [
+            shift15(
+                add32(
+                    multiply32(a_cos, b_cos),
+                    multiply32(b_sin_c_sin, a_sin),
+                )
+            ),
+            shift15(negate32(multiply32(c_cos, a_sin))),
+            shift15(
+                subtract32(
+                    multiply32(c_sin_b_cos, a_sin),
+                    multiply32(a_cos, b_sin),
+                )
+            ),
+            shift15(
+                subtract32(
+                    multiply32(b_sin_c_sin, a_cos),
+                    multiply32(a_sin, b_cos),
+                )
+            ),
+            negate32(shift15(multiply32(c_cos, a_cos))),
+            shift15(
+                add32(
+                    multiply32(b_sin, a_sin),
+                    multiply32(c_sin_b_cos, a_cos),
+                )
+            ),
+            shift15(multiply32(b_sin, c_cos)),
+            c_sin,
+            shift15(multiply32(c_cos, b_cos)),
+        ]
+        terms = [b_cos, b_sin, c_cos, c_sin, a_cos, a_sin]
+        expected_work = struct.pack("<6i9i", *(terms + matrix))
+        tail = bytes((0xA0 + index * 7) & 0xFF for index in range(6))
+        work_before = bytes((0x31 + index * 13) & 0xFF for index in range(60)) + tail
+        angle_words = struct.pack("<HHH", angle_b, angle_c, angle_a)
+        decoy_table = bytes((0xD3 + index * 11) & 0xFF for index in range(len(table)))
+        game_table_decoy = bytes(
+            (0x4B + index * 17) & 0xFF for index in range(len(table))
+        )
+        decoy_angles = bytes.fromhex("5aa596698778")
+        decoy_work = bytes((0x6D + index * 5) & 0xFF for index in range(len(work_before)))
+        stack_sentinel = bytes.fromhex("c33c5aa59669")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x98CB:
+                phases.append(
+                    {
+                        "address": address,
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == 0x992A:
+                phases.append(
+                    {
+                        "address": address,
+                        "terms": list(
+                            struct.unpack(
+                                "<6i",
+                                machine.mem_read(game_segment * 16 + 0x2F7D, 24),
+                            )
+                        ),
+                    }
+                )
+            elif address in store_addresses:
+                phases.append(
+                    {
+                        "address": address,
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "eax": signed32(machine.reg_read(UC_X86_REG_EAX)),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == 0x9A03:
+                phases.append(
+                    {
+                        "address": address,
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0x2F6D, angle_words),
+                (game_segment, 0x2F7D, work_before),
+                (game_segment, 0x4F45, game_table_decoy),
+                (data_segment, 0x2F6D, decoy_angles),
+                (data_segment, 0x2F7D, decoy_work),
+                (data_segment, 0x4F45, decoy_table),
+                (extra_segment, 0x2F6D, decoy_angles[::-1]),
+                (extra_segment, 0x2F7D, decoy_work[::-1]),
+                (extra_segment, 0x4F45, decoy_table[::-1]),
+                (stack_segment, 0x4F45, bytes(table)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_phases = [
+            {"address": 0x98CB, "ds": game_segment, "es": game_segment},
+            {"address": 0x992A, "terms": terms},
+        ]
+        expected_phases.extend(
+            {
+                "address": address,
+                "di": 0x2F95 + index * 4,
+                "eax": matrix[index],
+                "es": game_segment,
+            }
+            for index, address in enumerate(store_addresses)
+        )
+        expected_phases.append({"address": 0x9A03, "di": 0x2FB9})
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x98b9 {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        actual_work = bytes(machine.mem_read(game_segment * 16 + 0x2F7D, 66))
+        if actual_work != expected_work + tail:
+            raise AssertionError(f"0x98b9 {name}: projection workspace mismatch")
+        actual_angles = bytes(machine.mem_read(game_segment * 16 + 0x2F6D, 6))
+        actual_table = bytes(machine.mem_read(stack_segment * 16 + 0x4F45, len(table)))
+        if actual_angles != angle_words or actual_table != table:
+            raise AssertionError(f"0x98b9 {name}: source data changed")
+        if bytes(
+            machine.mem_read(game_segment * 16 + 0x4F45, len(game_table_decoy))
+        ) != game_table_decoy:
+            raise AssertionError(f"0x98b9 {name}: GS table decoy changed")
+        for segment, expected_angles, expected_segment_work, expected_table in (
+            (data_segment, decoy_angles, decoy_work, decoy_table),
+            (extra_segment, decoy_angles[::-1], decoy_work[::-1], decoy_table[::-1]),
+        ):
+            if bytes(machine.mem_read(segment * 16 + 0x2F6D, 6)) != expected_angles:
+                raise AssertionError(f"0x98b9 {name}: angle decoy changed")
+            if bytes(machine.mem_read(segment * 16 + 0x2F7D, 66)) != expected_segment_work:
+                raise AssertionError(f"0x98b9 {name}: work decoy changed")
+            if bytes(machine.mem_read(segment * 16 + 0x4F45, len(table))) != expected_table:
+                raise AssertionError(f"0x98b9 {name}: table decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x98b9 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x98b9 {name}: far return did not restore CS")
+
+        final_product = multiply32(c_cos, b_cos)
+        expected_flags = {
+            "cf": bool((final_product & 0xFFFFFFFF) & (1 << 14)),
+            "pf": (matrix[8] & 0xFF).bit_count() % 2 == 0,
+            "zf": matrix[8] == 0,
+            "sf": matrix[8] < 0,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x98b9 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x98b9 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "angles_a_b_c": [angle_a, angle_b, angle_c],
+                "table_pairs_a_b_c": [list(pair_a), list(pair_b), list(pair_c)],
+                "doubled_terms_b_c_a": terms,
+                "matrix": matrix,
+                "workspace_sha256": hashlib.sha256(actual_work).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -23053,6 +23398,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_963f_natural.json",
         matrix_table_clear_2a1b_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_98b9_natural.json",
+        ship_3d_projection_matrix_build_vectors(),
         args.check,
     )
     update_vector(

@@ -26,6 +26,15 @@ typedef struct ship_3d_projection_context {
     cb_u16 projected_depth;
 } ship_3d_projection_context;
 
+typedef struct ship_3d_projection_terms {
+    cb_i32 b_cos;
+    cb_i32 b_sin;
+    cb_i32 c_cos;
+    cb_i32 c_sin;
+    cb_i32 a_cos;
+    cb_i32 a_sin;
+} ship_3d_projection_terms;
+
 typedef struct ship_3d_angle_table_entry {
     cb_i16 cosine;
     cb_i16 sine;
@@ -52,14 +61,16 @@ extern volatile cb_u16 ship_3d_depth_offset; /* GS:0x2527 */
 extern volatile cb_u8 ship_3d_depth_opening; /* GS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* GS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* GS:0x2531 */
-extern volatile cb_u16 ship_3d_projection_angle_b; /* GS:0x2F6D */
-extern volatile cb_u16 ship_3d_projection_angle_c; /* GS:0x2F6F */
-extern volatile cb_u16 ship_3d_projection_angle_a; /* GS:0x2F71 */
+extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_b; /* GS:0x2F6D */
+extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_c; /* GS:0x2F6F */
+extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_a; /* GS:0x2F71 */
 /* Original BP addressing selects SS:0x2A1B; medium-model C requires SS == DS. */
 extern volatile ship_3d_matrix_slot ship_3d_matrix_slots[];
-extern volatile ship_3d_projection_context ship_3d_projection; /* GS:0x2F95 */
+extern volatile ship_3d_projection_terms CB_GAME_DATA ship_3d_projection_inputs; /* GS:0x2F7D */
+extern volatile ship_3d_projection_context CB_GAME_DATA ship_3d_projection; /* GS:0x2F95 */
 extern volatile ship_3d_point_record ship_3d_point_cloud[]; /* GS:0x2FC1 */
-extern const ship_3d_angle_table_entry ship_3d_angle_table[]; /* GS:0x4F45 */
+/* Original BP indexing selects SS:0x4F45; GAME_DATA must bind to SS == GS. */
+extern const ship_3d_angle_table_entry CB_GAME_DATA ship_3d_angle_table[];
 extern volatile cb_u32 ship_3d_render_state_block[]; /* GS:0x5251 */
 extern volatile cb_i16 ship_3d_clip_left;    /* GS:0x5235 */
 extern volatile cb_i16 ship_3d_clip_right;   /* GS:0x5237 */
@@ -74,6 +85,7 @@ extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
  * output cursor; an integration adapter must translate the binary's BP ABI. */
 #pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
 #pragma aux matrix_table_clear_2a1b modify exact []
+#pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -91,5 +103,6 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
         const volatile bloodprg_vm_object_header CB_FAR *target,
         cb_u16 CB_NEAR *output);              /* 0x00624B */
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
+void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
 
 #endif

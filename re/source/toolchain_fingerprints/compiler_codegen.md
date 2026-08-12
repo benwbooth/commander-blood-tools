@@ -1591,6 +1591,27 @@ preserves every register and emits the far return, but ends the loop with CMP,
 so exact integration must still account for final flags from CMP instead of
 the original final BP ADD.
 
+Projection-matrix builder `0x0098B9` has another BP-default segment boundary:
+the three indexed trig-pair reads are from SS:0x4F45, while the routine first
+sets DS and ES from GS for the angle words, persisted six-dword term workspace
+at 0x2F7D, and nine-dword matrix at 0x2F95. Twelve direct vectors exercise
+zero and identity matrices, mixed signs, signed extrema, deliberate modulo-32-
+bit overflow, repeated indices, and the recovered 0..180 table boundary. They
+prove every persisted term and matrix value, all nine STOSD destinations,
+segment isolation, full register/segment restoration, final defined SAR flags,
+and RETF. DF must be clear at entry, as required by the surrounding ABI.
+
+The corrected candidate removes two source-only helper functions so one
+assembly routine again corresponds to one C function, and restores the
+previously omitted 24-byte workspace side effect. Open Watcom `-3 -ox -mm`
+compiles it without warnings to 248 instructions/737 bytes versus 104/343
+original; Turbo C 2.01 medium emits 281 instructions. Both preserve the natural
+arithmetic, but neither emits the original inline 32-bit 386 multiply sequence:
+Watcom calls `__I4M` and implements each arithmetic shift as a 15-iteration
+16-bit SAR/RCR loop. Its based-segment form also leaves AX and ES clobbered, so
+the C declaration exposes those clobbers for a full rebuild; a drop-in binary
+replacement would still require a narrow preservation boundary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1661,6 +1682,7 @@ LCS and then mnemonic similarity:
 | `back_buffer_copy_from` | medium, `-ox`, register | 24/34 | 0.2083 | 0.7917 | 0.2500 |
 | `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
 | `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
+| `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

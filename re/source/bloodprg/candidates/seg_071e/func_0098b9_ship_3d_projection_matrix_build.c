@@ -1,15 +1,5 @@
 #include "../include/bloodprg_ship3d.h"
 
-static cb_i32 ship_3d_angle_component(cb_i16 value)
-{
-    return ((cb_i32)value) + ((cb_i32)value);
-}
-
-static cb_i32 ship_3d_mul_shift_15(cb_i32 lhs, cb_i32 rhs)
-{
-    return (lhs * rhs) >> 15;
-}
-
 void CB_FAR ship_3d_projection_matrix_build(void)
 {
     cb_i32 a_cos;
@@ -20,22 +10,28 @@ void CB_FAR ship_3d_projection_matrix_build(void)
     cb_i32 c_sin;
     cb_i32 b_sin_c_sin;
     cb_i32 c_sin_b_cos;
-    const ship_3d_angle_table_entry *entry;
+    const ship_3d_angle_table_entry CB_GAME_DATA *entry;
 
     entry = &ship_3d_angle_table[ship_3d_projection_angle_a];
-    a_cos = ship_3d_angle_component(entry->cosine);
-    a_sin = ship_3d_angle_component(entry->sine);
+    a_cos = (cb_i32)entry->cosine * 2L;
+    a_sin = (cb_i32)entry->sine * 2L;
+    ship_3d_projection_inputs.a_cos = a_cos;
+    ship_3d_projection_inputs.a_sin = a_sin;
 
     entry = &ship_3d_angle_table[ship_3d_projection_angle_b];
-    b_cos = ship_3d_angle_component(entry->cosine);
-    b_sin = ship_3d_angle_component(entry->sine);
+    b_cos = (cb_i32)entry->cosine * 2L;
+    b_sin = (cb_i32)entry->sine * 2L;
+    ship_3d_projection_inputs.b_cos = b_cos;
+    ship_3d_projection_inputs.b_sin = b_sin;
 
     entry = &ship_3d_angle_table[ship_3d_projection_angle_c];
-    c_cos = ship_3d_angle_component(entry->cosine);
-    c_sin = ship_3d_angle_component(entry->sine);
+    c_cos = (cb_i32)entry->cosine * 2L;
+    c_sin = (cb_i32)entry->sine * 2L;
+    ship_3d_projection_inputs.c_cos = c_cos;
+    ship_3d_projection_inputs.c_sin = c_sin;
 
-    b_sin_c_sin = ship_3d_mul_shift_15(b_sin, c_sin);
-    c_sin_b_cos = ship_3d_mul_shift_15(c_sin, b_cos);
+    b_sin_c_sin = (b_sin * c_sin) >> 15;
+    c_sin_b_cos = (c_sin * b_cos) >> 15;
 
     ship_3d_projection.matrix[0] =
             ((a_cos * b_cos) + (b_sin_c_sin * a_sin)) >> 15;
@@ -44,10 +40,10 @@ void CB_FAR ship_3d_projection_matrix_build(void)
             ((c_sin_b_cos * a_sin) - (a_cos * b_sin)) >> 15;
     ship_3d_projection.matrix[3] =
             ((b_sin_c_sin * a_cos) - (a_sin * b_cos)) >> 15;
-    ship_3d_projection.matrix[4] = -ship_3d_mul_shift_15(c_cos, a_cos);
+    ship_3d_projection.matrix[4] = -((c_cos * a_cos) >> 15);
     ship_3d_projection.matrix[5] =
             ((b_sin * a_sin) + (c_sin_b_cos * a_cos)) >> 15;
-    ship_3d_projection.matrix[6] = ship_3d_mul_shift_15(b_sin, c_cos);
+    ship_3d_projection.matrix[6] = (b_sin * c_cos) >> 15;
     ship_3d_projection.matrix[7] = c_sin;
-    ship_3d_projection.matrix[8] = ship_3d_mul_shift_15(c_cos, b_cos);
+    ship_3d_projection.matrix[8] = (c_cos * b_cos) >> 15;
 }

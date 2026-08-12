@@ -1,0 +1,578 @@
+[
+  {
+    "name": "zero",
+    "angles_a_b_c": [
+      0,
+      1,
+      2
+    ],
+    "table_pairs_a_b_c": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "matrix": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "workspace_sha256": "ab5dc20efb95cb0c89945019af578c3639505b4e5943e3f8081729c0b82d8a7b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "identity",
+    "angles_a_b_c": [
+      3,
+      4,
+      5
+    ],
+    "table_pairs_a_b_c": [
+      [
+        16384,
+        0
+      ],
+      [
+        16384,
+        0
+      ],
+      [
+        16384,
+        0
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      32768,
+      0,
+      32768,
+      0,
+      32768,
+      0
+    ],
+    "matrix": [
+      32768,
+      0,
+      0,
+      0,
+      -32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "workspace_sha256": "a76d6275411fa0ce4f87a321dad4f5786d9761c45d185c5d79b78ba3c6c710a9",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "quarter_turn_mix",
+    "angles_a_b_c": [
+      6,
+      7,
+      8
+    ],
+    "table_pairs_a_b_c": [
+      [
+        0,
+        16384
+      ],
+      [
+        16384,
+        0
+      ],
+      [
+        0,
+        -16384
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      32768,
+      0,
+      0,
+      -32768,
+      0,
+      32768
+    ],
+    "matrix": [
+      0,
+      0,
+      -32768,
+      -32768,
+      0,
+      0,
+      0,
+      -32768,
+      0
+    ],
+    "workspace_sha256": "cf37076681241271f788ad019e22048389fccf1b9cad4e311b7a90c837c4f649",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "mixed_signs",
+    "angles_a_b_c": [
+      17,
+      63,
+      121
+    ],
+    "table_pairs_a_b_c": [
+      [
+        12345,
+        -23456
+      ],
+      [
+        -16384,
+        8192
+      ],
+      [
+        24576,
+        -12288
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      -32768,
+      16384,
+      49152,
+      -24576,
+      24690,
+      -46912
+    ],
+    "matrix": [
+      -7098,
+      -60704,
+      -47529,
+      -56171,
+      -37035,
+      -4939,
+      24576,
+      -24576,
+      -49152
+    ],
+    "workspace_sha256": "7433794952a777d3d18af27bb2dcc17d557320ff4a3abf8b986509c57976eea7",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true
+    }
+  },
+  {
+    "name": "signed_extremes",
+    "angles_a_b_c": [
+      31,
+      95,
+      159
+    ],
+    "table_pairs_a_b_c": [
+      [
+        32767,
+        -32768
+      ],
+      [
+        -32768,
+        32767
+      ],
+      [
+        32767,
+        32767
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      -65536,
+      65534,
+      65534,
+      65534,
+      65534,
+      -65536
+    ],
+    "matrix": [
+      20,
+      -4,
+      -1,
+      -16,
+      8,
+      11,
+      -8,
+      65534,
+      4
+    ],
+    "workspace_sha256": "2cfc07b0eb81c3a5d071ecf106202411656662de98f0c23c8e572151df7e8809",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "negative_extremes",
+    "angles_a_b_c": [
+      32,
+      96,
+      160
+    ],
+    "table_pairs_a_b_c": [
+      [
+        -32768,
+        -32768
+      ],
+      [
+        -32768,
+        -1
+      ],
+      [
+        -1,
+        -32768
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      -65536,
+      -2,
+      -2,
+      -65536,
+      -65536,
+      -65536
+    ],
+    "matrix": [
+      -8,
+      -4,
+      -4,
+      -8,
+      -4,
+      4,
+      0,
+      -65536,
+      4
+    ],
+    "workspace_sha256": "22cf4a2a7bc6183472d8778967f416819546ddb0bcd10a3b520d7e7a4592f4a5",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "small_values",
+    "angles_a_b_c": [
+      10,
+      11,
+      12
+    ],
+    "table_pairs_a_b_c": [
+      [
+        1,
+        -1
+      ],
+      [
+        2,
+        -3
+      ],
+      [
+        4,
+        -5
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      4,
+      -6,
+      8,
+      -10,
+      2,
+      -2
+    ],
+    "matrix": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      -10,
+      0
+    ],
+    "workspace_sha256": "c5d782ef487eed1f2dfcde056091aec94270d1ced7310c25ed8a74ffefce84c7",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "overflow_products",
+    "angles_a_b_c": [
+      40,
+      80,
+      120
+    ],
+    "table_pairs_a_b_c": [
+      [
+        30000,
+        30000
+      ],
+      [
+        28000,
+        -29000
+      ],
+      [
+        -31000,
+        32000
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      56000,
+      -58000,
+      -62000,
+      64000,
+      60000,
+      60000
+    ],
+    "matrix": [
+      4041,
+      -17547,
+      -64600,
+      61107,
+      -17546,
+      -14858,
+      -21331,
+      64000,
+      25114
+    ],
+    "workspace_sha256": "efa0cceb0476a101ab0ffcc9e2120aba1e20874e3264b69f90290d77689414f6",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "angle_boundaries",
+    "angles_a_b_c": [
+      180,
+      179,
+      178
+    ],
+    "table_pairs_a_b_c": [
+      [
+        16384,
+        0
+      ],
+      [
+        -16384,
+        0
+      ],
+      [
+        0,
+        16384
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      -32768,
+      0,
+      0,
+      32768,
+      32768,
+      0
+    ],
+    "matrix": [
+      -32768,
+      0,
+      0,
+      0,
+      0,
+      -32768,
+      0,
+      32768,
+      0
+    ],
+    "workspace_sha256": "c9a57d0ddf8df0e6b898fd2f02474fbba7583d2d60072139f345cea907467427",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false
+    }
+  },
+  {
+    "name": "repeated_angle",
+    "angles_a_b_c": [
+      90,
+      90,
+      90
+    ],
+    "table_pairs_a_b_c": [
+      [
+        11585,
+        11585
+      ],
+      [
+        11585,
+        11585
+      ],
+      [
+        11585,
+        11585
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      23170,
+      23170,
+      23170,
+      23170,
+      23170,
+      23170
+    ],
+    "matrix": [
+      27967,
+      -16384,
+      -4800,
+      -4800,
+      -16383,
+      27967,
+      16383,
+      23170,
+      16383
+    ],
+    "workspace_sha256": "120e0478b7d35cebbb29828ac58fdbd38de85969f958f40289ead123395a89f9",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false
+    }
+  },
+  {
+    "name": "asymmetric_large",
+    "angles_a_b_c": [
+      45,
+      135,
+      179
+    ],
+    "table_pairs_a_b_c": [
+      [
+        -30001,
+        12345
+      ],
+      [
+        22222,
+        -11111
+      ],
+      [
+        -23456,
+        31415
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      44444,
+      -22222,
+      -46912,
+      62830,
+      -60002,
+      24690
+    ],
+    "matrix": [
+      17584,
+      35347,
+      55830,
+      44534,
+      45171,
+      -63850,
+      31813,
+      62830,
+      -63628
+    ],
+    "workspace_sha256": "972598c0bb615eef93e48ad0274f67ead9186359d3db81dbd28606004f383ff9",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true
+    }
+  },
+  {
+    "name": "final_negative",
+    "angles_a_b_c": [
+      71,
+      143,
+      29
+    ],
+    "table_pairs_a_b_c": [
+      [
+        8192,
+        -24576
+      ],
+      [
+        24576,
+        16384
+      ],
+      [
+        -24576,
+        8192
+      ]
+    ],
+    "doubled_terms_b_c_a": [
+      49152,
+      32768,
+      -49152,
+      16384,
+      16384,
+      -49152
+    ],
+    "matrix": [
+      0,
+      57344,
+      -53248,
+      -49152,
+      24576,
+      -36864,
+      -49152,
+      16384,
+      57344
+    ],
+    "workspace_sha256": "0eea9f5214dc95551d84eb71abaea366bdbcb6d4f6a5cd32e6a9d441592303d9",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false
+    }
+  }
+]

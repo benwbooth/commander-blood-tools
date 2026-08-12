@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph
 ; label: ship_3d_projection_matrix_build
-; label_comment: builds 3x3 fixed-point projection matrix at DS:0x2F95 from angle table DS:0x4F45 and angle words DS:0x2F71/0x2F6D/0x2F6F
+; label_comment: builds the 3x3 fixed-point projection matrix at GS:0x2f95; angles and the persisted six-dword term workspace are at GS:0x2f6d..0x2f71 and GS:0x2f7d, while BP-based trig-table reads select SS:0x4f45
 ; byte_count: 343
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: retf:1
