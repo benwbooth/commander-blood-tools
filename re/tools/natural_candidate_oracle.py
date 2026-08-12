@@ -27,6 +27,7 @@ from unicorn.x86_const import (
     UC_X86_REG_DI,
     UC_X86_REG_DS,
     UC_X86_REG_DX,
+    UC_X86_REG_EAX,
     UC_X86_REG_EFLAGS,
     UC_X86_REG_ES,
     UC_X86_REG_GS,
@@ -41,6 +42,7 @@ EXE = (REPO_ROOT / "re/bin/BLOODPRG.EXE").read_bytes()
 VECTOR_ROOT = REPO_ROOT / "re/tools/oracle_vectors"
 
 REGISTERS = {
+    "eax": UC_X86_REG_EAX,
     "ax": UC_X86_REG_AX,
     "bx": UC_X86_REG_BX,
     "cx": UC_X86_REG_CX,
@@ -62,6 +64,7 @@ def execute(
     registers: dict[str, int],
     memory: list[tuple[int, int, bytes]],
     interrupt_handler: Callable[[Uc, int], None] | None = None,
+    code_handler: Callable[[Uc, int, int], None] | None = None,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -81,6 +84,8 @@ def execute(
         if address == return_address:
             returned.append(address)
             machine.emu_stop()
+        elif code_handler is not None:
+            code_handler(machine, address, _size)
 
     machine.hook_add(UC_HOOK_CODE, stop_at_return)
     if interrupt_handler is not None:
@@ -2044,6 +2049,510 @@ def resource_palette_blocks_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_switch_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    buffer_segment = 0x3000
+    dta_segment = 0x5000
+    dta_offset = 0x0200
+    record_offset = 0x3000
+    buffer_end = 0xFFFE
+    cases = [
+        {
+            "name": "banked_primary_bounds",
+            "mode": "banked",
+            "resource_id": 2,
+            "record_flags": 0x00,
+            "variant": 0x0C,
+            "inner_skip": 6,
+            "palette_blocks": [],
+            "padding": 2,
+            "render_copy": False,
+            "archive_size": 0x00123456,
+            "primary_relative": 0x00000121,
+            "alternate_relative": 0x00000341,
+            "index_relative": 0x00000561,
+            "read_failure": None,
+        },
+        {
+            "name": "embedded_alternate_bounds",
+            "mode": "embedded",
+            "resource_id": 5,
+            "record_flags": 0x04,
+            "variant": 0x07,
+            "inner_skip": 10,
+            "palette_blocks": [(3, bytes([1, 2, 3]))],
+            "padding": 4,
+            "render_copy": True,
+            "archive_offset": 0x12345670,
+            "archive_remaining": 0x01020304,
+            "path_handle": 0x0042,
+            "primary_relative": 0x00001121,
+            "alternate_relative": 0x00002231,
+            "index_relative": 0x00003341,
+            "read_failure": None,
+        },
+        {
+            "name": "external_file_success",
+            "mode": "external",
+            "resource_id": 8,
+            "record_flags": 0x00,
+            "variant": 0x09,
+            "inner_skip": 14,
+            "palette_blocks": [
+                (1, bytes([0x3F, 0x20, 0x10, 0x08, 0x04, 0x02])),
+                (9, bytes([])),
+            ],
+            "padding": 1,
+            "render_copy": False,
+            "file_size": 0x00020000,
+            "open_handle": 0x0033,
+            "old_handle": 0x0022,
+            "primary_relative": 0x00000211,
+            "alternate_relative": 0x00000421,
+            "index_relative": 0x00000631,
+            "read_failure": None,
+        },
+        {
+            "name": "wrapped_inner_cursor",
+            "mode": "banked",
+            "resource_id": 11,
+            "record_flags": 0x00,
+            "variant": 0x02,
+            "inner_skip": 0xFFFF,
+            "palette_blocks": [],
+            "padding": 3,
+            "render_copy": False,
+            "archive_size": 0x00018000,
+            "primary_relative": 0x00000031,
+            "alternate_relative": 0x00000051,
+            "index_relative": 0x00000071,
+            "read_failure": None,
+        },
+        {
+            "name": "external_open_failure",
+            "mode": "external",
+            "resource_id": 13,
+            "record_flags": 0x04,
+            "variant": 0x05,
+            "file_size": 0x00009999,
+            "open_error": 2,
+            "path_handle": 0x1357,
+            "archive_offset": 0x11112222,
+            "archive_remaining": 0x33334444,
+            "read_failure": "open",
+        },
+        {
+            "name": "initial_read_failure",
+            "mode": "banked",
+            "resource_id": 17,
+            "record_flags": 0x00,
+            "variant": 0x03,
+            "archive_size": 0x00012345,
+            "read_failure": "initial",
+        },
+        {
+            "name": "body_read_failure",
+            "mode": "embedded",
+            "resource_id": 19,
+            "record_flags": 0x00,
+            "variant": 0x01,
+            "archive_offset": 0x01020304,
+            "archive_remaining": 0x00054321,
+            "path_handle": 0x0055,
+            "read_failure": "body",
+        },
+    ]
+    vectors = []
+
+    def read_u16(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + offset, 2)
+        )[0]
+
+    def read_u32(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + offset, 4)
+        )[0]
+
+    def write_u32(machine: Uc, offset: int, value: int) -> None:
+        machine.mem_write(
+            data_segment * 16 + offset, struct.pack("<I", value & 0xFFFFFFFF)
+        )
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode = str(case["mode"])
+        resource_id = int(case["resource_id"])
+        record_flags = int(case["record_flags"])
+        variant = int(case["variant"])
+        read_failure = case["read_failure"]
+        old_handle = int(case.get("old_handle", 0))
+        archive_offset = int(case.get("archive_offset", 0x55667788))
+        archive_remaining = int(case.get("archive_remaining", 0x11223344))
+        archive_size = int(case.get("archive_size", 0x01010101))
+        file_size = int(case.get("file_size", 0x00020000))
+        path_handle = int(case.get("path_handle", 0x2468))
+        open_handle = int(case.get("open_handle", 0x0033))
+
+        palette_blocks = list(case.get("palette_blocks", []))
+        palette_stream = bytearray()
+        for palette_start, payload in palette_blocks:
+            palette_stream.extend((palette_start, len(payload) // 3))
+            palette_stream.extend(payload)
+        palette_stream.extend(b"\xff\xff")
+        palette_consumed = len(palette_stream)
+        read_extent = palette_consumed + 32
+        final_metric = 6
+
+        buffer = bytearray(0x10000)
+        if read_failure not in {"open", "initial", "body"}:
+            inner_skip = int(case["inner_skip"])
+            struct.pack_into("<H", buffer, 0, inner_skip)
+            cursor_after_length = 2
+            unwrapped_cursor = cursor_after_length + inner_skip
+            if unwrapped_cursor > 0xFFFF or unwrapped_cursor > buffer_end:
+                palette_offset = 0
+            else:
+                palette_offset = cursor_after_length
+            buffer[
+                palette_offset : palette_offset + palette_consumed
+            ] = palette_stream
+            metadata_offset = (palette_offset + palette_consumed) & 0xFFFF
+            padding = int(case["padding"])
+            buffer[metadata_offset : metadata_offset + padding] = bytes(
+                [0xFF]
+            ) * padding
+            metadata_offset = (metadata_offset + padding) & 0xFFFF
+            primary_relative = int(case["primary_relative"])
+            alternate_relative = int(case["alternate_relative"])
+            index_relative = int(case["index_relative"])
+            struct.pack_into("<I", buffer, metadata_offset, primary_relative)
+            struct.pack_into(
+                "<I", buffer, metadata_offset + 0x10, alternate_relative
+            )
+            struct.pack_into(
+                "<I",
+                buffer,
+                metadata_offset + final_metric * 4,
+                index_relative,
+            )
+        else:
+            metadata_offset = 0
+            primary_relative = 0
+            alternate_relative = 0
+            index_relative = 0
+
+        initial_palette = bytes(
+            (index * 7 + 3) & 0x3F for index in range(768)
+        )
+        initial_render = bytes(
+            (index * 11 + 5) & 0xFF for index in range(0x180)
+        )
+        expected_palette = bytearray(initial_palette)
+        for palette_start, payload in palette_blocks:
+            destination = palette_start * 3
+            expected_palette[destination : destination + len(payload)] = payload
+
+        table_offset = 0x1FB5 + resource_id * 4
+        table_entry = struct.pack("<HH", record_offset, 0xA000 + resource_id)
+        record = bytes([record_flags, 0xA5]) + b"RESOURCE.DAT\0"
+        initial_eax = 0x89AB0000 | resource_id
+        calls: list[dict[str, int | str]] = []
+
+        def code_handler(
+            machine: Uc,
+            address: int,
+            _size: int,
+            case_name: str = name,
+            call_log: list[dict[str, int | str]] = calls,
+            selected_mode: str = mode,
+            selected_path_handle: int = path_handle,
+            selected_failure: object = read_failure,
+            selected_read_extent: int = read_extent,
+        ) -> None:
+            if address == 0x9FCB:
+                if machine.reg_read(UC_X86_REG_DX) != record_offset + 2:
+                    raise AssertionError(
+                        f"0x9F8E {case_name} passed an unexpected filename pointer"
+                    )
+                call_log.append({"call": "path", "filename": record_offset + 2})
+                machine.reg_write(UC_X86_REG_BX, selected_path_handle)
+                machine.mem_write(
+                    data_segment * 16 + 0x0AE2,
+                    bytes([1 if selected_mode == "embedded" else 0]),
+                )
+            elif address == 0xA021:
+                call_log.append({"call": "initial_read", "bytes": 2})
+                if selected_failure == "initial":
+                    set_carry(machine, True)
+                    return
+                source_offset = read_u32(machine, 0x0D84)
+                source_remaining = read_u32(machine, 0x0D88)
+                write_u32(machine, 0x0D84, source_offset + 2)
+                write_u32(machine, 0x0D88, source_remaining - 2)
+                machine.reg_write(UC_X86_REG_AX, selected_read_extent)
+                machine.reg_write(UC_X86_REG_ES, buffer_segment)
+                machine.reg_write(UC_X86_REG_SI, read_u16(machine, 0x0D8C))
+                set_carry(machine, False)
+            elif address == 0xA03E:
+                byte_count = machine.reg_read(UC_X86_REG_CX)
+                call_log.append({"call": "body_read", "bytes": byte_count})
+                if selected_failure == "body":
+                    set_carry(machine, True)
+                    return
+                source_offset = read_u32(machine, 0x0D84)
+                source_remaining = read_u32(machine, 0x0D88)
+                write_u32(machine, 0x0D84, source_offset + byte_count)
+                write_u32(machine, 0x0D88, source_remaining - byte_count)
+                machine.reg_write(UC_X86_REG_AX, byte_count)
+                set_carry(machine, False)
+
+        def interrupt_handler(
+            machine: Uc,
+            number: int,
+            case_name: str = name,
+            call_log: list[dict[str, int | str]] = calls,
+            selected_file_size: int = file_size,
+            selected_find_error: bool = case_index % 2 == 0,
+            selected_failure: object = read_failure,
+            selected_open_error: int = int(case.get("open_error", 0)),
+            selected_open_handle: int = open_handle,
+        ) -> None:
+            if number != 0x21:
+                raise AssertionError(
+                    f"0x9F8E {case_name} invoked unexpected INT {number:#x}"
+                )
+            function = machine.reg_read(UC_X86_REG_AX) >> 8
+            if function == 0x3E:
+                call_log.append(
+                    {"call": "close", "handle": machine.reg_read(UC_X86_REG_BX)}
+                )
+                set_carry(machine, False)
+            elif function == 0x2F:
+                call_log.append({"call": "get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+            elif function == 0x4E:
+                call_log.append({"call": "find_first"})
+                machine.mem_write(
+                    dta_segment * 16 + dta_offset + 0x1A,
+                    struct.pack("<I", selected_file_size),
+                )
+                set_carry(machine, selected_find_error)
+            elif function == 0x3D:
+                call_log.append({"call": "open"})
+                if selected_failure == "open":
+                    machine.reg_write(UC_X86_REG_AX, selected_open_error)
+                    set_carry(machine, True)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, selected_open_handle)
+                    set_carry(machine, False)
+            else:
+                raise AssertionError(
+                    f"0x9F8E {case_name} invoked unexpected DOS function "
+                    f"{function:#x}"
+                )
+
+        memory = [
+            (0, 0x9FCB, b"\x90" * 5),
+            (0, 0xA021, b"\x90" * 3),
+            (0, 0xA03E, b"\x90" * 3),
+            (data_segment, 0x0A52, struct.pack("<I", archive_size)),
+            (data_segment, 0x0A7E, struct.pack("<H", buffer_segment)),
+            (data_segment, 0x0A86, struct.pack("<H", 0x7FFF)),
+            (data_segment, 0x0A8A, struct.pack("<I", archive_offset)),
+            (data_segment, 0x0A8E, struct.pack("<I", archive_remaining)),
+            (data_segment, 0x0AE2, b"\xA5"),
+            (data_segment, 0x0D5B, struct.pack("<H", old_handle)),
+            (data_segment, 0x0D60, struct.pack("<4H", 9, 8, 7, 6)),
+            (data_segment, 0x0DBC, bytes([1 if mode == "banked" else 0])),
+            (data_segment, 0x1FB1, bytes([variant])),
+            (data_segment, table_offset, table_entry),
+            (data_segment, record_offset, record),
+            (data_segment, 0x2751, bytes([0 if case.get("render_copy") else 1])),
+            (data_segment, 0x5233, struct.pack("<H", buffer_end)),
+            (data_segment, 0x5251, initial_palette),
+            (data_segment, 0x5851, initial_render),
+            (buffer_segment, 0, bytes(buffer)),
+        ]
+        machine = execute(
+            0x9F8E,
+            0xA0C2,
+            {
+                "eax": initial_eax,
+                "bx": 0x2222,
+                "cx": 0x3333,
+                "dx": 0x4444,
+                "si": 0x5555,
+                "di": 0x6666,
+                "bp": 0x7777,
+                "sp": 0xFF00,
+                "ds": data_segment,
+                "es": 0x4000,
+                "gs": data_segment,
+                "flags": 0x0202,
+            },
+            memory,
+            interrupt_handler,
+            code_handler,
+        )
+
+        expected_success = read_failure is None
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not expected_success):
+            raise AssertionError(
+                f"0x9F8E {name} carry={carry}, expected={int(not expected_success)}"
+            )
+        if machine.reg_read(UC_X86_REG_EAX) != initial_eax:
+            raise AssertionError(f"0x9F8E {name} did not preserve EAX")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF00:
+            raise AssertionError(f"0x9F8E {name} did not restore SP")
+        if read_u16(machine, 0x0D80) != resource_id:
+            raise AssertionError(f"0x9F8E {name} stored an unexpected requested id")
+        if read_u16(machine, 0x0D82) != resource_id:
+            raise AssertionError(f"0x9F8E {name} stored an unexpected active id")
+        expected_flags_word = record_flags | variant << 8
+        if read_u16(machine, 0x0D76) != expected_flags_word:
+            raise AssertionError(f"0x9F8E {name} stored unexpected resource flags")
+        if machine.mem_read(data_segment * 16 + record_offset + 1, 1) != bytes(
+            [variant]
+        ):
+            raise AssertionError(f"0x9F8E {name} did not update the record variant")
+        if machine.mem_read(data_segment * 16 + 0x0D5F, 1) != b"\x00":
+            raise AssertionError(f"0x9F8E {name} did not clear list state")
+        if struct.unpack(
+            "<4H", machine.mem_read(data_segment * 16 + 0x0D60, 8)
+        ) != (0, 0, 0xFFFF, 0xFFFF):
+            raise AssertionError(f"0x9F8E {name} did not reset list bounds")
+
+        if mode == "banked":
+            source_base = 0
+            source_total = archive_size
+            expected_handle = 0
+            expected_path_calls = 0
+            expected_dos_calls = 0
+        elif mode == "embedded":
+            source_base = archive_offset
+            source_total = archive_remaining
+            expected_handle = path_handle
+            expected_path_calls = 1
+            expected_dos_calls = 0
+        else:
+            source_base = 0 if read_failure != "open" else archive_offset
+            source_total = file_size
+            expected_handle = (
+                path_handle if read_failure == "open" else open_handle
+            )
+            expected_path_calls = 1
+            expected_dos_calls = 3
+
+        actual_path_calls = sum(call["call"] == "path" for call in calls)
+        actual_dos_calls = sum(
+            call["call"] in {"get_dta", "find_first", "open"} for call in calls
+        )
+        if actual_path_calls != expected_path_calls:
+            raise AssertionError(f"0x9F8E {name} produced unexpected path calls")
+        if actual_dos_calls != expected_dos_calls:
+            raise AssertionError(f"0x9F8E {name} produced unexpected DOS calls")
+        if read_u16(machine, 0x0D5B) != expected_handle:
+            raise AssertionError(f"0x9F8E {name} stored an unexpected file handle")
+
+        expected_source_offset = source_base
+        expected_source_remaining = source_total
+        if read_failure not in {"open", "initial"}:
+            expected_source_offset = (expected_source_offset + 2) & 0xFFFFFFFF
+            expected_source_remaining = (
+                expected_source_remaining - 2
+            ) & 0xFFFFFFFF
+        if read_failure is None:
+            expected_source_offset = (
+                expected_source_offset + read_extent - 2
+            ) & 0xFFFFFFFF
+            expected_source_remaining = (
+                expected_source_remaining - (read_extent - 2)
+            ) & 0xFFFFFFFF
+        if read_u32(machine, 0x0D84) != expected_source_offset:
+            raise AssertionError(f"0x9F8E {name} stored an unexpected source offset")
+        if read_u32(machine, 0x0D88) != expected_source_remaining:
+            raise AssertionError(
+                f"0x9F8E {name} stored unexpected source remaining bytes"
+            )
+
+        if expected_success:
+            actual_metric = read_u16(machine, 0x0DAF)
+            if actual_metric != final_metric:
+                raise AssertionError(
+                    f"0x9F8E {name} metric={actual_metric:#x}, "
+                    f"expected={final_metric:#x}"
+                )
+            selected_relative = (
+                alternate_relative if record_flags & 4 else primary_relative
+            )
+            expected_ranges = (
+                (expected_source_offset + selected_relative) & 0xFFFFFFFF,
+                (expected_source_remaining - selected_relative) & 0xFFFFFFFF,
+                (expected_source_offset + index_relative) & 0xFFFFFFFF,
+                (expected_source_remaining - index_relative) & 0xFFFFFFFF,
+            )
+            actual_ranges = tuple(
+                read_u32(machine, offset)
+                for offset in (0x0D6E, 0x0D72, 0x0D78, 0x0D7C)
+            )
+            if actual_ranges != expected_ranges:
+                raise AssertionError(
+                    f"0x9F8E {name} ranges={actual_ranges}, "
+                    f"expected={expected_ranges}"
+                )
+            if machine.mem_read(data_segment * 16 + 0x0DB7, 1) != b"\xff":
+                raise AssertionError(f"0x9F8E {name} did not set resource marker")
+            actual_palette = bytes(
+                machine.mem_read(data_segment * 16 + 0x5251, 768)
+            )
+            if actual_palette != bytes(expected_palette):
+                raise AssertionError(f"0x9F8E {name} produced unexpected palette")
+            expected_render = (
+                bytes(expected_palette[:0x180])
+                if case.get("render_copy")
+                else initial_render
+            )
+            if machine.mem_read(
+                data_segment * 16 + 0x5851, 0x180
+            ) != expected_render:
+                raise AssertionError(
+                    f"0x9F8E {name} produced unexpected render-state bytes"
+                )
+
+        vectors.append(
+            {
+                "name": name,
+                "mode": mode,
+                "resource_id": resource_id,
+                "record_flags": expected_flags_word,
+                "success": expected_success,
+                "calls": calls,
+                "source_offset": read_u32(machine, 0x0D84),
+                "source_remaining": read_u32(machine, 0x0D88),
+                "file_handle": read_u16(machine, 0x0D5B),
+                "entry_metric": read_u16(machine, 0x0DAF),
+                "metadata_offset": metadata_offset,
+                "range_start": read_u32(machine, 0x0D6E),
+                "range_remaining": read_u32(machine, 0x0D72),
+                "index_start": read_u32(machine, 0x0D78),
+                "index_remaining": read_u32(machine, 0x0D7C),
+                "carry": carry,
+                "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -2120,6 +2629,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a0c3_natural.json",
         resource_palette_blocks_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9f8e_natural.json",
+        resource_switch_vectors(),
         args.check,
     )
     return 0

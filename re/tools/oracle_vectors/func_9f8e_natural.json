@@ -1,0 +1,224 @@
+[
+  {
+    "name": "banked_primary_bounds",
+    "mode": "banked",
+    "resource_id": 2,
+    "record_flags": 3072,
+    "success": true,
+    "calls": [
+      {
+        "call": "initial_read",
+        "bytes": 2
+      },
+      {
+        "call": "body_read",
+        "bytes": 32
+      }
+    ],
+    "source_offset": 34,
+    "source_remaining": 1193012,
+    "file_handle": 0,
+    "entry_metric": 6,
+    "metadata_offset": 6,
+    "range_start": 323,
+    "range_remaining": 1192723,
+    "index_start": 1411,
+    "index_remaining": 1191635,
+    "carry": 0,
+    "preserved_eax": 2309685250
+  },
+  {
+    "name": "embedded_alternate_bounds",
+    "mode": "embedded",
+    "resource_id": 5,
+    "record_flags": 1796,
+    "success": true,
+    "calls": [
+      {
+        "call": "path",
+        "filename": 12290
+      },
+      {
+        "call": "initial_read",
+        "bytes": 2
+      },
+      {
+        "call": "body_read",
+        "bytes": 37
+      }
+    ],
+    "source_offset": 305419927,
+    "source_remaining": 16909021,
+    "file_handle": 66,
+    "entry_metric": 6,
+    "metadata_offset": 13,
+    "range_start": 305428680,
+    "range_remaining": 16900268,
+    "index_start": 305433048,
+    "index_remaining": 16895900,
+    "carry": 0,
+    "preserved_eax": 2309685253
+  },
+  {
+    "name": "external_file_success",
+    "mode": "external",
+    "resource_id": 8,
+    "record_flags": 2304,
+    "success": true,
+    "calls": [
+      {
+        "call": "close",
+        "handle": 34
+      },
+      {
+        "call": "path",
+        "filename": 12290
+      },
+      {
+        "call": "get_dta"
+      },
+      {
+        "call": "find_first"
+      },
+      {
+        "call": "open"
+      },
+      {
+        "call": "initial_read",
+        "bytes": 2
+      },
+      {
+        "call": "body_read",
+        "bytes": 42
+      }
+    ],
+    "source_offset": 44,
+    "source_remaining": 131028,
+    "file_handle": 51,
+    "entry_metric": 6,
+    "metadata_offset": 15,
+    "range_start": 573,
+    "range_remaining": 130499,
+    "index_start": 1629,
+    "index_remaining": 129443,
+    "carry": 0,
+    "preserved_eax": 2309685256
+  },
+  {
+    "name": "wrapped_inner_cursor",
+    "mode": "banked",
+    "resource_id": 11,
+    "record_flags": 512,
+    "success": true,
+    "calls": [
+      {
+        "call": "initial_read",
+        "bytes": 2
+      },
+      {
+        "call": "body_read",
+        "bytes": 32
+      }
+    ],
+    "source_offset": 34,
+    "source_remaining": 98270,
+    "file_handle": 0,
+    "entry_metric": 6,
+    "metadata_offset": 5,
+    "range_start": 83,
+    "range_remaining": 98221,
+    "index_start": 147,
+    "index_remaining": 98157,
+    "carry": 0,
+    "preserved_eax": 2309685259
+  },
+  {
+    "name": "external_open_failure",
+    "mode": "external",
+    "resource_id": 13,
+    "record_flags": 1284,
+    "success": false,
+    "calls": [
+      {
+        "call": "path",
+        "filename": 12290
+      },
+      {
+        "call": "get_dta"
+      },
+      {
+        "call": "find_first"
+      },
+      {
+        "call": "open"
+      }
+    ],
+    "source_offset": 286335522,
+    "source_remaining": 39321,
+    "file_handle": 4951,
+    "entry_metric": 0,
+    "metadata_offset": 0,
+    "range_start": 0,
+    "range_remaining": 0,
+    "index_start": 0,
+    "index_remaining": 0,
+    "carry": 1,
+    "preserved_eax": 2309685261
+  },
+  {
+    "name": "initial_read_failure",
+    "mode": "banked",
+    "resource_id": 17,
+    "record_flags": 768,
+    "success": false,
+    "calls": [
+      {
+        "call": "initial_read",
+        "bytes": 2
+      }
+    ],
+    "source_offset": 0,
+    "source_remaining": 74565,
+    "file_handle": 0,
+    "entry_metric": 0,
+    "metadata_offset": 0,
+    "range_start": 0,
+    "range_remaining": 0,
+    "index_start": 0,
+    "index_remaining": 0,
+    "carry": 1,
+    "preserved_eax": 2309685265
+  },
+  {
+    "name": "body_read_failure",
+    "mode": "embedded",
+    "resource_id": 19,
+    "record_flags": 256,
+    "success": false,
+    "calls": [
+      {
+        "call": "path",
+        "filename": 12290
+      },
+      {
+        "call": "initial_read",
+        "bytes": 2
+      },
+      {
+        "call": "body_read",
+        "bytes": 32
+      }
+    ],
+    "source_offset": 16909062,
+    "source_remaining": 344863,
+    "file_handle": 85,
+    "entry_metric": 34,
+    "metadata_offset": 0,
+    "range_start": 0,
+    "range_remaining": 0,
+    "index_start": 0,
+    "index_remaining": 0,
+    "carry": 1,
+    "preserved_eax": 2309685267
+  }
+]
