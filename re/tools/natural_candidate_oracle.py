@@ -3534,6 +3534,87 @@ def resource_free_inner_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_handle_resolve_vectors() -> list[dict[str, object]]:
+    table_segment = 0x3800
+    cases = [
+        ("clear_flags_returns_unloaded", 0x0000, 0x0000, False),
+        ("unrelated_flag_returns_unloaded", 0x8004, 0x0013, False),
+        ("loaded_bit0_resolves", 0x0001, 0x0007, True),
+        ("loaded_bit1_resolves", 0x0002, 0x0025, True),
+        ("both_loaded_bits_resolve", 0x0003, 0x0101, True),
+        ("handle_index_wraps_to_sixteen_bits", 0x0003, 0x2006, True),
+    ]
+    vectors = []
+
+    for case_index, (name, entry_flags, handle, loaded) in enumerate(cases):
+        entry_offset = (handle * 8) & 0xFFFF
+        resource_segment = (0x4100 + case_index * 0x0317) & 0xFFFF
+        entry = struct.pack(
+            "<HHI",
+            resource_segment,
+            entry_flags,
+            (0x12345678 + case_index * 0x11111111) & 0xFFFFFFFF,
+        )
+        initial = {
+            "eax": 0xA1A10000 | handle,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": table_segment,
+            "gs": 0x2C00,
+        }
+
+        machine = execute(
+            0x5320,
+            0x533B,
+            initial,
+            [(table_segment, entry_offset, entry)],
+        )
+
+        expected = dict(initial)
+        expected["eax"] = (initial["eax"] & 0xFFFF0000) | int(loaded)
+        if loaded:
+            expected["ds"] = resource_segment
+            expected["esi"] = initial["esi"] & 0xFFFF0000
+        for register, value in expected.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x5320 {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+        if bytes(
+            machine.mem_read(table_segment * 16 + entry_offset, len(entry))
+        ) != entry:
+            raise AssertionError(f"0x5320 {name}: handle entry changed")
+        if EXE[0x533B] != 0xCB:
+            raise AssertionError("0x5320: expected far RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "handle": handle,
+                "entry_offset": entry_offset,
+                "entry_segment": resource_segment,
+                "entry_flags": entry_flags,
+                "result": {
+                    "loaded": loaded,
+                    "ax": int(loaded),
+                    "ds": resource_segment if loaded else initial["ds"],
+                    "si": 0 if loaded else initial["esi"] & 0xFFFF,
+                },
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -8026,6 +8107,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_529c_natural.json",
         resource_free_inner_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5320_natural.json",
+        resource_handle_resolve_vectors(),
         args.check,
     )
     update_vector(

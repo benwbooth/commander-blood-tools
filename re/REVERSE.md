@@ -1025,6 +1025,11 @@ manager from a bank file at startup/scene-load. IDENTIFYING THAT BANK FILE (what
 populates the `FS:0x0BBF` handle table with sprite blobs) is the final,
 still-open link for a fully composited ship-3D frame — it is the shared
 resource-manager subsystem, so this trace also unlocks other handle-based assets.
+Six direct vectors prove both unloaded flag classes, every loaded-bit
+combination, wrapped indexing, read-only ownership, and the conditional
+`AX`/`DS:SI` result. The natural C returns the same logical values in a typed
+structure because ordinary 16-bit C cannot return status in `AX` and a pointer
+in `DS:SI` simultaneously.
 
 RESOURCE-MANAGER SUBSYSTEM MAP (segment `0x04B9`, sess 003) — the shared handle
 memory manager behind every handle-based asset:
@@ -1050,7 +1055,9 @@ memory manager behind every handle-based asset:
   +4 size dword}` in the `FS` table. The **resource bytes are already in the
   pool** — this routine only manages residency/eviction, so the file→pool
   population is a HIGHER-LEVEL load (startup / level-load), not here.
-- `0x04B9:0x0190` (`0x5320`) = fast resident lookup; `0x533C` = get size;
+- `0x04B9:0x0190` (`0x5320`) = fast resident lookup; six direct vectors prove
+  its conditional `AX` plus `DS:SI` result, while Watcom emits 70 bytes for the
+  natural structured-result API versus 28 original. `0x533C` = get size;
   `0x5356` = free (clear in-use bit1); `0x5365` = acquire (bit0 set→mark bit1;
   else evictable→call loader `0x5190`).
 - `0x53A0` = `vm_resource_profile_select(ax)`: on profile change, copies five

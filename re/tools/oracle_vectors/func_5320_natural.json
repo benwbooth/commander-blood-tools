@@ -1,0 +1,80 @@
+[
+  {
+    "name": "clear_flags_returns_unloaded",
+    "handle": 0,
+    "entry_offset": 0,
+    "entry_segment": 16640,
+    "entry_flags": 0,
+    "result": {
+      "loaded": false,
+      "ax": 0,
+      "ds": 9216,
+      "si": 22136
+    }
+  },
+  {
+    "name": "unrelated_flag_returns_unloaded",
+    "handle": 19,
+    "entry_offset": 152,
+    "entry_segment": 17431,
+    "entry_flags": 32772,
+    "result": {
+      "loaded": false,
+      "ax": 0,
+      "ds": 9216,
+      "si": 22136
+    }
+  },
+  {
+    "name": "loaded_bit0_resolves",
+    "handle": 7,
+    "entry_offset": 56,
+    "entry_segment": 18222,
+    "entry_flags": 1,
+    "result": {
+      "loaded": true,
+      "ax": 1,
+      "ds": 18222,
+      "si": 0
+    }
+  },
+  {
+    "name": "loaded_bit1_resolves",
+    "handle": 37,
+    "entry_offset": 296,
+    "entry_segment": 19013,
+    "entry_flags": 2,
+    "result": {
+      "loaded": true,
+      "ax": 1,
+      "ds": 19013,
+      "si": 0
+    }
+  },
+  {
+    "name": "both_loaded_bits_resolve",
+    "handle": 257,
+    "entry_offset": 2056,
+    "entry_segment": 19804,
+    "entry_flags": 3,
+    "result": {
+      "loaded": true,
+      "ax": 1,
+      "ds": 19804,
+      "si": 0
+    }
+  },
+  {
+    "name": "handle_index_wraps_to_sixteen_bits",
+    "handle": 8198,
+    "entry_offset": 48,
+    "entry_segment": 20595,
+    "entry_flags": 3,
+    "result": {
+      "loaded": true,
+      "ax": 1,
+      "ds": 20595,
+      "si": 0
+    }
+  }
+]

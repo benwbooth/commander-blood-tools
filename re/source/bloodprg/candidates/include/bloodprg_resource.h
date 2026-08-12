@@ -12,7 +12,7 @@ typedef struct bloodprg_resource_handle_entry {
 typedef struct bloodprg_resource_resolve_result {
     cb_u16 segment;
     cb_u16 offset;
-    int loaded;
+    cb_u16 loaded;
 } bloodprg_resource_resolve_result;
 
 typedef struct bloodprg_resource_descriptor {
@@ -67,6 +67,8 @@ cb_u32 CB_FAR resource_file_load(const volatile char *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
 void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */
+bloodprg_resource_resolve_result CB_FAR resource_handle_resolve(
+        cb_u16 handle); /* 0x04B9:0x0190 */
 bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR path_builder_gs_relative(

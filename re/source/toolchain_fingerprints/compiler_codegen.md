@@ -600,6 +600,21 @@ Exact integration still needs the original FS/GS placement, `REPNE SCASW`
 search, packed 32-bit register operations, and DS/ES segment construction at
 the far-call boundary.
 
+Resource-handle resolver `0x005320` has six direct vectors. They prove clear and
+unrelated unloaded flags, each and combined loaded bits, 16-bit `handle * 8`
+wrap, read-only table access, the unloaded `AX=0` plus unchanged `DS:SI` result,
+the loaded `AX=1` plus `DS=segment`/`SI=0` result, unrelated-register
+preservation, and the far-return boundary.
+
+Open Watcom compiles the actual six-byte structured-result candidate without
+warnings; `-3 -ox -mm` emits 32 instructions/70 bytes versus 12/28 original.
+Standalone 8086/286/386 probes emit 36/32/32 instructions and 75/70/70 bytes,
+while Turbo C 2.01 emits 31 instructions. Both compiler families implement a
+hidden structure-return convention. That is suitable for natural integrated C,
+but it cannot reproduce the binary's simultaneous status in `AX` and conditional
+pointer in `DS:SI`; exact binary integration requires a narrow ABI adapter plus
+FS table placement.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
