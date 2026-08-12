@@ -1573,6 +1573,24 @@ instructions. Watcom preserves the C behavior but saves DX/ES, loads the named
 segment through them, and emits MOV plus ADD instead of the original ambient
 GS store and LODSW. Fixed GS placement remains the only integration boundary.
 
+Matrix-slot clear `0x00963F` uses BP without an override, so its six stores are
+to SS:0x2A1B rather than the previously recorded GS segment. Each iteration
+zeros only the first word and advances 24 bytes. Five direct vectors prove all
+six addresses, arbitrary untouched record tails, SS ownership against DS/ES/GS
+decoys, every preserved register, final ADD flags, and four-byte RETF stack
+consumption. The only caller emits `PUSH CS` followed by a near `CALL`, which
+constructs that far-return frame without an inter-segment call instruction.
+
+A natural pointer-to-end loop is a better compiler formulation than the
+initial array-index loop. Open Watcom `-3 -ox -mm` compiles the actual candidate
+without warnings to 8 instructions/19 bytes versus 12/23 original; Turbo C
+2.01 medium also emits 8 instructions. Both generated modules explicitly
+assume DS:DGROUP and SS:DGROUP, making the named DS-relative object equivalent
+to the original SS-relative storage in the medium-model game. Watcom naturally
+preserves every register and emits the far return, but ends the loop with CMP,
+so exact integration must still account for final flags from CMP instead of
+the original final BP ADD.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1642,6 +1660,7 @@ LCS and then mnemonic similarity:
 | `nav_choice_handler_3` | medium, `-ox`, register | 10/14 | 0.1000 | 0.8000 | 0.2000 |
 | `back_buffer_copy_from` | medium, `-ox`, register | 24/34 | 0.2083 | 0.7917 | 0.2500 |
 | `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
+| `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

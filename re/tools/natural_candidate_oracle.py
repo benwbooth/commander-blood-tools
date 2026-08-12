@@ -17066,6 +17066,170 @@ def presentation_mode_bits_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def matrix_table_clear_2a1b_vectors() -> list[dict[str, object]]:
+    entry = 0x963F
+    expected_hash = "60225baa9b9f1b75e86b7849f4a7b8b9dff1baf628d87ec419d1ed2e67568a32"
+    if hashlib.sha256(EXE[entry : entry + 23]).hexdigest() != expected_hash:
+        raise AssertionError("0x963f: recovered 23-byte body changed")
+
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    cases = [
+        ("varied_words", [0x1234, 0xABCD, 0x0001, 0x8000, 0x00FF, 0xFF00], 0x11),
+        ("already_zero", [0x0000] * 6, 0x27),
+        ("all_ffff", [0xFFFF] * 6, 0x3D),
+        ("alternating", [0xAAAA, 0x5555, 0xAAAA, 0x5555, 0xAAAA, 0x5555], 0x53),
+        ("ascending", [0x0000, 0x1111, 0x2222, 0x3333, 0x4444, 0x5555], 0x69),
+    ]
+    vectors = []
+
+    for name, first_words, seed in cases:
+        table_before = bytearray(6 * 24)
+        for record_index, first_word in enumerate(first_words):
+            record_offset = record_index * 24
+            struct.pack_into("<H", table_before, record_offset, first_word)
+            for tail_offset in range(2, 24):
+                table_before[record_offset + tail_offset] = (
+                    seed + record_index * 0x25 + tail_offset * 0x0B
+                ) & 0xFF
+
+        expected_table = bytearray(table_before)
+        for record_index in range(6):
+            struct.pack_into("<H", expected_table, record_index * 24, 0)
+
+        data_decoy = bytes((seed + index * 3) & 0xFF for index in range(6 * 24))
+        extra_decoy = bytes((seed + 0x40 + index * 5) & 0xFF for index in range(6 * 24))
+        game_decoy = bytes((seed + 0x80 + index * 7) & 0xFF for index in range(6 * 24))
+        stack_sentinel = bytes.fromhex("5aa59669c33c")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0ED7,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x9648, 0x9652):
+                return
+            phases.append(
+                {
+                    "address": address,
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x2A1B, data_decoy),
+                (extra_segment, 0x2A1B, extra_decoy),
+                (game_segment, 0x2A1B, game_decoy),
+                (stack_segment, 0x2A1B, bytes(table_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_phases = [
+            {
+                "address": 0x9648,
+                "bp": 0x2A1B + record_index * 0x18,
+                "cx": 6 - record_index,
+            }
+            for record_index in range(6)
+        ]
+        expected_phases.append({"address": 0x9652, "bp": 0x2AAB, "cx": 0})
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x963f {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        actual_table = bytes(
+            machine.mem_read(stack_segment * 16 + 0x2A1B, len(expected_table))
+        )
+        if actual_table != expected_table:
+            raise AssertionError(f"0x963f {name}: SS matrix table mismatch")
+        for segment, expected in (
+            (data_segment, data_decoy),
+            (extra_segment, extra_decoy),
+            (game_segment, game_decoy),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + 0x2A1B, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x963f {name}: decoy table in {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x963f {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x963f {name}: far return did not restore CS")
+
+        expected_flags = {
+            "cf": False,
+            "pf": False,
+            "af": False,
+            "zf": False,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x963f {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x963f {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "first_words_before": first_words,
+                "table_before_sha256": hashlib.sha256(table_before).hexdigest(),
+                "table_after_sha256": hashlib.sha256(actual_table).hexdigest(),
+                "store_offsets": [phase["bp"] for phase in phases[:-1]],
+                "final_loop_bp": phases[-1]["bp"],
+                "return_sp": machine.reg_read(UC_X86_REG_SP),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -22884,6 +23048,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9510_natural.json",
         presentation_mode_bits_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_963f_natural.json",
+        matrix_table_clear_2a1b_vectors(),
         args.check,
     )
     update_vector(

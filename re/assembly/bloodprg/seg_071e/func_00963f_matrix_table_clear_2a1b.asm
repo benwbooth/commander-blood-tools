@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph
 ; label: matrix_table_clear_2a1b
-; label_comment: clear the 3D matrix/object table: bp=0x2a1b; cx=6 records; [bp]=0; bp+=0x18 (24-byte stride). Zeros 6x 24-byte records (the per-object transform slots at 0x2a1b)
+; label_comment: clear the first word of six 24-byte 3D matrix/object records at SS:0x2a1b; BP advances by 0x18 while CX counts down. The caller pushes CS then uses a near CALL, and this helper consumes both return words with RETF
 ; byte_count: 23
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: retf:1
