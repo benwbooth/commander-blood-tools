@@ -147,7 +147,9 @@ preservation envelope; the function logic itself remains natural C.
 
 For `0x009F80`, eight direct-execution cases confirm that AX is an unsigned
 index into the four-byte table at DS:0x1FB5 and BX receives the entry's first
-word, a near presentation-line record pointer. The cases cover 16-bit table
+word, a near resource-descriptor pointer. The `0x009F8E` consumer proves that
+the descriptor begins with byte flags, a mutable variant byte, and its filename
+at offset two. The cases cover 16-bit table
 offset wrap, DS selection against ES/GS decoys, preservation of AX and every
 other register, and all six arithmetic flags left by the fourth ADD. Each of
 the five callers immediately consumes BX; their next instructions are MOV,
@@ -160,6 +162,21 @@ seven instructions and 14 bytes. The function body remains the natural
 on the stack and returns the pointer in AX. The natural source is therefore a
 drop-in logical match under the Watcom ABI declaration, but not an exact code
 shape or an isolated Borland replacement.
+
+For `0x009F8E`, seven direct-execution cases cover banked, embedded, and
+external-file resources, along with open, initial-read, and body-read failures.
+The cases patch only the path-builder, DOS, and staged-read call boundaries;
+the original close, list initialization, bounds reset, descriptor lookup, and
+palette routines execute unchanged. They verify the extent word is used only
+for ring-wrap detection, palette data begins immediately after that word unless
+the record wraps to offset zero, `0xFF` metadata padding is skipped, and both
+32-bit absolute/remaining range pairs use the recovered relative offsets. Open
+Watcom 1.9 medium compiles the natural body to 182 instructions and 514 bytes,
+and Turbo C 2.01 medium emits 206 instructions, versus 103 instructions and 309
+bytes in the original. The excess is primarily the conventional Boolean and
+pointer interfaces replacing the original AX,
+BX, ES:SI, and carry conventions, so this is a behaviorally verified natural C
+body with unresolved assembly boundaries rather than an exact codegen match.
 
 For `0x00A0C3`, five direct-execution cases confirm the complete palette-block
 loop, including immediate termination, a nonterminating zero-count block,

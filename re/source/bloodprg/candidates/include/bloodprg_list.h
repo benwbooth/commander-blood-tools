@@ -24,11 +24,15 @@ extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */
 extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
 extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
+extern volatile cb_u8 CB_FAR list_d8c_buffer[];    /* segment at 0x0A7E */
 
 void CB_NEAR close_file_d5b(void);              /* 0x00A141 */
 volatile cb_u8 CB_FAR *CB_NEAR resource_palette_blocks_apply(
         volatile cb_u8 CB_FAR *stream);          /* 0x00A0C3 */
 void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
+int CB_NEAR list_d8c_read(cb_u16 *entry_extent,
+        cb_u16 *cursor_offset);                  /* 0x00A622 */
+int CB_NEAR ems_paged_read(cb_u16 byte_count);   /* 0x00A664 */
 void CB_NEAR queue_d8c_wrap(cb_u16 byte_count, cb_u16 cursor); /* 0x00A38E */
 int CB_NEAR queue_d8c_has_room(cb_u16 byte_count); /* 0x00A3AD */
 void CB_NEAR queue_d8c_consume(void);            /* 0x00A3D0 */

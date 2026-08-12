@@ -1376,7 +1376,7 @@ def presentation_queue_finish_vectors() -> list[dict[str, object]]:
     return vectors
 
 
-def presentation_line_lookup_vectors() -> list[dict[str, object]]:
+def resource_descriptor_lookup_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     cases = [
         ("first_entry", 0x0000, 0x2069),
@@ -2613,7 +2613,7 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_9f80_natural.json",
-        presentation_line_lookup_vectors(),
+        resource_descriptor_lookup_vectors(),
         args.check,
     )
     update_vector(
