@@ -1981,6 +1981,16 @@ instead of `BX` and tail `JMP`; callback-entry `SP` therefore differs. Turbo C
 integration needs a narrow tail-call adapter, while the natural C control flow
 is sufficient for a consistently recompiled caller/callback set.
 
+The byte-identical AMER `0x000347`, CROOLIS `0x00035C`, and SCRUT `0x00035C`
+mouse-position helpers are recovered as two natural DS-global assignments plus
+a narrow `INT 33h` hardware intrinsic. Six interrupt-hook vectors per overlay
+verify ordered `DS:0x002A/0x002C` stores before the driver boundary,
+`AX=4/CX=x/DX=y`, stack position, ownership, preservation, and driver result
+propagation. Open Watcom compiles every actual candidate without warnings to
+the original five-instruction sequence and 14-byte size. Only the two global
+relocations remain for the overlay linker to bind. Turbo C 2.01 emits the same
+five-operation core inside a 10-instruction stack-argument frame.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -2021,6 +2031,7 @@ LCS and then mnemonic similarity:
 | `xdb_apply_delta` | medium, `-ox`, register | 6/9 | 0.1667 | 0.6667 | 0.3333 |
 | `xdb_lower_state` | medium, `-ox`, register | 4/4 | 0.2500 | 0.7500 | 0.7500 |
 | `xdb_resume_or_init` | medium, `-ox`, register | 8/9 | 0.1250 | 0.6250 | 0.1250 |
+| `xdb_mouse_position_set` | medium, `-ox`, register | 5/5 | 0.4000 | 1.0000 | 0.6000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

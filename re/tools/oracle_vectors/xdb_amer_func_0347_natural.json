@@ -1,0 +1,128 @@
+[
+  {
+    "name": "origin",
+    "module": "amer",
+    "entry": 839,
+    "x": 0,
+    "y": 0,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24832,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary",
+    "module": "amer",
+    "entry": 839,
+    "x": 160,
+    "y": 100,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24833,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "x_high_bit",
+    "module": "amer",
+    "entry": 839,
+    "x": 32768,
+    "y": 4660,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24834,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "y_high_bit",
+    "module": "amer",
+    "entry": 839,
+    "x": 17185,
+    "y": 32768,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24835,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum",
+    "module": "amer",
+    "entry": 839,
+    "x": 65535,
+    "y": 65535,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24836,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "mixed",
+    "module": "amer",
+    "entry": 839,
+    "x": 42330,
+    "y": 23205,
+    "interrupt": 51,
+    "interrupt_function": 4,
+    "globals_committed_before_interrupt": true,
+    "driver_ax_after": 24837,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

@@ -17,7 +17,7 @@ import json
 import struct
 from pathlib import Path
 
-from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_MODE_16, Uc, UcError
+from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_MODE_16, Uc, UcError
 from unicorn.x86_const import (
     UC_X86_REG_CS,
     UC_X86_REG_DS,
@@ -88,6 +88,7 @@ def execute(
     return_address: int,
     registers: dict[str, int],
     memory: list[tuple[int, int, bytes]],
+    interrupt_handler: object | None = None,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -108,6 +109,8 @@ def execute(
             machine.emu_stop()
 
     machine.hook_add(UC_HOOK_CODE, stop_at_return)
+    if interrupt_handler is not None:
+        machine.hook_add(UC_HOOK_INTR, interrupt_handler)
     try:
         machine.emu_start(entry, 0x2FFFF0, count=1000)
     except UcError as error:
@@ -119,6 +122,176 @@ def execute(
     if not returned:
         raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
     return machine
+
+
+def mouse_position_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "6eef96589bdec402ce6079bdeac73e81b55468ed5c9e7ed666225fd3145ffe32"
+    if hashlib.sha256(image[entry : entry + 14]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 14-byte body changed")
+
+    cases = [
+        ("origin", 0x0000, 0x0000),
+        ("ordinary", 0x00A0, 0x0064),
+        ("x_high_bit", 0x8000, 0x1234),
+        ("y_high_bit", 0x4321, 0x8000),
+        ("maximum", 0xFFFF, 0xFFFF),
+        ("mixed", 0xA55A, 0x5AA5),
+    ]
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0xF000
+    driver_flags = (0x0202, 0x0AD7, 0x0646, 0x0283, 0x0A12, 0x0643)
+    vectors = []
+
+    for case_index, (name, x, y) in enumerate(cases):
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        globals_before = bytes.fromhex("a1b2c3d4e5f6a7b8")
+        globals_after = globals_before[:2] + struct.pack("<HH", x, y) + globals_before[6:]
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C30000 | x,
+            "edx": 0xD4D40000 | y,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if case_index & 1 else 0),
+        }
+        driver_ax = (0x6100 + case_index) & 0xFFFF
+        interrupts: list[dict[str, int | bytes]] = []
+
+        def interrupt_handler(
+            machine: Uc, interrupt_number: int, _data: object
+        ) -> None:
+            interrupts.append(
+                {
+                    "number": interrupt_number,
+                    "ax": machine.reg_read(UC_X86_REG_EAX) & 0xFFFF,
+                    "cx": machine.reg_read(UC_X86_REG_ECX) & 0xFFFF,
+                    "dx": machine.reg_read(UC_X86_REG_EDX) & 0xFFFF,
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "globals": bytes(
+                        machine.mem_read(data_segment * 16 + 0x0028, 8)
+                    ),
+                }
+            )
+            machine.reg_write(
+                UC_X86_REG_EAX,
+                (machine.reg_read(UC_X86_REG_EAX) & 0xFFFF0000) | driver_ax,
+            )
+            machine.reg_write(UC_X86_REG_EFLAGS, driver_flags[case_index])
+
+        immutable = [
+            (extra_segment, 0x0028, bytes.fromhex("1122334455667788")),
+            (game_segment, 0x0028, bytes.fromhex("8877665544332211")),
+        ]
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                *immutable,
+                (data_segment, 0x0028, globals_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler,
+        )
+
+        expected_interrupt = {
+            "number": 0x33,
+            "ax": 4,
+            "cx": x,
+            "dx": y,
+            "ds": data_segment,
+            "sp": 0xFF00,
+            "globals": globals_after,
+        }
+        if interrupts != [expected_interrupt]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"interrupts={interrupts}, expected={[expected_interrupt]}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | driver_ax
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0028, 8)) != globals_after:
+            raise AssertionError(f"{module}:{entry:#x} {name}: mouse globals differ")
+        for segment, offset, value in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(f"{module}:{entry:#x} {name}: decoy changed")
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        expected_flags = {
+            flag: bool(driver_flags[case_index] & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "x": x,
+                "y": y,
+                "interrupt": 0x33,
+                "interrupt_function": 4,
+                "globals_committed_before_interrupt": True,
+                "driver_ax_after": driver_ax,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
 
 
 def anchor_state_vectors(
@@ -963,6 +1136,16 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for module, entry in (
+        ("amer", 0x0347),
+        ("croolis", 0x035C),
+        ("scrut", 0x035C),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            mouse_position_vectors(module, entry),
+            args.check,
+        )
     for module, entry, cursor_offset in (
         ("amer", 0x0B0F, 0x1BC2),
         ("croolis", 0x0B50, 0x1B2E),
