@@ -60,7 +60,7 @@
     }
   },
   {
-    "name": "rotate_vertex_2_on_tie",
+    "name": "rotate_vertex_2_on_x_tie",
     "module": "manu3",
     "entry": 1792,
     "face_count": 1,
@@ -122,7 +122,7 @@
     }
   },
   {
-    "name": "negative_y_clamps_bucket",
+    "name": "negative_x_clamps_bucket",
     "module": "manu3",
     "entry": 1792,
     "face_count": 1,
@@ -211,7 +211,7 @@
     }
   },
   {
-    "name": "doubled_y_sign_clamps_bucket",
+    "name": "doubled_x_sign_clamps_bucket",
     "module": "manu3",
     "entry": 1792,
     "face_count": 1,

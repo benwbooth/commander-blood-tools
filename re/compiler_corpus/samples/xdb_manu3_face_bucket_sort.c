@@ -16,7 +16,7 @@ typedef signed int i16;
 #define FAR_AT(type, segment, offset) \
     ((type FAR *)MK_FP((segment), (offset)))
 #define BUCKET_HEADS_OFFSET 0x0686u
-#define MAX_FACE_HEIGHT 0x0190u
+#define MAX_FACE_WIDTH 0x0190u
 
 typedef struct face_record {
     u16 link;
@@ -27,7 +27,7 @@ typedef struct face_record {
 
 typedef struct projected_vertex {
     u8 field_000[0x0A];
-    i16 screen_y;
+    i16 screen_x;
     u8 field_00c[0x06];
     u16 clip_flags;
 } projected_vertex;
@@ -80,52 +80,52 @@ void NEAR xdb_manu3_face_bucket_sort_probe(
         common_clip &= vertex_1->clip_flags;
         common_clip &= vertex_2->clip_flags;
         if (common_clip == 0u) {
-            i16 y_0 = vertex_0->screen_y;
-            i16 y_1 = vertex_1->screen_y;
-            i16 y_2 = vertex_2->screen_y;
+            i16 x_0 = vertex_0->screen_x;
+            i16 x_1 = vertex_1->screen_x;
+            i16 x_2 = vertex_2->screen_x;
             u16 span_1;
             u16 span_2;
 
-            if (y_1 > y_2) {
-                if (y_0 >= y_2) {
+            if (x_1 > x_2) {
+                if (x_0 >= x_2) {
                     u16 saved_vertex = vertex_0_offset;
-                    i16 saved_y = y_0;
+                    i16 saved_x = x_0;
 
                     vertex_0_offset = vertex_2_offset;
-                    y_0 = y_2;
+                    x_0 = x_2;
                     vertex_2_offset = vertex_1_offset;
-                    y_2 = y_1;
+                    x_2 = x_1;
                     vertex_1_offset = saved_vertex;
-                    y_1 = saved_y;
+                    x_1 = saved_x;
                     face->vertex_0 = vertex_0_offset;
                     face->vertex_1 = vertex_1_offset;
                     face->vertex_2 = vertex_2_offset;
                 }
-            } else if (y_0 > y_1) {
+            } else if (x_0 > x_1) {
                 u16 saved_vertex = vertex_0_offset;
-                i16 saved_y = y_0;
+                i16 saved_x = x_0;
 
                 vertex_0_offset = vertex_1_offset;
-                y_0 = y_1;
+                x_0 = x_1;
                 vertex_1_offset = vertex_2_offset;
-                y_1 = y_2;
+                x_1 = x_2;
                 vertex_2_offset = saved_vertex;
-                y_2 = saved_y;
+                x_2 = saved_x;
                 face->vertex_0 = vertex_0_offset;
                 face->vertex_1 = vertex_1_offset;
                 face->vertex_2 = vertex_2_offset;
             }
 
-            span_1 = (u16)((u16)y_1 - (u16)y_0);
-            span_2 = (u16)((u16)y_2 - (u16)y_0);
-            if (span_1 < MAX_FACE_HEIGHT && span_2 < MAX_FACE_HEIGHT) {
-                u16 doubled_y = (u16)((u16)y_0 << 1);
+            span_1 = (u16)((u16)x_1 - (u16)x_0);
+            span_2 = (u16)((u16)x_2 - (u16)x_0);
+            if (span_1 < MAX_FACE_WIDTH && span_2 < MAX_FACE_WIDTH) {
+                u16 doubled_x = (u16)((u16)x_0 << 1);
                 u16 bucket_offset = BUCKET_HEADS_OFFSET;
                 u16 previous_head;
                 volatile u16 FAR *bucket;
 
-                if ((i16)doubled_y >= 0) {
-                    bucket_offset = (u16)(bucket_offset + doubled_y);
+                if ((i16)doubled_x >= 0) {
+                    bucket_offset = (u16)(bucket_offset + doubled_x);
                 }
                 bucket = FAR_AT(
                         volatile u16,

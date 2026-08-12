@@ -2163,11 +2163,11 @@ Natural C exposes those two segment selectors as typed arguments. Watcom emits
 
 Ten direct vectors prove the complete `0x000700` face bucket sorter. The
 routine walks 8-byte faces and 20-byte projected vertices, rejects triangles
-whose three clip masks share a bit, rotates the signed lowest-Y vertex into
-slot zero, rejects either modular unsigned Y span at 400 or more, and prepends
-accepted faces to the scanline bucket selected by doubled Y. The matrix covers
-both rotation paths, the original `y0 == y2` tie rotation, both height rejects,
-negative and high-doubled-Y bucket clamping, three-face prepend order, exact
+whose three clip masks share a bit, rotates the signed lowest-X vertex into
+slot zero, rejects either modular unsigned X span at 400 or more, and prepends
+accepted faces to the column bucket selected by doubled X. The matrix covers
+both rotation paths, the original `x0 == x2` tie rotation, both width rejects,
+negative and high-doubled-X bucket clamping, three-face prepend order, exact
 renderer fallthrough, and count zero's 65,536 iterations.
 
 The actual candidate compiles warning-free with Open Watcom. Its best tested

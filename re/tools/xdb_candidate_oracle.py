@@ -3522,7 +3522,7 @@ def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
             "bucket_heads": {0x069A: 0x7111},
         },
         {
-            "name": "rotate_vertex_2_on_tie",
+            "name": "rotate_vertex_2_on_x_tie",
             "faces": (((10, 0), (30, 0), (10, 0)),),
             "bucket_heads": {0x069A: 0x7222},
         },
@@ -3532,7 +3532,7 @@ def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
             "bucket_heads": {0x0690: 0x7333},
         },
         {
-            "name": "negative_y_clamps_bucket",
+            "name": "negative_x_clamps_bucket",
             "faces": (((-5, 0), (4, 0), (6, 0)),),
             "bucket_heads": {0x0686: 0x7444},
         },
@@ -3547,7 +3547,7 @@ def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
             "bucket_heads": {},
         },
         {
-            "name": "doubled_y_sign_clamps_bucket",
+            "name": "doubled_x_sign_clamps_bucket",
             "faces": (((0x4000, 0), (0x4001, 0), (0x4002, 0)),),
             "bucket_heads": {0x0686: 0x7555},
         },

@@ -5,7 +5,7 @@
 
 #define XDB_MANU3_ACTIVE_SLOTS_OFFSET 0x1032u
 #define XDB_MANU3_BUCKET_HEADS_OFFSET 0x0686u
-#define XDB_MANU3_MAX_FACE_HEIGHT 0x0190u
+#define XDB_MANU3_MAX_FACE_WIDTH 0x0190u
 
 typedef struct xdb_manu3_tween_spec {
     xdb_u8 count;
@@ -40,7 +40,7 @@ typedef struct xdb_manu3_face {
 
 typedef struct xdb_manu3_vertex {
     xdb_u8 field_000[0x0A];
-    xdb_i16 screen_y;
+    xdb_i16 screen_x;
     xdb_u8 field_00c[0x06];
     xdb_u16 clip_flags;
 } xdb_manu3_vertex;
