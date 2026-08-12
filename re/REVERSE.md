@@ -1611,6 +1611,14 @@ secondary bookkeeping field yet, but it now ports the direct pair write and
 branch comparison in `interpret_line_states` / `execute_trace` and exposes the
 raw token as `VmToken::PairRecord`.
 
+Nine direct `0x6034` vectors prove that this helper returns the greatest
+directory base strictly less than AX, not less-than-or-equal. They include the
+binary's pre-first read when AX is at or below the first base, 16-bit SI wrap,
+GS ownership of the far directory pointer, complete preservation, and final
+`SUB SI,20` flags. The natural scan-then-decrement C compiles with Watcom to the
+same 12 instructions and 27 bytes versus 26 original; only the binary's
+GS-to-DS:SI placement differs from Watcom's DS-to-ES:BX choice.
+
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the

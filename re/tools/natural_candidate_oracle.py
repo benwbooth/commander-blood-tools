@@ -3979,6 +3979,155 @@ def vm_field_offset_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_record_lookup_by_threshold_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x2400
+    directory_segment = 0x4200
+    decoy_segment = 0x4600
+    decoy_offset = 0x0600
+    cases = [
+        ("below_first_uses_predecessor", 0x0200, 0x0005, 0xBEEF, [0x0010, 0x0030]),
+        ("equal_first_uses_predecessor", 0x0300, 0x0010, 0xCAFE, [0x0010, 0x0030]),
+        ("between_entries_returns_first", 0x0400, 0x0020, 0x1111, [0x0010, 0x0030]),
+        ("equal_second_returns_first", 0x0500, 0x0030, 0x2222, [0x0010, 0x0030]),
+        (
+            "crosses_multiple_entries",
+            0x0600,
+            0x0090,
+            0x3333,
+            [0x0000, 0x0014, 0x0028, 0x004A, 0x0092],
+        ),
+        (
+            "high_threshold_stops_on_ffff",
+            0x0700,
+            0xFFFF,
+            0x4444,
+            [0x1000, 0x8000, 0xFFF0, 0xFFFF],
+        ),
+        (
+            "directory_offset_wraps",
+            0xFFE0,
+            0x0050,
+            0x5555,
+            [0x0010, 0x0030, 0x0050],
+        ),
+        ("final_subtract_is_zero", 0x0014, 0x0010, 0x7777, [0x0010, 0x0030]),
+        (
+            "final_subtract_overflows_signed",
+            0x7FEC,
+            0x0200,
+            0x6666,
+            [0x0100, 0x0200],
+        ),
+    ]
+    vectors = []
+
+    for case_index, (name, start, threshold, predecessor, entries) in enumerate(cases):
+        stop_index = next(
+            index for index, object_offset in enumerate(entries) if threshold <= object_offset
+        )
+        expected_result = predecessor if stop_index == 0 else entries[stop_index - 1]
+        stopped_entry_offset = (start + stop_index * 20) & 0xFFFF
+        final_si = (stopped_entry_offset - 20) & 0xFFFF
+        pointer = struct.pack("<HH", start, directory_segment)
+        decoy_pointer = struct.pack("<HH", decoy_offset, decoy_segment)
+        predecessor_field = (start - 20 + 16) & 0xFFFF
+        memory = [
+            (game_segment, 0x672C, pointer),
+            (data_segment, 0x672C, decoy_pointer),
+            (directory_segment, predecessor_field, struct.pack("<H", predecessor)),
+            (decoy_segment, (decoy_offset - 20 + 16) & 0xFFFF, b"\xad\xde"),
+            (decoy_segment, (decoy_offset + 16) & 0xFFFF, b"\xff\xff"),
+        ]
+        directory_fields = [(predecessor_field, predecessor)]
+        for index, object_offset in enumerate(entries):
+            field_offset = (start + index * 20 + 16) & 0xFFFF
+            memory.append(
+                (directory_segment, field_offset, struct.pack("<H", object_offset))
+            )
+            directory_fields.append((field_offset, object_offset))
+
+        initial = {
+            "eax": 0xA1A10000 | threshold,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        machine = execute(0x6034, 0x604D, initial, memory)
+
+        expected = dict(initial)
+        del expected["flags"]
+        expected["eax"] = (initial["eax"] & 0xFFFF0000) | expected_result
+        for register, value in expected.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x6034 {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+
+        if bytes(machine.mem_read(game_segment * 16 + 0x672C, 4)) != pointer:
+            raise AssertionError(f"0x6034 {name}: GS directory pointer changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x672C, 4)) != decoy_pointer:
+            raise AssertionError(f"0x6034 {name}: DS decoy pointer changed")
+        for field_offset, object_offset in directory_fields:
+            actual = machine.mem_read(directory_segment * 16 + field_offset, 2)
+            if bytes(actual) != struct.pack("<H", object_offset):
+                raise AssertionError(f"0x6034 {name}: directory field changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": stopped_entry_offset < 20,
+            "pf": (final_si & 0xFF).bit_count() % 2 == 0,
+            "af": (stopped_entry_offset & 0xF) < (20 & 0xF),
+            "zf": final_si == 0,
+            "sf": bool(final_si & 0x8000),
+            "of": bool(
+                ((stopped_entry_offset ^ 20) & (stopped_entry_offset ^ final_si))
+                & 0x8000
+            ),
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6034 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x604D] != 0xC3:
+            raise AssertionError("0x6034: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "threshold": threshold,
+                "directory_offset": start,
+                "predecessor": predecessor,
+                "entries": entries,
+                "stop_index": stop_index,
+                "ax": expected_result,
+                "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -8496,6 +8645,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6023_natural.json",
         vm_field_offset_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6034_natural.json",
+        vm_record_lookup_by_threshold_vectors(),
         args.check,
     )
     update_vector(

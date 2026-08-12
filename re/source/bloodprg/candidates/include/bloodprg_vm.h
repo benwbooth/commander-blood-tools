@@ -105,6 +105,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
+#pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,

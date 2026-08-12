@@ -1,0 +1,188 @@
+[
+  {
+    "name": "below_first_uses_predecessor",
+    "threshold": 5,
+    "directory_offset": 512,
+    "predecessor": 48879,
+    "entries": [
+      16,
+      48
+    ],
+    "stop_index": 0,
+    "ax": 48879,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "equal_first_uses_predecessor",
+    "threshold": 16,
+    "directory_offset": 768,
+    "predecessor": 51966,
+    "entries": [
+      16,
+      48
+    ],
+    "stop_index": 0,
+    "ax": 51966,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "between_entries_returns_first",
+    "threshold": 32,
+    "directory_offset": 1024,
+    "predecessor": 4369,
+    "entries": [
+      16,
+      48
+    ],
+    "stop_index": 1,
+    "ax": 16,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "equal_second_returns_first",
+    "threshold": 48,
+    "directory_offset": 1280,
+    "predecessor": 8738,
+    "entries": [
+      16,
+      48
+    ],
+    "stop_index": 1,
+    "ax": 16,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "crosses_multiple_entries",
+    "threshold": 144,
+    "directory_offset": 1536,
+    "predecessor": 13107,
+    "entries": [
+      0,
+      20,
+      40,
+      74,
+      146
+    ],
+    "stop_index": 4,
+    "ax": 74,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_threshold_stops_on_ffff",
+    "threshold": 65535,
+    "directory_offset": 1792,
+    "predecessor": 17476,
+    "entries": [
+      4096,
+      32768,
+      65520,
+      65535
+    ],
+    "stop_index": 3,
+    "ax": 65520,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_offset_wraps",
+    "threshold": 80,
+    "directory_offset": 65504,
+    "predecessor": 21845,
+    "entries": [
+      16,
+      48,
+      80
+    ],
+    "stop_index": 2,
+    "ax": 48,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "final_subtract_is_zero",
+    "threshold": 16,
+    "directory_offset": 20,
+    "predecessor": 30583,
+    "entries": [
+      16,
+      48
+    ],
+    "stop_index": 0,
+    "ax": 30583,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "final_subtract_overflows_signed",
+    "threshold": 512,
+    "directory_offset": 32748,
+    "predecessor": 26214,
+    "entries": [
+      256,
+      512
+    ],
+    "stop_index": 1,
+    "ax": 256,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  }
+]

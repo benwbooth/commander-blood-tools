@@ -664,6 +664,26 @@ registers, but neither compiler lowers natural C to `BSF`, and Watcom resolves
 the far table through ES instead of fixed GS. Exact integration therefore needs
 a narrow BSF/GS adapter, not register-state code in the natural function.
 
+VM record owner lookup `0x006034` has nine deterministic direct vectors. They
+prove that the result is the greatest directory base strictly less than AX,
+including equality at the first and later entries and the binary's unconditional
+pre-first read when no entry is lower. Multi-entry and wrapped-offset cases
+prove the 20-byte stride and 16-bit SI arithmetic. Distinct GS and DS pointer
+slots prove the far directory pointer comes from `GS:0x672C`; the vectors also
+cover immutable directory data, upper-EAX and full unrelated-state
+preservation, the near return, and every flag class left by `SUB SI,20`.
+
+Replacing a tracked `previous` variable with the faithful natural sequence
+"scan, then decrement once" reduces the actual Watcom candidate from 37 to 27
+bytes. With the AX-only preserve-all pragma, `-3 -ox -mm` emits 12 instructions/
+27 bytes versus 12/26 original; the 8086/286/386 probes are identical, while
+Turbo C 2.01 emits 18 instructions. Watcom even folds the predecessor load to
+`ES:[BX-4]` and leaves the final flags from a following `SUB BX,20`. The remaining
+mismatch is segmented data placement: it loads a DS-held far pointer into ES:BX,
+whereas the binary loads a GS-held pointer into DS:SI. The natural algorithm and
+observable ABI are retained; exact register bytes need linker/segment binding or
+a narrow adapter.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -677,6 +697,7 @@ LCS and then mnemonic similarity:
 | --- | --- | ---: | ---: | ---: | ---: |
 | `far_strlen` | compact, unoptimized, register | 11/15 | 0.0909 | 0.6364 | 0.0909 |
 | `field_offset` | compact, `-ox`, register | 8/23 | 0.3750 | 0.7500 | 0.3750 |
+| `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |
