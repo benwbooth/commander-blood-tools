@@ -2,6 +2,7 @@
 #define BLOODPRG_VM_H
 
 #include "bloodprg_common.h"
+#include "bloodprg_random.h"
 
 typedef union bloodprg_vm_ui_state {
     cb_u16 word;
@@ -85,6 +86,12 @@ typedef struct bloodprg_vm_record_triple {
     cb_u16 value;
 } bloodprg_vm_record_triple;
 
+typedef struct bloodprg_value_node {
+    cb_u16 value;
+    const struct bloodprg_value_node CB_NEAR *next;
+    cb_u8 payload[1];
+} bloodprg_value_node;
+
 typedef struct bloodprg_dic_lookup_result {
     cb_u16 object_offset;
     int matched;
@@ -95,8 +102,9 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
-int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 void CB_NEAR object_heap_access(void);       /* 0x00149B */
+const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
+        const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
 void CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */

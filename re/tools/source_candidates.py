@@ -84,6 +84,7 @@ def function_pattern(name: str) -> re.Pattern[str]:
     return re.compile(
         r"\b(?:void|int|unsigned|signed|cb_u8|cb_u16|cb_u32|cb_i8|cb_i16|cb_i32|char|short|long|[A-Za-z_][A-Za-z0-9_]*)\s+"
         r"(?:(?:CB_NEAR|CB_FAR|XDB_NEAR|XDB_FAR)\s+)?"
+        r"(?:\*\s*(?:(?:CB_NEAR|CB_FAR|XDB_NEAR|XDB_FAR)\s+)?)?"
         + re.escape(name)
         + r"\s*\(",
         re.MULTILINE,
