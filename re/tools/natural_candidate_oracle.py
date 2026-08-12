@@ -8524,6 +8524,530 @@ def vm_cond_state_array_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_text_handler_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    line_segment = 0x5000
+    dictionary_segment = 0x6000
+    stack_segment = 0x9000
+    line_base = 0x0100
+    line_index = 0x0020
+    line_offset = line_base + line_index
+    cases = [
+        {
+            "name": "inactive_still_arms_skip_and_loop",
+            "start": 0x1800,
+            "selector": 0x7F,
+            "b4": 0x18,
+            "b5": 0x70,
+            "loop_target": 0x3333,
+            "words": [0x0100, 0x0200],
+            "path": "inactive",
+        },
+        {
+            "name": "display_active_gate",
+            "start": 0x1900,
+            "selector": 0x01,
+            "b4": 0x00,
+            "b5": 0x80,
+            "words": [0x0100],
+            "display_active": 1,
+            "path": "display_gate",
+        },
+        {
+            "name": "presentation_defer_gate",
+            "start": 0x1A00,
+            "selector": 0x02,
+            "b4": 0x00,
+            "b5": 0x80,
+            "words": [0x0100],
+            "defer": 0x80,
+            "path": "defer_gate",
+        },
+        {
+            "name": "already_shown_gate",
+            "start": 0x1B00,
+            "selector": 0x03,
+            "b4": 0x00,
+            "b5": 0x80,
+            "words": [0x0100],
+            "line_flags": 0x8000,
+            "path": "shown",
+        },
+        {
+            "name": "wrong_presentation_record_gate",
+            "start": 0x1C00,
+            "selector": 0x04,
+            "b4": 0x00,
+            "b5": 0x80,
+            "words": [0x0100],
+            "presentation_record": 0x00C5,
+            "path": "wrong_record",
+        },
+        {
+            "name": "random_condition_rejects",
+            "start": 0x1D00,
+            "selector": 0x05,
+            "b4": 0x02,
+            "b5": 0x80,
+            "words": [0x0100, 0x0200],
+            "prng_result": 1,
+            "path": "random_reject",
+        },
+        {
+            "name": "accepted_raw_word_list",
+            "start": 0x1E00,
+            "selector": 0xFF,
+            "b4": 0x00,
+            "b5": 0x80,
+            "words": [0x0100, 0x0200],
+            "path": "raw",
+        },
+        {
+            "name": "accepted_preserved_with_extra_control",
+            "start": 0x1F00,
+            "selector": 0x80,
+            "b4": 0x05,
+            "b5": 0x80,
+            "extra_control": 5,
+            "condition_value": 10,
+            "words": [0x0100],
+            "path": "raw_extra",
+        },
+        {
+            "name": "assembled_punctuation_spacing",
+            "start": 0x2000,
+            "selector": 0x06,
+            "b4": 0x20,
+            "b5": 0x80,
+            "words": [0x0100, 0x0110, 0x0120],
+            "dictionary": {
+                0x0000: b"\0",
+                0x0100: b"HELLO\0",
+                0x0110: b",\0",
+                0x0120: b"WORLD\0",
+            },
+            "output": b"HELLO, WORLD \r\0",
+            "line_length": 13,
+            "path": "assembled",
+        },
+        {
+            "name": "assembled_wraps_before_next_word",
+            "start": 0x2100,
+            "selector": 0x07,
+            "b4": 0x20,
+            "b5": 0x80,
+            "words": [0x0200, 0x0220],
+            "dictionary": {
+                0x0000: b"\0",
+                0x0200: b"12345678901234567890\0",
+                0x0220: b"abcdefghijklmnop\0",
+            },
+            "output": b"12345678901234567890 \rabcdefghijklmnop \r\0",
+            "line_length": 17,
+            "path": "assembled",
+        },
+        {
+            "name": "assembled_stops_at_menu_separator",
+            "start": 0x2200,
+            "selector": 0x08,
+            "b4": 0x20,
+            "b5": 0x80,
+            "words": [0x0300, 0xFFFF, 0x0320],
+            "dictionary": {
+                0x0000: b"\0",
+                0x0300: b"CHOICE\0",
+                0x0320: b"MENU\0",
+                0xFFFF: b"\0",
+            },
+            "output": b"CHOICE \r\0",
+            "line_length": 7,
+            "path": "assembled",
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        start = int(case["start"])
+        selector = int(case["selector"])
+        b4 = int(case["b4"])
+        b5 = int(case["b5"])
+        control = b4 | (b5 << 8)
+        path = str(case["path"])
+        loop_target = case.get("loop_target")
+        extra_control = case.get("extra_control")
+        words = [int(word) for word in case["words"]]
+        script = bytearray(struct.pack("<HBBB", line_index, selector, b4, b5))
+        condition_offset = start + len(script)
+        if loop_target is not None:
+            script.extend(struct.pack("<H", int(loop_target)))
+            condition_offset += 2
+        if extra_control is not None:
+            script.extend(struct.pack("<H", int(extra_control)))
+        words_offset = condition_offset + (2 if extra_control is not None else 0)
+        for word in words:
+            script.extend(struct.pack("<H", word))
+        script.extend(b"\0\0")
+        final_script = (start + len(script)) & 0xFFFF
+
+        display_active = int(case.get("display_active", 0))
+        defer = int(case.get("defer", 0))
+        line_flags = int(case.get("line_flags", 0x1234))
+        presentation_record = int(case.get("presentation_record", 0x00C4))
+        word_list_mode = 0xA4
+        initial_skip = 0x55
+        initial_resume_state = 0xA5
+        initial_resume_value = 0x5678
+        initial_loop_target = 0x9ABC
+        initial_selector = 0x2468
+        initial_yield = 0x40
+        initial_request = 0xA0
+        initial_hold = 0x67
+        initial_menu_pending = 0x33
+        initial_menu_end = 0x4444
+        initial_menu_words = (0x5555, 0x6666)
+        initial_reveal = 0x7777
+        initial_mode_cf9 = 0x22
+        initial_mode_cfa = 0x44
+        initial_voice = 0x66
+
+        memory = [
+            (0, 0x27E2, b"\xb8" + struct.pack("<H", int(case.get("prng_result", 0))) + b"\xcb"),
+            (game_segment, 0x6724, struct.pack("<HH", line_base, line_segment)),
+            (game_segment, 0x6728, struct.pack("<HH", 0, dictionary_segment)),
+            (game_segment, 0x6E91, b"\x3a"),
+            (game_segment, 0x6D71, b"\x20"),
+            (line_segment, line_offset + 2, struct.pack("<H", line_flags)),
+            (line_segment, line_offset + 0x3A, struct.pack("<H", presentation_record)),
+            (line_segment, line_offset + 0x20, struct.pack("<H", int(case.get("condition_value", 10)))),
+            (game_segment, 0x67AB, bytes([initial_skip])),
+            (game_segment, 0x67B1, bytes([initial_resume_state])),
+            (game_segment, 0x6764, struct.pack("<H", initial_resume_value)),
+            (game_segment, 0x6778, struct.pack("<H", initial_loop_target)),
+            (game_segment, 0x677C, struct.pack("<H", 0xAAAA)),
+            (game_segment, 0x5E64, bytes([display_active])),
+            (game_segment, 0x67B0, bytes([defer])),
+            (game_segment, 0x67B9, bytes([word_list_mode])),
+            (game_segment, 0x1FAB, struct.pack("<H", initial_selector)),
+            (game_segment, 0x0CF9, bytes([initial_mode_cf9])),
+            (game_segment, 0x0CFA, bytes([initial_mode_cfa])),
+            (game_segment, 0x0CFB, bytes([initial_voice])),
+            (game_segment, 0x0E18, b"\xcc" * 128),
+            (game_segment, 0x5E58, struct.pack("<H", initial_reveal)),
+            (game_segment, 0x67B4, bytes([initial_yield])),
+            (game_segment, 0x67BC, bytes([initial_hold])),
+            (game_segment, 0x67AA, bytes([initial_request])),
+            (game_segment, 0x1FB3, bytes([initial_menu_pending])),
+            (game_segment, 0x27D3, struct.pack("<H", initial_menu_end)),
+            (game_segment, 0x674A, struct.pack("<HH", *initial_menu_words)),
+            (game_segment, 0x27CF, struct.pack("<H", 0x8888)),
+            (data_segment, 0x67AB, b"\xde"),
+            (stack_segment, 0x67AB, b"\xad"),
+        ]
+        immutable = []
+        for byte_index, byte in enumerate(script):
+            offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+        dictionary = case.get("dictionary", {0: b"\0"})
+        for offset, encoded in dictionary.items():
+            memory.append((dictionary_segment, int(offset), bytes(encoded)))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        calls = {"condition": [], "scan": [], "strlen": []}
+
+        def capture_calls(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6339:
+                calls["condition"].append(
+                    (
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+            elif address == 0x647B:
+                calls["scan"].append(machine.reg_read(UC_X86_REG_SI))
+            elif address == 0x67A7:
+                calls["strlen"].append(
+                    (
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    )
+                )
+
+        machine = execute(
+            0x660C,
+            0x67A6,
+            initial,
+            memory,
+            code_handler=capture_calls,
+            instruction_count=50000,
+        )
+
+        condition_expected = path not in {
+            "inactive",
+            "display_gate",
+            "defer_gate",
+            "shown",
+            "wrong_record",
+        }
+        expected_condition_calls = (
+            [(control, line_segment, line_offset, condition_offset)]
+            if condition_expected
+            else []
+        )
+        if calls["condition"] != expected_condition_calls:
+            raise AssertionError(
+                f"0x660c {name}: condition calls={calls['condition']}, "
+                f"expected={expected_condition_calls}"
+            )
+        raw_path = path in {"raw", "raw_extra"}
+        expected_scan_calls = [words_offset] if raw_path else []
+        if calls["scan"] != expected_scan_calls:
+            raise AssertionError(
+                f"0x660c {name}: scan calls={calls['scan']}, "
+                f"expected={expected_scan_calls}"
+            )
+        expected_strlen = []
+        if path == "assembled":
+            separator = words.index(0xFFFF) if 0xFFFF in words else len(words)
+            expected_strlen = [
+                (dictionary_segment, words[index + 1] if index + 1 < len(words) else 0)
+                for index in range(separator)
+            ]
+        if calls["strlen"] != expected_strlen:
+            raise AssertionError(
+                f"0x660c {name}: strlen calls={calls['strlen']}, "
+                f"expected={expected_strlen}"
+            )
+
+        accepted = path in {"raw", "raw_extra", "assembled"}
+        expected_b5 = b5
+        if accepted and not (b4 & 1):
+            expected_b5 &= 0x7F
+        actual_b5 = machine.mem_read(data_segment * 16 + start + 4, 1)[0]
+        if actual_b5 != expected_b5:
+            raise AssertionError(
+                f"0x660c {name}: b5={actual_b5:#x}, expected={expected_b5:#x}"
+            )
+        for segment, offset, expected in immutable:
+            if offset == start + 4 and accepted and not (b4 & 1):
+                continue
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x660c {name}: script input changed")
+
+        actual_flags_word = struct.unpack(
+            "<H", machine.mem_read(line_segment * 16 + line_offset + 2, 2)
+        )[0]
+        expected_flags_word = line_flags | (0x8000 if accepted else 0)
+        if actual_flags_word != expected_flags_word:
+            raise AssertionError(
+                f"0x660c {name}: line flags={actual_flags_word:#x}, "
+                f"expected={expected_flags_word:#x}"
+            )
+        actual_selector_ptr = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x677C, 2)
+        )[0]
+        if actual_selector_ptr != (start + 2) & 0xFFFF:
+            raise AssertionError(f"0x660c {name}: selector pointer is wrong")
+        actual_selector = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x1FAB, 2)
+        )[0]
+        expected_selector = (
+            selector if selector < 0x80 else selector | 0xFF00
+        ) if accepted else initial_selector
+        if actual_selector != expected_selector:
+            raise AssertionError(
+                f"0x660c {name}: selector={actual_selector:#x}, "
+                f"expected={expected_selector:#x}"
+            )
+
+        expected_skip = (
+            ((b5 >> 4) & 7) + 1 if b4 & 8 else initial_skip
+        )
+        if machine.mem_read(game_segment * 16 + 0x67AB, 1)[0] != expected_skip:
+            raise AssertionError(f"0x660c {name}: skip count is wrong")
+        expected_resume_state = 1 if b4 & 0x10 else initial_resume_state
+        expected_resume_value = 0 if b4 & 0x10 else initial_resume_value
+        expected_loop_target = int(loop_target) if loop_target is not None else initial_loop_target
+        if machine.mem_read(game_segment * 16 + 0x67B1, 1)[0] != expected_resume_state:
+            raise AssertionError(f"0x660c {name}: resume state is wrong")
+        actual_resume_value = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6764, 2)
+        )[0]
+        if actual_resume_value != expected_resume_value:
+            raise AssertionError(f"0x660c {name}: resume value is wrong")
+        actual_loop_target = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6778, 2)
+        )[0]
+        if actual_loop_target != expected_loop_target:
+            raise AssertionError(f"0x660c {name}: loop target is wrong")
+        if machine.mem_read(data_segment * 16 + 0x67AB, 1) != b"\xde":
+            raise AssertionError(f"0x660c {name}: DS global decoy changed")
+        if machine.mem_read(stack_segment * 16 + 0x67AB, 1) != b"\xad":
+            raise AssertionError(f"0x660c {name}: SS global decoy changed")
+
+        if raw_path:
+            expected_count = len(words)
+            actual_count = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x27CF, 2)
+            )[0]
+            if actual_count != expected_count:
+                raise AssertionError(
+                    f"0x660c {name}: word count={actual_count}, "
+                    f"expected={expected_count}"
+                )
+            actual_menu_end = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x27D3, 2)
+            )[0]
+            actual_menu_words = struct.unpack(
+                "<HH", machine.mem_read(game_segment * 16 + 0x674A, 4)
+            )
+            if actual_menu_end != words_offset or actual_menu_words != (
+                words_offset,
+                data_segment,
+            ):
+                raise AssertionError(f"0x660c {name}: menu pointers are wrong")
+            expected_raw = {
+                0x5E64: 0,
+                0x0CF9: 1,
+                0x67AA: initial_request | 1,
+                0x67B4: (initial_yield + 2) & 0xFF,
+                0x67B0: 1,
+                0x67BC: 0,
+                0x1FB3: 1,
+            }
+            for offset, expected in expected_raw.items():
+                actual = machine.mem_read(game_segment * 16 + offset, 1)[0]
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x660c {name}: {offset:#x}={actual:#x}, expected={expected:#x}"
+                    )
+        elif path == "assembled":
+            expected_output = bytes(case["output"])
+            actual_output = bytes(
+                machine.mem_read(game_segment * 16 + 0x0E18, len(expected_output))
+            )
+            if actual_output != expected_output:
+                raise AssertionError(
+                    f"0x660c {name}: output={actual_output!r}, "
+                    f"expected={expected_output!r}"
+                )
+            expected_assembled = {
+                0x0CFB: 1,
+                0x0CFA: 0,
+                0x67B0: 0,
+                0x67B9: 0,
+                0x5E64: 1,
+                0x67B4: (initial_yield + 2) & 0xFF,
+                0x67BC: 0,
+                0x67AA: initial_request | 1,
+            }
+            for offset, expected in expected_assembled.items():
+                actual = machine.mem_read(game_segment * 16 + offset, 1)[0]
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x660c {name}: {offset:#x}={actual:#x}, expected={expected:#x}"
+                    )
+            actual_reveal = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x5E58, 2)
+            )[0]
+            if actual_reveal != 0:
+                raise AssertionError(f"0x660c {name}: reveal cursor was not cleared")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = initial["eax"] & 0xFFFF0000
+        expected_registers["ecx"] = (initial["ecx"] & 0xFFFF0000) | control
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | final_script
+        expected_registers["es"] = game_segment if path == "assembled" else line_segment
+        if path in {"inactive", "display_gate", "defer_gate", "shown"}:
+            expected_bx = initial["ebx"] & 0xFFFF
+            expected_dx = initial["edx"] & 0xFFFF
+        elif path == "wrong_record":
+            expected_bx = 0x003A
+            expected_dx = presentation_record
+        elif path == "raw_extra":
+            expected_bx = 0x003A
+            expected_dx = int(case["condition_value"])
+        elif path == "assembled":
+            expected_bx = dictionary_segment
+            expected_dx = int(case["line_length"])
+        else:
+            expected_bx = 0x003A
+            expected_dx = 0x00C4
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | expected_bx
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | expected_dx
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x660c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x660c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x67A6] != 0xC3:
+            raise AssertionError("0x660c: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "path": path,
+                "selector": selector if selector < 0x80 else selector - 0x100,
+                "control_word": control,
+                "word_list_offset": words_offset,
+                "final_script_offset": final_script,
+                "line_flags_before": line_flags,
+                "line_flags_after": expected_flags_word,
+                "token_b5_after": expected_b5,
+                "condition_called": condition_expected,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -13154,6 +13678,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_65eb_natural.json",
         vm_cond_state_array_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_660c_natural.json",
+        vm_text_handler_vectors(),
         args.check,
     )
     update_vector(

@@ -1039,6 +1039,22 @@ ABI; it does retain the natural source's byte load followed by `CBW`. The
 logical C is complete, but exact integration still needs SS state placement and
 the original AX-to-BP allocation with string loads.
 
+VM TEXT handler `0x00660C` has eleven direct vectors over its complete four-phase
+flow: control setup, display/presentation gating, accepted-token mutation, and
+the shared post-output terminator scan. They cover every pre-display gate,
+deterministic random rejection through the real `0x006339` helper, signed b3,
+the optional-control ordering, raw menu pointers and count, subtitle punctuation
+spacing, 35-column wrapping, the `0xFFFF` spoken/menu separator, all touched
+segments/globals, path registers, and final flags.
+
+The full natural candidate compiles cleanly with Open Watcom `-3 -ox -mm` to
+188 instructions/515 bytes versus 138/411 original. It retains the high-level
+branch topology and direct SI result but introduces a frame and locals, uses DS
+for globals, normalizes far pointers, and materializes the condition helper's
+logical result in AX instead of consuming its original carry result. This is a
+compiler/ABI mismatch; the recovered C body has no register-state or memory
+emulation layer.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

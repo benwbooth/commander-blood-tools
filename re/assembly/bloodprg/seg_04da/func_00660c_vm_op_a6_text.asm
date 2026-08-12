@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_a6_text
-; label_comment: 0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)
+; label_comment: 0xA6 TEXT handler: resolves b1b2 in the far runtime record table; parses signed b3 plus b4/b5 skip, loop, condition, mode, and active controls; gates on presentation state; mutates accepted tokens; then assembles subtitle dictionary words or publishes the raw menu list before scanning to the zero terminator
 ; incoming: vm_opcode_handlers:opcode_0xa6
 ; byte_count: 411
 ; boundary: cfg_blocks_31_terminals_4

@@ -46,7 +46,7 @@
 "0x005FF6","vm_special_slot_insert","insert AX into 16-word sentinel list DS:0x6d3e; CF clear only when full"
 "DS:0x6D3E","vm_special_slots","16-word runtime list for fields set to the blood/0xffff sentinel"
 "0x0064B8","vm_op_d2_script_profile_request","0xD2 handler: DS:0x6780 = sign_extend(operand byte) - 1"
-"0x00660C","vm_op_a6_text","0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
+"0x00660C","vm_op_a6_text","0xA6 TEXT handler: resolves b1b2 in the far runtime record table; parses signed b3 plus b4/b5 skip, loop, condition, mode, and active controls; gates on presentation state; mutates accepted tokens; then assembles subtitle dictionary words or publishes the raw menu list before scanning to the zero terminator"
 "0x006B4C","vm_op_c1_record_state","0xC1 line-record state handler; raw token C1 record operand"
 "0x006B8B","ship_3d_c1_mode1_resolved_compare","C1 mode-1 raw operand 1/2 compare path: selector-0x11 target then selector-0x13 record slot"
 "0x006BEA","ship_3d_c1_distance_redirect","C1 raw operand 1/2 distance gate: nonzero distance redirects DI through selector-0x11 and requires a kind-0x10 target"
