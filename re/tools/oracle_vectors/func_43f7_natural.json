@@ -1,0 +1,162 @@
+[
+  {
+    "name": "clip_snapshot_bit0",
+    "first_object_id": 0,
+    "last_object_id": 0,
+    "slot_flags": [
+      3
+    ],
+    "snapshot_flags_before": 1,
+    "snapshot_flags_after": 0,
+    "clip_bounds": [
+      0,
+      319,
+      5,
+      194
+    ],
+    "committed_geometry_after": [
+      [
+        32768,
+        33025,
+        33282,
+        33539
+      ]
+    ],
+    "wrote_clip_snapshot": true
+  },
+  {
+    "name": "clip_snapshot_clears_full_word",
+    "first_object_id": 21,
+    "last_object_id": 22,
+    "slot_flags": [
+      3,
+      42243
+    ],
+    "snapshot_flags_before": 42403,
+    "snapshot_flags_after": 0,
+    "clip_bounds": [
+      65535,
+      0,
+      32768,
+      32767
+    ],
+    "committed_geometry_after": [
+      [
+        32999,
+        33256,
+        33513,
+        33770
+      ],
+      [
+        33010,
+        33267,
+        33524,
+        33781
+      ]
+    ],
+    "wrote_clip_snapshot": true
+  },
+  {
+    "name": "single_dirty_state0",
+    "first_object_id": 4,
+    "last_object_id": 4,
+    "slot_flags": [
+      3
+    ],
+    "snapshot_flags_before": 0,
+    "snapshot_flags_after": 0,
+    "clip_bounds": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "committed_geometry_after": [
+      [
+        4124,
+        4397,
+        4670,
+        4943
+      ]
+    ],
+    "wrote_clip_snapshot": false
+  },
+  {
+    "name": "snapshot_bit_clear_walks_range",
+    "first_object_id": 7,
+    "last_object_id": 7,
+    "slot_flags": [
+      42243
+    ],
+    "snapshot_flags_before": 2,
+    "snapshot_flags_after": 2,
+    "clip_bounds": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "committed_geometry_after": [
+      [
+        4145,
+        4418,
+        4691,
+        4964
+      ]
+    ],
+    "wrote_clip_snapshot": false
+  },
+  {
+    "name": "mixed_range",
+    "first_object_id": 21,
+    "last_object_id": 25,
+    "slot_flags": [
+      0,
+      1,
+      2,
+      3,
+      65411
+    ],
+    "snapshot_flags_before": 0,
+    "snapshot_flags_after": 0,
+    "clip_bounds": [
+      9,
+      10,
+      11,
+      12
+    ],
+    "committed_geometry_after": [
+      [
+        32999,
+        33256,
+        33513,
+        33770
+      ],
+      [
+        33010,
+        33267,
+        33524,
+        33781
+      ],
+      [
+        33021,
+        33278,
+        33535,
+        33792
+      ],
+      [
+        4264,
+        4537,
+        4810,
+        5083
+      ],
+      [
+        4271,
+        4544,
+        4817,
+        5090
+      ]
+    ],
+    "wrote_clip_snapshot": false
+  }
+]

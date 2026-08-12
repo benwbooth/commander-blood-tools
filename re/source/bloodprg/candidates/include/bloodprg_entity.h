@@ -26,7 +26,11 @@ typedef struct bloodprg_entity_record {
     cb_u16 draw_y;
     cb_u16 extent_width;
     cb_u16 extent_height;
-    cb_u8 tail[16];
+    cb_u16 committed_draw_x;
+    cb_u16 committed_draw_y;
+    cb_u16 committed_extent_width;
+    cb_u16 committed_extent_height;
+    cb_u8 tail[8];
 } bloodprg_entity_record;
 
 typedef struct bloodprg_sprite_source_extent {
@@ -34,7 +38,17 @@ typedef struct bloodprg_sprite_source_extent {
     cb_u16 height;
 } bloodprg_sprite_source_extent;
 
+typedef struct bloodprg_dirty_rect {
+    cb_u16 left;
+    cb_u16 right;
+    cb_u16 top;
+    cb_u16 bottom;
+} bloodprg_dirty_rect;
+
 extern volatile bloodprg_entity_record bloodprg_entity_table[]; /* GS:0x6212 */
+extern volatile bloodprg_dirty_rect bloodprg_clip_bounds; /* GS:0x5235 */
+extern volatile cb_u16 bloodprg_clip_snapshot_flags; /* GS:0x5249 */
+extern volatile bloodprg_dirty_rect bloodprg_dirty_rect_list[]; /* GS:0x6612 */
 
 void CB_FAR entity_flag_state_transition(cb_u16 object_id); /* 0x0299:0x1241 */
 void CB_FAR sprite_slot_position_update(cb_u16 object_id,
@@ -45,6 +59,10 @@ void CB_FAR sprite_slot_extent_update(cb_u16 object_id,
         cb_u16 width,
         cb_u16 height,
         const volatile bloodprg_sprite_source_extent CB_FAR *source_extent);
+void CB_FAR sprite_slot_range_mark_dirty(cb_u16 first_object_id,
+        cb_u16 last_object_id); /* 0x0299:0x12B0 */
+void CB_FAR sprite_slot_commit_dirty_range(cb_u16 first_object_id,
+        cb_u16 last_object_id); /* 0x0299:0x1467 */
 
 void CB_FAR entity_record_setter(cb_u16 entity_id,
         const volatile void CB_FAR *resource,
@@ -56,6 +74,8 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
 #pragma aux entity_flag_state_transition parm [ax]
 #pragma aux sprite_slot_position_update parm [ax] [bx] [cx]
 #pragma aux sprite_slot_extent_update parm [ax] [cx] [dx] [es si]
+#pragma aux sprite_slot_range_mark_dirty parm [ax] [bx]
+#pragma aux sprite_slot_commit_dirty_range parm [ax] [bx]
 #endif
 
 #endif

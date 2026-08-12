@@ -1137,6 +1137,261 @@ def sprite_slot_extent_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def sprite_slot_range_mark_dirty_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    cases = [
+        ("single_inactive", 4, [0x0000]),
+        ("single_active", 7, [0x0080]),
+        ("single_preserve_high", 9, [0xA5FF]),
+        ("mixed_range", 0x15, [0x0080, 0x0001, 0x0183, 0x55C0]),
+    ]
+    vectors = []
+
+    for name, first_id, input_flags in cases:
+        records = bytearray()
+        for index, flags in enumerate(input_flags):
+            object_id = first_id + index
+            record = bytearray(
+                (byte_index * 23 + object_id) & 0xFF for byte_index in range(32)
+            )
+            record[0:2] = struct.pack("<H", flags)
+            records.extend(record)
+        decoy = bytes(byte ^ 0x5A for byte in records)
+        offset = 0x6212 + first_id * 32
+        last_id = first_id + len(input_flags) - 1
+        initial = {
+            "eax": 0xD1D10000 | first_id,
+            "bx": last_id,
+            "cx": 0x3456,
+            "dx": 0x4567,
+            "si": 0x5678,
+            "di": 0x6789,
+            "bp": 0x789A,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x4240,
+            0x426C,
+            initial,
+            [
+                (state_segment, offset, bytes(records)),
+                (data_segment, offset, decoy),
+            ],
+        )
+
+        expected = bytearray(records)
+        output_flags = []
+        for index, flags in enumerate(input_flags):
+            result = flags
+            if (flags & 0x80) != 0:
+                result = (flags & 0xFF00) | (((flags & 0xFF) & 0x7E) | 2)
+            expected[index * 32 : index * 32 + 2] = struct.pack("<H", result)
+            output_flags.append(result)
+        actual = bytes(machine.mem_read(state_segment * 16 + offset, len(records)))
+        if actual != bytes(expected):
+            raise AssertionError(
+                f"0x4240 {name}: actual={actual.hex()}, expected={expected.hex()}"
+            )
+        actual_decoy = bytes(
+            machine.mem_read(data_segment * 16 + offset, len(records))
+        )
+        if actual_decoy != decoy:
+            raise AssertionError(f"0x4240 {name}: DS decoy records changed")
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0x4240 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "first_object_id": first_id,
+                "last_object_id": last_id,
+                "input_flags": input_flags,
+                "output_flags": output_flags,
+            }
+        )
+
+    return vectors
+
+
+def sprite_slot_commit_dirty_range_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    cases = [
+        {
+            "name": "clip_snapshot_bit0",
+            "first_id": 0,
+            "flags": [0x0003],
+            "snapshot_flags": 0x0001,
+            "clip": [0, 319, 5, 194],
+        },
+        {
+            "name": "clip_snapshot_clears_full_word",
+            "first_id": 0x15,
+            "flags": [0x0003, 0xA503],
+            "snapshot_flags": 0xA5A3,
+            "clip": [0xFFFF, 0, 0x8000, 0x7FFF],
+        },
+        {
+            "name": "single_dirty_state0",
+            "first_id": 4,
+            "flags": [0x0003],
+            "snapshot_flags": 0,
+            "clip": [1, 2, 3, 4],
+        },
+        {
+            "name": "snapshot_bit_clear_walks_range",
+            "first_id": 7,
+            "flags": [0xA503],
+            "snapshot_flags": 0x0002,
+            "clip": [5, 6, 7, 8],
+        },
+        {
+            "name": "mixed_range",
+            "first_id": 0x15,
+            "flags": [0x0000, 0x0001, 0x0002, 0x0003, 0xFF83],
+            "snapshot_flags": 0,
+            "clip": [9, 10, 11, 12],
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        first_id = int(case["first_id"])
+        input_flags = [int(value) for value in case["flags"]]
+        snapshot_flags = int(case["snapshot_flags"])
+        clip = [int(value) for value in case["clip"]]
+        records = bytearray()
+        current_geometry = []
+        committed_geometry = []
+        for index, flags in enumerate(input_flags):
+            object_id = first_id + index
+            current = [
+                (0x1000 + object_id * 7 + field * 0x111) & 0xFFFF
+                for field in range(4)
+            ]
+            committed = [
+                (0x8000 + object_id * 11 + field * 0x101) & 0xFFFF
+                for field in range(4)
+            ]
+            record = bytearray(
+                (byte_index * 29 + object_id) & 0xFF for byte_index in range(32)
+            )
+            record[0:2] = struct.pack("<H", flags)
+            record[8:16] = struct.pack("<HHHH", *current)
+            record[16:24] = struct.pack("<HHHH", *committed)
+            records.extend(record)
+            current_geometry.append(current)
+            committed_geometry.append(committed)
+
+        offset = 0x6212 + first_id * 32
+        decoy_records = bytes(byte ^ 0xC3 for byte in records)
+        initial_dirty_list = bytes(
+            (index * 31 + first_id) & 0xFF for index in range(24)
+        )
+        decoy_dirty_list = bytes(byte ^ 0x96 for byte in initial_dirty_list)
+        initial = {
+            "eax": 0xD2D20000 | first_id,
+            "bx": first_id + len(input_flags) - 1,
+            "cx": 0x3456,
+            "dx": 0x4567,
+            "si": 0x5678,
+            "di": 0x6789,
+            "bp": 0x89AB,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        memory = [
+            (state_segment, offset, bytes(records)),
+            (data_segment, offset, decoy_records),
+            (state_segment, 0x5235, struct.pack("<HHHH", *clip)),
+            (state_segment, 0x5249, struct.pack("<H", snapshot_flags)),
+            (state_segment, 0x6612, initial_dirty_list),
+            (data_segment, 0x6612, decoy_dirty_list),
+        ]
+        machine = execute(0x43F7, 0x446E, initial, memory)
+
+        expected_records = bytearray(records)
+        expected_dirty_list = bytearray(initial_dirty_list)
+        expected_snapshot_flags = snapshot_flags
+        if (snapshot_flags & 1) != 0:
+            expected_dirty_list[0:8] = struct.pack("<HHHH", *clip)
+            expected_dirty_list[8:10] = struct.pack("<H", 0xFFFF)
+            expected_snapshot_flags = 0
+        else:
+            for index, flags in enumerate(input_flags):
+                if (flags & 3) == 3:
+                    start = index * 32
+                    expected_records[start + 16 : start + 24] = expected_records[
+                        start + 8 : start + 16
+                    ]
+
+        actual_records = bytes(
+            machine.mem_read(state_segment * 16 + offset, len(records))
+        )
+        if actual_records != bytes(expected_records):
+            raise AssertionError(
+                f"0x43F7 {name}: records={actual_records.hex()}, "
+                f"expected={expected_records.hex()}"
+            )
+        actual_dirty_list = bytes(machine.mem_read(state_segment * 16 + 0x6612, 24))
+        if actual_dirty_list != bytes(expected_dirty_list):
+            raise AssertionError(
+                f"0x43F7 {name}: dirty list={actual_dirty_list.hex()}, "
+                f"expected={expected_dirty_list.hex()}"
+            )
+        actual_snapshot_flags = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x5249, 2)
+        )[0]
+        if actual_snapshot_flags != expected_snapshot_flags:
+            raise AssertionError(
+                f"0x43F7 {name}: snapshot flags={actual_snapshot_flags:#x}, "
+                f"expected={expected_snapshot_flags:#x}"
+            )
+        actual_decoy_records = bytes(
+            machine.mem_read(data_segment * 16 + offset, len(records))
+        )
+        if actual_decoy_records != decoy_records:
+            raise AssertionError(f"0x43F7 {name}: DS decoy records changed")
+        actual_decoy_dirty = bytes(machine.mem_read(data_segment * 16 + 0x6612, 24))
+        if actual_decoy_dirty != decoy_dirty_list:
+            raise AssertionError(f"0x43F7 {name}: DS decoy dirty list changed")
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0x43F7 {name}: changed {register}")
+
+        output_geometry = []
+        for flags, current, committed in zip(
+            input_flags, current_geometry, committed_geometry
+        ):
+            should_commit = (flags & 3) == 3 and (snapshot_flags & 1) == 0
+            output_geometry.append(current if should_commit else committed)
+        vectors.append(
+            {
+                "name": name,
+                "first_object_id": first_id,
+                "last_object_id": initial["bx"],
+                "slot_flags": input_flags,
+                "snapshot_flags_before": snapshot_flags,
+                "snapshot_flags_after": expected_snapshot_flags,
+                "clip_bounds": clip,
+                "committed_geometry_after": output_geometry,
+                "wrote_clip_snapshot": (snapshot_flags & 1) != 0,
+            }
+        )
+
+    return vectors
+
+
 def mask_overlay_vectors() -> list[dict[str, object]]:
     patterns = [
         [0x0000] * 16,
@@ -5509,6 +5764,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_42cd_natural.json",
         sprite_slot_extent_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4240_natural.json",
+        sprite_slot_range_mark_dirty_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_43f7_natural.json",
+        sprite_slot_commit_dirty_range_vectors(),
         args.check,
     )
     update_vector(

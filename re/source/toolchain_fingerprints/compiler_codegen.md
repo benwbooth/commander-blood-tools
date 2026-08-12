@@ -424,6 +424,23 @@ context itself. The `-2` and `-3` targets reproduce the original immediate
 five-bit shifts, but omit more of the original preservation sequence and emit
 14/21/26 instructions and 27/45/58 bytes.
 
+The adjacent range slice covers `0x004240` and `0x0043F7` with nine more direct
+vectors. The first routine is now named `sprite_slot_range_mark_dirty`: its old
+`range_count` label described only the `last-first+1` setup and omitted the
+actual inclusive slot walk and active-byte state transition. The commit vectors
+prove both the one-shot global clip snapshot and the ordinary range walk,
+including the exact low-byte bit-1 plus bit-0 geometry-copy gate, full snapshot
+flag-word clear, `0xffff` dirty-list sentinel, GS ownership, and complete
+register preservation.
+
+Open Watcom 1.9 8086 medium compiles the actual candidates without warnings to
+43 and 105 bytes, versus 45 and 120 original. Their probes contain 24 and 50
+instructions versus 27 and 51. The commit control-flow shape is especially
+close, but natural aggregate/member assignment becomes four `MOVSW` or word
+load/store pairs where the binary uses two dword copies. GS data placement,
+packed-EBP range transport, and the original save/restore sets remain explicit
+ABI boundaries.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

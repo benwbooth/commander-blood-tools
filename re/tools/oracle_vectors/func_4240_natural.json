@@ -1,0 +1,52 @@
+[
+  {
+    "name": "single_inactive",
+    "first_object_id": 4,
+    "last_object_id": 4,
+    "input_flags": [
+      0
+    ],
+    "output_flags": [
+      0
+    ]
+  },
+  {
+    "name": "single_active",
+    "first_object_id": 7,
+    "last_object_id": 7,
+    "input_flags": [
+      128
+    ],
+    "output_flags": [
+      2
+    ]
+  },
+  {
+    "name": "single_preserve_high",
+    "first_object_id": 9,
+    "last_object_id": 9,
+    "input_flags": [
+      42495
+    ],
+    "output_flags": [
+      42366
+    ]
+  },
+  {
+    "name": "mixed_range",
+    "first_object_id": 21,
+    "last_object_id": 24,
+    "input_flags": [
+      128,
+      1,
+      387,
+      21952
+    ],
+    "output_flags": [
+      2,
+      1,
+      258,
+      21826
+    ]
+  }
+]
