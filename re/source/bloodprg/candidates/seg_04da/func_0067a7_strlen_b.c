@@ -1,13 +1,17 @@
-#include "../include/bloodprg_common.h"
+#include "../include/bloodprg_vm.h"
 
 cb_u16 CB_NEAR strlen_b(const char CB_FAR *s)
 {
-    const char CB_FAR *p;
+    cb_u16 length;
 
-    p = s;
-    while (*p != '\0') {
-        ++p;
+    length = 0;
+    while (length != 0xffffu) {
+        if (*s == '\0') {
+            return length;
+        }
+        ++s;
+        ++length;
     }
 
-    return (cb_u16)(p - s);
+    return 0xfffeu;
 }

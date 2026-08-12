@@ -1,0 +1,122 @@
+[
+  {
+    "name": "empty",
+    "start_offset": 4096,
+    "terminated": true,
+    "payload_length": 0,
+    "return_length": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_byte",
+    "start_offset": 4352,
+    "terminated": true,
+    "payload_length": 1,
+    "return_length": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "punctuation",
+    "start_offset": 4609,
+    "terminated": true,
+    "payload_length": 10,
+    "return_length": 10,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bytes",
+    "start_offset": 4864,
+    "terminated": true,
+    "payload_length": 3,
+    "return_length": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wraps_segment_offset",
+    "start_offset": 65533,
+    "terminated": true,
+    "payload_length": 4,
+    "return_length": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "length_254",
+    "start_offset": 8192,
+    "terminated": true,
+    "payload_length": 254,
+    "return_length": 254,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_scannable_length",
+    "start_offset": 0,
+    "terminated": true,
+    "payload_length": 65534,
+    "return_length": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "unterminated_scan_bound",
+    "start_offset": 0,
+    "terminated": false,
+    "payload_length": 65536,
+    "return_length": 65534,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

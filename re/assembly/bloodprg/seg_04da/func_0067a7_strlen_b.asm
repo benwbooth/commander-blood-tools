@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: direct_call_target, label_csv_target, manual_binary_boundary
 ; label: strlen_b
-; label_comment: near null-terminated string length helper; scans ES:DI for zero and returns byte length in AX
+; label_comment: near bounded string-length helper; scans at most 0xffff bytes from ES:DI with REPNE SCASB, returns the byte length in AX when terminated or 0xfffe at the unterminated bound, and preserves CX/DI
 ; incoming: call@0x006701->0x0067a7
 ; byte_count: 19
 ; boundary: cfg_blocks_1_terminals_1

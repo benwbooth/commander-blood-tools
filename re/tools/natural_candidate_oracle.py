@@ -9048,6 +9048,125 @@ def vm_text_handler_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def strlen_b_vectors() -> list[dict[str, object]]:
+    text_segment = 0x7000
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    cases = [
+        ("empty", 0x1000, b"", True),
+        ("one_byte", 0x1100, b"A", True),
+        ("punctuation", 0x1201, b"Commander!", True),
+        ("high_bytes", 0x1300, bytes([0x80, 0xFE, 0xFF]), True),
+        ("wraps_segment_offset", 0xFFFD, b"WRAP", True),
+        ("length_254", 0x2000, b"X" * 254, True),
+        ("maximum_scannable_length", 0x0000, b"Y" * 0xFFFE, True),
+        ("unterminated_scan_bound", 0x0000, b"Z" * 0x10000, False),
+    ]
+    vectors = []
+
+    for name, start, payload, terminated in cases:
+        memory = []
+        encoded = payload + (b"\0" if terminated else b"")
+        for byte_index, byte in enumerate(encoded):
+            memory.append(
+                (text_segment, (start + byte_index) & 0xFFFF, bytes([byte]))
+            )
+        if len(encoded) < 0x1000:
+            for byte_index in range(len(encoded)):
+                offset = (start + byte_index) & 0xFFFF
+                memory.append((data_segment, offset, b"\x5a"))
+                memory.append((game_segment, offset, b"\xa5"))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | start,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": text_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        machine = execute(
+            0x67A7,
+            0x67B9,
+            initial,
+            memory,
+            instruction_count=100000,
+        )
+
+        result = len(payload) if terminated else 0xFFFE
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | result
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x67a7 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        for byte_index, byte in enumerate(encoded):
+            offset = (start + byte_index) & 0xFFFF
+            actual = machine.mem_read(text_segment * 16 + offset, 1)[0]
+            if actual != byte:
+                raise AssertionError(f"0x67a7 {name}: input string changed")
+        if len(encoded) < 0x1000:
+            for byte_index in range(len(encoded)):
+                offset = (start + byte_index) & 0xFFFF
+                if machine.mem_read(data_segment * 16 + offset, 1) != b"\x5a":
+                    raise AssertionError(f"0x67a7 {name}: DS decoy changed")
+                if machine.mem_read(game_segment * 16 + offset, 1) != b"\xa5":
+                    raise AssertionError(f"0x67a7 {name}: GS decoy changed")
+
+        before_sub = (result + 2) & 0xFFFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": before_sub < 2,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (before_sub & 0x0F) < 2,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((before_sub ^ 2) & (before_sub ^ result)) & 0x8000),
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x67a7 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x67B9] != 0xC3:
+            raise AssertionError("0x67a7: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "terminated": terminated,
+                "payload_length": len(payload),
+                "return_length": result,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -13683,6 +13802,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_660c_natural.json",
         vm_text_handler_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_67a7_natural.json",
+        strlen_b_vectors(),
         args.check,
     )
     update_vector(
