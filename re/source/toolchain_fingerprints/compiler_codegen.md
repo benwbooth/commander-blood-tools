@@ -1791,6 +1791,26 @@ instead of the original simultaneous DS:SI and ES:DI allocation. Turbo C 2.01
 medium emits 34 instructions and stack-passes the count. The remaining gap is
 compiler segment/register placement, not missing patch semantics.
 
+Mouse button helper `0x001FBC` is not a simple primary-precedence edge test. It
+loads the current low byte into a mutable working value, conditionally ANDs that
+value with the previous low byte for button one, and then tests button two on
+the possibly changed result. Consequently current `3` with previous `2`
+suppresses a primary edge, current `3` with previous `1` suppresses a secondary
+edge, and current `3` with previous `0` sets only the primary latch because the
+first AND clears the working value. Fifteen direct vectors prove those overlap
+cases, DS ownership, a separately observable second previous-byte read, a final
+full-word current-state reload, all three latch effects, AX, preservation,
+flags, and near return.
+
+The natural candidate keeps that destructive byte flow and volatile access
+order directly. Open Watcom `-3 -ox -mm` accepts the AX-only result declaration
+and emits 20 instructions/54 bytes versus 16/50 original. It preserves the
+logical branches and stores, but emits `TEST AL,AL` after both `AND`s and
+outlines the secondary stores into a shared-return branch. Turbo C 2.01 medium
+emits all 16 original mnemonics within a 29-instruction stack-frame body. The
+remaining mismatch is optimizer and fixed-DGROUP placement, not omitted input
+logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1871,6 +1891,7 @@ LCS and then mnemonic similarity:
 | `object_heap_access` | medium, `-ox`, register | 20/30 | 0.1500 | 0.9500 | 0.3000 |
 | `palette_upload_if_dirty` | medium, `-ox`, register | 9/14 | 0.1111 | 0.6667 | 0.1111 |
 | `vm_patch_stream_apply` | medium, `-ox`, register | 19/30 | 0.2632 | 0.7895 | 0.2632 |
+| `mouse_button_edges_update` | medium, `-ox`, register | 16/20 | 0.0625 | 0.8750 | 0.2500 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

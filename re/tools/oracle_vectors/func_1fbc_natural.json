@@ -1,0 +1,272 @@
+[
+  {
+    "name": "none",
+    "current_initial": 0,
+    "previous_initial": 0,
+    "previous_second_read": null,
+    "current_final_read": 0,
+    "primary_after": 64,
+    "secondary_after": 96,
+    "pending_after": 128,
+    "result_ax": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "primary_new",
+    "current_initial": 1,
+    "previous_initial": 0,
+    "previous_second_read": null,
+    "current_final_read": 1,
+    "primary_after": 1,
+    "secondary_after": 97,
+    "pending_after": 1,
+    "result_ax": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "primary_held",
+    "current_initial": 1,
+    "previous_initial": 1,
+    "previous_second_read": null,
+    "current_final_read": 1,
+    "primary_after": 66,
+    "secondary_after": 98,
+    "pending_after": 130,
+    "result_ax": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "secondary_new",
+    "current_initial": 2,
+    "previous_initial": 0,
+    "previous_second_read": null,
+    "current_final_read": 2,
+    "primary_after": 67,
+    "secondary_after": 1,
+    "pending_after": 1,
+    "result_ax": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "secondary_held",
+    "current_initial": 2,
+    "previous_initial": 2,
+    "previous_second_read": null,
+    "current_final_read": 2,
+    "primary_after": 68,
+    "secondary_after": 100,
+    "pending_after": 132,
+    "result_ax": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "both_new_primary_only",
+    "current_initial": 3,
+    "previous_initial": 0,
+    "previous_second_read": null,
+    "current_final_read": 3,
+    "primary_after": 1,
+    "secondary_after": 101,
+    "pending_after": 1,
+    "result_ax": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "primary_new_secondary_held_suppressed",
+    "current_initial": 3,
+    "previous_initial": 2,
+    "previous_second_read": null,
+    "current_final_read": 3,
+    "primary_after": 70,
+    "secondary_after": 102,
+    "pending_after": 134,
+    "result_ax": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "primary_held_secondary_new_suppressed",
+    "current_initial": 3,
+    "previous_initial": 1,
+    "previous_second_read": null,
+    "current_final_read": 3,
+    "primary_after": 71,
+    "secondary_after": 103,
+    "pending_after": 135,
+    "result_ax": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "primary_new_with_unrelated_previous",
+    "current_initial": 1,
+    "previous_initial": 4,
+    "previous_second_read": null,
+    "current_final_read": 1,
+    "primary_after": 1,
+    "secondary_after": 104,
+    "pending_after": 1,
+    "result_ax": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "secondary_blocked_by_other_held",
+    "current_initial": 6,
+    "previous_initial": 4,
+    "previous_second_read": null,
+    "current_final_read": 6,
+    "primary_after": 73,
+    "secondary_after": 105,
+    "pending_after": 137,
+    "result_ax": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "secondary_new_with_previous_primary",
+    "current_initial": 2,
+    "previous_initial": 1,
+    "previous_second_read": null,
+    "current_final_read": 2,
+    "primary_after": 74,
+    "secondary_after": 1,
+    "pending_after": 1,
+    "result_ax": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unwatched_button",
+    "current_initial": 4,
+    "previous_initial": 0,
+    "previous_second_read": null,
+    "current_final_read": 4,
+    "primary_after": 75,
+    "secondary_after": 107,
+    "pending_after": 139,
+    "result_ax": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_words_ignored_for_edges",
+    "current_initial": 42241,
+    "previous_initial": 45568,
+    "previous_second_read": null,
+    "current_final_read": 42241,
+    "primary_after": 1,
+    "secondary_after": 108,
+    "pending_after": 1,
+    "result_ax": 42241,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "current_word_reloaded",
+    "current_initial": 49921,
+    "previous_initial": 54272,
+    "previous_second_read": null,
+    "current_final_read": 58626,
+    "primary_after": 1,
+    "secondary_after": 109,
+    "pending_after": 1,
+    "result_ax": 58626,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "previous_low_byte_reloaded",
+    "current_initial": 62979,
+    "previous_initial": 38658,
+    "previous_second_read": 38912,
+    "current_final_read": 62979,
+    "primary_after": 78,
+    "secondary_after": 1,
+    "pending_after": 1,
+    "result_ax": 62979,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

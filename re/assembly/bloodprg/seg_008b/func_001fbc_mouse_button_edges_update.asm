@@ -6,8 +6,8 @@
 ; seg_off: 008b:110c
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: flag_test_a2e
-; label_comment: flag test: ax=[0xa2e]; test al,1; branch. Reads the 0xa2e state word and dispatches on its low bit
+; label: mouse_button_edges_update
+; label_comment: Updates primary/secondary mouse press latches from the current and previous button words, then snapshots the current word
 ; byte_count: 50
 ; boundary: cfg_blocks_7_terminals_1
 ; terminal: ret:1

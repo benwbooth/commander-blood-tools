@@ -7,7 +7,7 @@
 ; group: seg_0000
 ; provenance: relocation_proven_far_transfer_target
 ; label: poll_mouse
-; label_comment: poll the mouse: ax=3; int 33h (get position + button status); store gs:[0xa2a]=cx (x), gs:[0xa2c]=dx (y). Reads the mouse cursor position each frame (bx=buttons -> [0xa3e]). Feeds mouse_hit_test 0x8269
+; label_comment: Polls INT 33h function 3 into GS:0x0a2a/0x0a2c coordinates and GS:0x0a2e button state for mouse_button_edges_update 0x1fbc
 ; incoming: call@0x001020->0000:070e
 ; byte_count: 60
 ; boundary: cfg_blocks_4_terminals_1

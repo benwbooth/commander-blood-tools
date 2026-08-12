@@ -1815,6 +1815,209 @@ def vm_patch_stream_apply_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def mouse_button_edges_update_vectors() -> list[dict[str, object]]:
+    entry = 0x1FBC
+    expected_hash = "223c44bf3248ca556f9f5740f65fae46529a1ca556d5a5f3e0a4fa84a99a0ea5"
+    if hashlib.sha256(EXE[entry : entry + 50]).hexdigest() != expected_hash:
+        raise AssertionError("0x1fbc: recovered 50-byte body changed")
+
+    cases = [
+        ("none", 0x0000, 0x0000, None, None),
+        ("primary_new", 0x0001, 0x0000, None, None),
+        ("primary_held", 0x0001, 0x0001, None, None),
+        ("secondary_new", 0x0002, 0x0000, None, None),
+        ("secondary_held", 0x0002, 0x0002, None, None),
+        ("both_new_primary_only", 0x0003, 0x0000, None, None),
+        ("primary_new_secondary_held_suppressed", 0x0003, 0x0002, None, None),
+        ("primary_held_secondary_new_suppressed", 0x0003, 0x0001, None, None),
+        ("primary_new_with_unrelated_previous", 0x0001, 0x0004, None, None),
+        ("secondary_blocked_by_other_held", 0x0006, 0x0004, None, None),
+        ("secondary_new_with_previous_primary", 0x0002, 0x0001, None, None),
+        ("unwatched_button", 0x0004, 0x0000, None, None),
+        ("high_words_ignored_for_edges", 0xA501, 0xB200, None, None),
+        ("current_word_reloaded", 0xC301, 0xD400, None, 0xE502),
+        ("previous_low_byte_reloaded", 0xF603, 0x9702, 0x9800, None),
+    ]
+    data_segment = 0x2C00
+    game_decoy_segment = 0x3A00
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (
+        name,
+        current_initial,
+        previous_initial,
+        previous_second,
+        current_final_override,
+    ) in enumerate(cases):
+        primary_before = (0x40 + case_index) & 0xFF
+        secondary_before = (0x60 + case_index) & 0xFF
+        pending_before = (0x80 + case_index) & 0xFF
+        current_final = (
+            current_initial
+            if current_final_override is None
+            else current_final_override
+        )
+
+        working = current_initial & 0xFF
+        primary_after = primary_before
+        secondary_after = secondary_before
+        pending_after = pending_before
+        last_result = working & 0x01
+        if last_result != 0:
+            working &= previous_initial & 0xFF
+            last_result = working
+            if working == 0:
+                primary_after = 1
+                pending_after = 1
+
+        last_result = working & 0x02
+        if last_result != 0:
+            previous_low = (
+                previous_initial
+                if previous_second is None
+                else previous_second
+            ) & 0xFF
+            working &= previous_low
+            last_result = working
+            if working == 0:
+                secondary_after = 1
+                pending_after = 1
+
+        expected_flags = {
+            "cf": False,
+            "pf": (last_result & 0xFF).bit_count() % 2 == 0,
+            "zf": (last_result & 0xFF) == 0,
+            "sf": bool(last_result & 0x80),
+            "of": False,
+        }
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        data_state = struct.pack("<HH", current_initial, previous_initial)
+        latch_state = bytes([primary_before, secondary_before, pending_before])
+        game_decoy_state = bytes(
+            (value ^ 0xA5) & 0xFF for value in data_state + latch_state
+        )
+        adjacent_before = bytes.fromhex("39c76ab4")
+        stack_sentinel = bytes.fromhex("5aa596698778")
+
+        def mutate_volatile_state(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x1FD7 and previous_second is not None:
+                machine.mem_write(
+                    data_segment * 16 + 0x0A30,
+                    struct.pack("<H", previous_second),
+                )
+            if address == 0x1FE7 and current_final_override is not None:
+                machine.mem_write(
+                    data_segment * 16 + 0x0A2E,
+                    struct.pack("<H", current_final_override),
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0x0A2A, adjacent_before),
+                (data_segment, 0x0A2E, data_state),
+                (data_segment, 0x0A3E, latch_state),
+                (game_decoy_segment, 0x0A2E, game_decoy_state[:4]),
+                (game_decoy_segment, 0x0A3E, game_decoy_state[4:]),
+                (0, return_address, b"\xcc"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=mutate_volatile_state,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | current_final
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1fbc {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1fbc {name}: near return changed CS")
+
+        if struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0A2E, 2)
+        )[0] != current_final:
+            raise AssertionError(f"0x1fbc {name}: current state changed unexpectedly")
+        if struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0A30, 2)
+        )[0] != current_final:
+            raise AssertionError(f"0x1fbc {name}: previous snapshot mismatch")
+        actual_latches = bytes(machine.mem_read(data_segment * 16 + 0x0A3E, 3))
+        expected_latches = bytes(
+            [primary_after, secondary_after, pending_after]
+        )
+        if actual_latches != expected_latches:
+            raise AssertionError(
+                f"0x1fbc {name}: latches={actual_latches.hex()}, "
+                f"expected={expected_latches.hex()}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A2A, 4)) != adjacent_before:
+            raise AssertionError(f"0x1fbc {name}: adjacent data changed")
+        if bytes(machine.mem_read(game_decoy_segment * 16 + 0x0A2E, 4)) != game_decoy_state[:4]:
+            raise AssertionError(f"0x1fbc {name}: GS state decoy changed")
+        if bytes(machine.mem_read(game_decoy_segment * 16 + 0x0A3E, 3)) != game_decoy_state[4:]:
+            raise AssertionError(f"0x1fbc {name}: GS latch decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x1fbc {name}: stack sentinel changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x1fbc {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "current_initial": current_initial,
+                "previous_initial": previous_initial,
+                "previous_second_read": previous_second,
+                "current_final_read": current_final,
+                "primary_after": primary_after,
+                "secondary_after": secondary_after,
+                "pending_after": pending_after,
+                "result_ax": current_final,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -25044,6 +25247,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1d74_natural.json",
         vm_patch_stream_apply_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1fbc_natural.json",
+        mouse_button_edges_update_vectors(),
         args.check,
     )
     update_vector(
