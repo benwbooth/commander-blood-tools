@@ -11,6 +11,12 @@ typedef unsigned long u32;
 #define FAR_FN
 #endif
 
+u16 FAR_FN u32_sqrt_newton_probe(u32 value);
+
+#if defined(__WATCOMC__)
+#pragma aux u32_sqrt_newton_probe parm [dx ax] value [ax] modify exact [ax]
+#endif
+
 u16 FAR_FN u32_sqrt_newton_probe(u32 value)
 {
     u16 low;

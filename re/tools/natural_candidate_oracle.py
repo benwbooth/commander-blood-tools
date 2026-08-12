@@ -2574,6 +2574,266 @@ def bloodprg_strlen_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def binary_u32_sqrt_vectors() -> list[dict[str, object]]:
+    entry = 0x2E33
+    expected_hash = "053e6585212671dcd885fa828776a23bd65c13b9905c43cad9e20e9b6318b188"
+    if hashlib.sha256(EXE[entry : entry + 64]).hexdigest() != expected_hash:
+        raise AssertionError("0x2e33: recovered 64-byte body changed")
+
+    values = list(range(0x100))
+    values.extend(
+        [
+            0x00000100,
+            0x00000101,
+            0x0000FFFE,
+            0x0000FFFF,
+            0x00010000,
+            0x00010001,
+            0x00FEFFFF,
+            0x00FF0000,
+            0x00FFFFFF,
+            0x01000000,
+            0x01000001,
+            0x7FFFFFFF,
+            0x80000000,
+            0xFFFC0003,
+            0xFFFC0004,
+            0xFFFC0005,
+            0xFFFDFFFF,
+            0xFFFE0000,
+            0xFFFE1234,
+            0xFFFEFFFF,
+            0xFFFF0000,
+            0xFFFFFFFF,
+        ]
+    )
+    for root in (
+        2,
+        3,
+        14,
+        15,
+        16,
+        17,
+        254,
+        255,
+        256,
+        257,
+        4094,
+        4095,
+        4096,
+        4097,
+        32767,
+        32768,
+        65533,
+        65534,
+    ):
+        square = root * root
+        values.extend((square - 1, square, square + 1))
+
+    random_value = 0xC0B10D94
+    for _ in range(96):
+        random_value ^= (random_value << 13) & 0xFFFFFFFF
+        random_value ^= random_value >> 17
+        random_value ^= (random_value << 5) & 0xFFFFFFFF
+        random_value &= 0xFFFFFFFF
+        values.append(random_value)
+    values = list(dict.fromkeys(value & 0xFFFFFFFF for value in values))
+
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, value in enumerate(values):
+        low = value & 0xFFFF
+        high = value >> 16
+        expected_trace = []
+        if high >= 0xFFFE:
+            path = "high_word_guard"
+            seed = None
+            result = low
+            final_compare = (high, 0xFFFE)
+        elif high != 0:
+            path = "high_word"
+            seed = 0xFFFF if (high & 0xFF00) != 0 else 0x0FFF
+            final_compare = None
+        elif low == 0:
+            path = "zero"
+            seed = None
+            result = 0
+            final_compare = None
+        else:
+            path = "low_word"
+            seed = 0x00FF if (low & 0xFF00) != 0 else 0x000F
+            final_compare = None
+
+        if seed is not None:
+            estimate = seed
+            while True:
+                quotient, remainder = divmod(value, estimate)
+                if quotient > 0xFFFF:
+                    raise AssertionError(
+                        f"0x2e33 {value:#010x}: quotient does not fit AX"
+                    )
+                candidate = (quotient + estimate) >> 1
+                expected_trace.append(
+                    (value, estimate, quotient, remainder, candidate)
+                )
+                if candidate >= estimate:
+                    result = candidate
+                    final_compare = (candidate, estimate)
+                    break
+                estimate = candidate
+
+        direction_set = bool(case_index & 1)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A10000 | low,
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | high,
+            "esi": 0xE5E50000 | ((0x5678 + case_index) & 0xFFFF),
+            "edi": 0xF6F60000 | ((0x6789 + case_index) & 0xFFFF),
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": 0x4400,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": 0x2C00,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if direction_set else 0),
+        }
+        actual_trace = []
+        pending_iteration = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x2E5C:
+                dividend = (
+                    machine.reg_read(UC_X86_REG_DX) << 16
+                ) | machine.reg_read(UC_X86_REG_AX)
+                estimate = machine.reg_read(UC_X86_REG_BX)
+                pending_iteration.append((dividend, estimate))
+            elif address == 0x2E5E:
+                if not pending_iteration or len(pending_iteration[-1]) != 2:
+                    raise AssertionError(
+                        f"0x2e33 {value:#010x}: division result without input"
+                    )
+                pending_iteration[-1] = (
+                    *pending_iteration[-1],
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_DX),
+                )
+            elif address == 0x2E62:
+                if not pending_iteration or len(pending_iteration[-1]) != 4:
+                    raise AssertionError(
+                        f"0x2e33 {value:#010x}: average without division"
+                    )
+                dividend, estimate, quotient, remainder = pending_iteration.pop()
+                actual_trace.append(
+                    (
+                        dividend,
+                        estimate,
+                        quotient,
+                        remainder,
+                        machine.reg_read(UC_X86_REG_AX),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if pending_iteration:
+            raise AssertionError(f"0x2e33 {value:#010x}: incomplete division trace")
+        if actual_trace != expected_trace:
+            raise AssertionError(
+                f"0x2e33 {value:#010x}: trace={actual_trace}, "
+                f"expected={expected_trace}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | result
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2e33 {value:#010x}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2e33 {value:#010x}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x2e33 {value:#010x}: stack sentinel changed")
+
+        if path == "zero":
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "df": direction_set,
+                "of": False,
+            }
+        else:
+            assert final_compare is not None
+            left, right = final_compare
+            difference = (left - right) & 0xFFFF
+            expected_flags = {
+                "cf": left < right,
+                "pf": (difference & 0xFF).bit_count() % 2 == 0,
+                "af": (left & 0x0F) < (right & 0x0F),
+                "zf": difference == 0,
+                "sf": bool(difference & 0x8000),
+                "df": direction_set,
+                "of": bool(((left ^ right) & (left ^ difference)) & 0x8000),
+            }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x2e33 {value:#010x}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": f"value_{value:08x}",
+                "value": value,
+                "path": path,
+                "seed": seed,
+                "iteration_count": len(expected_trace),
+                "return_value": result,
+                "direction_flag_preserved": direction_set,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -25830,6 +26090,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_2dd3_natural.json", cmos_rtc_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2e33_natural.json",
+        binary_u32_sqrt_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_2f90_natural.json",

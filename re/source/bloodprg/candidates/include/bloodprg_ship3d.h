@@ -77,6 +77,7 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_top;     /* GS:0x5239 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
 
 #if defined(__WATCOMC__)
+#pragma aux binary_u32_sqrt parm [dx ax] value [ax] modify exact [ax]
 #pragma aux ship_3d_position_distance parm [si] [di] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_position_field_resolve parm [si] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_object_table_bit_test_full parm [ax] [si] value [ax] modify exact [ax]

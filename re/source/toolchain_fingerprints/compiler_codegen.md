@@ -1871,6 +1871,28 @@ pointer. The natural logic is complete for conforming C callers; reproducing
 the inherited-DF path would require an assembly boundary and is not appropriate
 inside this C function.
 
+Unsigned square-root helper `0x002E33` consumes its 32-bit value in DX:AX and
+uses one of four BX seeds (`0x000F`, `0x00FF`, `0x0FFF`, or `0xFFFF`). Values
+with a high word at least `0xFFFE` return the input low word immediately. Every
+other nonzero input iterates a 32-by-16 `DIV`, forms the carry-aware mean of the
+quotient and old estimate with `ADD`/`RCR`, and returns the first candidate that
+does not decrease. A 404-vector direct oracle covers all byte-sized inputs,
+seed transitions, square neighbors, full-width boundaries, and deterministic
+32-bit samples. It verifies every intermediate dividend, seed, quotient,
+remainder, and candidate in addition to the result, preservation, final flags,
+inherited DF, and far return.
+
+The natural candidate expresses that exact seed ladder and Newton loop without
+inline assembly. Its Watcom declaration binds the input to DX:AX, returns AX,
+and preserves every other recovered register. Open Watcom `-3 -ox -mm`
+compiles both the probe and actual candidate without warnings to 49
+instructions/104 bytes versus 35/64 original; Turbo C 2.01 medium emits 51
+instructions. Watcom reproduces the branch structure and carry-aware average,
+but standard 32-bit C division calls `__U4D`. The assembly exploits the seed
+invariant that every quotient fits 16 bits and executes one `DIV BX`, a fact C
+cannot express directly. Keeping this as natural division preserves the proven
+logic; a hardware-DIV intrinsic can remain a narrow later integration option.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1895,7 +1917,7 @@ LCS and then mnemonic similarity:
 | `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
 | `segment_global_gate` | medium, `-ox`, register | 4/3 | 0.2500 | 0.5000 | 0.2500 |
 | `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
-| `u32_sqrt_newton` | compact, unoptimized, register | 35/51 | 0.1714 | 0.7714 | 0.2286 |
+| `u32_sqrt_newton` | medium, `-ox`, register | 35/49 | 0.2286 | 0.6571 | 0.2571 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
