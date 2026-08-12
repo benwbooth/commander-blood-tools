@@ -19,6 +19,7 @@ extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
 extern volatile cb_u8 CB_FAR *vm_secondary_record; /* GS:0x6752 */
+extern volatile cb_u16 vm_block_match_value; /* GS:0x6762 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
@@ -26,6 +27,7 @@ extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
+extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
@@ -35,6 +37,7 @@ extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
+void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
 void CB_NEAR vm_branch_fail(void);           /* 0x006462 */
 
 #endif
