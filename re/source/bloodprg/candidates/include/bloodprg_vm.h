@@ -59,6 +59,6 @@ int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
-void CB_NEAR vm_branch_fail(void);           /* 0x006462 */
+cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
 
 #endif
