@@ -1,0 +1,51 @@
+[
+  {
+    "name": "inactive",
+    "object_id": 0,
+    "input_flags": 0,
+    "output_flags": 0,
+    "record_offset": 25106
+  },
+  {
+    "name": "state0_without_active",
+    "object_id": 1,
+    "input_flags": 1,
+    "output_flags": 1,
+    "record_offset": 25138
+  },
+  {
+    "name": "active_without_state0",
+    "object_id": 2,
+    "input_flags": 128,
+    "output_flags": 128,
+    "record_offset": 25170
+  },
+  {
+    "name": "active_state0",
+    "object_id": 21,
+    "input_flags": 129,
+    "output_flags": 130,
+    "record_offset": 25778
+  },
+  {
+    "name": "active_state0_dirty",
+    "object_id": 31,
+    "input_flags": 131,
+    "output_flags": 130,
+    "record_offset": 26098
+  },
+  {
+    "name": "preserve_high_byte",
+    "object_id": 7,
+    "input_flags": 42369,
+    "output_flags": 42370,
+    "record_offset": 25330
+  },
+  {
+    "name": "preserve_other_low_bits",
+    "object_id": 9,
+    "input_flags": 21953,
+    "output_flags": 21954,
+    "record_offset": 25394
+  }
+]

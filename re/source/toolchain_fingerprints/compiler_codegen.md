@@ -404,6 +404,26 @@ advances SI. The natural keyboard wrapper is 7 instructions/20 bytes versus
 around direct INT 16h instructions. These candidates retain recovered logic;
 their remaining differences are explicit runtime and register-ABI boundaries.
 
+The sprite-slot state slice covers `0x0041D1`, `0x00420D`, and `0x0042CD`
+with 21 direct-execution vectors. They prove the 32-byte `GS:0x6212` record
+stride, low-byte flag edits with high-byte preservation, independent position
+updates, extent comparison/update ordering, and preservation of unrelated
+record bytes and incoming registers. The extent vectors additionally prove that
+the original loads its source-dimensions far pointer from inherited
+`SS:BP+4`; the natural API makes that hidden context a typed pointer argument.
+
+A word/byte union for the flag field materially improves generated code by
+letting Open Watcom keep the full flag word in `AX` while editing `AL`. Under
+8086 medium `-ox`, the actual candidates compile without warnings to 30, 50,
+and 63 bytes, versus 31, 51, and 73 original bytes. The corresponding probes
+contain 17/25/30 instructions versus 16/23/32. These close sizes do not erase
+the remaining boundaries: generated globals use the default data segment,
+Watcom follows its own volatile-register convention, and `0x0042CD` receives a
+normalized `ES:SI` pointer rather than recovering the inherited `SS:BP+4`
+context itself. The `-2` and `-3` targets reproduce the original immediate
+five-bit shifts, but omit more of the original preservation sequence and emit
+14/21/26 instructions and 27/45/58 bytes.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

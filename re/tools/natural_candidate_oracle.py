@@ -857,6 +857,286 @@ def text_width_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def entity_flag_state_transition_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    cases = [
+        ("inactive", 0, 0x0000),
+        ("state0_without_active", 1, 0x0001),
+        ("active_without_state0", 2, 0x0080),
+        ("active_state0", 0x15, 0x0081),
+        ("active_state0_dirty", 0x1F, 0x0083),
+        ("preserve_high_byte", 7, 0xA581),
+        ("preserve_other_low_bits", 9, 0x55C1),
+    ]
+    vectors = []
+
+    for name, object_id, flags in cases:
+        offset = 0x6212 + object_id * 32
+        record = bytearray((index * 13 + object_id) & 0xFF for index in range(32))
+        record[0:2] = struct.pack("<H", flags)
+        decoy = bytearray(record)
+        decoy[0:2] = struct.pack("<H", flags ^ 0xFFFF)
+        initial = {
+            "eax": 0xA5A50000 | object_id,
+            "bx": 0x2345,
+            "cx": 0x3456,
+            "dx": 0x4567,
+            "si": 0x5678,
+            "di": 0x6789,
+            "bp": 0x789A,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x41D1,
+            0x41EF,
+            initial,
+            [
+                (state_segment, offset, bytes(record)),
+                (data_segment, offset, bytes(decoy)),
+            ],
+        )
+
+        expected_flags = flags
+        low_flags = flags & 0xFF
+        if (low_flags & 0x80) != 0 and (low_flags & 1) != 0:
+            expected_flags = (flags & 0xFF00) | ((low_flags & 0xFE) | 2)
+        expected = bytearray(record)
+        expected[0:2] = struct.pack("<H", expected_flags)
+        actual = bytes(machine.mem_read(state_segment * 16 + offset, 32))
+        if actual != bytes(expected):
+            raise AssertionError(
+                f"0x41D1 {name}: actual={actual.hex()}, expected={expected.hex()}"
+            )
+        actual_decoy = bytes(machine.mem_read(data_segment * 16 + offset, 32))
+        if actual_decoy != bytes(decoy):
+            raise AssertionError(f"0x41D1 {name}: DS decoy record changed")
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0x41D1 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "object_id": object_id,
+                "input_flags": flags,
+                "output_flags": expected_flags,
+                "record_offset": offset,
+            }
+        )
+
+    return vectors
+
+
+def sprite_slot_position_update_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    cases = [
+        ("inactive_ignores_both", 0, 0x0000, 10, 20, 30, 40),
+        ("dirty_only_is_inactive", 1, 0x0002, 10, 20, 30, 40),
+        ("state0_unchanged", 2, 0x0001, 10, 20, 10, 20),
+        ("active_x_changes", 0x15, 0x0080, 10, 20, 30, 20),
+        ("state0_y_changes", 0x1F, 0x0001, 10, 20, 10, 40),
+        ("both_change_preserve_high", 7, 0xA580, 0xFFFF, 0, 0, 0xFFFF),
+    ]
+    vectors = []
+
+    for name, object_id, flags, old_x, old_y, draw_x, draw_y in cases:
+        offset = 0x6212 + object_id * 32
+        record = bytearray((index * 17 + object_id) & 0xFF for index in range(32))
+        record[0:2] = struct.pack("<H", flags)
+        record[8:10] = struct.pack("<H", old_x)
+        record[10:12] = struct.pack("<H", old_y)
+        decoy = bytes(byte ^ 0xFF for byte in record)
+        initial = {
+            "eax": 0xB6B60000 | object_id,
+            "bx": draw_x,
+            "cx": draw_y,
+            "dx": 0x4567,
+            "si": 0x5678,
+            "di": 0x6789,
+            "bp": 0x789A,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x420D,
+            0x423F,
+            initial,
+            [
+                (state_segment, offset, bytes(record)),
+                (data_segment, offset, decoy),
+            ],
+        )
+
+        expected = bytearray(record)
+        expected_flags = flags
+        active = (flags & 0x81) != 0
+        if active and (old_x != draw_x or old_y != draw_y):
+            expected_flags |= 2
+        if active and old_x != draw_x:
+            expected[8:10] = struct.pack("<H", draw_x)
+        if active and old_y != draw_y:
+            expected[10:12] = struct.pack("<H", draw_y)
+        expected[0:2] = struct.pack("<H", expected_flags)
+        actual = bytes(machine.mem_read(state_segment * 16 + offset, 32))
+        if actual != bytes(expected):
+            raise AssertionError(
+                f"0x420D {name}: actual={actual.hex()}, expected={expected.hex()}"
+            )
+        actual_decoy = bytes(machine.mem_read(data_segment * 16 + offset, 32))
+        if actual_decoy != decoy:
+            raise AssertionError(f"0x420D {name}: DS decoy record changed")
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0x420D {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "object_id": object_id,
+                "input_flags": flags,
+                "input_position": [old_x, old_y],
+                "requested_position": [draw_x, draw_y],
+                "output_flags": expected_flags,
+                "output_position": [
+                    draw_x if active and old_x != draw_x else old_x,
+                    draw_y if active and old_y != draw_y else old_y,
+                ],
+            }
+        )
+
+    return vectors
+
+
+def sprite_slot_extent_update_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    state_segment = 0x2600
+    source_segment = 0x3200
+    stack_segment = 0x9000
+    cases = [
+        ("inactive", 0, 0x0000, 64, 32, 65, 33, 64, 32),
+        ("equal_source_flag_already_clear", 1, 0x0080, 64, 32, 65, 33, 64, 32),
+        ("equal_source_clears_change", 2, 0x0090, 64, 32, 65, 33, 64, 32),
+        ("equal_source_preserves_high", 0x15, 0xA591, 64, 32, 65, 33, 64, 32),
+        ("different_source_same_extent", 0x1F, 0x0090, 80, 40, 80, 40, 64, 32),
+        ("different_width_updates", 7, 0x0080, 80, 40, 64, 40, 64, 32),
+        ("different_height_updates", 9, 0x0001, 80, 40, 80, 32, 64, 32),
+        ("both_update_wrap_values", 11, 0xA581, 0, 0xFFFF, 1, 2, 3, 4),
+    ]
+    vectors = []
+
+    for (
+        name,
+        object_id,
+        flags,
+        width,
+        height,
+        old_width,
+        old_height,
+        source_width,
+        source_height,
+    ) in cases:
+        offset = 0x6212 + object_id * 32
+        source_offset = 0x0100 + object_id * 4
+        bp = 0x0200 + object_id * 8
+        record = bytearray((index * 19 + object_id) & 0xFF for index in range(32))
+        record[0:2] = struct.pack("<H", flags)
+        record[12:14] = struct.pack("<H", old_width)
+        record[14:16] = struct.pack("<H", old_height)
+        decoy = bytes(byte ^ 0xA5 for byte in record)
+        initial = {
+            "eax": 0xC7C70000 | object_id,
+            "bx": 0x2345,
+            "cx": width,
+            "dx": height,
+            "si": 0x5678,
+            "di": 0x6789,
+            "bp": bp,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": state_segment,
+        }
+        machine = execute(
+            0x42CD,
+            0x4315,
+            initial,
+            [
+                (state_segment, offset, bytes(record)),
+                (data_segment, offset, decoy),
+                (
+                    stack_segment,
+                    bp + 4,
+                    struct.pack("<HH", source_offset, source_segment),
+                ),
+                (
+                    source_segment,
+                    source_offset,
+                    struct.pack("<HH", source_width, source_height),
+                ),
+            ],
+        )
+
+        expected = bytearray(record)
+        expected_flags = flags
+        active = (flags & 0x81) != 0
+        if active and width == source_width and height == source_height:
+            if (flags & 0x10) != 0:
+                expected_flags = (flags & 0xFFEF) | 2
+        elif active and (width != old_width or height != old_height):
+            expected_flags = flags | 0x12
+            expected[12:14] = struct.pack("<H", width)
+            expected[14:16] = struct.pack("<H", height)
+        expected[0:2] = struct.pack("<H", expected_flags)
+        actual = bytes(machine.mem_read(state_segment * 16 + offset, 32))
+        if actual != bytes(expected):
+            raise AssertionError(
+                f"0x42CD {name}: actual={actual.hex()}, expected={expected.hex()}"
+            )
+        actual_decoy = bytes(machine.mem_read(data_segment * 16 + offset, 32))
+        if actual_decoy != decoy:
+            raise AssertionError(f"0x42CD {name}: DS decoy record changed")
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0x42CD {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "object_id": object_id,
+                "input_flags": flags,
+                "requested_extent": [width, height],
+                "stored_extent": [old_width, old_height],
+                "source_extent": [source_width, source_height],
+                "output_flags": expected_flags,
+                "output_extent": [
+                    width
+                    if active
+                    and (width != source_width or height != source_height)
+                    and (width != old_width or height != old_height)
+                    else old_width,
+                    height
+                    if active
+                    and (width != source_width or height != source_height)
+                    and (width != old_width or height != old_height)
+                    else old_height,
+                ],
+                "source_pointer_boundary": "SS:BP+4",
+            }
+        )
+
+    return vectors
+
+
 def mask_overlay_vectors() -> list[dict[str, object]]:
     patterns = [
         [0x0000] * 16,
@@ -5215,6 +5495,21 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_30cd_natural.json", text_width_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_41d1_natural.json",
+        entity_flag_state_transition_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_420d_natural.json",
+        sprite_slot_position_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_42cd_natural.json",
+        sprite_slot_extent_update_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

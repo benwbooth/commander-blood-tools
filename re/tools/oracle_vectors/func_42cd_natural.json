@@ -1,0 +1,186 @@
+[
+  {
+    "name": "inactive",
+    "object_id": 0,
+    "input_flags": 0,
+    "requested_extent": [
+      64,
+      32
+    ],
+    "stored_extent": [
+      65,
+      33
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 0,
+    "output_extent": [
+      65,
+      33
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "equal_source_flag_already_clear",
+    "object_id": 1,
+    "input_flags": 128,
+    "requested_extent": [
+      64,
+      32
+    ],
+    "stored_extent": [
+      65,
+      33
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 128,
+    "output_extent": [
+      65,
+      33
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "equal_source_clears_change",
+    "object_id": 2,
+    "input_flags": 144,
+    "requested_extent": [
+      64,
+      32
+    ],
+    "stored_extent": [
+      65,
+      33
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 130,
+    "output_extent": [
+      65,
+      33
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "equal_source_preserves_high",
+    "object_id": 21,
+    "input_flags": 42385,
+    "requested_extent": [
+      64,
+      32
+    ],
+    "stored_extent": [
+      65,
+      33
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 42371,
+    "output_extent": [
+      65,
+      33
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "different_source_same_extent",
+    "object_id": 31,
+    "input_flags": 144,
+    "requested_extent": [
+      80,
+      40
+    ],
+    "stored_extent": [
+      80,
+      40
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 144,
+    "output_extent": [
+      80,
+      40
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "different_width_updates",
+    "object_id": 7,
+    "input_flags": 128,
+    "requested_extent": [
+      80,
+      40
+    ],
+    "stored_extent": [
+      64,
+      40
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 146,
+    "output_extent": [
+      80,
+      40
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "different_height_updates",
+    "object_id": 9,
+    "input_flags": 1,
+    "requested_extent": [
+      80,
+      40
+    ],
+    "stored_extent": [
+      80,
+      32
+    ],
+    "source_extent": [
+      64,
+      32
+    ],
+    "output_flags": 19,
+    "output_extent": [
+      80,
+      40
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  },
+  {
+    "name": "both_update_wrap_values",
+    "object_id": 11,
+    "input_flags": 42369,
+    "requested_extent": [
+      0,
+      65535
+    ],
+    "stored_extent": [
+      1,
+      2
+    ],
+    "source_extent": [
+      3,
+      4
+    ],
+    "output_flags": 42387,
+    "output_extent": [
+      0,
+      65535
+    ],
+    "source_pointer_boundary": "SS:BP+4"
+  }
+]

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "inactive_ignores_both",
+    "object_id": 0,
+    "input_flags": 0,
+    "input_position": [
+      10,
+      20
+    ],
+    "requested_position": [
+      30,
+      40
+    ],
+    "output_flags": 0,
+    "output_position": [
+      10,
+      20
+    ]
+  },
+  {
+    "name": "dirty_only_is_inactive",
+    "object_id": 1,
+    "input_flags": 2,
+    "input_position": [
+      10,
+      20
+    ],
+    "requested_position": [
+      30,
+      40
+    ],
+    "output_flags": 2,
+    "output_position": [
+      10,
+      20
+    ]
+  },
+  {
+    "name": "state0_unchanged",
+    "object_id": 2,
+    "input_flags": 1,
+    "input_position": [
+      10,
+      20
+    ],
+    "requested_position": [
+      10,
+      20
+    ],
+    "output_flags": 1,
+    "output_position": [
+      10,
+      20
+    ]
+  },
+  {
+    "name": "active_x_changes",
+    "object_id": 21,
+    "input_flags": 128,
+    "input_position": [
+      10,
+      20
+    ],
+    "requested_position": [
+      30,
+      20
+    ],
+    "output_flags": 130,
+    "output_position": [
+      30,
+      20
+    ]
+  },
+  {
+    "name": "state0_y_changes",
+    "object_id": 31,
+    "input_flags": 1,
+    "input_position": [
+      10,
+      20
+    ],
+    "requested_position": [
+      10,
+      40
+    ],
+    "output_flags": 3,
+    "output_position": [
+      10,
+      40
+    ]
+  },
+  {
+    "name": "both_change_preserve_high",
+    "object_id": 7,
+    "input_flags": 42368,
+    "input_position": [
+      65535,
+      0
+    ],
+    "requested_position": [
+      0,
+      65535
+    ],
+    "output_flags": 42370,
+    "output_position": [
+      0,
+      65535
+    ]
+  }
+]
