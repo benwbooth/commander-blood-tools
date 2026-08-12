@@ -4,6 +4,9 @@
 #include "bloodprg_common.h"
 
 extern volatile cb_u16 list_d8c_base_segment;      /* GS:0x0A7E */
+extern volatile cb_u8 state_flag_b17;              /* GS:0x0B17 */
+extern volatile cb_u8 list_d8c_state_byte;         /* GS:0x0D5F */
+extern volatile cb_u16 list_d8c_wrap_count;        /* GS:0x0D62 */
 extern volatile cb_u16 list_d8c_head_offset;       /* GS:0x0D8C */
 extern volatile cb_u16 list_d8c_head_segment;      /* GS:0x0D8E */
 extern volatile cb_u16 list_d8c_tail_offset;       /* GS:0x0D90 */
