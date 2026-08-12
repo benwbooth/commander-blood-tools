@@ -6630,6 +6630,194 @@ def vm_record_string_copy_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_tagged_word_compare_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("greater_tag_passes", 0x1000, 0x00F1, 1, 0, True),
+        ("greater_tag_equal_branches", 0x1100, 0x00F1, 7, 7, False),
+        ("greater_tag_less_branches", 0x1200, 0x00F1, -2, -1, False),
+        ("greater_tag_signed_overflow_passes", 0x1300, 0x00F1, 0x7FFF, -1, True),
+        ("greater_tag_signed_extremes_branch", 0x1400, 0x00F1, -0x8000, 0x7FFF, False),
+        ("less_tag_passes", 0x1500, 0x00F2, -1, 0, True),
+        ("less_tag_equal_branches", 0x1600, 0x00F2, -7, -7, False),
+        ("less_tag_greater_branches", 0x1700, 0x00F2, 2, 1, False),
+        ("less_tag_signed_overflow_passes", 0x1800, 0x00F2, -0x8000, 1, True),
+        ("default_tag_equal_passes", 0x1900, 0x0000, -123, -123, True),
+        ("default_tag_mismatch_branches", 0x1A00, 0x00F3, 0x1234, 0x1235, False),
+        ("only_low_tag_byte_is_used", 0x1B00, 0x12F1, 9, 8, True),
+        ("unaligned_cursor", 0x1C01, 0x34F2, -2, -1, True),
+        ("second_word_crosses_segment_end", 0xFFFD, 0x00F3, 0x4567, 0x4567, True),
+    ]
+    vectors = []
+
+    for index, (name, start, tag_word, value, compare, pass_result) in enumerate(cases):
+        value_word = value & 0xFFFF
+        compare_word = compare & 0xFFFF
+        tag = tag_word & 0xFF
+        branch_target = (0x7100 + index * 0x101) & 0xFFFF
+        script = struct.pack("<HH", tag_word, value_word)
+        memory = [
+            (game_segment, 0x0AA6, struct.pack("<H", compare_word)),
+            (data_segment, 0x0AA6, struct.pack("<H", compare_word ^ 0x8000)),
+            (stack_segment, 0x0AA6, struct.pack("<H", compare_word ^ 0x5A5A)),
+            (game_segment, 0x6884, struct.pack("<H", 4)),
+            (game_segment, 0x67AD, b"\xa5"),
+            (stack_segment, 0x6822, struct.pack("<H", branch_target)),
+            (game_segment, 0x6822, struct.pack("<H", branch_target ^ 0xFFFF)),
+        ]
+        immutable = []
+        for byte_index, byte in enumerate(script):
+            # A word at DS:FFFF reads its high byte at the next linear address;
+            # only the post-LODSW SI register wraps to offset 0001.
+            offset = start + byte_index
+            encoded = bytes([byte])
+            memory.append((data_segment, offset, encoded))
+            immutable.append((data_segment, offset, encoded))
+            memory.append((0x4800, offset, b"\x5a"))
+            memory.append((game_segment, offset, b"\xa5"))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        branch_calls = []
+
+        def capture_branch(_machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6462:
+                branch_calls.append(address)
+
+        machine = execute(
+            0x64E5,
+            0x650F,
+            initial,
+            memory,
+            code_handler=capture_branch,
+        )
+
+        expected_calls = [] if pass_result else [0x6462]
+        if branch_calls != expected_calls:
+            raise AssertionError(
+                f"0x64e5 {name}: branch calls={branch_calls}, "
+                f"expected={expected_calls}"
+            )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["edx"] = (initial["edx"] & 0xFFFFFF00) | tag
+        if pass_result:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | value_word
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | ((start + 4) & 0xFFFF)
+        else:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 2
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | branch_target
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x64e5 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        expected_top = 4 if pass_result else 2
+        if actual_top != expected_top:
+            raise AssertionError(
+                f"0x64e5 {name}: top={actual_top:#x}, expected={expected_top:#x}"
+            )
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        expected_query = 0xA5 if pass_result else 0
+        if actual_query != expected_query:
+            raise AssertionError(
+                f"0x64e5 {name}: query={actual_query:#x}, expected={expected_query:#x}"
+            )
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x64e5 {name}: script input changed")
+        for byte_index in range(len(script)):
+            offset = start + byte_index
+            if machine.mem_read(0x4800 * 16 + offset, 1) != b"\x5a":
+                raise AssertionError(f"0x64e5 {name}: ES script decoy changed")
+            if machine.mem_read(game_segment * 16 + offset, 1) != b"\xa5":
+                raise AssertionError(f"0x64e5 {name}: GS script decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if pass_result:
+            result = (value_word - compare_word) & 0xFFFF
+            expected_flags = {
+                "cf": value_word < compare_word,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "af": (value_word & 0x0F) < (compare_word & 0x0F),
+                "zf": result == 0,
+                "sf": bool(result & 0x8000),
+                "of": bool(
+                    ((value_word ^ compare_word) & (value_word ^ result)) & 0x8000
+                ),
+            }
+        else:
+            expected_flags = {
+                "cf": False,
+                "pf": False,
+                "af": False,
+                "zf": False,
+                "sf": False,
+                "of": False,
+            }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x64e5 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x650F] != 0xC3:
+            raise AssertionError("0x64e5: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "tag_word": tag_word,
+                "effective_tag": tag,
+                "value": value,
+                "compare": compare,
+                "comparison_passed": pass_result,
+                "branch_taken": not pass_result,
+                "final_script_offset": (
+                    (start + 4) & 0xFFFF if pass_result else branch_target
+                ),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -11220,6 +11408,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_64ce_natural.json",
         vm_record_string_copy_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_64e5_natural.json",
+        vm_tagged_word_compare_vectors(),
         args.check,
     )
     update_vector(

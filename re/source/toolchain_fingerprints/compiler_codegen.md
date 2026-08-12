@@ -895,6 +895,25 @@ AX for the destination and leaves BP unchanged, while the binary writes through
 SS:BP and returns advanced BP. Exact integration therefore needs the runtime
 SS=GS alias and a narrow BP boundary, not additional string-copy logic.
 
+VM tagged-word comparison `0x0064E5` has fourteen direct vectors covering F1
+signed-greater pass, equality, failure, and overflow; F2 signed-less pass,
+equality, failure, and overflow; default equality and mismatch; ignored tag high
+bytes; unaligned input; and a second word read spanning the segment end before SI
+wrap. They prove DS source ownership, GS comparison-word ownership, calls through
+the real branch helper, branch-stack and query effects, pass-path AX/SI outputs,
+failure-path AX/SI outputs, DL tag output, comparison versus SUB flags by path,
+preservation, immutable input, and near return.
+
+Replacing the pointer-to-pointer API and Boolean temporary with direct natural
+cursor returns matters materially. Keeping the volatile comparison global in
+each selected path lets Open Watcom `-3 -ox -mm` recover the original DL tag, AX
+value, and SI cursor allocation and emit exactly 17 instructions/47 bytes versus
+17/43 original; Turbo C 2.01 medium emits 33 instructions. Watcom uses MOV/ADD
+cursor loads and equivalent conditional tail branches to the branch helper
+instead of LODSW and CALL/shared-RET. Exact integration needs fixed GS placement
+and the original call boundary, but the comparison logic and register data flow
+need no assembly.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -925,6 +944,7 @@ LCS and then mnemonic similarity:
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
 | `vm_clear_state` | medium, `-ox`, register | 3/5 | 0.3333 | 1.0000 | 0.3333 |
 | `vm_record_string_copy` | medium, `-ox`, register | 13/20 | 0.2308 | 0.6923 | 0.3846 |
+| `vm_tagged_word_compare` | medium, `-ox`, register | 17/17 | 0.0588 | 0.5294 | 0.2941 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
