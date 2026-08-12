@@ -7,7 +7,7 @@
 ; group: seg_0b1b
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: snd_driver_call
-; label_comment: SND driver callback invoke (2 calls): ds=gs; lcall [0xcdf] (the registered SND-driver far fn-ptr, per dead_ends sess 001-002 - statically unresolvable). Dispatches to the loaded .drv sound driver
+; label_comment: switches DS to GS, invokes registered SND reset callback [DS:0x0CDF] with AX=0, clears DS:0x0BA0 after return, and restores AX/DS/ES
 ; incoming: call@0x001252->0b1b:03ed
 ; incoming: call@0x0012e0->0b1b:03ed
 ; incoming: call@0x0012e8->0b1b:03ed

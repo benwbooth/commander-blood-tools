@@ -18262,6 +18262,221 @@ def ship_3d_depth_scroll_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def snd_driver_call_vectors() -> list[dict[str, object]]:
+    entry = 0xBB9D
+    expected_hash = "e7fc7b7a0177bf7cbb2bd10dad92f9144b1bb5af1d5fb5d71b53b43f03ac725b"
+    if hashlib.sha256(EXE[entry : entry + 22]).hexdigest() != expected_hash:
+        raise AssertionError("0xbb9d: recovered 22-byte body changed")
+
+    cases = [
+        ("pending_zero", 0x00, 0x5A, 0x0202, False),
+        ("pending_bit_zero", 0x01, 0xA5, 0x0247, True),
+        ("pending_bit_one", 0x02, 0x3C, 0x0296, False),
+        ("pending_all_bits", 0xFF, 0xC3, 0x0AD7, True),
+        ("callback_rewrites_pending", 0x80, 0x7E, 0x0883, True),
+        ("shared_ds_and_gs", 0x55, 0xE1, 0x0612, False),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    callback_segment = 0xF000
+    callback_offset = 0x0100
+    callback_address = callback_segment * 16 + callback_offset
+    trap_segment = 0xE000
+    trap_offset = 0x0200
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (name, pending, callback_pending, callback_flags, clobber) in enumerate(cases):
+        incoming_ds = game_segment if name == "shared_ds_and_gs" else data_segment
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": incoming_ds,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        callback_changes = {
+            "ax": 0xCAFE,
+            "bx": 0x1357,
+            "cx": 0x2468,
+            "dx": 0x369C,
+            "si": 0x48AD,
+            "di": 0x5ABE,
+            "bp": 0x6BCF,
+            "es": 0x7CE0,
+        }
+        callback_calls = []
+        game_pointer = struct.pack("<HH", callback_offset, callback_segment)
+        data_pointer = struct.pack("<HH", trap_offset, trap_segment)
+        game_guard = bytes.fromhex("5aa59669")
+        data_pending = (0x31 + case_index * 17) & 0xFF
+        stack_sentinel = bytes.fromhex("69965aa5c33c")
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_address:
+                return
+            callback_calls.append(address)
+            actual_entry = {
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ebp": machine.reg_read(UC_X86_REG_EBP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_entry = dict(initial)
+            del expected_entry["flags"]
+            expected_entry["eax"] &= 0xFFFF0000
+            expected_entry["sp"] = 0xFEF6
+            expected_entry["ds"] = game_segment
+            expected_entry["cs"] = callback_segment
+            expected_entry["ip"] = callback_offset
+            if actual_entry != expected_entry:
+                raise AssertionError(
+                    f"0xbb9d {name}: callback state={actual_entry}, "
+                    f"expected={expected_entry}"
+                )
+            return_frame = struct.unpack(
+                "<HHHHH",
+                machine.mem_read(stack_segment * 16 + 0xFEF6, 10),
+            )
+            expected_frame = (
+                0xBBAA,
+                0,
+                initial["es"],
+                initial["ds"],
+                initial["eax"] & 0xFFFF,
+            )
+            if return_frame != expected_frame:
+                raise AssertionError(
+                    f"0xbb9d {name}: callback frame={return_frame}, "
+                    f"expected={expected_frame}"
+                )
+            pending_at_entry = machine.mem_read(game_segment * 16 + 0x0BA0, 1)[0]
+            if pending_at_entry != pending:
+                raise AssertionError(
+                    f"0xbb9d {name}: pending cleared before callback"
+                )
+            machine.mem_write(
+                game_segment * 16 + 0x0BA0,
+                bytes((callback_pending,)),
+            )
+            if clobber:
+                for register, value in callback_changes.items():
+                    machine.reg_write(REGISTERS[register], value)
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+
+        memory = [
+            (0, return_address, b"\xcc"),
+            (callback_segment, callback_offset, b"\xcb"),
+            (trap_segment, trap_offset, b"\xcc"),
+            (game_segment, 0x0CDF, game_pointer + game_guard),
+            (game_segment, 0x0BA0, bytes((pending,))),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<HH", return_address, 0) + stack_sentinel,
+            ),
+        ]
+        if incoming_ds != game_segment:
+            memory.extend(
+                [
+                    (incoming_ds, 0x0CDF, data_pointer + game_guard[::-1]),
+                    (incoming_ds, 0x0BA0, bytes((data_pending,))),
+                ]
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+        if callback_calls != [callback_address]:
+            raise AssertionError(
+                f"0xbb9d {name}: callback calls={callback_calls}"
+            )
+        if machine.mem_read(game_segment * 16 + 0x0BA0, 1)[0] != 0:
+            raise AssertionError(f"0xbb9d {name}: pending byte not cleared")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0CDF, 8)) != game_pointer + game_guard:
+            raise AssertionError(f"0xbb9d {name}: game callback pointer changed")
+        if incoming_ds != game_segment:
+            if machine.mem_read(incoming_ds * 16 + 0x0BA0, 1)[0] != data_pending:
+                raise AssertionError(f"0xbb9d {name}: DS pending decoy changed")
+            if bytes(machine.mem_read(incoming_ds * 16 + 0x0CDF, 8)) != data_pointer + game_guard[::-1]:
+                raise AssertionError(f"0xbb9d {name}: DS callback decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        if clobber:
+            for register in ("ebx", "ecx", "edx", "esi", "edi", "ebp"):
+                short_name = register[1:]
+                expected_registers[register] = (
+                    expected_registers[register] & 0xFFFF0000
+                ) | callback_changes[short_name]
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbb9d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xbb9d {name}: far return did not restore CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        expected_flags = {
+            flag: bool(callback_flags & mask) for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xbb9d {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbb9d {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "pending_before": pending,
+                "pending_written_by_callback": callback_pending,
+                "pending_after": 0,
+                "callback_ax": 0,
+                "callback_ds": game_segment,
+                "callback_sp": 0xFEF6,
+                "callback_clobbers_passed_through": clobber,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -24105,6 +24320,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b75c_natural.json",
         ship_3d_depth_scroll_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bb9d_natural.json",
+        snd_driver_call_vectors(),
         args.check,
     )
     update_vector(

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "pending_zero",
+    "pending_before": 0,
+    "pending_written_by_callback": 90,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "pending_bit_zero",
+    "pending_before": 1,
+    "pending_written_by_callback": 165,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "pending_bit_one",
+    "pending_before": 2,
+    "pending_written_by_callback": 60,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "pending_all_bits",
+    "pending_before": 255,
+    "pending_written_by_callback": 195,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "callback_rewrites_pending",
+    "pending_before": 128,
+    "pending_written_by_callback": 126,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "shared_ds_and_gs",
+    "pending_before": 85,
+    "pending_written_by_callback": 225,
+    "pending_after": 0,
+    "callback_ax": 0,
+    "callback_ds": 11264,
+    "callback_sp": 65270,
+    "callback_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
