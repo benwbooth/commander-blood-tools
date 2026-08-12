@@ -11,4 +11,7 @@ typedef struct bloodprg_resource_handle_entry {
 
 extern const volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
 
+cb_u32 CB_FAR resource_file_load(const volatile char *path,
+        volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
+
 #endif

@@ -22,4 +22,10 @@ typedef struct bloodprg_entity_record {
 
 extern volatile bloodprg_entity_record bloodprg_entity_table[]; /* GS:0x6212 */
 
+void CB_FAR entity_record_setter(cb_u16 entity_id,
+        const volatile void CB_FAR *resource,
+        cb_u16 draw_x,
+        cb_u16 draw_y,
+        cb_u16 frame_index); /* 0x0299:0x11BE */
+
 #endif
