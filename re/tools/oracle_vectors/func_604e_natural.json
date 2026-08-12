@@ -1,0 +1,166 @@
+[
+  {
+    "name": "first_entry_stops_scan",
+    "directory_offset": 512,
+    "record_pointer_offset_ignored": 12544,
+    "entries": [
+      {
+        "object_offset": 256,
+        "entry_kind": 0,
+        "flags": 2
+      },
+      {
+        "object_offset": 512,
+        "entry_kind": 1,
+        "flags": 2
+      }
+    ],
+    "active_objects": [],
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "filters_low_flag_byte_and_stops",
+    "directory_offset": 1024,
+    "record_pointer_offset_ignored": 12544,
+    "entries": [
+      {
+        "object_offset": 256,
+        "entry_kind": 1,
+        "flags": 514
+      },
+      {
+        "object_offset": 512,
+        "entry_kind": 1,
+        "flags": 0
+      },
+      {
+        "object_offset": 768,
+        "entry_kind": 1,
+        "flags": 255
+      },
+      {
+        "object_offset": 1024,
+        "entry_kind": 2,
+        "flags": 2
+      },
+      {
+        "object_offset": 1280,
+        "entry_kind": 1,
+        "flags": 2
+      }
+    ],
+    "active_objects": [
+      256,
+      768
+    ],
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_flag_byte_does_not_qualify",
+    "directory_offset": 2048,
+    "record_pointer_offset_ignored": 12544,
+    "entries": [
+      {
+        "object_offset": 4368,
+        "entry_kind": 1,
+        "flags": 512
+      },
+      {
+        "object_offset": 8736,
+        "entry_kind": 1,
+        "flags": 2
+      },
+      {
+        "object_offset": 13104,
+        "entry_kind": 0,
+        "flags": 0
+      }
+    ],
+    "active_objects": [
+      8736
+    ],
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_and_object_offsets_wrap",
+    "directory_offset": 65520,
+    "record_pointer_offset_ignored": 12544,
+    "entries": [
+      {
+        "object_offset": 65535,
+        "entry_kind": 1,
+        "flags": 2
+      },
+      {
+        "object_offset": 4660,
+        "entry_kind": 32768,
+        "flags": 2
+      }
+    ],
+    "active_objects": [
+      65535
+    ],
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "terminating_kind_two",
+    "directory_offset": 3072,
+    "record_pointer_offset_ignored": 12544,
+    "entries": [
+      {
+        "object_offset": 256,
+        "entry_kind": 1,
+        "flags": 2
+      },
+      {
+        "object_offset": 512,
+        "entry_kind": 2,
+        "flags": 2
+      }
+    ],
+    "active_objects": [
+      256
+    ],
+    "terminator": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

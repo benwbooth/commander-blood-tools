@@ -4128,6 +4128,209 @@ def vm_record_lookup_by_threshold_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def active_object_list_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x2400
+    directory_segment = 0x4200
+    record_segment = 0x4600
+    decoy_directory_segment = 0x4A00
+    decoy_record_segment = 0x4E00
+    record_pointer_offset = 0x3100
+    cases = [
+        (
+            "first_entry_stops_scan",
+            0x0200,
+            [(0x0100, 0x0000, 0x0002), (0x0200, 0x0001, 0x0002)],
+            [],
+        ),
+        (
+            "filters_low_flag_byte_and_stops",
+            0x0400,
+            [
+                (0x0100, 0x0001, 0x0202),
+                (0x0200, 0x0001, 0x0000),
+                (0x0300, 0x0001, 0x00FF),
+                (0x0400, 0x0002, 0x0002),
+                (0x0500, 0x0001, 0x0002),
+            ],
+            [0x0100, 0x0300],
+        ),
+        (
+            "high_flag_byte_does_not_qualify",
+            0x0800,
+            [(0x1110, 0x0001, 0x0200), (0x2220, 0x0001, 0x0002), (0x3330, 0, 0)],
+            [0x2220],
+        ),
+        (
+            "directory_and_object_offsets_wrap",
+            0xFFF0,
+            [(0xFFFF, 0x0001, 0x0002), (0x1234, 0x8000, 0x0002)],
+            [0xFFFF],
+        ),
+        (
+            "terminating_kind_two",
+            0x0C00,
+            [(0x0100, 0x0001, 0x0002), (0x0200, 0x0002, 0x0002)],
+            [0x0100],
+        ),
+    ]
+    vectors = []
+
+    for case_index, (name, directory_offset, entries, expected_objects) in enumerate(cases):
+        directory_pointer = struct.pack("<HH", directory_offset, directory_segment)
+        record_pointer = struct.pack(
+            "<HH", record_pointer_offset, record_segment
+        )
+        decoy_directory_pointer = struct.pack(
+            "<HH", 0x1800, decoy_directory_segment
+        )
+        decoy_record_pointer = struct.pack("<HH", 0x2200, decoy_record_segment)
+        initial_output = bytes(
+            (case_index * 41 + index * 13 + 7) & 0xFF for index in range(20)
+        )
+        expected_output = bytearray(initial_output)
+        result_words = [*expected_objects, 0xFFFF]
+        expected_output[: len(result_words) * 2] = struct.pack(
+            f"<{len(result_words)}H", *result_words
+        )
+        memory = [
+            (game_segment, 0x672C, directory_pointer),
+            (game_segment, 0x6724, record_pointer),
+            (data_segment, 0x672C, decoy_directory_pointer),
+            (data_segment, 0x6724, decoy_record_pointer),
+            (game_segment, 0x6A16, initial_output),
+            (data_segment, 0x6A16, bytes([0xA5]) * len(initial_output)),
+            (decoy_directory_segment, 0x1812, b"\x00\x00"),
+        ]
+        immutable_fields = []
+        for index, (object_offset, entry_kind, flags) in enumerate(entries):
+            entry_offset = (directory_offset + index * 20) & 0xFFFF
+            object_field = (entry_offset + 0x10) & 0xFFFF
+            kind_field = (entry_offset + 0x12) & 0xFFFF
+            memory.extend(
+                [
+                    (
+                        directory_segment,
+                        object_field,
+                        struct.pack("<H", object_offset),
+                    ),
+                    (directory_segment, kind_field, struct.pack("<H", entry_kind)),
+                    (
+                        record_segment,
+                        (object_offset + 2) & 0xFFFF,
+                        struct.pack("<H", flags),
+                    ),
+                    (
+                        record_segment,
+                        (record_pointer_offset + object_offset + 2) & 0xFFFF,
+                        struct.pack("<H", flags ^ 0x0002),
+                    ),
+                    (
+                        decoy_record_segment,
+                        (object_offset + 2) & 0xFFFF,
+                        struct.pack("<H", flags ^ 0x0002),
+                    ),
+                ]
+            )
+            immutable_fields.extend(
+                [
+                    (directory_segment, object_field, struct.pack("<H", object_offset)),
+                    (directory_segment, kind_field, struct.pack("<H", entry_kind)),
+                    (
+                        record_segment,
+                        (object_offset + 2) & 0xFFFF,
+                        struct.pack("<H", flags),
+                    ),
+                ]
+            )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        machine = execute(0x604E, 0x608E, initial, memory)
+
+        for register, value in initial.items():
+            if register == "flags":
+                continue
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x604e {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+        actual_output = bytes(
+            machine.mem_read(game_segment * 16 + 0x6A16, len(initial_output))
+        )
+        if actual_output != bytes(expected_output):
+            raise AssertionError(f"0x604e {name}: active-object output mismatch")
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x6A16, len(initial_output))
+        ) != bytes([0xA5]) * len(initial_output):
+            raise AssertionError(f"0x604e {name}: DS output decoy changed")
+        for segment, offset, expected_bytes in immutable_fields:
+            if bytes(machine.mem_read(segment * 16 + offset, len(expected_bytes))) != expected_bytes:
+                raise AssertionError(f"0x604e {name}: input table changed")
+
+        terminating_kind = next(kind for _, kind, _ in entries if kind != 1)
+        flag_result = (terminating_kind - 1) & 0xFFFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": terminating_kind < 1,
+            "pf": (flag_result & 0xFF).bit_count() % 2 == 0,
+            "af": (terminating_kind & 0xF) < 1,
+            "zf": flag_result == 0,
+            "sf": bool(flag_result & 0x8000),
+            "of": bool(
+                ((terminating_kind ^ 1) & (terminating_kind ^ flag_result))
+                & 0x8000
+            ),
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x604e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x608E] != 0xC3:
+            raise AssertionError("0x604e: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "directory_offset": directory_offset,
+                "record_pointer_offset_ignored": record_pointer_offset,
+                "entries": [
+                    {"object_offset": obj, "entry_kind": kind, "flags": flags}
+                    for obj, kind, flags in entries
+                ],
+                "active_objects": expected_objects,
+                "terminator": 0xFFFF,
+                "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -8650,6 +8853,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6034_natural.json",
         vm_record_lookup_by_threshold_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_604e_natural.json",
+        active_object_list_vectors(),
         args.check,
     )
     update_vector(

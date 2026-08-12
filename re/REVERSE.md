@@ -1619,6 +1619,16 @@ GS ownership of the far directory pointer, complete preservation, and final
 same 12 instructions and 27 bytes versus 26 original; only the binary's
 GS-to-DS:SI placement differs from Watcom's DS-to-ES:BX choice.
 
+Five focused direct vectors now verify active-object builder `0x604E`: it stops
+at the first directory entry whose kind is not 1, tests only bit 1 of the low
+object flag byte, writes all qualifying object offsets followed by `0xFFFF`, and
+preserves all state except final compare flags. The directory pointer, object
+pointer, and output are GS-owned. Importantly, the object pointer's offset half
+is discarded; each directory object offset is absolute within its segment. The
+natural C now uses `FP_SEG`/`MK_FP` to state that rule and compiles to 67 bytes
+versus 65 original, with Watcom's DS/ES placement and AX/ES clobbers still
+requiring an adapter.
+
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the

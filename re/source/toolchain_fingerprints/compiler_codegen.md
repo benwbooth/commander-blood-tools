@@ -684,6 +684,24 @@ whereas the binary loads a GS-held pointer into DS:SI. The natural algorithm and
 observable ABI are retained; exact register bytes need linker/segment binding or
 a narrow adapter.
 
+Active-object list builder `0x00604E` has five focused direct vectors in addition
+to the earlier lifted/native sweep. They prove immediate and later early-stop
+paths, low-byte-only object flag testing, unconditional `0xFFFF` termination,
+16-bit directory and object address wrap, and final terminating-`CMP` flags.
+Distinct GS/DS pointer and output slots establish GS ownership. A nonzero offset
+in the object-block far pointer proves the binary discards that half and uses the
+segment with each directory object offset as an absolute offset.
+
+The natural candidate now expresses that segment-only access with the standard
+16-bit `FP_SEG`/`MK_FP` idiom rather than incorrectly adding the far-pointer
+offset. Open Watcom compiles it warning-free at all three CPU targets to 28
+instructions/67 bytes versus 32/65 original; Turbo C 2.01 emits 31 instructions.
+The close sizes are not an ABI match: Watcom binds globals/output through DS,
+uses ES for both far inputs, and leaves AX/ES changed. The binary uses GS-owned
+globals/output, FS object reads, and restores every register and segment. Exact
+integration therefore needs segment binding and a preservation adapter around
+the natural algorithm.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -698,6 +716,7 @@ LCS and then mnemonic similarity:
 | `far_strlen` | compact, unoptimized, register | 11/15 | 0.0909 | 0.6364 | 0.0909 |
 | `field_offset` | compact, `-ox`, register | 8/23 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
+| `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |
