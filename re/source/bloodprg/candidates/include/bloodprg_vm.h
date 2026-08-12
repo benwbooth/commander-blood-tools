@@ -22,6 +22,8 @@ extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762 */
+extern volatile cb_u16 vm_blood_history_ring_index; /* GS:0x6744 */
+extern volatile cb_u16 CB_FAR *vm_blood_history_words; /* GS:0x6746 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
@@ -31,7 +33,9 @@ extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
+extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
+extern volatile cb_u16 vm_presentation_word_buffer[]; /* GS:0x67F8 */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
 extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
@@ -85,6 +89,9 @@ int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
+int CB_NEAR vm_condition_5(cb_u16 flags,
+        const volatile cb_u8 CB_FAR *record,
+        const cb_u8 *script_bytes);          /* 0x006339 */
 bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
