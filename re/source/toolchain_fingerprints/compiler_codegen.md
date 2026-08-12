@@ -1450,6 +1450,26 @@ adapters to the game's DS:SI and ES:DI helper conventions. Watcom's 16-bit
 `#pragma aux` also rejects EAX as a clobber name, so the original call-only
 `XOR EAX,EAX` remains an explicit machine-ABI boundary.
 
+Byte-parser opcode-0C handler `0x007754` and opcode-0D handler `0x007776`
+consume different record forms through GS-owned 16-bit destination cursors.
+Eight direct vectors for `0x007754` prove printable bounds, unconsumed low/high
+stops, NUL placement, source and destination wrap, ES writes versus GS cursor
+and count state, fixed 16-byte cursor advance, count wrap, AX/SI/DI outputs,
+ADD-carried CF plus INC-derived final flags, preservation, and near return.
+Seven vectors for `0x007776` prove aligned and unaligned leading-word copies,
+arbitrary high string bytes, embedded and consumed NUL, both wraps, DS/ES/GS
+ownership, final cursor, outputs, zero-test flags, preservation, and return.
+
+Their one-to-one candidates now return SI directly and use volatile named-data
+based pointers. The first retains a natural printable loop and fixed slot/count
+updates; the second uses a typed word assignment followed by a do-while byte
+copy. Open Watcom `-3 -ox -mm` compiles them without warnings to 27
+instructions/60 bytes and 23/49 respectively, versus originals of 13/34 and
+8/18. Turbo C 2.01 medium emits 37 and 35 instructions. Watcom preserves the
+operations but saves BX/DX/ES, loads `GAME_DATA`, and uses scalar loads, stores,
+and pointer additions instead of the original ambient ES=GS and compact
+LODSB/STOSB/MOVSW forms.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned
@@ -1526,6 +1546,8 @@ LCS and then mnemonic similarity:
 | `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/24 | 0.0909 | 0.4091 | 0.1818 |
 | `dlg_line_asset_table_fill` | medium, `-ox`, register | 22/35 | 0.0909 | 0.5455 | 0.1818 |
 | `index_lookup_1fd7` | medium, `-ox`, register | 47/44 | 0.0851 | 0.4043 | 0.1064 |
+| `byte_parser_copy_131a_entry` | medium, `-ox`, register | 13/27 | 0.1538 | 0.6154 | 0.2308 |
+| `byte_parser_stream_0f18_append` | medium, `-ox`, register | 8/23 | 0.1250 | 0.5000 | 0.1250 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

@@ -16003,6 +16003,338 @@ def index_lookup_1fd7_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def byte_parser_copy_131a_entry_vectors() -> list[dict[str, object]]:
+    entry = 0x7754
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("immediate_nul", 0x6000, b"\x00", 0x3000, 0x00, 0x0002),
+        ("immediate_high", 0x6020, b"\xff", 0x3020, 0x01, 0x0AD7),
+        ("lower_printable", 0x6040, b"\x20\x1f", 0x3040, 0x0F, 0x0803),
+        ("upper_printable", 0x6060, b"\x7f\x80", 0x3060, 0x7F, 0x00D6),
+        ("ordinary_text", 0x6080, b"ENTRY\x00", 0x3080, 0x80, 0x0812),
+        ("source_wrap", 0xFFFF, b"A\x00", 0x30A0, 0xFE, 0x00C3),
+        ("destination_wrap", 0x60C0, b"AB\x00", 0xFFFE, 0x10, 0x0896),
+        ("cursor_and_count_wrap", 0x60E0, b"\x00", 0xFFF8, 0xFF, 0x0047),
+    ]
+    expected_hash = "4c74b7b0c5779a3a71a6883e2408d5bfec92d98a20c26bf2cee47b5ff54d0108"
+    if hashlib.sha256(EXE[entry : entry + 34]).hexdigest() != expected_hash:
+        raise AssertionError("0x7754: recovered 34-byte body changed")
+
+    def wrapped_bytes(machine: Uc, segment: int, offset: int, length: int) -> bytes:
+        return bytes(
+            machine.mem_read(segment * 16 + ((offset + index) & 0xFFFF), 1)[0]
+            for index in range(length)
+        )
+
+    vectors = []
+    for name, start, payload, cursor, count, flags_before in cases:
+        stop_index = next(
+            index
+            for index, byte in enumerate(payload)
+            if byte < 0x20 or byte >= 0x80
+        )
+        copied = payload[:stop_index]
+        stop_byte = payload[stop_index]
+        final_source = (start + stop_index) & 0xFFFF
+        final_destination = (cursor + len(copied)) & 0xFFFF
+        final_cursor = (cursor + 0x10) & 0xFFFF
+        final_count = (count + 1) & 0xFF
+        destination_before = bytes([0xCC]) * (len(copied) + 3)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (game_segment, 0x131A, struct.pack("<H", cursor)),
+            (game_segment, 0x131E, bytes([count])),
+            (data_segment, 0x131A, b"\x5a\xa5"),
+            (data_segment, 0x131E, b"\x69"),
+            (destination_segment, 0x131A, b"\x87\x78"),
+            (destination_segment, 0x131E, b"\x96"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        for index, byte in enumerate(destination_before):
+            memory.append(
+                (destination_segment, (cursor + index) & 0xFFFF, bytes([byte]))
+            )
+        immutable_source = []
+        for index, byte in enumerate(payload):
+            source_offset = (start + index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            immutable_source.append((source_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BE55,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        machine = execute(entry, return_address, initial, memory)
+
+        actual_destination = wrapped_bytes(
+            machine, destination_segment, cursor, len(destination_before)
+        )
+        expected_destination = (
+            copied + b"\x00" + destination_before[len(copied) + 1 :]
+        )
+        if actual_destination != expected_destination:
+            raise AssertionError(
+                f"0x7754 {name}: destination={actual_destination!r}, "
+                f"expected={expected_destination!r}"
+            )
+        actual_cursor = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x131A, 2)
+        )[0]
+        actual_count = machine.mem_read(game_segment * 16 + 0x131E, 1)[0]
+        if actual_cursor != final_cursor or actual_count != final_count:
+            raise AssertionError(
+                f"0x7754 {name}: globals={(actual_cursor, actual_count)}, "
+                f"expected={(final_cursor, final_count)}"
+            )
+        for source_offset, expected in immutable_source:
+            actual = bytes(machine.mem_read(data_segment * 16 + source_offset, 1))
+            if actual != expected:
+                raise AssertionError(f"0x7754 {name}: source changed")
+        for segment, offset, expected in (
+            (data_segment, 0x131A, b"\x5a\xa5"),
+            (data_segment, 0x131E, b"\x69"),
+            (destination_segment, 0x131A, b"\x87\x78"),
+            (destination_segment, 0x131E, b"\x96"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x7754 {name}: global decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": (initial["eax"] & 0xFFFFFF00) | stop_byte,
+                "esi": (initial["esi"] & 0xFFFF0000) | final_source,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_destination,
+                "sp": 0xFF02,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7754 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        expected_flags = {
+            "cf": cursor > 0xFFEF,
+            "pf": (final_count.bit_count() % 2) == 0,
+            "af": (count & 0x0F) == 0x0F,
+            "zf": final_count == 0,
+            "sf": bool(final_count & 0x80),
+            "of": count == 0x7F,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x7754 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x7754 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "source_offset": start,
+                "input_hex": payload.hex(),
+                "copied_hex": copied.hex(),
+                "stopping_byte": stop_byte,
+                "destination_cursor_before": cursor,
+                "destination_cursor_after": final_cursor,
+                "entry_count_before": count,
+                "entry_count_after": final_count,
+                "final_source_offset": final_source,
+                "final_destination_offset": final_destination,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def byte_parser_stream_0f18_append_vectors() -> list[dict[str, object]]:
+    entry = 0x7776
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("empty", 0x6200, 0x0000, b"\x00", 0x3200, 0x0002),
+        ("ordinary", 0x6220, 0x1234, b"ABC\x00", 0x3220, 0x0AD7),
+        ("high_bytes", 0x6240, 0xA55A, b"\x80\xff\x00", 0x3240, 0x0803),
+        ("embedded_nul", 0x6260, 0xBEEF, b"A\x00Z", 0x3260, 0x00D6),
+        ("unaligned", 0x6281, 0x0102, b"XY\x00", 0x3281, 0x0812),
+        ("source_wrap", 0xFFFE, 0xCAFE, b"Q\x00", 0x32A0, 0x00C3),
+        ("destination_wrap", 0x62C0, 0xBEEF, b"A\x00", 0xFFFE, 0x0896),
+    ]
+    expected_hash = "d93f743d34dbe42e419c9a1ca52aae856d5d941fc2b79b8bc2fe15c241b0bfdc"
+    if hashlib.sha256(EXE[entry : entry + 18]).hexdigest() != expected_hash:
+        raise AssertionError("0x7776: recovered 18-byte body changed")
+
+    def wrapped_bytes(machine: Uc, segment: int, offset: int, length: int) -> bytes:
+        return bytes(
+            machine.mem_read(segment * 16 + ((offset + index) & 0xFFFF), 1)[0]
+            for index in range(length)
+        )
+
+    vectors = []
+    for name, start, leading_word, suffix, cursor, flags_before in cases:
+        nul_index = suffix.index(0)
+        copied_suffix = suffix[: nul_index + 1]
+        stream = struct.pack("<H", leading_word) + suffix
+        copied = struct.pack("<H", leading_word) + copied_suffix
+        final_source = (start + len(copied)) & 0xFFFF
+        final_destination = (cursor + len(copied)) & 0xFFFF
+        destination_before = bytes([0xCC]) * (len(copied) + 2)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (game_segment, 0x0F18, struct.pack("<H", cursor)),
+            (data_segment, 0x0F18, b"\x5a\xa5"),
+            (destination_segment, 0x0F18, b"\x87\x78"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        for index, byte in enumerate(destination_before):
+            memory.append(
+                (destination_segment, (cursor + index) & 0xFFFF, bytes([byte]))
+            )
+        immutable_source = []
+        for index, byte in enumerate(stream):
+            source_offset = (start + index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            immutable_source.append((source_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BE55,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        machine = execute(entry, return_address, initial, memory)
+
+        actual_destination = wrapped_bytes(
+            machine, destination_segment, cursor, len(destination_before)
+        )
+        expected_destination = copied + destination_before[len(copied) :]
+        if actual_destination != expected_destination:
+            raise AssertionError(
+                f"0x7776 {name}: destination={actual_destination.hex()}, "
+                f"expected={expected_destination.hex()}"
+            )
+        actual_cursor = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x0F18, 2)
+        )[0]
+        if actual_cursor != final_destination:
+            raise AssertionError(
+                f"0x7776 {name}: cursor={actual_cursor:#x}, "
+                f"expected={final_destination:#x}"
+            )
+        for source_offset, expected in immutable_source:
+            actual = bytes(machine.mem_read(data_segment * 16 + source_offset, 1))
+            if actual != expected:
+                raise AssertionError(f"0x7776 {name}: source changed")
+        for segment, offset, expected in (
+            (data_segment, 0x0F18, b"\x5a\xa5"),
+            (destination_segment, 0x0F18, b"\x87\x78"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x7776 {name}: cursor decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": initial["eax"] & 0xFFFFFF00,
+                "esi": (initial["esi"] & 0xFFFF0000) | final_source,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_destination,
+                "sp": 0xFF02,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7776 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x7776 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x7776 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "source_offset": start,
+                "leading_word": leading_word,
+                "suffix_hex": suffix.hex(),
+                "copied_hex": copied.hex(),
+                "destination_cursor_before": cursor,
+                "destination_cursor_after": final_destination,
+                "final_source_offset": final_source,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def byte_parser_store_word_1fa5_vectors() -> list[dict[str, object]]:
     entry = 0x76BA
     data_segment = 0x4400
@@ -20967,6 +21299,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_76ea_natural.json",
         index_lookup_1fd7_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7754_natural.json",
+        byte_parser_copy_131a_entry_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7776_natural.json",
+        byte_parser_stream_0f18_append_vectors(),
         args.check,
     )
     update_vector(

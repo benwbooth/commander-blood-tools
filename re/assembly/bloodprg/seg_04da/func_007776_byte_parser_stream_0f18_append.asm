@@ -6,6 +6,8 @@
 ; seg_off: 04da:23d6
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_stream_0f18_append
+; label_comment: Byte-parser opcode 0x0D copies one leading little-endian word and then a complete NUL-terminated byte string from DS:SI through the ES destination offset held at GS:0x0F18. Both source and destination advance past the copied NUL, and the final DI offset is stored back to GS:0x0F18.
 ; incoming: byte_parser_dispatch_74e5:byte_0x0d
 ; byte_count: 18
 ; boundary: cfg_blocks_3_terminals_1

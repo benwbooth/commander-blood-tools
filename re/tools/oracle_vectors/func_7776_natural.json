@@ -1,0 +1,128 @@
+[
+  {
+    "name": "empty",
+    "source_offset": 25088,
+    "leading_word": 0,
+    "suffix_hex": "00",
+    "copied_hex": "000000",
+    "destination_cursor_before": 12800,
+    "destination_cursor_after": 12803,
+    "final_source_offset": 25091,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary",
+    "source_offset": 25120,
+    "leading_word": 4660,
+    "suffix_hex": "41424300",
+    "copied_hex": "341241424300",
+    "destination_cursor_before": 12832,
+    "destination_cursor_after": 12838,
+    "final_source_offset": 25126,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bytes",
+    "source_offset": 25152,
+    "leading_word": 42330,
+    "suffix_hex": "80ff00",
+    "copied_hex": "5aa580ff00",
+    "destination_cursor_before": 12864,
+    "destination_cursor_after": 12869,
+    "final_source_offset": 25157,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "embedded_nul",
+    "source_offset": 25184,
+    "leading_word": 48879,
+    "suffix_hex": "41005a",
+    "copied_hex": "efbe4100",
+    "destination_cursor_before": 12896,
+    "destination_cursor_after": 12900,
+    "final_source_offset": 25188,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unaligned",
+    "source_offset": 25217,
+    "leading_word": 258,
+    "suffix_hex": "585900",
+    "copied_hex": "0201585900",
+    "destination_cursor_before": 12929,
+    "destination_cursor_after": 12934,
+    "final_source_offset": 25222,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_wrap",
+    "source_offset": 65534,
+    "leading_word": 51966,
+    "suffix_hex": "5100",
+    "copied_hex": "feca5100",
+    "destination_cursor_before": 12960,
+    "destination_cursor_after": 12964,
+    "final_source_offset": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "destination_wrap",
+    "source_offset": 25280,
+    "leading_word": 48879,
+    "suffix_hex": "4100",
+    "copied_hex": "efbe4100",
+    "destination_cursor_before": 65534,
+    "destination_cursor_after": 2,
+    "final_source_offset": 25284,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

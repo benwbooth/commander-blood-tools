@@ -6,6 +6,8 @@
 ; seg_off: 04da:23b4
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_copy_131a_entry
+; label_comment: Byte-parser opcode 0x0C copies bytes 0x20..0x7F from DS:SI through the ES destination offset held at GS:0x131A, leaves the first control/high-bit byte unconsumed, and NUL-terminates. It then advances the stored destination cursor by a fixed 16 bytes and increments the GS:0x131E entry count; the copied length does not control the next slot.
 ; incoming: byte_parser_dispatch_74e5:byte_0x0c
 ; byte_count: 34
 ; boundary: cfg_blocks_5_terminals_2

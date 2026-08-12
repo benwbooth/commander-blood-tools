@@ -1,0 +1,170 @@
+[
+  {
+    "name": "immediate_nul",
+    "source_offset": 24576,
+    "input_hex": "00",
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "destination_cursor_before": 12288,
+    "destination_cursor_after": 12304,
+    "entry_count_before": 0,
+    "entry_count_after": 1,
+    "final_source_offset": 24576,
+    "final_destination_offset": 12288,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "immediate_high",
+    "source_offset": 24608,
+    "input_hex": "ff",
+    "copied_hex": "",
+    "stopping_byte": 255,
+    "destination_cursor_before": 12320,
+    "destination_cursor_after": 12336,
+    "entry_count_before": 1,
+    "entry_count_after": 2,
+    "final_source_offset": 24608,
+    "final_destination_offset": 12320,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lower_printable",
+    "source_offset": 24640,
+    "input_hex": "201f",
+    "copied_hex": "20",
+    "stopping_byte": 31,
+    "destination_cursor_before": 12352,
+    "destination_cursor_after": 12368,
+    "entry_count_before": 15,
+    "entry_count_after": 16,
+    "final_source_offset": 24641,
+    "final_destination_offset": 12353,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "upper_printable",
+    "source_offset": 24672,
+    "input_hex": "7f80",
+    "copied_hex": "7f",
+    "stopping_byte": 128,
+    "destination_cursor_before": 12384,
+    "destination_cursor_after": 12400,
+    "entry_count_before": 127,
+    "entry_count_after": 128,
+    "final_source_offset": 24673,
+    "final_destination_offset": 12385,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "ordinary_text",
+    "source_offset": 24704,
+    "input_hex": "454e54525900",
+    "copied_hex": "454e545259",
+    "stopping_byte": 0,
+    "destination_cursor_before": 12416,
+    "destination_cursor_after": 12432,
+    "entry_count_before": 128,
+    "entry_count_after": 129,
+    "final_source_offset": 24709,
+    "final_destination_offset": 12421,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "source_wrap",
+    "source_offset": 65535,
+    "input_hex": "4100",
+    "copied_hex": "41",
+    "stopping_byte": 0,
+    "destination_cursor_before": 12448,
+    "destination_cursor_after": 12464,
+    "entry_count_before": 254,
+    "entry_count_after": 255,
+    "final_source_offset": 0,
+    "final_destination_offset": 12449,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "destination_wrap",
+    "source_offset": 24768,
+    "input_hex": "414200",
+    "copied_hex": "4142",
+    "stopping_byte": 0,
+    "destination_cursor_before": 65534,
+    "destination_cursor_after": 14,
+    "entry_count_before": 16,
+    "entry_count_after": 17,
+    "final_source_offset": 24770,
+    "final_destination_offset": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_and_count_wrap",
+    "source_offset": 24800,
+    "input_hex": "00",
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "destination_cursor_before": 65528,
+    "destination_cursor_after": 8,
+    "entry_count_before": 255,
+    "entry_count_after": 0,
+    "final_source_offset": 24800,
+    "final_destination_offset": 65528,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]
