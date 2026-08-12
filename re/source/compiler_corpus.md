@@ -1,8 +1,10 @@
 # Compiler Corpus Gate
 
 No historical C/C++ compiler is currently installed in this checkout's dev
-environment. The available tools are DOSBox-X, nasm, objdump, Rust, and the
-Python RE/oracle scripts.
+environment. On 2026-08-11, the active shell had Wine and `objdump` on PATH,
+but did not have `dosbox`, `dosbox-x`, `bcc`, `tcc`, `wcc`, `wasm`, or `nasm`.
+Use `toolchain_fingerprints/README.md` for the current executable fingerprint
+evidence and local toolchain check.
 
 Before adding natural C routines, build a small compiler corpus and compare
 codegen against recovered routines:
