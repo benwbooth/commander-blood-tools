@@ -1934,6 +1934,14 @@ MOVSB` tail and assumes the standard clear-DF C ABI. Turbo C 2.01 medium emits a
 library. The data operation is fully represented in natural C; direct `REP
 MOVSD` and unconditional CLD remain narrow integration/codegen differences.
 
+Four XDB entries are independently proven one-byte near-return methods: AMER
+`0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
+direct raw-overlay vectors per entry verify that only the two-byte return word
+is consumed while all registers, segments, tested flags, and following stack
+bytes survive. Empty one-to-one C functions compile under both Open Watcom and
+Turbo C 2.01 to a single `RET`; Watcom's object byte is exactly `C3`. These
+empty functions are accepted recovered behavior rather than stubs.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1961,6 +1969,7 @@ LCS and then mnemonic similarity:
 | `u32_sqrt_newton` | medium, `-ox`, register | 35/49 | 0.2286 | 0.6571 | 0.2571 |
 | `graphics_band_fill` | medium, `-ox`, register | 30/52 | 0.1667 | 0.7667 | 0.2000 |
 | `fullscreen_copy` | medium, `-ox`, register | 13/35 | 0.5385 | 0.9231 | 0.5385 |
+| `xdb_near_noop` | medium, `-ox`, register | 1/1 | 1.0000 | 1.0000 | 1.0000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

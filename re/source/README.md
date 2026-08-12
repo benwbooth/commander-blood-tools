@@ -47,4 +47,6 @@ Before accepting new recovered source, keep the assembly inventory closed:
 
 ```sh
 python3 re/tools/assembly_inventory.py --check
+nix develop -c python3 re/tools/natural_candidate_oracle.py --check
+nix develop -c python3 re/tools/xdb_candidate_oracle.py --check
 ```

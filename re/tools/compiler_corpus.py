@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run natural-C compiler codegen probes for BLOODPRG source recovery.
+"""Run natural-C compiler codegen probes for BLOODPRG and XDB source recovery.
 
 The probes are not recovered game source. They are small C samples used to
 compare candidate historical DOS compiler output against recovered assembly
@@ -81,10 +81,22 @@ def sample_path(row: dict[str, str]) -> Path:
 
 
 def asm_path_for_target(target: str) -> Path | None:
-    needle = f"func_{int(target, 16):06x}_"
-    matches = sorted(
-        (REPO_ROOT / "re" / "assembly" / "bloodprg").glob(f"**/{needle}*.asm")
-    )
+    if ":" in target:
+        module, address = target.split(":", 1)
+        if not module.startswith("xdb_"):
+            return None
+        assembly_root = (
+            REPO_ROOT / "re" / "assembly" / "xdb" / module.removeprefix("xdb_")
+        )
+    else:
+        address = target
+        assembly_root = REPO_ROOT / "re" / "assembly" / "bloodprg"
+
+    try:
+        needle = f"func_{int(address, 16):06x}_"
+    except ValueError:
+        return None
+    matches = sorted(assembly_root.glob(f"**/{needle}*.asm"))
     return matches[0] if matches else None
 
 

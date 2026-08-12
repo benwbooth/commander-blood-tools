@@ -1,0 +1,50 @@
+[
+  {
+    "name": "flags_0202",
+    "module": "manu3",
+    "entry": 2120,
+    "stack_bytes_consumed": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "flags_0ad7",
+    "module": "manu3",
+    "entry": 2120,
+    "stack_bytes_consumed": 2,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "flags_0646",
+    "module": "manu3",
+    "entry": 2120,
+    "stack_bytes_consumed": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]
