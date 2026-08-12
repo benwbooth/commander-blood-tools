@@ -87,6 +87,16 @@ respectively, versus the original 26, and do not reproduce its compact
 LODSW/XCHG/shift-until-zero/LOOP form or register effects. The natural source is
 therefore behaviorally verified but remains a codegen mismatch.
 
+For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
+wrap source and show that both direct callers ignore its incidental AX/SI/CX
+results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,
+versus the original 11 instructions and 31 bytes; placing byte count first
+recovers its AX argument and final subtraction. The generated cursor remains in
+DX/BX rather than SI, and ordinary C stores do not lower to the original
+XOR/XCHG head clear. Turbo C 2.01 medium emits 21 instructions and uses stack
+arguments. Keeping the iteration-count word non-volatile avoids a duplicate
+Watcom store while retaining the original store-before-increment order.
+
 For `0x00A3D0`, eight direct-execution boundary cases confirm the natural
 queue-consumption source, including the distinction between discarded overflow
 from `tail + 2` and wrapping overflow from the following entry-size add. Turbo C

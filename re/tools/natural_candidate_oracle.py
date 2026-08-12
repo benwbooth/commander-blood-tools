@@ -26,6 +26,7 @@ from unicorn.x86_const import (
     UC_X86_REG_DI,
     UC_X86_REG_DS,
     UC_X86_REG_DX,
+    UC_X86_REG_EFLAGS,
     UC_X86_REG_ES,
     UC_X86_REG_GS,
     UC_X86_REG_SI,
@@ -435,6 +436,165 @@ def queue_consume_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def queue_wrap_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        {
+            "name": "ordinary_advance",
+            "cursor": 0x0100,
+            "byte_count": 0x0020,
+            "buffer_end": 0x1000,
+            "head": 0x0555,
+            "wrap_limit": 0xAAAA,
+            "wrap_count": 0x0001,
+        },
+        {
+            "name": "next_equals_end",
+            "cursor": 0x0F00,
+            "byte_count": 0x0100,
+            "buffer_end": 0x1000,
+            "head": 0x0666,
+            "wrap_limit": 0xBBBB,
+            "wrap_count": 0x0010,
+        },
+        {
+            "name": "next_past_end",
+            "cursor": 0x0F01,
+            "byte_count": 0x0100,
+            "buffer_end": 0x1000,
+            "head": 0x0777,
+            "wrap_limit": 0xCCCC,
+            "wrap_count": 0x0100,
+        },
+        {
+            "name": "cursor_add_carry",
+            "cursor": 0xFF00,
+            "byte_count": 0x0200,
+            "buffer_end": 0xFFFF,
+            "head": 0x0888,
+            "wrap_limit": 0xDDDD,
+            "wrap_count": 0x1000,
+        },
+        {
+            "name": "zero_byte_count",
+            "cursor": 0x1234,
+            "byte_count": 0x0000,
+            "buffer_end": 0xFFFF,
+            "head": 0x0999,
+            "wrap_limit": 0xEEEE,
+            "wrap_count": 0xFFFE,
+        },
+        {
+            "name": "one_byte_count",
+            "cursor": 0x0000,
+            "byte_count": 0x0001,
+            "buffer_end": 0x0000,
+            "head": 0x0AAA,
+            "wrap_limit": 0x1111,
+            "wrap_count": 0xFFFF,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        cursor = int(case["cursor"])
+        byte_count = int(case["byte_count"])
+        buffer_end = int(case["buffer_end"])
+        head = int(case["head"])
+        wrap_limit = int(case["wrap_limit"])
+        wrap_count = int(case["wrap_count"])
+        initial = {
+            "ax": byte_count,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": cursor,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x8888,
+        }
+        machine = execute(
+            0xA38E,
+            0xA3AC,
+            initial,
+            [
+                (data_segment, 0x0D8C, struct.pack("<H", head)),
+                (data_segment, 0x0D98, struct.pack("<H", wrap_limit)),
+                (data_segment, 0x0DA0, struct.pack("<H", 0x5A5A)),
+                (data_segment, 0x0D62, struct.pack("<H", wrap_count)),
+                (data_segment, 0x5233, struct.pack("<H", buffer_end)),
+            ],
+        )
+
+        full_next = cursor + byte_count
+        next_cursor = full_next & 0xFFFF
+        wrapped = full_next > 0xFFFF or next_cursor > buffer_end
+        expected = {
+            "head": 0 if wrapped else head,
+            "wrap_limit": head if wrapped else wrap_limit,
+            "iteration_count": (byte_count - 2) & 0xFFFF,
+            "wrap_count": (wrap_count + 1) & 0xFFFF,
+        }
+        observed = {
+            "head": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D8C, 2)
+            )[0],
+            "wrap_limit": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D98, 2)
+            )[0],
+            "iteration_count": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0DA0, 2)
+            )[0],
+            "wrap_count": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D62, 2)
+            )[0],
+        }
+        if observed != expected:
+            raise AssertionError(
+                f"0xA38E {case['name']}: actual={observed}, expected={expected}"
+            )
+
+        expected_registers = {
+            "ax": (byte_count - 2) & 0xFFFF,
+            "si": next_cursor,
+            "cx": head if wrapped else initial["cx"],
+        }
+        for name, expected_register in expected_registers.items():
+            actual_register = machine.reg_read(REGISTERS[name])
+            if actual_register != expected_register:
+                raise AssertionError(
+                    f"0xA38E {case['name']} {name}: "
+                    f"actual={actual_register:#x}, expected={expected_register:#x}"
+                )
+        for name in ("bx", "dx", "di", "bp"):
+            actual_register = machine.reg_read(REGISTERS[name])
+            if actual_register != initial[name]:
+                raise AssertionError(f"0xA38E did not preserve {name}")
+
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        expected_carry = int(byte_count < 2)
+        if carry != expected_carry:
+            raise AssertionError(
+                f"0xA38E {case['name']} carry={carry}, expected={expected_carry}"
+            )
+
+        vectors.append(
+            {
+                **case,
+                "wrapped": wrapped,
+                "result_cursor": next_cursor,
+                "result_head": observed["head"],
+                "result_wrap_limit": observed["wrap_limit"],
+                "result_iteration_count": observed["iteration_count"],
+                "result_wrap_count": observed["wrap_count"],
+                "result_carry": carry,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -463,6 +623,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a3d0_natural.json", queue_consume_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a38e_natural.json", queue_wrap_vectors(), args.check
     )
     return 0
 
