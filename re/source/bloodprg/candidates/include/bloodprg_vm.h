@@ -35,6 +35,23 @@ extern volatile cb_u16 vm_state_words[];     /* GS:0x6ADE */
 extern volatile char vm_record_string_slots[][16]; /* GS:0x6CDE */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
+#define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
+#define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
+
+typedef struct bloodprg_vm_directory_entry {
+    cb_u8 unknown_00[16];
+    cb_u16 object_offset;
+    cb_u16 entry_kind;
+} bloodprg_vm_directory_entry;
+
+typedef struct bloodprg_vm_object_header {
+    cb_u16 kind;
+    cb_u8 flags;
+} bloodprg_vm_object_header;
+
+extern const volatile bloodprg_vm_directory_entry CB_FAR *vm_record_directory; /* GS:0x672C */
+extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
+
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
