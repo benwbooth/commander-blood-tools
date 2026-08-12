@@ -1,0 +1,82 @@
+[
+  {
+    "name": "first_active_entry_matches",
+    "dictionary_base": 4096,
+    "dictionary_offset": 3,
+    "word_offset": 4099,
+    "directory_offset": 8192,
+    "active_compare_calls": 1,
+    "object_offset": 4369,
+    "matched_carry": true
+  },
+  {
+    "name": "second_active_entry_matches",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 8192,
+    "active_compare_calls": 2,
+    "object_offset": 8738,
+    "matched_carry": true
+  },
+  {
+    "name": "first_entry_inactive",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 8192,
+    "active_compare_calls": 0,
+    "object_offset": 13107,
+    "matched_carry": false
+  },
+  {
+    "name": "active_miss_returns_inactive_object",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 8192,
+    "active_compare_calls": 1,
+    "object_offset": 17476,
+    "matched_carry": false
+  },
+  {
+    "name": "prefix_is_not_a_match",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 8192,
+    "active_compare_calls": 1,
+    "object_offset": 21845,
+    "matched_carry": false
+  },
+  {
+    "name": "high_bytes_compare_unsigned",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 8192,
+    "active_compare_calls": 1,
+    "object_offset": 26214,
+    "matched_carry": true
+  },
+  {
+    "name": "dictionary_offset_wraps",
+    "dictionary_base": 65534,
+    "dictionary_offset": 4,
+    "word_offset": 2,
+    "directory_offset": 8192,
+    "active_compare_calls": 1,
+    "object_offset": 30583,
+    "matched_carry": true
+  },
+  {
+    "name": "directory_stride_wraps",
+    "dictionary_base": 4096,
+    "dictionary_offset": 0,
+    "word_offset": 4096,
+    "directory_offset": 65528,
+    "active_compare_calls": 1,
+    "object_offset": 34952,
+    "matched_carry": false
+  }
+]

@@ -5536,6 +5536,224 @@ def vm_condition_5_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def dic_word_lookup_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    dic_segment = 0x4400
+    directory_segment = 0x4800
+    cases = [
+        (
+            "first_active_entry_matches",
+            0x1000,
+            3,
+            0x2000,
+            b"HELLO\0",
+            [(b"HELLO\0", 0x1111, 1), (b"", 0xEEEE, 0)],
+            0x1111,
+            True,
+            1,
+        ),
+        (
+            "second_active_entry_matches",
+            0x1000,
+            0,
+            0x2000,
+            b"BETA\0",
+            [(b"ALPHA\0", 0x1111, 1), (b"BETA\0", 0x2222, 1), (b"", 0xEEEE, 0)],
+            0x2222,
+            True,
+            2,
+        ),
+        (
+            "first_entry_inactive",
+            0x1000,
+            0,
+            0x2000,
+            b"ANY\0",
+            [(b"ANY\0", 0x3333, 0)],
+            0x3333,
+            False,
+            0,
+        ),
+        (
+            "active_miss_returns_inactive_object",
+            0x1000,
+            0,
+            0x2000,
+            b"MISSING\0",
+            [(b"OTHER\0", 0x1111, 1), (b"", 0x4444, 7)],
+            0x4444,
+            False,
+            1,
+        ),
+        (
+            "prefix_is_not_a_match",
+            0x1000,
+            0,
+            0x2000,
+            b"ABC\0",
+            [(b"ABCD\0", 0x1111, 1), (b"", 0x5555, 0)],
+            0x5555,
+            False,
+            1,
+        ),
+        (
+            "high_bytes_compare_unsigned",
+            0x1000,
+            0,
+            0x2000,
+            b"\x80\xfe\0",
+            [(b"\x80\xfe\0", 0x6666, 1), (b"", 0xEEEE, 0)],
+            0x6666,
+            True,
+            1,
+        ),
+        (
+            "dictionary_offset_wraps",
+            0xFFFE,
+            4,
+            0x2000,
+            b"WRAP\0",
+            [(b"WRAP\0", 0x7777, 1), (b"", 0xEEEE, 0)],
+            0x7777,
+            True,
+            1,
+        ),
+        (
+            "directory_stride_wraps",
+            0x1000,
+            0,
+            0xFFF8,
+            b"TARGET\0",
+            [(b"OTHER\0", 0x1111, 1), (b"", 0x8888, 0)],
+            0x8888,
+            False,
+            1,
+        ),
+    ]
+    vectors = []
+
+    for (
+        name,
+        dic_base,
+        dictionary_offset,
+        directory_base,
+        word,
+        entries,
+        expected_object,
+        expected_match,
+        expected_compare_calls,
+    ) in cases:
+        word_offset = (dic_base + dictionary_offset) & 0xFFFF
+        memory = [
+            # Mirror the executable's far-called string_compare at 01CE:02C4.
+            (0, 0x1FA4, EXE[0x25A4:0x25BA]),
+            (game_segment, 0x6728, struct.pack("<HH", dic_base, dic_segment)),
+            (
+                game_segment,
+                0x672C,
+                struct.pack("<HH", directory_base, directory_segment),
+            ),
+            (0x2400, 0x6728, struct.pack("<HH", 0xAAAA, 0xBBBB)),
+            (0x2400, 0x672C, struct.pack("<HH", 0xCCCC, 0xDDDD)),
+        ]
+        immutable = []
+        for index, value in enumerate(word):
+            offset = (word_offset + index) & 0xFFFF
+            encoded = bytes([value])
+            memory.append((dic_segment, offset, encoded))
+            immutable.append((dic_segment, offset, encoded))
+
+        for index, (entry_name, object_offset, entry_kind) in enumerate(entries):
+            entry_offset = (directory_base + index * 20) & 0xFFFF
+            name_bytes = entry_name.ljust(16, b"\xa5")[:16]
+            for byte_index, value in enumerate(name_bytes):
+                offset = (entry_offset + byte_index) & 0xFFFF
+                encoded = bytes([value])
+                memory.append((directory_segment, offset, encoded))
+                immutable.append((directory_segment, offset, encoded))
+            for relative, value in ((0x10, object_offset), (0x12, entry_kind)):
+                offset = (entry_offset + relative) & 0xFFFF
+                encoded = struct.pack("<H", value)
+                memory.append((directory_segment, offset, encoded))
+                immutable.append((directory_segment, offset, encoded))
+
+        initial = {
+            "eax": 0xA1A10000 | dictionary_offset,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        compare_calls = []
+
+        def capture_compare(_machine: Uc, address: int, _size: int) -> None:
+            if address == 0x1FA4:
+                compare_calls.append(address)
+
+        machine = execute(
+            0x6433,
+            0x6461,
+            initial,
+            memory,
+            code_handler=capture_compare,
+        )
+
+        result = machine.reg_read(UC_X86_REG_EAX)
+        expected_eax = (initial["eax"] & 0xFFFF0000) | expected_object
+        if result != expected_eax:
+            raise AssertionError(
+                f"0x6433 {name}: eax={result:#x}, expected={expected_eax:#x}"
+            )
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        matched = bool(flags & 0x0001)
+        if matched != expected_match:
+            raise AssertionError(
+                f"0x6433 {name}: matched={matched}, expected={expected_match}"
+            )
+        if len(compare_calls) != expected_compare_calls:
+            raise AssertionError(
+                f"0x6433 {name}: compare calls={len(compare_calls)}, "
+                f"expected={expected_compare_calls}"
+            )
+
+        for register, expected in initial.items():
+            if register in {"eax", "flags"}:
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(f"0x6433 {name}: changed {register}")
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x6433 {name}: input memory changed")
+        if EXE[0x6461] != 0xC3:
+            raise AssertionError("0x6433: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "dictionary_base": dic_base,
+                "dictionary_offset": dictionary_offset,
+                "word_offset": word_offset,
+                "directory_offset": directory_base,
+                "active_compare_calls": expected_compare_calls,
+                "object_offset": expected_object,
+                "matched_carry": expected_match,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -10090,6 +10308,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_6339_natural.json", vm_condition_5_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6433_natural.json", dic_word_lookup_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check

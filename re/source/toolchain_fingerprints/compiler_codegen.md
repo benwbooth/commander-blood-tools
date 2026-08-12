@@ -797,6 +797,22 @@ C function. Open Watcom `-3 -ox -mm` binds the three input locations and emits
 179 instructions. Exact integration still needs fixed segment placement, the
 runtime SS=GS alias, and a narrow Boolean-to-carry result adapter.
 
+VM dictionary lookup `0x006433` has eight direct vectors covering first- and
+later-entry matches, immediate inactive termination, active miss, prefix
+rejection, high-byte equality, DIC offset wrap, and a 20-byte directory stride
+across offset `0xFFFF`. The vectors execute the original far `string_compare`
+callee and prove AX input/result, CF match status, GS ownership of both far
+pointers, DS:SI and ES:DI comparator inputs, immutable source data, preservation
+of every other register and segment, and the near-return boundary.
+
+The natural candidate returns an object-offset plus matched-status structure.
+Open Watcom `-3 -ox -mm` naturally places those words in AX and DX, but cannot
+bind the DIC far pointer to DS:SI while retaining its medium-model DGROUP. It
+emits 38 instructions/90 bytes versus 21/47 original; Turbo C 2.01 medium emits
+36 instructions. Exact integration therefore needs GS data placement and
+narrow DS:SI/ES:DI comparator and carry-result ABI boundaries, not additional
+lookup logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -824,7 +840,7 @@ LCS and then mnemonic similarity:
 | `u32_sqrt_newton` | compact, unoptimized, register | 35/51 | 0.1714 | 0.7714 | 0.2286 |
 | `vm_branch_stack_return` | compact, `-ox`, register | 8/11 | 0.1250 | 0.8750 | 0.1250 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
-| `vm_dic_lookup_result` | compact, unoptimized, cdecl | 21/42 | 0.2381 | 0.6190 | 0.2381 |
+| `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 
 ## Interpretation
