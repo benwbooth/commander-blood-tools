@@ -2,7 +2,7 @@
  * Codegen probe for BLOODPRG 0x0025A4.
  * This is not recovered game source.
  */
-typedef unsigned int u16;
+typedef unsigned char u8;
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define FAR far
@@ -12,15 +12,29 @@ typedef unsigned int u16;
 #define FAR_FN
 #endif
 
-int FAR_FN string_equal_mixed_probe(const char *left, const char FAR *right)
+int FAR_FN string_equal_mixed_probe(
+        const volatile char *left,
+        const volatile char FAR *right);
+
+#if defined(__WATCOMC__)
+#pragma aux string_equal_mixed_probe parm [si] [es di] value [ax] modify exact [ax]
+#endif
+
+int FAR_FN string_equal_mixed_probe(
+        const volatile char *left,
+        const volatile char FAR *right)
 {
-    while (*left == *right) {
-        if (*left == '\0') {
+    u8 ch;
+
+    for (;;) {
+        ch = (u8)*left;
+        if (ch != (u8)*right) {
+            return 0;
+        }
+        if (ch == 0) {
             return 1;
         }
         ++left;
         ++right;
     }
-
-    return 0;
 }

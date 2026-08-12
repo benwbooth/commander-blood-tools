@@ -1832,6 +1832,25 @@ instead of an inline clear. Natural C assumes the normal DOS C ABI invariant
 that DF is clear on entry; the direct oracle still records the original
 descending write extent for completeness.
 
+String comparator `0x0025A4` consumes its left string through DS:SI and its
+right string through ES:DI, preserves every register and segment, and returns
+equality only in carry. Ten direct vectors cover empty and ordinary equality,
+first/middle mismatch, both prefix directions, high bytes, independent SI and
+DI offset wrap, segment decoys, immutable input, full preservation, flags, and
+far return. A DF-set vector also records the binary's asymmetric behavior:
+`LODSB` walks the left string backward while explicit `INC DI` still walks the
+right string forward.
+
+The corrected natural candidate caches each left byte once, models the DS side
+as a near pointer and the ES side as a far pointer, and returns an ordinary C
+Boolean. Open Watcom `-3 -ox -mm` binds SI and ES:DI directly and emits 18
+instructions/28 bytes versus 16/22 original. The compare loop and pointer
+preservation are close, but Watcom emits `TEST` instead of `OR`, materializes
+zero/one in AX, duplicates the far epilogue, and cannot express a carry return
+that preserves incoming AX. Turbo C 2.01 medium emits 22 instructions with
+stack arguments. Exact binary integration therefore needs a small
+Boolean-to-carry/AX-preservation adapter; the C logic itself is complete.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1855,7 +1874,7 @@ LCS and then mnemonic similarity:
 | `vm_condition_5` | medium, `-ox`, register | 104/142 | 0.0577 | 0.5096 | 0.0769 |
 | `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
 | `segment_global_gate` | medium, `-ox`, register | 4/3 | 0.2500 | 0.5000 | 0.2500 |
-| `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |
+| `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | compact, unoptimized, register | 35/51 | 0.1714 | 0.7714 | 0.2286 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |

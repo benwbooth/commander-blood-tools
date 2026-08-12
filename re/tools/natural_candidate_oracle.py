@@ -2222,6 +2222,209 @@ def palette_scene_entries_clear_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def string_compare_vectors() -> list[dict[str, object]]:
+    entry = 0x25A4
+    expected_hash = "1691a2639d9965aec2aef0b71864c5f83041c5eccdf86acac625d778f958bdd3"
+    if hashlib.sha256(EXE[entry : entry + 22]).hexdigest() != expected_hash:
+        raise AssertionError("0x25a4: recovered 22-byte body changed")
+
+    cases = [
+        ("empty", b"\0", b"\0", 0x0100, 0x0300, False),
+        ("equal_ascii", b"BLOOD\0", b"BLOOD\0", 0x1100, 0x2100, False),
+        ("first_mismatch", b"X\0", b"Y\0", 0x1200, 0x2200, False),
+        ("middle_mismatch", b"ABX\0", b"ABY\0", 0x1300, 0x2300, False),
+        ("left_prefix", b"AB\0", b"ABC\0", 0x1400, 0x2400, False),
+        ("right_prefix", b"ABC\0", b"AB\0", 0x1500, 0x2500, False),
+        ("high_bytes", b"\x80\xff\0", b"\x80\xff\0", 0x1600, 0x2600, False),
+        ("left_offset_wrap", b"QR\0", b"QR\0", 0xFFFE, 0x2700, False),
+        ("right_offset_wrap", b"ST\0", b"ST\0", 0x1700, 0xFFFE, False),
+        ("descending_left", b"UV\0", b"UV\0", 0x1802, 0x2800, True),
+    ]
+    data_segment = 0x2000
+    extra_segment = 0x3000
+    fs_segment = 0x4000
+    game_segment = 0x4800
+    stack_segment = 0x7000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (
+        name,
+        left_values,
+        right_values,
+        left_offset,
+        right_offset,
+        direction_set,
+    ) in enumerate(cases):
+        left_step = -1 if direction_set else 1
+        left_memory = []
+        right_memory = []
+        left_decoy_memory = []
+        right_decoy_memory = []
+        for index, value in enumerate(left_values):
+            offset = (left_offset + left_step * index) & 0xFFFF
+            left_memory.append((data_segment, offset, bytes([value])))
+            left_decoy_memory.append(
+                (extra_segment, offset, bytes([value ^ 0xA5]))
+            )
+        for index, value in enumerate(right_values):
+            offset = (right_offset + index) & 0xFFFF
+            right_memory.append((extra_segment, offset, bytes([value])))
+            right_decoy_memory.append(
+                (data_segment, offset, bytes([value ^ 0x5A]))
+            )
+
+        compared = []
+        matched = False
+        left_final = 0
+        right_final = 0
+        for index, (left_value, right_value) in enumerate(
+            zip(left_values, right_values)
+        ):
+            left_at = (left_offset + left_step * index) & 0xFFFF
+            right_at = (right_offset + index) & 0xFFFF
+            compared.append((left_at, right_at, left_value, right_value))
+            left_final = left_value
+            right_final = right_value
+            if left_value != right_value:
+                break
+            if left_value == 0:
+                matched = True
+                break
+        else:
+            raise AssertionError(f"0x25a4 {name}: unterminated oracle case")
+
+        if matched:
+            expected_flags = {
+                "cf": True,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "df": direction_set,
+                "of": False,
+            }
+        else:
+            difference = (left_final - right_final) & 0xFF
+            overflow = bool(
+                ((left_final ^ right_final) & (left_final ^ difference) & 0x80)
+            )
+            expected_flags = {
+                "cf": False,
+                "pf": difference.bit_count() % 2 == 0,
+                "zf": False,
+                "sf": bool(difference & 0x80),
+                "df": direction_set,
+                "of": overflow,
+            }
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": (0xE5E50000 | left_offset),
+            "edi": (0xF6F60000 | right_offset),
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if direction_set else 0),
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x25A7:
+                phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                *left_memory,
+                *right_memory,
+                *left_decoy_memory,
+                *right_decoy_memory,
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_phases = [(item[0], item[1]) for item in compared]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x25a4 {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x25a4 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x25a4 {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x25a4 {name}: stack sentinel changed")
+
+        for segment, offset, value in (
+            left_memory + right_memory + left_decoy_memory + right_decoy_memory
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, 1))
+            if actual != value:
+                raise AssertionError(f"0x25a4 {name}: input memory changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x25a4 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "matched_carry": matched,
+                "direction": "descending-left" if direction_set else "ascending",
+                "left_offset": left_offset,
+                "right_offset": right_offset,
+                "compared_offsets": [
+                    {"left": item[0], "right": item[1]} for item in compared
+                ],
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -25461,6 +25664,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_248b_natural.json",
         palette_scene_entries_clear_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_25a4_natural.json",
+        string_compare_vectors(),
         args.check,
     )
     update_vector(

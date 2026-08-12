@@ -1,0 +1,288 @@
+[
+  {
+    "name": "empty",
+    "matched_carry": true,
+    "direction": "ascending",
+    "left_offset": 256,
+    "right_offset": 768,
+    "compared_offsets": [
+      {
+        "left": 256,
+        "right": 768
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "equal_ascii",
+    "matched_carry": true,
+    "direction": "ascending",
+    "left_offset": 4352,
+    "right_offset": 8448,
+    "compared_offsets": [
+      {
+        "left": 4352,
+        "right": 8448
+      },
+      {
+        "left": 4353,
+        "right": 8449
+      },
+      {
+        "left": 4354,
+        "right": 8450
+      },
+      {
+        "left": 4355,
+        "right": 8451
+      },
+      {
+        "left": 4356,
+        "right": 8452
+      },
+      {
+        "left": 4357,
+        "right": 8453
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_mismatch",
+    "matched_carry": false,
+    "direction": "ascending",
+    "left_offset": 4608,
+    "right_offset": 8704,
+    "compared_offsets": [
+      {
+        "left": 4608,
+        "right": 8704
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "middle_mismatch",
+    "matched_carry": false,
+    "direction": "ascending",
+    "left_offset": 4864,
+    "right_offset": 8960,
+    "compared_offsets": [
+      {
+        "left": 4864,
+        "right": 8960
+      },
+      {
+        "left": 4865,
+        "right": 8961
+      },
+      {
+        "left": 4866,
+        "right": 8962
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_prefix",
+    "matched_carry": false,
+    "direction": "ascending",
+    "left_offset": 5120,
+    "right_offset": 9216,
+    "compared_offsets": [
+      {
+        "left": 5120,
+        "right": 9216
+      },
+      {
+        "left": 5121,
+        "right": 9217
+      },
+      {
+        "left": 5122,
+        "right": 9218
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_prefix",
+    "matched_carry": false,
+    "direction": "ascending",
+    "left_offset": 5376,
+    "right_offset": 9472,
+    "compared_offsets": [
+      {
+        "left": 5376,
+        "right": 9472
+      },
+      {
+        "left": 5377,
+        "right": 9473
+      },
+      {
+        "left": 5378,
+        "right": 9474
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_bytes",
+    "matched_carry": true,
+    "direction": "ascending",
+    "left_offset": 5632,
+    "right_offset": 9728,
+    "compared_offsets": [
+      {
+        "left": 5632,
+        "right": 9728
+      },
+      {
+        "left": 5633,
+        "right": 9729
+      },
+      {
+        "left": 5634,
+        "right": 9730
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_offset_wrap",
+    "matched_carry": true,
+    "direction": "ascending",
+    "left_offset": 65534,
+    "right_offset": 9984,
+    "compared_offsets": [
+      {
+        "left": 65534,
+        "right": 9984
+      },
+      {
+        "left": 65535,
+        "right": 9985
+      },
+      {
+        "left": 0,
+        "right": 9986
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_offset_wrap",
+    "matched_carry": true,
+    "direction": "ascending",
+    "left_offset": 5888,
+    "right_offset": 65534,
+    "compared_offsets": [
+      {
+        "left": 5888,
+        "right": 65534
+      },
+      {
+        "left": 5889,
+        "right": 65535
+      },
+      {
+        "left": 5890,
+        "right": 0
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "descending_left",
+    "matched_carry": true,
+    "direction": "descending-left",
+    "left_offset": 6146,
+    "right_offset": 10240,
+    "compared_offsets": [
+      {
+        "left": 6146,
+        "right": 10240
+      },
+      {
+        "left": 6145,
+        "right": 10241
+      },
+      {
+        "left": 6144,
+        "right": 10242
+      }
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "df": true,
+      "of": false
+    }
+  }
+]
