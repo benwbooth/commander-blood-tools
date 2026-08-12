@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph
 ; label: back_buffer_copy_from
-; label_comment: blit helper (10 calls): les di,gs:[0x5229] (linear back-buffer dest); lds si,gs:[0xabc] (source surface); copies from the gs:0xabc source into the back buffer. A surface->backbuffer copy
+; label_comment: blit helper (10 calls): BX=x, CX=row, DX=width; loads normalized far buffer pointers from GS:0x0ABC/0x5229; computes row*320+x for the byte-row domain and copies DX bytes source-to-backbuffer with rep movsb
 ; byte_count: 42
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1

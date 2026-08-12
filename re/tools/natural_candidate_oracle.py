@@ -16595,6 +16595,273 @@ def nav_choice_handler_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def back_buffer_copy_from_vectors() -> list[dict[str, object]]:
+    entry = 0x933A
+    expected_hash = "0f0d19e171bb60749bf5523468b18aa2a731b735356689d76ba4f520f8161fc3"
+    if hashlib.sha256(EXE[entry : entry + 42]).hexdigest() != expected_hash:
+        raise AssertionError("0x933a: recovered 42-byte body changed")
+
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    source_segment = 0x5000
+    destination_segment = 0x6000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("zero_width", 0, 0, 0, 0, 0),
+        ("single_origin", 0, 0, 1, 0, 0),
+        ("partial_row", 37, 12, 17, 0, 0),
+        ("full_row", 0, 110, 320, 0, 0),
+        ("last_screen_row_tail", 311, 199, 9, 0, 0),
+        ("offset_wrap", 251, 204, 12, 0, 0),
+        ("max_byte_row", 5, 255, 7, 0, 0),
+        ("high_row_machine_formula", 3, 0x0100, 5, 0, 0),
+        ("offset_add_carry", 0x0200, 204, 3, 0, 0),
+        ("offset_add_auxiliary_carry", 1, 0x0F00, 2, 0, 0),
+        ("offset_add_signed_overflow", 0x0300, 100, 1, 0, 0),
+        ("nonzero_pointer_offsets_ignored", 7, 4, 6, 0x1234, 0x4321),
+    ]
+    vectors = []
+
+    for case_index, (
+        name,
+        x,
+        y,
+        width,
+        source_pointer_offset,
+        destination_pointer_offset,
+    ) in enumerate(cases):
+        source = bytes(
+            (index * 37 + case_index * 29 + 11) & 0xFF
+            for index in range(0x10000)
+        )
+        destination = bytes(
+            (index * 13 + case_index * 17 + 7) & 0xFF
+            for index in range(0x10000)
+        )
+        expected_destination = bytearray(destination)
+        swapped_y = ((y & 0xFF) << 8) | (y >> 8)
+        row_offset = (swapped_y + ((y << 6) & 0xFFFF)) & 0xFFFF
+        offset = (row_offset + x) & 0xFFFF
+        natural_offset = (y * 320 + x) & 0xFFFF
+        for index in range(width):
+            copy_offset = (offset + index) & 0xFFFF
+            expected_destination[copy_offset] = source[copy_offset]
+
+        source_pointer = struct.pack(
+            "<HH", source_pointer_offset, source_segment
+        )
+        destination_pointer = struct.pack(
+            "<HH", destination_pointer_offset, destination_segment
+        )
+        data_pointer_decoy = struct.pack("<HH", 0x1111, extra_segment)
+        extra_pointer_decoy = struct.pack("<HH", 0x2222, data_segment)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        flags_before = 0x0AD7
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C30000 | y,
+            "edx": 0xD4D40000 | width,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x6800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x9340, 0x9345, 0x934A, 0x935B, 0x935D):
+                return
+            if address == 0x935B and any(
+                phase["address"] == address for phase in phases
+            ):
+                return
+            phases.append(
+                {
+                    "address": address,
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0x0ABC, source_pointer),
+                (game_segment, 0x5229, destination_pointer),
+                (data_segment, 0x0ABC, data_pointer_decoy),
+                (data_segment, 0x5229, data_pointer_decoy),
+                (extra_segment, 0x0ABC, extra_pointer_decoy),
+                (extra_segment, 0x5229, extra_pointer_decoy),
+                (source_segment, 0, source),
+                (destination_segment, 0, destination),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=max(20000, width + 64),
+        )
+
+        expected_phases = [
+            {
+                "address": 0x9340,
+                "ds": data_segment,
+                "es": extra_segment,
+                "si": initial["esi"] & 0xFFFF,
+                "di": initial["edi"] & 0xFFFF,
+                "cx": y,
+            },
+            {
+                "address": 0x9345,
+                "ds": data_segment,
+                "es": destination_segment,
+                "si": initial["esi"] & 0xFFFF,
+                "di": destination_pointer_offset,
+                "cx": y,
+            },
+            {
+                "address": 0x934A,
+                "ds": source_segment,
+                "es": destination_segment,
+                "si": source_pointer_offset,
+                "di": destination_pointer_offset,
+                "cx": y,
+            },
+            {
+                "address": 0x935B,
+                "ds": source_segment,
+                "es": destination_segment,
+                "si": offset,
+                "di": offset,
+                "cx": width,
+            },
+            {
+                "address": 0x935D,
+                "ds": source_segment,
+                "es": destination_segment,
+                "si": (offset + width) & 0xFFFF,
+                "di": (offset + width) & 0xFFFF,
+                "cx": 0,
+            },
+        ]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"0x933a {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        actual_destination = bytes(
+            machine.mem_read(destination_segment * 16, 0x10000)
+        )
+        if actual_destination != bytes(expected_destination):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_destination, expected_destination)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x933a {name}: destination[{mismatch:#x}]="
+                f"{actual_destination[mismatch]:#x}, "
+                f"expected={expected_destination[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != source:
+            raise AssertionError(f"0x933a {name}: source changed")
+        for segment, pointer_offset, expected in (
+            (game_segment, 0x0ABC, source_pointer),
+            (game_segment, 0x5229, destination_pointer),
+            (data_segment, 0x0ABC, data_pointer_decoy),
+            (data_segment, 0x5229, data_pointer_decoy),
+            (extra_segment, 0x0ABC, extra_pointer_decoy),
+            (extra_segment, 0x5229, extra_pointer_decoy),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + pointer_offset, 4))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x933a {name}: pointer {segment:#x}:{pointer_offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x933a {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x933a {name}: near return changed CS")
+
+        full_sum = row_offset + x
+        expected_flags = {
+            "cf": full_sum > 0xFFFF,
+            "pf": (offset & 0xFF).bit_count() % 2 == 0,
+            "af": (row_offset & 0x0F) + (x & 0x0F) > 0x0F,
+            "zf": offset == 0,
+            "sf": bool(offset & 0x8000),
+            "of": bool((~(row_offset ^ x) & (row_offset ^ offset)) & 0x8000),
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x933a {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x933a {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "x": x,
+                "y": y,
+                "width": width,
+                "source_pointer_offset": source_pointer_offset,
+                "destination_pointer_offset": destination_pointer_offset,
+                "machine_offset": offset,
+                "natural_y_times_320_offset": natural_offset,
+                "natural_offset_matches": offset == natural_offset,
+                "copied_sha256": hashlib.sha256(
+                    bytes(
+                        source[(offset + index) & 0xFFFF]
+                        for index in range(width)
+                    )
+                ).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -22403,6 +22670,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_8848_natural.json",
         nav_choice_handler_vectors(0x8848),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_933a_natural.json",
+        back_buffer_copy_from_vectors(),
         args.check,
     )
     update_vector(

@@ -1418,6 +1418,23 @@ exact: the near-pointer Watcom pragma supplies the correct AX/SI call arguments,
 but Watcom emits 14 instructions/40 bytes versus 10/36 because it preserves ES
 and splits the return; Turbo C emits 14 instructions with stack arguments.
 
+Back-buffer row copy `0x00933A` takes x, row, and width in BX/CX/DX and loads
+the source/destination far-pointer segments from GS:0x0ABC and GS:0x5229. Twelve
+direct vectors prove zero, partial, full-row, and 64 KiB-wrapped copies; GS
+ownership against DS/ES decoys; exact `rep movsb` entry/exit state; preservation;
+and every status flag from the final offset addition. They also expose the
+routine's domain assumptions: its byte-swap plus shift equals `row * 320` only
+for `row <= 255`, it discards both stored far-pointer offsets, and `rep movsb`
+expects DF clear. All ten recovered callers keep rows at 0..199, and the game
+buffers use normalized offset-zero pointers.
+
+The one-to-one candidate therefore keeps the natural `row * 320 + x` expression
+and invokes the ordinary DOS `_fmemcpy` far-memory primitive. Open Watcom's
+intrinsic form honors the BX/CX/DX pragma and compiles without warnings to 34
+instructions/69 bytes versus 24/42 original. It selects `rep movsw` plus a byte
+tail and emits generic based-segment loads, so it is not code-shape exact. Turbo
+C 2.01 medium emits 32 instructions and a near library `_fmemcpy` call.
+
 Byte-parser opcode-07 handler `0x007684` contains a stale-flag dependency that
 the earlier candidate misread as an asset-id sign test. Its `CBW` sign-extends
 the source byte but does not change flags; the sole proven caller's dispatch
@@ -1609,6 +1626,7 @@ LCS and then mnemonic similarity:
 | `music_voc_name_patcher` | medium, `-ox`, register | 20/38 | 0.1000 | 0.4500 | 0.2000 |
 | `nav_choice_handler_0` | medium, `-ox`, register | 7/8 | 0.1429 | 0.8571 | 0.1429 |
 | `nav_choice_handler_3` | medium, `-ox`, register | 10/14 | 0.1000 | 0.8000 | 0.2000 |
+| `back_buffer_copy_from` | medium, `-ox`, register | 24/34 | 0.2083 | 0.7917 | 0.2500 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
