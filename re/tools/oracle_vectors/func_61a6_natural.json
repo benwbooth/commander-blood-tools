@@ -1,0 +1,66 @@
+[
+  {
+    "name": "direct_kind8",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 260,
+    "eax": 260
+  },
+  {
+    "name": "direct_kind10",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 262,
+    "eax": 262
+  },
+  {
+    "name": "direct_kind200",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 264,
+    "eax": 264
+  },
+  {
+    "name": "parent_link_to_direct",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 774,
+    "eax": 774
+  },
+  {
+    "name": "parent_ffff_falls_back_to_arche",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 1284,
+    "eax": 1284
+  },
+  {
+    "name": "kind100_match",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 260,
+    "eax": 260
+  },
+  {
+    "name": "kind100_mismatch",
+    "record_offset": 256,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 264,
+    "eax": 264
+  },
+  {
+    "name": "direct_offset_wrap",
+    "record_offset": 65532,
+    "kind100_compare_word": 30583,
+    "arche_record_offset": 1280,
+    "resolved_position_offset": 0,
+    "eax": 0
+  }
+]

@@ -1,81 +1,88 @@
 #include "../include/bloodprg_ship3d.h"
 
-static volatile cb_u16 CB_FAR *ship_3d_record_word(cb_u16 record_offset,
-        cb_u16 field_offset)
+cb_u16 CB_NEAR ship_3d_position_distance(
+        const volatile bloodprg_vm_object_header CB_NEAR *first_record,
+        const volatile bloodprg_vm_object_header CB_NEAR *second_record,
+        cb_u16 inherited_kind100_compare_word)
 {
-    return (volatile cb_u16 CB_FAR *)(vm_record_base + record_offset + field_offset);
-}
-
-static cb_u16 ship_3d_kind100_relation_word(cb_u16 record_offset)
-{
-    volatile bloodprg_vm_object_header CB_FAR *record;
+    const volatile cb_u8 CB_NEAR *first_record_bytes;
+    const volatile cb_u8 CB_NEAR *second_record_bytes;
+    const volatile ship_3d_position_field CB_NEAR *first;
+    const volatile ship_3d_position_field CB_NEAR *second;
     cb_u16 field_offset;
-
-    record = (volatile bloodprg_vm_object_header CB_FAR *)
-        (vm_record_base + record_offset);
-    field_offset = (cb_u16)vm_field_offset(
-        SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, record->kind);
-    return *ship_3d_record_word(record_offset, field_offset);
-}
-
-static cb_u16 ship_3d_distance_field(cb_u16 record_offset,
-        cb_u16 other_record_offset, cb_u16 *kind100_compare_word)
-{
-    volatile bloodprg_vm_object_header CB_FAR *record;
-    cb_u16 field_offset;
-
-    record = (volatile bloodprg_vm_object_header CB_FAR *)
-        (vm_record_base + record_offset);
-    if (record->kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
-        *kind100_compare_word = ship_3d_kind100_relation_word(other_record_offset);
-        return ship_3d_position_field_resolve(record_offset, *kind100_compare_word);
-    }
-
-    if (record->kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40) {
-        field_offset = (cb_u16)vm_field_offset(
-            SHIP_3D_FIELD_SELECTOR_POSITION, record->kind);
-        return (cb_u16)(record_offset + field_offset);
-    }
-
-    return ship_3d_position_field_resolve(record_offset, *kind100_compare_word);
-}
-
-static cb_u16 ship_3d_abs_word_delta(cb_u16 lhs, cb_u16 rhs)
-{
-    cb_u16 delta;
-
-    delta = (cb_u16)(lhs - rhs);
-    if ((delta & 0x8000u) != 0) {
-        delta = (cb_u16)(0u - delta);
-    }
-    return delta;
-}
-
-cb_u16 CB_NEAR ship_3d_position_distance(cb_u16 first_record_offset,
-        cb_u16 second_record_offset, cb_u16 inherited_kind100_compare_word)
-{
-    cb_u16 first_field_offset;
-    cb_u16 second_field_offset;
-    volatile ship_3d_position_field CB_FAR *first;
-    volatile ship_3d_position_field CB_FAR *second;
+    cb_u16 compare_word;
+    cb_u16 selector;
+    cb_u16 dx_word;
+    cb_u16 dy_word;
     cb_i32 dx;
     cb_i32 dy;
     cb_u32 squared;
-    cb_u16 kind100_compare_word;
 
-    kind100_compare_word = inherited_kind100_compare_word;
-    first_field_offset = ship_3d_distance_field(first_record_offset,
-        second_record_offset, &kind100_compare_word);
-    second_field_offset = ship_3d_distance_field(second_record_offset,
-        first_record_offset, &kind100_compare_word);
+    first_record_bytes = (const volatile cb_u8 CB_NEAR *)first_record;
+    second_record_bytes = (const volatile cb_u8 CB_NEAR *)second_record;
+    compare_word = inherited_kind100_compare_word;
 
-    first = (volatile ship_3d_position_field CB_FAR *)
-        (vm_record_base + first_field_offset);
-    second = (volatile ship_3d_position_field CB_FAR *)
-        (vm_record_base + second_field_offset);
+    if (first_record->kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, second_record->kind);
+        compare_word = *(const volatile cb_u16 CB_NEAR *)
+            (second_record_bytes + field_offset);
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, first_record->kind);
+        selector = *(const volatile cb_u16 CB_NEAR *)
+            (first_record_bytes + field_offset) == compare_word
+            ? SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH
+            : SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH;
+        field_offset = (cb_u16)vm_field_offset(selector, first_record->kind);
+        first = (const volatile ship_3d_position_field CB_NEAR *)
+            (first_record_bytes + field_offset);
+    } else if (first_record->kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40) {
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_POSITION, first_record->kind);
+        first = (const volatile ship_3d_position_field CB_NEAR *)
+            (first_record_bytes + field_offset);
+    } else {
+        first = ship_3d_position_field_resolve(
+            (volatile bloodprg_vm_object_header CB_NEAR *)first_record,
+            compare_word);
+    }
 
-    dx = (cb_i16)ship_3d_abs_word_delta(first->x, second->x);
-    dy = (cb_i16)ship_3d_abs_word_delta(first->y, second->y);
+    if (second_record->kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD, first_record->kind);
+        compare_word = *(const volatile cb_u16 CB_NEAR *)
+            (first_record_bytes + field_offset);
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, second_record->kind);
+        selector = *(const volatile cb_u16 CB_NEAR *)
+            (second_record_bytes + field_offset) == compare_word
+            ? SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH
+            : SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH;
+        field_offset = (cb_u16)vm_field_offset(selector, second_record->kind);
+        second = (const volatile ship_3d_position_field CB_NEAR *)
+            (second_record_bytes + field_offset);
+    } else if (second_record->kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40) {
+        field_offset = (cb_u16)vm_field_offset(
+            SHIP_3D_FIELD_SELECTOR_POSITION, second_record->kind);
+        second = (const volatile ship_3d_position_field CB_NEAR *)
+            (second_record_bytes + field_offset);
+    } else {
+        second = ship_3d_position_field_resolve(
+            (volatile bloodprg_vm_object_header CB_NEAR *)second_record,
+            compare_word);
+    }
+
+    dx_word = (cb_u16)(first->x - second->x);
+    if ((dx_word & 0x8000u) != 0) {
+        dx_word = (cb_u16)(0u - dx_word);
+    }
+    dy_word = (cb_u16)(first->y - second->y);
+    if ((dy_word & 0x8000u) != 0) {
+        dy_word = (cb_u16)(0u - dy_word);
+    }
+
+    dx = (cb_i16)dx_word;
+    dy = (cb_i16)dy_word;
     squared = (cb_u32)(dx * dx) + (cb_u32)(dy * dy);
     return binary_u32_sqrt(squared);
 }

@@ -702,6 +702,36 @@ globals/output, FS object reads, and restores every register and segment. Exact
 integration therefore needs segment binding and a preservation adapter around
 the natural algorithm.
 
+Ship 3D position resolver `0x0061A6` has eight direct vectors covering direct
+kinds `0x0008`, `0x0010`, and `0x0200`, an ordinary selector-`0x11` parent,
+`0xFFFF` arche fallback, both kind-`0x0100` outcomes, and a wrapping returned
+offset. Distinct GS and DS copies prove that both the selector table and arche
+offset are GS-owned. The kind-`0x0100` path's address-size override also exposes
+a real precondition: ESI must be zero-extended because the comparison reads
+`[EAX+ESI]`, not `[AX+SI]`.
+
+The resolver is now one natural C function over a near record pointer. Open
+Watcom `-3 -ox -mm` emits 46 instructions/98 bytes versus 45/106 original, with
+mnemonic multiset overlap 0.8667. It binds SI/DX and returns the near pointer in
+AX, but saves extra CX/DX/DI temporaries and addresses the arche global through
+DS instead of GS. Turbo C 2.01 medium emits 76 instructions. This is a close
+Watcom structural lowering, not an exact ABI image.
+
+Ship 3D distance `0x0060DD` has six direct vectors covering kind-`0x0040`,
+delegated direct and parent/arche resolution, kind-`0x0100` on either operand,
+inherited compare state, and the signed `0x8000` delta edge. The vectors execute
+the real mirrored far sqrt body and verify the binary's full EAX result: AX is
+the root while the upper word remains the squared-distance high word.
+
+Replacing far-base arithmetic and three private helpers with one natural
+near-pointer function reduces Watcom medium output from 617 to 282 bytes. The
+remaining result is 117 instructions versus 88 original, with mnemonic multiset
+overlap 0.8523. Watcom emits two far `__I4M` calls for the long squares, while
+the binary uses compact 386 `CWDE`/`MUL EAX` operations, `SHLD` to form DX:AX,
+and one far sqrt call. Turbo C 2.01 medium emits 178 instructions. Exact
+integration still requires GS table placement and a narrow codegen/preservation
+boundary; the recovered algorithm remains plain C.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -717,6 +747,8 @@ LCS and then mnemonic similarity:
 | `field_offset` | compact, `-ox`, register | 8/23 | 0.3750 | 0.7500 | 0.3750 |
 | `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
+| `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
+| `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/46 | 0.1111 | 0.6667 | 0.2444 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |

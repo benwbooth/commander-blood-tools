@@ -1629,6 +1629,23 @@ natural C now uses `FP_SEG`/`MK_FP` to state that rule and compiles to 67 bytes
 versus 65 original, with Watcom's DS/ES placement and AX/ES clobbers still
 requiring an adapter.
 
+The paired ship-position routines now have direct binary oracles and one natural
+C function per assembly routine. Eight `0x61A6` vectors cover all three direct
+position kinds, ordinary and arche parent traversal, both kind-`0x100` choices,
+offset wrap, GS selector/arche ownership, and preservation. Its 32-bit
+`[EAX+ESI]` comparison proves that callers must zero-extend SI in ESI on that
+path. Watcom medium emits 46 instructions/98 bytes versus 45/106 original.
+Turbo C 2.01 medium emits 76 instructions.
+
+Six `0x60DD` vectors cover direct and delegated fields, kind-`0x100` on either
+operand, inherited DX compare state, arche fallback, and the `0x8000` wrapped
+delta. They execute the real far sqrt routine, proving the DX:AX input and the
+result shape: AX is the root while upper EAX retains the square high word. The
+near-pointer C reduces Watcom output from the former 617-byte far-pointer shape
+to 282 bytes versus 201 original. Watcom's two `__I4M` calls and broad save set
+remain codegen mismatches against the binary's compact 386 multiply sequence;
+Turbo C 2.01 is farther away at 178 instructions.
+
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the

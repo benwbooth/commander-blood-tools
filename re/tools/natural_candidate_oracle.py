@@ -14,6 +14,7 @@ sys.path[:] = [
 import argparse
 import hashlib
 import json
+import math
 import struct
 from collections.abc import Callable
 from pathlib import Path
@@ -25,6 +26,7 @@ from unicorn import (
     UC_HOOK_INTR,
     UC_MODE_16,
     Uc,
+    UcError,
 )
 from unicorn.x86_const import (
     UC_X86_INS_IN,
@@ -146,7 +148,14 @@ def execute(
         )
     # The stop address is a global execution boundary in Unicorn, so it cannot
     # be the routine's RET when a nested call targets a higher address.
-    machine.emu_start(entry, 0x2ffff0, count=20000)
+    try:
+        machine.emu_start(entry, 0x2ffff0, count=20000)
+    except UcError as error:
+        raise RuntimeError(
+            f"{entry:#x}: execution failed at "
+            f"{machine.reg_read(UC_X86_REG_CS):#x}:"
+            f"{machine.reg_read(UC_X86_REG_IP):#x}"
+        ) from error
     if not returned:
         raise RuntimeError(
             f"{entry:#x}: did not reach return at {return_address:#x}; "
@@ -4325,6 +4334,321 @@ def active_object_list_vectors() -> list[dict[str, object]]:
                 "active_objects": expected_objects,
                 "terminator": 0xFFFF,
                 "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
+def ship_3d_position_field_resolve_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    record_segment = 0x4400
+    table = {
+        (0x0B, 0x0008): 0x04,
+        (0x0B, 0x0010): 0x06,
+        (0x0B, 0x0200): 0x08,
+        (0x0C, 0x0100): 0x02,
+        (0x09, 0x0100): 0x04,
+        (0x0A, 0x0100): 0x08,
+        (0x11, 0x0002): 0x02,
+    }
+    cases = [
+        ("direct_kind8", 0x0100, 0x7777, {0x0100: 0x0008}, 0x0500, 0x0104),
+        ("direct_kind10", 0x0100, 0x7777, {0x0100: 0x0010}, 0x0500, 0x0106),
+        ("direct_kind200", 0x0100, 0x7777, {0x0100: 0x0200}, 0x0500, 0x0108),
+        (
+            "parent_link_to_direct",
+            0x0100,
+            0x7777,
+            {0x0100: 0x0002, 0x0102: 0x0300, 0x0300: 0x0010},
+            0x0500,
+            0x0306,
+        ),
+        (
+            "parent_ffff_falls_back_to_arche",
+            0x0100,
+            0x7777,
+            {0x0100: 0x0002, 0x0102: 0xFFFF, 0x0500: 0x0008},
+            0x0500,
+            0x0504,
+        ),
+        (
+            "kind100_match",
+            0x0100,
+            0x7777,
+            {0x0100: 0x0100, 0x0102: 0x7777},
+            0x0500,
+            0x0104,
+        ),
+        (
+            "kind100_mismatch",
+            0x0100,
+            0x7777,
+            {0x0100: 0x0100, 0x0102: 0x6666},
+            0x0500,
+            0x0108,
+        ),
+        ("direct_offset_wrap", 0xFFFC, 0x7777, {0xFFFC: 0x0008}, 0x0500, 0),
+    ]
+    vectors = []
+
+    for name, record_offset, compare_word, words, arche, expected in cases:
+        memory = [(game_segment, 0x6752, struct.pack("<H", arche))]
+        table_offsets = []
+        for (selector, kind), field_offset in table.items():
+            column = (kind & -kind).bit_length() - 1
+            offset = (0x6D60 + selector * 16 + column) & 0xFFFF
+            table_offsets.append((offset, field_offset))
+            memory.append((game_segment, offset, bytes([field_offset])))
+            memory.append((record_segment, offset, bytes([field_offset ^ 0x3F])))
+        for offset, value in words.items():
+            memory.append((record_segment, offset, struct.pack("<H", value)))
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D40000 | compare_word,
+            # The kind-0x100 path uses [EAX+ESI], not [AX+SI].
+            "esi": record_offset,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": record_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        machine = execute(0x61A6, 0x620F, initial, memory)
+
+        result = machine.reg_read(UC_X86_REG_EAX)
+        if result != expected:
+            raise AssertionError(
+                f"0x61a6 {name}: eax={result:#x}, expected={expected:#x}"
+            )
+        for register, value in initial.items():
+            if register in {"eax", "flags"}:
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != value:
+                raise AssertionError(
+                    f"0x61a6 {name}: {register}={actual:#x}, expected={value:#x}"
+                )
+        for offset, value in words.items():
+            actual = machine.mem_read(record_segment * 16 + offset, 2)
+            if actual != struct.pack("<H", value):
+                raise AssertionError(f"0x61a6 {name}: record memory changed")
+        for offset, field_offset in table_offsets:
+            actual = machine.mem_read(game_segment * 16 + offset, 1)
+            if actual != bytes([field_offset]):
+                raise AssertionError(f"0x61a6 {name}: field table changed")
+        if EXE[0x620F] != 0xC3:
+            raise AssertionError("0x61a6: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "record_offset": record_offset,
+                "kind100_compare_word": compare_word,
+                "arche_record_offset": arche,
+                "resolved_position_offset": expected,
+                "eax": expected,
+            }
+        )
+
+    return vectors
+
+
+def ship_3d_position_distance_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    record_segment = 0x4400
+    table = {
+        (0x0B, 0x0040): 0x04,
+        (0x0B, 0x0008): 0x04,
+        (0x0B, 0x0010): 0x04,
+        (0x0B, 0x0200): 0x04,
+        (0x0E, 0x0040): 0x10,
+        (0x0E, 0x0008): 0x10,
+        (0x0C, 0x0100): 0x02,
+        (0x09, 0x0100): 0x04,
+        (0x0A, 0x0100): 0x08,
+        (0x11, 0x0002): 0x02,
+    }
+    cases = [
+        (
+            "direct_kind40_three_four_five",
+            0x0100,
+            0x0200,
+            0x9999,
+            {0x0100: 0x0040, 0x0104: 100, 0x0106: 100,
+             0x0200: 0x0040, 0x0204: 103, 0x0206: 104},
+            0x0500,
+        ),
+        (
+            "delegated_direct_kind_wrap_delta_8000",
+            0x0100,
+            0x0200,
+            0x8888,
+            {0x0100: 0x0008, 0x0104: 0x7FFF, 0x0106: 5,
+             0x0200: 0x0010, 0x0204: 0xFFFF, 0x0206: 5},
+            0x0500,
+        ),
+        (
+            "parent_ffff_falls_back_to_arche",
+            0x0100,
+            0x0200,
+            0x7777,
+            {0x0100: 0x0002, 0x0102: 0xFFFF,
+             0x0200: 0x0200, 0x0204: 13, 0x0206: 14,
+             0x0500: 0x0008, 0x0504: 10, 0x0506: 10},
+            0x0500,
+        ),
+        (
+            "first_kind100_match",
+            0x0100,
+            0x0200,
+            0x6666,
+            {0x0100: 0x0100, 0x0102: 0x7777, 0x0104: 0, 0x0106: 0,
+             0x0108: 50, 0x010A: 50, 0x0200: 0x0040,
+             0x0204: 6, 0x0206: 8, 0x0210: 0x7777},
+            0x0500,
+        ),
+        (
+            "second_kind100_mismatch",
+            0x0100,
+            0x0200,
+            0x5555,
+            {0x0100: 0x0040, 0x0104: 4, 0x0106: 5, 0x0110: 0x1111,
+             0x0200: 0x0100, 0x0202: 0x2222, 0x0204: 90, 0x0206: 90,
+             0x0208: 7, 0x020A: 9},
+            0x0500,
+        ),
+        (
+            "inherited_compare_reaches_linked_kind100",
+            0x0100,
+            0x0200,
+            0x5555,
+            {0x0100: 0x0008, 0x0104: 1, 0x0106: 1,
+             0x0200: 0x0002, 0x0202: 0x0300,
+             0x0300: 0x0100, 0x0302: 0x5555,
+             0x0304: 9, 0x0306: 16, 0x0308: 40, 0x030A: 40},
+            0x0500,
+        ),
+    ]
+    vectors = []
+
+    for name, first_offset, second_offset, inherited, words, arche in cases:
+        # The MZ header is 0x600 bytes. A far transfer addresses the loaded
+        # image, while this oracle executes near routines at file offsets.
+        memory = [
+            (0, 0x2833, EXE[0x2E33:0x2E73]),
+            (game_segment, 0x6752, struct.pack("<H", arche)),
+        ]
+        table_offsets = []
+        for (selector, kind), field_offset in table.items():
+            column = (kind & -kind).bit_length() - 1
+            offset = (0x6D60 + selector * 16 + column) & 0xFFFF
+            table_offsets.append((offset, field_offset))
+            memory.append((game_segment, offset, bytes([field_offset])))
+            memory.append((record_segment, offset, bytes([field_offset ^ 0x3F])))
+        for offset, value in words.items():
+            memory.append((record_segment, offset, struct.pack("<H", value)))
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D40000 | inherited,
+            # 0x61F5 uses the 32-bit [EAX+ESI] address form, so callers must
+            # supply a zero-extended SI even though the surrounding code is
+            # otherwise 16-bit.
+            "esi": first_offset,
+            "edi": 0xF6F60000 | second_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": record_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        resolved_fields: dict[str, int] = {}
+
+        def capture_resolved_fields(
+            machine: Uc, address: int, _size: int
+        ) -> None:
+            if address == 0x6173:
+                resolved_fields["first"] = machine.reg_read(UC_X86_REG_SI)
+                resolved_fields["second"] = machine.reg_read(UC_X86_REG_DI)
+
+        machine = execute(
+            0x60DD,
+            0x61A5,
+            initial,
+            memory,
+            code_handler=capture_resolved_fields,
+        )
+
+        result = machine.reg_read(UC_X86_REG_EAX)
+        if set(resolved_fields) != {"first", "second"}:
+            raise AssertionError(
+                f"0x60dd {name}: coordinate fields were not resolved"
+            )
+        first_field = resolved_fields["first"]
+        second_field = resolved_fields["second"]
+        first_x = words[first_field]
+        first_y = words[(first_field + 2) & 0xFFFF]
+        second_x = words[second_field]
+        second_y = words[(second_field + 2) & 0xFFFF]
+
+        def signed_abs_delta(left: int, right: int) -> int:
+            value = (left - right) & 0xFFFF
+            if value & 0x8000:
+                value = (-value) & 0xFFFF
+            return value - 0x10000 if value & 0x8000 else value
+
+        dx = signed_abs_delta(first_x, second_x)
+        dy = signed_abs_delta(first_y, second_y)
+        squared = (dx * dx + dy * dy) & 0xFFFFFFFF
+        expected_eax = (squared & 0xFFFF0000) | math.isqrt(squared)
+        if result != expected_eax:
+            raise AssertionError(
+                f"0x60dd {name}: eax={result:#x}, expected={expected_eax:#x}"
+            )
+        for register, value in initial.items():
+            if register in {"eax", "flags"}:
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != value:
+                raise AssertionError(
+                    f"0x60dd {name}: {register}={actual:#x}, expected={value:#x}"
+                )
+        for offset, value in words.items():
+            actual = machine.mem_read(record_segment * 16 + offset, 2)
+            if actual != struct.pack("<H", value):
+                raise AssertionError(f"0x60dd {name}: record memory changed")
+        for offset, field_offset in table_offsets:
+            actual = machine.mem_read(game_segment * 16 + offset, 1)
+            if actual != bytes([field_offset]):
+                raise AssertionError(f"0x60dd {name}: field table changed")
+        if machine.mem_read(0x2833, 0x40) != EXE[0x2E33:0x2E73]:
+            raise AssertionError(f"0x60dd {name}: mirrored sqrt code changed")
+        if EXE[0x61A5] != 0xC3:
+            raise AssertionError("0x60dd: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "first_record_offset": first_offset,
+                "second_record_offset": second_offset,
+                "inherited_compare_word": inherited,
+                "first_position_offset": first_field,
+                "second_position_offset": second_field,
+                "squared_distance": squared,
+                "eax": expected_eax,
             }
         )
 
@@ -8858,6 +9182,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_604e_natural.json",
         active_object_list_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_60dd_natural.json",
+        ship_3d_position_distance_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_61a6_natural.json",
+        ship_3d_position_field_resolve_vectors(),
         args.check,
     )
     update_vector(

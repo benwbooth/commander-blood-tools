@@ -1,0 +1,62 @@
+[
+  {
+    "name": "direct_kind40_three_four_five",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 39321,
+    "first_position_offset": 260,
+    "second_position_offset": 516,
+    "squared_distance": 25,
+    "eax": 5
+  },
+  {
+    "name": "delegated_direct_kind_wrap_delta_8000",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 34952,
+    "first_position_offset": 260,
+    "second_position_offset": 516,
+    "squared_distance": 1073741824,
+    "eax": 1073774592
+  },
+  {
+    "name": "parent_ffff_falls_back_to_arche",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 30583,
+    "first_position_offset": 1284,
+    "second_position_offset": 516,
+    "squared_distance": 25,
+    "eax": 5
+  },
+  {
+    "name": "first_kind100_match",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 26214,
+    "first_position_offset": 260,
+    "second_position_offset": 516,
+    "squared_distance": 100,
+    "eax": 10
+  },
+  {
+    "name": "second_kind100_mismatch",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 21845,
+    "first_position_offset": 260,
+    "second_position_offset": 520,
+    "squared_distance": 25,
+    "eax": 5
+  },
+  {
+    "name": "inherited_compare_reaches_linked_kind100",
+    "first_record_offset": 256,
+    "second_record_offset": 512,
+    "inherited_compare_word": 21845,
+    "first_position_offset": 260,
+    "second_position_offset": 772,
+    "squared_distance": 289,
+    "eax": 17
+  }
+]
