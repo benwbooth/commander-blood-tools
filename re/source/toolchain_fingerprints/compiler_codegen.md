@@ -2005,6 +2005,25 @@ original `PUSH CX`/`POP DX`; the natural semantics are otherwise complete.
 Turbo C 2.01 emits a 12-instruction stack-argument implementation with the
 same two interrupt operations.
 
+The byte-identical slot-8 trio (AMER `0x001B5F`, CROOLIS `0x001ACB`, SCRUT
+`0x001B80`) advances a byte cursor by four modulo `0x1000`, subtracts the
+previous signed sample from the current sample, and applies that wrapping
+delta to the first word of every 20-byte object record. The slot-9 trio (AMER
+`0x001B8F`, CROOLIS `0x001AFB`, SCRUT `0x001BB0`) is identical except that it
+arithmetic-shifts the current signed sample right by four before storing and
+differencing it. Seven raw-overlay vectors per routine cover positive and
+negative values, signed overflow, cursor and object-offset wrap, and count
+zero. The latter proves that the original `LOOP` executes 65,536 iterations,
+which the natural unsigned `do/while (--count)` retains.
+
+Open Watcom compiles all six actual candidates without warnings. Slot 8 is 21
+instructions/51 bytes versus the original 17/48; slot 9 is 22/54 versus 18/51.
+The compiler uses a natural far `ES:BX` object pointer, preserves `DX/ES`, and
+lowers the loop to `DEC/JNE`. The original temporarily installs the object
+segment in `DS`, traverses through `SI`, and uses `CX/LOOP`. Memory and declared
+`AX` delta results agree, but scratch-register outputs and final flags differ.
+Turbo C 2.01 emits 40 and 43 instructions respectively with stack arguments.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -2047,6 +2066,8 @@ LCS and then mnemonic similarity:
 | `xdb_resume_or_init` | medium, `-ox`, register | 8/9 | 0.1250 | 0.6250 | 0.1250 |
 | `xdb_mouse_position_set` | medium, `-ox`, register | 5/5 | 0.4000 | 1.0000 | 0.6000 |
 | `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
+| `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
+| `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

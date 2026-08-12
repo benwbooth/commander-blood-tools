@@ -16,6 +16,11 @@ typedef struct xdb_alien_state {
     xdb_i16 field_0b0;
 } xdb_alien_state;
 
+typedef struct xdb_alien_object_record {
+    volatile xdb_i16 position;
+    xdb_u8 field_002[0x12];
+} xdb_alien_object_record;
+
 typedef struct xdb_alien_method_context xdb_alien_method_context;
 typedef void XDB_NEAR xdb_alien_resume_function(
         xdb_alien_method_context XDB_NEAR *context);
@@ -24,15 +29,29 @@ typedef xdb_alien_resume_function XDB_NEAR *xdb_alien_resume_callback;
 struct xdb_alien_method_context {
     xdb_u8 field_00[0x16];
     volatile xdb_alien_state XDB_NEAR *state;
-    xdb_u8 field_018[0x1e];
+    xdb_u8 field_018[0x04];
+    xdb_u16 object_offset;
+    xdb_u16 field_01e;
+    xdb_u16 object_count;
+    xdb_u8 field_022[0x14];
     xdb_alien_resume_callback resume;
-    xdb_u16 resume_step;
-    xdb_u16 resume_value;
+    union {
+        struct {
+            xdb_u16 step;
+            xdb_u16 value;
+        } resume_state;
+        struct {
+            xdb_u16 cursor;
+            xdb_i16 previous;
+        } sample_state;
+    } continuation;
 };
 
 typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
+extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
+extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -58,6 +77,18 @@ void XDB_NEAR xdb_croolis_method_slot_13_resume_or_init(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_method_slot_13_resume_or_init(
         xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_amer_method_slot_8_apply_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_croolis_method_slot_8_apply_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_scrut_method_slot_8_apply_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_amer_method_slot_9_apply_scaled_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_croolis_method_slot_9_apply_scaled_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_scrut_method_slot_9_apply_scaled_sample_delta(
+        xdb_alien_method_context XDB_NEAR *context);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
@@ -77,6 +108,18 @@ void XDB_NEAR xdb_scrut_resume_1c45(
 #pragma aux xdb_amer_method_slot_13_resume_or_init parm [di]
 #pragma aux xdb_croolis_method_slot_13_resume_or_init parm [di]
 #pragma aux xdb_scrut_method_slot_13_resume_or_init parm [di]
+#pragma aux xdb_amer_method_slot_8_apply_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_croolis_method_slot_8_apply_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_scrut_method_slot_8_apply_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_amer_method_slot_9_apply_scaled_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_croolis_method_slot_9_apply_scaled_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
+#pragma aux xdb_scrut_method_slot_9_apply_scaled_sample_delta \
+        parm [di] value [ax] modify exact [ax bx cx si]
 #endif
 
 #endif

@@ -1,0 +1,259 @@
+[
+  {
+    "name": "one_positive",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 0,
+    "sample_cursor_after": 4,
+    "raw_sample": 4660,
+    "current_sample": 291,
+    "previous_sample": 4608,
+    "delta": 61219,
+    "object_offset": 512,
+    "object_count": 1,
+    "effective_iterations": 1,
+    "first_changed_offsets": [
+      512
+    ],
+    "object_memory_sha256": "53b7fa83267db4f1fef02d0b5cf710c6a94c97b4c3775c43223560837bdfe091",
+    "register_results": {
+      "ax_delta": 61219,
+      "bx_previous": 4608,
+      "cx": 0,
+      "si_next_object": 532
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "three_negative",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 4,
+    "sample_cursor_after": 8,
+    "raw_sample": 60876,
+    "current_sample": 65244,
+    "previous_sample": 256,
+    "delta": 64988,
+    "object_offset": 4096,
+    "object_count": 3,
+    "effective_iterations": 3,
+    "first_changed_offsets": [
+      4096,
+      4116,
+      4136
+    ],
+    "object_memory_sha256": "935169d1cc12ca593eebd8ee8c2c78a30bce241ef6775dba4d3a13940606b85d",
+    "register_results": {
+      "ax_delta": 64988,
+      "bx_previous": 256,
+      "cx": 0,
+      "si_next_object": 4156
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "cursor_wrap",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 4092,
+    "sample_cursor_after": 0,
+    "raw_sample": 32767,
+    "current_sample": 2047,
+    "previous_sample": 65534,
+    "delta": 2049,
+    "object_offset": 8192,
+    "object_count": 2,
+    "effective_iterations": 2,
+    "first_changed_offsets": [
+      8192,
+      8212
+    ],
+    "object_memory_sha256": "32db97c0619357b4a7106014df2e7d1bc4462c06015e1c052f3c275a259a95a0",
+    "register_results": {
+      "ax_delta": 2049,
+      "bx_previous": 65534,
+      "cx": 0,
+      "si_next_object": 8232
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "delta_wrap",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 2048,
+    "sample_cursor_after": 2052,
+    "raw_sample": 32768,
+    "current_sample": 63488,
+    "previous_sample": 32767,
+    "delta": 30721,
+    "object_offset": 12288,
+    "object_count": 4,
+    "effective_iterations": 4,
+    "first_changed_offsets": [
+      12288,
+      12308,
+      12328,
+      12348
+    ],
+    "object_memory_sha256": "2e4cc0cf9dfa2bd180f4ea227b18fad44c2c01615313ccad659a14f48800d2a1",
+    "register_results": {
+      "ax_delta": 30721,
+      "bx_previous": 32767,
+      "cx": 0,
+      "si_next_object": 12368
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "object_wrap",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 64,
+    "sample_cursor_after": 68,
+    "raw_sample": 16384,
+    "current_sample": 1024,
+    "previous_sample": 49152,
+    "delta": 17408,
+    "object_offset": 65520,
+    "object_count": 3,
+    "effective_iterations": 3,
+    "first_changed_offsets": [
+      65520,
+      4,
+      24
+    ],
+    "object_memory_sha256": "658585ecf5ed9706af5be209c05fc8ec66ddb7612ad17957fe45e78bbbdd381a",
+    "register_results": {
+      "ax_delta": 17408,
+      "bx_previous": 49152,
+      "cx": 0,
+      "si_next_object": 44
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "odd_cursor",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 65535,
+    "sample_cursor_after": 0,
+    "raw_sample": 42330,
+    "current_sample": 64085,
+    "previous_sample": 23205,
+    "delta": 40880,
+    "object_offset": 16642,
+    "object_count": 2,
+    "effective_iterations": 2,
+    "first_changed_offsets": [
+      16642,
+      16662
+    ],
+    "object_memory_sha256": "39161f7eca2eb1df8cfcf91ddecdee95b6cd5056137c9271ba3ce74bbf59c062",
+    "register_results": {
+      "ax_delta": 40880,
+      "bx_previous": 23205,
+      "cx": 0,
+      "si_next_object": 16682
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_count",
+    "module": "croolis",
+    "entry": 6907,
+    "scaled": true,
+    "sample_cursor_before": 12,
+    "sample_cursor_after": 16,
+    "raw_sample": 16,
+    "current_sample": 1,
+    "previous_sample": 1,
+    "delta": 0,
+    "object_offset": 0,
+    "object_count": 0,
+    "effective_iterations": 65536,
+    "first_changed_offsets": [
+      0,
+      20,
+      40,
+      60
+    ],
+    "object_memory_sha256": "789aaa5b611d9aa5dabb5b0ce0fc4ba38cfc6aa5c77034441b93c120770825f8",
+    "register_results": {
+      "ax_delta": 0,
+      "bx_previous": 1,
+      "cx": 0,
+      "si_next_object": 0
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

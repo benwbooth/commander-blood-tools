@@ -12,6 +12,6 @@ void XDB_NEAR xdb_amer_method_slot_13_resume_or_init(
     }
 
     context->resume = xdb_amer_resume_1c34;
-    context->resume_step = 0;
-    context->resume_value = 0;
+    context->continuation.resume_state.step = 0;
+    context->continuation.resume_state.value = 0;
 }

@@ -9,8 +9,11 @@ typedef unsigned long xdb_u32;
 typedef signed long xdb_i32;
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#include <dos.h>
 #define XDB_FAR far
 #define XDB_NEAR near
+#define XDB_FAR_AT(type, segment, offset) \
+    ((type XDB_FAR *)MK_FP((segment), (offset)))
 #else
 #define XDB_FAR
 #define XDB_NEAR

@@ -89,6 +89,7 @@ def execute(
     registers: dict[str, int],
     memory: list[tuple[int, int, bytes]],
     interrupt_handler: object | None = None,
+    max_instructions: int = 1000,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -112,7 +113,7 @@ def execute(
     if interrupt_handler is not None:
         machine.hook_add(UC_HOOK_INTR, interrupt_handler)
     try:
-        machine.emu_start(entry, 0x2FFFF0, count=1000)
+        machine.emu_start(entry, 0x2FFFF0, count=max_instructions)
     except UcError as error:
         raise RuntimeError(
             f"{entry:#x}: execution failed at "
@@ -471,6 +472,230 @@ def mouse_bounds_vectors(module: str, entry: int) -> list[dict[str, object]]:
                     "ax": second_outputs[0],
                     "cx": second_outputs[1],
                     "dx": second_outputs[2],
+                },
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def add_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+    total = left + right
+    result = total & 0xFFFF
+    return {
+        "cf": total > 0xFFFF,
+        "pf": (result & 0xFF).bit_count() % 2 == 0,
+        "af": ((left & 0xF) + (right & 0xF)) > 0xF,
+        "zf": result == 0,
+        "sf": bool(result & 0x8000),
+        "if": bool(initial_flags & 0x0200),
+        "df": bool(initial_flags & 0x0400),
+        "of": bool((~(left ^ right) & (left ^ result) & 0x8000)),
+    }
+
+
+def sample_delta_vectors(
+    module: str, entry: int, scaled: bool
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 51 if scaled else 48
+    expected_hash = (
+        "adbd3507c4073fd2f2e866dc269fcb1885d1873f896c7d1861824f46492dfafe"
+        if scaled
+        else "946199cf60611843e6ebdcba55201fae95864e43b62c23206d65165c5169174c"
+    )
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != expected_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte body changed"
+        )
+
+    cases = [
+        ("one_positive", 0x0000, 0x1234, 0x1200, 1, 0x0200),
+        ("three_negative", 0x0004, 0xEDCC, 0x0100, 3, 0x1000),
+        ("cursor_wrap", 0x0FFC, 0x7FFF, 0xFFFE, 2, 0x2000),
+        ("delta_wrap", 0x0800, 0x8000, 0x7FFF, 4, 0x3000),
+        ("object_wrap", 0x0040, 0x4000, 0xC000, 3, 0xFFF0),
+        ("odd_cursor", 0xFFFF, 0xA55A, 0x5AA5, 2, 0x4102),
+        ("zero_count", 0x000C, 0x0010, 0x0001, 0, 0x0000),
+    ]
+    game_segment = 0x2000
+    data_segment = 0x4000
+    object_segment = 0x6000
+    extra_segment = 0x8000
+    stack_segment = 0xA000
+    context_offset = 0x3000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (
+        name,
+        cursor,
+        raw_sample,
+        previous,
+        count,
+        object_offset,
+    ) in enumerate(cases):
+        data_before = bytearray(0x10000)
+        struct.pack_into("<H", data_before, 0x0002, object_segment)
+        struct.pack_into("<H", data_before, context_offset + 0x001C, object_offset)
+        struct.pack_into("<H", data_before, context_offset + 0x001E, 0xDEAD)
+        struct.pack_into("<H", data_before, context_offset + 0x0020, count)
+        struct.pack_into("<H", data_before, context_offset + 0x0038, cursor)
+        struct.pack_into("<H", data_before, context_offset + 0x003A, previous)
+        sample_offset = (cursor + 0x0036) & 0xFFFF
+        struct.pack_into("<H", data_before, sample_offset, raw_sample)
+        data_expected = bytearray(data_before)
+
+        signed_sample = raw_sample if raw_sample < 0x8000 else raw_sample - 0x10000
+        current = signed_sample >> 4 if scaled else signed_sample
+        current_word = current & 0xFFFF
+        delta = (current_word - previous) & 0xFFFF
+        next_cursor = (cursor + 4) & 0x0FFC
+        struct.pack_into(
+            "<H", data_expected, context_offset + 0x0038, next_cursor
+        )
+        struct.pack_into(
+            "<H", data_expected, context_offset + 0x003A, current_word
+        )
+
+        object_before = bytearray(
+            ((index * 37 + case_index * 11) & 0xFF) for index in range(0x10000)
+        )
+        object_expected = bytearray(object_before)
+        iterations = count if count != 0 else 0x10000
+        object_cursor = object_offset
+        changed_offsets = []
+        for iteration in range(iterations):
+            old_value = struct.unpack_from("<H", object_expected, object_cursor)[0]
+            struct.pack_into(
+                "<H", object_expected, object_cursor, (old_value + delta) & 0xFFFF
+            )
+            if iteration < 4:
+                changed_offsets.append(object_cursor)
+            object_cursor = (object_cursor + 0x14) & 0xFFFF
+
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4567 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | ((0x5678 + case_index) & 0xFFFF),
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        decoy = bytes.fromhex("112233445566778899aabbccddeeff00")
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (object_segment, 0, bytes(object_before)),
+                (extra_segment, context_offset, decoy),
+                (game_segment, context_offset, decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=300000 if count == 0 else 1000,
+        )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data segment differs at {differences}"
+            )
+        actual_objects = bytes(machine.mem_read(object_segment * 16, 0x10000))
+        if actual_objects != bytes(object_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: object segment differs")
+        for segment in (extra_segment, game_segment):
+            if bytes(machine.mem_read(segment * 16 + context_offset, len(decoy))) != decoy:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy segment {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | delta
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | previous
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | object_cursor
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        last_add_left = (object_cursor - 0x14) & 0xFFFF
+        expected_flags = add_flags_16(last_add_left, 0x14, initial_flags)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "scaled": scaled,
+                "sample_cursor_before": cursor,
+                "sample_cursor_after": next_cursor,
+                "raw_sample": raw_sample,
+                "current_sample": current_word,
+                "previous_sample": previous,
+                "delta": delta,
+                "object_offset": object_offset,
+                "object_count": count,
+                "effective_iterations": iterations,
+                "first_changed_offsets": changed_offsets,
+                "object_memory_sha256": hashlib.sha256(object_expected).hexdigest(),
+                "register_results": {
+                    "ax_delta": delta,
+                    "bx_previous": previous,
+                    "cx": 0,
+                    "si_next_object": object_cursor,
                 },
                 "defined_flags": expected_flags,
             }
@@ -1365,6 +1590,26 @@ def main() -> int:
         lower_state_vectors("scrut", 0x0B65, 0x1BE3),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x1B5F),
+        ("croolis", 0x1ACB),
+        ("scrut", 0x1B80),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            sample_delta_vectors(module, entry, False),
+            args.check,
+        )
+    for module, entry in (
+        ("amer", 0x1B8F),
+        ("croolis", 0x1AFB),
+        ("scrut", 0x1BB0),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            sample_delta_vectors(module, entry, True),
+            args.check,
+        )
     for module, entry, initial_resume in (
         ("amer", 0x1BEA, 0x1C34),
         ("croolis", 0x1B46, 0x1B85),
