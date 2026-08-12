@@ -39,6 +39,7 @@ extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
+#define BLOODPRG_VM_OBJECT_ACCESS_MASK 0x0118u
 
 typedef struct bloodprg_vm_directory_entry {
     char name[16];
@@ -51,6 +52,13 @@ typedef struct bloodprg_vm_object_header {
     cb_u8 flags;
 } bloodprg_vm_object_header;
 
+typedef struct bloodprg_vm_object_record {
+    cb_u16 kind;
+    cb_u8 flags;
+    cb_u8 reserved_03[17];
+    cb_u8 access_count;
+} bloodprg_vm_object_record;
+
 typedef struct bloodprg_dic_lookup_result {
     cb_u16 object_offset;
     int matched;
@@ -62,6 +70,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
+void CB_NEAR object_heap_access(void);       /* 0x00149B */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */

@@ -1,5 +1,6 @@
 entry	source	asm_path	function	status	notes
 0x000986	seg_0000/func_000986_bcd_to_binary.c	re/assembly/bloodprg/seg_0000/func_000986_bcd_to_binary.asm	bcd_to_binary	natural_candidate_pending_codegen	Packed BCD byte conversion; pending proof of AL argument and return codegen.
+0x00149b	seg_008b/func_00149b_object_heap_access.c	re/assembly/bloodprg/seg_008b/func_00149b_object_heap_access.asm	object_heap_access	natural_candidate_pending_codegen	Walks active VM directory entries and increments the selected object record access byte when the kind mask and in-play flag are set.
 0x00248b	seg_01ce/func_00248b_clear_block_5251.c	re/assembly/bloodprg/seg_01ce/func_00248b_clear_block_5251.asm	clear_block_5251	natural_candidate_pending_codegen	Render-state block clear zeroes 0x90 dwords at GS:0x5251.
 0x0025a4	seg_01ce/func_0025a4_string_compare.c	re/assembly/bloodprg/seg_01ce/func_0025a4_string_compare.asm	string_compare	natural_candidate_pending_codegen	Bytewise NUL-terminated string equality helper returning match logically where the binary sets carry.
 0x003d7b	seg_0299/func_003d7b_blit_fill_row_5221.c	re/assembly/bloodprg/seg_0299/func_003d7b_blit_fill_row_5221.asm	blit_fill_row_5221	natural_candidate_pending_codegen	Display-page band fill expands AL to a dword pattern and fills (bottom-top)*80 dwords at top*320 in the primary display buffer.
