@@ -289,6 +289,353 @@ def anchor_state_vectors(
     return vectors
 
 
+def apply_delta_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "c74ca55adaf050bd2fcd4d0ec1d112f3a4341bf8fe309e5eeb801255cf127b59"
+    if hashlib.sha256(image[entry : entry + 16]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 16-byte body changed")
+
+    cases = [
+        ("zero", 0x1000, 0x2000, 0x0000, 0x1234),
+        ("positive_round_down", 0x1100, 0x2100, 0x0001, 0x1111),
+        ("positive_even", 0x1200, 0x2200, 0x0002, 0x2222),
+        ("positive_odd", 0x1300, 0x2300, 0x0003, 0x3333),
+        ("positive_sum_wrap", 0x1400, 0x2400, 0x7FFF, 0xC001),
+        ("negative_even", 0x1500, 0x2500, 0x8000, 0x5555),
+        ("negative_odd", 0x1600, 0x2600, 0x8001, 0x6666),
+        ("negative_one", 0x1700, 0x2700, 0xFFFF, 0x7777),
+        ("context_offset_wrap", 0xFFF0, 0x2800, 0x0004, 0xFFFF),
+        ("state_field_wrap", 0x1800, 0xFF80, 0x0006, 0x7FFF),
+    ]
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (
+        name,
+        context_offset,
+        state_offset,
+        delta_before,
+        field_before,
+    ) in enumerate(cases):
+        context_state_offset = (context_offset + 0x16) & 0xFFFF
+        field_offset = (state_offset + 0xB0) & 0xFFFF
+        half_delta = ((delta_before >> 1) | (delta_before & 0x8000)) & 0xFFFF
+        applied = not bool(half_delta & 0x8000)
+        field_after = (
+            (field_before + half_delta) & 0xFFFF if applied else field_before
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        delta_sentinel = bytes.fromhex("a1b20000e5f6")
+        delta_bytes = delta_sentinel[:2] + struct.pack("<H", delta_before) + delta_sentinel[4:]
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | (0xBEEF + case_index),
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        immutable = [
+            (data_segment, context_state_offset, struct.pack("<H", state_offset)),
+            (extra_segment, context_state_offset, struct.pack("<H", state_offset ^ 0x5A5A)),
+            (game_segment, context_state_offset, struct.pack("<H", state_offset ^ 0xA5A5)),
+            (data_segment, 0x0099, struct.pack("<H", delta_before ^ 0xFFFF)),
+            (extra_segment, field_offset, struct.pack("<H", field_before ^ 0x3C3C)),
+            (game_segment, field_offset, struct.pack("<H", field_before ^ 0xC3C3)),
+        ]
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                *immutable,
+                (data_segment, field_offset, struct.pack("<H", field_before)),
+                (0, 0x0097, delta_bytes),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | half_delta
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | state_offset
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        actual_field = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + field_offset, 2)
+        )[0]
+        if actual_field != field_after:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: field={actual_field:#x}, "
+                f"expected={field_after:#x}"
+            )
+        if bytes(machine.mem_read(0x0097, 6)) != delta_bytes:
+            raise AssertionError(f"{module}:{entry:#x} {name}: CS delta changed")
+        for segment, offset, value in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: input or decoy changed"
+                )
+
+        if applied:
+            expected_flags = {
+                "cf": field_before + half_delta > 0xFFFF,
+                "pf": (field_after & 0xFF).bit_count() % 2 == 0,
+                "af": (field_before & 0x0F) + (half_delta & 0x0F) > 0x0F,
+                "zf": field_after == 0,
+                "sf": bool(field_after & 0x8000),
+                "if": bool(initial_flags & 0x0200),
+                "df": bool(initial_flags & 0x0400),
+                "of": bool(
+                    (~(field_before ^ half_delta) & (field_before ^ field_after))
+                    & 0x8000
+                ),
+            }
+        else:
+            expected_flags = {
+                "cf": bool(delta_before & 1),
+                "pf": (half_delta & 0xFF).bit_count() % 2 == 0,
+                "zf": half_delta == 0,
+                "sf": bool(half_delta & 0x8000),
+                "if": bool(initial_flags & 0x0200),
+                "df": bool(initial_flags & 0x0400),
+                "of": False,
+            }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "context_offset": context_offset,
+                "state_offset": state_offset,
+                "field_offset": field_offset,
+                "delta_before": delta_before,
+                "half_delta": half_delta,
+                "applied": applied,
+                "field_before": field_before,
+                "field_after": field_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def lower_state_vectors(module: str, entry: int, cursor_offset: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "07a87d58a684bc18b00cfeeb2cd87d37018e440df7ab597ef4704fb517532d33"
+    if hashlib.sha256(image[entry : entry + 11]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 11-byte body changed")
+
+    cases = [
+        ("zero", 0x1000, 0x2000, 0x0000),
+        ("delta_exact", 0x1101, 0x2103, 0x000F),
+        ("positive", 0x1200, 0x3000, 0x7FFF),
+        ("signed_wrap", 0x1300, 0x4000, 0x8000),
+        ("word_wrap", 0x1400, 0x5000, 0xFFFF),
+        ("context_offset_wrap", 0xFFF0, 0x6000, 0x1234),
+        ("state_bias_wrap", 0x1500, 0xFFC0, 0xBEEF),
+    ]
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0xF000
+    vectors = []
+
+    for case_index, (name, context_offset, state_offset, field_before) in enumerate(cases):
+        context_state_offset = (context_offset + 0x16) & 0xFFFF
+        biased_offset = (state_offset + 0x5E) & 0xFFFF
+        field_offset = (biased_offset + 0x52) & 0xFFFF
+        field_after = (field_before - 0x000F) & 0xFFFF
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        cursor_sentinel = bytes.fromhex("a1b2c3d4e5f6")
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        immutable = [
+            (data_segment, context_state_offset, struct.pack("<H", state_offset)),
+            (extra_segment, context_state_offset, struct.pack("<H", state_offset ^ 0x5A5A)),
+            (game_segment, context_state_offset, struct.pack("<H", state_offset ^ 0xA5A5)),
+            (extra_segment, field_offset, struct.pack("<H", field_before ^ 0x3C3C)),
+            (game_segment, field_offset, struct.pack("<H", field_before ^ 0xC3C3)),
+        ]
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                *immutable,
+                (data_segment, field_offset, struct.pack("<H", field_before)),
+                (0, cursor_offset - 2, cursor_sentinel),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | biased_offset
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        actual_field = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + field_offset, 2)
+        )[0]
+        if actual_field != field_after:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: field={actual_field:#x}, "
+                f"expected={field_after:#x}"
+            )
+        if bytes(machine.mem_read(cursor_offset - 2, 6)) != cursor_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: cursor changed")
+        for segment, offset, value in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: input or decoy changed"
+                )
+
+        difference = field_after
+        expected_flags = {
+            "cf": field_before < 0x000F,
+            "pf": (difference & 0xFF).bit_count() % 2 == 0,
+            "af": (field_before & 0x0F) < 0x0F,
+            "zf": difference == 0,
+            "sf": bool(difference & 0x8000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": bool(
+                ((field_before ^ 0x000F) & (field_before ^ difference))
+                & 0x8000
+            ),
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "context_offset": context_offset,
+                "state_offset": state_offset,
+                "biased_offset": biased_offset,
+                "field_offset": field_offset,
+                "field_before": field_before,
+                "field_after": field_after,
+                "cursor_offset": cursor_offset,
+                "cursor_unchanged": True,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def near_noop_vectors(module: str, entry: int) -> list[dict[str, object]]:
     image = load_image(module)
     if image[entry : entry + 1] != b"\xc3":
@@ -411,6 +758,20 @@ def main() -> int:
             anchor_state_vectors(module, entry, cursor_offset),
             args.check,
         )
+    for module, entry in (
+        ("amer", 0x0B1F),
+        ("croolis", 0x0B60),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            apply_delta_vectors(module, entry),
+            args.check,
+        )
+    update_vector(
+        VECTOR_ROOT / "xdb_scrut_func_0b65_natural.json",
+        lower_state_vectors("scrut", 0x0B65, 0x1BE3),
+        args.check,
+    )
     for module, entry in (
         ("amer", 0x1DD6),
         ("croolis", 0x1D27),

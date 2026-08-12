@@ -1949,6 +1949,25 @@ symbol also remains a relocation that the overlay linker must place at
 `0x1BC2`, `0x1B2E`, or `0x1BE3`. Turbo C 2.01 medium emits a 19-instruction
 stack-argument wrapper and accesses the cursor as far data.
 
+The three alien slot-12 methods split into two verified behaviors. AMER
+`0x000B1F` and CROOLIS `0x000B60` load a signed delta from `CS:0x0099`,
+arithmetic-shift it right in `AX`, and add only a nonnegative result to the
+`DS` state at `+0xB0`; ten raw-overlay vectors each verify rounding, negative
+suppression, wrapping, ownership, `AX`/`SI`, preservation, flags, and near
+return. Watcom compiles each actual candidate without warnings to 9
+instructions/20 bytes versus 6/16. It returns the half-delta in `AX`, but uses
+saved `BX` instead of `SI` for state and inserts `TEST`/`JL` instead of direct
+`JS` from `SAR`, changing negative-path flags. Turbo C emits 21 instructions
+with a stack argument and far delta access.
+
+SCRUT `0x000B65` instead repeats the slot-11 field subtraction without the
+cursor publication. Seven vectors verify the missing `CS` write as well as
+the pointer/field wraps, `SI` result, preservation, flags, and near return.
+Watcom emits four instructions/12 bytes versus four/11 original: it performs
+an equivalent-result `ADD word,-15` at state `+0xB0`, then adds `0x5E` to
+`SI`. Memory and `SI` match, but the reordered final arithmetic flags do not.
+Turbo C emits a 16-instruction stack-argument wrapper.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -1986,6 +2005,8 @@ LCS and then mnemonic similarity:
 | `fullscreen_copy` | medium, `-ox`, register | 13/35 | 0.5385 | 0.9231 | 0.5385 |
 | `xdb_near_noop` | medium, `-ox`, register | 1/1 | 1.0000 | 1.0000 | 1.0000 |
 | `xdb_anchor_state` | medium, `-ox`, register | 5/5 | 0.2000 | 0.8000 | 0.6000 |
+| `xdb_apply_delta` | medium, `-ox`, register | 6/9 | 0.1667 | 0.6667 | 0.3333 |
+| `xdb_lower_state` | medium, `-ox`, register | 4/4 | 0.2500 | 0.7500 | 0.7500 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

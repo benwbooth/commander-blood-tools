@@ -37,11 +37,20 @@ volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_croolis_method_slot_11_anchor_state(
         const xdb_alien_method_context XDB_NEAR *context);
 volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_scrut_method_slot_11_anchor_state(
         const xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_amer_method_slot_12_apply_delta(
+        const xdb_alien_method_context XDB_NEAR *context);
+xdb_i16 XDB_NEAR xdb_croolis_method_slot_12_apply_delta(
+        const xdb_alien_method_context XDB_NEAR *context);
+volatile xdb_u8 XDB_NEAR *XDB_NEAR xdb_scrut_method_slot_12_lower_state(
+        const xdb_alien_method_context XDB_NEAR *context);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_amer_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_croolis_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_scrut_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
+#pragma aux xdb_amer_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
+#pragma aux xdb_croolis_method_slot_12_apply_delta parm [di] value [ax] modify exact [ax si]
+#pragma aux xdb_scrut_method_slot_12_lower_state parm [di] value [si] modify exact [si]
 #endif
 
 #endif
