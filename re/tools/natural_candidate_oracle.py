@@ -15198,6 +15198,370 @@ def byte_parser_snd_bank_name_load_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def dlg_line_asset_table_fill_vectors() -> list[dict[str, object]]:
+    entry = 0x7684
+    dispatcher_entry = 0x74DD
+    dispatcher_return = 0x74ED
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    direct_return = 0x6F00
+    cases = [
+        {
+            "name": "dispatch_id_01_empty",
+            "id": 0x01,
+            "detail": b"\x00",
+        },
+        {
+            "name": "dispatch_id_02_text_low_stop",
+            "id": 0x02,
+            "detail": b"TALK.HNM\x1f",
+        },
+        {
+            "name": "dispatch_id_04_high_stop",
+            "id": 0x04,
+            "detail": b"A\x80",
+        },
+        {
+            "name": "dispatch_shipped_id_ff",
+            "id": 0xFF,
+            "detail": b"MG_SCR1.HNM\x00",
+        },
+        {
+            "name": "dispatch_id_80",
+            "id": 0x80,
+            "detail": b"\xff",
+        },
+        {
+            "name": "dispatch_id_00",
+            "id": 0x00,
+            "detail": b"FD\x00",
+        },
+        {
+            "name": "dispatch_source_wrap",
+            "id": 0x03,
+            "detail": b"A\x00",
+            "start": 0xFFFD,
+        },
+        {
+            "name": "dispatch_asset_destination_wrap",
+            "id": 0x01,
+            "detail": b"\x7f\x00",
+            "asset_cursor": 0xFFFE,
+            "detail_cursor": 0x5000,
+        },
+        {
+            "name": "dispatch_detail_destination_wrap",
+            "id": 0x02,
+            "detail": b"AB\x00",
+            "asset_cursor": 0x5000,
+            "detail_cursor": 0xFFFF,
+        },
+        {
+            "name": "direct_sf_clear_id_ff",
+            "id": 0xFF,
+            "detail": b"\x00",
+            "direct": True,
+            "flags": 0x0002,
+        },
+        {
+            "name": "direct_sf_set_id_ff",
+            "id": 0xFF,
+            "detail": b"\x00",
+            "direct": True,
+            "flags": 0x0082,
+        },
+        {
+            "name": "direct_sf_set_id_01",
+            "id": 0x01,
+            "detail": b"B\x00",
+            "direct": True,
+            "flags": 0x0883,
+        },
+    ]
+    vectors = []
+
+    def wrapped_bytes(machine: Uc, segment: int, offset: int, length: int) -> bytes:
+        return bytes(
+            machine.mem_read(segment * 16 + ((offset + index) & 0xFFFF), 1)[0]
+            for index in range(length)
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        asset_id = int(case["id"])
+        detail = bytes(case["detail"])
+        direct = bool(case.get("direct", False))
+        start = int(case.get("start", 0x6000 + case_index * 0x80))
+        asset_cursor = int(case.get("asset_cursor", 0x3000 + case_index * 0x20))
+        detail_cursor = int(case.get("detail_cursor", 0x4000 + case_index * 0x40))
+        flags_before = int(case.get("flags", 0x0AD7))
+        stop_index = next(
+            index
+            for index, byte in enumerate(detail)
+            if byte < 0x20 or byte >= 0x80
+        )
+        copied = detail[:stop_index]
+        stop_byte = detail[stop_index]
+        stream = bytes([asset_id]) + detail if direct else bytes([0x07, asset_id]) + detail
+        id_offset = start if direct else (start + 1) & 0xFFFF
+        stop_offset = (id_offset + 1 + stop_index) & 0xFFFF
+        final_asset_cursor = (asset_cursor + 4) & 0xFFFF
+        final_detail_global = (detail_cursor + 0x1A) & 0xFFFF
+        final_detail_cursor = (detail_cursor + len(copied)) & 0xFFFF
+
+        signed_id = asset_id if asset_id < 0x80 else asset_id - 0x100
+        sign_extended_id = signed_id & 0xFFFF
+        handler_sf = bool(flags_before & 0x80) if direct else False
+        if handler_sf:
+            stored_id = sign_extended_id
+        else:
+            stored_id = (
+                ((sign_extended_id - 1) << 4) + 0x0DD7
+            ) & 0xFFFF
+
+        asset_before = bytes([0xCC]) * 6
+        detail_before = bytes([0xDD]) * (len(copied) + 3)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (game_segment, 0x1FAF, struct.pack("<H", asset_cursor)),
+            (game_segment, 0x1FAD, struct.pack("<H", detail_cursor)),
+            (data_segment, 0x1FAF, b"\x5a\xa5"),
+            (data_segment, 0x1FAD, b"\x69\x96"),
+            (destination_segment, 0x1FAF, b"\xc3\x3c"),
+            (destination_segment, 0x1FAD, b"\x87\x78"),
+            (stack_segment, 0x1FAF, b"\x0f\xf0"),
+            (stack_segment, 0x1FAD, b"\x55\xaa"),
+            (0, direct_return, b"\xcc"),
+        ]
+        for index, byte in enumerate(asset_before):
+            memory.append(
+                (destination_segment, (asset_cursor + index) & 0xFFFF, bytes([byte]))
+            )
+        for index, byte in enumerate(detail_before):
+            memory.append(
+                (destination_segment, (detail_cursor + index) & 0xFFFF, bytes([byte]))
+            )
+        immutable_source = []
+        for index, byte in enumerate(stream):
+            source_offset = (start + index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            memory.append((game_segment, source_offset, b"\xa5"))
+            immutable_source.append((source_offset, encoded))
+
+        if direct:
+            memory.append(
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", direct_return) + stack_sentinel,
+                )
+            )
+            run_entry = entry
+            stop_address = direct_return
+            expected_sp = 0xFF02
+            initial_eax = 0xA1A1BEEF
+        else:
+            memory.extend(
+                [
+                    (0, 0x218A, struct.pack("<H", entry)),
+                    (stack_segment, 0xFEFC, b"\x13\x57"),
+                    (stack_segment, 0xFF00, stack_sentinel),
+                ]
+            )
+            run_entry = dispatcher_entry
+            stop_address = dispatcher_return
+            expected_sp = 0xFF00
+            initial_eax = 0x0000BEEF
+
+        initial = {
+            "eax": initial_eax,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x7684, 0x768B, 0x7694, 0x769D, 0x76A8, 0x76B9):
+                return
+            phases.append(
+                (
+                    address,
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_SI),
+                    machine.reg_read(UC_X86_REG_DI),
+                    bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x80),
+                    struct.unpack(
+                        "<H", machine.mem_read(game_segment * 16 + 0x1FAF, 2)
+                    )[0],
+                    struct.unpack(
+                        "<H", machine.mem_read(game_segment * 16 + 0x1FAD, 2)
+                    )[0],
+                )
+            )
+
+        machine = execute(
+            run_entry,
+            stop_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+        handler_entries = [phase for phase in phases if phase[0] == 0x7684]
+        if len(handler_entries) != 1 or handler_entries[0][4] != handler_sf:
+            raise AssertionError(
+                f"0x7684 {name}: handler entry SF={handler_entries}, "
+                f"expected={handler_sf}"
+            )
+        cbw_phases = [phase for phase in phases if phase[0] == 0x768B]
+        if (
+            len(cbw_phases) != 1
+            or cbw_phases[0][1] != sign_extended_id
+            or cbw_phases[0][4] != handler_sf
+        ):
+            raise AssertionError(
+                f"0x7684 {name}: CBW phase={cbw_phases}, "
+                f"expected AX={sign_extended_id:#x}, SF={handler_sf}"
+            )
+        store_phases = [phase for phase in phases if phase[0] == 0x7694]
+        if len(store_phases) != 1 or store_phases[0][1] != stored_id:
+            raise AssertionError(
+                f"0x7684 {name}: store phase={store_phases}, "
+                f"expected AX={stored_id:#x}"
+            )
+
+        asset_after = wrapped_bytes(machine, destination_segment, asset_cursor, 6)
+        expected_asset = struct.pack("<H", stored_id) + asset_before[2:]
+        if asset_after != expected_asset:
+            raise AssertionError(
+                f"0x7684 {name}: asset={asset_after.hex()}, "
+                f"expected={expected_asset.hex()}"
+            )
+        detail_after = wrapped_bytes(
+            machine, destination_segment, detail_cursor, len(detail_before)
+        )
+        expected_detail = copied + b"\x00" + detail_before[len(copied) + 1 :]
+        if detail_after != expected_detail:
+            raise AssertionError(
+                f"0x7684 {name}: detail={detail_after!r}, expected={expected_detail!r}"
+            )
+        actual_asset_cursor = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x1FAF, 2)
+        )[0]
+        actual_detail_global = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x1FAD, 2)
+        )[0]
+        if (
+            actual_asset_cursor != final_asset_cursor
+            or actual_detail_global != final_detail_global
+        ):
+            raise AssertionError(
+                f"0x7684 {name}: cursors={(actual_asset_cursor, actual_detail_global)}, "
+                f"expected={(final_asset_cursor, final_detail_global)}"
+            )
+        for segment, offset, expected in (
+            (data_segment, 0x1FAF, b"\x5a\xa5"),
+            (data_segment, 0x1FAD, b"\x69\x96"),
+            (destination_segment, 0x1FAF, b"\xc3\x3c"),
+            (destination_segment, 0x1FAD, b"\x87\x78"),
+            (stack_segment, 0x1FAF, b"\x0f\xf0"),
+            (stack_segment, 0x1FAD, b"\x55\xaa"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x7684 {name}: cursor decoy changed")
+        for source_offset, expected in immutable_source:
+            actual = bytes(machine.mem_read(data_segment * 16 + source_offset, 1))
+            if actual != expected:
+                raise AssertionError(f"0x7684 {name}: source changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": (initial_eax & 0xFFFF0000) | (stored_id & 0xFF00) | stop_byte,
+                "esi": (initial["esi"] & 0xFFFF0000) | stop_offset,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_detail_cursor,
+                "sp": expected_sp,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7684 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        dec_input = (stop_offset + 1) & 0xFFFF
+        expected_flags = {
+            "cf": stop_byte < 0x20,
+            "pf": (stop_offset & 0xFF).bit_count() % 2 == 0,
+            "af": (dec_input & 0x0F) == 0,
+            "zf": stop_offset == 0,
+            "sf": bool(stop_offset & 0x8000),
+            "of": dec_input == 0x8000,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x7684 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if direct:
+            if wrapped_bytes(machine, stack_segment, 0xFF02, 4) != stack_sentinel:
+                raise AssertionError(f"0x7684 {name}: direct stack sentinel changed")
+        else:
+            if struct.unpack(
+                "<H", machine.mem_read(stack_segment * 16 + 0xFEFE, 2)
+            )[0] != dispatcher_return:
+                raise AssertionError(f"0x7684 {name}: dispatcher return was not pushed")
+            if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, 4)) != stack_sentinel:
+                raise AssertionError(f"0x7684 {name}: dispatcher stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "entry_mode": "direct" if direct else "real_dispatcher",
+                "asset_id": asset_id,
+                "handler_entry_sf": handler_sf,
+                "stored_id": stored_id,
+                "copied_hex": copied.hex(),
+                "stopping_byte": stop_byte,
+                "asset_cursor_before": asset_cursor,
+                "asset_cursor_after": actual_asset_cursor,
+                "detail_cursor_before": detail_cursor,
+                "detail_cursor_after": actual_detail_global,
+                "final_source_offset": stop_offset,
+                "final_destination_offset": final_detail_cursor,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def byte_parser_store_word_1fa5_vectors() -> list[dict[str, object]]:
     entry = 0x76BA
     data_segment = 0x4400
@@ -20132,6 +20496,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_763e_natural.json",
         byte_parser_snd_bank_name_load_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7684_natural.json",
+        dlg_line_asset_table_fill_vectors(),
         args.check,
     )
     update_vector(

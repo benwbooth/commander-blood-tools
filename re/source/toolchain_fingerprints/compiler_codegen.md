@@ -1401,6 +1401,30 @@ far call, but passes its natural far pointer in CX:BX rather than the original
 loader's DS:SI. A drop-in build therefore needs a narrow ABI boundary at that
 existing external call; the recovered handler itself remains natural C.
 
+Byte-parser opcode-07 handler `0x007684` contains a stale-flag dependency that
+the earlier candidate misread as an asset-id sign test. Its `CBW` sign-extends
+the source byte but does not change flags; the sole proven caller's dispatch
+index `ADD AX,AX` leaves SF clear for opcode 0x07. Nine vectors entering through
+that real dispatcher prove the arithmetic path for IDs 0x00, 0x01, 0x02, 0x03,
+0x04, 0x80, and 0xFF, including shipped 0xFF -> 0x0DB7. Three direct-entry
+controls prove that an artificial incoming SF instead selects the unchanged
+sign-extended value. The vectors also cover both cursor updates, printable
+bounds, unconsumed low/high stopping bytes, source and destination 64 KiB
+wraps, DS/ES/GS ownership, outputs, final flags, source immutability, and near
+return. `DESCRIPT.DES` contains 448 opcode-07 records using IDs 1, 2, 3, 4,
+and 0xFF, so the corrected high-id behavior is exercised by shipped data.
+
+The one-to-one natural candidate models the complete reachable caller contract
+with direct SI input/result, 16-bit wrapping arithmetic, and volatile
+named-segment cursor pointers. Open Watcom `-3 -ox -mm` compiles it without
+warnings to 35 instructions/82 bytes versus 22/54 original; Turbo C 2.01
+medium emits 63 instructions. Watcom preserves the signed load, equivalent
+offset arithmetic (`id*16+0x0DC7`), two 16-bit based pointers, copy bounds, and
+unconsumed stop, but saves BX/DX/ES, reloads `GAME_DATA`, and uses scalar
+loads/stores rather than the original ambient ES=GS and string instructions.
+The out-of-contract incoming-SF branch remains a documented machine-level ABI
+fact rather than an artificial flag parameter in the natural C function.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned
@@ -1475,6 +1499,7 @@ LCS and then mnemonic similarity:
 | `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
 | `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
 | `byte_parser_snd_bank_name_load` | medium, `-ox`, register | 22/24 | 0.0909 | 0.4091 | 0.1818 |
+| `dlg_line_asset_table_fill` | medium, `-ox`, register | 22/35 | 0.0909 | 0.5455 | 0.1818 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

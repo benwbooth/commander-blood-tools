@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: dlg_line_asset_table_fill
-; label_comment: THE FILL for the per-line asset table (completes the chain from A6 b3). di = the cursor gs:[0x1FAF], which 0x7447 seeded at 0x1FB5+0x26 -- i.e. already AT entry+2, exactly where the reader 0x9D6E looks. Per source byte: LODSB + CBW; if NEGATIVE store the sign-extended value unchanged (so 0xFF becomes 0xFFFF, the 'no asset' sentinel the reader tests at 0x9D71); otherwise store (byte-1)*16 (DEC AX; SHL AX,4). Then STOSW + `add di,2` advances a full 4-byte stride to the next entry's +2. The *16 means the stored id is a BYTE OFFSET into a 16-byte-stride NAME TABLE -- the same stride as the sprite filename table at DS:0x0669 -- so a per-line asset is a filename reference, not an ordinal
+; label_comment: Fills one per-line asset-table entry and its detail string. DI starts at the GS:0x1FAF cursor, seeded by 0x7447 at entry+2. LODSB/CBW sign-extends the id, but CBW leaves flags unchanged: through the sole proven caller, opcode 0x07 makes the dispatcher's ADD AX,AX leave SF clear, so JS is not taken and every shipped id follows 0x0DD7+(id-1)*16 modulo 16 bits (including 0xFF -> 0x0DB7). Only an out-of-contract direct entry with SF set stores the sign-extended id unchanged. STOSW plus ADD DI,2 advances the four-byte entry stride; GS:0x1FAD supplies a separate detail cursor advanced by 0x1A, and bytes 0x20..0x7F are copied without consuming the stopping byte.
 ; incoming: byte_parser_dispatch_74e5:byte_0x07
 ; byte_count: 54
 ; boundary: cfg_blocks_7_terminals_2
@@ -18,7 +18,7 @@
 
 007684:  65 8B 3E AF 1F               mov      di, word ptr gs:[0x1faf]
 007689:  AC                           lodsb    al, byte ptr [si]
-00768A:  98                           cwde    
+00768A:  98                           cbw
 00768B:  78 07                        js       0x7694
 00768D:  48                           dec      ax
 00768E:  C1 E0 04                     shl      ax, 4

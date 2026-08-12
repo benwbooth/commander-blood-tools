@@ -10,6 +10,9 @@
 #define CB_GAME_DATA CB_FAR
 #endif
 
+typedef volatile char CB_GAME_DATA *cb_game_char_ptr;
+typedef volatile cb_u16 CB_GAME_DATA *cb_game_word_ptr;
+
 extern volatile cb_u8 byte_parser_b16_flag;  /* GS:0x0B16 */
 extern char CB_GAME_DATA byte_parser_table_2460[]; /* ES:0x2460 */
 extern char CB_GAME_DATA byte_parser_table_247a[]; /* ES:0x247A */
@@ -31,8 +34,8 @@ extern volatile char byte_parser_index_path_2137[]; /* GS:0x2137 */
 extern volatile char byte_parser_index_text_213a[]; /* GS:0x213A */
 extern volatile cb_u8 CB_FAR *byte_parser_back_buffer; /* GS:0x5229 */
 extern volatile cb_u16 CB_GAME_DATA byte_parser_word_1fa5; /* GS:0x1FA5 */
-extern volatile char *byte_parser_detail_cursor; /* GS:0x1FAD */
-extern volatile cb_u16 *byte_parser_asset_cursor; /* GS:0x1FAF */
+extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_detail_cursor; /* GS:0x1FAD */
+extern volatile cb_game_word_ptr CB_GAME_DATA byte_parser_asset_cursor; /* GS:0x1FAF */
 extern volatile char *byte_parser_table_131a_cursor; /* GS:0x131A */
 extern volatile cb_u8 byte_parser_table_131e_count; /* GS:0x131E */
 extern volatile char *byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
@@ -48,6 +51,7 @@ extern volatile char *byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
 #pragma aux byte_parser_copy_2460_printable parm [si] value [si] modify exact [ax si di]
 #pragma aux byte_parser_copy_247a_printable parm [si] value [si] modify exact [ax si di]
 #pragma aux byte_parser_snd_bank_name_load parm [si] value [si] modify exact [ax bx cx dx si di es]
+#pragma aux dlg_line_asset_table_fill parm [si] value [si] modify exact [ax si di]
 #pragma aux byte_parser_store_word_1fa5 parm [si] value [si] modify exact [ax si]
 #endif
 
@@ -67,6 +71,8 @@ const cb_u8 CB_NEAR *CB_NEAR byte_parser_copy_247a_printable(
     const cb_u8 CB_NEAR *script_bytes); /* 0x0076D5 */
 const cb_u8 CB_NEAR *CB_NEAR byte_parser_snd_bank_name_load(
     const cb_u8 CB_NEAR *script_bytes); /* 0x00763E */
+const cb_u8 CB_NEAR *CB_NEAR dlg_line_asset_table_fill(
+    const cb_u8 CB_NEAR *script_bytes); /* 0x007684 */
 const cb_u16 CB_NEAR *CB_NEAR byte_parser_store_word_1fa5(
     const cb_u16 CB_NEAR *script_words); /* 0x0076BA */
 
