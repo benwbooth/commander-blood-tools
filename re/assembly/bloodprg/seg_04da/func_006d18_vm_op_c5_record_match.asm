@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c5_record_match
-; label_comment: VM opcode 0xC5 FULL: les di,gs:0x6724; lodsw bp=record ptr, lodsw operand; gated on gs:[0x67ad]&1: cmp operand vs es:[bp+2] (record id/value field) AND cmp es:[bp] vs 0xC5 (record TYPE tag = the opcode value). So state-table records are TYPED - field +0 = the opcode/type that created them, +2 = id/value. Each C-range opcode (C5/C6/C7/C8) matches records of ITS OWN type (compares +0 to its own opcode). Record-match/conditional op || ALSO RECORDED as `vm_op_c5_state_record`: VM opcode 0xC5: object/line-record state op (les di,gs:0x6724 + 0xA1-skip prologue + lodsw operand). Part of the C-range state-table family; exact field operation NOT yet fully decoded (only the shared prologue confirmed) || ALSO RECORDED as `vm_op_c5_record_entry`: 0xC5 record-entry handler; writes es:[record]={0xc5,related,0} when related type is 0x0200 || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xC5 uses absolute offsets in the segment loaded from GS:0x6724; query mode optionally inverts a {type C5, operand} match, while set mode writes {C5, related, 0} only when the related record is active type 0x0200 and the destination is empty.
 ; incoming: vm_opcode_handlers:opcode_0xc5
 ; byte_count: 104
 ; boundary: cfg_blocks_15_terminals_4
