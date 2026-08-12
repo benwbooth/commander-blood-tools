@@ -2150,6 +2150,17 @@ the hidden current-`CS` value as a typed argument. Exact integration still
 needs that tiny input adapter, segment installation, and the original jump
 through its caller's saved-`DS` epilogue.
 
+Six patched-sorter vectors prove the `0x0006F6` stage prelude. It loads the
+geometry segment from FS:`0x0002` into `DS` and the raster/bucket segment from
+FS:`0x0006` into `ES`, then falls into face bucket sort at `0x000700` without a
+stack change. Zero, equal, high-bit, and maximum segment cases verify exact
+segment outputs, full register/flag preservation, and memory ownership.
+Natural C exposes those two segment selectors as typed arguments. Watcom emits
+`MOV DX,[+6]; MOV AX,[+2]; JMP`, preserving the tail transfer and the original
+10-byte length, versus two segment-register loads in the binary. Turbo C emits
+6 instructions with stack arguments. Exact integration needs only the
+`AX/DX` to `DS/ES` sorter-entry adapter.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2194,6 +2205,7 @@ LCS and then mnemonic similarity:
 | `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
+| `xdb_manu3_face_builder_next` | medium, `-ox -zdp`, register | 2/3 | 0.0000 | 1.0000 | 0.0000 |
 | `xdb_manu3_face_activate` | medium, `-ox -zdp`, register | 6/12 | 0.0000 | 0.6667 | 0.0000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |

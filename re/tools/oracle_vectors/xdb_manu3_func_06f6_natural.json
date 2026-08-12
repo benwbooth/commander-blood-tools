@@ -1,0 +1,56 @@
+[
+  {
+    "name": "both_zero",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 0,
+    "raster_segment": 0,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  },
+  {
+    "name": "ordinary",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 17408,
+    "raster_segment": 25600,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  },
+  {
+    "name": "same_segment",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 18432,
+    "raster_segment": 18432,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  },
+  {
+    "name": "geometry_high",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 32768,
+    "raster_segment": 19456,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  },
+  {
+    "name": "raster_high",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 20480,
+    "raster_segment": 32768,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  },
+  {
+    "name": "maximum",
+    "module": "manu3",
+    "entry": 1782,
+    "geometry_segment": 65535,
+    "raster_segment": 65535,
+    "bucket_sort_fallthrough": 1792,
+    "fallthrough_stack_unchanged": true
+  }
+]

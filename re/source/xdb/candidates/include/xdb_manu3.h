@@ -53,6 +53,8 @@ extern volatile xdb_u16 XDB_CODE_DATA
         xdb_manu3_data_segment; /* CS:0x136A */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_manu3_data_segment_delta; /* CS:0x1368 */
+extern volatile xdb_manu3_segment_directory
+        xdb_manu3_segments; /* DS/FS:0x0000 */
 extern volatile xdb_u16
         xdb_manu3_framebuffer_window_offset; /* SS:0x20CE */
 extern volatile xdb_u16 xdb_manu3_framebuffer_segment; /* DS:0x0018 */
@@ -75,6 +77,9 @@ void XDB_NEAR xdb_manu3_tween_step(void);
 void XDB_NEAR xdb_manu3_matrix_build(void);
 void XDB_NEAR xdb_manu3_entity_project(void);
 void XDB_NEAR xdb_manu3_face_builder_next(void);
+void XDB_NEAR xdb_manu3_face_bucket_sort(
+        xdb_u16 geometry_segment,
+        xdb_u16 raster_segment);
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 void XDB_NEAR xdb_manu3_face_activate(
@@ -96,6 +101,10 @@ void XDB_NEAR xdb_manu3_gradient_setup(
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_step \
         modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_face_builder_next \
+        modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_face_bucket_sort \
+        parm [ax] [dx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_activate \
