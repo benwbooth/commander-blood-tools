@@ -1,10 +1,11 @@
 #include "../include/bloodprg_vm.h"
 
-cb_u16 CB_NEAR vm_op_a4_jump(const cb_u16 *script_words)
+const cb_u8 CB_NEAR *CB_NEAR vm_op_a4_jump(
+    const cb_u16 CB_NEAR *script_words)
 {
-    cb_u16 target;
+    const cb_u8 CB_NEAR *target;
 
-    target = *script_words;
+    target = (const cb_u8 CB_NEAR *)*script_words;
     vm_resume_state = 0;
     vm_resume_value = 0;
     return target;

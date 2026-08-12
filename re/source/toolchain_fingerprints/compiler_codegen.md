@@ -1008,6 +1008,22 @@ AX and the selected offset in BP. Exact integration therefore needs the runtime
 SS=GS alias, fixed globals, and narrow AX/BP compatibility, not a different C
 algorithm.
 
+VM script jump `0x0065DB` has six direct vectors covering ordinary, zero, odd,
+and maximum targets, unaligned input, and a target word spanning `DS:FFFF`.
+Instruction-phase checks prove SI is replaced directly from DS:SI before the
+GS:0x67B1 byte clear, which precedes the GS:0x6764 word clear. The vectors also
+prove no operand postincrement, unchanged AX and unrelated state, complete
+arithmetic-flag preservation, segmented output ownership, immutable input, and
+near return.
+
+Representing the result as a near byte-stream pointer lets Open Watcom `-3 -ox
+-mm` recover the SI input/result directly and emit 8 instructions/15 bytes
+versus 4/16 original. It saves AX and synthesizes the two zeros with XOR, though,
+so final flags differ. Turbo C 2.01 medium emits 11 instructions with stack
+input and AX return, but uses immediate stores and therefore preserves flags.
+The C logic is complete; exact integration needs Watcom's register ABI combined
+with Turbo-like immediate stores or a narrow codegen boundary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1044,6 +1060,7 @@ LCS and then mnemonic similarity:
 | `vm_branch_stack_pop` | medium, `-ox`, register | 6/7 | 0.1667 | 0.6667 | 0.1667 |
 | `vm_random_branch` | medium, `-ox`, register | 6/6 | 0.1667 | 0.3333 | 0.1667 |
 | `vm_conditional_block` | medium, `-ox`, register | 29/32 | 0.0690 | 0.6897 | 0.1034 |
+| `vm_script_jump` | medium, `-ox`, register | 4/8 | 0.2500 | 1.0000 | 0.5000 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

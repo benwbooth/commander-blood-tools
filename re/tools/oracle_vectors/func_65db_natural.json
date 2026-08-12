@@ -1,0 +1,92 @@
+[
+  {
+    "name": "ordinary_target",
+    "start_offset": 4096,
+    "target_offset": 9029,
+    "resume_state_before": 1,
+    "resume_value_before": 17767,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "zero_target",
+    "start_offset": 4352,
+    "target_offset": 0,
+    "resume_state_before": 255,
+    "resume_value_before": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "odd_target",
+    "start_offset": 4608,
+    "target_offset": 4951,
+    "resume_state_before": 128,
+    "resume_value_before": 32768,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "maximum_target",
+    "start_offset": 4864,
+    "target_offset": 65535,
+    "resume_state_before": 127,
+    "resume_value_before": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "unaligned_operand",
+    "start_offset": 5121,
+    "target_offset": 26505,
+    "resume_state_before": 85,
+    "resume_value_before": 42330,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "operand_crosses_segment_end",
+    "start_offset": 65535,
+    "target_offset": 48879,
+    "resume_state_before": 170,
+    "resume_value_before": 23205,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  }
+]
