@@ -1646,6 +1646,15 @@ to 282 bytes versus 201 original. Watcom's two `__I4M` calls and broad save set
 remain codegen mismatches against the binary's compact 386 multiply sequence;
 Turbo C 2.01 is farther away at 178 instructions.
 
+Eight direct vectors now pin helper `0x6210` at the binary boundary. AX is the
+object offset, DS:SI is the caller's bitset base, GS owns the far directory and
+selector table, selector 5/kind 2 contributes a signed byte offset, and the
+20-byte directory and bitset addresses wrap at 16 bits. Indices 0, 1, 7, 8,
+and 15 prove the bit order is high-bit-first. The routine restores every
+register, including AX, and reports only through carry left by its final byte
+shift. Watcom medium emits 33 instructions/70 bytes versus 31/59 but returns a
+normal Boolean in AX, so exact integration needs a small carry-result adapter.
+
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the

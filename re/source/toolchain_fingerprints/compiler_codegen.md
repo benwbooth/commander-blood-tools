@@ -732,6 +732,22 @@ and one far sqrt call. Turbo C 2.01 medium emits 178 instructions. Exact
 integration still requires GS table placement and a narrow codegen/preservation
 boundary; the recovered algorithm remains plain C.
 
+Ship 3D object-table bit test `0x006210` has eight direct vectors spanning
+directory indices 0, 1, 7, 8, and 15, a wrapping 20-byte directory walk, and a
+negative selector-table byte. They prove object input in AX, bitset base in
+DS:SI, GS ownership of both the far directory pointer and selector table,
+signed field-offset addition, 16-bit address wrap, immutable inputs, and full
+state preservation. The final byte `SHL` reports the high-bit-first selection in
+carry; the vectors also verify ZF/SF/PF and OF when its count is one.
+
+The natural candidate states the same selection as a word shift followed by a
+bit-`0x0100` Boolean test. Open Watcom `-3 -ox -mm` emits 33 instructions/70
+bytes versus 31/59 original, with mnemonic multiset overlap 0.8387; Turbo C 2.01
+medium emits 48 instructions. Watcom binds AX/SI and closely reproduces the
+scan, but loads the far directory pointer through DS rather than GS and returns
+the Boolean in AX. The binary instead restores AX and exposes only carry, so
+exact integration requires a narrow carry-result adapter around the natural C.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -749,6 +765,7 @@ LCS and then mnemonic similarity:
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
 | `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/46 | 0.1111 | 0.6667 | 0.2444 |
+| `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `presentation_line_step` | medium, unoptimized, register | 60/62 | 0.2167 | 0.7333 | 0.2833 |
 | `segment_global_gate` | compact, unoptimized, cdecl | 4/8 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | huge, unoptimized, register | 16/32 | 0.4375 | 0.6250 | 0.5000 |

@@ -68,6 +68,7 @@ extern volatile cb_i16 ship_3d_clip_bottom;  /* GS:0x523B */
 #if defined(__WATCOMC__)
 #pragma aux ship_3d_position_distance parm [si] [di] [dx] value [ax] modify exact [ax]
 #pragma aux ship_3d_position_field_resolve parm [si] [dx] value [ax] modify exact [ax]
+#pragma aux ship_3d_object_table_bit_test_full parm [ax] [si] value [ax] modify exact [ax]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -80,6 +81,6 @@ ship_3d_position_field_resolve(
         volatile bloodprg_vm_object_header CB_NEAR *record,
         cb_u16 kind100_compare_word);        /* 0x0061A6 */
 int CB_NEAR ship_3d_object_table_bit_test_full(cb_u16 object_offset,
-        const volatile cb_u8 *bitset_base);  /* 0x006210 */
+        const volatile cb_u8 CB_NEAR *bitset_base); /* 0x006210 */
 
 #endif

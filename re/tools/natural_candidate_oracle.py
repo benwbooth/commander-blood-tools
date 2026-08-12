@@ -4655,6 +4655,136 @@ def ship_3d_position_distance_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_object_table_bit_test_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    directory_segment = 0x4800
+    cases = [
+        ("index0_high_bit_set", 0, 0x001E, 0x0100, 0x80, 0x0200),
+        ("index0_high_bit_clear", 0, 0x001E, 0x0100, 0x7F, 0x0200),
+        ("index1_bit6_set", 1, 0x001E, 0x0100, 0x40, 0x0200),
+        ("index7_low_bit_set", 7, 0x001E, 0x0100, 0x01, 0x0200),
+        ("index8_next_byte_high_set", 8, 0x001E, 0x0100, 0x80, 0x0200),
+        ("index15_next_byte_low_clear", 15, 0x001E, 0x0100, 0xFE, 0x0200),
+        ("signed_field_offset_wrap", 0, 0xFFFE, 0x0001, 0x80, 0x0200),
+        ("directory_stride_wrap", 1, 0x001E, 0x0100, 0x40, 0xFFF8),
+    ]
+    table_offset = 0x6DB1
+    vectors = []
+
+    for name, index, field_offset, bitset_base, value, directory_base in cases:
+        target = 0x7000
+        directory_words = []
+        memory = [
+            (
+                game_segment,
+                0x672C,
+                struct.pack("<HH", directory_base, directory_segment),
+            ),
+            (data_segment, 0x672C, struct.pack("<HH", 0x1234, 0x5678)),
+            (game_segment, table_offset, bytes([field_offset & 0xFF])),
+            (data_segment, table_offset, bytes([(field_offset ^ 0x3F) & 0xFF])),
+        ]
+        for entry_index in range(index + 1):
+            object_offset = (
+                target if entry_index == index else 0x1000 + entry_index * 0x14
+            )
+            offset = (directory_base + entry_index * 20 + 0x10) & 0xFFFF
+            directory_words.append((offset, object_offset))
+            memory.append(
+                (directory_segment, offset, struct.pack("<H", object_offset))
+            )
+
+        byte_offset = (
+            bitset_base
+            + (field_offset if field_offset < 0x8000 else field_offset - 0x10000)
+            + (index >> 3)
+        ) & 0xFFFF
+        memory.append((data_segment, byte_offset, bytes([value])))
+        memory.append((game_segment, byte_offset, bytes([value ^ 0xFF])))
+
+        initial = {
+            "eax": 0xA1A10000 | target,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | bitset_base,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": game_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        machine = execute(0x6210, 0x624A, initial, memory)
+
+        for register, expected in initial.items():
+            if register == "flags":
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6210 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        shift_count = (index & 7) + 1
+        carry = (value >> (8 - shift_count)) & 1
+        shifted = (value << shift_count) & 0xFF
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "carry": carry,
+            "zero": int(shifted == 0),
+            "sign": (shifted >> 7) & 1,
+            "parity": int((shifted.bit_count() & 1) == 0),
+        }
+        actual_flags = {
+            "carry": flags & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "parity": (flags >> 2) & 1,
+        }
+        if shift_count == 1:
+            expected_flags["overflow"] = ((shifted >> 7) & 1) ^ carry
+            actual_flags["overflow"] = (flags >> 11) & 1
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6210 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        for offset, object_offset in directory_words:
+            actual = machine.mem_read(directory_segment * 16 + offset, 2)
+            if actual != struct.pack("<H", object_offset):
+                raise AssertionError(f"0x6210 {name}: directory memory changed")
+        if machine.mem_read(game_segment * 16 + table_offset, 1) != bytes(
+            [field_offset & 0xFF]
+        ):
+            raise AssertionError(f"0x6210 {name}: field table changed")
+        if machine.mem_read(data_segment * 16 + byte_offset, 1) != bytes([value]):
+            raise AssertionError(f"0x6210 {name}: bitset memory changed")
+        if EXE[0x624A] != 0xC3:
+            raise AssertionError("0x6210: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "object_offset": target,
+                "directory_index": index,
+                "directory_offset": directory_base,
+                "field_offset": field_offset,
+                "bitset_base": bitset_base,
+                "bitset_byte_offset": byte_offset,
+                "bitset_byte": value,
+                "shift_count": shift_count,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -9192,6 +9322,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_61a6_natural.json",
         ship_3d_position_field_resolve_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6210_natural.json",
+        ship_3d_object_table_bit_test_vectors(),
         args.check,
     )
     update_vector(

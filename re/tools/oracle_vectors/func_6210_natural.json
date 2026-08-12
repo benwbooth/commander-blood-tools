@@ -1,0 +1,142 @@
+[
+  {
+    "name": "index0_high_bit_set",
+    "object_offset": 28672,
+    "directory_index": 0,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 286,
+    "bitset_byte": 128,
+    "shift_count": 1,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1,
+      "overflow": 1
+    }
+  },
+  {
+    "name": "index0_high_bit_clear",
+    "object_offset": 28672,
+    "directory_index": 0,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 286,
+    "bitset_byte": 127,
+    "shift_count": 1,
+    "defined_flags": {
+      "carry": 0,
+      "zero": 0,
+      "sign": 1,
+      "parity": 0,
+      "overflow": 1
+    }
+  },
+  {
+    "name": "index1_bit6_set",
+    "object_offset": 28672,
+    "directory_index": 1,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 286,
+    "bitset_byte": 64,
+    "shift_count": 2,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1
+    }
+  },
+  {
+    "name": "index7_low_bit_set",
+    "object_offset": 28672,
+    "directory_index": 7,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 286,
+    "bitset_byte": 1,
+    "shift_count": 8,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1
+    }
+  },
+  {
+    "name": "index8_next_byte_high_set",
+    "object_offset": 28672,
+    "directory_index": 8,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 287,
+    "bitset_byte": 128,
+    "shift_count": 1,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1,
+      "overflow": 1
+    }
+  },
+  {
+    "name": "index15_next_byte_low_clear",
+    "object_offset": 28672,
+    "directory_index": 15,
+    "directory_offset": 512,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 287,
+    "bitset_byte": 254,
+    "shift_count": 8,
+    "defined_flags": {
+      "carry": 0,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1
+    }
+  },
+  {
+    "name": "signed_field_offset_wrap",
+    "object_offset": 28672,
+    "directory_index": 0,
+    "directory_offset": 512,
+    "field_offset": 65534,
+    "bitset_base": 1,
+    "bitset_byte_offset": 65535,
+    "bitset_byte": 128,
+    "shift_count": 1,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1,
+      "overflow": 1
+    }
+  },
+  {
+    "name": "directory_stride_wrap",
+    "object_offset": 28672,
+    "directory_index": 1,
+    "directory_offset": 65528,
+    "field_offset": 30,
+    "bitset_base": 256,
+    "bitset_byte_offset": 286,
+    "bitset_byte": 64,
+    "shift_count": 2,
+    "defined_flags": {
+      "carry": 1,
+      "zero": 1,
+      "sign": 0,
+      "parity": 1
+    }
+  }
+]
