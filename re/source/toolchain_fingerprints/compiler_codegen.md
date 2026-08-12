@@ -1318,6 +1318,25 @@ local, reallocates destination/related/inversion, materializes query truth,
 addresses globals through DS, and duplicates returns. Exact integration still
 needs fixed segment placement and the original compact BP/BX/AX/DL allocation.
 
+VM opcode-C9 handler `0x006FB9` consumes an absolute record offset in the
+segment loaded from GS:0x6724. It reads the old kind, clears kind, then reads
+the old related offset before clearing related and value. For old C4 records it
+reads the related kind, adds the signed selector-0x13 field offset with 16-bit
+wrap, resets the sequence/depth globals, and clears the reciprocal triple.
+Eight direct vectors prove the exact volatile access order, both teardown
+paths, positive, negative, and zero offsets, reciprocal wrap and aliasing, the
+real field-offset helper, segmented ownership, registers, flags, and return.
+They corrected the old candidate's base-relative pointers and premature read.
+
+The corrected one-to-one candidate directly accepts and returns SI. Open
+Watcom `-3 -ox -mm` compiles it without warnings to 29 instructions/88 bytes
+versus 26/58 original; Turbo C 2.01 medium emits 56 instructions. Watcom keeps
+the direct helper call, signed 16-bit addition, and ordered volatile stores,
+but saves DX, materializes the record segment in DX, uses indexed BX stores
+instead of DI plus STOSW, and addresses globals through DS. Exact integration
+still needs fixed GS placement and the original frameless AX/BX/CX/DI
+allocation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1372,7 +1391,7 @@ LCS and then mnemonic similarity:
 | `vm_c6_record_match` | medium, `-ox`, register | 31/32 | 0.0323 | 0.5806 | 0.0323 |
 | `vm_c7_record_match` | medium, `-ox`, register | 39/49 | 0.0769 | 0.6154 | 0.1026 |
 | `vm_c8_record_match` | medium, `-ox`, register | 34/32 | 0.0294 | 0.5294 | 0.0294 |
-| `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
+| `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 

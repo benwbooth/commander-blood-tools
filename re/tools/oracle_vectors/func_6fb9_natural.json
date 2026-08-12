@@ -1,0 +1,261 @@
+[
+  {
+    "name": "clear_non_c4",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5120,
+    "old_record": [
+      200,
+      12288,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 48879,
+    "reciprocal_offset": 12288,
+    "reciprocal_after": [
+      48879,
+      48059,
+      52428
+    ],
+    "sequence_active_after": 165,
+    "depth_step_after": 90,
+    "final_script_offset": 26626,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "clear_zero_kind",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5152,
+    "old_record": [
+      0,
+      12544,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 48879,
+    "reciprocal_offset": 12544,
+    "reciprocal_after": [
+      48879,
+      48059,
+      52428
+    ],
+    "sequence_active_after": 165,
+    "depth_step_after": 90,
+    "final_script_offset": 26658,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "clear_non_c4_script_end",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5184,
+    "old_record": [
+      1024,
+      12800,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 48879,
+    "reciprocal_offset": 12800,
+    "reciprocal_after": [
+      48879,
+      48059,
+      52428
+    ],
+    "sequence_active_after": 165,
+    "depth_step_after": 90,
+    "final_script_offset": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c4_positive_offset",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5216,
+    "old_record": [
+      196,
+      13056,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 1,
+    "reciprocal_offset": 13062,
+    "reciprocal_after": [
+      0,
+      0,
+      0
+    ],
+    "sequence_active_after": 0,
+    "depth_step_after": 6,
+    "final_script_offset": 26722,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c4_negative_offset",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5248,
+    "old_record": [
+      196,
+      13312,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 32768,
+    "reciprocal_offset": 13308,
+    "reciprocal_after": [
+      0,
+      0,
+      0
+    ],
+    "sequence_active_after": 0,
+    "depth_step_after": 6,
+    "final_script_offset": 26754,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c4_reciprocal_wrap",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5280,
+    "old_record": [
+      196,
+      2,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 32,
+    "reciprocal_offset": 65534,
+    "reciprocal_after": [
+      0,
+      0,
+      0
+    ],
+    "sequence_active_after": 0,
+    "depth_step_after": 6,
+    "final_script_offset": 26786,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c4_zero_offset",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 5312,
+    "old_record": [
+      196,
+      13568,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 4,
+    "reciprocal_offset": 13568,
+    "reciprocal_after": [
+      0,
+      0,
+      0
+    ],
+    "sequence_active_after": 0,
+    "depth_step_after": 6,
+    "final_script_offset": 26818,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c4_reciprocal_alias_primary",
+    "record_base_offset_ignored": 4660,
+    "record_offset": 6144,
+    "old_record": [
+      196,
+      6136,
+      42330
+    ],
+    "record_after": [
+      0,
+      0,
+      0
+    ],
+    "related_kind": 2,
+    "reciprocal_offset": 6144,
+    "reciprocal_after": [
+      0,
+      0,
+      0
+    ],
+    "sequence_active_after": 0,
+    "depth_step_after": 6,
+    "final_script_offset": 26850,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

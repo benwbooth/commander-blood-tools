@@ -14328,6 +14328,264 @@ def vm_c8_record_match_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_c9_clear_record_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    record_segment = 0x5200
+    stack_segment = 0x9000
+    cases = [
+        {"name": "clear_non_c4", "kind": 0x00C8, "related": 0x3000},
+        {"name": "clear_zero_kind", "kind": 0, "related": 0x3100},
+        {"name": "clear_non_c4_script_end", "kind": 0x0400, "related": 0x3200, "start": 0xFFFF},
+        {"name": "c4_positive_offset", "kind": 0x00C4, "related": 0x3300, "related_kind": 1, "field_offset": 6},
+        {"name": "c4_negative_offset", "kind": 0x00C4, "related": 0x3400, "related_kind": 0x8000, "field_offset": -4},
+        {"name": "c4_reciprocal_wrap", "kind": 0x00C4, "related": 2, "related_kind": 0x20, "field_offset": -4},
+        {"name": "c4_zero_offset", "kind": 0x00C4, "related": 0x3500, "related_kind": 4, "field_offset": 0},
+        {"name": "c4_reciprocal_alias_primary", "kind": 0x00C4, "record": 0x1800, "related": 0x17F8, "related_kind": 2, "field_offset": 8},
+    ]
+    vectors = []
+
+    def logic_flags_16(value: int) -> dict[str, bool]:
+        result = value & 0xFFFF
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": False,
+        }
+
+    def sub_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        kind = int(case["kind"])
+        related = int(case["related"])
+        related_kind = int(case.get("related_kind", 0xBEEF))
+        field_offset = int(case.get("field_offset", 0))
+        record_offset = int(case.get("record", 0x1400 + case_index * 0x20))
+        record_tail = 0xA55A
+        reciprocal_offset = (related + field_offset) & 0xFFFF
+        reciprocal_words = [0xAAAA, 0xBBBB, 0xCCCC]
+        if field_offset == 0:
+            reciprocal_words[0] = related_kind
+        elif field_offset == -4:
+            reciprocal_words[2] = related_kind
+        if reciprocal_offset == record_offset:
+            reciprocal_words = [kind, related, record_tail]
+        reciprocal_before = tuple(reciprocal_words)
+        start = int(case.get("start", 0x6800 + case_index * 0x20))
+        script = struct.pack("<H", record_offset)
+        final_script = (start + 2) & 0xFFFF
+        base_offset = 0x1234
+        sequence_before = 0xA5
+        depth_before = 0x5A
+        is_c4 = kind == 0x00C4
+        sequence_after = 0 if is_c4 else sequence_before
+        depth_after = 6 if is_c4 else depth_before
+
+        pointer = struct.pack("<HH", base_offset, record_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x2222, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x3333, stack_segment)
+        relative_record = (base_offset + record_offset) & 0xFFFF
+        relative_decoy = b"\xad\xde\xad\xde\xad\xde"
+        bit_index = (related_kind & -related_kind).bit_length() - 1
+        field_table_offset = (0x6D60 + (0x13 << 4) + bit_index) & 0xFFFF
+        memory = [
+            (game_segment, 0x6724, pointer),
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (game_segment, 0x252A, bytes([sequence_before])),
+            (game_segment, 0x2531, bytes([depth_before])),
+            (data_segment, 0x252A, b"\x11"),
+            (data_segment, 0x2531, b"\x22"),
+            (stack_segment, 0x252A, b"\x33"),
+            (stack_segment, 0x2531, b"\x44"),
+            (record_segment, record_offset, struct.pack("<HHH", kind, related, record_tail)),
+            (record_segment, related, struct.pack("<H", related_kind)),
+            (record_segment, reciprocal_offset, struct.pack("<HHH", *reciprocal_before)),
+            (record_segment, relative_record, relative_decoy),
+            (game_segment, field_table_offset, bytes([field_offset & 0xFF])),
+            (data_segment, field_table_offset, b"\x7f"),
+        ]
+        immutable_script = []
+        for byte_index, byte in enumerate(script):
+            script_offset = start + byte_index
+            encoded = bytes([byte])
+            memory.extend(
+                [
+                    (data_segment, script_offset, encoded),
+                    (extra_segment, script_offset, b"\x5a"),
+                    (game_segment, script_offset, b"\xa5"),
+                ]
+            )
+            immutable_script.append((script_offset, encoded))
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        order = []
+        helper_events = []
+        terminal = []
+
+        def read_record(machine: Uc) -> tuple[int, int, int]:
+            return tuple(
+                struct.unpack(
+                    "<H",
+                    machine.mem_read(
+                        record_segment * 16 + ((record_offset + offset) & 0xFFFF),
+                        2,
+                    ),
+                )[0]
+                for offset in (0, 2, 4)
+            )
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address in (0x6FC7, 0x6FC8, 0x6FCB, 0x6FCC):
+                order.append((address, read_record(machine)))
+            elif address == 0x6023:
+                helper_events.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address == 0x6FF1:
+                terminal.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        read_record(machine),
+                        machine.mem_read(game_segment * 16 + 0x252A, 1)[0],
+                        machine.mem_read(game_segment * 16 + 0x2531, 1)[0],
+                    )
+                )
+
+        machine = execute(0x6FB9, 0x6FF2, initial, memory, code_handler=capture)
+        expected_order = [
+            (0x6FC7, (kind, related, record_tail)),
+            (0x6FC8, (0, related, record_tail)),
+            (0x6FCB, (0, related, record_tail)),
+            (0x6FCC, (0, 0, record_tail)),
+        ]
+        if order != expected_order:
+            raise AssertionError(f"0x6fb9 {name}: order={order}, expected={expected_order}")
+        expected_helpers = (
+            [(0x13, related_kind, final_script, (record_offset + 6) & 0xFFFF, record_segment)]
+            if is_c4
+            else []
+        )
+        if helper_events != expected_helpers:
+            raise AssertionError(f"0x6fb9 {name}: helpers={helper_events}, expected={expected_helpers}")
+        terminal_di = (reciprocal_offset + 6) & 0xFFFF if is_c4 else (record_offset + 6) & 0xFFFF
+        terminal_bx = related_kind if is_c4 else related
+        expected_terminal = [
+            (0, terminal_bx, kind, final_script, terminal_di, record_segment, (0, 0, 0), sequence_after, depth_after)
+        ]
+        if terminal != expected_terminal:
+            raise AssertionError(f"0x6fb9 {name}: terminal={terminal}, expected={expected_terminal}")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": initial["eax"] & 0xFFFF0000,
+                "ebx": (initial["ebx"] & 0xFFFF0000) | terminal_bx,
+                "ecx": (initial["ecx"] & 0xFFFF0000) | kind,
+                "esi": (initial["esi"] & 0xFFFF0000) | final_script,
+                "es": record_segment,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(f"0x6fb9 {name}: {register}={actual:#x}, expected={expected:#x}")
+        reciprocal_after = tuple(
+            struct.unpack(
+                "<H",
+                machine.mem_read(
+                    record_segment * 16 + ((reciprocal_offset + offset) & 0xFFFF),
+                    2,
+                ),
+            )[0]
+            for offset in (0, 2, 4)
+        )
+        expected_reciprocal = (0, 0, 0) if is_c4 else reciprocal_before
+        if reciprocal_after != expected_reciprocal:
+            raise AssertionError(
+                f"0x6fb9 {name}: reciprocal={reciprocal_after}, expected={expected_reciprocal}"
+            )
+        if bytes(machine.mem_read(record_segment * 16 + relative_record, 6)) != relative_decoy:
+            raise AssertionError(f"0x6fb9 {name}: base-relative record changed")
+        for script_offset, expected in immutable_script:
+            if bytes(machine.mem_read(data_segment * 16 + script_offset, 1)) != expected:
+                raise AssertionError(f"0x6fb9 {name}: script changed")
+        for segment, offset, expected in [
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (data_segment, 0x252A, b"\x11"),
+            (data_segment, 0x2531, b"\x22"),
+            (stack_segment, 0x252A, b"\x33"),
+            (stack_segment, 0x2531, b"\x44"),
+            (data_segment, field_table_offset, b"\x7f"),
+        ]:
+            if bytes(machine.mem_read(segment * 16 + offset, len(expected))) != expected:
+                raise AssertionError(f"0x6fb9 {name}: segment decoy changed")
+        expected_flags = logic_flags_16(0) if is_c4 else sub_flags_16(kind, 0xC4)
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {flag: bool(flags & masks[flag]) for flag in expected_flags}
+        if actual_flags != expected_flags:
+            raise AssertionError(f"0x6fb9 {name}: flags={actual_flags}, expected={expected_flags}")
+        if EXE[0x6FF2] != 0xC3:
+            raise AssertionError("0x6fb9: expected near RET boundary")
+        vectors.append(
+            {
+                "name": name,
+                "record_base_offset_ignored": base_offset,
+                "record_offset": record_offset,
+                "old_record": [kind, related, record_tail],
+                "record_after": [0, 0, 0],
+                "related_kind": related_kind,
+                "reciprocal_offset": reciprocal_offset,
+                "reciprocal_after": list(expected_reciprocal),
+                "sequence_active_after": sequence_after,
+                "depth_step_after": depth_after,
+                "final_script_offset": final_script,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -19048,6 +19306,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6f62_natural.json",
         vm_c8_record_match_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6fb9_natural.json",
+        vm_c9_clear_record_vectors(),
         args.check,
     )
     update_vector(
