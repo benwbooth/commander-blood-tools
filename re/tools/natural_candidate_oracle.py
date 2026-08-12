@@ -3067,6 +3067,242 @@ def graphics_band_fill_vectors(
     return vectors
 
 
+def fullscreen_copy_vectors(
+    entry: int, pointer_global: int, routine_name: str
+) -> list[dict[str, object]]:
+    routine_hashes = {
+        0x3E46: "6911992622456f7740750a31025560aa2df326de8988938338d383bbace87dfd",
+        0x3E5B: "362c8ff17c1838d14a1315e2b6c262674d128bd857001f944b9d9f789618ee05",
+    }
+    expected_hash = routine_hashes[entry]
+    if hashlib.sha256(EXE[entry : entry + 21]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered 21-byte body changed")
+
+    cases = [
+        ("zero_offsets", 0x0000, 0x0000),
+        ("nonzero_offsets", 0x0100, 0x0200),
+        ("source_wrap", 0x0800, 0x0000),
+        ("destination_wrap", 0x0000, 0x0800),
+        ("both_wrap", 0xFFC0, 0xFFC0),
+        ("opposite_halves", 0x8000, 0x4000),
+    ]
+    game_segment = 0x2C00
+    source_segment = 0x5000
+    extra_segment = 0x4400
+    fs_segment = 0x4800
+    display_segment = 0x7000
+    back_segment = 0x9000
+    stack_segment = 0xB000
+    return_address = 0x6F00
+    target_segment = (
+        display_segment if pointer_global == 0x5221 else back_segment
+    )
+    other_segment = back_segment if target_segment == display_segment else display_segment
+    rep_address = entry + 0x0D
+    vectors = []
+
+    for case_index, (name, source_offset, destination_offset) in enumerate(cases):
+        source_before = bytearray(
+            (byte_index * 43 + case_index * 31 + 3) & 0xFF
+            for byte_index in range(0x10000)
+        )
+        target_before = bytes(
+            (byte_index * 17 + case_index * 23 + 5) & 0xFF
+            for byte_index in range(0x10000)
+        )
+        other_before = bytes(
+            (byte_index * 29 + case_index * 11 + 9) & 0xFF
+            for byte_index in range(0x10000)
+        )
+
+        pointer_values = {
+            0x5221: (
+                destination_offset if pointer_global == 0x5221 else 0x5678,
+                display_segment,
+            ),
+            0x5229: (
+                destination_offset if pointer_global == 0x5229 else 0x9ABC,
+                back_segment,
+            ),
+        }
+        game_data = [
+            (
+                game_segment,
+                offset,
+                struct.pack("<HH", pointer_offset, segment),
+            )
+            for offset, (pointer_offset, segment) in pointer_values.items()
+        ]
+        source_decoys = [
+            (0x5221, struct.pack("<HH", 0x1357, extra_segment)),
+            (0x5229, struct.pack("<HH", 0x2468, fs_segment)),
+        ]
+        for offset, value in source_decoys:
+            source_before[offset : offset + len(value)] = value
+        decoy_data = [
+            (extra_segment, 0x5221, bytes.fromhex("11223344")),
+            (extra_segment, 0x5229, bytes.fromhex("55667788")),
+            (fs_segment, 0x5221, bytes.fromhex("99aabbcc")),
+            (fs_segment, 0x5229, bytes.fromhex("ddeeff00")),
+        ]
+
+        target_after = bytearray(target_before)
+        for byte_index in range(0xFA00):
+            target_after[(destination_offset + byte_index) & 0xFFFF] = (
+                source_before[(source_offset + byte_index) & 0xFFFF]
+            )
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial_flags = 0x0AD7 ^ ((case_index & 1) * 0x0895)
+        initial_flags |= 0x0400 if case_index & 1 else 0
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        phases = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == rep_address and not phases:
+                phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                        bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x0400),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, bytes(source_before)),
+                (
+                    display_segment,
+                    0,
+                    target_before if target_segment == display_segment else other_before,
+                ),
+                (
+                    back_segment,
+                    0,
+                    target_before if target_segment == back_segment else other_before,
+                ),
+                *game_data,
+                *decoy_data,
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=100000,
+        )
+
+        expected_phases = [
+            (
+                0x3E80,
+                source_segment,
+                source_offset,
+                target_segment,
+                destination_offset,
+                False,
+            )
+        ]
+        if phases != expected_phases:
+            raise AssertionError(
+                f"{entry:#x} {name}: phases={phases}, expected={expected_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{entry:#x} {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(source_before):
+            raise AssertionError(f"{entry:#x} {name}: source changed")
+        actual_target = bytes(machine.mem_read(target_segment * 16, 0x10000))
+        if actual_target != bytes(target_after):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_target, target_after)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{entry:#x} {name}: target mismatch at {mismatch:#x}"
+            )
+        if bytes(machine.mem_read(other_segment * 16, 0x10000)) != other_before:
+            raise AssertionError(f"{entry:#x} {name}: other framebuffer changed")
+        for segment, offset, value in game_data + decoy_data:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(value)))
+            if actual != value:
+                raise AssertionError(
+                    f"{entry:#x} {name}: pointer or decoy memory changed"
+                )
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        expected_flags = {
+            flag: False if flag == "df" else bool(initial_flags & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "routine": routine_name,
+                "source_offset": source_offset,
+                "destination_offset": destination_offset,
+                "copied_byte_count": 0xFA00,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -26348,6 +26584,18 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3dbf_natural.json",
         graphics_band_fill_vectors(0x3DBF, 0x5229, "back_buffer_fill"),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3e46_natural.json",
+        fullscreen_copy_vectors(0x3E46, 0x5221, "full_screen_blit"),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3e5b_natural.json",
+        fullscreen_copy_vectors(
+            0x3E5B, 0x5229, "fullscreen_copy_to_backbuffer"
+        ),
         args.check,
     )
     update_vector(

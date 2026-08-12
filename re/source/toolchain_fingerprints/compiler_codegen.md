@@ -1915,6 +1915,25 @@ loop instead of `REP STOSD`. It also relies on the normal clear-DF C ABI instead
 of reproducing the binary's unconditional `CLD`, which remains a narrow
 integration boundary rather than a reason to put assembly into the C logic.
 
+Fullscreen-copy siblings `0x003E46` and `0x003E5B` consume a near source in
+DS:SI, retain both the segment and offset of the display or backbuffer pointer
+from GS, clear DF, and copy exactly `0x3E80` dwords (64,000 bytes) with `REP
+MOVSD`. Six independent direct vectors per routine prove source and destination
+ownership, nonzero offsets, separate and simultaneous 16-bit offset wrap,
+exact destination extent, immutable source and sibling buffer, full register
+and segment preservation, all non-DF flags, CLD, and far return.
+
+The one-to-one candidates express the operation as ordinary `_fmemcpy`, bind
+the source through SI, and retain the named GAME_DATA far pointer. Four
+Watcom-only push/pop instructions preserve AX and ES because the intrinsic's C
+boundary otherwise exposes those implementation registers. Open Watcom `-3
+-ox -mm` compiles each actual candidate without warnings to 35 instructions/53
+bytes versus 13/21 original. It uses `REP MOVSW` followed by a zero-byte `REP
+MOVSB` tail and assumes the standard clear-DF C ABI. Turbo C 2.01 medium emits a
+14-instruction wrapper that stack-passes the source and calls its far-memory
+library. The data operation is fully represented in natural C; direct `REP
+MOVSD` and unconditional CLD remain narrow integration/codegen differences.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1941,6 +1960,7 @@ LCS and then mnemonic similarity:
 | `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | medium, `-ox`, register | 35/49 | 0.2286 | 0.6571 | 0.2571 |
 | `graphics_band_fill` | medium, `-ox`, register | 30/52 | 0.1667 | 0.7667 | 0.2000 |
+| `fullscreen_copy` | medium, `-ox`, register | 13/35 | 0.5385 | 0.9231 | 0.5385 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

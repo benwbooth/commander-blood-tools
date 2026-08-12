@@ -1,0 +1,98 @@
+[
+  {
+    "name": "zero_offsets",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 0,
+    "destination_offset": 0,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "nonzero_offsets",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 256,
+    "destination_offset": 512,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_wrap",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 2048,
+    "destination_offset": 0,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "destination_wrap",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 0,
+    "destination_offset": 2048,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "both_wrap",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 65472,
+    "destination_offset": 65472,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "opposite_halves",
+    "routine": "fullscreen_copy_to_backbuffer",
+    "source_offset": 32768,
+    "destination_offset": 16384,
+    "copied_byte_count": 64000,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  }
+]

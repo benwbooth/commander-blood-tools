@@ -74,6 +74,10 @@ void CB_NEAR back_buffer_copy_from(
         cb_u16 x, cb_u16 y, cb_u16 width); /* 0x00933A */
 void CB_FAR blit_fill_row_5221(cb_u8 color); /* 0x003D7B */
 void CB_FAR back_buffer_fill(cb_u8 color);   /* 0x003DBF */
+void CB_FAR full_screen_blit(
+        const cb_u32 CB_NEAR *source); /* 0x003E46 */
+void CB_FAR fullscreen_copy_to_backbuffer(
+        const cb_u32 CB_NEAR *source); /* 0x003E5B */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
@@ -83,6 +87,8 @@ void CB_FAR back_buffer_fill(cb_u8 color);   /* 0x003DBF */
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
+#pragma aux full_screen_blit parm [si] modify exact []
+#pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
 #endif
 
 #endif

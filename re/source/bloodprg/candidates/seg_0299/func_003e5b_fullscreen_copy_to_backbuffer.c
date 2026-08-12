@@ -1,12 +1,17 @@
 #include "../include/bloodprg_graphics.h"
 
-void CB_FAR fullscreen_copy_to_backbuffer(const cb_u32 *source)
+void CB_FAR fullscreen_copy_to_backbuffer(const cb_u32 CB_NEAR *source)
 {
-    volatile cb_u32 CB_FAR *dst;
-    cb_u16 i;
+#if defined(__WATCOMC__)
+    _asm push ax;
+    _asm push es;
+#endif
 
-    dst = (volatile cb_u32 CB_FAR *)graphics_back_buffer;
-    for (i = 0; i < 0x3e80u; ++i) {
-        dst[i] = source[i];
-    }
+    _fmemcpy((void CB_FAR *)graphics_back_buffer,
+            (const void CB_FAR *)source, 0xfa00u);
+
+#if defined(__WATCOMC__)
+    _asm pop es;
+    _asm pop ax;
+#endif
 }
