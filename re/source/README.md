@@ -36,6 +36,7 @@ are not accepted replacement source until promoted out of the candidate tree.
 
 Start with:
 
+- `coverage.md` for current natural-C candidate coverage by module.
 - `compiler_corpus.md` for the compiler/codegen comparison gate.
 - `bloodprg/candidates/README.md` for pending natural-C candidate rules.
 - `bloodprg/abi_observations.tsv` for current routine-level ABI facts.
