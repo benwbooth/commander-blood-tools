@@ -6,8 +6,8 @@
 ; seg_off: 04da:22cf
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
-; label: dlg_line_record_parser
-; label_comment: PER-LINE RECORD PARSER — the source of the per-line asset table. Reads one record from ds:si and fans it into THREE destinations: (1) a NAME copied to DS:0x24C6 (0x766F..0x767E, LODSB with a js/cmp 0x20 terminator like the other name copiers); (2) the ASSET ID at 0x7684, stored as (byte-1)*16 or a sign-extended passthrough, through the cursor DS:0x1FAF into the 4-byte-stride table DS:0x1FB5; (3) a further field at 0x769D through the cursor DS:0x1FAD, which advances 0x1A (26) bytes per record. Immediately preceded at 0x7667 by `mov ax,1; lcall 0xb1b:0x855` — the SND bank loader with AX!=0, the mode that preserves the table and may write son.snd
+; label: byte_parser_copy_24c6_printable
+; label_comment: Byte-parser opcode 0x10 copies bytes 0x20 through 0x7F from DS:SI to ES:0x24C6. It leaves the first control or high-bit byte unconsumed and writes a NUL terminator without advancing DI. Adjacent routines parse later line-record fields; they are outside this function boundary.
 ; incoming: byte_parser_dispatch_74e5:byte_0x10
 ; byte_count: 21
 ; boundary: cfg_blocks_5_terminals_2

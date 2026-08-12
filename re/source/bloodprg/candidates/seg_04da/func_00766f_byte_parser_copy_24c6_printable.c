@@ -1,12 +1,12 @@
 #include "../include/bloodprg_byte_parser.h"
 
-const cb_u8 CB_NEAR *CB_NEAR byte_parser_copy_247a_printable(
+const cb_u8 CB_NEAR *CB_NEAR byte_parser_copy_24c6_printable(
     const cb_u8 CB_NEAR *script_bytes)
 {
     char CB_GAME_DATA *dst;
     cb_u8 ch;
 
-    dst = byte_parser_table_247a;
+    dst = byte_parser_line_name;
     for (;;) {
         ch = *script_bytes++;
         if ((cb_i8)ch < 0 || ch < 0x20u) {

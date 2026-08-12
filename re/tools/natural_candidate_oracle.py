@@ -14825,6 +14825,165 @@ def credit_presenter_b_cryo_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def byte_parser_copy_printable_vectors(
+    entry: int, destination_offset: int, opcode: int
+) -> list[dict[str, object]]:
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("zero_at_offset_zero", 0, b"\x00"),
+        ("immediate_control", 0x6800, b"\x1f"),
+        ("immediate_high", 0x6820, b"\x80"),
+        ("max_printable", 0x6840, b"\x7f\x00"),
+        ("text_then_control", 0x6860, b"ABC\x1f"),
+        ("text_then_high", 0x6880, b"Z\xff"),
+        ("script_wrap", 0xFFFE, b"AB\x00"),
+        ("high_at_segment_end", 0xFFFF, b"\x80"),
+    ]
+    expected_tail = bytes.fromhex("ac0ac078073c207203aaebf44e26c60500c3")
+    vectors = []
+
+    if EXE[entry : entry + 1] != b"\xbf":
+        raise AssertionError(f"{entry:#x}: expected MOV DI entry")
+    if struct.unpack("<H", EXE[entry + 1 : entry + 3])[0] != destination_offset:
+        raise AssertionError(f"{entry:#x}: unexpected destination immediate")
+    if EXE[entry + 3 : entry + 21] != expected_tail:
+        raise AssertionError(f"{entry:#x}: unexpected printable-copy body")
+
+    for name, start, payload in cases:
+        stop_index = next(
+            index
+            for index, byte in enumerate(payload)
+            if byte < 0x20 or byte >= 0x80
+        )
+        copied = payload[:stop_index]
+        stop_byte = payload[stop_index]
+        destination_before = bytes([0xCC]) * (len(copied) + 3)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            (destination_segment, destination_offset, destination_before),
+            (game_segment, destination_offset, bytes([0xA5]) * len(destination_before)),
+            (data_segment, destination_offset, bytes([0x5A]) * len(destination_before)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        immutable_source = []
+        for byte_index, byte in enumerate(payload):
+            source_offset = (start + byte_index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            immutable_source.append((source_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BE55,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        machine = execute(entry, return_address, initial, memory)
+
+        expected_destination = (
+            copied + b"\x00" + destination_before[len(copied) + 1 :]
+        )
+        destination_after = bytes(
+            machine.mem_read(
+                destination_segment * 16 + destination_offset,
+                len(destination_before),
+            )
+        )
+        if destination_after != expected_destination:
+            raise AssertionError(
+                f"{entry:#x} {name}: destination={destination_after!r}, "
+                f"expected={expected_destination!r}"
+            )
+        for source_offset, expected in immutable_source:
+            if machine.mem_read(data_segment * 16 + source_offset, 1) != expected:
+                raise AssertionError(f"{entry:#x} {name}: source changed")
+        for segment, expected_byte in ((game_segment, 0xA5), (data_segment, 0x5A)):
+            actual = bytes(
+                machine.mem_read(
+                    segment * 16 + destination_offset,
+                    len(destination_before),
+                )
+            )
+            expected = bytes([expected_byte]) * len(destination_before)
+            if actual != expected:
+                raise AssertionError(f"{entry:#x} {name}: segment decoy changed")
+
+        final_source_offset = (start + stop_index) & 0xFFFF
+        final_destination_offset = destination_offset + len(copied)
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": (initial["eax"] & 0xFFFFFF00) | stop_byte,
+                "esi": (initial["esi"] & 0xFFFF0000) | final_source_offset,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_destination_offset,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        dec_input = (final_source_offset + 1) & 0xFFFF
+        dec_result = final_source_offset
+        expected_flags = {
+            "cf": stop_byte < 0x20,
+            "pf": (dec_result & 0xFF).bit_count() % 2 == 0,
+            "af": (dec_input & 0x0F) == 0,
+            "zf": dec_result == 0,
+            "sf": bool(dec_result & 0x8000),
+            "of": dec_input == 0x8000,
+        }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {flag: bool(flags & masks[flag]) for flag in expected_flags}
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"{entry:#x} {name}: near RET did not consume return word")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "entry": f"0x{entry:06x}",
+                "dispatch_opcode": f"0x{opcode:02x}",
+                "source_offset": start,
+                "input_hex": payload.hex(),
+                "copied_hex": copied.hex(),
+                "stopping_byte": stop_byte,
+                "destination_offset": destination_offset,
+                "final_source_offset": final_source_offset,
+                "final_destination_offset": final_destination_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -19575,6 +19734,26 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7612_natural.json",
         credit_presenter_b_cryo_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7629_natural.json",
+        byte_parser_copy_printable_vectors(0x7629, 0x20B8, 0x06),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_766f_natural.json",
+        byte_parser_copy_printable_vectors(0x766F, 0x24C6, 0x10),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_76c0_natural.json",
+        byte_parser_copy_printable_vectors(0x76C0, 0x2460, 0x09),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_76d5_natural.json",
+        byte_parser_copy_printable_vectors(0x76D5, 0x247A, 0x0A),
         args.check,
     )
     update_vector(

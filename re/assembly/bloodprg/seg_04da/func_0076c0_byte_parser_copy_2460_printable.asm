@@ -6,6 +6,8 @@
 ; seg_off: 04da:2320
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_copy_2460_printable
+; label_comment: Byte-parser opcode 0x09 copies bytes 0x20 through 0x7F from DS:SI to ES:0x2460. It leaves the first control or high-bit byte unconsumed and writes a NUL terminator without advancing DI.
 ; incoming: byte_parser_dispatch_74e5:byte_0x09
 ; byte_count: 21
 ; boundary: cfg_blocks_5_terminals_2

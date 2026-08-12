@@ -1367,6 +1367,23 @@ into ES, saves BX/DX/ES, emits a scalar indexed copy, and zero-extends the final
 AL through AH before storing the timer. Exact integration needs the original
 ambient ES=GS contract, DI allocation, LODSB/STOSB loop, and GS state accesses.
 
+Byte-parser handlers `0x007629`, `0x00766F`, `0x0076C0`, and `0x0076D5`
+share one 21-byte copy shape with destination offsets 0x20B8, 0x24C6, 0x2460,
+and 0x247A. Each copies bytes 0x20 through 0x7F from DS:SI to ES:DI, leaves
+the first low-control or high-bit byte unconsumed, and writes a NUL without
+advancing DI. Eight direct vectors per entry prove both stopping classes,
+boundary bytes, source wrap, DS/ES ownership, AL/SI/DI outputs, preservation,
+near return, CF inherited from the stopping test, and the remaining flags from
+the final `DEC SI`. They also narrow `0x00766F` from an incorrect whole-record
+label to its actual name-copy boundary.
+
+The four one-to-one candidates use direct SI results, a signed-byte guard, and
+named based-segment destinations. Open Watcom `-3 -ox -mm` compiles each without
+warnings to 23 instructions/42 bytes versus 11/21 original; Turbo C 2.01 medium
+emits 28 instructions. Watcom retains the signed and unsigned tests, explicit
+cursor decrement, and NUL store, but loads `GAME_DATA`, saves BX/DX/ES, and
+uses scalar indexing instead of ambient ES plus LODSB/STOSB.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1424,6 +1441,7 @@ LCS and then mnemonic similarity:
 | `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
 | `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `credit_presenter_b_cryo` | medium, `-ox`, register | 8/19 | 0.1250 | 0.6250 | 0.1250 |
+| `byte_parser_copy_printable` | medium, `-ox`, register | 11/23 | 0.1818 | 0.6364 | 0.2727 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 
