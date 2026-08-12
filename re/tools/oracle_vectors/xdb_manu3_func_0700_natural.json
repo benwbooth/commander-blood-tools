@@ -1,0 +1,312 @@
+[
+  {
+    "name": "common_clip_rejected",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 36864,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {},
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "already_lowest",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 28945,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x069a": 4096
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "rotate_vertex_2_on_tie",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 29218,
+        "vertices": [
+          12352,
+          12288,
+          12320
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x069a": 4096
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "rotate_vertex_1",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 29491,
+        "vertices": [
+          12320,
+          12352,
+          12288
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x0690": 4096
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_y_clamps_bucket",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 29764,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x0686": 4096
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_span_rejected",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 36864,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {},
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "second_span_rejected",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 36864,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {},
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "doubled_y_sign_clamps_bucket",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 1,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 30037,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x0686": 4096
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "three_faces_prepend_same_bucket",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 3,
+    "faces_after": [
+      {
+        "offset": 4096,
+        "link": 30310,
+        "vertices": [
+          12288,
+          12320,
+          12352
+        ]
+      },
+      {
+        "offset": 4104,
+        "link": 4096,
+        "vertices": [
+          12416,
+          12448,
+          12480
+        ]
+      },
+      {
+        "offset": 4112,
+        "link": 4104,
+        "vertices": [
+          12544,
+          12576,
+          12608
+        ]
+      }
+    ],
+    "bucket_heads_after": {
+      "0x069e": 4112
+    },
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_count_wraps_65536_iterations",
+    "module": "manu3",
+    "entry": 1792,
+    "face_count": 0,
+    "iterations": 65536,
+    "face_cursor_after": 0,
+    "renderer_fallthrough": 1909,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

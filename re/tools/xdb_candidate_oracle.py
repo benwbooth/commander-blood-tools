@@ -3499,6 +3499,468 @@ def manu3_face_builder_next_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_face_bucket_sort_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0700
+    renderer = 0x0775
+    image = load_image(module)
+    expected_hash = "7c332d7f4ed8cddf1dc6289e33919c57f0109bddda0a68301cf67eb912eaaa32"
+    if hashlib.sha256(image[entry : entry + 117]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 117-byte body changed")
+
+    patched_image = bytearray(image)
+    patched_image[renderer] = 0xC3
+    cases = (
+        {
+            "name": "common_clip_rejected",
+            "faces": (((10, 0x0001), (20, 0x0003), (30, 0x0005)),),
+            "bucket_heads": {},
+        },
+        {
+            "name": "already_lowest",
+            "faces": (((10, 0), (20, 0), (30, 0)),),
+            "bucket_heads": {0x069A: 0x7111},
+        },
+        {
+            "name": "rotate_vertex_2_on_tie",
+            "faces": (((10, 0), (30, 0), (10, 0)),),
+            "bucket_heads": {0x069A: 0x7222},
+        },
+        {
+            "name": "rotate_vertex_1",
+            "faces": (((25, 0), (5, 0), (20, 0)),),
+            "bucket_heads": {0x0690: 0x7333},
+        },
+        {
+            "name": "negative_y_clamps_bucket",
+            "faces": (((-5, 0), (4, 0), (6, 0)),),
+            "bucket_heads": {0x0686: 0x7444},
+        },
+        {
+            "name": "first_span_rejected",
+            "faces": (((0, 0), (400, 0), (100, 0)),),
+            "bucket_heads": {},
+        },
+        {
+            "name": "second_span_rejected",
+            "faces": (((0, 0), (100, 0), (400, 0)),),
+            "bucket_heads": {},
+        },
+        {
+            "name": "doubled_y_sign_clamps_bucket",
+            "faces": (((0x4000, 0), (0x4001, 0), (0x4002, 0)),),
+            "bucket_heads": {0x0686: 0x7555},
+        },
+        {
+            "name": "three_faces_prepend_same_bucket",
+            "faces": (
+                ((12, 0), (20, 0), (24, 0)),
+                ((12, 0), (18, 0), (28, 0)),
+                ((12, 0), (16, 0), (32, 0)),
+            ),
+            "bucket_heads": {0x069E: 0x7666},
+        },
+    )
+    geometry_segment = 0x4400
+    active_segment = 0x6000
+    raster_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0xF000
+    face_list_offset = 0x1000
+    vectors = []
+
+    def read_word(buffer: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", buffer, offset)[0]
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", buffer, offset, value & 0xFFFF)
+
+    def signed_word(value: int) -> int:
+        return value if value < 0x8000 else value - 0x10000
+
+    def model_sort(
+        geometry: bytearray,
+        raster: bytearray,
+        count: int,
+        start: int,
+        initial: dict[str, int],
+    ) -> tuple[dict[str, int], dict[str, bool]]:
+        ax = initial["eax"] & 0xFFFF
+        bx = initial["ebx"] & 0xFFFF
+        cx = count
+        dx = initial["edx"] & 0xFFFF
+        si = start
+        di = initial["edi"] & 0xFFFF
+        bp = initial["ebp"] & 0xFFFF
+        iterations = count if count != 0 else 0x10000
+
+        for _iteration in range(iterations):
+            bx = read_word(geometry, si + 2)
+            di = read_word(geometry, si + 4)
+            ax = read_word(geometry, bx + 0x12)
+            bp = read_word(geometry, si + 6)
+            ax &= read_word(geometry, di + 0x12)
+            ax &= read_word(geometry, bp + 0x12)
+            if ax == 0:
+                saved_count = cx
+                ax = read_word(geometry, bx + 0x0A)
+                dx = read_word(geometry, di + 0x0A)
+                cx = read_word(geometry, bp + 0x0A)
+                if signed_word(dx) > signed_word(cx):
+                    if signed_word(ax) >= signed_word(cx):
+                        bp, bx = bx, bp
+                        cx, ax = ax, cx
+                        bp, di = di, bp
+                        dx, cx = cx, dx
+                        write_word(geometry, si + 2, bx)
+                        write_word(geometry, si + 4, di)
+                        write_word(geometry, si + 6, bp)
+                elif signed_word(ax) > signed_word(dx):
+                    bp, bx = bx, bp
+                    cx, ax = ax, cx
+                    di, bx = bx, di
+                    dx, ax = ax, dx
+                    write_word(geometry, si + 2, bx)
+                    write_word(geometry, si + 4, di)
+                    write_word(geometry, si + 6, bp)
+
+                dx = (dx - ax) & 0xFFFF
+                cx = (cx - ax) & 0xFFFF
+                if dx < 0x0190 and cx < 0x0190:
+                    ax = (ax + ax) & 0xFFFF
+                    di = 0x0686
+                    if signed_word(ax) >= 0:
+                        di = (di + ax) & 0xFFFF
+                    bx = read_word(raster, di)
+                    write_word(raster, di, si)
+                    write_word(geometry, si, bx)
+                cx = saved_count
+
+            add_left = si
+            si = (si + 8) & 0xFFFF
+            cx = (cx - 1) & 0xFFFF
+
+        low_words = {
+            "eax": ax,
+            "ebx": bx,
+            "ecx": cx,
+            "edx": dx,
+            "esi": si,
+            "edi": di,
+            "ebp": bp,
+        }
+        expected_registers = {
+            register: (initial[register] & 0xFFFF0000) | value
+            for register, value in low_words.items()
+        }
+        expected_registers.update(
+            {
+                "sp": 0xFF02,
+                "ds": geometry_segment,
+                "es": raster_segment,
+                "fs": active_segment,
+                "gs": initial["gs"],
+                "ss": stack_segment,
+            }
+        )
+        return expected_registers, add_flags_16(add_left, 8, initial["flags"])
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+
+    for case_index, case in enumerate(cases):
+        faces = case["faces"]
+        count = len(faces)
+        geometry_before = bytearray(
+            ((offset * 13 + case_index * 29 + 7) & 0xFF)
+            for offset in range(0x10000)
+        )
+        raster_before = bytearray(
+            ((offset * 31 + case_index * 17 + 3) & 0xFF)
+            for offset in range(0x10000)
+        )
+        active_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x2400)
+        )
+        write_word(active_before, 0x2300, face_list_offset)
+        write_word(active_before, 0x2304, count)
+
+        for face_index, vertices in enumerate(faces):
+            face_offset = face_list_offset + face_index * 8
+            vertex_offsets = tuple(
+                0x3000 + face_index * 0x0080 + vertex_index * 0x0020
+                for vertex_index in range(3)
+            )
+            struct.pack_into(
+                "<HHHH",
+                geometry_before,
+                face_offset,
+                0x9000 + face_index,
+                *vertex_offsets,
+            )
+            for vertex_offset, (screen_y, clip_flags) in zip(
+                vertex_offsets, vertices
+            ):
+                write_word(geometry_before, vertex_offset + 0x0A, screen_y)
+                write_word(geometry_before, vertex_offset + 0x12, clip_flags)
+        for bucket_offset, head in case["bucket_heads"].items():
+            write_word(raster_before, bucket_offset, head)
+
+        geometry_expected = bytearray(geometry_before)
+        raster_expected = bytearray(raster_before)
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4567 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | ((0x5678 + case_index) & 0xFFFF),
+            "edi": 0xF6F60000 | ((0x6789 + case_index) & 0xFFFF),
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": active_segment,
+            "gs": 0x7800,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        expected_registers, expected_flags = model_sort(
+            geometry_expected,
+            raster_expected,
+            count,
+            face_list_offset,
+            initial,
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        renderer_entries: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == renderer:
+                renderer_entries.append(
+                    {
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "fs": machine.reg_read(UC_X86_REG_FS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (active_segment, 0, bytes(active_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=code_handler,
+        )
+        expected_entry = {
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": active_segment,
+            "sp": 0xFF00,
+        }
+        if renderer_entries != [expected_entry]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"renderer entries={renderer_entries}, expected={[expected_entry]}"
+            )
+        for segment, expected, label in (
+            (geometry_segment, geometry_expected, "geometry"),
+            (active_segment, active_before, "active"),
+            (raster_segment, raster_expected, "raster"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, len(expected)))
+            if actual != bytes(expected):
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(len(expected))
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{label} differs at {differences}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: stack sentinel changed"
+            )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        face_words = [
+            struct.unpack_from("<HHHH", geometry_expected, face_list_offset + i * 8)
+            for i in range(count)
+        ]
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "face_count": count,
+                "faces_after": [
+                    {
+                        "offset": face_list_offset + i * 8,
+                        "link": words[0],
+                        "vertices": list(words[1:]),
+                    }
+                    for i, words in enumerate(face_words)
+                ],
+                "bucket_heads_after": {
+                    f"0x{offset:04x}": read_word(raster_expected, offset)
+                    for offset in case["bucket_heads"]
+                },
+                "renderer_fallthrough": renderer,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    geometry_before = bytearray(
+        ((offset * 13 + 0xA7) & 0xFF) for offset in range(0x10000)
+    )
+    for face_offset in range(0, 0x10000, 8):
+        write_word(geometry_before, face_offset + 2, 0x8000)
+        write_word(geometry_before, face_offset + 4, 0x8000)
+        write_word(geometry_before, face_offset + 6, 0x8000)
+    active_before = bytearray(
+        ((offset * 37 + 0x3D) & 0xFF) for offset in range(0x2400)
+    )
+    write_word(active_before, 0x2300, 0)
+    write_word(active_before, 0x2304, 0)
+    raster_before = bytearray(
+        ((offset * 31 + 0x51) & 0xFF) for offset in range(0x10000)
+    )
+    initial_flags = 0x0E93
+    initial = {
+        "eax": 0xA1A1BEEF,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C33456,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F66789,
+        "ebp": 0x9797789A,
+        "sp": 0xFF00,
+        "ds": geometry_segment,
+        "es": raster_segment,
+        "fs": active_segment,
+        "gs": 0x7800,
+        "ss": stack_segment,
+        "flags": initial_flags,
+    }
+    geometry_expected = bytearray(geometry_before)
+    raster_expected = bytearray(raster_before)
+    expected_registers, expected_flags = model_sort(
+        geometry_expected, raster_expected, 0, 0, initial
+    )
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    renderer_entries = []
+
+    def zero_code_handler(
+        machine: Uc, address: int, _size: int, _data: object
+    ) -> None:
+        if address == renderer:
+            renderer_entries.append(address)
+
+    machine = execute(
+        bytes(patched_image),
+        entry,
+        return_address,
+        initial,
+        [
+            (0, return_address, b"\xcc"),
+            (geometry_segment, 0, bytes(geometry_before)),
+            (active_segment, 0, bytes(active_before)),
+            (raster_segment, 0, bytes(raster_before)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+        max_instructions=1000000,
+        code_handler=zero_code_handler,
+    )
+    if renderer_entries != [renderer]:
+        raise AssertionError(
+            f"{module}:{entry:#x} zero_count: renderer entries={renderer_entries}"
+        )
+    for segment, expected, label in (
+        (geometry_segment, geometry_expected, "geometry"),
+        (active_segment, active_before, "active"),
+        (raster_segment, raster_expected, "raster"),
+    ):
+        actual = bytes(machine.mem_read(segment * 16, len(expected)))
+        if actual != bytes(expected):
+            raise AssertionError(f"{module}:{entry:#x} zero_count: {label} changed")
+    if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+        raise AssertionError(f"{module}:{entry:#x} zero_count: stack sentinel changed")
+    for register, expected in expected_registers.items():
+        actual = machine.reg_read(REGISTERS[register])
+        if actual != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} zero_count: "
+                f"{register}={actual:#x}, expected={expected:#x}"
+            )
+    flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+    actual_flags = {
+        flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+    }
+    if actual_flags != expected_flags:
+        raise AssertionError(
+            f"{module}:{entry:#x} zero_count: "
+            f"flags={actual_flags}, expected={expected_flags}"
+        )
+    vectors.append(
+        {
+            "name": "zero_count_wraps_65536_iterations",
+            "module": module,
+            "entry": entry,
+            "face_count": 0,
+            "iterations": 0x10000,
+            "face_cursor_after": expected_registers["esi"] & 0xFFFF,
+            "renderer_fallthrough": renderer,
+            "defined_flags": expected_flags,
+        }
+    )
+
+    return vectors
+
+
 def manu3_face_activate_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x0D7D
@@ -4058,6 +4520,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_06f6_natural.json",
         manu3_face_builder_next_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0700_natural.json",
+        manu3_face_bucket_sort_vectors(),
         args.check,
     )
     update_vector(

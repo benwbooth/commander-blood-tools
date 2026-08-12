@@ -4,6 +4,8 @@
 #include "xdb_common.h"
 
 #define XDB_MANU3_ACTIVE_SLOTS_OFFSET 0x1032u
+#define XDB_MANU3_BUCKET_HEADS_OFFSET 0x0686u
+#define XDB_MANU3_MAX_FACE_HEIGHT 0x0190u
 
 typedef struct xdb_manu3_tween_spec {
     xdb_u8 count;
@@ -36,6 +38,13 @@ typedef struct xdb_manu3_face {
     xdb_u16 vertex_2;
 } xdb_manu3_face;
 
+typedef struct xdb_manu3_vertex {
+    xdb_u8 field_000[0x0A];
+    xdb_i16 screen_y;
+    xdb_u8 field_00c[0x06];
+    xdb_u16 clip_flags;
+} xdb_manu3_vertex;
+
 typedef struct xdb_manu3_segment_directory {
     xdb_u16 field_000;
     xdb_u16 work_segment_0;
@@ -67,6 +76,8 @@ extern volatile xdb_u16 xdb_manu3_finished_pitch; /* DS:0x223A */
 extern volatile xdb_u16 xdb_manu3_finished_yaw; /* DS:0x223C */
 extern volatile xdb_u16 xdb_manu3_view_pitch; /* DS:0x23E2 */
 extern volatile xdb_u16 xdb_manu3_view_yaw; /* DS:0x23E4 */
+extern volatile xdb_u16 xdb_manu3_face_list_offset; /* DS/FS:0x2300 */
+extern volatile xdb_u16 xdb_manu3_face_count; /* DS/FS:0x2304 */
 extern volatile xdb_u16 xdb_manu3_sequence_table_offset; /* DS:0x2306 */
 
 void XDB_FAR xdb_manu3_anim_select_entry(xdb_u16 selector);
@@ -80,6 +91,7 @@ void XDB_NEAR xdb_manu3_face_builder_next(void);
 void XDB_NEAR xdb_manu3_face_bucket_sort(
         xdb_u16 geometry_segment,
         xdb_u16 raster_segment);
+void XDB_NEAR xdb_manu3_span_renderer_init(void);
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 void XDB_NEAR xdb_manu3_face_activate(
@@ -105,6 +117,8 @@ void XDB_NEAR xdb_manu3_gradient_setup(
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_bucket_sort \
         parm [ax] [dx] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_manu3_span_renderer_init \
+        modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_activate \

@@ -2161,6 +2161,25 @@ Natural C exposes those two segment selectors as typed arguments. Watcom emits
 6 instructions with stack arguments. Exact integration needs only the
 `AX/DX` to `DS/ES` sorter-entry adapter.
 
+Ten direct vectors prove the complete `0x000700` face bucket sorter. The
+routine walks 8-byte faces and 20-byte projected vertices, rejects triangles
+whose three clip masks share a bit, rotates the signed lowest-Y vertex into
+slot zero, rejects either modular unsigned Y span at 400 or more, and prepends
+accepted faces to the scanline bucket selected by doubled Y. The matrix covers
+both rotation paths, the original `y0 == y2` tie rotation, both height rejects,
+negative and high-doubled-Y bucket clamping, three-face prepend order, exact
+renderer fallthrough, and count zero's 65,536 iterations.
+
+The actual candidate compiles warning-free with Open Watcom. Its best tested
+shape is medium model `-3 -ox -mm -zdp`: 83 instructions/226 bytes versus the
+original 47/117. The compiler retains the two signed sort branches, two span
+checks, bucket calculation, and `DEC/JNE` loop, but uses a stack frame and far
+pointer temporaries because the source exposes geometry/raster segments rather
+than assuming live `DS`/`ES`. Turbo C 2.01 medium emits 132 instructions. The
+remaining integration boundaries map the original FS active-data globals to C
+data addressing and the physical fallthrough into `0x000775` to a normal
+typed call.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2206,6 +2225,7 @@ LCS and then mnemonic similarity:
 | `xdb_manu3_tween_step` | medium, `-ox -zdp`, register | 26/30 | 0.0385 | 0.6538 | 0.0769 |
 | `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
 | `xdb_manu3_face_builder_next` | medium, `-ox -zdp`, register | 2/3 | 0.0000 | 1.0000 | 0.0000 |
+| `xdb_manu3_face_bucket_sort` | medium, `-ox -zdp`, register | 47/83 | 0.0000 | 0.6809 | 0.0426 |
 | `xdb_manu3_face_activate` | medium, `-ox -zdp`, register | 6/12 | 0.0000 | 0.6667 | 0.0000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
