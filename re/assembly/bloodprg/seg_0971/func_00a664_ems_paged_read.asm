@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: ems_paged_read
-; label_comment: EMS/banked-memory paged read (gated on [0xdbc]&1, handle [0xa58]!=-1): [0xd84]=32-bit linear addr; si=addr&0x3fff (offset in 16KB page), page=addr>>14 (bx). Accesses banked memory via 16KB-page addressing - the EMS/XMS large-memory model (int 67h) the game uses. After updating source offset/remaining at 0xa722, execution falls through the independently callable queue_d8c_enqueue shared tail at 0xa734, which advances destination head/count and clears carry before the common RET.
+; label_comment: read CX bytes into the D8C queue through one of three backends: map four EMS pages from handle 0xa58 and far-move from page frame 0xa66; submit a standard XMS move descriptor at 0xa6c from handle 0xa56; or repeatedly DOS-seek/read handle 0xd5b until AX>=CX. The common tail advances 32-bit source offset/remaining by AX, then falls through queue_d8c_enqueue 0xa734 to advance destination head/count and clear carry.
 ; shared_tail_entries: 0x00a734
 ; byte_count: 218
 ; boundary: cfg_blocks_11_terminals_3

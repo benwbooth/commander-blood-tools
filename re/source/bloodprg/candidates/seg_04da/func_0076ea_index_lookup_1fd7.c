@@ -29,9 +29,9 @@ void CB_NEAR index_lookup_1fd7(const cb_u8 **script_bytes)
     *dst = '\0';
 
     if ((vm_ui_flags & 1u) == 0) {
-        if (byte_parser_ems_handle_a58 != -1) {
+        if (resource_ems_handle != -1) {
             path_build_call_2693(byte_parser_index_path_2137);
-        } else if (byte_parser_ems_handle_a56 != -1) {
+        } else if (resource_xms_handle != -1) {
             file_open_wrapper(byte_parser_index_path_2137,
                     byte_parser_back_buffer);
         }

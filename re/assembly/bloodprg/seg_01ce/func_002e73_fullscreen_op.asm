@@ -6,8 +6,8 @@
 ; seg_off: 01ce:0b93
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: fullscreen_op
-; label_comment: full-screen (0xfa00=64000-byte) operation: ebp=0xfa00 budget; 32-bit fill/copy loop over the whole 320x200 frame. A screen clear/fill or bulk-decode over the full framebuffer
+; label: far_memmove
+; label_comment: overlap-safe far memmove of EAX bytes from DS:SI to ES:DI. Converts both far pointers to linear addresses, selects backward copy when source overlaps destination, and normalizes the pointers in chunks of at most 0xfa00 (64000) bytes; preserves all registers and returns with direction clear.
 ; incoming: call@0x005302->01ce:0b93
 ; incoming: call@0x00a6aa->01ce:0b93
 ; incoming: call@0x00b95f->01ce:0b93

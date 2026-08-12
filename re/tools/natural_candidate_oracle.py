@@ -1248,6 +1248,494 @@ def list_read_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ems_paged_read_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    buffer_segment = 0x3000
+    page_frame_segment = 0x5000
+    cases = [
+        {
+            "name": "direct_no_handle",
+            "mode": "direct",
+            "byte_count": 4,
+            "file_handle": 0,
+            "head": 0x0100,
+            "queued": 0x0020,
+            "source_offset": 0x12345678,
+            "source_remaining": 0x01020304,
+            "reads": [],
+        },
+        {
+            "name": "direct_zero_count",
+            "mode": "direct",
+            "byte_count": 0,
+            "file_handle": 1,
+            "head": 0,
+            "queued": 0,
+            "source_offset": 0,
+            "source_remaining": 0,
+            "reads": [(0, False, b"")],
+        },
+        {
+            "name": "direct_short_retry",
+            "mode": "direct",
+            "byte_count": 4,
+            "file_handle": 5,
+            "head": 0x0220,
+            "queued": 0x0030,
+            "source_offset": 0x0000FFFF,
+            "source_remaining": 0x00010001,
+            "reads": [(2, False, b"no"), (4, False, b"DATA")],
+        },
+        {
+            "name": "direct_oversized_result",
+            "mode": "direct",
+            "byte_count": 2,
+            "file_handle": 0x7FFF,
+            "head": 0xFFFE,
+            "queued": 0xFFFF,
+            "source_offset": 0xFFFFFFFF,
+            "source_remaining": 1,
+            "reads": [(3, True, b"XYZ")],
+        },
+        {
+            "name": "banked_ems_cross_page",
+            "mode": "ems",
+            "byte_count": 9,
+            "ems_handle": 0x2345,
+            "head": 0x1234,
+            "queued": 0x4567,
+            "source_offset": 0x0000BFFD,
+            "source_remaining": 0x00020000,
+            "payload": b"EMS-CROSS",
+        },
+        {
+            "name": "banked_ems_page_wrap_zero_count",
+            "mode": "ems",
+            "byte_count": 0,
+            "ems_handle": 0xFFFE,
+            "head": 0xAAAA,
+            "queued": 0x5555,
+            "source_offset": 0xFFFFC000,
+            "source_remaining": 0,
+            "payload": b"",
+        },
+        {
+            "name": "banked_xms_even",
+            "mode": "xms",
+            "byte_count": 6,
+            "xms_handle": 0x1357,
+            "head": 0x0300,
+            "queued": 0x0400,
+            "source_offset": 0x10203040,
+            "source_remaining": 0x55667788,
+            "payload": b"XMS123",
+        },
+        {
+            "name": "banked_xms_odd_rounds_move",
+            "mode": "xms",
+            "byte_count": 5,
+            "xms_handle": 0x2468,
+            "head": 0xFFFC,
+            "queued": 0xFFFE,
+            "source_offset": 0xFFFFFFFE,
+            "source_remaining": 3,
+            "payload": b"odd5!+",
+        },
+        {
+            "name": "banked_without_memory_falls_back_to_file",
+            "mode": "fallback",
+            "byte_count": 3,
+            "file_handle": 9,
+            "head": 0x0800,
+            "queued": 0x0900,
+            "source_offset": 0xAABBCCDD,
+            "source_remaining": 0x11223344,
+            "reads": [(3, False, b"DOS")],
+        },
+    ]
+    vectors = []
+
+    def read_u16(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + offset, 2)
+        )[0]
+
+    def read_u32(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + offset, 4)
+        )[0]
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode = str(case["mode"])
+        byte_count = int(case["byte_count"])
+        file_handle = int(case.get("file_handle", 0))
+        ems_handle = int(case.get("ems_handle", 0xFFFF))
+        xms_handle = int(case.get("xms_handle", 0xFFFF))
+        head = int(case["head"])
+        queued = int(case["queued"])
+        source_offset = int(case["source_offset"])
+        source_remaining = int(case["source_remaining"])
+        reads = list(case.get("reads", []))
+        payload = bytes(case.get("payload", b""))
+        calls: list[dict[str, int | bool | str]] = []
+        read_index = 0
+        initial_eax = 0xA5A50000 | (0x2000 + case_index)
+        initial = {
+            "eax": initial_eax,
+            "bx": 0x2222,
+            "cx": byte_count,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000,
+            "gs": data_segment,
+            "flags": 0x0202,
+        }
+        destination_seed = bytes([0xCC]) * 0x10000
+        page_frame_seed = bytearray([0xEE]) * 0x10000
+        if mode == "ems":
+            page_offset = source_offset & 0x3FFF
+            page_frame_seed[page_offset : page_offset + len(payload)] = payload
+        xms_descriptor_seed = bytes(range(0x80, 0x90))
+
+        def interrupt_handler(
+            machine: Uc,
+            number: int,
+            case_name: str = name,
+            call_log: list[dict[str, int | bool | str]] = calls,
+            responses: list[object] = reads,
+        ) -> None:
+            nonlocal read_index
+            if number == 0x67:
+                ax = machine.reg_read(UC_X86_REG_AX)
+                if ax >> 8 != 0x44:
+                    raise AssertionError(
+                        f"0xA664 {case_name} invoked unexpected EMS function"
+                    )
+                call_log.append(
+                    {
+                        "call": "ems_map",
+                        "handle": machine.reg_read(UC_X86_REG_DX),
+                        "logical_page": machine.reg_read(UC_X86_REG_BX),
+                        "physical_page": ax & 0xFF,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, ax & 0x00FF)
+                return
+
+            if number != 0x21:
+                raise AssertionError(
+                    f"0xA664 {case_name} invoked unexpected INT {number:#x}"
+                )
+            function = machine.reg_read(UC_X86_REG_AX) >> 8
+            if function == 0x42:
+                call_log.append(
+                    {
+                        "call": "seek",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "offset_high": machine.reg_read(UC_X86_REG_CX),
+                        "offset_low": machine.reg_read(UC_X86_REG_DX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, source_offset & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DX, source_offset >> 16)
+                set_carry(machine, False)
+                return
+
+            if function != 0x3F or read_index >= len(responses):
+                raise AssertionError(
+                    f"0xA664 {case_name} invoked unexpected DOS function "
+                    f"{function:#x}"
+                )
+            returned, failed, response_payload = responses[read_index]
+            read_index += 1
+            destination_segment = machine.reg_read(UC_X86_REG_DS)
+            destination_offset = machine.reg_read(UC_X86_REG_DX)
+            call_log.append(
+                {
+                    "call": "read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "destination_segment": destination_segment,
+                    "destination_offset": destination_offset,
+                    "returned": int(returned),
+                    "carry": bool(failed),
+                }
+            )
+            machine.mem_write(
+                destination_segment * 16 + destination_offset,
+                bytes(response_payload),
+            )
+            machine.reg_write(UC_X86_REG_AX, int(returned))
+            set_carry(machine, bool(failed))
+
+        def code_handler(
+            machine: Uc,
+            address: int,
+            _size: int,
+            case_name: str = name,
+            call_log: list[dict[str, int | bool | str]] = calls,
+            xms_payload: bytes = payload,
+        ) -> None:
+            if address == 0xA6AA:
+                transferred = machine.reg_read(UC_X86_REG_EAX)
+                source_segment = machine.reg_read(UC_X86_REG_DS)
+                source_pointer = machine.reg_read(UC_X86_REG_SI)
+                destination_segment = machine.reg_read(UC_X86_REG_ES)
+                destination_offset = machine.reg_read(UC_X86_REG_DI)
+                call_log.append(
+                    {
+                        "call": "far_memmove",
+                        "byte_count": transferred,
+                        "source_segment": source_segment,
+                        "source_offset": source_pointer,
+                        "destination_segment": destination_segment,
+                        "destination_offset": destination_offset,
+                    }
+                )
+                copied = bytes(
+                    machine.mem_read(
+                        source_segment * 16 + source_pointer, transferred
+                    )
+                )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset, copied
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~(1 << 10))
+            elif address == 0xA6F0:
+                descriptor = struct.unpack(
+                    "<IHIHI",
+                    machine.mem_read(data_segment * 16 + 0x0A6C, 16),
+                )
+                destination_offset = descriptor[4] & 0xFFFF
+                destination_segment = descriptor[4] >> 16
+                call_log.append(
+                    {
+                        "call": "xms_move",
+                        "function": machine.reg_read(UC_X86_REG_EAX),
+                        "length": descriptor[0],
+                        "source_handle": descriptor[1],
+                        "source_offset": descriptor[2],
+                        "destination_handle": descriptor[3],
+                        "destination_segment": destination_segment,
+                        "destination_offset": destination_offset,
+                    }
+                )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset,
+                    xms_payload[: descriptor[0]],
+                )
+                machine.reg_write(UC_X86_REG_AX, 1)
+                set_carry(machine, False)
+
+        memory = [
+            (0, 0xA6AA, b"\x90" * 5),
+            (0, 0xA6F0, b"\x90" * 4),
+            (data_segment, 0x0A56, struct.pack("<H", xms_handle)),
+            (data_segment, 0x0A58, struct.pack("<H", ems_handle)),
+            (data_segment, 0x0A66, struct.pack("<H", page_frame_segment)),
+            (data_segment, 0x0A6C, xms_descriptor_seed),
+            (data_segment, 0x0D5B, struct.pack("<H", file_handle)),
+            (data_segment, 0x0D84, struct.pack("<I", source_offset)),
+            (data_segment, 0x0D88, struct.pack("<I", source_remaining)),
+            (
+                data_segment,
+                0x0D8C,
+                struct.pack("<HH", head, buffer_segment),
+            ),
+            (data_segment, 0x0D9A, struct.pack("<H", queued)),
+            (
+                data_segment,
+                0x0DBC,
+                bytes([1 if mode in {"ems", "xms", "fallback"} else 0]),
+            ),
+            (buffer_segment, 0, destination_seed),
+            (page_frame_segment, 0, bytes(page_frame_seed)),
+        ]
+        machine = execute(
+            0xA664,
+            0xA73D,
+            initial,
+            memory,
+            interrupt_handler,
+            code_handler,
+        )
+
+        success = not (mode in {"direct", "fallback"} and file_handle < 1)
+        if mode in {"ems", "xms"}:
+            transferred = byte_count
+        elif success:
+            transferred = int(reads[-1][0])
+        else:
+            transferred = initial_eax & 0xFFFF
+        expected_increment = transferred if success else 0
+        expected_state = {
+            "source_offset": (
+                source_offset + expected_increment
+            ) & 0xFFFFFFFF,
+            "source_remaining": (
+                source_remaining - expected_increment
+            ) & 0xFFFFFFFF,
+            "head": (head + expected_increment) & 0xFFFF,
+            "queued": (queued + expected_increment) & 0xFFFF,
+        }
+        observed_state = {
+            "source_offset": read_u32(machine, 0x0D84),
+            "source_remaining": read_u32(machine, 0x0D88),
+            "head": read_u16(machine, 0x0D8C),
+            "queued": read_u16(machine, 0x0D9A),
+        }
+        if observed_state != expected_state:
+            raise AssertionError(
+                f"0xA664 {name} state={observed_state}, "
+                f"expected={expected_state}"
+            )
+
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not success):
+            raise AssertionError(
+                f"0xA664 {name} carry={carry}, expected={int(not success)}"
+            )
+        expected_eax = initial_eax
+        if success and mode in {"ems", "xms"}:
+            expected_eax = transferred
+        elif success:
+            expected_eax = (initial_eax & 0xFFFF0000) | transferred
+        expected_bx = initial["bx"]
+        expected_dx = initial["dx"]
+        if mode == "ems":
+            expected_bx = ((source_offset >> 14) + 4) & 0xFFFF
+            expected_dx = ems_handle
+        elif mode in {"direct", "fallback"}:
+            expected_bx = file_handle
+            if success:
+                expected_dx = head
+        expected_registers = {
+            "eax": expected_eax,
+            "bx": expected_bx,
+            "cx": byte_count,
+            "dx": expected_dx,
+            "si": initial["si"],
+            "di": initial["di"],
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": initial["es"],
+            "gs": initial["gs"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xA664 {name} {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        if mode == "ems":
+            map_calls = [call for call in calls if call["call"] == "ems_map"]
+            expected_pages = [
+                ((source_offset >> 14) + index) & 0xFFFF for index in range(4)
+            ]
+            if [call["logical_page"] for call in map_calls] != expected_pages:
+                raise AssertionError(f"0xA664 {name} mapped unexpected EMS pages")
+            if [call["physical_page"] for call in map_calls] != list(range(4)):
+                raise AssertionError(f"0xA664 {name} mapped unexpected EMS frames")
+            if any(call["handle"] != ems_handle for call in map_calls):
+                raise AssertionError(f"0xA664 {name} used an unexpected EMS handle")
+            move_calls = [
+                call for call in calls if call["call"] == "far_memmove"
+            ]
+            if move_calls != [
+                {
+                    "call": "far_memmove",
+                    "byte_count": byte_count,
+                    "source_segment": page_frame_segment,
+                    "source_offset": source_offset & 0x3FFF,
+                    "destination_segment": buffer_segment,
+                    "destination_offset": head,
+                }
+            ]:
+                raise AssertionError(f"0xA664 {name} used an unexpected far move")
+        elif mode == "xms":
+            rounded_length = byte_count + (byte_count & 1)
+            expected_xms_call = {
+                "call": "xms_move",
+                "function": 0x0B00,
+                "length": rounded_length,
+                "source_handle": xms_handle,
+                "source_offset": source_offset,
+                "destination_handle": 0,
+                "destination_segment": buffer_segment,
+                "destination_offset": head,
+            }
+            if calls != [expected_xms_call]:
+                raise AssertionError(f"0xA664 {name} built an unexpected XMS move")
+        else:
+            if read_index != len(reads):
+                raise AssertionError(f"0xA664 {name} missed a DOS response")
+            if len(calls) != len(reads) * 2:
+                raise AssertionError(f"0xA664 {name} made unexpected DOS calls")
+            for call in calls:
+                if call["handle"] != file_handle:
+                    raise AssertionError(
+                        f"0xA664 {name} used an unexpected DOS handle"
+                    )
+                if call["call"] == "seek" and (
+                    call["offset_high"] != source_offset >> 16
+                    or call["offset_low"] != source_offset & 0xFFFF
+                ):
+                    raise AssertionError(f"0xA664 {name} sought unexpectedly")
+                if call["call"] == "read" and (
+                    call["requested"] != byte_count
+                    or call["destination_segment"] != buffer_segment
+                    or call["destination_offset"] != head
+                ):
+                    raise AssertionError(f"0xA664 {name} read unexpectedly")
+
+        expected_payload = b""
+        if mode in {"ems", "xms"}:
+            expected_payload = payload
+        elif success:
+            expected_payload = bytes(reads[-1][2])
+        actual_payload = bytes(
+            machine.mem_read(
+                buffer_segment * 16 + head, len(expected_payload)
+            )
+        )
+        if actual_payload != expected_payload:
+            raise AssertionError(f"0xA664 {name} copied unexpected bytes")
+        descriptor = bytes(machine.mem_read(data_segment * 16 + 0x0A6C, 16))
+        if mode != "xms" and descriptor != xms_descriptor_seed:
+            raise AssertionError(f"0xA664 {name} changed the XMS descriptor")
+
+        vectors.append(
+            {
+                "name": name,
+                "mode": mode,
+                "success": success,
+                "requested": byte_count,
+                "transferred": transferred if success else None,
+                "calls": calls,
+                "result": observed_state,
+                "result_carry": carry,
+                "xms_descriptor": list(descriptor) if mode == "xms" else None,
+            }
+        )
+
+    return vectors
+
+
 def list_init_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     cases = [
@@ -2866,6 +3354,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a622_natural.json", list_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a664_natural.json", ems_paged_read_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_a734_natural.json", queue_enqueue_vectors(), args.check

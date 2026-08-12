@@ -1,0 +1,347 @@
+[
+  {
+    "name": "direct_no_handle",
+    "mode": "direct",
+    "success": false,
+    "requested": 4,
+    "transferred": null,
+    "calls": [],
+    "result": {
+      "source_offset": 305419896,
+      "source_remaining": 16909060,
+      "head": 256,
+      "queued": 32
+    },
+    "result_carry": 1,
+    "xms_descriptor": null
+  },
+  {
+    "name": "direct_zero_count",
+    "mode": "direct",
+    "success": true,
+    "requested": 0,
+    "transferred": 0,
+    "calls": [
+      {
+        "call": "seek",
+        "handle": 1,
+        "offset_high": 0,
+        "offset_low": 0
+      },
+      {
+        "call": "read",
+        "handle": 1,
+        "requested": 0,
+        "destination_segment": 12288,
+        "destination_offset": 0,
+        "returned": 0,
+        "carry": false
+      }
+    ],
+    "result": {
+      "source_offset": 0,
+      "source_remaining": 0,
+      "head": 0,
+      "queued": 0
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  },
+  {
+    "name": "direct_short_retry",
+    "mode": "direct",
+    "success": true,
+    "requested": 4,
+    "transferred": 4,
+    "calls": [
+      {
+        "call": "seek",
+        "handle": 5,
+        "offset_high": 0,
+        "offset_low": 65535
+      },
+      {
+        "call": "read",
+        "handle": 5,
+        "requested": 4,
+        "destination_segment": 12288,
+        "destination_offset": 544,
+        "returned": 2,
+        "carry": false
+      },
+      {
+        "call": "seek",
+        "handle": 5,
+        "offset_high": 0,
+        "offset_low": 65535
+      },
+      {
+        "call": "read",
+        "handle": 5,
+        "requested": 4,
+        "destination_segment": 12288,
+        "destination_offset": 544,
+        "returned": 4,
+        "carry": false
+      }
+    ],
+    "result": {
+      "source_offset": 65539,
+      "source_remaining": 65533,
+      "head": 548,
+      "queued": 52
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  },
+  {
+    "name": "direct_oversized_result",
+    "mode": "direct",
+    "success": true,
+    "requested": 2,
+    "transferred": 3,
+    "calls": [
+      {
+        "call": "seek",
+        "handle": 32767,
+        "offset_high": 65535,
+        "offset_low": 65535
+      },
+      {
+        "call": "read",
+        "handle": 32767,
+        "requested": 2,
+        "destination_segment": 12288,
+        "destination_offset": 65534,
+        "returned": 3,
+        "carry": true
+      }
+    ],
+    "result": {
+      "source_offset": 2,
+      "source_remaining": 4294967294,
+      "head": 1,
+      "queued": 2
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  },
+  {
+    "name": "banked_ems_cross_page",
+    "mode": "ems",
+    "success": true,
+    "requested": 9,
+    "transferred": 9,
+    "calls": [
+      {
+        "call": "ems_map",
+        "handle": 9029,
+        "logical_page": 2,
+        "physical_page": 0
+      },
+      {
+        "call": "ems_map",
+        "handle": 9029,
+        "logical_page": 3,
+        "physical_page": 1
+      },
+      {
+        "call": "ems_map",
+        "handle": 9029,
+        "logical_page": 4,
+        "physical_page": 2
+      },
+      {
+        "call": "ems_map",
+        "handle": 9029,
+        "logical_page": 5,
+        "physical_page": 3
+      },
+      {
+        "call": "far_memmove",
+        "byte_count": 9,
+        "source_segment": 20480,
+        "source_offset": 16381,
+        "destination_segment": 12288,
+        "destination_offset": 4660
+      }
+    ],
+    "result": {
+      "source_offset": 49158,
+      "source_remaining": 131063,
+      "head": 4669,
+      "queued": 17776
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  },
+  {
+    "name": "banked_ems_page_wrap_zero_count",
+    "mode": "ems",
+    "success": true,
+    "requested": 0,
+    "transferred": 0,
+    "calls": [
+      {
+        "call": "ems_map",
+        "handle": 65534,
+        "logical_page": 65535,
+        "physical_page": 0
+      },
+      {
+        "call": "ems_map",
+        "handle": 65534,
+        "logical_page": 0,
+        "physical_page": 1
+      },
+      {
+        "call": "ems_map",
+        "handle": 65534,
+        "logical_page": 1,
+        "physical_page": 2
+      },
+      {
+        "call": "ems_map",
+        "handle": 65534,
+        "logical_page": 2,
+        "physical_page": 3
+      },
+      {
+        "call": "far_memmove",
+        "byte_count": 0,
+        "source_segment": 20480,
+        "source_offset": 0,
+        "destination_segment": 12288,
+        "destination_offset": 43690
+      }
+    ],
+    "result": {
+      "source_offset": 4294950912,
+      "source_remaining": 0,
+      "head": 43690,
+      "queued": 21845
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  },
+  {
+    "name": "banked_xms_even",
+    "mode": "xms",
+    "success": true,
+    "requested": 6,
+    "transferred": 6,
+    "calls": [
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "length": 6,
+        "source_handle": 4951,
+        "source_offset": 270544960,
+        "destination_handle": 0,
+        "destination_segment": 12288,
+        "destination_offset": 768
+      }
+    ],
+    "result": {
+      "source_offset": 270544966,
+      "source_remaining": 1432778626,
+      "head": 774,
+      "queued": 1030
+    },
+    "result_carry": 0,
+    "xms_descriptor": [
+      6,
+      0,
+      0,
+      0,
+      87,
+      19,
+      64,
+      48,
+      32,
+      16,
+      0,
+      0,
+      0,
+      3,
+      0,
+      48
+    ]
+  },
+  {
+    "name": "banked_xms_odd_rounds_move",
+    "mode": "xms",
+    "success": true,
+    "requested": 5,
+    "transferred": 5,
+    "calls": [
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "length": 6,
+        "source_handle": 9320,
+        "source_offset": 4294967294,
+        "destination_handle": 0,
+        "destination_segment": 12288,
+        "destination_offset": 65532
+      }
+    ],
+    "result": {
+      "source_offset": 3,
+      "source_remaining": 4294967294,
+      "head": 1,
+      "queued": 3
+    },
+    "result_carry": 0,
+    "xms_descriptor": [
+      6,
+      0,
+      0,
+      0,
+      104,
+      36,
+      254,
+      255,
+      255,
+      255,
+      0,
+      0,
+      252,
+      255,
+      0,
+      48
+    ]
+  },
+  {
+    "name": "banked_without_memory_falls_back_to_file",
+    "mode": "fallback",
+    "success": true,
+    "requested": 3,
+    "transferred": 3,
+    "calls": [
+      {
+        "call": "seek",
+        "handle": 9,
+        "offset_high": 43707,
+        "offset_low": 52445
+      },
+      {
+        "call": "read",
+        "handle": 9,
+        "requested": 3,
+        "destination_segment": 12288,
+        "destination_offset": 2048,
+        "returned": 3,
+        "carry": false
+      }
+    ],
+    "result": {
+      "source_offset": 2864434400,
+      "source_remaining": 287454017,
+      "head": 2051,
+      "queued": 2307
+    },
+    "result_carry": 0,
+    "xms_descriptor": null
+  }
+]

@@ -241,6 +241,21 @@ instructions and 47 bytes, and Turbo C 2.01 medium emits 32 instructions,
 versus six instructions and 18 bytes in the original. The algorithm is
 verified, but the compact carry/AX/ES:SI result remains an assembly ABI boundary.
 
+For `0x00A664`, nine direct cases cover all three source backends and execute
+the common `0x00A734` queue tail. The EMS path maps four consecutive logical
+pages to physical pages zero through three even for a zero-byte request, then
+calls the far memmove at `01CE:0B93` from `source_offset & 0x3FFF`. The XMS path
+builds the standard 16-byte function-0x0B move descriptor and rounds an odd
+physical move length up, while source and queue accounting advances only by
+the requested count. The direct-file path always seeks before reading, retries
+while AX is below CX, and ignores DOS carry; a crafted carry-set AX above CX is
+accepted and then masked by the common carry clear. Open Watcom 1.9 medium
+emits 133 instructions and 386 bytes, and Turbo C 2.01 medium emits 174
+instructions, versus 88 instructions and 218 bytes in the original. The
+natural body preserves the backend selection and accounting, but the original
+interrupts, XMS callback, register ABI, carry result, and shared-tail placement
+remain explicit integration boundaries.
+
 For `0x00A634`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly when GS:0x0B17 bit 0 is clear. It also verifies
 the GS-versus-DS selection, PF/CF/SF/OF results, preservation of IF/DF, and all

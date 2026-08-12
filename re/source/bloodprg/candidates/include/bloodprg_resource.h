@@ -70,6 +70,9 @@ volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
 void CB_NEAR cb_dos_find_first(const volatile char *path);
 int CB_NEAR cb_dos_open_read_only(const volatile char *path,
         cb_u16 *handle);
+void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
+cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,
+        volatile cb_u8 CB_FAR *destination, cb_u16 byte_count);
 int CB_NEAR resource_switch(cb_u16 resource_id); /* 0x009F8E */
 
 #endif
