@@ -1251,6 +1251,113 @@ def flag_gated_copy_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_queue_finish_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("nonzero_one", 0x00, 0x0001, 0x0000, 0x1234),
+        ("nonzero_high_bit", 0x02, 0x8000, 0x0000, 0x1234),
+        ("nonzero_max", 0xFE, 0xFFFF, 0x0000, 0x1234),
+        ("zero_no_handle", 0x00, 0x0000, 0x0000, 0x1234),
+        ("zero_reserved_handle", 0x01, 0x0000, 0x1234, 0x1234),
+        ("zero_preserve_high_bits", 0xFC, 0x0000, 0xABCD, 0xABCD),
+    ]
+    vectors = []
+
+    def parity_even(value: int) -> int:
+        return int((value & 0xFF).bit_count() % 2 == 0)
+
+    for name, state, byte_count, file_handle, reserved_handle in cases:
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": 0x3000,
+            "flags": 0x0ED7,
+        }
+        machine = execute(
+            0xA2DD,
+            0xA2F1,
+            initial,
+            [
+                (data_segment, 0x0A86, struct.pack("<H", reserved_handle)),
+                (data_segment, 0x0D5B, struct.pack("<H", file_handle)),
+                (data_segment, 0x0D5F, bytes([state])),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+            ],
+        )
+
+        expected_state = state | 1
+        close_called = byte_count == 0
+        if close_called:
+            expected_state |= 2
+        actual_state = machine.mem_read(data_segment * 16 + 0x0D5F, 1)[0]
+        actual_count = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+        )[0]
+        actual_handle = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0D5B, 2)
+        )[0]
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0xA2DD {name} state={actual_state:#x}, expected={expected_state:#x}"
+            )
+        if actual_count != byte_count or actual_handle != file_handle:
+            raise AssertionError(f"0xA2DD {name} changed queue count or file handle")
+
+        expected_registers = dict(initial)
+        if close_called:
+            expected_registers["bx"] = file_handle
+            expected_registers["cx"] = 0
+        for register, value in expected_registers.items():
+            if register == "flags":
+                continue
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0xA2DD {name} {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_zero = int(byte_count == 0)
+        expected_sign = int(bool(byte_count & 0x8000))
+        expected_parity = parity_even(byte_count)
+        actual_zero = (flags >> 6) & 1
+        actual_sign = (flags >> 7) & 1
+        actual_parity = (flags >> 2) & 1
+        if (actual_zero, actual_sign, actual_parity) != (
+            expected_zero,
+            expected_sign,
+            expected_parity,
+        ):
+            raise AssertionError(f"0xA2DD {name} produced unexpected status flags")
+        if flags & ((1 << 0) | (1 << 11)):
+            raise AssertionError(f"0xA2DD {name} did not clear CF/OF")
+
+        vectors.append(
+            {
+                "name": name,
+                "initial_state": state,
+                "byte_count": byte_count,
+                "file_handle": file_handle,
+                "reserved_handle": reserved_handle,
+                "result_state": expected_state,
+                "close_called": close_called,
+                "result_bx": expected_registers["bx"],
+                "result_cx": expected_registers["cx"],
+                "result_zero_flag": actual_zero,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1303,6 +1410,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a117_natural.json", flag_gated_copy_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a2dd_natural.json",
+        presentation_queue_finish_vectors(),
+        args.check,
     )
     return 0
 

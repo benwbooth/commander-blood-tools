@@ -6,6 +6,8 @@
 ; seg_off: 0971:05cd
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: presentation_queue_finish
+; label_comment: set queue state bit 0; when the queued byte count is zero, also set bit 1 and close the current queue file
 ; byte_count: 21
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1

@@ -1,7 +1,7 @@
 # Historical Compiler Codegen Matrix
 
 This report records an initial compiler-in-the-loop matrix against ten natural-C
-probes in `re/compiler_corpus`, plus two focused medium-model follow-ups.
+probes in `re/compiler_corpus`, plus focused recovered-source follow-ups.
 Generated objects and listings remain ignored; the source corpus, runner,
 commands, hashes, and conclusions are checked in.
 
@@ -34,11 +34,11 @@ probe comparisons. `wdis` listings retained the generated object-code bytes.
 
 ## Results
 
-No Watcom configuration produced an exact mnemonic sequence or exact sequence
-of encoded instruction bytes for any probe. The strongest aggregate Watcom
-configuration was unoptimized huge model with its default register convention.
-Its main positive signal is ABI shape: simple functions naturally receive
-arguments in registers and can omit a stack frame.
+In the initial matrix, no Watcom configuration produced an exact mnemonic
+sequence or exact sequence of encoded instruction bytes for any probe. The
+strongest aggregate Watcom configuration was unoptimized huge model with its
+default register convention. Its main positive signal is ABI shape: simple
+functions naturally receive arguments in registers and can omit a stack frame.
 
 In the initial ten-probe matrix, Turbo C produced the same four-mnemonic sequence as the trivial
 `segment_global_gate` probe in 11 configurations, but only one of four
@@ -49,18 +49,19 @@ for those listings.
 
 ## Recovered-source follow-up
 
-Two later recovered functions provide a stronger positive result for Turbo C
+Three later recovered functions provide a stronger positive result for Turbo C
 2.01 in the medium memory model with `-O -Z`:
 
 | routine | source operations | original bytes | Turbo OMF result |
 | --- | ---: | ---: | --- |
 | `0x00A73E list_d8c_bounds_init` | four direct word stores plus `ret` | 25 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, 14, and 20 |
 | `0x00A744 list_d8c_wrap_bounds_reset` | three direct word stores plus `ret` | 19 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, and 14 |
+| `0x00A2DD presentation_queue_finish` | two byte ORs, zero-word branch, near call, `ret` | 21 | exact LEDATA shape; global/call FIXUPP records at offsets 2, 7, 14, and 18 |
 
 The object payloads contain zero placeholders where the original has
 `0x0D60`, `0x0D62`, `0x0D64`, and `0x0D66`; the adjacent FIXUPP records cover
-exactly those words. Binding the four external globals to their recovered data
-offsets therefore supplies the original instruction bytes. The two entrypoints
+exactly those words. Binding the external globals to their recovered data
+offsets therefore supplies the original instruction bytes. The first two entrypoints
 share the tail beginning at `0x00A744`, so reproducing their overlapping linked
 layout remains a separate translation-unit/linker problem.
 
@@ -101,6 +102,17 @@ temporarily sets DS from the caller's ES, uses 96 iterations of `REP MOVSD`,
 preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
 `SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
 and register ABI boundary, not an exact compiler match.
+
+For `0x00A2DD`, six direct-execution cases confirm the unconditional queue-state
+bit 0 update, the zero-count-only bit 1 update and close-helper call, preservation
+of the other state bits and storage, helper-derived BX/CX effects, and final
+flags. Turbo C 2.01 medium `-O -Z` emits the exact six mnemonics and 21-byte
+LEDATA payload. Its address/call words are zero only at FIXUPP-covered offsets
+2, 7, 14, and 18. Binding the repeated state external to DS:0x0D5F, the count
+external to DS:0x0D9A, and the near helper to `0x00A141` produces the original
+bytes exactly. Open Watcom 1.9 also emits 21 bytes, but reverses the branch and
+tail-jumps to the close helper instead of retaining the original call/return
+shape.
 
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX

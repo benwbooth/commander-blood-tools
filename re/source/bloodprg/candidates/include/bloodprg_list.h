@@ -5,7 +5,7 @@
 
 extern volatile cb_u16 list_d8c_base_segment;      /* GS:0x0A7E */
 extern volatile cb_u8 state_flag_b17;              /* GS:0x0B17 */
-extern volatile cb_u8 list_d8c_state_byte;         /* GS:0x0D5F */
+extern volatile cb_u8 list_d8c_state_byte;         /* game data:0x0D5F */
 extern volatile cb_u16 list_d8c_read_wrap_index;   /* DS:0x0D60 */
 extern volatile cb_u16 list_d8c_wrap_count;        /* GS:0x0D62 */
 extern volatile cb_u16 list_d8c_read_wrap_limit;   /* DS:0x0D64 */
@@ -17,7 +17,7 @@ extern volatile cb_u16 list_d8c_tail_segment;      /* GS:0x0D92 */
 extern volatile cb_u16 CB_FAR *list_d8c_tail_pointer; /* DS:0x0D90 */
 extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D96 */
 extern volatile cb_u16 list_d8c_wrap_limit;        /* GS:0x0D98 */
-extern volatile cb_u16 list_d8c_byte_count;        /* GS:0x0D9A */
+extern volatile cb_u16 list_d8c_byte_count;        /* game data:0x0D9A */
 extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern volatile cb_u16 list_d8c_buffer_end_offset; /* GS:0x5233 */
 extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
