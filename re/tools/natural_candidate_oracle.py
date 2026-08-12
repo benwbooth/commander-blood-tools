@@ -10098,6 +10098,127 @@ def vm_poke_byte_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_yield_vectors(entry: int) -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    cases = [
+        ("clear_flag", 0x00, 0x0002),
+        ("already_set", 0x01, 0x0AD7),
+        ("maximum_byte", 0xFF, 0x0246),
+        ("high_bit_only", 0x80, 0x0893),
+        ("alternating_low", 0x5A, 0x0447),
+        ("alternating_high", 0xA5, 0x0CD2),
+    ]
+    vectors = []
+
+    for name, yield_before, initial_flags in cases:
+        data_decoy = yield_before ^ 0x55
+        extra_decoy = yield_before ^ 0x33
+        stack_decoy = yield_before ^ 0xAA
+        fs_decoy = yield_before ^ 0xC3
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        phases = []
+
+        def capture_entry(machine: Uc, address: int, _size: int) -> None:
+            if address == entry:
+                phases.append(
+                    (
+                        machine.mem_read(game_segment * 16 + 0x67B4, 1)[0],
+                        machine.mem_read(data_segment * 16 + 0x67B4, 1)[0],
+                        machine.mem_read(extra_segment * 16 + 0x67B4, 1)[0],
+                        machine.mem_read(stack_segment * 16 + 0x67B4, 1)[0],
+                    )
+                )
+
+        machine = execute(
+            entry,
+            entry + 6,
+            initial,
+            [
+                (game_segment, 0x67B4, bytes([yield_before])),
+                (data_segment, 0x67B4, bytes([data_decoy])),
+                (extra_segment, 0x67B4, bytes([extra_decoy])),
+                (stack_segment, 0x67B4, bytes([stack_decoy])),
+                (initial["fs"], 0x67B4, bytes([fs_decoy])),
+            ],
+            code_handler=capture_entry,
+        )
+
+        expected_phase = [
+            (yield_before, data_decoy, extra_decoy, stack_decoy)
+        ]
+        if phases != expected_phase:
+            raise AssertionError(
+                f"{entry:#06x} {name}: phases={phases}, expected={expected_phase}"
+            )
+        for register, expected in initial.items():
+            if register == "flags":
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#06x} {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        actual_yield = machine.mem_read(game_segment * 16 + 0x67B4, 1)[0]
+        if actual_yield != 1:
+            raise AssertionError(
+                f"{entry:#06x} {name}: yield={actual_yield:#x}, expected=0x1"
+            )
+        decoys = [
+            (data_segment, data_decoy),
+            (extra_segment, extra_decoy),
+            (stack_segment, stack_decoy),
+            (initial["fs"], fs_decoy),
+        ]
+        for segment, expected in decoys:
+            actual = machine.mem_read(segment * 16 + 0x67B4, 1)[0]
+            if actual != expected:
+                raise AssertionError(f"{entry:#06x} {name}: segment decoy changed")
+
+        flag_mask = 0x0CD5
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask
+        expected_flags = initial_flags & flag_mask
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{entry:#06x} {name}: flags={actual_flags:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        if EXE[entry + 6] != 0xC3:
+            raise AssertionError(f"{entry:#06x}: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "entry": entry,
+                "yield_before": yield_before,
+                "yield_after": actual_yield,
+                "preserved_flags_mask": flag_mask,
+                "preserved_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -14758,6 +14879,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_684c_natural.json",
         vm_poke_byte_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6855_natural.json",
+        vm_yield_vectors(0x6855),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_685c_natural.json",
+        vm_yield_vectors(0x685C),
         args.check,
     )
     update_vector(

@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_aa_yield
-; label_comment: VM opcode 0xAA: set gs:[0x67b4]=1 - the yield flag the exec loop checks after each handler (0x562a); makes the VM break/yield the current frame. A yield/wait opcode
+; label_comment: VM opcode 0xAA: set the GS:0x67B4 yield flag to one; the execution loop checks this flag after each handler and stops the current frame
 ; incoming: vm_opcode_handlers:opcode_0xaa
 ; byte_count: 7
 ; boundary: cfg_blocks_1_terminals_1

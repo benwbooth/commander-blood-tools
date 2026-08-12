@@ -1128,6 +1128,20 @@ replaces INC's arithmetic flags. Turbo C 2.01 medium emits 20 instructions under
 its stack ABI. Exact codegen requires only LODSB selection, not a different C
 algorithm or an emulation layer.
 
+VM yield handlers `0x006855` (AA) and `0x00685C` (AC) are byte-identical but
+remain separate dispatch targets and separate C functions. Six direct vectors
+per entry cover zero, already-set, high-bit, maximum, and alternating initial
+values. They prove an unconditional write of one to GS:0x67B4, isolation from
+DS/ES/FS/SS decoys, complete register preservation, preserved arithmetic,
+interrupt, and direction flags, and near return.
+
+The existing natural C body is exactly one volatile assignment for each entry.
+Both Open Watcom `-3 -ox -mm` and Turbo C 2.01 medium emit the exact two-mnemonic
+`MOV; RET` shape. Watcom compiles each actual candidate without warnings to 6
+bytes versus 7 original; the sole structural difference is the missing GS
+override because an ordinary external global is addressed through DS. Exact
+integration is therefore a data-placement/linker problem, not missing C logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1171,6 +1185,7 @@ LCS and then mnemonic similarity:
 | `vm_load_string` | medium, `-ox`, register | 29/38 | 0.0690 | 0.8621 | 0.1034 |
 | `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
 | `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
+| `vm_yield` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

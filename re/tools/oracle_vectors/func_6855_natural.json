@@ -1,0 +1,50 @@
+[
+  {
+    "name": "clear_flag",
+    "entry": 26709,
+    "yield_before": 0,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 0
+  },
+  {
+    "name": "already_set",
+    "entry": 26709,
+    "yield_before": 1,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 2261
+  },
+  {
+    "name": "maximum_byte",
+    "entry": 26709,
+    "yield_before": 255,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 68
+  },
+  {
+    "name": "high_bit_only",
+    "entry": 26709,
+    "yield_before": 128,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 2193
+  },
+  {
+    "name": "alternating_low",
+    "entry": 26709,
+    "yield_before": 90,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 1093
+  },
+  {
+    "name": "alternating_high",
+    "entry": 26709,
+    "yield_before": 165,
+    "yield_after": 1,
+    "preserved_flags_mask": 3285,
+    "preserved_flags": 3280
+  }
+]
