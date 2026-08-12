@@ -20,6 +20,7 @@ extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
+extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* GS:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* GS:0x2795 */

@@ -47,6 +47,7 @@ REGISTERS = {
     "si": UC_X86_REG_SI,
     "di": UC_X86_REG_DI,
     "bp": UC_X86_REG_BP,
+    "sp": UC_X86_REG_SP,
     "ds": UC_X86_REG_DS,
     "es": UC_X86_REG_ES,
     "gs": UC_X86_REG_GS,
@@ -1454,6 +1455,185 @@ def presentation_line_lookup_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_update_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("inactive_zero", 0x00, 0x0000, 0x08, 0x5A, 0x1234, 0xFF, 0x00),
+        ("inactive_other_bits", 0xFE, 0x0001, 0x08, 0xA5, 0x2468, 0x83, 0x40),
+        ("active_no_redraw", 0x01, 0x0001, 0x00, 0x5A, 0x1357, 0x03, 0x80),
+        ("active_redraw", 0xFF, 0xFFFF, 0x08, 0xA5, 0x2468, 0xFF, 0x02),
+        ("active_high_ship_byte_only", 0x03, 0x8000, 0x00, 0x7E, 0x369C, 0x02, 0x04),
+        ("active_zero_count", 0x01, 0x0000, 0x08, 0x5A, 0x48AD, 0x00, 0x08),
+        ("active_reserved_handle", 0x81, 0x0000, 0x08, 0xC3, 0x5ABE, 0xFC, 0x10),
+        ("active_request_sign", 0x01, 0x0001, 0x08, 0x11, 0x6BCF, 0x82, 0x20),
+    ]
+    vectors = []
+
+    def parity_even(value: int) -> int:
+        return int((value & 0xFF).bit_count() % 2 == 0)
+
+    for (
+        name,
+        gate,
+        byte_count,
+        ship_low,
+        redraw,
+        active_line,
+        request_flags,
+        list_state,
+    ) in cases:
+        ship_flags = ship_low | (0x0800 if name == "active_high_ship_byte_only" else 0)
+        file_handle = 0x1234 if name == "active_reserved_handle" else 0
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "gs": 0x4000,
+            "flags": 0x0ED7,
+        }
+        machine = execute(
+            0x9F53,
+            0x9F7F,
+            initial,
+            [
+                (data_segment, 0x0A86, struct.pack("<H", file_handle)),
+                (data_segment, 0x0D5B, struct.pack("<H", file_handle)),
+                (data_segment, 0x0D5F, bytes([list_state])),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+                (data_segment, 0x1FB2, bytes([gate])),
+                (data_segment, 0x24F3, struct.pack("<H", ship_flags)),
+                (data_segment, 0x27D8, bytes([redraw])),
+                (data_segment, 0x6788, struct.pack("<H", active_line)),
+                (data_segment, 0x67AA, bytes([request_flags])),
+                (initial["gs"], 0x0D5F, bytes([0x99])),
+                (initial["gs"], 0x0D9A, struct.pack("<H", 0x5555)),
+                (initial["gs"], 0x1FB2, bytes([0xA4])),
+                (initial["gs"], 0x24F3, struct.pack("<H", 0x8888)),
+                (initial["gs"], 0x27D8, bytes([0x66])),
+                (initial["gs"], 0x6788, struct.pack("<H", 0x7777)),
+                (initial["gs"], 0x67AA, bytes([0xBB])),
+            ],
+        )
+
+        active = bool(gate & 1)
+        expected = {
+            "gate": 0 if active else gate,
+            "redraw": 1 if active and (ship_flags & 8) else redraw,
+            "active_line": 0xFFFF if active else active_line,
+            "request_flags": request_flags & 0xFD if active else request_flags,
+            "list_state": list_state
+            | (1 if active else 0)
+            | (2 if active and byte_count == 0 else 0),
+            "byte_count": byte_count,
+            "file_handle": file_handle,
+            "ship_flags": ship_flags,
+        }
+        observed = {
+            "gate": machine.mem_read(data_segment * 16 + 0x1FB2, 1)[0],
+            "redraw": machine.mem_read(data_segment * 16 + 0x27D8, 1)[0],
+            "active_line": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x6788, 2)
+            )[0],
+            "request_flags": machine.mem_read(data_segment * 16 + 0x67AA, 1)[0],
+            "list_state": machine.mem_read(data_segment * 16 + 0x0D5F, 1)[0],
+            "byte_count": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+            )[0],
+            "file_handle": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D5B, 2)
+            )[0],
+            "ship_flags": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x24F3, 2)
+            )[0],
+        }
+        if observed != expected:
+            raise AssertionError(
+                f"0x9F53 {name} state={observed}, expected={expected}"
+            )
+        for register, value in initial.items():
+            if register == "flags":
+                continue
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x9F53 {name} did not preserve {register}")
+
+        gs_decoys = {
+            "list_state": machine.mem_read(initial["gs"] * 16 + 0x0D5F, 1)[0],
+            "byte_count": struct.unpack(
+                "<H", machine.mem_read(initial["gs"] * 16 + 0x0D9A, 2)
+            )[0],
+            "gate": machine.mem_read(initial["gs"] * 16 + 0x1FB2, 1)[0],
+            "ship_flags": struct.unpack(
+                "<H", machine.mem_read(initial["gs"] * 16 + 0x24F3, 2)
+            )[0],
+            "redraw": machine.mem_read(initial["gs"] * 16 + 0x27D8, 1)[0],
+            "active_line": struct.unpack(
+                "<H", machine.mem_read(initial["gs"] * 16 + 0x6788, 2)
+            )[0],
+            "request_flags": machine.mem_read(initial["gs"] * 16 + 0x67AA, 1)[0],
+        }
+        expected_decoys = {
+            "list_state": 0x99,
+            "byte_count": 0x5555,
+            "gate": 0xA4,
+            "ship_flags": 0x8888,
+            "redraw": 0x66,
+            "active_line": 0x7777,
+            "request_flags": 0xBB,
+        }
+        if gs_decoys != expected_decoys:
+            raise AssertionError(f"0x9F53 {name} accessed GS-owned decoy data")
+
+        flag_result = expected["request_flags"] if active else gate & 1
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "carry": (flags >> 0) & 1,
+            "parity": (flags >> 2) & 1,
+            "zero": (flags >> 6) & 1,
+            "sign": (flags >> 7) & 1,
+            "overflow": (flags >> 11) & 1,
+            "interrupt": (flags >> 9) & 1,
+            "direction": (flags >> 10) & 1,
+        }
+        expected_flags = {
+            "carry": 0,
+            "parity": parity_even(flag_result),
+            "zero": int(flag_result == 0),
+            "sign": int(bool(flag_result & 0x80)),
+            "overflow": 0,
+            "interrupt": 1,
+            "direction": 1,
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9F53 {name} flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "initial_gate": gate,
+                "byte_count": byte_count,
+                "ship_flags": ship_flags,
+                "initial_redraw": redraw,
+                "initial_active_line": active_line,
+                "initial_request_flags": request_flags,
+                "initial_list_state": list_state,
+                "result": observed,
+                "final_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -1515,6 +1695,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9f80_natural.json",
         presentation_line_lookup_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9f53_natural.json",
+        presentation_update_vectors(),
         args.check,
     )
     return 0

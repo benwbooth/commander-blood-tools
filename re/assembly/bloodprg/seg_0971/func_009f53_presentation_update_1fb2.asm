@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: presentation_update_1fb2
-; label_comment: presentation update step: test [0x1fb2]&1; call 0xa2dd; test [0x24f3]&8. A per-frame dialogue/presentation state-machine step gated on the [0x1fb2]/[0x24f3] flags
+; label_comment: Far presentation finalizer (4 callers): preserves AX/BX/CX; when DS:0x1fb2 bit 0 is set, finishes the queue, conditionally requests a bridge redraw, clears the active line and gate, and releases request bit 1.
 ; incoming: call@0x0012db->0971:0243
 ; incoming: call@0x007bdd->0971:0243
 ; incoming: call@0x007bfd->0971:0243

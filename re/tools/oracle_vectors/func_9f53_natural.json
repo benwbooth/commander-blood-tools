@@ -1,0 +1,234 @@
+[
+  {
+    "name": "inactive_zero",
+    "initial_gate": 0,
+    "byte_count": 0,
+    "ship_flags": 8,
+    "initial_redraw": 90,
+    "initial_active_line": 4660,
+    "initial_request_flags": 255,
+    "initial_list_state": 0,
+    "result": {
+      "gate": 0,
+      "redraw": 90,
+      "active_line": 4660,
+      "request_flags": 255,
+      "list_state": 0,
+      "byte_count": 0,
+      "file_handle": 0,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "inactive_other_bits",
+    "initial_gate": 254,
+    "byte_count": 1,
+    "ship_flags": 8,
+    "initial_redraw": 165,
+    "initial_active_line": 9320,
+    "initial_request_flags": 131,
+    "initial_list_state": 64,
+    "result": {
+      "gate": 254,
+      "redraw": 165,
+      "active_line": 9320,
+      "request_flags": 131,
+      "list_state": 64,
+      "byte_count": 1,
+      "file_handle": 0,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_no_redraw",
+    "initial_gate": 1,
+    "byte_count": 1,
+    "ship_flags": 0,
+    "initial_redraw": 90,
+    "initial_active_line": 4951,
+    "initial_request_flags": 3,
+    "initial_list_state": 128,
+    "result": {
+      "gate": 0,
+      "redraw": 90,
+      "active_line": 65535,
+      "request_flags": 1,
+      "list_state": 129,
+      "byte_count": 1,
+      "file_handle": 0,
+      "ship_flags": 0
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 0,
+      "zero": 0,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_redraw",
+    "initial_gate": 255,
+    "byte_count": 65535,
+    "ship_flags": 8,
+    "initial_redraw": 165,
+    "initial_active_line": 9320,
+    "initial_request_flags": 255,
+    "initial_list_state": 2,
+    "result": {
+      "gate": 0,
+      "redraw": 1,
+      "active_line": 65535,
+      "request_flags": 253,
+      "list_state": 3,
+      "byte_count": 65535,
+      "file_handle": 0,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 0,
+      "zero": 0,
+      "sign": 1,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_high_ship_byte_only",
+    "initial_gate": 3,
+    "byte_count": 32768,
+    "ship_flags": 2048,
+    "initial_redraw": 126,
+    "initial_active_line": 13980,
+    "initial_request_flags": 2,
+    "initial_list_state": 4,
+    "result": {
+      "gate": 0,
+      "redraw": 126,
+      "active_line": 65535,
+      "request_flags": 0,
+      "list_state": 5,
+      "byte_count": 32768,
+      "file_handle": 0,
+      "ship_flags": 2048
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_zero_count",
+    "initial_gate": 1,
+    "byte_count": 0,
+    "ship_flags": 8,
+    "initial_redraw": 90,
+    "initial_active_line": 18605,
+    "initial_request_flags": 0,
+    "initial_list_state": 8,
+    "result": {
+      "gate": 0,
+      "redraw": 1,
+      "active_line": 65535,
+      "request_flags": 0,
+      "list_state": 11,
+      "byte_count": 0,
+      "file_handle": 0,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 1,
+      "sign": 0,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_reserved_handle",
+    "initial_gate": 129,
+    "byte_count": 0,
+    "ship_flags": 8,
+    "initial_redraw": 195,
+    "initial_active_line": 23230,
+    "initial_request_flags": 252,
+    "initial_list_state": 16,
+    "result": {
+      "gate": 0,
+      "redraw": 1,
+      "active_line": 65535,
+      "request_flags": 252,
+      "list_state": 19,
+      "byte_count": 0,
+      "file_handle": 4660,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 1,
+      "zero": 0,
+      "sign": 1,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  },
+  {
+    "name": "active_request_sign",
+    "initial_gate": 1,
+    "byte_count": 1,
+    "ship_flags": 8,
+    "initial_redraw": 17,
+    "initial_active_line": 27599,
+    "initial_request_flags": 130,
+    "initial_list_state": 32,
+    "result": {
+      "gate": 0,
+      "redraw": 1,
+      "active_line": 65535,
+      "request_flags": 128,
+      "list_state": 33,
+      "byte_count": 1,
+      "file_handle": 0,
+      "ship_flags": 8
+    },
+    "final_flags": {
+      "carry": 0,
+      "parity": 0,
+      "zero": 0,
+      "sign": 1,
+      "overflow": 0,
+      "interrupt": 1,
+      "direction": 1
+    }
+  }
+]

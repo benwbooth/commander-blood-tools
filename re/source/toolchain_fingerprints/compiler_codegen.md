@@ -49,7 +49,7 @@ for those listings.
 
 ## Recovered-source follow-up
 
-Three later recovered functions provide a stronger positive result for Turbo C
+Four later recovered functions provide a stronger positive result for Turbo C
 2.01 in the medium memory model with `-O -Z`:
 
 | routine | source operations | original bytes | Turbo OMF result |
@@ -57,6 +57,7 @@ Three later recovered functions provide a stronger positive result for Turbo C
 | `0x00A73E list_d8c_bounds_init` | four direct word stores plus `ret` | 25 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, 14, and 20 |
 | `0x00A744 list_d8c_wrap_bounds_reset` | three direct word stores plus `ret` | 19 | exact opcode/immediate LEDATA shape; address-word FIXUPP records at offsets 2, 8, and 14 |
 | `0x00A2DD presentation_queue_finish` | two byte ORs, zero-word branch, near call, `ret` | 21 | exact LEDATA shape; global/call FIXUPP records at offsets 2, 7, 14, and 18 |
+| `0x009F53 presentation_update_1fb2` | natural gated state updates plus six inline register saves/restores | 45 | exact LEDATA shape; global/call FIXUPP records at offsets 5, 11, 15, 22, 27, 33, and 38 |
 
 The object payloads contain zero placeholders where the original has
 `0x0D60`, `0x0D62`, `0x0D64`, and `0x0D66`; the adjacent FIXUPP records cover
@@ -113,6 +114,20 @@ external to DS:0x0D9A, and the near helper to `0x00A141` produces the original
 bytes exactly. Open Watcom 1.9 also emits 21 bytes, but reverses the branch and
 tail-jumps to the close helper instead of retaining the original call/return
 shape.
+
+For `0x009F53`, eight direct-execution cases cover the inactive gate, both
+redraw outcomes, low-byte versus high-byte ship flags, nonzero and zero queue
+counts, the reserved-handle close path, request-bit preservation, and final
+TEST/AND flags. GS decoys prove that this far entry accesses the shared game
+data through DS, and every register and segment is preserved across the nested
+`0x00A2DD` call. Turbo C 2.01 medium `-O -Z` emits the exact 45-byte LEDATA
+payload from the natural state-machine body plus three inline PUSH and three
+inline POP instructions. The seven FIXUPP records cover the gate at offsets 5
+and 33, near call at 11, ship-state low byte at 15, redraw byte at 22, active
+line at 27, and request byte at 38. Binding those externals to DS:0x1FB2,
+0x00A2DD, DS:0x24F3, DS:0x27D8, DS:0x6788, and DS:0x67AA supplies every original
+byte. The inline instructions are limited to the nonstandard AX/BX/CX
+preservation envelope; the function logic itself remains natural C.
 
 For `0x009F80`, eight direct-execution cases confirm that AX is an unsigned
 index into the four-byte table at DS:0x1FB5 and BX receives the entry's first
