@@ -1727,6 +1727,29 @@ returns the packed value through DX:AX. The remaining BP argument is an ABI
 integration boundary; the C arithmetic and call semantics need no emulator or
 synthetic wrapper.
 
+Object-heap access helper `0x00149B` reads its directory pointer and object-heap
+segment directly through DS, which aliases game data at its sole caller. The
+offset half of the heap pointer at DS:0x6724 is ignored: each directory +0x10
+word is an absolute offset within segment DS:0x6726. Entry zero is processed
+unconditionally; after each iteration, the next 20-byte entry is processed only
+when its +0x12 kind equals one. A qualifying object has any kind bit from
+0x0118 and low flag bit 0x02, and its byte at +0x14 increments with wrap. Six
+direct vectors prove selector and pointer ownership, both gates, the unusual
+first-entry rule, wrapping offsets, duplicate object references, byte wrap,
+final CMP flags, full preservation, and near return.
+
+The corrected candidate uses `FP_SEG`/`MK_FP` to state the segment-only heap
+rule and caches that segment before the loop, matching the binary's one-time
+load. Four Watcom-only inline instructions save and restore AX/ES around the
+natural body because `modify exact []` does not force preservation on a
+definition. Open Watcom `-3 -ox -mm` emits 30 instructions/64 bytes versus
+20/47 original and retains the two TESTs, conditional INC, 20-byte stride,
+terminating CMP, and full runtime register contract. It alternates ES between
+directory and heap instead of loading the directory into DS, and conservatively
+saves extra registers around the inline boundary. Turbo C 2.01 medium emits 29
+instructions with stack-frame temporaries. These are register-placement
+boundaries, not missing C logic.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1804,6 +1827,7 @@ LCS and then mnemonic similarity:
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |
 | `layout_offset_calc` | medium, `-ox`, register | 32/35 | 0.1875 | 0.5938 | 0.2812 |
+| `object_heap_access` | medium, `-ox`, register | 20/30 | 0.1500 | 0.9500 | 0.3000 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

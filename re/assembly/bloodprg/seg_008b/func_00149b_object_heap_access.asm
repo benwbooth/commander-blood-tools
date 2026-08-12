@@ -7,7 +7,7 @@
 ; group: seg_008b
 ; provenance: recursive_graph
 ; label: object_heap_access
-; label_comment: runtime object-heap accessor: es=[0x6726] (object heap segment), lds si,[0x672c] (lookup table); di=[si+0x10]; test es:[di],0x118 (object flags). Reads a live object from the runtime heap via the 0x672c lookup - the object-instance heap access (es:0x6726 is the runtime object heap)
+; label_comment: walks 20-byte DS:0x672C directory entries, uses only DS:0x6726 as the object-heap segment, and increments object byte +0x14 when kind mask 0x0118 and flag 0x02 both match
 ; byte_count: 47
 ; boundary: cfg_blocks_6_terminals_1
 ; terminal: ret:1

@@ -119,6 +119,7 @@ extern const volatile bloodprg_vm_directory_entry CB_FAR *vm_record_directory; /
 extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 
 #if defined(__WATCOMC__)
+#pragma aux object_heap_access modify exact []
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]

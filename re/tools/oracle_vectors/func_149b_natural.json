@@ -1,0 +1,240 @@
+[
+  {
+    "name": "first_entry_kind_ignored",
+    "directory_offset": 512,
+    "heap_base_offset_ignored": 12544,
+    "processed_entries": 1,
+    "entries": [
+      {
+        "object_offset": 256,
+        "entry_kind": 30583,
+        "object_kind": 8,
+        "flags": 2,
+        "access_count_before": 16,
+        "access_count_after": 17
+      },
+      {
+        "object_offset": 512,
+        "entry_kind": 0,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 32,
+        "access_count_after": 32
+      }
+    ],
+    "terminal_kind": 0,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_mask_required",
+    "directory_offset": 1024,
+    "heap_base_offset_ignored": 12800,
+    "processed_entries": 1,
+    "entries": [
+      {
+        "object_offset": 768,
+        "entry_kind": 1,
+        "object_kind": 512,
+        "flags": 2,
+        "access_count_before": 48,
+        "access_count_after": 48
+      },
+      {
+        "object_offset": 1024,
+        "entry_kind": 2,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 64,
+        "access_count_after": 64
+      }
+    ],
+    "terminal_kind": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "low_flag_byte_required",
+    "directory_offset": 1536,
+    "heap_base_offset_ignored": 13056,
+    "processed_entries": 1,
+    "entries": [
+      {
+        "object_offset": 1280,
+        "entry_kind": 1,
+        "object_kind": 280,
+        "flags": 0,
+        "access_count_before": 80,
+        "access_count_after": 80
+      },
+      {
+        "object_offset": 1536,
+        "entry_kind": 32768,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 96,
+        "access_count_after": 96
+      }
+    ],
+    "terminal_kind": 32768,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "all_mask_bits_and_counter_wrap",
+    "directory_offset": 2048,
+    "heap_base_offset_ignored": 13312,
+    "processed_entries": 4,
+    "entries": [
+      {
+        "object_offset": 4096,
+        "entry_kind": 8738,
+        "object_kind": 8,
+        "flags": 2,
+        "access_count_before": 16,
+        "access_count_after": 17
+      },
+      {
+        "object_offset": 4352,
+        "entry_kind": 1,
+        "object_kind": 16,
+        "flags": 2,
+        "access_count_before": 254,
+        "access_count_after": 255
+      },
+      {
+        "object_offset": 4608,
+        "entry_kind": 1,
+        "object_kind": 256,
+        "flags": 3,
+        "access_count_before": 255,
+        "access_count_after": 0
+      },
+      {
+        "object_offset": 4864,
+        "entry_kind": 1,
+        "object_kind": 280,
+        "flags": 1,
+        "access_count_before": 64,
+        "access_count_after": 64
+      },
+      {
+        "object_offset": 5120,
+        "entry_kind": 65535,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 80,
+        "access_count_after": 80
+      }
+    ],
+    "terminal_kind": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_and_object_offsets_wrap",
+    "directory_offset": 65520,
+    "heap_base_offset_ignored": 13568,
+    "processed_entries": 2,
+    "entries": [
+      {
+        "object_offset": 65528,
+        "entry_kind": 13107,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 127,
+        "access_count_after": 128
+      },
+      {
+        "object_offset": 32,
+        "entry_kind": 1,
+        "object_kind": 8,
+        "flags": 2,
+        "access_count_before": 128,
+        "access_count_after": 129
+      },
+      {
+        "object_offset": 64,
+        "entry_kind": 4660,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 144,
+        "access_count_after": 144
+      }
+    ],
+    "terminal_kind": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "duplicate_object_is_incremented_twice",
+    "directory_offset": 2560,
+    "heap_base_offset_ignored": 13824,
+    "processed_entries": 2,
+    "entries": [
+      {
+        "object_offset": 8192,
+        "entry_kind": 17476,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 254,
+        "access_count_after": 0
+      },
+      {
+        "object_offset": 8192,
+        "entry_kind": 1,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 254,
+        "access_count_after": 0
+      },
+      {
+        "object_offset": 8704,
+        "entry_kind": 2,
+        "object_kind": 280,
+        "flags": 2,
+        "access_count_before": 34,
+        "access_count_after": 34
+      }
+    ],
+    "terminal_kind": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

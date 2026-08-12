@@ -1004,6 +1004,340 @@ def layout_offset_calc_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def object_heap_access_vectors() -> list[dict[str, object]]:
+    entry = 0x149B
+    expected_hash = "23fc2a908b47847ad46c411b0ea3eac0447641651b0864c4ab0c1a2544d70439"
+    if hashlib.sha256(EXE[entry : entry + 47]).hexdigest() != expected_hash:
+        raise AssertionError("0x149b: recovered 47-byte body changed")
+
+    cases = [
+        (
+            "first_entry_kind_ignored",
+            0x0200,
+            0x3100,
+            [
+                (0x0100, 0x7777, 0x0008, 0x02, 0x10, 0x00),
+                (0x0200, 0x0000, 0x0118, 0x02, 0x20, 0x00),
+            ],
+        ),
+        (
+            "kind_mask_required",
+            0x0400,
+            0x3200,
+            [
+                (0x0300, 0x0001, 0x0200, 0x02, 0x30, 0x00),
+                (0x0400, 0x0002, 0x0118, 0x02, 0x40, 0x00),
+            ],
+        ),
+        (
+            "low_flag_byte_required",
+            0x0600,
+            0x3300,
+            [
+                (0x0500, 0x0001, 0x0118, 0x00, 0x50, 0x02),
+                (0x0600, 0x8000, 0x0118, 0x02, 0x60, 0x00),
+            ],
+        ),
+        (
+            "all_mask_bits_and_counter_wrap",
+            0x0800,
+            0x3400,
+            [
+                (0x1000, 0x2222, 0x0008, 0x02, 0x10, 0xA1),
+                (0x1100, 0x0001, 0x0010, 0x02, 0xFE, 0xA2),
+                (0x1200, 0x0001, 0x0100, 0x03, 0xFF, 0xA3),
+                (0x1300, 0x0001, 0x0118, 0x01, 0x40, 0xA4),
+                (0x1400, 0xFFFF, 0x0118, 0x02, 0x50, 0xA5),
+            ],
+        ),
+        (
+            "directory_and_object_offsets_wrap",
+            0xFFF0,
+            0x3500,
+            [
+                (0xFFF8, 0x3333, 0x0118, 0x02, 0x7F, 0xB1),
+                (0x0020, 0x0001, 0x0008, 0x02, 0x80, 0xB2),
+                (0x0040, 0x1234, 0x0118, 0x02, 0x90, 0xB3),
+            ],
+        ),
+        (
+            "duplicate_object_is_incremented_twice",
+            0x0A00,
+            0x3600,
+            [
+                (0x2000, 0x4444, 0x0118, 0x02, 0xFE, 0xC1),
+                (0x2000, 0x0001, 0x0118, 0x02, 0xFE, 0xC1),
+                (0x2200, 0x0002, 0x0118, 0x02, 0x22, 0xC2),
+            ],
+        ),
+    ]
+    data_segment = 0x2C00
+    game_decoy_segment = 0x3000
+    directory_segment = 0x4200
+    object_segment = 0x4600
+    directory_decoy_segment = 0x4A00
+    object_decoy_segment = 0x4E00
+    incoming_es = 0x5200
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (
+        name,
+        directory_offset,
+        heap_base_offset,
+        entries,
+    ) in enumerate(cases):
+        directory_pointer = struct.pack(
+            "<HH", directory_offset, directory_segment
+        )
+        object_pointer = struct.pack(
+            "<HH", heap_base_offset, object_segment
+        )
+        decoy_directory_pointer = struct.pack(
+            "<HH", 0x1800, directory_decoy_segment
+        )
+        decoy_object_pointer = struct.pack(
+            "<HH", 0x2400, object_decoy_segment
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        memory = [
+            (data_segment, 0x6724, object_pointer),
+            (data_segment, 0x672C, directory_pointer),
+            (game_decoy_segment, 0x6724, decoy_object_pointer),
+            (game_decoy_segment, 0x672C, decoy_directory_pointer),
+            (stack_segment, 0x6724, bytes.fromhex("34127856bc9af0de")),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        immutable_fields = []
+        object_fields: dict[int, tuple[int, int, int, int]] = {}
+
+        for entry_index, (
+            object_offset,
+            entry_kind,
+            kind,
+            flags,
+            access_count,
+            flag_neighbor,
+        ) in enumerate(entries):
+            entry_offset = (directory_offset + entry_index * 20) & 0xFFFF
+            object_field = (entry_offset + 0x10) & 0xFFFF
+            kind_field = (entry_offset + 0x12) & 0xFFFF
+            object_bytes = struct.pack("<H", object_offset)
+            entry_kind_bytes = struct.pack("<H", entry_kind)
+            memory.extend(
+                [
+                    (directory_segment, object_field, object_bytes),
+                    (directory_segment, kind_field, entry_kind_bytes),
+                    (
+                        directory_decoy_segment,
+                        (0x1810 + entry_index * 20) & 0xFFFF,
+                        bytes.fromhex("adde"),
+                    ),
+                ]
+            )
+            immutable_fields.extend(
+                [
+                    (directory_segment, object_field, object_bytes),
+                    (directory_segment, kind_field, entry_kind_bytes),
+                ]
+            )
+
+            object_state = (kind, flags, access_count, flag_neighbor)
+            previous_state = object_fields.setdefault(object_offset, object_state)
+            if previous_state != object_state:
+                raise AssertionError(f"0x149b {name}: inconsistent aliased object")
+
+        expected_counts = {
+            object_offset: state[2] for object_offset, state in object_fields.items()
+        }
+        stop_index = next(
+            index
+            for index in range(1, len(entries))
+            if entries[index][1] != 1
+        )
+        for object_offset, _, kind, flags, _, _ in entries[:stop_index]:
+            if (kind & 0x0118) != 0 and (flags & 0x02) != 0:
+                expected_counts[object_offset] = (
+                    expected_counts[object_offset] + 1
+                ) & 0xFF
+
+        for object_index, (
+            object_offset,
+            (kind, flags, access_count, flag_neighbor),
+        ) in enumerate(object_fields.items()):
+            kind_bytes = struct.pack("<H", kind)
+            memory.extend(
+                [
+                    (object_segment, object_offset, kind_bytes),
+                    (object_segment, (object_offset + 2) & 0xFFFF, bytes([flags])),
+                    (
+                        object_segment,
+                        (object_offset + 3) & 0xFFFF,
+                        bytes([flag_neighbor]),
+                    ),
+                    (
+                        object_segment,
+                        (object_offset + 0x14) & 0xFFFF,
+                        bytes([access_count]),
+                    ),
+                    (
+                        object_segment,
+                        (heap_base_offset + object_offset + 0x14) & 0xFFFF,
+                        bytes([0xD0 + object_index]),
+                    ),
+                    (
+                        object_decoy_segment,
+                        (object_offset + 0x14) & 0xFFFF,
+                        bytes([0xE0 + object_index]),
+                    ),
+                    (
+                        incoming_es,
+                        (object_offset + 0x14) & 0xFFFF,
+                        bytes([0xF0 + object_index]),
+                    ),
+                ]
+            )
+            immutable_fields.extend(
+                [
+                    (object_segment, object_offset, kind_bytes),
+                    (object_segment, (object_offset + 2) & 0xFFFF, bytes([flags])),
+                    (
+                        object_segment,
+                        (object_offset + 3) & 0xFFFF,
+                        bytes([flag_neighbor]),
+                    ),
+                    (
+                        object_segment,
+                        (heap_base_offset + object_offset + 0x14) & 0xFFFF,
+                        bytes([0xD0 + object_index]),
+                    ),
+                    (
+                        object_decoy_segment,
+                        (object_offset + 0x14) & 0xFFFF,
+                        bytes([0xE0 + object_index]),
+                    ),
+                    (
+                        incoming_es,
+                        (object_offset + 0x14) & 0xFFFF,
+                        bytes([0xF0 + object_index]),
+                    ),
+                ]
+            )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": incoming_es,
+            "fs": 0x5A00,
+            "gs": game_decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (case_index & 1),
+        }
+        machine = execute(entry, return_address, initial, memory)
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x149b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x149b {name}: near return changed CS")
+
+        for object_offset, expected_count in expected_counts.items():
+            actual_count = machine.mem_read(
+                object_segment * 16 + ((object_offset + 0x14) & 0xFFFF), 1
+            )[0]
+            if actual_count != expected_count:
+                raise AssertionError(
+                    f"0x149b {name}: object {object_offset:#x} count "
+                    f"{actual_count:#x}, expected {expected_count:#x}"
+                )
+        for segment, offset, expected_bytes in immutable_fields:
+            actual_bytes = bytes(
+                machine.mem_read(segment * 16 + offset, len(expected_bytes))
+            )
+            if actual_bytes != expected_bytes:
+                raise AssertionError(
+                    f"0x149b {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+        if bytes(machine.mem_read(data_segment * 16 + 0x6724, 4)) != object_pointer:
+            raise AssertionError(f"0x149b {name}: DS object pointer changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x672C, 4)) != directory_pointer:
+            raise AssertionError(f"0x149b {name}: DS directory pointer changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x149b {name}: stack sentinel changed")
+
+        terminal_kind = entries[stop_index][1]
+        compare_result = (terminal_kind - 1) & 0xFFFF
+        expected_flags = {
+            "cf": terminal_kind < 1,
+            "pf": (compare_result & 0xFF).bit_count() % 2 == 0,
+            "af": (terminal_kind & 0x0F) < 1,
+            "zf": compare_result == 0,
+            "sf": bool(compare_result & 0x8000),
+            "of": bool(
+                ((terminal_kind ^ 1) & (terminal_kind ^ compare_result))
+                & 0x8000
+            ),
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x149b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "directory_offset": directory_offset,
+                "heap_base_offset_ignored": heap_base_offset,
+                "processed_entries": stop_index,
+                "entries": [
+                    {
+                        "object_offset": object_offset,
+                        "entry_kind": entry_kind,
+                        "object_kind": kind,
+                        "flags": flags,
+                        "access_count_before": access_count,
+                        "access_count_after": expected_counts[object_offset],
+                    }
+                    for (
+                        object_offset,
+                        entry_kind,
+                        kind,
+                        flags,
+                        access_count,
+                        _flag_neighbor,
+                    ) in entries
+                ],
+                "terminal_kind": terminal_kind,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -24218,6 +24552,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0e62_natural.json",
         layout_offset_calc_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_149b_natural.json",
+        object_heap_access_vectors(),
         args.check,
     )
     update_vector(
