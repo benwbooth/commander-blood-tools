@@ -1199,6 +1199,27 @@ DS, and consumes Boolean AX results where the original slot helpers return
 carry while preserving AX. Exact integration needs segmented placement and
 narrow carry adapters, not different C logic.
 
+VM opcode-CD handler `0x0069C7` has two modes. Query mode optionally consumes
+an A1 inversion prefix and matches `{0x00CD, second, third}` at the first record
+offset. Set mode resolves the first operand through the threshold directory,
+performs three flag-byte reads whose TEST results are not consumed, looks up
+selector `0x11` twice, synchronizes the second record with the special-owner
+list, writes through a signed field offset, and conditionally requests C2
+presentation. Twenty direct vectors prove those decisions, the real helper
+ordering and side effects, absolute offsets in the loaded record segment,
+segment ownership and wrap, path registers and flags, and the C2 far-call ABI.
+
+The one-to-one natural candidate keeps the direct cursor/branch result, signed
+field update, duplicate selector lookup, full-list early return, and ordered
+presentation writes. Open Watcom `-3 -ox -mm` compiles it without warnings to
+86 instructions/232 bytes versus 82/224 original; Turbo C 2.01 medium emits 135
+instructions. Watcom is structurally closer but introduces a four-byte frame,
+reallocates the owner/record/value registers, addresses globals through DS,
+uses Boolean AX for the carry-return insertion helper, and drops the three dead
+TEST reads even though the C expressions use volatile lvalues. Exact integration
+therefore still needs segmented placement, narrow ABI adapters, and either the
+original register allocation or a deliberately assembly-shaped boundary.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1246,6 +1267,7 @@ LCS and then mnemonic similarity:
 | `vm_shared_state` | medium, `-ox`, register | 69/87 | 0.1304 | 0.7971 | 0.2464 |
 | `vm_shared_bit_state` | medium, `-ox`, register | 31/36 | 0.0323 | 0.4839 | 0.0645 |
 | `vm_record_wildcard` | medium, `-ox`, register | 55/56 | 0.0545 | 0.5455 | 0.1273 |
+| `vm_cd_record_triple` | medium, `-ox`, register | 82/86 | 0.0366 | 0.6341 | 0.0732 |
 | `vm_c9_record_clear` | compact, unoptimized, register | 26/38 | 0.0769 | 0.5769 | 0.1154 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

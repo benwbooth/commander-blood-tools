@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_cd_state_gated
-; label_comment: VM opcode 0xCD: state-table record op (les di,gs:0x6724, gated on gs:[0x67ad]&1, 0xA1-skip). State-table family; exact op partial || ALSO RECORDED as `vm_op_cd_record_triple`: 0xCD record-triple handler; consumes record/first/second words, optional A1 inverted compare || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xCD: query mode performs an optionally A1-inverted {0x00cd, second, third} record-triple match; set mode resolves the first operand to an owner, synchronizes the second record with the special-owner list, writes selector 0x11, and conditionally requests C2 presentation.
 ; incoming: vm_opcode_handlers:opcode_0xcd
 ; byte_count: 224
 ; boundary: cfg_blocks_20_terminals_3
