@@ -1,0 +1,4354 @@
+[
+  {
+    "mode": 0,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 4660,
+    "destination_es": 18432,
+    "destination_di": 33024,
+    "bl_at_call": 255,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 1,
+    "callee": "ems_buffer_setup",
+    "callee_address": 48462,
+    "value_ax": 4917,
+    "destination_es": 18432,
+    "destination_di": 33217,
+    "bl_at_call": 255,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 2,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 5174,
+    "destination_es": 18432,
+    "destination_di": 33410,
+    "bl_at_call": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 3,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 5431,
+    "destination_es": 18432,
+    "destination_di": 33603,
+    "bl_at_call": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 4,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 5688,
+    "destination_es": 18432,
+    "destination_di": 33796,
+    "bl_at_call": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 5,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 5945,
+    "destination_es": 18432,
+    "destination_di": 33989,
+    "bl_at_call": 3,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 6,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 6202,
+    "destination_es": 18432,
+    "destination_di": 34182,
+    "bl_at_call": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 7,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 6459,
+    "destination_es": 18432,
+    "destination_di": 34375,
+    "bl_at_call": 5,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 8,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 6716,
+    "destination_es": 18432,
+    "destination_di": 34568,
+    "bl_at_call": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 9,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 6973,
+    "destination_es": 18432,
+    "destination_di": 34761,
+    "bl_at_call": 7,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 10,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 7230,
+    "destination_es": 18432,
+    "destination_di": 34954,
+    "bl_at_call": 8,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 11,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 7487,
+    "destination_es": 18432,
+    "destination_di": 35147,
+    "bl_at_call": 9,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 12,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 7744,
+    "destination_es": 18432,
+    "destination_di": 35340,
+    "bl_at_call": 10,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 13,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 8001,
+    "destination_es": 18432,
+    "destination_di": 35533,
+    "bl_at_call": 11,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 14,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 8258,
+    "destination_es": 18432,
+    "destination_di": 35726,
+    "bl_at_call": 12,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 15,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 8515,
+    "destination_es": 18432,
+    "destination_di": 35919,
+    "bl_at_call": 13,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 16,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 8772,
+    "destination_es": 18432,
+    "destination_di": 36112,
+    "bl_at_call": 14,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 17,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 9029,
+    "destination_es": 18432,
+    "destination_di": 36305,
+    "bl_at_call": 15,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 18,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 9286,
+    "destination_es": 18432,
+    "destination_di": 36498,
+    "bl_at_call": 16,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 19,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 9543,
+    "destination_es": 18432,
+    "destination_di": 36691,
+    "bl_at_call": 17,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 20,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 9800,
+    "destination_es": 18432,
+    "destination_di": 36884,
+    "bl_at_call": 18,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 21,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 10057,
+    "destination_es": 18432,
+    "destination_di": 37077,
+    "bl_at_call": 19,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 22,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 10314,
+    "destination_es": 18432,
+    "destination_di": 37270,
+    "bl_at_call": 20,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 23,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 10571,
+    "destination_es": 18432,
+    "destination_di": 37463,
+    "bl_at_call": 21,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 24,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 10828,
+    "destination_es": 18432,
+    "destination_di": 37656,
+    "bl_at_call": 22,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 25,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 11085,
+    "destination_es": 18432,
+    "destination_di": 37849,
+    "bl_at_call": 23,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 26,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 11342,
+    "destination_es": 18432,
+    "destination_di": 38042,
+    "bl_at_call": 24,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 27,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 11599,
+    "destination_es": 18432,
+    "destination_di": 38235,
+    "bl_at_call": 25,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 28,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 11856,
+    "destination_es": 18432,
+    "destination_di": 38428,
+    "bl_at_call": 26,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 29,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 12113,
+    "destination_es": 18432,
+    "destination_di": 38621,
+    "bl_at_call": 27,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 30,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 12370,
+    "destination_es": 18432,
+    "destination_di": 38814,
+    "bl_at_call": 28,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 31,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 12627,
+    "destination_es": 18432,
+    "destination_di": 39007,
+    "bl_at_call": 29,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 32,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 12884,
+    "destination_es": 18432,
+    "destination_di": 39200,
+    "bl_at_call": 30,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 33,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 13141,
+    "destination_es": 18432,
+    "destination_di": 39393,
+    "bl_at_call": 31,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 34,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 13398,
+    "destination_es": 18432,
+    "destination_di": 39586,
+    "bl_at_call": 32,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 35,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 13655,
+    "destination_es": 18432,
+    "destination_di": 39779,
+    "bl_at_call": 33,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 36,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 13912,
+    "destination_es": 18432,
+    "destination_di": 39972,
+    "bl_at_call": 34,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 37,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 14169,
+    "destination_es": 18432,
+    "destination_di": 40165,
+    "bl_at_call": 35,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 38,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 14426,
+    "destination_es": 18432,
+    "destination_di": 40358,
+    "bl_at_call": 36,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 39,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 14683,
+    "destination_es": 18432,
+    "destination_di": 40551,
+    "bl_at_call": 37,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 40,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 14940,
+    "destination_es": 18432,
+    "destination_di": 40744,
+    "bl_at_call": 38,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 41,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 15197,
+    "destination_es": 18432,
+    "destination_di": 40937,
+    "bl_at_call": 39,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 42,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 15454,
+    "destination_es": 18432,
+    "destination_di": 41130,
+    "bl_at_call": 40,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 43,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 15711,
+    "destination_es": 18432,
+    "destination_di": 41323,
+    "bl_at_call": 41,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 44,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 15968,
+    "destination_es": 18432,
+    "destination_di": 41516,
+    "bl_at_call": 42,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 45,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 16225,
+    "destination_es": 18432,
+    "destination_di": 41709,
+    "bl_at_call": 43,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 46,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 16482,
+    "destination_es": 18432,
+    "destination_di": 41902,
+    "bl_at_call": 44,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 47,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 16739,
+    "destination_es": 18432,
+    "destination_di": 42095,
+    "bl_at_call": 45,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 48,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 16996,
+    "destination_es": 18432,
+    "destination_di": 42288,
+    "bl_at_call": 46,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 49,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 17253,
+    "destination_es": 18432,
+    "destination_di": 42481,
+    "bl_at_call": 47,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 50,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 17510,
+    "destination_es": 18432,
+    "destination_di": 42674,
+    "bl_at_call": 48,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 51,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 17767,
+    "destination_es": 18432,
+    "destination_di": 42867,
+    "bl_at_call": 49,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 52,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 18024,
+    "destination_es": 18432,
+    "destination_di": 43060,
+    "bl_at_call": 50,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 53,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 18281,
+    "destination_es": 18432,
+    "destination_di": 43253,
+    "bl_at_call": 51,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 54,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 18538,
+    "destination_es": 18432,
+    "destination_di": 43446,
+    "bl_at_call": 52,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 55,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 18795,
+    "destination_es": 18432,
+    "destination_di": 43639,
+    "bl_at_call": 53,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 56,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 19052,
+    "destination_es": 18432,
+    "destination_di": 43832,
+    "bl_at_call": 54,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 57,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 19309,
+    "destination_es": 18432,
+    "destination_di": 44025,
+    "bl_at_call": 55,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 58,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 19566,
+    "destination_es": 18432,
+    "destination_di": 44218,
+    "bl_at_call": 56,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 59,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 19823,
+    "destination_es": 18432,
+    "destination_di": 44411,
+    "bl_at_call": 57,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 60,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 20080,
+    "destination_es": 18432,
+    "destination_di": 44604,
+    "bl_at_call": 58,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 61,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 20337,
+    "destination_es": 18432,
+    "destination_di": 44797,
+    "bl_at_call": 59,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 62,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 20594,
+    "destination_es": 18432,
+    "destination_di": 44990,
+    "bl_at_call": 60,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 63,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 20851,
+    "destination_es": 18432,
+    "destination_di": 45183,
+    "bl_at_call": 61,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 64,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 21108,
+    "destination_es": 18432,
+    "destination_di": 45376,
+    "bl_at_call": 62,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 65,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 21365,
+    "destination_es": 18432,
+    "destination_di": 45569,
+    "bl_at_call": 63,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 66,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 21622,
+    "destination_es": 18432,
+    "destination_di": 45762,
+    "bl_at_call": 64,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 67,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 21879,
+    "destination_es": 18432,
+    "destination_di": 45955,
+    "bl_at_call": 65,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 68,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 22136,
+    "destination_es": 18432,
+    "destination_di": 46148,
+    "bl_at_call": 66,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 69,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 22393,
+    "destination_es": 18432,
+    "destination_di": 46341,
+    "bl_at_call": 67,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 70,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 22650,
+    "destination_es": 18432,
+    "destination_di": 46534,
+    "bl_at_call": 68,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 71,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 22907,
+    "destination_es": 18432,
+    "destination_di": 46727,
+    "bl_at_call": 69,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 72,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 23164,
+    "destination_es": 18432,
+    "destination_di": 46920,
+    "bl_at_call": 70,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 73,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 23421,
+    "destination_es": 18432,
+    "destination_di": 47113,
+    "bl_at_call": 71,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 74,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 23678,
+    "destination_es": 18432,
+    "destination_di": 47306,
+    "bl_at_call": 72,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 75,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 23935,
+    "destination_es": 18432,
+    "destination_di": 47499,
+    "bl_at_call": 73,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 76,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 24192,
+    "destination_es": 18432,
+    "destination_di": 47692,
+    "bl_at_call": 74,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 77,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 24449,
+    "destination_es": 18432,
+    "destination_di": 47885,
+    "bl_at_call": 75,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 78,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 24706,
+    "destination_es": 18432,
+    "destination_di": 48078,
+    "bl_at_call": 76,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 79,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 24963,
+    "destination_es": 18432,
+    "destination_di": 48271,
+    "bl_at_call": 77,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 80,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 25220,
+    "destination_es": 18432,
+    "destination_di": 48464,
+    "bl_at_call": 78,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 81,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 25477,
+    "destination_es": 18432,
+    "destination_di": 48657,
+    "bl_at_call": 79,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 82,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 25734,
+    "destination_es": 18432,
+    "destination_di": 48850,
+    "bl_at_call": 80,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 83,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 25991,
+    "destination_es": 18432,
+    "destination_di": 49043,
+    "bl_at_call": 81,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 84,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 26248,
+    "destination_es": 18432,
+    "destination_di": 49236,
+    "bl_at_call": 82,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 85,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 26505,
+    "destination_es": 18432,
+    "destination_di": 49429,
+    "bl_at_call": 83,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 86,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 26762,
+    "destination_es": 18432,
+    "destination_di": 49622,
+    "bl_at_call": 84,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 87,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 27019,
+    "destination_es": 18432,
+    "destination_di": 49815,
+    "bl_at_call": 85,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 88,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 27276,
+    "destination_es": 18432,
+    "destination_di": 50008,
+    "bl_at_call": 86,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 89,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 27533,
+    "destination_es": 18432,
+    "destination_di": 50201,
+    "bl_at_call": 87,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 90,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 27790,
+    "destination_es": 18432,
+    "destination_di": 50394,
+    "bl_at_call": 88,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 91,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 28047,
+    "destination_es": 18432,
+    "destination_di": 50587,
+    "bl_at_call": 89,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 92,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 28304,
+    "destination_es": 18432,
+    "destination_di": 50780,
+    "bl_at_call": 90,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 93,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 28561,
+    "destination_es": 18432,
+    "destination_di": 50973,
+    "bl_at_call": 91,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 94,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 28818,
+    "destination_es": 18432,
+    "destination_di": 51166,
+    "bl_at_call": 92,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 95,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 29075,
+    "destination_es": 18432,
+    "destination_di": 51359,
+    "bl_at_call": 93,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 96,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 29332,
+    "destination_es": 18432,
+    "destination_di": 51552,
+    "bl_at_call": 94,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 97,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 29589,
+    "destination_es": 18432,
+    "destination_di": 51745,
+    "bl_at_call": 95,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 98,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 29846,
+    "destination_es": 18432,
+    "destination_di": 51938,
+    "bl_at_call": 96,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 99,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 30103,
+    "destination_es": 18432,
+    "destination_di": 52131,
+    "bl_at_call": 97,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 100,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 30360,
+    "destination_es": 18432,
+    "destination_di": 52324,
+    "bl_at_call": 98,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 101,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 30617,
+    "destination_es": 18432,
+    "destination_di": 52517,
+    "bl_at_call": 99,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 102,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 30874,
+    "destination_es": 18432,
+    "destination_di": 52710,
+    "bl_at_call": 100,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 103,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 31131,
+    "destination_es": 18432,
+    "destination_di": 52903,
+    "bl_at_call": 101,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 104,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 31388,
+    "destination_es": 18432,
+    "destination_di": 53096,
+    "bl_at_call": 102,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 105,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 31645,
+    "destination_es": 18432,
+    "destination_di": 53289,
+    "bl_at_call": 103,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 106,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 31902,
+    "destination_es": 18432,
+    "destination_di": 53482,
+    "bl_at_call": 104,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 107,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 32159,
+    "destination_es": 18432,
+    "destination_di": 53675,
+    "bl_at_call": 105,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 108,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 32416,
+    "destination_es": 18432,
+    "destination_di": 53868,
+    "bl_at_call": 106,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 109,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 32673,
+    "destination_es": 18432,
+    "destination_di": 54061,
+    "bl_at_call": 107,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 110,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 32930,
+    "destination_es": 18432,
+    "destination_di": 54254,
+    "bl_at_call": 108,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 111,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 33187,
+    "destination_es": 18432,
+    "destination_di": 54447,
+    "bl_at_call": 109,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 112,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 33444,
+    "destination_es": 18432,
+    "destination_di": 54640,
+    "bl_at_call": 110,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 113,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 33701,
+    "destination_es": 18432,
+    "destination_di": 54833,
+    "bl_at_call": 111,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 114,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 33958,
+    "destination_es": 18432,
+    "destination_di": 55026,
+    "bl_at_call": 112,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 115,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 34215,
+    "destination_es": 18432,
+    "destination_di": 55219,
+    "bl_at_call": 113,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 116,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 34472,
+    "destination_es": 18432,
+    "destination_di": 55412,
+    "bl_at_call": 114,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 117,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 34729,
+    "destination_es": 18432,
+    "destination_di": 55605,
+    "bl_at_call": 115,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 118,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 34986,
+    "destination_es": 18432,
+    "destination_di": 55798,
+    "bl_at_call": 116,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 119,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 35243,
+    "destination_es": 18432,
+    "destination_di": 55991,
+    "bl_at_call": 117,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 120,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 35500,
+    "destination_es": 18432,
+    "destination_di": 56184,
+    "bl_at_call": 118,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 121,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 35757,
+    "destination_es": 18432,
+    "destination_di": 56377,
+    "bl_at_call": 119,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 122,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 36014,
+    "destination_es": 18432,
+    "destination_di": 56570,
+    "bl_at_call": 120,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 123,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 36271,
+    "destination_es": 18432,
+    "destination_di": 56763,
+    "bl_at_call": 121,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 124,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 36528,
+    "destination_es": 18432,
+    "destination_di": 56956,
+    "bl_at_call": 122,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 125,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 36785,
+    "destination_es": 18432,
+    "destination_di": 57149,
+    "bl_at_call": 123,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 126,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 37042,
+    "destination_es": 18432,
+    "destination_di": 57342,
+    "bl_at_call": 124,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 127,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 37299,
+    "destination_es": 18432,
+    "destination_di": 57535,
+    "bl_at_call": 125,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 128,
+    "callee": "ems_page_offset_split",
+    "callee_address": 48525,
+    "value_ax": 37556,
+    "destination_es": 18432,
+    "destination_di": 57728,
+    "bl_at_call": 126,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "mode": 129,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 37813,
+    "destination_es": 18432,
+    "destination_di": 57921,
+    "bl_at_call": 128,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 130,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 38070,
+    "destination_es": 18432,
+    "destination_di": 58114,
+    "bl_at_call": 129,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 131,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 38327,
+    "destination_es": 18432,
+    "destination_di": 58307,
+    "bl_at_call": 130,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 132,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 38584,
+    "destination_es": 18432,
+    "destination_di": 58500,
+    "bl_at_call": 131,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 133,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 38841,
+    "destination_es": 18432,
+    "destination_di": 58693,
+    "bl_at_call": 132,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 134,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 39098,
+    "destination_es": 18432,
+    "destination_di": 58886,
+    "bl_at_call": 133,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 135,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 39355,
+    "destination_es": 18432,
+    "destination_di": 59079,
+    "bl_at_call": 134,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 136,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 39612,
+    "destination_es": 18432,
+    "destination_di": 59272,
+    "bl_at_call": 135,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 137,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 39869,
+    "destination_es": 18432,
+    "destination_di": 59465,
+    "bl_at_call": 136,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 138,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 40126,
+    "destination_es": 18432,
+    "destination_di": 59658,
+    "bl_at_call": 137,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 139,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 40383,
+    "destination_es": 18432,
+    "destination_di": 59851,
+    "bl_at_call": 138,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 140,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 40640,
+    "destination_es": 18432,
+    "destination_di": 60044,
+    "bl_at_call": 139,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 141,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 40897,
+    "destination_es": 18432,
+    "destination_di": 60237,
+    "bl_at_call": 140,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 142,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 41154,
+    "destination_es": 18432,
+    "destination_di": 60430,
+    "bl_at_call": 141,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 143,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 41411,
+    "destination_es": 18432,
+    "destination_di": 60623,
+    "bl_at_call": 142,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 144,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 41668,
+    "destination_es": 18432,
+    "destination_di": 60816,
+    "bl_at_call": 143,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 145,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 41925,
+    "destination_es": 18432,
+    "destination_di": 61009,
+    "bl_at_call": 144,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 146,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 42182,
+    "destination_es": 18432,
+    "destination_di": 61202,
+    "bl_at_call": 145,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 147,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 42439,
+    "destination_es": 18432,
+    "destination_di": 61395,
+    "bl_at_call": 146,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 148,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 42696,
+    "destination_es": 18432,
+    "destination_di": 61588,
+    "bl_at_call": 147,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 149,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 42953,
+    "destination_es": 18432,
+    "destination_di": 61781,
+    "bl_at_call": 148,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 150,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 43210,
+    "destination_es": 18432,
+    "destination_di": 61974,
+    "bl_at_call": 149,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 151,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 43467,
+    "destination_es": 18432,
+    "destination_di": 62167,
+    "bl_at_call": 150,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 152,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 43724,
+    "destination_es": 18432,
+    "destination_di": 62360,
+    "bl_at_call": 151,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 153,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 43981,
+    "destination_es": 18432,
+    "destination_di": 62553,
+    "bl_at_call": 152,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 154,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 44238,
+    "destination_es": 18432,
+    "destination_di": 62746,
+    "bl_at_call": 153,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 155,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 44495,
+    "destination_es": 18432,
+    "destination_di": 62939,
+    "bl_at_call": 154,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 156,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 44752,
+    "destination_es": 18432,
+    "destination_di": 63132,
+    "bl_at_call": 155,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 157,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 45009,
+    "destination_es": 18432,
+    "destination_di": 63325,
+    "bl_at_call": 156,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 158,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 45266,
+    "destination_es": 18432,
+    "destination_di": 63518,
+    "bl_at_call": 157,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 159,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 45523,
+    "destination_es": 18432,
+    "destination_di": 63711,
+    "bl_at_call": 158,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 160,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 45780,
+    "destination_es": 18432,
+    "destination_di": 63904,
+    "bl_at_call": 159,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 161,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 46037,
+    "destination_es": 18432,
+    "destination_di": 64097,
+    "bl_at_call": 160,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 162,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 46294,
+    "destination_es": 18432,
+    "destination_di": 64290,
+    "bl_at_call": 161,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 163,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 46551,
+    "destination_es": 18432,
+    "destination_di": 64483,
+    "bl_at_call": 162,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 164,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 46808,
+    "destination_es": 18432,
+    "destination_di": 64676,
+    "bl_at_call": 163,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 165,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 47065,
+    "destination_es": 18432,
+    "destination_di": 64869,
+    "bl_at_call": 164,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 166,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 47322,
+    "destination_es": 18432,
+    "destination_di": 65062,
+    "bl_at_call": 165,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 167,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 47579,
+    "destination_es": 18432,
+    "destination_di": 65255,
+    "bl_at_call": 166,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 168,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 47836,
+    "destination_es": 18432,
+    "destination_di": 65448,
+    "bl_at_call": 167,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 169,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 48093,
+    "destination_es": 18432,
+    "destination_di": 105,
+    "bl_at_call": 168,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 170,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 48350,
+    "destination_es": 18432,
+    "destination_di": 298,
+    "bl_at_call": 169,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 171,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 48607,
+    "destination_es": 18432,
+    "destination_di": 491,
+    "bl_at_call": 170,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 172,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 48864,
+    "destination_es": 18432,
+    "destination_di": 684,
+    "bl_at_call": 171,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 173,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 49121,
+    "destination_es": 18432,
+    "destination_di": 877,
+    "bl_at_call": 172,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 174,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 49378,
+    "destination_es": 18432,
+    "destination_di": 1070,
+    "bl_at_call": 173,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 175,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 49635,
+    "destination_es": 18432,
+    "destination_di": 1263,
+    "bl_at_call": 174,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 176,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 49892,
+    "destination_es": 18432,
+    "destination_di": 1456,
+    "bl_at_call": 175,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 177,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 50149,
+    "destination_es": 18432,
+    "destination_di": 1649,
+    "bl_at_call": 176,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 178,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 50406,
+    "destination_es": 18432,
+    "destination_di": 1842,
+    "bl_at_call": 177,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 179,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 50663,
+    "destination_es": 18432,
+    "destination_di": 2035,
+    "bl_at_call": 178,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 180,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 50920,
+    "destination_es": 18432,
+    "destination_di": 2228,
+    "bl_at_call": 179,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 181,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 51177,
+    "destination_es": 18432,
+    "destination_di": 2421,
+    "bl_at_call": 180,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 182,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 51434,
+    "destination_es": 18432,
+    "destination_di": 2614,
+    "bl_at_call": 181,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 183,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 51691,
+    "destination_es": 18432,
+    "destination_di": 2807,
+    "bl_at_call": 182,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 184,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 51948,
+    "destination_es": 18432,
+    "destination_di": 3000,
+    "bl_at_call": 183,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 185,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 52205,
+    "destination_es": 18432,
+    "destination_di": 3193,
+    "bl_at_call": 184,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 186,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 52462,
+    "destination_es": 18432,
+    "destination_di": 3386,
+    "bl_at_call": 185,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 187,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 52719,
+    "destination_es": 18432,
+    "destination_di": 3579,
+    "bl_at_call": 186,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 188,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 52976,
+    "destination_es": 18432,
+    "destination_di": 3772,
+    "bl_at_call": 187,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 189,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 53233,
+    "destination_es": 18432,
+    "destination_di": 3965,
+    "bl_at_call": 188,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 190,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 53490,
+    "destination_es": 18432,
+    "destination_di": 4158,
+    "bl_at_call": 189,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 191,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 53747,
+    "destination_es": 18432,
+    "destination_di": 4351,
+    "bl_at_call": 190,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 192,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 54004,
+    "destination_es": 18432,
+    "destination_di": 4544,
+    "bl_at_call": 191,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 193,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 54261,
+    "destination_es": 18432,
+    "destination_di": 4737,
+    "bl_at_call": 192,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 194,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 54518,
+    "destination_es": 18432,
+    "destination_di": 4930,
+    "bl_at_call": 193,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 195,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 54775,
+    "destination_es": 18432,
+    "destination_di": 5123,
+    "bl_at_call": 194,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 196,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 55032,
+    "destination_es": 18432,
+    "destination_di": 5316,
+    "bl_at_call": 195,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 197,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 55289,
+    "destination_es": 18432,
+    "destination_di": 5509,
+    "bl_at_call": 196,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 198,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 55546,
+    "destination_es": 18432,
+    "destination_di": 5702,
+    "bl_at_call": 197,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 199,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 55803,
+    "destination_es": 18432,
+    "destination_di": 5895,
+    "bl_at_call": 198,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 200,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 56060,
+    "destination_es": 18432,
+    "destination_di": 6088,
+    "bl_at_call": 199,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 201,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 56317,
+    "destination_es": 18432,
+    "destination_di": 6281,
+    "bl_at_call": 200,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 202,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 56574,
+    "destination_es": 18432,
+    "destination_di": 6474,
+    "bl_at_call": 201,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 203,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 56831,
+    "destination_es": 18432,
+    "destination_di": 6667,
+    "bl_at_call": 202,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 204,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 57088,
+    "destination_es": 18432,
+    "destination_di": 6860,
+    "bl_at_call": 203,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 205,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 57345,
+    "destination_es": 18432,
+    "destination_di": 7053,
+    "bl_at_call": 204,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 206,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 57602,
+    "destination_es": 18432,
+    "destination_di": 7246,
+    "bl_at_call": 205,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 207,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 57859,
+    "destination_es": 18432,
+    "destination_di": 7439,
+    "bl_at_call": 206,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 208,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 58116,
+    "destination_es": 18432,
+    "destination_di": 7632,
+    "bl_at_call": 207,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 209,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 58373,
+    "destination_es": 18432,
+    "destination_di": 7825,
+    "bl_at_call": 208,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 210,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 58630,
+    "destination_es": 18432,
+    "destination_di": 8018,
+    "bl_at_call": 209,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 211,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 58887,
+    "destination_es": 18432,
+    "destination_di": 8211,
+    "bl_at_call": 210,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 212,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 59144,
+    "destination_es": 18432,
+    "destination_di": 8404,
+    "bl_at_call": 211,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 213,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 59401,
+    "destination_es": 18432,
+    "destination_di": 8597,
+    "bl_at_call": 212,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 214,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 59658,
+    "destination_es": 18432,
+    "destination_di": 8790,
+    "bl_at_call": 213,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 215,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 59915,
+    "destination_es": 18432,
+    "destination_di": 8983,
+    "bl_at_call": 214,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 216,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 60172,
+    "destination_es": 18432,
+    "destination_di": 9176,
+    "bl_at_call": 215,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 217,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 60429,
+    "destination_es": 18432,
+    "destination_di": 9369,
+    "bl_at_call": 216,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 218,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 60686,
+    "destination_es": 18432,
+    "destination_di": 9562,
+    "bl_at_call": 217,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 219,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 60943,
+    "destination_es": 18432,
+    "destination_di": 9755,
+    "bl_at_call": 218,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 220,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 61200,
+    "destination_es": 18432,
+    "destination_di": 9948,
+    "bl_at_call": 219,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 221,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 61457,
+    "destination_es": 18432,
+    "destination_di": 10141,
+    "bl_at_call": 220,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 222,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 61714,
+    "destination_es": 18432,
+    "destination_di": 10334,
+    "bl_at_call": 221,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 223,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 61971,
+    "destination_es": 18432,
+    "destination_di": 10527,
+    "bl_at_call": 222,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 224,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 62228,
+    "destination_es": 18432,
+    "destination_di": 10720,
+    "bl_at_call": 223,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 225,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 62485,
+    "destination_es": 18432,
+    "destination_di": 10913,
+    "bl_at_call": 224,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 226,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 62742,
+    "destination_es": 18432,
+    "destination_di": 11106,
+    "bl_at_call": 225,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 227,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 62999,
+    "destination_es": 18432,
+    "destination_di": 11299,
+    "bl_at_call": 226,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 228,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 63256,
+    "destination_es": 18432,
+    "destination_di": 11492,
+    "bl_at_call": 227,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 229,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 63513,
+    "destination_es": 18432,
+    "destination_di": 11685,
+    "bl_at_call": 228,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 230,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 63770,
+    "destination_es": 18432,
+    "destination_di": 11878,
+    "bl_at_call": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 231,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 64027,
+    "destination_es": 18432,
+    "destination_di": 12071,
+    "bl_at_call": 230,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 232,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 64284,
+    "destination_es": 18432,
+    "destination_di": 12264,
+    "bl_at_call": 231,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 233,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 64541,
+    "destination_es": 18432,
+    "destination_di": 12457,
+    "bl_at_call": 232,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 234,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 64798,
+    "destination_es": 18432,
+    "destination_di": 12650,
+    "bl_at_call": 233,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 235,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 65055,
+    "destination_es": 18432,
+    "destination_di": 12843,
+    "bl_at_call": 234,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 236,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 65312,
+    "destination_es": 18432,
+    "destination_di": 13036,
+    "bl_at_call": 235,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 237,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 33,
+    "destination_es": 18432,
+    "destination_di": 13229,
+    "bl_at_call": 236,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 238,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 290,
+    "destination_es": 18432,
+    "destination_di": 13422,
+    "bl_at_call": 237,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 239,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 547,
+    "destination_es": 18432,
+    "destination_di": 13615,
+    "bl_at_call": 238,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 240,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 804,
+    "destination_es": 18432,
+    "destination_di": 13808,
+    "bl_at_call": 239,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 241,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 1061,
+    "destination_es": 18432,
+    "destination_di": 14001,
+    "bl_at_call": 240,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 242,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 1318,
+    "destination_es": 18432,
+    "destination_di": 14194,
+    "bl_at_call": 241,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 243,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 1575,
+    "destination_es": 18432,
+    "destination_di": 14387,
+    "bl_at_call": 242,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 244,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 1832,
+    "destination_es": 18432,
+    "destination_di": 14580,
+    "bl_at_call": 243,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 245,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 2089,
+    "destination_es": 18432,
+    "destination_di": 14773,
+    "bl_at_call": 244,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 246,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 2346,
+    "destination_es": 18432,
+    "destination_di": 14966,
+    "bl_at_call": 245,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 247,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 2603,
+    "destination_es": 18432,
+    "destination_di": 15159,
+    "bl_at_call": 246,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 248,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 2860,
+    "destination_es": 18432,
+    "destination_di": 15352,
+    "bl_at_call": 247,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 249,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 3117,
+    "destination_es": 18432,
+    "destination_di": 15545,
+    "bl_at_call": 248,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 250,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 3374,
+    "destination_es": 18432,
+    "destination_di": 15738,
+    "bl_at_call": 249,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 251,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 3631,
+    "destination_es": 18432,
+    "destination_di": 15931,
+    "bl_at_call": 250,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 252,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 3888,
+    "destination_es": 18432,
+    "destination_di": 16124,
+    "bl_at_call": 251,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 253,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 4145,
+    "destination_es": 18432,
+    "destination_di": 16317,
+    "bl_at_call": 252,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 254,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 4402,
+    "destination_es": 18432,
+    "destination_di": 16510,
+    "bl_at_call": 253,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "mode": 255,
+    "callee": "ems_map_page_and_copy",
+    "callee_address": 48422,
+    "value_ax": 4659,
+    "destination_es": 18432,
+    "destination_di": 16703,
+    "bl_at_call": 254,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

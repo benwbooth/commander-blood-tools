@@ -6,8 +6,8 @@
 ; seg_off: 0b1b:0559
 ; group: seg_0b1b
 ; provenance: recursive_graph
-; label: timer_tick_b9f
-; label_comment: timer/counter tick (2 calls): bl=gs:[0xb9f]; dec; if it underflows call 0xbd26 (reload/fire) else store back. A countdown timer (sound-tempo/frame pacing) that fires 0xbd26 on expiry
+; label: ems_transfer_dispatch
+; label_comment: dispatches AX and ES:DI by GS:0x0B9F: 0 or 0x81..0xFF to EMS page copy, 1 to XMS buffer setup, and 2..0x80 to file-page read
 ; byte_count: 29
 ; boundary: cfg_blocks_6_terminals_3
 ; terminal: jmp 0xbd24:2, ret:1

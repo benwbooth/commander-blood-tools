@@ -1688,6 +1688,24 @@ external driver's observed AX interface. A full rebuild can bind game data to
 DGROUP and compile callers around Watcom's clobbers; a binary drop-in still
 needs the original narrow wrapper boundary.
 
+EMS transfer dispatcher `0x00BD09` was previously mislabeled as a timer. It
+does not update GS:0x0B9F; that byte is a transfer-mode selector. Two wrapping
+byte decrements partition all values into mode 0 or 0x81..0xFF for EMS page
+copy `0xBD26`, mode 1 for XMS buffer setup `0xBD4E`, and modes 2..0x80 for
+file-page read `0xBD8D`. All branches forward the live AX value and ES:DI
+destination. Exhaustive 256-mode direct vectors prove the selected helper,
+path-dependent BL, near-call frame, GS ownership against DS decoys, selector
+immutability, BX restoration, final DEC flags, and near return. Both recovered
+callers establish DS=GS before entry.
+
+A natural signed-byte local with two pre-decrement tests is closer than range
+comparisons. With AX and ES:DI helper pragmas, Open Watcom `-3 -ox -mm` emits
+both `DEC BL` operations and the three direct near calls in 22 instructions/38
+bytes versus 13/29 original. It inserts `TEST BL,BL` after each decrement,
+saves an otherwise unnecessary DX copy of ES, and duplicates the epilogue.
+Turbo C 2.01 medium emits 32 instructions; although it branches directly from
+each decrement, its stack parameters do not reproduce the live AX/ES:DI ABI.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1763,6 +1781,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
+| `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

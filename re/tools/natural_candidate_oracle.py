@@ -18477,6 +18477,184 @@ def snd_driver_call_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ems_transfer_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0xBD09
+    expected_hash = "c4f057a1f1e81d9fb22d0a27a472bcb804659cf240fed7127de452fa2d5dc071"
+    if hashlib.sha256(EXE[entry : entry + 29]).hexdigest() != expected_hash:
+        raise AssertionError("0xbd09: recovered 29-byte body changed")
+
+    helper_names = {
+        0xBD26: "ems_map_page_and_copy",
+        0xBD4E: "ems_buffer_setup",
+        0xBD8D: "ems_page_offset_split",
+    }
+    data_segment = 0x4000
+    game_segment = 0x2C00
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for mode in range(256):
+        value = (0x1234 + mode * 257) & 0xFFFF
+        destination_offset = (0x8100 + mode * 193) & 0xFFFF
+        initial = {
+            "eax": 0xA1A10000 | value,
+            "ebx": 0xB2B2ABCD,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (mode & 1),
+        }
+        if mode == 0 or mode > 0x80:
+            helper = 0xBD26
+            return_ip = 0xBD16
+            decrements = 1
+        elif mode == 1:
+            helper = 0xBD4E
+            return_ip = 0xBD1F
+            decrements = 2
+        else:
+            helper = 0xBD8D
+            return_ip = 0xBD24
+            decrements = 2
+        bl_at_call = (mode - decrements) & 0xFF
+        helper_calls = []
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        data_decoy = (mode + 0x55) & 0xFF
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in helper_names:
+                return
+            actual_call = {
+                "address": address,
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ebp": machine.reg_read(UC_X86_REG_EBP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_call = dict(initial)
+            del expected_call["flags"]
+            expected_call["ebx"] = (initial["ebx"] & 0xFFFFFF00) | bl_at_call
+            expected_call["sp"] = 0xFEFC
+            expected_call["address"] = helper
+            expected_call["cs"] = 0
+            expected_call["ip"] = helper
+            if actual_call != expected_call:
+                raise AssertionError(
+                    f"0xbd09 mode={mode:#x}: call={actual_call}, "
+                    f"expected={expected_call}"
+                )
+            stack_words = struct.unpack(
+                "<HHH", machine.mem_read(stack_segment * 16 + 0xFEFC, 6)
+            )
+            expected_stack = (return_ip, initial["ebx"] & 0xFFFF, return_address)
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0xbd09 mode={mode:#x}: stack={stack_words}, "
+                    f"expected={expected_stack}"
+                )
+            helper_calls.append(address)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xBD26, b"\xc3"),
+                (0, 0xBD4E, b"\xc3"),
+                (0, 0xBD8D, b"\xc3"),
+                (game_segment, 0x0B9F, bytes((mode,))),
+                (data_segment, 0x0B9F, bytes((data_decoy,))),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+        if helper_calls != [helper]:
+            raise AssertionError(
+                f"0xbd09 mode={mode:#x}: calls={helper_calls}, expected={[helper]}"
+            )
+        if machine.mem_read(game_segment * 16 + 0x0B9F, 1)[0] != mode:
+            raise AssertionError(f"0xbd09 mode={mode:#x}: selector changed")
+        if machine.mem_read(data_segment * 16 + 0x0B9F, 1)[0] != data_decoy:
+            raise AssertionError(f"0xbd09 mode={mode:#x}: DS decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbd09 mode={mode:#x}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xbd09 mode={mode:#x}: near return changed CS")
+
+        before_final_dec = (mode - decrements + 1) & 0xFF
+        result = bl_at_call
+        expected_flags = {
+            "cf": bool(initial["flags"] & 1),
+            "pf": result.bit_count() % 2 == 0,
+            "af": bool((before_final_dec ^ 1 ^ result) & 0x10),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": before_final_dec == 0x80,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xbd09 mode={mode:#x}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbd09 mode={mode:#x}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "mode": mode,
+                "callee": helper_names[helper],
+                "callee_address": helper,
+                "value_ax": value,
+                "destination_es": extra_segment,
+                "destination_di": destination_offset,
+                "bl_at_call": bl_at_call,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -24325,6 +24503,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_bb9d_natural.json",
         snd_driver_call_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bd09_natural.json",
+        ems_transfer_dispatch_vectors(),
         args.check,
     )
     update_vector(

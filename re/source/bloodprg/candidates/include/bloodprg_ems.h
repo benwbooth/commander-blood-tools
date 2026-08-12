@@ -11,7 +11,8 @@ typedef struct bloodprg_xms_read_request {
     volatile cb_u8 CB_FAR *destination;
 } bloodprg_xms_read_request;
 
-extern volatile cb_u8 ems_transfer_mode; /* GS:0x0B9F */
+/* Both recovered callers establish DS=GS before this dispatch. */
+extern volatile cb_u8 ems_transfer_mode; /* DS=GS:0x0B9F */
 extern volatile cb_i16 CB_GAME_DATA resource_xms_handle; /* GS:0x0A56 */
 extern volatile cb_i16 CB_GAME_DATA resource_ems_handle; /* GS:0x0A58 */
 extern volatile bloodprg_xms_read_request
@@ -32,5 +33,12 @@ void CB_NEAR ems_page_offset_split(cb_u16 offset,
         volatile cb_u8 CB_FAR *destination); /* 0x00BD8D */
 void CB_NEAR ems_transfer_dispatch(cb_u16 value,
         volatile cb_u8 CB_FAR *destination); /* 0x00BD09 */
+
+#if defined(__WATCOMC__)
+#pragma aux ems_map_page_and_copy parm [ax] [es di] modify exact []
+#pragma aux ems_buffer_setup parm [ax] [es di] modify exact []
+#pragma aux ems_page_offset_split parm [ax] [es di] modify exact []
+#pragma aux ems_transfer_dispatch parm [ax] [es di]
+#endif
 
 #endif
