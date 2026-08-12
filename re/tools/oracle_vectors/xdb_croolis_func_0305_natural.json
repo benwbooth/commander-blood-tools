@@ -1,0 +1,168 @@
+[
+  {
+    "name": "immediate",
+    "module": "croolis",
+    "entry": 773,
+    "palette_index_writes": 1,
+    "palette_component_zero_writes": 768,
+    "crtc_word": {
+      "port": 980,
+      "value": 12
+    },
+    "sequencer_word": {
+      "port": 964,
+      "value": 3842
+    },
+    "video_segment": 40960,
+    "video_bytes_cleared": 64000,
+    "video_clear_precedes_status_reads": true,
+    "video_tail_sha256": "114320dfff7846adabc1ecd8fc730463c2e7ec598ba657e7ea7152239b0a8139",
+    "status_values": [
+      0,
+      8
+    ],
+    "register_results": {
+      "eax": 8,
+      "bx": 40960,
+      "cx": 0,
+      "dx": 986,
+      "di": 64000,
+      "es": 40960
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "busy_then_edge",
+    "module": "croolis",
+    "entry": 773,
+    "palette_index_writes": 1,
+    "palette_component_zero_writes": 768,
+    "crtc_word": {
+      "port": 980,
+      "value": 12
+    },
+    "sequencer_word": {
+      "port": 964,
+      "value": 3842
+    },
+    "video_segment": 40960,
+    "video_bytes_cleared": 64000,
+    "video_clear_precedes_status_reads": true,
+    "video_tail_sha256": "edf60dc971fd39b94f8403d75588090086ebdd2a087330e0bf5b090012651086",
+    "status_values": [
+      8,
+      8,
+      0,
+      0,
+      8
+    ],
+    "register_results": {
+      "eax": 8,
+      "bx": 40960,
+      "cx": 0,
+      "dx": 986,
+      "di": 64000,
+      "es": 40960
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unrelated_bits",
+    "module": "croolis",
+    "entry": 773,
+    "palette_index_writes": 1,
+    "palette_component_zero_writes": 768,
+    "crtc_word": {
+      "port": 980,
+      "value": 12
+    },
+    "sequencer_word": {
+      "port": 964,
+      "value": 3842
+    },
+    "video_segment": 40960,
+    "video_bytes_cleared": 64000,
+    "video_clear_precedes_status_reads": true,
+    "video_tail_sha256": "96265ba8705d5a69cdddc3c797b9747a8b8c6b134e1149d79c835c3bcac52c70",
+    "status_values": [
+      247,
+      255
+    ],
+    "register_results": {
+      "eax": 255,
+      "bx": 40960,
+      "cx": 0,
+      "dx": 986,
+      "di": 64000,
+      "es": 40960
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "multiple_phases",
+    "module": "croolis",
+    "entry": 773,
+    "palette_index_writes": 1,
+    "palette_component_zero_writes": 768,
+    "crtc_word": {
+      "port": 980,
+      "value": 12
+    },
+    "sequencer_word": {
+      "port": 964,
+      "value": 3842
+    },
+    "video_segment": 40960,
+    "video_bytes_cleared": 64000,
+    "video_clear_precedes_status_reads": true,
+    "video_tail_sha256": "63272650e6081662364713e41b3b0bb3ddd706e5e1ea8d6db39a04b448cd1f4a",
+    "status_values": [
+      24,
+      8,
+      7,
+      0,
+      136
+    ],
+    "register_results": {
+      "eax": 136,
+      "bx": 40960,
+      "cx": 0,
+      "dx": 986,
+      "di": 64000,
+      "es": 40960
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

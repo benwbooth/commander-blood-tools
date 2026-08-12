@@ -17,8 +17,18 @@ import json
 import struct
 from pathlib import Path
 
-from unicorn import UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_MODE_16, Uc, UcError
+from unicorn import (
+    UC_ARCH_X86,
+    UC_HOOK_CODE,
+    UC_HOOK_INSN,
+    UC_HOOK_INTR,
+    UC_MODE_16,
+    Uc,
+    UcError,
+)
 from unicorn.x86_const import (
+    UC_X86_INS_IN,
+    UC_X86_INS_OUT,
     UC_X86_REG_CS,
     UC_X86_REG_DS,
     UC_X86_REG_EAX,
@@ -90,6 +100,8 @@ def execute(
     memory: list[tuple[int, int, bytes]],
     interrupt_handler: object | None = None,
     max_instructions: int = 1000,
+    input_handler: object | None = None,
+    output_handler: object | None = None,
 ) -> Uc:
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x300000)
@@ -112,6 +124,26 @@ def execute(
     machine.hook_add(UC_HOOK_CODE, stop_at_return)
     if interrupt_handler is not None:
         machine.hook_add(UC_HOOK_INTR, interrupt_handler)
+    if input_handler is not None:
+
+        def handle_input(
+            machine: Uc, port: int, size: int, _data: object
+        ) -> int:
+            return input_handler(machine, port, size)
+
+        machine.hook_add(
+            UC_HOOK_INSN, handle_input, None, 1, 0, UC_X86_INS_IN
+        )
+    if output_handler is not None:
+
+        def handle_output(
+            machine: Uc, port: int, size: int, value: int, _data: object
+        ) -> None:
+            output_handler(machine, port, size, value)
+
+        machine.hook_add(
+            UC_HOOK_INSN, handle_output, None, 1, 0, UC_X86_INS_OUT
+        )
     try:
         machine.emu_start(entry, 0x2FFFF0, count=max_instructions)
     except UcError as error:
@@ -696,6 +728,257 @@ def sample_delta_vectors(
                     "bx_previous": previous,
                     "cx": 0,
                     "si_next_object": object_cursor,
+                },
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def vga_clear_and_sync_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "3efa9eb40129f518dfc3dc860ca40a59ddb841eee7db8cada6ea9c15839291df"
+    if hashlib.sha256(image[entry : entry + 70]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 70-byte body changed")
+
+    cases = [
+        ("immediate", [0x00, 0x08]),
+        ("busy_then_edge", [0x08, 0x08, 0x00, 0x00, 0x08]),
+        ("unrelated_bits", [0xF7, 0xFF]),
+        ("multiple_phases", [0x18, 0x08, 0x07, 0x00, 0x88]),
+    ]
+    data_segment = 0x4000
+    extra_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    video_segment = 0xA000
+    return_address = 0xF000
+    expected_outputs = (
+        [(0x03C8, 1, 0)]
+        + [(0x03C9, 1, 0)] * 0x0300
+        + [(0x03D4, 2, 0x000C), (0x03C4, 2, 0x0F02)]
+    )
+    vectors = []
+
+    for case_index, (name, input_values) in enumerate(cases):
+        globals_before = bytes.fromhex("a1b2c3d4e5f6a7b8")
+        globals_after = (
+            globals_before[:2]
+            + struct.pack("<HH", 0x4000, 0xA400)
+            + globals_before[6:]
+        )
+        video_before = bytes(
+            ((index * 29 + case_index * 17) & 0xFF)
+            for index in range(0x10000)
+        )
+        video_after = bytes(0xFA00) + video_before[0xFA00:]
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x8000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        inputs = []
+        outputs = []
+        control_snapshots = []
+        video_at_first_input = []
+
+        def input_handler(
+            _machine: Uc, port: int, size: int, _data: object = None
+        ) -> int:
+            if port != 0x03DA or size != 1:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: unexpected IN {port:#x}/{size}"
+                )
+            if len(inputs) >= len(input_values):
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: extra status read"
+                )
+            value = input_values[len(inputs)]
+            if not inputs:
+                video_at_first_input.append(
+                    hashlib.sha256(
+                        bytes(_machine.mem_read(video_segment * 16, 0x10000))
+                    ).hexdigest()
+                )
+            inputs.append((port, size, value))
+            return value
+
+        def output_handler(
+            _machine: Uc,
+            port: int,
+            size: int,
+            value: int,
+            _data: object = None,
+        ) -> None:
+            outputs.append((port, size, value))
+            if port in (0x03D4, 0x03C4):
+                control_snapshots.append(
+                    (
+                        port,
+                        bytes(
+                            _machine.mem_read(data_segment * 16 + 0x0024, 8)
+                        ),
+                        hashlib.sha256(
+                            bytes(
+                                _machine.mem_read(video_segment * 16, 0x10000)
+                            )
+                        ).hexdigest(),
+                    )
+                )
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        decoy = bytes.fromhex("1122334455667788")
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x0024, globals_before),
+                (extra_segment, 0x0024, decoy),
+                (game_segment, 0x0024, decoy),
+                (video_segment, 0, video_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100000,
+            input_handler=input_handler,
+            output_handler=output_handler,
+        )
+
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: VGA output sequence differs"
+            )
+        expected_inputs = [
+            (0x03DA, 1, value) for value in input_values
+        ]
+        if inputs != expected_inputs:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"inputs={inputs}, expected={expected_inputs}"
+            )
+        expected_control_snapshots = [
+            (0x03D4, globals_after, hashlib.sha256(video_before).hexdigest()),
+            (0x03C4, globals_after, hashlib.sha256(video_before).hexdigest()),
+        ]
+        if control_snapshots != expected_control_snapshots:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: control-write ordering differs"
+            )
+        expected_cleared_hash = hashlib.sha256(video_after).hexdigest()
+        if video_at_first_input != [expected_cleared_hash]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: retrace wait preceded framebuffer clear"
+            )
+        actual_globals = bytes(
+            machine.mem_read(data_segment * 16 + 0x0024, 8)
+        )
+        if actual_globals != globals_after:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: globals={actual_globals.hex()}"
+            )
+        actual_video = bytes(machine.mem_read(video_segment * 16, 0x10000))
+        if actual_video != video_after:
+            raise AssertionError(f"{module}:{entry:#x} {name}: VGA memory differs")
+        for segment in (extra_segment, game_segment):
+            if bytes(machine.mem_read(segment * 16 + 0x0024, 8)) != decoy:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: decoy segment {segment:#x} changed"
+                )
+
+        final_status = input_values[-1]
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = final_status
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0xA000
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | 0x03DA
+        expected_registers["edi"] = (initial["edi"] & 0xFFFF0000) | 0xFA00
+        expected_registers["es"] = video_segment
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        expected_flags = {
+            "cf": False,
+            "pf": False,
+            "zf": False,
+            "sf": False,
+            "if": bool(initial_flags & 0x0200),
+            "df": False,
+            "of": False,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "palette_index_writes": 1,
+                "palette_component_zero_writes": 0x0300,
+                "crtc_word": {"port": 0x03D4, "value": 0x000C},
+                "sequencer_word": {"port": 0x03C4, "value": 0x0F02},
+                "video_segment": video_segment,
+                "video_bytes_cleared": 0xFA00,
+                "video_clear_precedes_status_reads": True,
+                "video_tail_sha256": hashlib.sha256(
+                    video_after[0xFA00:]
+                ).hexdigest(),
+                "status_values": input_values,
+                "register_results": {
+                    "eax": final_status,
+                    "bx": 0xA000,
+                    "cx": 0,
+                    "dx": 0x03DA,
+                    "di": 0xFA00,
+                    "es": video_segment,
                 },
                 "defined_flags": expected_flags,
             }
@@ -1546,6 +1829,16 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for module, entry in (
+        ("amer", 0x02F0),
+        ("croolis", 0x0305),
+        ("scrut", 0x0305),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            vga_clear_and_sync_vectors(module, entry),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x0336),
         ("croolis", 0x034B),

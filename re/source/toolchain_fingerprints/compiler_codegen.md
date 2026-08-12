@@ -2005,6 +2005,23 @@ original `PUSH CX`/`POP DX`; the natural semantics are otherwise complete.
 Turbo C 2.01 emits a 12-instruction stack-argument implementation with the
 same two interrupt operations.
 
+The byte-identical AMER `0x0002F0`, CROOLIS `0x000305`, and SCRUT `0x000305`
+VGA helpers are recovered as natural counted palette and framebuffer clears,
+two page-global assignments, two word-sized VGA control writes, and two
+status-poll loops. Four port-hook vectors per overlay prove all 769 byte output
+writes, both control words, operation ordering, the exact 64,000-byte
+`A000:0000` clear while preserving `A000:FA00..FFFF`, and retrace-low followed
+by retrace-high synchronization across multiple input sequences. They also
+verify DS ownership, full register/segment effects, `CLD`, final `TEST` flags,
+and near return.
+
+Open Watcom compiles all three actual candidates without warnings to 37
+instructions/86 bytes versus the original 30/70. Port operations remain the
+same narrow hardware instructions. Watcom lowers the natural far framebuffer
+loop to scalar `ES` stores with `DEC/JNE`; the original uses `CLD` plus `REP
+STOSW`, so scratch-register results and flags differ even though observable VGA
+and memory behavior agrees. Turbo C 2.01 emits 55 instructions.
+
 The byte-identical slot-8 trio (AMER `0x001B5F`, CROOLIS `0x001ACB`, SCRUT
 `0x001B80`) advances a byte cursor by four modulo `0x1000`, subtracts the
 previous signed sample from the current sample, and applies that wrapping
@@ -2068,6 +2085,7 @@ LCS and then mnemonic similarity:
 | `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
+| `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
