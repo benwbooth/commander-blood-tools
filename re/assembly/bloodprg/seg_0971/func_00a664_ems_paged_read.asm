@@ -7,7 +7,8 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: ems_paged_read
-; label_comment: EMS/banked-memory paged read (gated on [0xdbc]&1, handle [0xa58]!=-1): [0xd84]=32-bit linear addr; si=addr&0x3fff (offset in 16KB page), page=addr>>14 (bx). Accesses banked memory via 16KB-page addressing - the EMS/XMS large-memory model (int 67h) the game uses. Backs the gs:0xd8c list read
+; label_comment: EMS/banked-memory paged read (gated on [0xdbc]&1, handle [0xa58]!=-1): [0xd84]=32-bit linear addr; si=addr&0x3fff (offset in 16KB page), page=addr>>14 (bx). Accesses banked memory via 16KB-page addressing - the EMS/XMS large-memory model (int 67h) the game uses. After updating source offset/remaining at 0xa722, execution falls through the independently callable queue_d8c_enqueue shared tail at 0xa734, which advances destination head/count and clears carry before the common RET.
+; shared_tail_entries: 0x00a734
 ; byte_count: 218
 ; boundary: cfg_blocks_11_terminals_3
 ; terminal: jmp 0xa722:2, ret:1
@@ -99,5 +100,7 @@
 00A726:  83 1E 8A 0D 00               sbb      word ptr [0xd8a], 0
 00A72B:  01 06 84 0D                  add      word ptr [0xd84], ax
 00A72F:  83 16 86 0D 00               adc      word ptr [0xd86], 0
-; -- non-contiguous block: next 0x00a73d --
+00A734:  01 06 8C 0D                  add      word ptr [0xd8c], ax
+00A738:  01 06 9A 0D                  add      word ptr [0xd9a], ax
+00A73C:  F8                           clc
 00A73D:  C3                           ret     
