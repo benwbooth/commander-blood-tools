@@ -1991,6 +1991,20 @@ the original five-instruction sequence and 14-byte size. Only the two global
 relocations remain for the overlay linker to bind. Turbo C 2.01 emits the same
 five-operation core inside a 10-instruction stack-argument frame.
 
+The byte-identical AMER `0x000336`, CROOLIS `0x00034B`, and SCRUT `0x00034B`
+mouse-bounds helpers are recovered as two typed mouse-driver calls. The first
+sets vertical bounds to `0..max_y`; the second sets horizontal bounds to
+`0..max_x`. Six interrupt-hook vectors per overlay make the first driver
+destroy `AX/CX/DX`, proving that the second call uses the original `CX` value
+saved by the routine rather than an incidental register value. They also
+verify call order, zero minima, stack state, preservation, and propagation of
+the second driver's registers and flags. Open Watcom compiles every actual
+candidate without warnings to 11 instructions/21 bytes versus the original
+9/17. It saves `max_x` in `BX` with a function prologue/epilogue instead of the
+original `PUSH CX`/`POP DX`; the natural semantics are otherwise complete.
+Turbo C 2.01 emits a 12-instruction stack-argument implementation with the
+same two interrupt operations.
+
 Four XDB entries are independently proven one-byte near-return methods: AMER
 `0x001DD6`, CROOLIS `0x001D27`, MANU3 `0x000848`, and SCRUT `0x001DE7`. Three
 direct raw-overlay vectors per entry verify that only the two-byte return word
@@ -2032,6 +2046,7 @@ LCS and then mnemonic similarity:
 | `xdb_lower_state` | medium, `-ox`, register | 4/4 | 0.2500 | 0.7500 | 0.7500 |
 | `xdb_resume_or_init` | medium, `-ox`, register | 8/9 | 0.1250 | 0.6250 | 0.1250 |
 | `xdb_mouse_position_set` | medium, `-ox`, register | 5/5 | 0.4000 | 1.0000 | 0.6000 |
+| `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

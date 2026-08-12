@@ -1,0 +1,200 @@
+[
+  {
+    "name": "zero",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 0,
+    "max_y": 0,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 0
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 0
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20736,
+      "cx": 20992,
+      "dx": 21248
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "screen",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 319,
+    "max_y": 199,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 199
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 319
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20737,
+      "cx": 20993,
+      "dx": 21249
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "x_high_bit",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 32768,
+    "max_y": 4660,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 4660
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 32768
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20738,
+      "cx": 20994,
+      "dx": 21250
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "y_high_bit",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 17185,
+    "max_y": 32768,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 32768
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 17185
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20739,
+      "cx": 20995,
+      "dx": 21251
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "maximum",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 65535,
+    "max_y": 65535,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20740,
+      "cx": 20996,
+      "dx": 21252
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mixed",
+    "module": "croolis",
+    "entry": 843,
+    "max_x": 42330,
+    "max_y": 23205,
+    "vertical_call": {
+      "function": 8,
+      "minimum": 0,
+      "maximum": 23205
+    },
+    "horizontal_call": {
+      "function": 7,
+      "minimum": 0,
+      "maximum": 42330
+    },
+    "max_x_saved_on_stack": true,
+    "second_driver_outputs": {
+      "ax": 20741,
+      "cx": 20997,
+      "dx": 21253
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

@@ -294,6 +294,191 @@ def mouse_position_vectors(module: str, entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def mouse_bounds_vectors(module: str, entry: int) -> list[dict[str, object]]:
+    image = load_image(module)
+    expected_hash = "9088c864b81d156291d0a7bcc1f0de09edfa68b14d89034733fd541a0d196efc"
+    if hashlib.sha256(image[entry : entry + 17]).hexdigest() != expected_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 17-byte body changed")
+
+    cases = [
+        ("zero", 0x0000, 0x0000),
+        ("screen", 0x013F, 0x00C7),
+        ("x_high_bit", 0x8000, 0x1234),
+        ("y_high_bit", 0x4321, 0x8000),
+        ("maximum", 0xFFFF, 0xFFFF),
+        ("mixed", 0xA55A, 0x5AA5),
+    ]
+    stack_segment = 0x9000
+    return_address = 0xF000
+    first_flags = (0x0202, 0x0AD7, 0x0646, 0x0283, 0x0A12, 0x0643)
+    second_flags = (0x0A93, 0x0246, 0x0683, 0x0A02, 0x0257, 0x0647)
+    vectors = []
+
+    for case_index, (name, max_x, max_y) in enumerate(cases):
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C30000 | max_x,
+            "edx": 0xD4D40000 | max_y,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": 0x4400,
+            "es": 0x4800,
+            "fs": 0x4C00,
+            "gs": 0x2C00,
+            "ss": stack_segment,
+            "flags": 0x0A93 | (0x0400 if case_index & 1 else 0),
+        }
+        first_outputs = (
+            (0x4100 + case_index) & 0xFFFF,
+            (0x4200 + case_index) & 0xFFFF,
+            (0x4300 + case_index) & 0xFFFF,
+        )
+        second_outputs = (
+            (0x5100 + case_index) & 0xFFFF,
+            (0x5200 + case_index) & 0xFFFF,
+            (0x5300 + case_index) & 0xFFFF,
+        )
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt_handler(
+            machine: Uc, interrupt_number: int, _data: object
+        ) -> None:
+            interrupt_index = len(interrupts)
+            snapshot = {
+                "number": interrupt_number,
+                "ax": machine.reg_read(UC_X86_REG_EAX) & 0xFFFF,
+                "cx": machine.reg_read(UC_X86_REG_ECX) & 0xFFFF,
+                "dx": machine.reg_read(UC_X86_REG_EDX) & 0xFFFF,
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "saved_max_x": struct.unpack(
+                    "<H", machine.mem_read(stack_segment * 16 + 0xFEFE, 2)
+                )[0],
+            }
+            interrupts.append(snapshot)
+            outputs = first_outputs if interrupt_index == 0 else second_outputs
+            flags = (
+                first_flags[case_index]
+                if interrupt_index == 0
+                else second_flags[case_index]
+            )
+            for register, value in zip(
+                (UC_X86_REG_EAX, UC_X86_REG_ECX, UC_X86_REG_EDX), outputs
+            ):
+                machine.reg_write(
+                    register,
+                    (machine.reg_read(register) & 0xFFFF0000) | value,
+                )
+            machine.reg_write(UC_X86_REG_EFLAGS, flags)
+
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler,
+        )
+
+        expected_interrupts = [
+            {
+                "number": 0x33,
+                "ax": 8,
+                "cx": 0,
+                "dx": max_y,
+                "sp": 0xFEFE,
+                "saved_max_x": max_x,
+            },
+            {
+                "number": 0x33,
+                "ax": 7,
+                "cx": 0,
+                "dx": max_x,
+                "sp": 0xFF00,
+                "saved_max_x": max_x,
+            },
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"interrupts={interrupts}, expected={expected_interrupts}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        for name_key, value in zip(("eax", "ecx", "edx"), second_outputs):
+            expected_registers[name_key] = (
+                initial[name_key] & 0xFFFF0000
+            ) | value
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x} {name}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack sentinel changed")
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        expected_flags = {
+            flag: bool(second_flags[case_index] & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "max_x": max_x,
+                "max_y": max_y,
+                "vertical_call": {"function": 8, "minimum": 0, "maximum": max_y},
+                "horizontal_call": {"function": 7, "minimum": 0, "maximum": max_x},
+                "max_x_saved_on_stack": True,
+                "second_driver_outputs": {
+                    "ax": second_outputs[0],
+                    "cx": second_outputs[1],
+                    "dx": second_outputs[2],
+                },
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def anchor_state_vectors(
     module: str, entry: int, cursor_offset: int
 ) -> list[dict[str, object]]:
@@ -1136,6 +1321,16 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    for module, entry in (
+        ("amer", 0x0336),
+        ("croolis", 0x034B),
+        ("scrut", 0x034B),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            mouse_bounds_vectors(module, entry),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x0347),
         ("croolis", 0x035C),
