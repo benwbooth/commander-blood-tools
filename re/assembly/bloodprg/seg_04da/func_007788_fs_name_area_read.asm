@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: fs_name_area_read
-; label_comment: read from the FS resource-name area: es=fs; di=0xc74 (near the FS:0x0c04 resource-name table); lodsb - reads a resource name/entry indexed by the script
+; label_comment: copies script bytes 0x20..0x7f from DS:SI into FS:0x0c74, leaves the first control/high-bit byte unconsumed, NUL-terminates, sets GS:0x27e8 to 1, and restores the caller's ES
 ; incoming: byte_parser_dispatch_74e5:byte_0x0e
 ; byte_count: 33
 ; boundary: cfg_blocks_5_terminals_2

@@ -18,8 +18,10 @@ typedef signed long cb_i32;
 
 #if defined(__WATCOMC__)
 #define CB_GAME_DATA __based(__segname("GAME_DATA"))
+#define CB_FS_DATA __based(__segname("FS_DATA"))
 #else
 #define CB_GAME_DATA CB_FAR
+#define CB_FS_DATA CB_FAR
 #endif
 
 cb_u16 CB_FAR bloodprg_strlen(const volatile char CB_FAR *text); /* 0x002665 */

@@ -1470,6 +1470,26 @@ operations but saves BX/DX/ES, loads `GAME_DATA`, and uses scalar loads, stores,
 and pointer additions instead of the original ambient ES=GS and compact
 LODSB/STOSB/MOVSW forms.
 
+Byte-parser opcode-0E handler `0x007788` copies bytes `0x20..0x7F` from DS:SI
+to a fixed FS buffer, leaves the stopping byte unconsumed, terminates the
+result, and sets a GS-owned dirty flag to exactly one. Eight direct vectors
+prove both stop classes, source wrap, FS destination ownership, GS state
+ownership, ES restoration, outputs, DEC-derived flags, preservation, and
+return. Opcode-12 handler `0x0077A9` accepts `0x21..0x7F`, masks every accepted
+byte at least `0x61` with `0xDF`, compares the transformed byte before writing,
+sets the changed byte to exactly one after a mismatch, and ORs the unchanged
+byte with one only if changed bit zero is clear at the stop. Eleven vectors
+cover unusual inputs such as backtick and brace, preexisting even and odd
+changed values, source wrap, segment ownership, outputs, flags, and return.
+
+Their one-to-one candidates now consume and return SI directly and use named
+FS/game-data objects. Open Watcom `-3 -ox -mm` compiles the actual candidates
+without warnings to 26 instructions/53 bytes and 38/87 respectively, versus
+originals of 16/33 and 20/52. Turbo C 2.01 medium emits 31 and 47 instructions.
+Watcom preserves the natural operations, but its register saves and named
+segment reloads do not reproduce the original ambient ES/GS/FS setup or string
+instruction allocation.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned
@@ -1548,6 +1568,8 @@ LCS and then mnemonic similarity:
 | `index_lookup_1fd7` | medium, `-ox`, register | 47/44 | 0.0851 | 0.4043 | 0.1064 |
 | `byte_parser_copy_131a_entry` | medium, `-ox`, register | 13/27 | 0.1538 | 0.6154 | 0.2308 |
 | `byte_parser_stream_0f18_append` | medium, `-ox`, register | 8/23 | 0.1250 | 0.5000 | 0.1250 |
+| `fs_name_area_read` | medium, `-ox`, register | 16/26 | 0.2500 | 0.6875 | 0.3125 |
+| `music_voc_name_patcher` | medium, `-ox`, register | 20/38 | 0.1000 | 0.4500 | 0.2000 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

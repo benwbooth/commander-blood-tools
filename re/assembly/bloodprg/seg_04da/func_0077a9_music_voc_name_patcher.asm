@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: music_voc_name_patcher
-; label_comment: Patches the MUSIC filename into the `mu\\xxxxxxxx.voc` template at DS:0x0D2C, writing the 8-char name field at DS:0x0D30. Copies from ds:si uppercasing (cmp al,0x61 / and al,0xDF), stopping at space, control or a high-bit byte; sets gs:0xBA1 if any character CHANGED and gs:0xBA0 if the name was identical, so the caller can skip a reload. RESOLVED 2026-07-24: this is MUSIC, not dialogue voice -- all 44 files in BLOOD.DAT's mu/ are track names (angst, blintr, credits, croolrap, tablo2, generik...) and NONE is a character name. Dialogue voices come from the son.snd bank instead (loader 0xC005, handle DS:0x0C47)
+; label_comment: Patches the MUSIC filename in the `mu\\xxxxxxxx.voc` template, writing transformed script bytes to ES:0x0D30. Accepts 0x21..0x7f and masks every byte >=0x61 with 0xdf; sets GS:0x0ba1 to 1 on a mismatch, and ORs GS:0x0ba0 with 1 only when changed bit 0 is clear at the stop. The stop byte remains unconsumed. Dialogue voices come from the son.snd bank instead (loader 0xC005, handle DS:0x0C47)
 ; incoming: byte_parser_dispatch_74e5:byte_0x12
 ; byte_count: 52
 ; boundary: cfg_blocks_11_terminals_2

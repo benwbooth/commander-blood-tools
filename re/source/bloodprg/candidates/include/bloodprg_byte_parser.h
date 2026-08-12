@@ -13,14 +13,14 @@ extern char CB_GAME_DATA byte_parser_table_2460[]; /* ES:0x2460 */
 extern char CB_GAME_DATA byte_parser_table_247a[]; /* ES:0x247A */
 extern char CB_GAME_DATA byte_parser_line_name[];  /* ES:0x24C6 */
 extern char CB_GAME_DATA byte_parser_text_20b8[];  /* ES:0x20B8 */
-extern volatile char fs_resource_name_area[]; /* FS:0x0C74 */
+extern char CB_FS_DATA fs_resource_name_area[];       /* FS:0x0C74 */
 extern char CB_GAME_DATA credit_text_buffer[];          /* ES:0x0E18 */
 extern volatile cb_u8 CB_GAME_DATA credit_reveal_active; /* GS:0x5E64 */
 extern volatile cb_u16 CB_GAME_DATA credit_reveal_timer; /* GS:0x5E58 */
-extern volatile cb_u8 fs_name_area_dirty;    /* GS:0x27E8 */
-extern volatile char music_voc_name_field[]; /* GS:0x0D30 */
-extern volatile cb_u8 music_voc_name_unchanged; /* GS:0x0BA0 */
-extern volatile cb_u8 music_voc_name_changed; /* GS:0x0BA1 */
+extern volatile cb_u8 CB_GAME_DATA fs_name_area_dirty; /* GS:0x27E8 */
+extern char CB_GAME_DATA music_voc_name_field[];       /* ES:0x0D30 */
+extern volatile cb_u8 CB_GAME_DATA music_voc_name_unchanged; /* GS:0x0BA0 */
+extern volatile cb_u8 CB_GAME_DATA music_voc_name_changed; /* GS:0x0BA1 */
 extern volatile char CB_GAME_DATA byte_parser_snd_bank_path[]; /* GS:0x0D06 */
 extern char CB_GAME_DATA byte_parser_snd_bank_name_field[]; /* ES:0x0D09 */
 extern volatile cb_u16 CB_GAME_DATA byte_parser_ui_state; /* GS:0x2793 */
@@ -51,6 +51,8 @@ extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_stream_0f18_cursor; /*
 #pragma aux index_lookup_1fd7 parm [si] value [si] modify exact [ax si]
 #pragma aux byte_parser_copy_131a_entry parm [si] value [si] modify exact [ax si di]
 #pragma aux byte_parser_stream_0f18_append parm [si] value [si] modify exact [ax si di]
+#pragma aux fs_name_area_read parm [si] value [si] modify exact [ax si di]
+#pragma aux music_voc_name_patcher parm [si] value [si] modify exact [ax si di]
 #endif
 
 void CB_NEAR byte_parser_op_01_mark_b16(void); /* 0x007542 */
@@ -79,6 +81,10 @@ const cb_u8 CB_NEAR *CB_NEAR byte_parser_copy_131a_entry(
     const cb_u8 CB_NEAR *script_bytes); /* 0x007754 */
 const cb_u8 CB_NEAR *CB_NEAR byte_parser_stream_0f18_append(
     const cb_u8 CB_NEAR *script_bytes); /* 0x007776 */
+const cb_u8 CB_NEAR *CB_NEAR fs_name_area_read(
+    const cb_u8 CB_NEAR *script_bytes); /* 0x007788 */
+const cb_u8 CB_NEAR *CB_NEAR music_voc_name_patcher(
+    const cb_u8 CB_NEAR *script_bytes); /* 0x0077A9 */
 
 void CB_FAR path_build_call_2693(cb_game_char_ptr path); /* 0x01CE:0712 */
 void CB_FAR file_open_wrapper(cb_game_char_ptr path,

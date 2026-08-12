@@ -1,0 +1,154 @@
+[
+  {
+    "name": "immediate_nul",
+    "source_offset": 25600,
+    "input_hex": "00",
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "dirty_before": 0,
+    "dirty_after": 1,
+    "final_source_offset": 25600,
+    "final_destination_offset": 3188,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "immediate_high",
+    "source_offset": 25632,
+    "input_hex": "ff",
+    "copied_hex": "",
+    "stopping_byte": 255,
+    "dirty_before": 126,
+    "dirty_after": 1,
+    "final_source_offset": 25632,
+    "final_destination_offset": 3188,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lower_printable",
+    "source_offset": 25664,
+    "input_hex": "201f",
+    "copied_hex": "20",
+    "stopping_byte": 31,
+    "dirty_before": 165,
+    "dirty_after": 1,
+    "final_source_offset": 25665,
+    "final_destination_offset": 3189,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "upper_printable",
+    "source_offset": 25696,
+    "input_hex": "7f80",
+    "copied_hex": "7f",
+    "stopping_byte": 128,
+    "dirty_before": 90,
+    "dirty_after": 1,
+    "final_source_offset": 25697,
+    "final_destination_offset": 3189,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary_text",
+    "source_offset": 25728,
+    "input_hex": "5245534f555243452e44415400",
+    "copied_hex": "5245534f555243452e444154",
+    "stopping_byte": 0,
+    "dirty_before": 0,
+    "dirty_after": 1,
+    "final_source_offset": 25740,
+    "final_destination_offset": 3200,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_wrap",
+    "source_offset": 65535,
+    "input_hex": "4100",
+    "copied_hex": "41",
+    "stopping_byte": 0,
+    "dirty_before": 255,
+    "dirty_after": 1,
+    "final_source_offset": 0,
+    "final_destination_offset": 3189,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "low_stop_after_text",
+    "source_offset": 25792,
+    "input_hex": "41424310",
+    "copied_hex": "414243",
+    "stopping_byte": 16,
+    "dirty_before": 18,
+    "dirty_after": 1,
+    "final_source_offset": 25795,
+    "final_destination_offset": 3191,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_stop_after_text",
+    "source_offset": 25824,
+    "input_hex": "58595a80",
+    "copied_hex": "58595a",
+    "stopping_byte": 128,
+    "dirty_before": 52,
+    "dirty_after": 1,
+    "final_source_offset": 25827,
+    "final_destination_offset": 3191,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
