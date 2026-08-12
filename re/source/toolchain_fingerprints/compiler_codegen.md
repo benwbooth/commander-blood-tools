@@ -87,6 +87,16 @@ respectively, versus the original 26, and do not reproduce its compact
 LODSW/XCHG/shift-until-zero/LOOP form or register effects. The natural source is
 therefore behaviorally verified but remains a codegen mismatch.
 
+For `0x00A3D0`, eight direct-execution boundary cases confirm the natural
+queue-consumption source, including the distinction between discarded overflow
+from `tail + 2` and wrapping overflow from the following entry-size add. Turbo C
+2.01 medium emits 40 instructions and Open Watcom 1.9 medium emits 32, versus
+the original 20. Both retain the two unsigned wrap tests and counter rollover,
+but neither emits the original LES SI/LODSW pointer advance or register effects.
+An exploratory non-volatile Watcom build shortened the routine to 29
+instructions but reordered shared-state accesses, so it is not accepted as the
+recovered source formulation.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

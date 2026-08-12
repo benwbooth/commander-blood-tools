@@ -245,6 +245,196 @@ def mask_overlay_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def queue_consume_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    tail_segment = 0x3000
+    cases = [
+        {
+            "name": "ordinary_advance",
+            "tail": 0x0100,
+            "entry_bytes": 0x0020,
+            "byte_count": 0x0100,
+            "buffer_end": 0x1000,
+            "sequence": 0x0010,
+            "read_index": 0x0003,
+            "read_limit": 0x0007,
+        },
+        {
+            "name": "candidate_equals_end",
+            "tail": 0x0F00,
+            "entry_bytes": 0x00FE,
+            "byte_count": 0x0200,
+            "buffer_end": 0x1000,
+            "sequence": 0x0100,
+            "read_index": 0x0006,
+            "read_limit": 0x0007,
+        },
+        {
+            "name": "candidate_past_end",
+            "tail": 0x0F00,
+            "entry_bytes": 0x0100,
+            "byte_count": 0x0200,
+            "buffer_end": 0x1000,
+            "sequence": 0x1234,
+            "read_index": 0x0002,
+            "read_limit": 0x0007,
+        },
+        {
+            "name": "candidate_add_carry",
+            "tail": 0xFF00,
+            "entry_bytes": 0x0200,
+            "byte_count": 0x0300,
+            "buffer_end": 0xFFFF,
+            "sequence": 0xFFFE,
+            "read_index": 0x0010,
+            "read_limit": 0x0020,
+        },
+        {
+            "name": "read_index_past_limit",
+            "tail": 0x0200,
+            "entry_bytes": 0x0010,
+            "byte_count": 0x0010,
+            "buffer_end": 0x1000,
+            "sequence": 0xFFFF,
+            "read_index": 0x0007,
+            "read_limit": 0x0007,
+        },
+        {
+            "name": "read_index_equals_limit",
+            "tail": 0x0200,
+            "entry_bytes": 0x0010,
+            "byte_count": 0x0010,
+            "buffer_end": 0x1000,
+            "sequence": 0x2222,
+            "read_index": 0x0006,
+            "read_limit": 0x0007,
+        },
+        {
+            "name": "read_index_word_wrap",
+            "tail": 0x0200,
+            "entry_bytes": 0x0010,
+            "byte_count": 0x0008,
+            "buffer_end": 0x1000,
+            "sequence": 0x3333,
+            "read_index": 0xFFFF,
+            "read_limit": 0x0000,
+        },
+        {
+            "name": "tail_plus_header_wrap_is_discarded",
+            "tail": 0xFFFF,
+            "entry_bytes": 0x0000,
+            "byte_count": 0x0000,
+            "buffer_end": 0x0001,
+            "sequence": 0x4444,
+            "read_index": 0x0000,
+            "read_limit": 0xFFFF,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x8888,
+        }
+        tail = int(case["tail"])
+        entry_bytes = int(case["entry_bytes"])
+        byte_count = int(case["byte_count"])
+        buffer_end = int(case["buffer_end"])
+        sequence = int(case["sequence"])
+        read_index = int(case["read_index"])
+        read_limit = int(case["read_limit"])
+        machine = execute(
+            0xA3D0,
+            0xA40A,
+            initial,
+            [
+                (
+                    data_segment,
+                    0x0D90,
+                    struct.pack("<HH", tail, tail_segment),
+                ),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+                (data_segment, 0x5233, struct.pack("<H", buffer_end)),
+                (data_segment, 0x131C, struct.pack("<H", sequence)),
+                (data_segment, 0x0D60, struct.pack("<H", read_index)),
+                (data_segment, 0x0D64, struct.pack("<H", read_limit)),
+                (tail_segment, tail, struct.pack("<H", entry_bytes)),
+            ],
+        )
+
+        after_header = (tail + 2) & 0xFFFF
+        sum_after_header = after_header + entry_bytes
+        candidate = sum_after_header & 0xFFFF
+        wrapped = sum_after_header > 0xFFFF or candidate > buffer_end
+        expected_tail = (
+            (entry_bytes - 2) & 0xFFFF
+            if wrapped
+            else (tail + entry_bytes) & 0xFFFF
+        )
+        expected_count = (byte_count - entry_bytes) & 0xFFFF
+        expected_sequence = (sequence + 1) & 0xFFFF
+        expected_index = (read_index + 1) & 0xFFFF
+        expected_limit = read_limit
+        if expected_index > read_limit:
+            expected_index = 1
+            expected_limit = 0xFFFF
+
+        observed = {
+            "tail": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D90, 2)
+            )[0],
+            "byte_count": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+            )[0],
+            "sequence": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x131C, 2)
+            )[0],
+            "read_index": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D60, 2)
+            )[0],
+            "read_limit": struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0D64, 2)
+            )[0],
+        }
+        expected = {
+            "tail": expected_tail,
+            "byte_count": expected_count,
+            "sequence": expected_sequence,
+            "read_index": expected_index,
+            "read_limit": expected_limit,
+        }
+        if observed != expected:
+            raise AssertionError(
+                f"0xA3D0 {case['name']}: actual={observed}, expected={expected}"
+            )
+        for name in ("bx", "cx", "dx", "di", "bp"):
+            actual_register = machine.reg_read(REGISTERS[name])
+            if actual_register != initial[name]:
+                raise AssertionError(f"0xA3D0 did not preserve {name}")
+
+        vectors.append(
+            {
+                **case,
+                "wrapped": wrapped,
+                "result_tail": observed["tail"],
+                "result_byte_count": observed["byte_count"],
+                "result_sequence": observed["sequence"],
+                "result_read_index": observed["read_index"],
+                "result_read_limit": observed["read_limit"],
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -270,6 +460,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_7cb4_natural.json", mask_overlay_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a3d0_natural.json", queue_consume_vectors(), args.check
     )
     return 0
 
