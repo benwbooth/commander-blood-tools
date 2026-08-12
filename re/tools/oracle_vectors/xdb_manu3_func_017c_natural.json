@@ -1,0 +1,38 @@
+[
+  {
+    "name": "selector_0000",
+    "module": "manu3",
+    "entry": 380,
+    "selector": 0,
+    "near_callee": 385,
+    "near_return_ip": 383,
+    "far_stack_bytes_consumed": 4
+  },
+  {
+    "name": "selector_001f",
+    "module": "manu3",
+    "entry": 380,
+    "selector": 31,
+    "near_callee": 385,
+    "near_return_ip": 383,
+    "far_stack_bytes_consumed": 4
+  },
+  {
+    "name": "selector_0020",
+    "module": "manu3",
+    "entry": 380,
+    "selector": 32,
+    "near_callee": 385,
+    "near_return_ip": 383,
+    "far_stack_bytes_consumed": 4
+  },
+  {
+    "name": "selector_ffff",
+    "module": "manu3",
+    "entry": 380,
+    "selector": 65535,
+    "near_callee": 385,
+    "near_return_ip": 383,
+    "far_stack_bytes_consumed": 4
+  }
+]

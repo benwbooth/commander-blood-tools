@@ -2070,6 +2070,34 @@ bytes survive. Empty one-to-one C functions compile under both Open Watcom and
 Turbo C 2.01 to a single `RET`; Watcom's object byte is exactly `C3`. These
 empty functions are accepted recovered behavior rather than stubs.
 
+The first MANU3 animation chain is recovered as three one-to-one natural C
+functions. Entry `0x00017C` is a far wrapper around near selector `0x000181`;
+four patched-callee vectors prove its BX argument, inner return word, outer far
+return, preservation, and flags. Open Watcom `-3 -ox -mm -zdp` emits the exact
+two instructions and four bytes (`CALL near`, `RETF`) from the natural wrapper.
+Turbo C 2.01 medium emits seven instructions because it stack-passes the
+selector and creates a BP frame.
+
+Four patched-constructor vectors prove that `0x000181` masks the selector to
+five bits, indexes a relative-word table based at DS:`0x2306`, clears the phase,
+publishes the wrapped script offset, loads BX with the active-list base
+`0x1032`, and tail-jumps to the constructor. Watcom emits 10 instructions/29
+bytes versus 8/26 original. It retains every original mnemonic class but uses a
+normal `CALL`/`RET` pair and different table-index temporaries. Turbo C emits 21
+instructions with a stack argument.
+
+Eight direct vectors prove the complete `0x0001DF` constructor: count/phase
+gates over packed 8-byte specs; 14-byte records containing counter, target,
+Q16 accumulator, and Q16 step; 16-bit wrapped signed deltas; truncating signed
+division; multiple records; both script and active-cursor wrap; phase advance;
+and the empty-sequence camera/final-state writes. Open Watcom compiles the
+natural struct loop to 65 instructions/179 bytes versus 49/145 original. It
+uses a stack frame and `__I4D` helper, whereas the binary keeps values in
+registers and executes 386 `CDQ`/`IDIV ECX` inline. Turbo C emits 87
+instructions and calls `LDIV@`. The source-level data and control flow are
+verified; the constructor remains a codegen mismatch rather than an assembly
+substitute.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2108,6 +2136,9 @@ LCS and then mnemonic similarity:
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |
+| `xdb_manu3_anim_select_entry` | medium, `-ox -zdp`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `xdb_manu3_anim_select` | medium, `-ox -zdp`, register | 8/10 | 0.0000 | 0.8750 | 0.1250 |
+| `xdb_manu3_tween_constructor` | medium, `-ox -zdp`, register | 49/65 | 0.0408 | 0.5714 | 0.0408 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/7 | 0.1250 | 0.7500 | 0.1250 |
 | `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |

@@ -1,0 +1,239 @@
+[
+  {
+    "name": "phase_mismatch",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 12288,
+    "script_offset_after": 12288,
+    "phase_before": 43778,
+    "phase_after": 43779,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4146,
+    "processed_records": [],
+    "final_path": "phase_advance",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "empty_initial",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 12544,
+    "script_offset_after": 12544,
+    "phase_before": 7,
+    "phase_after": 256,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4146,
+    "processed_records": [],
+    "final_path": "completed_without_active_records",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "empty_after_active_phase_wrap",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 12672,
+    "script_offset_after": 12672,
+    "phase_before": 65535,
+    "phase_after": 0,
+    "active_cursor_before": 4352,
+    "active_cursor_after": 4352,
+    "processed_records": [],
+    "final_path": "end_after_active_records",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_positive_then_end",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 12800,
+    "script_offset_after": 12808,
+    "phase_before": 1,
+    "phase_after": 2,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4148,
+    "processed_records": [
+      {
+        "record_offset": 16384,
+        "target_offset": 20480,
+        "counter": 3,
+        "step": 3276800,
+        "accumulator": 9830400,
+        "remainder": 0
+      }
+    ],
+    "final_path": "end_after_active_records",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "one_negative_then_next_phase",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 13056,
+    "script_offset_after": 13064,
+    "phase_before": 52481,
+    "phase_after": 52482,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4148,
+    "processed_records": [
+      {
+        "record_offset": 16416,
+        "target_offset": 20496,
+        "counter": 2,
+        "step": -6553600,
+        "accumulator": 0,
+        "remainder": 0
+      }
+    ],
+    "final_path": "phase_advance",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "two_records_delta_wrap",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 13312,
+    "script_offset_after": 13328,
+    "phase_before": 4,
+    "phase_after": 5,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4150,
+    "processed_records": [
+      {
+        "record_offset": 16448,
+        "target_offset": 20528,
+        "counter": 0,
+        "step": -65536,
+        "accumulator": 2147418112,
+        "remainder": 0
+      },
+      {
+        "record_offset": 16480,
+        "target_offset": 20544,
+        "counter": 254,
+        "step": 257,
+        "accumulator": 2147418369,
+        "remainder": 1
+      }
+    ],
+    "final_path": "phase_advance",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "script_wrap",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 65528,
+    "script_offset_after": 0,
+    "phase_before": 6,
+    "phase_after": 7,
+    "active_cursor_before": 4146,
+    "active_cursor_after": 4148,
+    "processed_records": [
+      {
+        "record_offset": 16512,
+        "target_offset": 20576,
+        "counter": 1,
+        "step": 655360,
+        "accumulator": 65536,
+        "remainder": 0
+      }
+    ],
+    "final_path": "end_after_active_records",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "active_cursor_wrap",
+    "module": "manu3",
+    "entry": 479,
+    "script_offset_before": 13568,
+    "script_offset_after": 13576,
+    "phase_before": 8,
+    "phase_after": 9,
+    "active_cursor_before": 65534,
+    "active_cursor_after": 0,
+    "processed_records": [
+      {
+        "record_offset": 16544,
+        "target_offset": 20592,
+        "counter": 6,
+        "step": -11234742,
+        "accumulator": 47747658,
+        "remainder": -6
+      }
+    ],
+    "final_path": "end_after_active_records",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

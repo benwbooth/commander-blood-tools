@@ -1,11 +1,12 @@
 # Compiler Corpus Gate
 
 The corpus has now been compiled with archived Turbo C 2.00 and 2.01 through
-DOSBox and with Open Watcom C16 1.9. None of the tested natural-C probes was an
-exact machine-code match. Turbo C's stack-oriented lowering was generally a
-poor fit; Open Watcom's default register convention was structurally closer but
-still not an identification. See `toolchain_fingerprints/compiler_codegen.md`
-for the measured results and tool hashes.
+DOSBox and with Open Watcom C16 1.9. The initial broad probes produced no exact
+machine-code matches, while later routine-specific probes recovered a small
+number of exact shapes. Turbo C's stack-oriented lowering is generally a poor
+fit; Open Watcom's register convention is structurally closer but still not a
+compiler identification. See `toolchain_fingerprints/compiler_codegen.md` for
+the measured results and tool hashes.
 
 Before adding natural C routines, build a small compiler corpus and compare
 codegen against recovered routines:

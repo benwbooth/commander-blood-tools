@@ -1,0 +1,86 @@
+[
+  {
+    "name": "first",
+    "module": "manu3",
+    "entry": 385,
+    "selector": 0,
+    "masked_selector": 0,
+    "table_offset": 12288,
+    "relative_offset": 291,
+    "script_offset": 12579,
+    "constructor_tail_jump": 479,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "last",
+    "module": "manu3",
+    "entry": 385,
+    "selector": 31,
+    "masked_selector": 31,
+    "table_offset": 13312,
+    "relative_offset": 65244,
+    "script_offset": 13020,
+    "constructor_tail_jump": 479,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "masked_zero",
+    "module": "manu3",
+    "entry": 385,
+    "selector": 32,
+    "masked_selector": 0,
+    "table_offset": 14336,
+    "relative_offset": 32768,
+    "script_offset": 47104,
+    "constructor_tail_jump": 479,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "masked_last",
+    "module": "manu3",
+    "entry": 385,
+    "selector": 65535,
+    "masked_selector": 31,
+    "table_offset": 65472,
+    "relative_offset": 128,
+    "script_offset": 64,
+    "constructor_tail_jump": 479,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]
