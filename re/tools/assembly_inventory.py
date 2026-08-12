@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate recovered BLOODPRG assembly inventory consistency."""
+"""Validate recovered assembly inventory consistency."""
 
 from __future__ import annotations
 
@@ -19,12 +19,13 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-BLOODPRG = REPO_ROOT / "re" / "bin" / "BLOODPRG.EXE"
 ROUTINE_INDEX = REPO_ROOT / "re" / "assembly" / "routine_index.tsv"
-ASM_ROOT = REPO_ROOT / "re" / "assembly" / "bloodprg"
 
 DIRECT_CALLEE_RE = re.compile(r"^; direct_callees: (.+)$", re.MULTILINE)
+ARTIFACT_RE = re.compile(r"^; artifact: (.+)$", re.MULTILINE)
+ARTIFACT_SHA_RE = re.compile(r"^; artifact_sha256: ([0-9a-f]+)$", re.MULTILINE)
 FILE_OFFSET_RE = re.compile(r"^; file_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
+OVERLAY_OFFSET_RE = re.compile(r"^; overlay_offset: 0x([0-9a-fA-F]+)$", re.MULTILINE)
 BYTE_COUNT_RE = re.compile(r"^; byte_count: (\d+)$", re.MULTILINE)
 SHA_RE = re.compile(r"^; routine_bytes_sha256: ([0-9a-f]+)$", re.MULTILINE)
 
@@ -34,34 +35,48 @@ def load_index() -> list[dict[str, str]]:
         return list(csv.DictReader(fh, delimiter="\t"))
 
 
-def bloodprg_entries(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    return [row for row in rows if row["module"] == "bloodprg"]
+def indexed_entries(rows: list[dict[str, str]]) -> dict[str, set[int]]:
+    indexed: dict[str, set[int]] = {}
+    for row in rows:
+        indexed.setdefault(row["module"], set()).add(int(row["entry"], 16))
+    return indexed
 
 
-def indexed_entries(rows: list[dict[str, str]]) -> set[int]:
-    return {int(row["entry"], 16) for row in bloodprg_entries(rows)}
-
-
-def parse_metadata(path: Path) -> tuple[int, int, str]:
+def parse_metadata(path: Path) -> tuple[Path, str, int, int, str]:
     text = path.read_text(encoding="utf-8", errors="replace")
+    artifact = ARTIFACT_RE.search(text)
+    artifact_sha = ARTIFACT_SHA_RE.search(text)
     file_offset = FILE_OFFSET_RE.search(text)
+    overlay_offset = OVERLAY_OFFSET_RE.search(text)
     byte_count = BYTE_COUNT_RE.search(text)
     sha = SHA_RE.search(text)
     missing = []
+    if artifact is None:
+        missing.append("artifact")
+    if artifact_sha is None:
+        missing.append("artifact_sha256")
     if file_offset is None:
-        missing.append("file_offset")
+        if overlay_offset is None:
+            missing.append("file_offset or overlay_offset")
     if byte_count is None:
         missing.append("byte_count")
     if sha is None:
         missing.append("routine_bytes_sha256")
     if missing:
         raise ValueError(f"missing metadata: {', '.join(missing)}")
-    return int(file_offset.group(1), 16), int(byte_count.group(1)), sha.group(1)
+    offset = file_offset or overlay_offset
+    return (
+        REPO_ROOT / artifact.group(1),
+        artifact_sha.group(1),
+        int(offset.group(1), 16),
+        int(byte_count.group(1)),
+        sha.group(1),
+    )
 
 
 def check_index_paths(rows: list[dict[str, str]]) -> list[str]:
     errors = []
-    for row in bloodprg_entries(rows):
+    for row in rows:
         path = REPO_ROOT / row["asm_path"]
         if not path.exists():
             errors.append(f"{row['entry']}: missing asm path {row['asm_path']}")
@@ -69,16 +84,33 @@ def check_index_paths(rows: list[dict[str, str]]) -> list[str]:
 
 
 def check_hashes(rows: list[dict[str, str]]) -> list[str]:
-    blob = BLOODPRG.read_bytes()
     errors = []
-    for row in bloodprg_entries(rows):
+    artifact_cache: dict[Path, bytes] = {}
+    artifact_hashes: dict[Path, str] = {}
+
+    for row in rows:
         path = REPO_ROOT / row["asm_path"]
         if not path.exists():
             continue
         try:
-            file_offset, byte_count, expected = parse_metadata(path)
+            artifact, expected_artifact_sha, file_offset, byte_count, expected = parse_metadata(path)
         except ValueError as exc:
             errors.append(f"{row['entry']} {row['asm_path']}: {exc}")
+            continue
+        if not artifact.exists():
+            errors.append(f"{row['entry']} {row['asm_path']}: missing artifact {artifact}")
+            continue
+        if artifact not in artifact_cache:
+            blob = artifact.read_bytes()
+            artifact_cache[artifact] = blob
+            artifact_hashes[artifact] = hashlib.sha256(blob).hexdigest()
+        blob = artifact_cache[artifact]
+        artifact_sha = artifact_hashes[artifact]
+        if artifact_sha != expected_artifact_sha:
+            errors.append(
+                f"{row['entry']} {row['asm_path']}: artifact sha mismatch "
+                f"{artifact_sha} != {expected_artifact_sha}"
+            )
             continue
         got = hashlib.sha256(blob[file_offset:file_offset + byte_count]).hexdigest()
         if got != expected:
@@ -102,13 +134,25 @@ def direct_callees_from_text(text: str) -> list[int]:
 def check_direct_callees(rows: list[dict[str, str]]) -> list[str]:
     indexed = indexed_entries(rows)
     errors = []
-    for path in sorted(ASM_ROOT.glob("**/*.asm")):
+    for row in rows:
+        path = REPO_ROOT / row["asm_path"]
+        if not path.exists():
+            continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for target in direct_callees_from_text(text):
-            if target not in indexed:
+            if target not in indexed.get(row["module"], set()):
                 rel = path.relative_to(REPO_ROOT)
-                errors.append(f"{rel}: direct callee {target:#08x} is not indexed")
+                errors.append(
+                    f"{rel}: direct callee {target:#08x} is not indexed in {row['module']}"
+                )
     return errors
+
+
+def module_counts(rows: list[dict[str, str]]) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        counts[row["module"]] = counts.get(row["module"], 0) + 1
+    return sorted(counts.items())
 
 
 def main() -> int:
@@ -131,8 +175,10 @@ def main() -> int:
             print(f"ERROR: {error}")
         return 1
 
-    print(f"OK: {len(bloodprg_entries(rows))} BLOODPRG routine(s) indexed")
-    print("OK: routine byte hashes match BLOODPRG.EXE")
+    print(f"OK: {len(rows)} routine(s) indexed")
+    for module, count in module_counts(rows):
+        print(f"OK: {module}: {count} routine(s)")
+    print("OK: routine byte hashes match source artifacts")
     print("OK: direct callee targets are indexed")
     return 0
 
