@@ -15,6 +15,7 @@ extern volatile char vm_load_string_buffer[]; /* GS:0x2120 */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
 extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
+extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u16 vm_branch_stack[];    /* GS:0x6820 */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764 */
@@ -40,7 +41,7 @@ extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
 
 typedef struct bloodprg_vm_directory_entry {
-    cb_u8 unknown_00[16];
+    char name[16];
     cb_u16 object_offset;
     cb_u16 entry_kind;
 } bloodprg_vm_directory_entry;
@@ -50,15 +51,23 @@ typedef struct bloodprg_vm_object_header {
     cb_u8 flags;
 } bloodprg_vm_object_header;
 
+typedef struct bloodprg_dic_lookup_result {
+    cb_u16 object_offset;
+    int matched;
+} bloodprg_dic_lookup_result;
+
 extern const volatile bloodprg_vm_directory_entry CB_FAR *vm_record_directory; /* GS:0x672C */
 extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 
+int CB_FAR string_compare(const volatile char CB_FAR *left,
+        const volatile char CB_FAR *right); /* 0x0025A4 */
 int CB_FAR blood_prng_next(cb_u16 modulus);  /* 0x002DE2 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 void CB_NEAR vm_token_special(const cb_u8 **script_bytes, cb_u16 terminator); /* 0x006293 */
+bloodprg_dic_lookup_result CB_NEAR dic_word_lookup(cb_u16 dictionary_offset); /* 0x006433 */
 cb_u16 CB_NEAR vm_branch_fail(void);         /* 0x006462 */
 
 #endif
