@@ -20,3 +20,10 @@ Run the current candidate sanity check with:
 ```sh
 python3 re/tools/source_candidates.py --check
 ```
+
+Re-run the crafted direct-binary vectors for behaviorally verified candidates
+with:
+
+```sh
+nix develop -c python3 re/tools/natural_candidate_oracle.py --check
+```

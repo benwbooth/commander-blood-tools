@@ -1,8 +1,9 @@
 # Historical Compiler Codegen Matrix
 
-This report records compiler-in-the-loop experiments against ten natural-C
-probes in `re/compiler_corpus`. Generated objects and listings remain ignored;
-the source corpus, runner, commands, hashes, and conclusions are checked in.
+This report records an initial compiler-in-the-loop matrix against ten natural-C
+probes in `re/compiler_corpus`, plus two focused medium-model follow-ups.
+Generated objects and listings remain ignored; the source corpus, runner,
+commands, hashes, and conclusions are checked in.
 
 ## Toolchains
 
@@ -69,6 +70,22 @@ does not match these routines. Turbo C and Watcom medium both preserve the core
 signed subtract/compare order of the `0x008269` and `0x008295` hit tests, but
 neither reproduces their live SI/BP pointer ABI or the latter routine's carry
 return from ordinary C declarations.
+
+The `0x0030CD` text-width probe is a useful near miss. Open Watcom 1.9 medium
+`-3 -ox` emits 60 bytes and 31 instructions versus the original 57 bytes and 28
+instructions, with the same two-table selection, byte lookup, word accumulation,
+subtract-two result, preserved BX/CX/SI/DI, and far return. It still passes the
+text pointer in AX and selector in DX, addresses tables through DS, and uses
+MOVZX loads rather than the original AX selector, DS:SI text, GS-prefixed XLAT
+and indexed advance read. Turbo C 2.01 medium uses stack arguments and a stack
+frame, so neither result reproduces the routine boundary.
+
+For `0x007CB4`, Turbo C 2.01 and Open Watcom 1.9 medium preserve the recovered
+signed table index, big-endian row construction, set-bit-only writes, fixed
+framebuffer offset, and 320-byte row advance. They emit 51 and 40 instructions
+respectively, versus the original 26, and do not reproduce its compact
+LODSW/XCHG/shift-until-zero/LOOP form or register effects. The natural source is
+therefore behaviorally verified but remains a codegen mismatch.
 
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for

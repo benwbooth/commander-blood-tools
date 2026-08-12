@@ -6,8 +6,8 @@
 ; seg_off: 071e:04d4
 ; group: seg_071e
 ; provenance: recursive_graph
-; label: record_access_7bb8
-; label_comment: 32-byte-record accessor (2 calls): si=0x7bb8 + [0x27e3]*32 (al=[0x27e3]; cbw; shl 5). Indexes a 32-byte-record table at 0x7bb8 by the [0x27e3] index
+; label: selected_mask_overlay
+; label_comment: selected 16x16 mask overlay (2 calls): sign-extends DS:0x27e3, selects one 32-byte big-endian row mask at DS:0x7bb8, then writes color 0xfe for set bits at framebuffer offset 0x12c5 (x=5,y=15) with a 320-byte row stride. The far framebuffer pointer's offset word is deliberately discarded after LES; only its segment is used
 ; byte_count: 52
 ; boundary: cfg_blocks_5_terminals_1
 ; terminal: ret:1

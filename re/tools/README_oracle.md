@@ -1,5 +1,13 @@
 # Per-function differential oracle (Unicorn) — proof of concept
 
+The natural-C recovery track also has compact, reviewable crafted cases for
+routines whose generic randomized vectors do not reach meaningful data. Verify
+those committed vectors directly against `BLOODPRG.EXE` with:
+
+```sh
+nix develop -c python3 re/tools/natural_candidate_oracle.py --check
+```
+
 Run a single DOS function from BLOODPRG.EXE in isolation on a scriptable 8086 core
 (Unicorn Engine), capture its **return value + memory side effects + I/O**, and diff
 against the Rust port. This is the gold-standard per-function verification.
