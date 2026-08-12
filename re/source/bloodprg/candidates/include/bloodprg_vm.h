@@ -46,11 +46,13 @@ extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
+extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
 extern volatile cb_u16 vm_blood_history_ring_index; /* GS:0x6744 */
 extern volatile cb_u16 CB_FAR *vm_blood_history_words; /* GS:0x6746 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
+extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
@@ -69,7 +71,7 @@ extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS *
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
 extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
-extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; DS alias */
+extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; runtime SS=DS */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
@@ -146,6 +148,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_op_ab_poke_byte parm [si] value [si] modify exact [ax bx si]
 #pragma aux vm_op_shared_state_marker parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_op_shared_ae_b0_state parm [si] value [si] modify exact [ax bx dx si es]
+#pragma aux vm_op_shared_record_wildcard parm [si] value [si] modify exact [ax bx cx dx si es]
 #endif
 
 int CB_FAR string_compare(const volatile char CB_FAR *left,
@@ -206,6 +209,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_state_marker(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006863 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_ae_b0_state(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006902 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_shared_record_wildcard(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006946 */
 void CB_NEAR vm_op_c9_clear_record_full(const cb_u8 **script_bytes); /* 0x006FB9 */
 void CB_NEAR presentation_mode_bits_update(void); /* 0x009510 */
 void CB_FAR presentation_update_1fb2(void); /* 0x009F53 */

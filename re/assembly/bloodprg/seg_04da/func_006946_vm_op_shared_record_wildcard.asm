@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_shared_record_wildcard
-; label_comment: VM shared handler for 0xAD/0xAF/0xB2/0xB3/0xBA/0xBB/0xBC (7 opcodes, same op): dual-mode record op on gs:0x6724[bx+di], gated on the query flag gs:[0x67ad]. QUERY mode: lodsw bx offset + lodsw value; WILDCARD - if value==gs:[0x674e] substitute 0xffff (match-any); cmp vs es:[bx+di], branch via 0x6462 on mismatch. SET mode: write path (0x6985). These 7 opcode values all execute this same generic record compare/write with wildcard - likely script-readability verbs mapping to one op || ALSO RECORDED as `vm_op_shared_state_gated`: VM opcode SHARED handler for 0xAD/0xAF/0xB2/0xB3/0xBA/0xBB/0xBC (7 opcodes -> same handler = same operation): les di,gs:[0x6724] state table; gated on gs:[0x67ad]&1; 0xA1-skip; lodsw bx record offset/value. A state-table record op these opcodes all perform identically (aliased/grouped opcodes). Exact field op partially decoded (prologue + record access confirmed) || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: Shared AD/AF/B2/B3/BA/BB/BC handler: inverted wildcard equality queries or record assignment with BC publication and special-owner remove/insert maintenance
 ; incoming: vm_opcode_handlers:opcode_0xad
 ; incoming: vm_opcode_handlers:opcode_0xaf
 ; incoming: vm_opcode_handlers:opcode_0xb2
