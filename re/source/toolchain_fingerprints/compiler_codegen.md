@@ -570,6 +570,20 @@ emits 58 instructions. The natural function uses one scalar byte-copy loop. The
 binary instead splits rows by source alignment and width remainder, then uses
 four specialized combinations of `REP MOVSD` and `REP MOVSB`.
 
+Resource-release gate `0x005288` has six patched-callee direct vectors. They
+prove clear, unrelated, individual, and combined loaded-flag paths, 16-bit
+`handle * 8` wrap, AX propagation, read-only handle-table access, full register
+and segment preservation, and the exact push-CS/near-call stack consumed by the
+callee's far return.
+
+Open Watcom compiles the actual `0x005288` candidate without warnings; `-3 -ox
+-mm` emits 11 instructions/26 bytes versus 9/20 original. Standalone 8086/286/
+386 probes emit 15/11/11 instructions and 30/26/26 bytes, while Turbo C 2.01
+emits 16 instructions. The natural conditional call is structurally close, but
+Watcom relocates the abstract handle table through DS and emits a direct far
+call; exact integration still needs original FS placement and same-segment
+push-CS/near-call lowering.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

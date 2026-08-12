@@ -45,6 +45,7 @@ from unicorn.x86_const import (
     UC_X86_REG_EDX,
     UC_X86_REG_EFLAGS,
     UC_X86_REG_ES,
+    UC_X86_REG_FS,
     UC_X86_REG_GS,
     UC_X86_REG_IP,
     UC_X86_REG_SI,
@@ -76,6 +77,7 @@ REGISTERS = {
     "sp": UC_X86_REG_SP,
     "ds": UC_X86_REG_DS,
     "es": UC_X86_REG_ES,
+    "fs": UC_X86_REG_FS,
     "gs": UC_X86_REG_GS,
     "flags": UC_X86_REG_EFLAGS,
 }
@@ -3170,6 +3172,102 @@ def dirty_rects_copy_secondary_to_primary_vectors() -> list[dict[str, object]]:
                 "rectangles": rectangles,
                 "copied_rows": copied_rows,
                 "copied_bytes": sum(width for _offset, width in copied_rows),
+            }
+        )
+
+    return vectors
+
+
+def resource_release_vectors() -> list[dict[str, object]]:
+    table_segment = 0x3800
+    cases = [
+        ("clear_flags_skip_release", 0x0000, 0x0000, False),
+        ("loaded_bit0_releases", 0x0001, 0x0001, True),
+        ("loaded_bit1_releases", 0x0002, 0x0007, True),
+        ("both_loaded_bits_release", 0x0003, 0x0013, True),
+        ("unrelated_flag_skips_release", 0x8004, 0x0025, False),
+        ("handle_index_wraps_to_sixteen_bits", 0x0101, 0x2001, True),
+    ]
+    vectors = []
+
+    for case_index, (name, entry_flags, handle, expected_call) in enumerate(cases):
+        entry_offset = (handle * 8) & 0xFFFF
+        entry = struct.pack(
+            "<HHI",
+            (0x4100 + case_index * 0x31) & 0xFFFF,
+            entry_flags,
+            (0x12345678 + case_index * 0x11111111) & 0xFFFFFFFF,
+        )
+        initial = {
+            "eax": 0xA1A10000 | handle,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": table_segment,
+            "gs": 0x2C00,
+        }
+        calls = []
+
+        def inspect_call(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x529C:
+                return
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            stack = machine.mem_read(
+                machine.reg_read(UC_X86_REG_SS) * 16 + stack_pointer, 4
+            )
+            return_offset, return_segment = struct.unpack("<HH", stack)
+            calls.append(
+                {
+                    "handle": machine.reg_read(UC_X86_REG_AX),
+                    "return_offset": return_offset,
+                    "return_segment": return_segment,
+                }
+            )
+
+        machine = execute(
+            0x5288,
+            0x529B,
+            initial,
+            [
+                (table_segment, entry_offset, entry),
+                (0, 0x529C, b"\xcb"),
+            ],
+            code_handler=inspect_call,
+        )
+        if bool(calls) != expected_call:
+            raise AssertionError(
+                f"0x5288 {name}: calls={calls}, expected_call={expected_call}"
+            )
+        if calls and calls != [
+            {
+                "handle": handle,
+                "return_offset": 0x529A,
+                "return_segment": 0,
+            }
+        ]:
+            raise AssertionError(f"0x5288 {name}: bad call boundary {calls}")
+        if bytes(
+            machine.mem_read(table_segment * 16 + entry_offset, len(entry))
+        ) != entry:
+            raise AssertionError(f"0x5288 {name}: handle entry changed")
+        for register, value in initial.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(f"0x5288 {name}: changed {register}")
+
+        vectors.append(
+            {
+                "name": name,
+                "handle": handle,
+                "entry_offset": entry_offset,
+                "entry_flags": entry_flags,
+                "calls": calls,
             }
         )
 
@@ -7658,6 +7756,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_509d_natural.json",
         dirty_rects_copy_secondary_to_primary_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5288_natural.json",
+        resource_release_vectors(),
         args.check,
     )
     update_vector(

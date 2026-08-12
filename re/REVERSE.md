@@ -1028,6 +1028,10 @@ resource-manager subsystem, so this trace also unlocks other handle-based assets
 
 RESOURCE-MANAGER SUBSYSTEM MAP (segment `0x04B9`, sess 003) — the shared handle
 memory manager behind every handle-based asset:
+- `0x04B9:0x00F8` (file `0x5288`) = loaded-resource release gate: tests the
+  low two flags at `FS:[handle*8+2]`, then calls the actual free routine at
+  `0x010C`. Six direct vectors prove the AX handle ABI, wrapped indexing, flag
+  gate, and push-CS/near-call boundary; Watcom emits 26 bytes versus 20 original.
 - `0x04B9:0x0000` (file `0x5190`) = the core **pool allocator** (NOT a file
   reader): takes a handle id, returns its segment if already resident
   (`flags & 3`); else aligns the size (`ebp` from `entry+4`) to 16 bytes, and if

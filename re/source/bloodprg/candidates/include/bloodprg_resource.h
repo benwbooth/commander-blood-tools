@@ -54,6 +54,8 @@ extern volatile cb_u8 resource_ready_marker;        /* game data:0x0DB7 */
 extern volatile char resource_path_buffer[];        /* game data:0x0259 */
 
 #if defined(__WATCOMC__)
+#pragma aux resource_release parm [ax] modify exact []
+#pragma aux resource_free_inner parm [ax] modify exact []
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
 #pragma aux path_builder_gs_relative parm [dx] value [bx] modify [bx cx dx]
 #endif
@@ -61,6 +63,7 @@ extern volatile char resource_path_buffer[];        /* game data:0x0259 */
 cb_u32 CB_FAR resource_file_load(const volatile char *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
+void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */
 bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR path_builder_gs_relative(

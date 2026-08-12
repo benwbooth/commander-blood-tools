@@ -1,0 +1,68 @@
+[
+  {
+    "name": "clear_flags_skip_release",
+    "handle": 0,
+    "entry_offset": 0,
+    "entry_flags": 0,
+    "calls": []
+  },
+  {
+    "name": "loaded_bit0_releases",
+    "handle": 1,
+    "entry_offset": 8,
+    "entry_flags": 1,
+    "calls": [
+      {
+        "handle": 1,
+        "return_offset": 21146,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "loaded_bit1_releases",
+    "handle": 7,
+    "entry_offset": 56,
+    "entry_flags": 2,
+    "calls": [
+      {
+        "handle": 7,
+        "return_offset": 21146,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "both_loaded_bits_release",
+    "handle": 19,
+    "entry_offset": 152,
+    "entry_flags": 3,
+    "calls": [
+      {
+        "handle": 19,
+        "return_offset": 21146,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "unrelated_flag_skips_release",
+    "handle": 37,
+    "entry_offset": 296,
+    "entry_flags": 32772,
+    "calls": []
+  },
+  {
+    "name": "handle_index_wraps_to_sixteen_bits",
+    "handle": 8193,
+    "entry_offset": 8,
+    "entry_flags": 257,
+    "calls": [
+      {
+        "handle": 8193,
+        "return_offset": 21146,
+        "return_segment": 0
+      }
+    ]
+  }
+]
