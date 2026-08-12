@@ -647,6 +647,23 @@ list algorithms, but emits DS-symbol accesses and Boolean results in AX. Exact
 binary integration therefore needs a narrow carry adapter that preserves the
 input AX plus the recovered `SS=DS` placement contract.
 
+VM field-offset resolver `0x006023` has eight deterministic direct vectors.
+They prove selector input in AX, a nonzero kind bitmask in BX, lowest-set-bit
+selection when several bits are set, 16-bit wrapping of `selector * 16 + bit`,
+GS table ownership against a DS decoy, signed-byte extension by 16-bit `CBW`
+while preserving upper EAX, BX and unrelated-register preservation, the near
+return boundary, and all six arithmetic flags left by the final `ADD`.
+
+The natural candidate counts trailing zeroes by shifting a local copy of the
+kind mask, which is both clearer and smaller than constructing a new bit mask
+for every test. Open Watcom compiles the actual candidate without warnings;
+`-3 -ox -mm` emits 20 instructions/39 bytes versus 8/17 original. Standalone
+8086/286/386 probes emit 24/21/20 instructions and 42/39/39 bytes, while Turbo
+C 2.01 emits 20 instructions. The AX/BX pragma reproduces the entry and return
+registers, but neither compiler lowers natural C to `BSF`, and Watcom resolves
+the far table through ES instead of fixed GS. Exact integration therefore needs
+a narrow BSF/GS adapter, not register-state code in the natural function.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

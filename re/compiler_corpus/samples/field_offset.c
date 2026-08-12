@@ -16,12 +16,17 @@ typedef unsigned int u16;
 
 extern const i8 FAR selector_field_offsets[];
 
+#if defined(__WATCOMC__)
+#pragma aux field_offset_probe parm [ax] [bx] value [ax] modify exact [ax]
+#endif
+
 i16 NEAR field_offset_probe(u16 selector, u16 kind_mask)
 {
     u16 bit_index;
 
     bit_index = 0;
-    while ((kind_mask & (u16)(1u << bit_index)) == 0) {
+    while ((kind_mask & 1u) == 0) {
+        kind_mask >>= 1;
         ++bit_index;
     }
 

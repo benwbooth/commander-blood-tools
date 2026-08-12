@@ -3875,6 +3875,110 @@ def vm_special_slot_vector(
     }
 
 
+def vm_field_offset_vectors() -> list[dict[str, object]]:
+    table_segment = 0x3C00
+    data_segment = 0x2400
+    cases = [
+        ("zero_selector_kind_bit0_zero", 0x0000, 0x0001, 0x00),
+        ("selector_one_kind_bit1_positive", 0x0001, 0x0002, 0x7F),
+        ("lowest_of_multiple_kind_bits", 0x0002, 0x00A0, 0x80),
+        ("kind_bit15_negative_one", 0x0003, 0x8000, 0xFF),
+        ("largest_row_before_wrap", 0x0FFF, 0x8000, 0x01),
+        ("selector_shift_wraps_to_zero", 0x1000, 0x0004, 0xFE),
+        ("selector_shift_discards_high_bits", 0xF801, 0x0040, 0x55),
+        ("negative_byte_preserves_eax_high_word", 0x0007, 0x0010, 0xA5),
+    ]
+    vectors = []
+
+    for case_index, (name, selector, kind_mask, table_byte) in enumerate(cases):
+        bit_index = (kind_mask & -kind_mask).bit_length() - 1
+        shifted_selector = (selector << 4) & 0xFFFF
+        table_index = (shifted_selector + bit_index) & 0xFFFF
+        table_offset = (0x6D60 + table_index) & 0xFFFF
+        initial = {
+            "eax": 0xA1A10000 | selector,
+            "ebx": 0xB2B20000 | kind_mask,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2800,
+            "fs": 0x3800,
+            "gs": table_segment,
+            "ss": 0x9000,
+            "flags": 0x0AD7,
+        }
+        ds_decoy = bytes([(table_byte + case_index + 0x31) & 0xFF])
+        machine = execute(
+            0x6023,
+            0x6033,
+            initial,
+            [
+                (table_segment, table_offset, bytes([table_byte])),
+                (data_segment, table_offset, ds_decoy),
+            ],
+        )
+
+        expected = dict(initial)
+        del expected["flags"]
+        signed_word = table_byte if table_byte < 0x80 else table_byte | 0xFF00
+        expected["eax"] = (initial["eax"] & 0xFFFF0000) | signed_word
+        for register, value in expected.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x6023 {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+        if machine.mem_read(table_segment * 16 + table_offset, 1)[0] != table_byte:
+            raise AssertionError(f"0x6023 {name}: GS table byte changed")
+        if bytes(machine.mem_read(data_segment * 16 + table_offset, 1)) != ds_decoy:
+            raise AssertionError(f"0x6023 {name}: DS decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        add_result = table_index
+        expected_flags = {
+            "cf": False,
+            "pf": (add_result & 0xFF).bit_count() % 2 == 0,
+            "af": False,
+            "zf": add_result == 0,
+            "sf": bool(add_result & 0x8000),
+            "of": False,
+        }
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6023 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6033] != 0xC3:
+            raise AssertionError("0x6023: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "selector": selector,
+                "kind_mask": kind_mask,
+                "lowest_set_bit": bit_index,
+                "table_index": table_index,
+                "table_byte": table_byte,
+                "ax": signed_word,
+                "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
     return_address = 0x6F00
     initial = {
@@ -8387,6 +8491,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5ff6_natural.json",
         vm_special_slot_insert_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6023_natural.json",
+        vm_field_offset_vectors(),
         args.check,
     )
     update_vector(

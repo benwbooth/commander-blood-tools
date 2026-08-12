@@ -1334,7 +1334,12 @@ binary.
   `DS:0x5219` to another framebuffer pointer before invoking this routine.
 - The object coordinate helpers live in the same VM/object block, before the
   target-list helpers. `0x006023` is the shared kind-specific field-offset
-  lookup (`GS:0x6D60[selector * 16 + bsf(kind)]`). `0x0061A6` resolves an
+  lookup (`GS:0x6D60[selector * 16 + bsf(kind)]`). Eight direct vectors prove
+  its AX/BX inputs, nonzero-kind contract, 16-bit index wrap, GS ownership,
+  signed-byte `CBW` result in AX with upper EAX preserved, BX preservation, and
+  final `ADD` flags. Natural trailing-zero C compiles under Watcom to 39 bytes
+  versus 17 original; exact `BSF` and fixed-GS lowering require a narrow ABI
+  adapter. `0x0061A6` resolves an
   object's coordinate field by following selector-`0x11` parent/reference links
   until it reaches a direct coordinate kind (`0x0008`, `0x0010`, `0x0200`), or
   kind `0x0100`, which chooses selector `0x09`/`0x0A` from a selector-`0x0C`

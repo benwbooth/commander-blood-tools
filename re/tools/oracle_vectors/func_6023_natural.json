@@ -1,0 +1,138 @@
+[
+  {
+    "name": "zero_selector_kind_bit0_zero",
+    "selector": 0,
+    "kind_mask": 1,
+    "lowest_set_bit": 0,
+    "table_index": 0,
+    "table_byte": 0,
+    "ax": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selector_one_kind_bit1_positive",
+    "selector": 1,
+    "kind_mask": 2,
+    "lowest_set_bit": 1,
+    "table_index": 17,
+    "table_byte": 127,
+    "ax": 127,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lowest_of_multiple_kind_bits",
+    "selector": 2,
+    "kind_mask": 160,
+    "lowest_set_bit": 5,
+    "table_index": 37,
+    "table_byte": 128,
+    "ax": 65408,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_bit15_negative_one",
+    "selector": 3,
+    "kind_mask": 32768,
+    "lowest_set_bit": 15,
+    "table_index": 63,
+    "table_byte": 255,
+    "ax": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "largest_row_before_wrap",
+    "selector": 4095,
+    "kind_mask": 32768,
+    "lowest_set_bit": 15,
+    "table_index": 65535,
+    "table_byte": 1,
+    "ax": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selector_shift_wraps_to_zero",
+    "selector": 4096,
+    "kind_mask": 4,
+    "lowest_set_bit": 2,
+    "table_index": 2,
+    "table_byte": 254,
+    "ax": 65534,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selector_shift_discards_high_bits",
+    "selector": 63489,
+    "kind_mask": 64,
+    "lowest_set_bit": 6,
+    "table_index": 32790,
+    "table_byte": 85,
+    "ax": 85,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_byte_preserves_eax_high_word",
+    "selector": 7,
+    "kind_mask": 16,
+    "lowest_set_bit": 4,
+    "table_index": 116,
+    "table_byte": 165,
+    "ax": 65445,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
