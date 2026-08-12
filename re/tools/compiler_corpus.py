@@ -60,7 +60,7 @@ INSN_RE = re.compile(
 def load_manifest() -> list[dict[str, str]]:
     with MANIFEST.open(newline="") as fh:
         rows = list(csv.DictReader(fh, delimiter="\t"))
-    required = {"sample", "source", "target_routine", "question"}
+    required = {"sample", "source", "target_routine", "question", "candidate_source"}
     missing = required.difference(rows[0].keys() if rows else set())
     if missing:
         raise SystemExit(f"{MANIFEST}: missing columns: {', '.join(sorted(missing))}")
@@ -182,6 +182,12 @@ def check_corpus(rows: list[dict[str, str]]) -> int:
         if asm_path is None:
             errors.append(f"{sample}: no assembly file for {row['target_routine']}")
 
+        candidate_source = row.get("candidate_source", "")
+        if candidate_source and candidate_source != "-":
+            candidate_path = REPO_ROOT / candidate_source
+            if not candidate_path.exists():
+                errors.append(f"{sample}: missing candidate source {candidate_path}")
+
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
@@ -192,9 +198,16 @@ def check_corpus(rows: list[dict[str, str]]) -> int:
 
 
 def list_samples(rows: list[dict[str, str]]) -> None:
+    fieldnames = list(rows[0].keys()) if rows else [
+        "sample",
+        "source",
+        "target_routine",
+        "question",
+        "candidate_source",
+    ]
     writer = csv.DictWriter(
         sys.stdout,
-        fieldnames=["sample", "source", "target_routine", "question"],
+        fieldnames=fieldnames,
         delimiter="\t",
         lineterminator="\n",
     )

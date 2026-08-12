@@ -5,6 +5,11 @@ recovery track. The files under `samples/` are not recovered game source. They
 are small programs used to test what candidate DOS compilers emit for the
 calling conventions and data shapes seen in `BLOODPRG.EXE`.
 
+`manifest.tsv` records the recovered routine each probe is meant to exercise.
+Rows may also point at the recovered candidate file through `candidate_source`;
+the checker verifies those links so probe coverage stays attached to the actual
+C recovery work.
+
 Run integrity and original-routine shape checks:
 
 ```sh
