@@ -1,0 +1,170 @@
+[
+  {
+    "name": "call_empty",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26624,
+    "input_hex": "00",
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "final_source_offset": 26624,
+    "final_destination_offset": 3337,
+    "ui_state": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3334,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "skip_empty",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26656,
+    "input_hex": "00",
+    "copied_hex": "",
+    "stopping_byte": 0,
+    "final_source_offset": 26656,
+    "final_destination_offset": 3337,
+    "ui_state": 1,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "call_text",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26688,
+    "input_hex": "42414e4b2e534e441f",
+    "copied_hex": "42414e4b2e534e44",
+    "stopping_byte": 31,
+    "final_source_offset": 26696,
+    "final_destination_offset": 3345,
+    "ui_state": 42240,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3334,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "skip_text",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26752,
+    "input_hex": "534f4e2e534e4480",
+    "copied_hex": "534f4e2e534e44",
+    "stopping_byte": 128,
+    "final_source_offset": 26759,
+    "final_destination_offset": 3344,
+    "ui_state": 23041,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "call_max_printable",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26816,
+    "input_hex": "7f00",
+    "copied_hex": "7f",
+    "stopping_byte": 0,
+    "final_source_offset": 26817,
+    "final_destination_offset": 3338,
+    "ui_state": 65534,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3334,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "skip_high",
+    "dispatch_opcode": "0x11",
+    "source_offset": 26848,
+    "input_hex": "ff",
+    "copied_hex": "",
+    "stopping_byte": 255,
+    "final_source_offset": 26848,
+    "final_destination_offset": 3337,
+    "ui_state": 3,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "call_script_wrap",
+    "dispatch_opcode": "0x11",
+    "source_offset": 65534,
+    "input_hex": "414200",
+    "copied_hex": "4142",
+    "stopping_byte": 0,
+    "final_source_offset": 0,
+    "final_destination_offset": 3339,
+    "ui_state": 0,
+    "loader_called": true,
+    "loader_mode": 1,
+    "loader_path_offset": 3334,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "skip_high_at_end",
+    "dispatch_opcode": "0x11",
+    "source_offset": 65535,
+    "input_hex": "80",
+    "copied_hex": "",
+    "stopping_byte": 128,
+    "final_source_offset": 65535,
+    "final_destination_offset": 3337,
+    "ui_state": 32769,
+    "loader_called": false,
+    "loader_mode": null,
+    "loader_path_offset": null,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

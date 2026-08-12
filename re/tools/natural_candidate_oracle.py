@@ -14935,6 +14935,7 @@ def byte_parser_copy_printable_vectors(
                 "eax": (initial["eax"] & 0xFFFFFF00) | stop_byte,
                 "esi": (initial["esi"] & 0xFFFF0000) | final_source_offset,
                 "edi": (initial["edi"] & 0xFFFF0000) | final_destination_offset,
+                "sp": 0xFF02,
             }
         )
         for register, expected in expected_registers.items():
@@ -14978,6 +14979,219 @@ def byte_parser_copy_printable_vectors(
                 "destination_offset": destination_offset,
                 "final_source_offset": final_source_offset,
                 "final_destination_offset": final_destination_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def byte_parser_snd_bank_name_load_vectors() -> list[dict[str, object]]:
+    entry = 0x763E
+    data_segment = 0x4400
+    destination_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("call_empty", 0x6800, b"\x00", 0x0000),
+        ("skip_empty", 0x6820, b"\x00", 0x0001),
+        ("call_text", 0x6840, b"BANK.SND\x1f", 0xA500),
+        ("skip_text", 0x6880, b"SON.SND\x80", 0x5A01),
+        ("call_max_printable", 0x68C0, b"\x7f\x00", 0xFFFE),
+        ("skip_high", 0x68E0, b"\xff", 0x0003),
+        ("call_script_wrap", 0xFFFE, b"AB\x00", 0x0000),
+        ("skip_high_at_end", 0xFFFF, b"\x80", 0x8001),
+    ]
+    vectors = []
+
+    for name, start, payload, ui_state in cases:
+        stop_index = next(
+            index
+            for index, byte in enumerate(payload)
+            if byte < 0x20 or byte >= 0x80
+        )
+        copied = payload[:stop_index]
+        stop_byte = payload[stop_index]
+        should_call = (ui_state & 1) == 0
+        destination_before = bytes([0xCC]) * (len(copied) + 3)
+        game_path = b"X:\\SOUND\\OLD.SND\x00"
+        stack_sentinel = bytes.fromhex("5aa59669")
+        memory = [
+            # Runtime far address 0B1B:0855 is linear 0xBA05; file offset
+            # 0xC005 includes the 0x600-byte executable header.
+            (0, 0xBA05, EXE[0xC005:0xC1E6]),
+            (destination_segment, 0x0D09, destination_before),
+            (game_segment, 0x0D06, game_path),
+            (data_segment, 0x0D06, bytes([0x5A]) * len(game_path)),
+            (game_segment, 0x2793, struct.pack("<H", ui_state)),
+            (data_segment, 0x2793, struct.pack("<H", ui_state ^ 0xFFFF)),
+            (game_segment, 0x0ADE, b"\x00"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        immutable_source = []
+        for byte_index, byte in enumerate(payload):
+            source_offset = (start + byte_index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.append((data_segment, source_offset, encoded))
+            immutable_source.append((source_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BE55,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xBA05:
+                calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_SP),
+                        machine.reg_read(UC_X86_REG_CS),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+        expected_calls = (
+            [
+                (
+                    1,
+                    game_segment,
+                    0x0D06,
+                    destination_segment,
+                    0x0D09 + len(copied),
+                    0xFEF8,
+                    0x0B1B,
+                )
+            ]
+            if should_call
+            else []
+        )
+        if calls != expected_calls:
+            raise AssertionError(f"0x763e {name}: calls={calls}, expected={expected_calls}")
+
+        expected_destination = (
+            copied + b"\x00" + destination_before[len(copied) + 1 :]
+        )
+        destination_after = bytes(
+            machine.mem_read(
+                destination_segment * 16 + 0x0D09,
+                len(destination_before),
+            )
+        )
+        if destination_after != expected_destination:
+            raise AssertionError(
+                f"0x763e {name}: destination={destination_after!r}, "
+                f"expected={expected_destination!r}"
+            )
+        for source_offset, expected in immutable_source:
+            if machine.mem_read(data_segment * 16 + source_offset, 1) != expected:
+                raise AssertionError(f"0x763e {name}: source changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0D06, len(game_path))) != game_path:
+            raise AssertionError(f"0x763e {name}: game path changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0D06, len(game_path))) != bytes(
+            [0x5A]
+        ) * len(game_path):
+            raise AssertionError(f"0x763e {name}: DS path decoy changed")
+        if struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x2793, 2)
+        )[0] != ui_state:
+            raise AssertionError(f"0x763e {name}: UI state changed")
+
+        final_source_offset = (start + stop_index) & 0xFFFF
+        final_destination_offset = 0x0D09 + len(copied)
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": (
+                    (initial["eax"] & 0xFFFF0000) | 1
+                    if should_call
+                    else (initial["eax"] & 0xFFFFFF00) | stop_byte
+                ),
+                "esi": (initial["esi"] & 0xFFFF0000) | final_source_offset,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_destination_offset,
+                "sp": 0xFF02,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x763e {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x763e {name}: far call did not restore CS")
+
+        if should_call:
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            expected_flags = {
+                "cf": False,
+                "pf": False,
+                "zf": False,
+                "sf": False,
+                "of": False,
+            }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {flag: bool(flags & masks[flag]) for flag in expected_flags}
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x763e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"0x763e {name}: near RET did not consume return word")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(f"0x763e {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "dispatch_opcode": "0x11",
+                "source_offset": start,
+                "input_hex": payload.hex(),
+                "copied_hex": copied.hex(),
+                "stopping_byte": stop_byte,
+                "final_source_offset": final_source_offset,
+                "final_destination_offset": final_destination_offset,
+                "ui_state": ui_state,
+                "loader_called": should_call,
+                "loader_mode": 1 if should_call else None,
+                "loader_path_offset": 0x0D06 if should_call else None,
                 "defined_flags": expected_flags,
             }
         )
@@ -19739,6 +19953,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7629_natural.json",
         byte_parser_copy_printable_vectors(0x7629, 0x20B8, 0x06),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_763e_natural.json",
+        byte_parser_snd_bank_name_load_vectors(),
         args.check,
     )
     update_vector(

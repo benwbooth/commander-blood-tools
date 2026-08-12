@@ -6,6 +6,8 @@
 ; seg_off: 04da:229e
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
+; label: byte_parser_snd_bank_name_load
+; label_comment: Byte-parser opcode 0x11 copies bytes 0x20 through 0x7F from DS:SI to ES:0x0D09, leaves the stopping byte unconsumed, and NUL-terminates. When GS:0x2793 bit 0 is clear, it preserves the parser DS:SI, calls snd_bank_loader far with AX=1 and DS:SI=GS:0x0D06, then restores the parser cursor.
 ; incoming: byte_parser_dispatch_74e5:byte_0x11
 ; byte_count: 49
 ; boundary: cfg_blocks_7_terminals_2
