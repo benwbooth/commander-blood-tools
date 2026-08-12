@@ -1,0 +1,298 @@
+[
+  {
+    "name": "initial_no_handle",
+    "success": false,
+    "extent": 10,
+    "body_count": null,
+    "entry_start": null,
+    "calls": [],
+    "result": {
+      "head": 0,
+      "head_segment": 12288,
+      "tail": 0,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 36864,
+      "byte_count": 0,
+      "iteration_count": 0,
+      "source_offset": 305419896,
+      "source_remaining": 16909060
+    },
+    "result_carry": 1
+  },
+  {
+    "name": "extent_two_empty_body",
+    "success": true,
+    "extent": 2,
+    "body_count": 0,
+    "entry_start": 36860,
+    "calls": [
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 4,
+        "offset": 0
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 4,
+        "requested": 2,
+        "destination": 0,
+        "returned": 2,
+        "carry": false
+      },
+      {
+        "call": "seek",
+        "stage": "body",
+        "handle": 4,
+        "offset": 2
+      },
+      {
+        "call": "read",
+        "stage": "body",
+        "handle": 4,
+        "requested": 0,
+        "destination": 36862,
+        "returned": 0,
+        "carry": false
+      }
+    ],
+    "result": {
+      "head": 36862,
+      "head_segment": 12288,
+      "tail": 36860,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 36864,
+      "byte_count": 2,
+      "iteration_count": 0,
+      "source_offset": 2,
+      "source_remaining": 0
+    },
+    "result_carry": 0
+  },
+  {
+    "name": "ordinary_extent",
+    "success": true,
+    "extent": 10,
+    "body_count": 8,
+    "entry_start": 40948,
+    "calls": [
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 5,
+        "offset": 65535
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 5,
+        "requested": 2,
+        "destination": 0,
+        "returned": 2,
+        "carry": false
+      },
+      {
+        "call": "seek",
+        "stage": "body",
+        "handle": 5,
+        "offset": 65537
+      },
+      {
+        "call": "read",
+        "stage": "body",
+        "handle": 5,
+        "requested": 8,
+        "destination": 40950,
+        "returned": 8,
+        "carry": false
+      }
+    ],
+    "result": {
+      "head": 40958,
+      "head_segment": 12288,
+      "tail": 40948,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 40960,
+      "byte_count": 10,
+      "iteration_count": 0,
+      "source_offset": 65545,
+      "source_remaining": 65558
+    },
+    "result_carry": 0
+  },
+  {
+    "name": "short_reads_ignore_carry",
+    "success": true,
+    "extent": 12,
+    "body_count": 10,
+    "entry_start": 32498,
+    "calls": [
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 6,
+        "offset": 270544960
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 6,
+        "requested": 2,
+        "destination": 0,
+        "returned": 1,
+        "carry": false
+      },
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 6,
+        "offset": 270544960
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 6,
+        "requested": 2,
+        "destination": 0,
+        "returned": 2,
+        "carry": true
+      },
+      {
+        "call": "seek",
+        "stage": "body",
+        "handle": 6,
+        "offset": 270544962
+      },
+      {
+        "call": "read",
+        "stage": "body",
+        "handle": 6,
+        "requested": 10,
+        "destination": 32500,
+        "returned": 3,
+        "carry": true
+      },
+      {
+        "call": "seek",
+        "stage": "body",
+        "handle": 6,
+        "offset": 270544962
+      },
+      {
+        "call": "read",
+        "stage": "body",
+        "handle": 6,
+        "requested": 10,
+        "destination": 32500,
+        "returned": 10,
+        "carry": false
+      }
+    ],
+    "result": {
+      "head": 32510,
+      "head_segment": 12288,
+      "tail": 32498,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 32512,
+      "byte_count": 12,
+      "iteration_count": 0,
+      "source_offset": 270544972,
+      "source_remaining": 1432778620
+    },
+    "result_carry": 0
+  },
+  {
+    "name": "body_handle_removed",
+    "success": false,
+    "extent": 6,
+    "body_count": 4,
+    "entry_start": 34808,
+    "calls": [
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 7,
+        "offset": 4294967294
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 7,
+        "requested": 2,
+        "destination": 0,
+        "returned": 2,
+        "carry": false
+      }
+    ],
+    "result": {
+      "head": 34810,
+      "head_segment": 12288,
+      "tail": 34808,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 34816,
+      "byte_count": 2,
+      "iteration_count": 0,
+      "source_offset": 0,
+      "source_remaining": 6
+    },
+    "result_carry": 1
+  },
+  {
+    "name": "extent_one_wraps_body_count",
+    "success": true,
+    "extent": 1,
+    "body_count": 65535,
+    "entry_start": 28669,
+    "calls": [
+      {
+        "call": "seek",
+        "stage": "initial",
+        "handle": 8,
+        "offset": 16909060
+      },
+      {
+        "call": "read",
+        "stage": "initial",
+        "handle": 8,
+        "requested": 2,
+        "destination": 0,
+        "returned": 2,
+        "carry": false
+      },
+      {
+        "call": "seek",
+        "stage": "body",
+        "handle": 8,
+        "offset": 16909062
+      },
+      {
+        "call": "read",
+        "stage": "body",
+        "handle": 8,
+        "requested": 65535,
+        "destination": 28671,
+        "returned": 65535,
+        "carry": false
+      }
+    ],
+    "result": {
+      "head": 28670,
+      "head_segment": 12288,
+      "tail": 28669,
+      "tail_segment": 12288,
+      "active": 0,
+      "wrap_limit": 28672,
+      "byte_count": 1,
+      "iteration_count": 0,
+      "source_offset": 16974597,
+      "source_remaining": 65535
+    },
+    "result_carry": 0
+  }
+]

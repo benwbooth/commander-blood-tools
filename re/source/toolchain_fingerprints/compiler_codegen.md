@@ -241,6 +241,17 @@ instructions and 47 bytes, and Turbo C 2.01 medium emits 32 instructions,
 versus six instructions and 18 bytes in the original. The algorithm is
 verified, but the compact carry/AX/ES:SI result remains an assembly ABI boundary.
 
+For `0x00A642`, six direct-file vectors execute the real `0x00A757` queue init,
+`0x00A622` extent read, and `0x00A664` body read. They cover initial and body
+failure, zero and `0xFFFF` wrapped body lengths, header relocation, repeated
+short reads even when carry is set, and all source/queue accounting. Open
+Watcom 1.9 medium emits 32 instructions and 80 bytes; Turbo C 2.01 medium emits
+48 instructions. The original has a 12-instruction, 34-byte unique prefix and
+then physically falls through the complete `0x00A664` body, making its indexed
+span 100 instructions and 252 bytes. The natural helper composition is
+behaviorally equivalent, but output parameters, logical returns, and a normal
+call replace the original AX/ES:SI/carry ABI and shared-tail placement.
+
 For `0x00A664`, nine direct cases cover all three source backends and execute
 the common `0x00A734` queue tail. The EMS path maps four consecutive logical
 pages to physical pages zero through three even for a zero-byte request, then

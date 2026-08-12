@@ -1248,6 +1248,396 @@ def list_read_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def banked_list_load_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    buffer_segment = 0x3000
+    wrapper = 0xF000
+    cases = [
+        {
+            "name": "initial_no_handle",
+            "file_handle": 0,
+            "buffer_end": 0x9000,
+            "extent": 10,
+            "source_offset": 0x12345678,
+            "source_remaining": 0x01020304,
+            "reads": [],
+        },
+        {
+            "name": "extent_two_empty_body",
+            "file_handle": 4,
+            "buffer_end": 0x9000,
+            "extent": 2,
+            "source_offset": 0,
+            "source_remaining": 2,
+            "reads": [
+                {
+                    "stage": "initial",
+                    "returned": 2,
+                    "carry": False,
+                    "payload": struct.pack("<H", 2),
+                },
+                {
+                    "stage": "body",
+                    "returned": 0,
+                    "carry": False,
+                    "payload": b"",
+                },
+            ],
+        },
+        {
+            "name": "ordinary_extent",
+            "file_handle": 5,
+            "buffer_end": 0xA000,
+            "extent": 10,
+            "source_offset": 0x0000FFFF,
+            "source_remaining": 0x00010020,
+            "reads": [
+                {
+                    "stage": "initial",
+                    "returned": 2,
+                    "carry": False,
+                    "payload": struct.pack("<H", 10),
+                },
+                {
+                    "stage": "body",
+                    "returned": 8,
+                    "carry": False,
+                    "payload": b"BODYDATA",
+                },
+            ],
+        },
+        {
+            "name": "short_reads_ignore_carry",
+            "file_handle": 6,
+            "buffer_end": 0x7F00,
+            "extent": 12,
+            "source_offset": 0x10203040,
+            "source_remaining": 0x55667788,
+            "reads": [
+                {
+                    "stage": "initial",
+                    "returned": 1,
+                    "carry": False,
+                    "payload": b"\x0c",
+                },
+                {
+                    "stage": "initial",
+                    "returned": 2,
+                    "carry": True,
+                    "payload": struct.pack("<H", 12),
+                },
+                {
+                    "stage": "body",
+                    "returned": 3,
+                    "carry": True,
+                    "payload": b"bad",
+                },
+                {
+                    "stage": "body",
+                    "returned": 10,
+                    "carry": False,
+                    "payload": b"0123456789",
+                },
+            ],
+        },
+        {
+            "name": "body_handle_removed",
+            "file_handle": 7,
+            "buffer_end": 0x8800,
+            "extent": 6,
+            "source_offset": 0xFFFFFFFE,
+            "source_remaining": 8,
+            "reads": [
+                {
+                    "stage": "initial",
+                    "returned": 2,
+                    "carry": False,
+                    "payload": struct.pack("<H", 6),
+                    "drop_handle": True,
+                }
+            ],
+        },
+        {
+            "name": "extent_one_wraps_body_count",
+            "file_handle": 8,
+            "buffer_end": 0x7000,
+            "extent": 1,
+            "source_offset": 0x01020304,
+            "source_remaining": 0x00020000,
+            "reads": [
+                {
+                    "stage": "initial",
+                    "returned": 2,
+                    "carry": False,
+                    "payload": struct.pack("<H", 1),
+                },
+                {
+                    "stage": "body",
+                    "returned": 0xFFFF,
+                    "carry": False,
+                    "payload": b"",
+                },
+            ],
+        },
+    ]
+    vectors = []
+    wrapper_code = b"\xe8" + struct.pack("<h", 0xA642 - (wrapper + 3))
+
+    def read_u16(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + offset, 2)
+        )[0]
+
+    def read_u32(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + offset, 4)
+        )[0]
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        file_handle = int(case["file_handle"])
+        buffer_end = int(case["buffer_end"])
+        extent = int(case["extent"])
+        source_offset = int(case["source_offset"])
+        source_remaining = int(case["source_remaining"])
+        reads = list(case["reads"])
+        body_count = (extent - 2) & 0xFFFF
+        entry_start = (buffer_end - extent - 2) & 0xFFFF
+        body_start = (entry_start + 2) & 0xFFFF
+        read_index = 0
+        calls: list[dict[str, int | bool | str]] = []
+
+        def interrupt_handler(
+            machine: Uc,
+            number: int,
+            case_name: str = name,
+            responses: list[object] = reads,
+            call_log: list[dict[str, int | bool | str]] = calls,
+        ) -> None:
+            nonlocal read_index
+            if number != 0x21 or read_index >= len(responses):
+                raise AssertionError(
+                    f"0xA642 {case_name} invoked an unexpected interrupt"
+                )
+
+            response = responses[read_index]
+            function = machine.reg_read(UC_X86_REG_AX) >> 8
+            stage = str(response["stage"])
+            expected_offset = source_offset + (2 if stage == "body" else 0)
+            if function == 0x42:
+                call_log.append(
+                    {
+                        "call": "seek",
+                        "stage": stage,
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "offset": (
+                            machine.reg_read(UC_X86_REG_CX) << 16
+                            | machine.reg_read(UC_X86_REG_DX)
+                        ),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, expected_offset & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DX, expected_offset >> 16)
+                set_carry(machine, False)
+                return
+
+            if function != 0x3F:
+                raise AssertionError(
+                    f"0xA642 {case_name} invoked DOS function {function:#x}"
+                )
+            requested = machine.reg_read(UC_X86_REG_CX)
+            destination_segment = machine.reg_read(UC_X86_REG_DS)
+            destination_offset = machine.reg_read(UC_X86_REG_DX)
+            expected_count = 2 if stage == "initial" else body_count
+            expected_destination = 0 if stage == "initial" else body_start
+            if requested != expected_count or destination_offset != expected_destination:
+                raise AssertionError(f"0xA642 {case_name} issued an unexpected read")
+            if destination_segment != buffer_segment:
+                raise AssertionError(
+                    f"0xA642 {case_name} selected an unexpected buffer segment"
+                )
+            payload = bytes(response["payload"])
+            if payload:
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset, payload
+                )
+            call_log.append(
+                {
+                    "call": "read",
+                    "stage": stage,
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "requested": requested,
+                    "destination": destination_offset,
+                    "returned": int(response["returned"]),
+                    "carry": bool(response["carry"]),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, int(response["returned"]))
+            set_carry(machine, bool(response["carry"]))
+            if response.get("drop_handle"):
+                machine.mem_write(
+                    data_segment * 16 + 0x0D5B, struct.pack("<H", 0)
+                )
+            read_index += 1
+
+        initial_words = {
+            0x0D8C: 0x1111,
+            0x0D8E: 0x2222,
+            0x0D90: 0x3333,
+            0x0D92: 0x4444,
+            0x0D96: 0x5555,
+            0x0D98: 0x6666,
+            0x0D9A: 0x7777,
+            0x0DA0: 0x8888,
+        }
+        memory = [
+            (0, wrapper, wrapper_code),
+            (data_segment, 0x0A56, struct.pack("<H", 0xFFFF)),
+            (data_segment, 0x0A58, struct.pack("<H", 0xFFFF)),
+            (data_segment, 0x0A7E, struct.pack("<H", buffer_segment)),
+            (data_segment, 0x0D5B, struct.pack("<H", file_handle)),
+            (data_segment, 0x0D84, struct.pack("<I", source_offset)),
+            (data_segment, 0x0D88, struct.pack("<I", source_remaining)),
+            (data_segment, 0x0DBC, b"\x00"),
+            (data_segment, 0x5233, struct.pack("<H", buffer_end)),
+            (buffer_segment, 0, bytes([0xCC]) * 0x10000),
+        ]
+        memory.extend(
+            (data_segment, offset, struct.pack("<H", value))
+            for offset, value in initial_words.items()
+        )
+        initial_eax = 0xA5A50000 | case_index
+        machine = execute(
+            wrapper,
+            wrapper + len(wrapper_code),
+            {
+                "eax": initial_eax,
+                "bx": 0x2222,
+                "cx": 0x3333,
+                "dx": 0x4444,
+                "si": 0x5555,
+                "di": 0x6666,
+                "bp": 0x7777,
+                "sp": 0xFF00,
+                "ds": data_segment,
+                "es": 0x4000,
+                "gs": data_segment,
+                "flags": 0x0202,
+            },
+            memory,
+            interrupt_handler,
+        )
+
+        initial_failed = file_handle < 1
+        body_failed = bool(reads and reads[-1].get("drop_handle"))
+        success = not initial_failed and not body_failed
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not success):
+            raise AssertionError(
+                f"0xA642 {name} carry={carry}, expected={int(not success)}"
+            )
+        if read_index != len(reads) or len(calls) != len(reads) * 2:
+            raise AssertionError(f"0xA642 {name} did not consume all DOS responses")
+        for call in calls:
+            if call["handle"] != file_handle:
+                raise AssertionError(f"0xA642 {name} changed the DOS handle")
+            expected_offset = source_offset + (
+                2 if call["stage"] == "body" else 0
+            )
+            if call["call"] == "seek" and call["offset"] != expected_offset:
+                raise AssertionError(f"0xA642 {name} sought unexpectedly")
+
+        if initial_failed:
+            transferred = 0
+            expected_tail = 0
+            expected_head = 0
+            expected_queued = 0
+        elif body_failed:
+            transferred = 2
+            expected_tail = entry_start
+            expected_head = body_start
+            expected_queued = 2
+        else:
+            transferred = 2 + body_count
+            expected_tail = entry_start
+            expected_head = (body_start + body_count) & 0xFFFF
+            expected_queued = (2 + body_count) & 0xFFFF
+
+        observed = {
+            "head": read_u16(machine, 0x0D8C),
+            "head_segment": read_u16(machine, 0x0D8E),
+            "tail": read_u16(machine, 0x0D90),
+            "tail_segment": read_u16(machine, 0x0D92),
+            "active": read_u16(machine, 0x0D96),
+            "wrap_limit": read_u16(machine, 0x0D98),
+            "byte_count": read_u16(machine, 0x0D9A),
+            "iteration_count": read_u16(machine, 0x0DA0),
+            "source_offset": read_u32(machine, 0x0D84),
+            "source_remaining": read_u32(machine, 0x0D88),
+        }
+        expected = {
+            "head": expected_head,
+            "head_segment": buffer_segment,
+            "tail": expected_tail,
+            "tail_segment": buffer_segment,
+            "active": 0,
+            "wrap_limit": buffer_end,
+            "byte_count": expected_queued,
+            "iteration_count": 0,
+            "source_offset": (source_offset + transferred) & 0xFFFFFFFF,
+            "source_remaining": (
+                source_remaining - transferred
+            ) & 0xFFFFFFFF,
+        }
+        if observed != expected:
+            raise AssertionError(
+                f"0xA642 {name} state={observed}, expected={expected}"
+            )
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF00:
+            raise AssertionError(f"0xA642 {name} did not restore the caller stack")
+
+        if not initial_failed:
+            initial_header = struct.unpack(
+                "<H", machine.mem_read(buffer_segment * 16, 2)
+            )[0]
+            relocated_header = struct.unpack(
+                "<H",
+                machine.mem_read(buffer_segment * 16 + entry_start, 2),
+            )[0]
+            if initial_header != extent or relocated_header != extent:
+                raise AssertionError(f"0xA642 {name} misplaced the extent header")
+        if success:
+            body_responses = [
+                response for response in reads if response["stage"] == "body"
+            ]
+            expected_payload = bytes(body_responses[-1]["payload"])
+            if expected_payload and machine.mem_read(
+                buffer_segment * 16 + body_start, len(expected_payload)
+            ) != expected_payload:
+                raise AssertionError(f"0xA642 {name} misplaced the entry body")
+
+        vectors.append(
+            {
+                "name": name,
+                "success": success,
+                "extent": extent,
+                "body_count": body_count if not initial_failed else None,
+                "entry_start": entry_start if not initial_failed else None,
+                "calls": calls,
+                "result": observed,
+                "result_carry": carry,
+            }
+        )
+
+    return vectors
+
+
 def ems_paged_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     buffer_segment = 0x3000
@@ -3354,6 +3744,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a622_natural.json", list_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a642_natural.json",
+        banked_list_load_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_a664_natural.json", ems_paged_read_vectors(), args.check

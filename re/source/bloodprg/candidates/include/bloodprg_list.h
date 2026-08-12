@@ -32,6 +32,7 @@ volatile cb_u8 CB_FAR *CB_NEAR resource_palette_blocks_apply(
 void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
 int CB_NEAR list_d8c_read(cb_u16 *entry_extent,
         cb_u16 *cursor_offset);                  /* 0x00A622 */
+int CB_NEAR banked_list_load(void);              /* 0x00A642 */
 int CB_NEAR ems_paged_read(cb_u16 byte_count);   /* 0x00A664 */
 void CB_NEAR queue_d8c_wrap(cb_u16 byte_count, cb_u16 cursor); /* 0x00A38E */
 int CB_NEAR queue_d8c_has_room(cb_u16 byte_count); /* 0x00A3AD */
