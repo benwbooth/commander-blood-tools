@@ -228,6 +228,19 @@ original four. The extra instructions materialize a C Boolean in AX; the
 original sole caller consumes ZF directly, making this a confirmed flag-ABI
 boundary rather than an unresolved algorithm.
 
+For `0x00A622`, six direct-file cases execute the original `0x00A664` transport
+and its `0x00A734` shared tail without patching either routine. They verify
+failure with handle zero, ordinary and wrapping destination reads, 32-bit
+source offset/remaining carry and borrow, and retries after both a short read
+and a carry-set short response, proving that AX alone controls retry. On
+success the routine returns the extent in AX, the post-read cursor in ES:SI,
+and carry clear; both callers consume those exact results. The natural C
+candidate exposes logical success plus extent/cursor output parameters. Open
+Watcom 1.9 medium emits 23
+instructions and 47 bytes, and Turbo C 2.01 medium emits 32 instructions,
+versus six instructions and 18 bytes in the original. The algorithm is
+verified, but the compact carry/AX/ES:SI result remains an assembly ABI boundary.
+
 For `0x00A634`, exhaustive direct execution over all 256 state-byte values
 confirms that ZF is set exactly when GS:0x0B17 bit 0 is clear. It also verifies
 the GS-versus-DS selection, PF/CF/SF/OF results, preservation of IF/DF, and all

@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: list_d8c_read
-; label_comment: read from the gs:0xd8c list (3 calls): cx=2; call 0xa664; les si,gs:[0xd8c]; consumes entries from the list. Role: list read/dequeue; exact record op partial
+; label_comment: stage the next two-byte list entry extent through ems_paged_read 0xa664. On success ES:SI is the post-read gs:0xd8c cursor, AX is the extent word at ES:[SI-2], and carry is clear; on transport failure carry remains set and ES:SI/AX are not replaced.
 ; byte_count: 18
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1

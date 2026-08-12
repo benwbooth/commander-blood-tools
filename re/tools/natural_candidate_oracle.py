@@ -978,6 +978,276 @@ def queue_enqueue_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_read_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    buffer_segment = 0x3000
+    cases = [
+        {
+            "name": "no_file_handle",
+            "handle": 0,
+            "head": 0x0100,
+            "byte_count": 0x0020,
+            "source_offset": 0x12345678,
+            "source_remaining": 0x01020304,
+            "reads": [],
+        },
+        {
+            "name": "zero_extent",
+            "handle": 1,
+            "head": 0x0000,
+            "byte_count": 0x0000,
+            "source_offset": 0,
+            "source_remaining": 2,
+            "reads": [(0x0000, 2, False)],
+        },
+        {
+            "name": "ordinary_extent",
+            "handle": 5,
+            "head": 0x0120,
+            "byte_count": 0x0040,
+            "source_offset": 0x00123456,
+            "source_remaining": 0x00010000,
+            "reads": [(0x1234, 2, False)],
+        },
+        {
+            "name": "head_and_count_wrap",
+            "handle": 0x7FFF,
+            "head": 0xFFFF,
+            "byte_count": 0xFFFF,
+            "source_offset": 0xFFFFFFFF,
+            "source_remaining": 1,
+            "reads": [(0xBEEF, 2, False)],
+        },
+        {
+            "name": "short_read_retry",
+            "handle": 9,
+            "head": 0x2200,
+            "byte_count": 0x3333,
+            "source_offset": 0x0000FFFF,
+            "source_remaining": 0x00010001,
+            "reads": [(0x00A5, 1, False), (0xCAFE, 2, False)],
+        },
+        {
+            "name": "carry_set_short_retry",
+            "handle": 0x1234,
+            "head": 0x3456,
+            "byte_count": 0xFFFE,
+            "source_offset": 0xFFFF0000,
+            "source_remaining": 0x00000000,
+            "reads": [(0x0005, 1, True), (0x55AA, 2, False)],
+        },
+    ]
+    vectors = []
+
+    def read_u16(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + offset, 2)
+        )[0]
+
+    def read_u32(machine: Uc, offset: int) -> int:
+        return struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + offset, 4)
+        )[0]
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        handle = int(case["handle"])
+        head = int(case["head"])
+        byte_count = int(case["byte_count"])
+        source_offset = int(case["source_offset"])
+        source_remaining = int(case["source_remaining"])
+        reads = list(case["reads"])
+        calls: list[dict[str, int | bool | str]] = []
+        read_index = 0
+        initial_eax = 0xA5A50000 | (0x1000 + case_index)
+        initial = {
+            "eax": initial_eax,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000,
+            "gs": data_segment,
+            "flags": 0x0ED7,
+        }
+
+        def interrupt_handler(
+            machine: Uc,
+            number: int,
+            case_name: str = name,
+            call_log: list[dict[str, int | bool | str]] = calls,
+            responses: list[object] = reads,
+        ) -> None:
+            nonlocal read_index
+            if number != 0x21:
+                raise AssertionError(
+                    f"0xA622 {case_name} invoked unexpected INT {number:#x}"
+                )
+
+            function = machine.reg_read(UC_X86_REG_AX) >> 8
+            if function == 0x42:
+                call_log.append(
+                    {
+                        "call": "seek",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "offset_high": machine.reg_read(UC_X86_REG_CX),
+                        "offset_low": machine.reg_read(UC_X86_REG_DX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, source_offset & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DX, source_offset >> 16)
+                set_carry(machine, False)
+                return
+
+            if function != 0x3F or read_index >= len(responses):
+                raise AssertionError(
+                    f"0xA622 {case_name} invoked unexpected DOS function "
+                    f"{function:#x}"
+                )
+
+            value, returned, failed = responses[read_index]
+            read_index += 1
+            destination_segment = machine.reg_read(UC_X86_REG_DS)
+            destination_offset = machine.reg_read(UC_X86_REG_DX)
+            call_log.append(
+                {
+                    "call": "read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "destination_segment": destination_segment,
+                    "destination_offset": destination_offset,
+                    "returned": int(returned),
+                    "carry": bool(failed),
+                }
+            )
+            machine.mem_write(
+                destination_segment * 16 + destination_offset,
+                struct.pack("<H", int(value))[: int(returned)],
+            )
+            machine.reg_write(UC_X86_REG_AX, int(returned))
+            set_carry(machine, bool(failed))
+
+        machine = execute(
+            0xA622,
+            0xA633,
+            initial,
+            [
+                (data_segment, 0x0D5B, struct.pack("<H", handle)),
+                (data_segment, 0x0D84, struct.pack("<I", source_offset)),
+                (data_segment, 0x0D88, struct.pack("<I", source_remaining)),
+                (
+                    data_segment,
+                    0x0D8C,
+                    struct.pack("<HH", head, buffer_segment),
+                ),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+                (data_segment, 0x0DBC, b"\x00"),
+            ],
+            interrupt_handler,
+        )
+
+        success = handle >= 1
+        expected_extent = int(reads[-1][0]) if success else initial_eax & 0xFFFF
+        expected_head = (head + 2) & 0xFFFF if success else head
+        expected_byte_count = (
+            (byte_count + 2) & 0xFFFF if success else byte_count
+        )
+        expected_source_offset = (
+            (source_offset + 2) & 0xFFFFFFFF if success else source_offset
+        )
+        expected_source_remaining = (
+            (source_remaining - 2) & 0xFFFFFFFF if success else source_remaining
+        )
+        expected_registers = {
+            "eax": (initial_eax & 0xFFFF0000) | expected_extent,
+            "bx": handle,
+            "cx": 2,
+            "dx": head if success else initial["dx"],
+            "si": expected_head if success else initial["si"],
+            "di": initial["di"],
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": data_segment,
+            "es": buffer_segment if success else initial["es"],
+            "gs": data_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xA622 {name} {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        observed = {
+            "head": read_u16(machine, 0x0D8C),
+            "byte_count": read_u16(machine, 0x0D9A),
+            "source_offset": read_u32(machine, 0x0D84),
+            "source_remaining": read_u32(machine, 0x0D88),
+        }
+        expected_state = {
+            "head": expected_head,
+            "byte_count": expected_byte_count,
+            "source_offset": expected_source_offset,
+            "source_remaining": expected_source_remaining,
+        }
+        if observed != expected_state:
+            raise AssertionError(
+                f"0xA622 {name} state={observed}, expected={expected_state}"
+            )
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not success):
+            raise AssertionError(
+                f"0xA622 {name} carry={carry}, expected={int(not success)}"
+            )
+        if read_index != len(reads):
+            raise AssertionError(f"0xA622 {name} did not consume all read responses")
+        if len(calls) != len(reads) * 2:
+            raise AssertionError(f"0xA622 {name} produced an unexpected call count")
+        for call in calls:
+            if call["handle"] != handle:
+                raise AssertionError(f"0xA622 {name} used an unexpected file handle")
+            if call["call"] == "seek" and (
+                call["offset_high"] != source_offset >> 16
+                or call["offset_low"] != source_offset & 0xFFFF
+            ):
+                raise AssertionError(f"0xA622 {name} sought to an unexpected offset")
+            if call["call"] == "read" and (
+                call["requested"] != 2
+                or call["destination_segment"] != buffer_segment
+                or call["destination_offset"] != head
+            ):
+                raise AssertionError(f"0xA622 {name} used an unexpected read request")
+
+        vectors.append(
+            {
+                "name": name,
+                "success": success,
+                "handle": handle,
+                "initial_head": head,
+                "initial_byte_count": byte_count,
+                "extent": expected_extent if success else None,
+                "calls": calls,
+                "result": observed,
+                "result_cursor_segment": machine.reg_read(UC_X86_REG_ES),
+                "result_cursor_offset": machine.reg_read(UC_X86_REG_SI),
+                "result_carry": carry,
+            }
+        )
+
+    return vectors
+
+
 def list_init_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     cases = [
@@ -2593,6 +2863,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a634_natural.json", flag_test_b17_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a622_natural.json", list_read_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_a734_natural.json", queue_enqueue_vectors(), args.check
