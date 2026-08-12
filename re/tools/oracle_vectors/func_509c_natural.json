@@ -1,0 +1,10 @@
+[
+  {
+    "entry": "0x00509c",
+    "opcode": "c3",
+    "stack_pointer_before": 65280,
+    "stack_pointer_after": 65282,
+    "return_address": 28416,
+    "registers_and_flags_preserved": true
+  }
+]

@@ -2002,6 +2002,56 @@ def sprite_blit_raw_transparent_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def sprite_blitter_noop_vectors(entry: int) -> list[dict[str, object]]:
+    return_address = 0x6F00
+    initial = {
+        "eax": 0xA1A11234,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C33456,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F66789,
+        "ebp": 0x9797789A,
+        "ds": 0x2000,
+        "es": 0x2400,
+        "gs": 0x2800,
+        "flags": 0x0AD7,
+    }
+    stack_sentinel = bytes.fromhex("5aa59669")
+    machine = execute(
+        entry,
+        return_address,
+        initial,
+        [
+            (0x9000, 0xFF00, struct.pack("<H", return_address) + stack_sentinel),
+            (0, return_address, b"\xcc"),
+        ],
+    )
+
+    for register, value in initial.items():
+        actual_register = machine.reg_read(REGISTERS[register])
+        if actual_register != value:
+            raise AssertionError(f"{entry:#x}: changed {register}")
+    if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+        raise AssertionError(f"{entry:#x}: near RET did not consume return word")
+    actual_sentinel = bytes(machine.mem_read(0x9000 * 16 + 0xFF02, 4))
+    if actual_sentinel != stack_sentinel:
+        raise AssertionError(f"{entry:#x}: stack sentinel changed")
+    if EXE[entry] != 0xC3:
+        raise AssertionError(f"{entry:#x}: expected one-byte near RET")
+
+    return [
+        {
+            "entry": f"0x{entry:06x}",
+            "opcode": "c3",
+            "stack_pointer_before": 0xFF00,
+            "stack_pointer_after": 0xFF02,
+            "return_address": return_address,
+            "registers_and_flags_preserved": True,
+        }
+    ]
+
+
 def mask_overlay_vectors() -> list[dict[str, object]]:
     patterns = [
         [0x0000] * 16,
@@ -6394,6 +6444,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_4536_natural.json",
         sprite_blit_raw_transparent_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_509a_natural.json",
+        sprite_blitter_noop_vectors(0x509A),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_509b_natural.json",
+        sprite_blitter_noop_vectors(0x509B),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_509c_natural.json",
+        sprite_blitter_noop_vectors(0x509C),
         args.check,
     )
     update_vector(

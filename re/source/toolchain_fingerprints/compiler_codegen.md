@@ -478,6 +478,14 @@ into DS. The original also receives its already-computed rectangle in
 AX/BX/DX/BP and uses register-shaped row loops, while the natural function
 derives that context from the typed slot.
 
+Dispatch modes 5, 6, and 7 at `0x00509A..0x00509C` are exact one-byte no-ops.
+The direct oracle executes each `RET` with a synthetic near return address and
+proves that only SP advances by two; all general registers including their upper
+halves, segments, flags, and adjacent stack bytes are preserved. Open Watcom
+`-3 -ox -mm` compiles each typed empty DI-argument callback to the exact original
+`C3` byte. Turbo C 2.01 retains an unnecessary BP frame and emits four
+instructions, so Watcom is the exact result for this slice.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

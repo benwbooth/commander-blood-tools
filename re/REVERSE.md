@@ -2115,7 +2115,8 @@ Named targets that are already tied to code behavior:
   - mode 4 -> `0x0299:0x1FD2` (`sprite_blit_scaled_transparent`): fixed-point
     scaled transparent blit; source zero skips the destination.
   - modes 5..7 -> `0x0299:0x210A..0x210C`: unused single-byte near-return
-    handlers.
+    handlers. Direct execution proves complete no-op behavior, and Open Watcom
+    reproduces each exact `C3` body from a typed empty callback.
   Modes 1 and 3 use the same row RLE control format: each row decodes until
   the frame-header stride is reached; control bytes `0x00..0x7F` copy
   `control + 1` literal bytes, while `0x80..0xFF` repeat the following byte
