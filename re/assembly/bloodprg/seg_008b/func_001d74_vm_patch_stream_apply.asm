@@ -6,8 +6,8 @@
 ; seg_off: 008b:0ec4
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: copy_abc_to_671c
-; label_comment: buffer copy: lds si,gs:[0xabc]; les di,gs:[0x671c]; lodsw loop. Word-copies from the 0xabc source buffer into the 0x671c object/work area
+; label: vm_patch_stream_apply
+; label_comment: consume AX bytes as packed three-byte {absolute destination offset, value} records from the far stream at GS:0x0abc; use only the segment of GS:0x671c and scatter each value into that VM image, returning the final destination offset in AX
 ; byte_count: 32
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1

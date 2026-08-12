@@ -4239,7 +4239,9 @@ a serialization of the live VM state. WRITE (int21 ah=0x40) / READ (ah=0x3F):
 5. **far [0xABC], length AX (0x1D94 on save / 0xFFFF read on load)** = the object
    work buffer.
 
-On LOAD, after reading: copy [0xABC]→[0x671C] (`copy_abc_to_671c` 0x1D74),
+On LOAD, after reading: apply packed three-byte VM patch records from the far
+[0xABC] stream to absolute offsets within the segment of [0x671C]
+(`vm_patch_stream_apply` 0x1D74),
 rebuild derived VM pointers (lcall 0x4DA:0x1BB, 0x71E:0x14B6), set redraw flags.
 So blood.sav = {profile:u16, flags512, state96, objblock[var], workbuf[var]}.
 The port's save.rs is a port-native format; this is the byte-exact DOS layout.

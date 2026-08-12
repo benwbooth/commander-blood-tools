@@ -1570,6 +1570,251 @@ def palette_upload_if_dirty_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_patch_stream_apply_vectors() -> list[dict[str, object]]:
+    entry = 0x1D74
+    expected_hash = "30c8f13284ab8cb77ad2283714851fe93e0dbeecc377800db9c5488a42f8da2c"
+    if hashlib.sha256(EXE[entry : entry + 32]).hexdigest() != expected_hash:
+        raise AssertionError("0x1d74: recovered 32-byte body changed")
+
+    cases = [
+        (
+            "single_absolute_offset",
+            0x0003,
+            0x0200,
+            [(0x0010, 0xA1)],
+            False,
+        ),
+        (
+            "ordered_duplicate_and_boundaries",
+            0x000C,
+            0x1400,
+            [(0x0000, 0x11), (0xFFFF, 0x22), (0x1234, 0x33), (0x1234, 0x44)],
+            False,
+        ),
+        (
+            "source_offset_wrap",
+            0x0009,
+            0xFFFD,
+            [(0x2222, 0x55), (0x3333, 0x66), (0x4444, 0x77)],
+            False,
+        ),
+        (
+            "zero_count_full_wrap",
+            0x0000,
+            0x7A31,
+            [],
+            True,
+        ),
+    ]
+    game_segment = 0x1000
+    data_segment = 0x3000
+    source_segment = 0x5000
+    target_segment = 0x7000
+    source_decoy_segment = 0x9000
+    target_decoy_segment = 0xB000
+    stack_segment = 0xD000
+    source_decoy_offset = 0x2400
+    target_base_offset = 0x3800
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (
+        name,
+        byte_count,
+        source_offset,
+        records,
+        fill_entire_stream,
+    ) in enumerate(cases):
+        if fill_entire_stream:
+            source_before = bytearray(
+                (offset * 73 + (offset >> 8) * 19 + 0x2D) & 0xFF
+                for offset in range(0x10000)
+            )
+        else:
+            source_before = bytearray([0xCC] * 0x10000)
+            cursor = source_offset
+            for target_offset, value in records:
+                source_before[cursor] = target_offset & 0xFF
+                source_before[(cursor + 1) & 0xFFFF] = target_offset >> 8
+                source_before[(cursor + 2) & 0xFFFF] = value
+                cursor = (cursor + 3) & 0xFFFF
+
+        target_before = bytes(
+            (offset * 29 + case_index * 41 + 0x17) & 0xFF
+            for offset in range(0x10000)
+        )
+        source_linear_tail = (0x9D + case_index * 7) & 0xFF
+        expected_target = bytearray(target_before)
+        simulated_cx = byte_count
+        simulated_si = source_offset
+        iterations = 0
+        final_target_offset = 0
+        while True:
+            final_target_offset = (
+                source_before[simulated_si]
+                | (
+                    (
+                        source_linear_tail
+                        if simulated_si == 0xFFFF
+                        else source_before[simulated_si + 1]
+                    )
+                    << 8
+                )
+            )
+            simulated_si = (simulated_si + 2) & 0xFFFF
+            expected_target[final_target_offset] = source_before[simulated_si]
+            simulated_si = (simulated_si + 1) & 0xFFFF
+            simulated_cx = (simulated_cx - 3) & 0xFFFF
+            iterations += 1
+            if simulated_cx == 0:
+                break
+            if iterations > 0x10000:
+                raise AssertionError(f"0x1d74 {name}: simulation did not terminate")
+
+        source_pointer = struct.pack("<HH", source_offset, source_segment)
+        target_pointer = struct.pack("<HH", target_base_offset, target_segment)
+        source_decoy_pointer = struct.pack(
+            "<HH", source_decoy_offset, source_decoy_segment
+        )
+        target_decoy_pointer = struct.pack("<HH", 0x4200, target_decoy_segment)
+        game_pointer_sentinel = bytes.fromhex("e17ac43b")
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A10000 | byte_count,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": target_decoy_segment,
+            "fs": 0xE000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0x0ABC, source_pointer),
+                (game_segment, 0x671C, target_pointer),
+                (game_segment, 0x0AC0, game_pointer_sentinel),
+                (data_segment, 0x0ABC, source_decoy_pointer),
+                (data_segment, 0x671C, target_decoy_pointer),
+                (source_segment, 0, bytes(source_before)),
+                (source_segment, 0x10000, bytes([source_linear_tail])),
+                (target_segment, 0, target_before),
+                (source_decoy_segment, 0, bytes([0xD1]) * 0x10000),
+                (target_decoy_segment, 0, bytes([0xE2]) * 0x10000),
+                (0, return_address, b"\xcc"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            instruction_count=iterations * 6 + 64,
+        )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | final_target_offset
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1d74 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1d74 {name}: near return changed CS")
+
+        source_after = bytes(machine.mem_read(source_segment * 16, 0x10000))
+        if source_after != bytes(source_before):
+            raise AssertionError(f"0x1d74 {name}: source stream changed")
+        if machine.mem_read(source_segment * 16 + 0x10000, 1)[0] != source_linear_tail:
+            raise AssertionError(f"0x1d74 {name}: source linear tail changed")
+        target_after = bytes(machine.mem_read(target_segment * 16, 0x10000))
+        if target_after != bytes(expected_target):
+            raise AssertionError(f"0x1d74 {name}: target image mismatch")
+        if bytes(
+            machine.mem_read(source_decoy_segment * 16, 0x10000)
+        ) != bytes([0xD1]) * 0x10000:
+            raise AssertionError(f"0x1d74 {name}: DS source decoy changed")
+        if bytes(
+            machine.mem_read(target_decoy_segment * 16, 0x10000)
+        ) != bytes([0xE2]) * 0x10000:
+            raise AssertionError(f"0x1d74 {name}: DS/ES target decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0ABC, 4)) != source_pointer:
+            raise AssertionError(f"0x1d74 {name}: GS source pointer changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x671C, 4)) != target_pointer:
+            raise AssertionError(f"0x1d74 {name}: GS target pointer changed")
+        if bytes(
+            machine.mem_read(game_segment * 16 + 0x0AC0, 4)
+        ) != game_pointer_sentinel:
+            raise AssertionError(f"0x1d74 {name}: adjacent game data changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x1d74 {name}: stack sentinel changed")
+
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x1d74 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        changed_offsets = [
+            offset
+            for offset, (before, after) in enumerate(
+                zip(target_before, expected_target)
+            )
+            if before != after
+        ]
+        vectors.append(
+            {
+                "name": name,
+                "byte_count": byte_count,
+                "iterations": iterations,
+                "source_offset": source_offset,
+                "target_pointer_offset_ignored": target_base_offset,
+                "records": [
+                    {"target_offset": target_offset, "value": value}
+                    for target_offset, value in records
+                ],
+                "changed_target_bytes": len(changed_offsets),
+                "target_sha256": hashlib.sha256(expected_target).hexdigest(),
+                "result_ax": final_target_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def text_width_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     font_segment = 0x2600
@@ -24794,6 +25039,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_178b_natural.json",
         palette_upload_if_dirty_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1d74_natural.json",
+        vm_patch_stream_apply_vectors(),
         args.check,
     )
     update_vector(

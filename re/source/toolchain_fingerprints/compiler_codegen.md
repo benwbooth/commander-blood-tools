@@ -1770,6 +1770,27 @@ stores. Turbo C 2.01 medium emits 11 instructions, but stack-passes the palette
 pointer and does not preserve AX. The natural logic is recovered; exact
 replacement still depends on the original far-helper and fixed-DGROUP linkage.
 
+VM patch-stream helper `0x001D74` consumes the DOS read count in AX and packed
+three-byte `{u16 destination_offset, u8 value}` records from the GS:0x0ABC far
+stream. `LES DI,GS:[0x671C]` is immediately followed by `MOV DI,AX`, so the
+stored pointer offset is deliberately discarded: every record offset is
+absolute within only the destination segment. The loop subtracts three modulo
+16 bits and returns the last destination offset in AX. Four direct vectors
+prove GS pointer ownership against DS/ES decoys, absolute offsets 0 and 0xFFFF,
+ordered duplicate overwrites, source wrap including a word load at offset
+0xFFFF, the zero-count 65,536-iteration path, full non-result preservation,
+final SUB flags, and near return.
+
+The corrected natural candidate uses a packed record and standard DOS
+`FP_SEG`/`MK_FP` construction to express the segment-only destination without
+emulating registers or memory. Open Watcom `-3 -ox -mm` accepts the AX
+input/result pragma and emits 30 instructions/66 bytes versus 19/32 original.
+It retains the word load, byte store, three-byte source step, subtract, and
+loop, but uses ES for both far objects plus a stack local for the source segment
+instead of the original simultaneous DS:SI and ES:DI allocation. Turbo C 2.01
+medium emits 34 instructions and stack-passes the count. The remaining gap is
+compiler segment/register placement, not missing patch semantics.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -1849,6 +1870,7 @@ LCS and then mnemonic similarity:
 | `layout_offset_calc` | medium, `-ox`, register | 32/35 | 0.1875 | 0.5938 | 0.2812 |
 | `object_heap_access` | medium, `-ox`, register | 20/30 | 0.1500 | 0.9500 | 0.3000 |
 | `palette_upload_if_dirty` | medium, `-ox`, register | 9/14 | 0.1111 | 0.6667 | 0.1111 |
+| `vm_patch_stream_apply` | medium, `-ox`, register | 19/30 | 0.2632 | 0.7895 | 0.2632 |
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |

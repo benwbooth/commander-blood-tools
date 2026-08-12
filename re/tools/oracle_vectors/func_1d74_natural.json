@@ -1,0 +1,113 @@
+[
+  {
+    "name": "single_absolute_offset",
+    "byte_count": 3,
+    "iterations": 1,
+    "source_offset": 512,
+    "target_pointer_offset_ignored": 14336,
+    "records": [
+      {
+        "target_offset": 16,
+        "value": 161
+      }
+    ],
+    "changed_target_bytes": 1,
+    "target_sha256": "07de49c3273e35f38b1301111fa9bcee049ee54af552f76fcd86e5903e5ca1ca",
+    "result_ax": 16,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordered_duplicate_and_boundaries",
+    "byte_count": 12,
+    "iterations": 4,
+    "source_offset": 5120,
+    "target_pointer_offset_ignored": 14336,
+    "records": [
+      {
+        "target_offset": 0,
+        "value": 17
+      },
+      {
+        "target_offset": 65535,
+        "value": 34
+      },
+      {
+        "target_offset": 4660,
+        "value": 51
+      },
+      {
+        "target_offset": 4660,
+        "value": 68
+      }
+    ],
+    "changed_target_bytes": 3,
+    "target_sha256": "2f0d1cff1046a2f7d896354f286b2c3232cbcad72608772a8205c89b53611698",
+    "result_ax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_offset_wrap",
+    "byte_count": 9,
+    "iterations": 3,
+    "source_offset": 65533,
+    "target_pointer_offset_ignored": 14336,
+    "records": [
+      {
+        "target_offset": 8738,
+        "value": 85
+      },
+      {
+        "target_offset": 13107,
+        "value": 102
+      },
+      {
+        "target_offset": 17476,
+        "value": 119
+      }
+    ],
+    "changed_target_bytes": 3,
+    "target_sha256": "263e762fa15eca911b2d188ae999d9b7b122e1379d13a3ba3deae4a2ff1b66b4",
+    "result_ax": 17476,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_count_full_wrap",
+    "byte_count": 0,
+    "iterations": 65536,
+    "source_offset": 31281,
+    "target_pointer_offset_ignored": 14336,
+    "records": [],
+    "changed_target_bytes": 509,
+    "target_sha256": "3ad905248636189299f98a9df9b1d9f427c90659a51828d9ba283624b8a3d24d",
+    "result_ax": 41561,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

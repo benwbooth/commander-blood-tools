@@ -499,7 +499,7 @@
 "0x001397","flag_gated_ae6_a","flag-gated render routine: test byte gs:[0xae6],1; if clear skip to 0x13bf, else es=gs and proceed. Gates on the 0xae6 enable bit"
 "0x0013C4","flag_gated_ae6_b","flag-gated render routine (sibling of 0x1397): same gs:0xae6 gate, skips to 0x1476 when clear"
 "0x001817","backbuffer_clear_flags","back-buffer setup: si=0xe3; les di,[0x5229] (the linear render back-buffer); clears byte [0x5b53] and [0x5b57]. Resets the two render-state flags before drawing into the back buffer"
-"0x001D74","copy_abc_to_671c","buffer copy: lds si,gs:[0xabc]; les di,gs:[0x671c]; lodsw loop. Word-copies from the 0xabc source buffer into the 0x671c object/work area"
+"0x001D74","vm_patch_stream_apply","consume AX bytes as packed three-byte {absolute destination offset, value} records from the far stream at GS:0x0abc; use only the segment of GS:0x671c and scatter each value into that VM image, returning the final destination offset in AX"
 "0x001DD8","flag_gated_b15","flag-gated routine: si=0x273b; al=[0xb15]; test/branch. Gates on the 0xb15 state byte (a mode/enable flag)"
 "0x00218D","vm_querymode_gated_67a6","VM query-mode gated routine: test byte [0x67a6],3; if clear skip to 0x21d9, else ds=gs. Branches on the 0x67a6 query/compare mode bits (companion to the 0x67ad query flag)"
 "0x002224","set_b15_test_query","sets [0xb15]=dl (mode byte); test [0x67a6],1; reads [0x67a2]. Records a mode flag then dispatches on the VM query-mode state"

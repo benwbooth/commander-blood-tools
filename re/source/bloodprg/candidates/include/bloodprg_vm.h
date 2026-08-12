@@ -12,6 +12,8 @@ typedef union bloodprg_vm_ui_state {
     } bytes;
 } bloodprg_vm_ui_state;
 
+typedef volatile cb_u8 CB_FAR *bloodprg_vm_image_ptr;
+
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
 extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
@@ -41,7 +43,7 @@ extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
 extern volatile cb_u8 vm_text_display_active; /* GS:0x5E64 */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
-extern volatile cb_u8 CB_FAR *vm_script_image; /* GS:0x671C */
+extern bloodprg_vm_image_ptr CB_GAME_DATA vm_script_image; /* GS:0x671C */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
@@ -166,7 +168,10 @@ int CB_FAR string_compare(const volatile char CB_FAR *left,
 void CB_NEAR object_heap_access(void);       /* 0x00149B */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
-void CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
+cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
+#if defined(__WATCOMC__)
+#pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
+#endif
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
