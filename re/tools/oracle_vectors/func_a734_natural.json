@@ -1,0 +1,74 @@
+[
+  {
+    "name": "zero",
+    "head": 0,
+    "byte_count": 0,
+    "increment": 0,
+    "result_head": 0,
+    "result_byte_count": 0,
+    "result_carry": 0
+  },
+  {
+    "name": "ordinary",
+    "head": 256,
+    "byte_count": 512,
+    "increment": 32,
+    "result_head": 288,
+    "result_byte_count": 544,
+    "result_carry": 0
+  },
+  {
+    "name": "head_wrap",
+    "head": 65535,
+    "byte_count": 0,
+    "increment": 1,
+    "result_head": 0,
+    "result_byte_count": 1,
+    "result_carry": 0
+  },
+  {
+    "name": "count_wrap",
+    "head": 0,
+    "byte_count": 65535,
+    "increment": 1,
+    "result_head": 1,
+    "result_byte_count": 0,
+    "result_carry": 0
+  },
+  {
+    "name": "both_wrap_to_zero",
+    "head": 32768,
+    "byte_count": 32768,
+    "increment": 32768,
+    "result_head": 0,
+    "result_byte_count": 0,
+    "result_carry": 0
+  },
+  {
+    "name": "maximum_increment",
+    "head": 4660,
+    "byte_count": 65535,
+    "increment": 65535,
+    "result_head": 4659,
+    "result_byte_count": 65534,
+    "result_carry": 0
+  },
+  {
+    "name": "both_adds_carry",
+    "head": 65520,
+    "byte_count": 65528,
+    "increment": 32,
+    "result_head": 16,
+    "result_byte_count": 24,
+    "result_carry": 0
+  },
+  {
+    "name": "high_bit_increment",
+    "head": 43690,
+    "byte_count": 21845,
+    "increment": 32769,
+    "result_head": 10923,
+    "result_byte_count": 54614,
+    "result_carry": 0
+  }
+]

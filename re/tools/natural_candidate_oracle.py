@@ -812,6 +812,80 @@ def queue_state_le_one_vectors() -> list[dict[str, object]]:
     ]
 
 
+def queue_enqueue_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    cases = [
+        ("zero", 0x0000, 0x0000, 0x0000),
+        ("ordinary", 0x0100, 0x0200, 0x0020),
+        ("head_wrap", 0xFFFF, 0x0000, 0x0001),
+        ("count_wrap", 0x0000, 0xFFFF, 0x0001),
+        ("both_wrap_to_zero", 0x8000, 0x8000, 0x8000),
+        ("maximum_increment", 0x1234, 0xFFFF, 0xFFFF),
+        ("both_adds_carry", 0xFFF0, 0xFFF8, 0x0020),
+        ("high_bit_increment", 0xAAAA, 0x5555, 0x8001),
+    ]
+    vectors = []
+
+    for name, head, byte_count, increment in cases:
+        initial = {
+            "ax": increment,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": data_segment,
+            "es": 0x2800,
+            "gs": 0x2C00,
+        }
+        machine = execute(
+            0xA734,
+            0xA73D,
+            initial,
+            [
+                (data_segment, 0x0D8C, struct.pack("<H", head)),
+                (data_segment, 0x0D9A, struct.pack("<H", byte_count)),
+            ],
+        )
+
+        result_head = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0D8C, 2)
+        )[0]
+        result_byte_count = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+        )[0]
+        expected_head = (head + increment) & 0xFFFF
+        expected_byte_count = (byte_count + increment) & 0xFFFF
+        if result_head != expected_head or result_byte_count != expected_byte_count:
+            raise AssertionError(
+                f"0xA734 {name}: head={result_head:#x}/{expected_head:#x}, "
+                f"count={result_byte_count:#x}/{expected_byte_count:#x}"
+            )
+        for register, value in initial.items():
+            if register in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[register])
+                if actual_register != value:
+                    raise AssertionError(f"0xA734 did not preserve {register}")
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != 0:
+            raise AssertionError(f"0xA734 {name} did not clear carry")
+
+        vectors.append(
+            {
+                "name": name,
+                "head": head,
+                "byte_count": byte_count,
+                "increment": increment,
+                "result_head": result_head,
+                "result_byte_count": result_byte_count,
+                "result_carry": carry,
+            }
+        )
+
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -849,6 +923,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a40b_natural.json", queue_state_le_one_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a734_natural.json", queue_enqueue_vectors(), args.check
     )
     return 0
 
