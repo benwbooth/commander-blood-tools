@@ -34,6 +34,8 @@ extern volatile cb_u16 nav_deferred_record_type; /* GS:0x6768 */
 extern volatile cb_u16 nav_deferred_record_link; /* GS:0x676A */
 extern volatile char nav_radio_snd_path[];    /* GS:0x0D16 */
 extern volatile cb_u8 nav_presentation_reverse; /* DS:0x27E4 */
+extern volatile cb_u8 presentation_mode_flag_27e0; /* DS:0x27E0 */
+extern volatile cb_u8 presentation_mode_flag_27e1; /* DS:0x27E1 */
 extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
 extern const volatile char fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 

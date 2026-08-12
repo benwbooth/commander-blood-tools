@@ -6,8 +6,8 @@
 ; seg_off: 0971:0530
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: mode_check_27e0
-; label_comment: dual mode-flag check (2 calls): test [0x27e0]&1 AND [0x27e1]&1 -> proceed only if both set. A subsystem-ready gate
+; label: list_d8c_advance_due
+; label_comment: gate active D8C queue advancement by audio playback position when presentation/audio bits are all set, otherwise by the software tick threshold; carry clear means due and carry set means wait
 ; byte_count: 81
 ; boundary: cfg_blocks_13_terminals_2
 ; terminal: jmp 0xa290:1, ret:1
@@ -32,7 +32,7 @@
 00A26B:  58                           pop      ax
 00A26C:  72 22                        jb       0xa290
 00A26E:  A3 41 0C                     mov      word ptr [0xc41], ax
-00A271:  F8                           clc     
+00A271:  F8                           clc
 00A272:  EB 1C                        jmp      0xa290
 00A274:  A1 29 0B                     mov      ax, word ptr [0xb29]
 00A277:  2B 06 A2 0D                  sub      ax, word ptr [0xda2]
@@ -44,5 +44,5 @@
 00A287:  72 07                        jb       0xa290
 00A289:  A1 29 0B                     mov      ax, word ptr [0xb29]
 00A28C:  A3 A2 0D                     mov      word ptr [0xda2], ax
-00A28F:  F8                           clc     
-00A290:  C3                           ret     
+00A28F:  F8                           clc
+00A290:  C3                           ret

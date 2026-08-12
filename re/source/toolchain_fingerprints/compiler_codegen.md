@@ -114,6 +114,19 @@ and 52 bytes in the original. The natural far-pointer decision tree is
 verified, but Boolean materialization and typed parameter passing replace the
 original carry result and register-call boundary.
 
+For `0x00A240`, twelve direct cases execute the routine's actual indirect far
+callback and cover both audio-phase threshold boundaries, signed-negative
+phase correction, callback-result wrap, all three software-clock fallback
+gates, positive and negative tick deltas, the `0x8000` edge, zero threshold,
+and the due path's deliberate second tick read. A source-level subtraction and
+negation produces the original `SUB AX,4000h` / `NEG AX` pair. Open Watcom 1.9
+medium emits 39 instructions and 103 bytes; Turbo C 2.01 medium emits 52
+instructions, versus 31 instructions and 81 bytes in the original. Watcom
+retains the three bit tests, indirect far call, 16-bit correction arithmetic,
+threshold decisions, and ordered clock stores, but uses DX for the preserved
+phase/delta and materializes the logical result in AX instead of returning it
+through carry.
+
 For `0x00A2DD`, six direct-execution cases confirm the unconditional queue-state
 bit 0 update, the zero-count-only bit 1 update and close-helper call, preservation
 of the other state bits and storage, helper-derived BX/CX effects, and final

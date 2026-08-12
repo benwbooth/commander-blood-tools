@@ -1482,6 +1482,325 @@ def list_d8c_activate_ready_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_advance_due_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    callback_segment = 0xF000
+    callback_address = callback_segment * 16
+    cases = [
+        {
+            "name": "audio_phase_below_threshold",
+            "mode_27e0": 0x81,
+            "mode_27e1": 0x01,
+            "audio_enabled": 0x03,
+            "callback": 0x3000,
+            "phase_last": 0x0C69,
+            "tick": 0x1111,
+            "tick_last": 0x2222,
+            "threshold": 0x55,
+            "due": False,
+        },
+        {
+            "name": "audio_phase_exact_threshold",
+            "mode_27e0": 0x01,
+            "mode_27e1": 0x81,
+            "audio_enabled": 0x01,
+            "callback": 0x3000,
+            "phase_last": 0x0C68,
+            "tick": 0x3333,
+            "tick_last": 0x4444,
+            "threshold": 0x66,
+            "due": True,
+        },
+        {
+            "name": "audio_negative_delta_corrected_below",
+            "mode_27e0": 0x03,
+            "mode_27e1": 0x05,
+            "audio_enabled": 0x81,
+            "callback": 0x3E00,
+            "phase_last": 0x3E69,
+            "tick": 0x5555,
+            "tick_last": 0x6666,
+            "threshold": 0x77,
+            "due": False,
+        },
+        {
+            "name": "audio_negative_delta_corrected_exact",
+            "mode_27e0": 0x01,
+            "mode_27e1": 0x03,
+            "audio_enabled": 0x05,
+            "callback": 0x3E00,
+            "phase_last": 0x3E68,
+            "tick": 0x7777,
+            "tick_last": 0x8888,
+            "threshold": 0x88,
+            "due": True,
+        },
+        {
+            "name": "audio_phase_wrap",
+            "mode_27e0": 0xFF,
+            "mode_27e1": 0xFF,
+            "audio_enabled": 0xFF,
+            "callback": 0x4010,
+            "phase_last": 0xFC58,
+            "tick": 0x9999,
+            "tick_last": 0xAAAA,
+            "threshold": 0x99,
+            "due": True,
+        },
+        {
+            "name": "mode_27e0_fallback_below",
+            "mode_27e0": 0xFE,
+            "mode_27e1": 0x01,
+            "audio_enabled": 0x01,
+            "callback": 0x1357,
+            "phase_last": 0x2468,
+            "tick": 0x0104,
+            "tick_last": 0x0100,
+            "threshold": 5,
+            "due": False,
+        },
+        {
+            "name": "mode_27e1_fallback_exact_and_reread",
+            "mode_27e0": 0x01,
+            "mode_27e1": 0x02,
+            "audio_enabled": 0x01,
+            "callback": 0x2468,
+            "phase_last": 0x3579,
+            "tick": 0x0105,
+            "tick_last": 0x0100,
+            "threshold": 5,
+            "reread_tick": 0x0107,
+            "due": True,
+        },
+        {
+            "name": "audio_disabled_fallback_high_byte",
+            "mode_27e0": 0x01,
+            "mode_27e1": 0x01,
+            "audio_enabled": 0x80,
+            "callback": 0x3579,
+            "phase_last": 0x468A,
+            "tick": 0x0200,
+            "tick_last": 0x0100,
+            "threshold": 0xFF,
+            "due": True,
+        },
+        {
+            "name": "software_negative_delta_below",
+            "mode_27e0": 0,
+            "mode_27e1": 0,
+            "audio_enabled": 0,
+            "callback": 0x468A,
+            "phase_last": 0x579B,
+            "tick": 0x1000,
+            "tick_last": 0x1005,
+            "threshold": 6,
+            "due": False,
+        },
+        {
+            "name": "software_negative_delta_exact",
+            "mode_27e0": 0,
+            "mode_27e1": 1,
+            "audio_enabled": 1,
+            "callback": 0x579B,
+            "phase_last": 0x68AC,
+            "tick": 0x1000,
+            "tick_last": 0x1005,
+            "threshold": 5,
+            "due": True,
+        },
+        {
+            "name": "software_half_range_delta",
+            "mode_27e0": 1,
+            "mode_27e1": 0,
+            "audio_enabled": 1,
+            "callback": 0x68AC,
+            "phase_last": 0x79BD,
+            "tick": 0,
+            "tick_last": 0x8000,
+            "threshold": 0xFF,
+            "due": True,
+        },
+        {
+            "name": "software_zero_threshold",
+            "mode_27e0": 1,
+            "mode_27e1": 1,
+            "audio_enabled": 0,
+            "callback": 0x79BD,
+            "phase_last": 0x8ACE,
+            "tick": 0x1234,
+            "tick_last": 0x1234,
+            "threshold": 0,
+            "due": True,
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode_27e0 = int(case["mode_27e0"])
+        mode_27e1 = int(case["mode_27e1"])
+        audio_enabled = int(case["audio_enabled"])
+        callback_value = int(case["callback"])
+        phase_last = int(case["phase_last"])
+        tick = int(case["tick"])
+        tick_last = int(case["tick_last"])
+        threshold = int(case["threshold"])
+        due = bool(case["due"])
+        reread_tick = int(case.get("reread_tick", tick))
+        audio_clock = bool(
+            mode_27e0 & 1 and mode_27e1 & 1 and audio_enabled & 1
+        )
+
+        data = bytearray([0xCC]) * 0x2800
+        struct.pack_into("<B", data, 0x0ADE, audio_enabled)
+        struct.pack_into("<H", data, 0x0B29, tick)
+        struct.pack_into("<H", data, 0x0C41, phase_last)
+        struct.pack_into("<HH", data, 0x0CF3, 0, callback_segment)
+        struct.pack_into("<B", data, 0x0D77, threshold)
+        struct.pack_into("<H", data, 0x0DA2, tick_last)
+        struct.pack_into("<B", data, 0x27E0, mode_27e0)
+        struct.pack_into("<B", data, 0x27E1, mode_27e1)
+        expected_data = bytearray(data)
+        callback_calls: list[int] = []
+        tick_rereads: list[int] = []
+
+        if audio_clock:
+            current = (0x4000 - callback_value) & 0xFFFF
+            delta = (current - phase_last) & 0xFFFF
+            if delta & 0x8000:
+                delta = (delta + 0x4000) & 0xFFFF
+            expected_due = delta >= 0x0398
+            result_ax = current
+            if expected_due:
+                struct.pack_into("<H", expected_data, 0x0C41, current)
+        else:
+            delta = (tick - tick_last) & 0xFFFF
+            if delta & 0x8000:
+                delta = (-delta) & 0xFFFF
+            expected_due = (delta & 0xFF00) != 0 or (delta & 0xFF) >= threshold
+            result_ax = delta
+            if expected_due:
+                result_ax = reread_tick
+                struct.pack_into("<H", expected_data, 0x0B29, reread_tick)
+                struct.pack_into("<H", expected_data, 0x0DA2, reread_tick)
+
+        if expected_due != due:
+            raise AssertionError(
+                f"0xA240 {name} malformed test vector: "
+                f"model due={expected_due}, declared={due}"
+            )
+
+        initial = {
+            "eax": 0xA5A50000 | case_index,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000,
+            "gs": decoy_segment,
+            "flags": 0x0202,
+        }
+
+        def code_handler(machine: Uc, address: int, _size: int) -> None:
+            if address == callback_address:
+                callback_calls.append(address)
+            if address == 0xA289:
+                tick_rereads.append(address)
+                machine.mem_write(
+                    data_segment * 16 + 0x0B29,
+                    struct.pack("<H", reread_tick),
+                )
+
+        machine = execute(
+            0xA240,
+            0xA290,
+            initial,
+            [
+                (data_segment, 0, bytes(data)),
+                (decoy_segment, 0, bytes(data)),
+                (
+                    callback_segment,
+                    0,
+                    b"\xB8" + struct.pack("<H", callback_value) + b"\xCB",
+                ),
+            ],
+            code_handler=code_handler,
+        )
+
+        expected_callback_count = int(audio_clock)
+        if len(callback_calls) != expected_callback_count:
+            raise AssertionError(
+                f"0xA240 {name} callback count={len(callback_calls)}, "
+                f"expected={expected_callback_count}"
+            )
+        expected_rereads = int(not audio_clock and due)
+        if len(tick_rereads) != expected_rereads:
+            raise AssertionError(
+                f"0xA240 {name} tick rereads={len(tick_rereads)}, "
+                f"expected={expected_rereads}"
+            )
+
+        carry = machine.reg_read(UC_X86_REG_EFLAGS) & 1
+        if carry != int(not due):
+            raise AssertionError(
+                f"0xA240 {name} carry={carry}, expected={int(not due)}"
+            )
+
+        expected_registers = {
+            "eax": (initial["eax"] & 0xFFFF0000) | result_ax,
+            "bx": initial["bx"],
+            "cx": initial["cx"],
+            "dx": initial["dx"],
+            "si": initial["si"],
+            "di": initial["di"],
+            "bp": initial["bp"],
+            "sp": initial["sp"],
+            "ds": initial["ds"],
+            "es": initial["es"],
+            "gs": initial["gs"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xA240 {name} {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, len(expected_data)))
+        if actual_data != bytes(expected_data):
+            raise AssertionError(f"0xA240 {name} modified unexpected game data")
+        actual_decoy = bytes(machine.mem_read(decoy_segment * 16, len(data)))
+        if actual_decoy != bytes(data):
+            raise AssertionError(f"0xA240 {name} modified GS decoy data")
+
+        vectors.append(
+            {
+                "name": name,
+                "audio_clock": audio_clock,
+                "due": due,
+                "mode_27e0": mode_27e0,
+                "mode_27e1": mode_27e1,
+                "audio_enabled": audio_enabled,
+                "callback_value": callback_value,
+                "previous_phase": phase_last,
+                "tick": tick,
+                "previous_tick": tick_last,
+                "threshold": threshold,
+                "reread_tick": reread_tick,
+                "normalized_delta": delta,
+                "result_ax": result_ax,
+                "result_carry": carry,
+            }
+        )
+
+    return vectors
+
+
 def banked_list_load_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     buffer_segment = 0x3000
@@ -3982,6 +4301,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a20c_natural.json",
         list_d8c_activate_ready_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a240_natural.json",
+        list_d8c_advance_due_vectors(),
         args.check,
     )
     update_vector(

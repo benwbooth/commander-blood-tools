@@ -28,11 +28,16 @@ extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
 extern volatile cb_u8 CB_FAR list_d8c_buffer[];    /* segment at 0x0A7E */
 extern volatile cb_u16 list_d8c_default_entry_segment; /* GS:0x0ABE */
 extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
+extern volatile cb_u16 timer_tick_count;          /* DS:0x0B29 */
+extern volatile cb_u16 list_d8c_audio_phase;      /* DS:0x0C41 */
+extern volatile cb_u8 list_d8c_tick_threshold;    /* DS:0x0D77 */
+extern volatile cb_u16 list_d8c_previous_tick;    /* DS:0x0DA2 */
 
 void CB_NEAR close_file_d5b(void);              /* 0x00A141 */
 volatile cb_u8 CB_FAR *CB_NEAR resource_palette_blocks_apply(
         volatile cb_u8 CB_FAR *stream);          /* 0x00A0C3 */
 int CB_NEAR list_d8c_activate_ready(void);      /* 0x00A20C */
+int CB_NEAR list_d8c_advance_due(void);         /* 0x00A240 */
 void CB_NEAR list_d8c_activate_entry(cb_u16 entry_extent,
         volatile cb_u16 CB_FAR *entry,
         cb_u16 storage_segment);                /* 0x00A552 */

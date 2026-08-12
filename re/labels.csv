@@ -354,7 +354,7 @@
 "0x00A3AD","queue_d8c_has_room","carry-clear capacity check (2 calls): rejects a head/tail gap below requested bytes+0x12, then rejects total queued bytes+requested bytes+0x0a above the wrap limit"
 "0x00A38E","queue_d8c_wrap","ring-buffer pointer wrap (2 calls): si += ax; if si > [0x5233] (buffer end) wrap. Handles the gs:0xd8c queue's circular wraparound"
 "0x00A40B","list_d8c_state_le_one","leaves ZF set exactly when the GS:0x0D5F queue state byte is zero or one; the sole caller branches directly on that flag"
-"0x00A240","mode_check_27e0","dual mode-flag check (2 calls): test [0x27e0]&1 AND [0x27e1]&1 -> proceed only if both set. A subsystem-ready gate"
+"0x00A240","list_d8c_advance_due","gate active D8C queue advancement by audio playback position when [0x27e0]&1, [0x27e1]&1, and [0x0ade]&1 are all set; otherwise use the software tick threshold. Carry clear means due and carry set means wait"
 "0x00A7E6","mem_copy_words","four-word forward-copy helper (2 calls): ES=DS, then four MOVSW operations copy DS:SI to ES:DI and advance SI/DI by 8"
 "0x00A734","queue_d8c_enqueue","enqueue into the gs:0xd8c ring buffer (2 calls): [0xd8c] += ax (advance head), [0xd9a] += ax (add to count); clc. Adds an ax-byte entry to the queue head - the enqueue counterpart to queue_d8c_consume 0xa3d0"
 "0x00A4ED","linear_offset_calc","linear screen offset calc (2 calls): bx*256 (xchg al,ah) + bx*64 (shl bx,6) = bx*320; = the y*320 row-offset into the linear buffer. A coordinate->offset helper"
