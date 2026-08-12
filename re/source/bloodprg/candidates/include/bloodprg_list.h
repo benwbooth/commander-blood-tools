@@ -27,6 +27,7 @@ void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
 void CB_NEAR queue_d8c_wrap(cb_u16 byte_count, cb_u16 cursor); /* 0x00A38E */
 int CB_NEAR queue_d8c_has_room(cb_u16 byte_count); /* 0x00A3AD */
 void CB_NEAR queue_d8c_consume(void);            /* 0x00A3D0 */
+int CB_NEAR list_d8c_state_le_one(void);         /* 0x00A40B */
 void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
 void CB_NEAR list_d8c_wrap_bounds_reset(void);  /* 0x00A744 */
 

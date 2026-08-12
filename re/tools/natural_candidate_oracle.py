@@ -761,6 +761,57 @@ def queue_room_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def queue_state_le_one_vectors() -> list[dict[str, object]]:
+    data_segment = 0x2000
+    zero_flag_states = []
+
+    for state in range(0x100):
+        initial = {
+            "ax": 0x1111,
+            "bx": 0x2222,
+            "cx": 0x3333,
+            "dx": 0x4444,
+            "si": 0x5555,
+            "di": 0x6666,
+            "bp": 0x7777,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "gs": data_segment,
+        }
+        machine = execute(
+            0xA40B,
+            0xA419,
+            initial,
+            [(data_segment, 0x0D5F, bytes([state]))],
+        )
+
+        zero_flag = (machine.reg_read(UC_X86_REG_EFLAGS) >> 6) & 1
+        expected = int(state <= 1)
+        if zero_flag != expected:
+            raise AssertionError(
+                f"0xA40B state={state:#x} ZF={zero_flag}, expected={expected}"
+            )
+        if zero_flag:
+            zero_flag_states.append(state)
+        for name, value in initial.items():
+            if name in REGISTERS:
+                actual_register = machine.reg_read(REGISTERS[name])
+                if actual_register != value:
+                    raise AssertionError(f"0xA40B did not preserve {name}")
+        actual_state = machine.mem_read(data_segment * 16 + 0x0D5F, 1)[0]
+        if actual_state != state:
+            raise AssertionError(f"0xA40B changed state byte {state:#x}")
+
+    return [
+        {
+            "tested_state_count": 0x100,
+            "zero_flag_set_states": zero_flag_states,
+            "zero_flag_clear_range": [2, 0xFF],
+            "logical_result": "state <= 1",
+        }
+    ]
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -795,6 +846,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a3ad_natural.json", queue_room_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a40b_natural.json", queue_state_le_one_vectors(), args.check
     )
     return 0
 

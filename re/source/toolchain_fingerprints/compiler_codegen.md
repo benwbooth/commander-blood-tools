@@ -116,6 +116,14 @@ An exploratory non-volatile Watcom build shortened the routine to 29
 instructions but reordered shared-state accesses, so it is not accepted as the
 recovered source formulation.
 
+For `0x00A40B`, exhaustive direct execution over all 256 state-byte values
+confirms that ZF is set exactly for zero and one and that all registers are
+preserved. Open Watcom 1.9 and Turbo C 2.01 retain the natural source's two
+comparisons, but emit eight and ten instructions respectively versus the
+original four. The extra instructions materialize a C Boolean in AX; the
+original sole caller consumes ZF directly, making this a confirmed flag-ABI
+boundary rather than an unresolved algorithm.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a

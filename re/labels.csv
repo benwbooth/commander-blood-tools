@@ -344,6 +344,7 @@
 "0x00A3D0","queue_d8c_consume","consume a variable-length entry from the gs:0xd8c queue (2 calls): les si,[0xd90] (tail); lodsw ax = entry size; [0xd9a] -= ax (dec remaining count); si += ax (advance past the entry). Dequeues one variable-length record"
 "0x00A3AD","queue_d8c_has_room","carry-clear capacity check (2 calls): rejects a head/tail gap below requested bytes+0x12, then rejects total queued bytes+requested bytes+0x0a above the wrap limit"
 "0x00A38E","queue_d8c_wrap","ring-buffer pointer wrap (2 calls): si += ax; if si > [0x5233] (buffer end) wrap. Handles the gs:0xd8c queue's circular wraparound"
+"0x00A40B","list_d8c_state_le_one","leaves ZF set exactly when the GS:0x0D5F queue state byte is zero or one; the sole caller branches directly on that flag"
 "0x00A240","mode_check_27e0","dual mode-flag check (2 calls): test [0x27e0]&1 AND [0x27e1]&1 -> proceed only if both set. A subsystem-ready gate"
 "0x00A7E6","mem_copy_words","word-block copy (2 calls): rep-style movsw es:[di]<-[si]. Copies N words between buffers"
 "0x00A734","queue_d8c_enqueue","enqueue into the gs:0xd8c ring buffer (2 calls): [0xd8c] += ax (advance head), [0xd9a] += ax (add to count); clc. Adds an ax-byte entry to the queue head - the enqueue counterpart to queue_d8c_consume 0xa3d0"

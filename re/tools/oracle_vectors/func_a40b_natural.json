@@ -1,0 +1,14 @@
+[
+  {
+    "tested_state_count": 256,
+    "zero_flag_set_states": [
+      0,
+      1
+    ],
+    "zero_flag_clear_range": [
+      2,
+      255
+    ],
+    "logical_result": "state <= 1"
+  }
+]

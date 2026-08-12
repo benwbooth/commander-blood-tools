@@ -6,6 +6,8 @@
 ; seg_off: 0971:06fb
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: list_d8c_state_le_one
+; label_comment: leaves ZF set exactly when the GS:0x0D5F queue state byte is zero or one; the sole caller branches directly on that flag
 ; byte_count: 15
 ; boundary: cfg_blocks_3_terminals_1
 ; terminal: ret:1
