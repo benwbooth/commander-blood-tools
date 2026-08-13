@@ -1635,6 +1635,42 @@ Watcom calls `__I4M` and implements each arithmetic shift as a 15-iteration
 the C declaration exposes those clobbers for a full rebuild; a drop-in binary
 replacement would still require a narrow preservation boundary.
 
+Point-cloud projector `0x009A10` first seeds DS:0x2F77 with 1000, then sets
+DS=GS and walks 1,000 eight-byte records at GS:0x2FC1. It copies every complete
+record, including the fourth scratch word, to GS:0x4F01 and subtracts the three
+GS camera-origin words with 16-bit wrap. The matrix and projected fields use
+SS:BP at 0x2F95 because every BP-relative access defaults to SS. Depth is a
+modulo-32-bit signed row-6..8 dot product shifted by 15; nonpositive values are
+skipped. The two visible axes use rows 0..2 and 3..5, shift by seven, divide by
+the positive depth with signed truncation, and add screen centers 160 and 100.
+The plotter is then called with BP still at 0x2F95 and ES loaded from the
+segment word at GS:0x5223.
+
+Six direct-binary vectors execute 5,003 records and observe 2,037 plot calls.
+They cover mixed, zero, and negative depth; 16-bit translation wrap; deliberate
+32-bit product and addition overflow; negative and wrapping screen results;
+all source, scratch, projected-field, and counter side effects; exact
+BP/DS/ES/SI/SP state at every plot call; complete top-level preservation; final
+DEC flags; and RETF. Matrix/output ownership is isolated to SS while the point,
+camera, scratch, and loop state is isolated to GS. A three-iteration split-
+segment case additionally proves the initial count store uses entry DS but the
+loop decrement uses GS. The shipped medium-model call domain therefore
+requires both DS==GS for the counter and SS==GS for the matrix/output object.
+
+The natural one-function candidate maps those runtime aliases to typed
+GAME_DATA objects and calls the separately recovered natural plotter with an
+ordinary context and far framebuffer pointer. Open Watcom medium with
+`-3 -ox -mm -zdp -we` compiles it warning-free to 164 instructions/505 bytes
+versus 80/244
+original. The probe's mnemonic-sequence LCS is 48.75 percent and multiset
+overlap is 61.25 percent. Watcom emits nine `__I4M` calls, two `__I4D` calls,
+15- and 7-iteration SAR/RCR loops, and conventional plot arguments where the
+binary uses inline 386 IMUL/IDIV and ambient SS:BP/ES state. These are explicit
+codegen and ABI boundaries. The C call carries the complete display pointer
+where the binary loads only its segment; the allocator and dirty-rectangle
+recovery independently establish that this pointer's runtime offset is zero.
+The projection loop itself remains natural C.
+
 Point plotter `0x009B04` reads projected x/y/depth through SS:BP, compares
 against signed DS clip bounds, and addresses a normalized ES framebuffer. Its
 row calculation byte-swaps the y word to obtain y*256 and adds y*64+x. Fourteen
@@ -2575,6 +2611,7 @@ LCS and then mnemonic similarity:
 | `presentation_mode_bits_update` | medium, `-ox`, register | 25/25 | 0.2000 | 0.8800 | 0.2000 |
 | `matrix_table_clear_2a1b` | medium, `-ox`, register | 12/8 | 0.0833 | 0.5000 | 0.0833 |
 | `ship_3d_projection_matrix_build` | medium, `-ox`, register | 104/248 | 0.0481 | 0.5962 | 0.0577 |
+| `ship_3d_point_cloud_project` | medium, `-ox`, register | 80/164 | 0.0500 | 0.4875 | 0.0625 |
 | `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |

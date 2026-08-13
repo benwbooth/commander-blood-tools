@@ -40362,6 +40362,404 @@ def ship_3d_projection_matrix_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_point_cloud_project_vectors() -> list[dict[str, object]]:
+    entry = 0x9A10
+    expected_hash = "10a3734ef018c6766adeb2def5cb606e4af026d9ae3f26463eb2baf9c5cd45da"
+    if hashlib.sha256(EXE[entry : entry + 244]).hexdigest() != expected_hash:
+        raise AssertionError("0x9a10: recovered 244-byte body changed")
+
+    cases = [
+        {
+            "name": "axis_matrix_mixed_depth",
+            "matrix": [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+            "camera": [0, 0, 0],
+            "seed": 0x11,
+            "callback_carry": True,
+        },
+        {
+            "name": "mixed_matrix_translation",
+            "matrix": [
+                0x6500, -0x1700, 0x0900,
+                -0x1100, -0x5400, 0x1B00,
+                0x2000, -0x1000, 0x5000,
+            ],
+            "camera": [0xFC18, 0x7F10, 0x8100],
+            "seed": 0x2B,
+            "callback_carry": False,
+        },
+        {
+            "name": "modular_product_overflow",
+            "matrix": [
+                0x70000001, -0x6FFFFFED, 0x3456789A,
+                -0x7654321, 0x6ABCDEFF, -0x43210FED,
+                0, 0, 0x8000,
+            ],
+            "camera": [0x1234, 0xFEDC, 0x0100],
+            "seed": 0x45,
+            "callback_carry": True,
+        },
+        {
+            "name": "all_zero_or_negative_depth",
+            "matrix": [0x8000, 0, 0, 0, 0x8000, 0, 0, 0, -0x8000],
+            "camera": [0, 0, 0],
+            "seed": 0x5F,
+            "callback_carry": False,
+            "reject_all": True,
+        },
+        {
+            "name": "word_translation_and_screen_wrap",
+            "matrix": [0x8000, 0, 0, 0, 0x8000, 0, 0, 0, 0x8000],
+            "camera": [0xF000, 0x8001, 0xFF00],
+            "seed": 0x79,
+            "callback_carry": False,
+        },
+        {
+            "name": "split_ds_gs_counter_precondition",
+            "matrix": [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+            "camera": [0x0100, 0x0200, 0x0300],
+            "seed": 0x93,
+            "callback_carry": True,
+            "split_segments": True,
+            "iterations": 3,
+        },
+    ]
+
+    game_segment = 0x4000
+    data_segment = 0x2800
+    extra_segment = 0x6000
+    framebuffer_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x7600
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def signed32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    def multiply32(left: int, right: int) -> int:
+        return signed32(left * right)
+
+    def add32(left: int, right: int) -> int:
+        return signed32(left + right)
+
+    def dot32(components: list[int], terms: list[int]) -> int:
+        partial = add32(
+            multiply32(components[0], terms[0]),
+            multiply32(components[1], terms[1]),
+        )
+        return add32(partial, multiply32(components[2], terms[2]))
+
+    def divide_toward_zero(dividend: int, divisor: int) -> int:
+        magnitude = abs(dividend) // abs(divisor)
+        return -magnitude if (dividend < 0) != (divisor < 0) else magnitude
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        matrix = [int(value) for value in case["matrix"]]
+        camera = [int(value) for value in case["camera"]]
+        seed = int(case["seed"])
+        split_segments = bool(case.get("split_segments", False))
+        iteration_count = int(case.get("iterations", 1000))
+        reject_all = bool(case.get("reject_all", False))
+
+        points = []
+        for point_index in range(1000):
+            x = (point_index * 977 + seed * 0x101 + 0x1234) & 0xFFFF
+            y = (point_index * 613 + seed * 0x83 + 0x4321) & 0xFFFF
+            if reject_all:
+                z = (point_index * 37 + 1) & 0x7FFF
+            elif case_index == 0:
+                z = (0, 1, 1000, 0x7FFF, 0xFFFF, 0x8000)[point_index % 6]
+            else:
+                z = (point_index * 283 + seed * 17 + 1) & 0xFFFF
+            scratch = (point_index * 0x1111 + seed * 0x0101) & 0xFFFF
+            points.append([x, y, z, scratch])
+
+        final_index = iteration_count - 1
+        points[final_index][0] = camera[0] & 0xFFFF
+        points[final_index][1] = camera[1] & 0xFFFF
+        points[final_index][2] = (camera[2] + 1000) & 0xFFFF
+
+        game_before = bytearray(
+            (offset * 29 + (offset >> 8) * 13 + seed) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<3H", game_before, 0x2F65, *camera)
+        struct.pack_into("<H", game_before, 0x5223, framebuffer_segment)
+        if split_segments:
+            struct.pack_into("<H", game_before, 0x2F77, iteration_count)
+        for point_index, point in enumerate(points):
+            struct.pack_into("<4H", game_before, 0x2FC1 + point_index * 8, *point)
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + seed + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + (offset >> 8) * 5 + seed + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        framebuffer_before = bytes(
+            (offset * 19 + (offset >> 8) * 3 + seed + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 23 + seed + 0x97) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<9i", stack_before, 0x2F95, *matrix)
+        stack_before[0xFF00 : 0xFF0C] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        game_expected = bytearray(game_before)
+        data_expected = bytearray(data_before)
+        stack_expected = bytearray(stack_before)
+        if split_segments:
+            struct.pack_into("<H", data_expected, 0x2F77, 1000)
+        expected_calls = []
+        last_work = None
+        for point_index in range(iteration_count):
+            point = points[point_index]
+            translated_words = [
+                (point[axis] - camera[axis]) & 0xFFFF for axis in range(3)
+            ]
+            translated = [signed16(value) for value in translated_words]
+            last_work = translated_words + [point[3]]
+            depth = dot32(translated, matrix[6:9]) >> 15
+            if depth <= 0:
+                continue
+            x_axis = dot32(translated, matrix[0:3]) >> 7
+            y_axis = dot32(translated, matrix[3:6]) >> 7
+            projected_x = (divide_toward_zero(x_axis, depth) + 160) & 0xFFFF
+            projected_y = (divide_toward_zero(y_axis, depth) + 100) & 0xFFFF
+            projected_depth = depth & 0xFFFF
+            expected_calls.append(
+                {
+                    "point_index": point_index,
+                    "projected": [projected_x, projected_y, projected_depth],
+                    "remaining_at_call": iteration_count - point_index,
+                    "source_si": (0x2FC1 + (point_index + 1) * 8) & 0xFFFF,
+                    "work": last_work,
+                }
+            )
+            struct.pack_into(
+                "<3H",
+                stack_expected,
+                0x2FB9,
+                projected_x,
+                projected_y,
+                projected_depth,
+            )
+        if last_work is None:
+            raise AssertionError(f"0x9a10 {name}: no modeled iterations")
+        struct.pack_into("<4H", game_expected, 0x4F01, *last_work)
+        struct.pack_into("<H", game_expected, 0x2F77, 0)
+
+        initial_ds = data_segment if split_segments else game_segment
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": initial_ds,
+            "es": extra_segment,
+            "fs": 0x8000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        struct.pack_into("<I", stack_expected, 0xFEFC, initial["eax"])
+        struct.pack_into("<I", stack_expected, 0xFEF8, initial["ebx"])
+        struct.pack_into("<I", stack_expected, 0xFEF4, initial["ecx"])
+        struct.pack_into("<I", stack_expected, 0xFEF0, initial["edx"])
+        struct.pack_into("<H", stack_expected, 0xFEEE, initial["ebp"] & 0xFFFF)
+        struct.pack_into("<H", stack_expected, 0xFEEC, initial["ds"])
+        struct.pack_into("<H", stack_expected, 0xFEEA, initial["edi"] & 0xFFFF)
+        struct.pack_into("<H", stack_expected, 0xFEE8, initial["es"])
+        struct.pack_into("<H", stack_expected, 0xFEE6, initial["esi"] & 0xFFFF)
+        if expected_calls:
+            struct.pack_into("<H", stack_expected, 0xFEE4, 0x9AEE)
+        call_index = 0
+        observed_call_bytes = bytearray()
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal call_index
+            if address != 0x9B04:
+                return
+            if call_index >= len(expected_calls):
+                raise AssertionError(f"0x9a10 {name}: unexpected plot call")
+            expected_call = expected_calls[call_index]
+            point_index = int(expected_call["point_index"])
+            actual = {
+                "point_index": point_index,
+                "projected": list(
+                    struct.unpack(
+                        "<3H",
+                        machine.mem_read(stack_segment * 16 + 0x2FB9, 6),
+                    )
+                ),
+                "remaining_at_call": struct.unpack(
+                    "<H", machine.mem_read(game_segment * 16 + 0x2F77, 2)
+                )[0],
+                "source_si": machine.reg_read(UC_X86_REG_SI),
+                "work": list(
+                    struct.unpack(
+                        "<4H",
+                        machine.mem_read(game_segment * 16 + 0x4F01, 8),
+                    )
+                ),
+            }
+            if actual != expected_call:
+                raise AssertionError(
+                    f"0x9a10 {name}: call={actual}, expected={expected_call}"
+                )
+            if (
+                machine.reg_read(UC_X86_REG_BP) != 0x2F95
+                or machine.reg_read(UC_X86_REG_DI) != 0x4F01
+                or machine.reg_read(UC_X86_REG_DS) != game_segment
+                or machine.reg_read(UC_X86_REG_ES) != framebuffer_segment
+                or machine.reg_read(UC_X86_REG_SP) != 0xFEE4
+                or struct.unpack(
+                    "<H", machine.mem_read(stack_segment * 16 + 0xFEE4, 2)
+                )[0] != 0x9AEE
+            ):
+                raise AssertionError(f"0x9a10 {name}: plot ABI state differs")
+            observed_call_bytes.extend(
+                struct.pack("<I3H", point_index, *actual["projected"])
+            )
+            callback_flags = 0x0202 | int(bool(case["callback_carry"]))
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+            call_index += 1
+
+        memory = [
+            (0, return_address, b"\xcc"),
+            (0, 0x9B04, b"\xc3"),
+            (game_segment, 0, bytes(game_before)),
+            (extra_segment, 0, extra_before),
+            (framebuffer_segment, 0, framebuffer_before),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        if split_segments:
+            memory.append((data_segment, 0, bytes(data_before)))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=300000,
+        )
+
+        if call_index != len(expected_calls):
+            raise AssertionError(
+                f"0x9a10 {name}: plots={call_index}, expected={len(expected_calls)}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(game_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_game, game_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x9a10 {name}: game state differs at {mismatch:#x}"
+            )
+        if split_segments:
+            actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+            if actual_data != bytes(data_expected):
+                raise AssertionError(f"0x9a10 {name}: entry DS state differs")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x9a10 {name}: entry ES decoy changed")
+        if bytes(
+            machine.mem_read(framebuffer_segment * 16, 0x10000)
+        ) != framebuffer_before:
+            raise AssertionError(f"0x9a10 {name}: framebuffer changed by stub")
+        actual_stack = bytes(machine.mem_read(stack_segment * 16, 0x10000))
+        if actual_stack != bytes(stack_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_stack, stack_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x9a10 {name}: SS state differs at {mismatch:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9a10 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9a10 {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9a10 {name}: stack sentinel changed")
+
+        expected_flags = {
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        if expected_calls and expected_calls[-1]["point_index"] == final_index:
+            expected_flags["cf"] = bool(case["callback_carry"])
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9a10 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "runtime_ds_equals_gs": not split_segments,
+                "iterations": iteration_count,
+                "matrix": matrix,
+                "camera": camera,
+                "plot_calls": len(expected_calls),
+                "plot_sequence_sha256": hashlib.sha256(
+                    observed_call_bytes
+                ).hexdigest(),
+                "first_plot": expected_calls[0] if expected_calls else None,
+                "last_plot": expected_calls[-1] if expected_calls else None,
+                "final_work": last_work,
+                "entry_ds_counter_after": (
+                    1000 if split_segments else None
+                ),
+                "game_counter_after": 0,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_plot_point_vectors() -> list[dict[str, object]]:
     entry = 0x9B04
     expected_hash = "ac19f28f8de11959599f3709ac9a949cf4c83428d206d71a312b3cba58fd68a2"
@@ -51294,6 +51692,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_98b9_natural.json",
         ship_3d_projection_matrix_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9a10_natural.json",
+        ship_3d_point_cloud_project_vectors(),
         args.check,
     )
     update_vector(

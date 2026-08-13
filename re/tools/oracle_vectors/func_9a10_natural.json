@@ -1,0 +1,397 @@
+[
+  {
+    "name": "axis_matrix_mixed_depth",
+    "runtime_ds_equals_gs": true,
+    "iterations": 1000,
+    "matrix": [
+      32768,
+      0,
+      0,
+      0,
+      -32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "camera": [
+      0,
+      0,
+      0
+    ],
+    "plot_calls": 501,
+    "plot_sequence_sha256": "860b55771084d1046a2a4f9f8a1d9f93a5987cd6d0c2d89ea1012b3471ad8d66",
+    "first_plot": {
+      "point_index": 1,
+      "projected": [
+        5792,
+        51044,
+        1
+      ],
+      "remaining_at_call": 999,
+      "source_si": 12241,
+      "work": [
+        10006,
+        20025,
+        1,
+        8738
+      ]
+    },
+    "last_plot": {
+      "point_index": 999,
+      "projected": [
+        160,
+        100,
+        1000
+      ],
+      "remaining_at_call": 1,
+      "source_si": 20225,
+      "work": [
+        0,
+        0,
+        1000,
+        43624
+      ]
+    },
+    "final_work": [
+      0,
+      0,
+      1000,
+      43624
+    ],
+    "entry_ds_counter_after": null,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "cf": true
+    }
+  },
+  {
+    "name": "mixed_matrix_translation",
+    "runtime_ds_equals_gs": true,
+    "iterations": 1000,
+    "matrix": [
+      25856,
+      -5888,
+      2304,
+      -4352,
+      -21504,
+      6912,
+      8192,
+      -4096,
+      20480
+    ],
+    "camera": [
+      64536,
+      32528,
+      33024
+    ],
+    "plot_calls": 459,
+    "plot_sequence_sha256": "b2ec319dcb49ef5063a406f38a90b29fe03f22f7bb2283c8042e2ec035c2b11b",
+    "first_plot": {
+      "point_index": 70,
+      "projected": [
+        4766,
+        3715,
+        1132
+      ],
+      "remaining_at_call": 930,
+      "source_si": 12793,
+      "work": [
+        19565,
+        33200,
+        53054,
+        54737
+      ]
+    },
+    "last_plot": {
+      "point_index": 999,
+      "projected": [
+        188,
+        186,
+        625
+      ],
+      "remaining_at_call": 1,
+      "source_si": 20225,
+      "work": [
+        0,
+        0,
+        1000,
+        50306
+      ]
+    },
+    "final_work": [
+      0,
+      0,
+      1000,
+      50306
+    ],
+    "entry_ds_counter_after": null,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "cf": false
+    }
+  },
+  {
+    "name": "modular_product_overflow",
+    "runtime_ds_equals_gs": true,
+    "iterations": 1000,
+    "matrix": [
+      1879048193,
+      -1879048173,
+      878082202,
+      -124076833,
+      1790762751,
+      -1126240237,
+      0,
+      0,
+      32768
+    ],
+    "camera": [
+      4660,
+      65244,
+      256
+    ],
+    "plot_calls": 537,
+    "plot_sequence_sha256": "1e22e6f90c8ef43d81dfea3f23c516bfa4d02ba4fea6fb04628224714b1ffa59",
+    "first_plot": {
+      "point_index": 0,
+      "projected": [
+        4459,
+        54352,
+        918
+      ],
+      "remaining_at_call": 1000,
+      "source_si": 12233,
+      "work": [
+        17733,
+        26516,
+        918,
+        17733
+      ]
+    },
+    "last_plot": {
+      "point_index": 999,
+      "projected": [
+        15073,
+        58146,
+        1000
+      ],
+      "remaining_at_call": 1,
+      "source_si": 20225,
+      "work": [
+        0,
+        0,
+        1000,
+        56988
+      ]
+    },
+    "final_work": [
+      0,
+      0,
+      1000,
+      56988
+    ],
+    "entry_ds_counter_after": null,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "cf": true
+    }
+  },
+  {
+    "name": "all_zero_or_negative_depth",
+    "runtime_ds_equals_gs": true,
+    "iterations": 1000,
+    "matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      -32768
+    ],
+    "camera": [
+      0,
+      0,
+      0
+    ],
+    "plot_calls": 0,
+    "plot_sequence_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "first_plot": null,
+    "last_plot": null,
+    "final_work": [
+      0,
+      0,
+      1000,
+      63670
+    ],
+    "entry_ds_counter_after": null,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "word_translation_and_screen_wrap",
+    "runtime_ds_equals_gs": true,
+    "iterations": 1000,
+    "matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "camera": [
+      61440,
+      32769,
+      65280
+    ],
+    "plot_calls": 537,
+    "plot_sequence_sha256": "184395d92fa0aa610128e095c6e7bca2fdf15c863cd02837af0f81171d71e0a5",
+    "first_plot": {
+      "point_index": 0,
+      "projected": [
+        62855,
+        129,
+        2314
+      ],
+      "remaining_at_call": 1000,
+      "source_si": 12233,
+      "work": [
+        39853,
+        267,
+        2314,
+        31097
+      ]
+    },
+    "last_plot": {
+      "point_index": 999,
+      "projected": [
+        160,
+        100,
+        1000
+      ],
+      "remaining_at_call": 1,
+      "source_si": 20225,
+      "work": [
+        0,
+        0,
+        1000,
+        4816
+      ]
+    },
+    "final_work": [
+      0,
+      0,
+      1000,
+      4816
+    ],
+    "entry_ds_counter_after": null,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "cf": false
+    }
+  },
+  {
+    "name": "split_ds_gs_counter_precondition",
+    "runtime_ds_equals_gs": false,
+    "iterations": 3,
+    "matrix": [
+      32768,
+      0,
+      0,
+      0,
+      -32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "camera": [
+      256,
+      512,
+      768
+    ],
+    "plot_calls": 3,
+    "plot_sequence_sha256": "d0f392d7535cc2e8625a1bb530244db6c033f79e8a0bb713ed0f5794b77384e4",
+    "first_plot": {
+      "point_index": 0,
+      "projected": [
+        62245,
+        4475,
+        1732
+      ],
+      "remaining_at_call": 3,
+      "source_si": 12233,
+      "work": [
+        42183,
+        35930,
+        1732,
+        37779
+      ]
+    },
+    "last_plot": {
+      "point_index": 2,
+      "projected": [
+        160,
+        100,
+        1000
+      ],
+      "remaining_at_call": 1,
+      "source_si": 12249,
+      "work": [
+        0,
+        0,
+        1000,
+        46517
+      ]
+    },
+    "final_work": [
+      0,
+      0,
+      1000,
+      46517
+    ],
+    "entry_ds_counter_after": 1000,
+    "game_counter_after": 0,
+    "defined_flags": {
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "cf": true
+    }
+  }
+]
