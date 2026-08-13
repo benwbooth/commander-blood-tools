@@ -9258,6 +9258,650 @@ def small_text_render_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def gfx_clipped_span_fill_vectors() -> list[dict[str, object]]:
+    entry = 0x39BB
+    expected_hash = "462a918d52d2c1f7d3741acf183ddd6fcca6f2a3ab78243a1d7c8fa3ab9f6630"
+    if hashlib.sha256(EXE[entry : entry + 248]).hexdigest() != expected_hash:
+        raise AssertionError("0x39BB: recovered 248-byte body changed")
+
+    cases = [
+        {
+            "name": "zero_width_rejected",
+            "x": 10,
+            "y": 20,
+            "width": 0,
+            "color": 0xEF,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "negative_width_rejected",
+            "x": 10,
+            "y": 20,
+            "width": 0x8000,
+            "color": 0xEE,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "signed_row_above_top_rejected",
+            "x": 10,
+            "y": 0xFFF5,
+            "width": 7,
+            "color": 0xED,
+            "left": 0,
+            "right": 100,
+            "top": 0xFFF6,
+            "bottom": 10,
+        },
+        {
+            "name": "bottom_row_is_exclusive",
+            "x": 10,
+            "y": 30,
+            "width": 7,
+            "color": 0xEC,
+            "left": 0,
+            "right": 100,
+            "top": 10,
+            "bottom": 30,
+        },
+        {
+            "name": "fully_left_clipped_rejected",
+            "x": 5,
+            "y": 10,
+            "width": 5,
+            "color": 0xEB,
+            "left": 10,
+            "right": 30,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "left_clipped_color_zero",
+            "x": 5,
+            "y": 10,
+            "width": 9,
+            "color": 0,
+            "left": 10,
+            "right": 30,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "right_endpoint_exact",
+            "x": 13,
+            "y": 11,
+            "width": 7,
+            "color": 0xD7,
+            "left": 0,
+            "right": 20,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "right_clipped",
+            "x": 17,
+            "y": 12,
+            "width": 8,
+            "color": 0xC6,
+            "left": 0,
+            "right": 20,
+            "top": 10,
+            "bottom": 20,
+            "remap_flag": 2,
+        },
+        {
+            "name": "fully_right_clipped_rejected",
+            "x": 20,
+            "y": 13,
+            "width": 3,
+            "color": 0xB5,
+            "left": 0,
+            "right": 20,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "single_pixel_plane_zero",
+            "x": 20,
+            "y": 21,
+            "width": 1,
+            "color": 0xA4,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "single_pixel_plane_one",
+            "x": 21,
+            "y": 22,
+            "width": 1,
+            "color": 0x93,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "single_pixel_plane_two",
+            "x": 22,
+            "y": 23,
+            "width": 1,
+            "color": 0x82,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "single_pixel_plane_three",
+            "x": 23,
+            "y": 24,
+            "width": 1,
+            "color": 0x71,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "aligned_full_group",
+            "x": 24,
+            "y": 25,
+            "width": 4,
+            "color": 0x60,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "leading_middle_and_trailing_groups",
+            "x": 25,
+            "y": 26,
+            "width": 10,
+            "color": 0x5F,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "remap_plane_zero_uneven_counts",
+            "x": 28,
+            "y": 27,
+            "width": 7,
+            "color": 0x4E,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 1,
+        },
+        {
+            "name": "remap_plane_one_uneven_counts",
+            "x": 29,
+            "y": 28,
+            "width": 6,
+            "color": 0x3D,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 3,
+        },
+        {
+            "name": "remap_plane_two_uneven_counts",
+            "x": 30,
+            "y": 29,
+            "width": 5,
+            "color": 0x2C,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 0x81,
+        },
+        {
+            "name": "remap_plane_three_even_counts",
+            "x": 31,
+            "y": 30,
+            "width": 8,
+            "color": 0x1B,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 0xFF,
+        },
+        {
+            "name": "fill_output_offset_wrap",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "color": 0xF8,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "framebuffer_offset": 0xFFFE,
+        },
+        {
+            "name": "remap_output_offset_wrap",
+            "x": 3,
+            "y": 0,
+            "width": 9,
+            "color": 0xE7,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "framebuffer_offset": 0xFFFF,
+            "remap_flag": 1,
+        },
+        {
+            "name": "remap_plane_zero_final_pointer_carry",
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "color": 0xD8,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "framebuffer_offset": 0xFFFF,
+            "remap_flag": 1,
+        },
+        {
+            "name": "inherited_backward_fill_direction",
+            "x": 25,
+            "y": 31,
+            "width": 10,
+            "color": 0xD6,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "direction_flag": True,
+        },
+        {
+            "name": "inherited_backward_remap_direction",
+            "x": 27,
+            "y": 32,
+            "width": 9,
+            "color": 0xC5,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 1,
+            "direction_flag": True,
+        },
+        {
+            "name": "full_word_coordinates_and_row_wrap",
+            "x": 0x8121,
+            "y": 0x8123,
+            "width": 8,
+            "color": 0xB4,
+            "left": 0x8100,
+            "right": 0x8200,
+            "top": 0x8100,
+            "bottom": 0x8200,
+            "framebuffer_offset": 0xFFF0,
+        },
+        {
+            "name": "left_negate_overflow_preserves_wrapped_count",
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "color": 0xA3,
+            "left": 0x8000,
+            "right": 0x0100,
+            "top": 0,
+            "bottom": 10,
+        },
+        {
+            "name": "right_signed_compare_honors_subtract_overflow",
+            "x": 0x7FFF,
+            "y": 2,
+            "width": 1,
+            "color": 0x92,
+            "left": 0,
+            "right": 0x7FFF,
+            "top": 0,
+            "bottom": 10,
+        },
+    ]
+
+    data_segment = 0x2000
+    game_segment = 0x4000
+    output_segment = 0x7000
+    stack_segment = 0xA000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("e12dd23cc34bb45a")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logical_flags(value: int, width: int) -> dict[str, bool]:
+        value &= (1 << width) - 1
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & (1 << (width - 1))) != 0,
+            "of": False,
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        x = int(case["x"])
+        y = int(case["y"])
+        width = int(case["width"])
+        color = int(case["color"])
+        left = int(case["left"])
+        right = int(case["right"])
+        top = int(case["top"])
+        bottom = int(case["bottom"])
+        framebuffer_offset = int(case.get("framebuffer_offset", 0x0300))
+        remap_flag = int(case.get("remap_flag", 0))
+        direction_flag = bool(case.get("direction_flag", False))
+        direction = -1 if direction_flag else 1
+
+        data_memory = bytes(
+            (index * 13 + case_index * 19 + 5) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory[0x5219:0x521D] = struct.pack(
+            "<HH", framebuffer_offset, output_segment
+        )
+        game_memory[0x5235:0x523D] = struct.pack(
+            "<4H", left, right, top, bottom
+        )
+        game_memory[0x5B56] = remap_flag
+        for value in range(256):
+            game_memory[0x5F11 + value] = (
+                (value * 73 + case_index * 11) ^ 0xA5
+            ) & 0xFF
+
+        stack_memory = bytearray(
+            (index * 29 + case_index * 31 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        output_seed = bytes(
+            (index * 37 + case_index * 41 + 0x2B) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+
+        clipped_x = x
+        clipped_width = width
+        left_clipped = 0
+        right_clipped = 0
+        rejected = False
+        rejection = ""
+        expected_flags: dict[str, bool]
+
+        if width == 0 or (width & 0x8000) != 0:
+            rejected = True
+            rejection = "width"
+            expected_flags = logical_flags(width, 16)
+        elif signed16(y) < signed16(top):
+            rejected = True
+            rejection = "top"
+            expected_flags = sub16_flags(y, top)
+        elif signed16(y) >= signed16(bottom):
+            rejected = True
+            rejection = "bottom"
+            expected_flags = sub16_flags(y, bottom)
+        else:
+            expected_flags = {}
+
+        if not rejected:
+            left_delta = (clipped_x - left) & 0xFFFF
+            if left_delta & 0x8000:
+                left_clipped = (-left_delta) & 0xFFFF
+                original_width = clipped_width
+                clipped_width = (clipped_width - left_clipped) & 0xFFFF
+                if signed16(original_width) <= signed16(left_clipped):
+                    rejected = True
+                    rejection = "left"
+                    expected_flags = sub16_flags(original_width, left_clipped)
+                else:
+                    clipped_x = left
+
+        if not rejected:
+            span_end = (clipped_x + clipped_width) & 0xFFFF
+            right_delta = (span_end - right) & 0xFFFF
+            if signed16(span_end) >= signed16(right):
+                right_clipped = right_delta
+                original_width = clipped_width
+                clipped_width = (clipped_width - right_delta) & 0xFFFF
+                if signed16(original_width) <= signed16(right_delta):
+                    rejected = True
+                    rejection = "right"
+                    expected_flags = sub16_flags(original_width, right_delta)
+
+        expected_ports = []
+        plane_counts: list[int] = []
+        start_plane = clipped_x & 3
+        row_offset = ((y << 4) + (y << 6)) & 0xFFFF
+        pixel = (
+            framebuffer_offset + row_offset + (clipped_x >> 2)
+        ) & 0xFFFF
+
+        if not rejected:
+            expected_ports.append((0x3C4, 1, 2))
+            if remap_flag & 1:
+                map_mask = (0x11 << start_plane) & 0xFF
+                plane_origin = pixel
+                middle_count = clipped_width >> 2
+                partial_count = clipped_width & 3
+                for plane_number in range(4):
+                    expected_ports.append((0x3C5, 1, map_mask))
+                    count = middle_count + (plane_number < partial_count)
+                    plane_counts.append(count)
+                    plane_pixel = plane_origin
+                    for _ in range(count):
+                        output_model[plane_pixel] = game_memory[
+                            0x5F11 + output_model[plane_pixel]
+                        ]
+                        plane_pixel = (plane_pixel + direction) & 0xFFFF
+                    if map_mask & 0x80:
+                        plane_origin = (plane_origin + 1) & 0xFFFF
+                    map_mask = ((map_mask << 1) | (map_mask >> 7)) & 0xFF
+                expected_flags = {
+                    "cf": start_plane == 0 and pixel == 0xFFFF,
+                    "pf": True,
+                    "af": False,
+                    "zf": True,
+                    "sf": False,
+                    "of": False,
+                }
+            else:
+                remaining = clipped_width
+                final_flag_value = 0
+                if start_plane != 0:
+                    partial_count = 4 - start_plane
+                    if remaining < partial_count:
+                        map_mask = ((1 << remaining) - 1) << start_plane
+                        expected_ports.append((0x3C5, 1, map_mask))
+                        output_model[pixel] = color
+                        remaining = 0
+                        final_flag_value = map_mask
+                    else:
+                        map_mask = (0x0F << start_plane) & 0xFF
+                        expected_ports.append((0x3C5, 1, map_mask))
+                        output_model[pixel] = color
+                        pixel = (pixel + 1) & 0xFFFF
+                        remaining -= partial_count
+
+                if final_flag_value == 0:
+                    middle_count = remaining >> 2
+                    expected_ports.append((0x3C5, 1, 0x0F))
+                    for _ in range(middle_count):
+                        output_model[pixel] = color
+                        pixel = (pixel + direction) & 0xFFFF
+                    partial_count = remaining & 3
+                    final_flag_value = partial_count
+                    if partial_count != 0:
+                        map_mask = 0x0F >> (4 - partial_count)
+                        expected_ports.append((0x3C5, 1, map_mask))
+                        output_model[pixel] = color
+                        final_flag_value = map_mask
+                expected_flags = logical_flags(final_flag_value, 8)
+
+        initial = {
+            "eax": 0xA1A15A00 | color,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C30000 | y,
+            "edx": 0xD4D40000 | width,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+        actual_ports = []
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            actual_ports.append((port, size, value))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, data_memory),
+                (game_segment, 0, bytes(game_memory)),
+                (output_segment, 0, output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            output_handler=output_port,
+            instruction_count=1000000,
+        )
+
+        if actual_ports != expected_ports:
+            mismatch = next(
+                (
+                    index
+                    for index, pair in enumerate(zip(actual_ports, expected_ports))
+                    if pair[0] != pair[1]
+                ),
+                min(len(actual_ports), len(expected_ports)),
+            )
+            raise AssertionError(
+                f"0x39BB {name}: port mismatch at {mismatch}; "
+                f"actual={actual_ports[mismatch:mismatch + 4]}, "
+                f"expected={expected_ports[mismatch:mismatch + 4]}, "
+                f"counts={len(actual_ports)}/{len(expected_ports)}"
+            )
+
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x39BB {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x39BB {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x39BB {name}: far return CS differs")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x39BB {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x39BB {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x39BB {name}: stack sentinel changed")
+
+        port_bytes = b"".join(
+            struct.pack("<HBB", port, size, value)
+            for port, size, value in actual_ports
+        )
+        vectors.append(
+            {
+                "name": name,
+                "x": x,
+                "y": y,
+                "input_width": width,
+                "color": color,
+                "clip": [left, right, top, bottom],
+                "rejected": rejected,
+                "rejection": rejection,
+                "clipped_x": clipped_x,
+                "clipped_width": clipped_width,
+                "left_clip_amount": left_clipped,
+                "right_clip_amount": right_clipped,
+                "start_plane": start_plane,
+                "remap_flag": remap_flag,
+                "plane_counts": plane_counts,
+                "direction_flag": direction_flag,
+                "framebuffer_offset": framebuffer_offset,
+                "port_write_count": len(actual_ports),
+                "port_writes": [list(item) for item in actual_ports],
+                "port_writes_sha256": hashlib.sha256(port_bytes).hexdigest(),
+                "defined_flags": expected_flags,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def main_font_text_draw_display_vectors() -> list[dict[str, object]]:
     entry = 0x3192
     expected_hash = "2c83af0acf062fa3fa48bb64c99d7af3f1e36640ac25ef84cf9a0ddf4d06d3b2"
@@ -42417,6 +43061,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_36ea_natural.json",
         small_text_render_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_39bb_natural.json",
+        gfx_clipped_span_fill_vectors(),
         args.check,
     )
     update_vector(

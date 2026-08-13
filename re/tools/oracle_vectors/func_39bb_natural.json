@@ -1,0 +1,1399 @@
+[
+  {
+    "name": "zero_width_rejected",
+    "x": 10,
+    "y": 20,
+    "input_width": 0,
+    "color": 239,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": true,
+    "rejection": "width",
+    "clipped_x": 10,
+    "clipped_width": 0,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "negative_width_rejected",
+    "x": 10,
+    "y": 20,
+    "input_width": 32768,
+    "color": 238,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": true,
+    "rejection": "width",
+    "clipped_x": 10,
+    "clipped_width": 32768,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "signed_row_above_top_rejected",
+    "x": 10,
+    "y": 65525,
+    "input_width": 7,
+    "color": 237,
+    "clip": [
+      0,
+      100,
+      65526,
+      10
+    ],
+    "rejected": true,
+    "rejection": "top",
+    "clipped_x": 10,
+    "clipped_width": 7,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "bottom_row_is_exclusive",
+    "x": 10,
+    "y": 30,
+    "input_width": 7,
+    "color": 236,
+    "clip": [
+      0,
+      100,
+      10,
+      30
+    ],
+    "rejected": true,
+    "rejection": "bottom",
+    "clipped_x": 10,
+    "clipped_width": 7,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6895bb6cf9200b8d222cba70a7a45fdfac5c39f8c0aeba83f5feca101c2eef52"
+  },
+  {
+    "name": "fully_left_clipped_rejected",
+    "x": 5,
+    "y": 10,
+    "input_width": 5,
+    "color": 235,
+    "clip": [
+      10,
+      30,
+      10,
+      20
+    ],
+    "rejected": true,
+    "rejection": "left",
+    "clipped_x": 5,
+    "clipped_width": 0,
+    "left_clip_amount": 5,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5789fc6de164d558e8d75c7e498b4d55000b46ba920f30a84ba1e25ec7532c83"
+  },
+  {
+    "name": "left_clipped_color_zero",
+    "x": 5,
+    "y": 10,
+    "input_width": 9,
+    "color": 0,
+    "clip": [
+      10,
+      30,
+      10,
+      20
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 10,
+    "clipped_width": 4,
+    "left_clip_amount": 5,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 4,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        60
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        3
+      ]
+    ],
+    "port_writes_sha256": "ffbc72c39c7f0c8568eddfd664b1b99458959332ee3d4816c584d2ff5ed7e064",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "73e7a8bd8286ddb38dcf72460435782f79458522b55ef28a569265f431f4b96f"
+  },
+  {
+    "name": "right_endpoint_exact",
+    "x": 13,
+    "y": 11,
+    "input_width": 7,
+    "color": 215,
+    "clip": [
+      0,
+      20,
+      10,
+      20
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 13,
+    "clipped_width": 7,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        30
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "d351f8e1030b1deed439ce6f5556c8648e035e9941573757b0b110c1701920e6",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "b9ab31e28f99115f06f1313e8e2b3ae9549e132b02db7f8a9f6a837cbf33558c"
+  },
+  {
+    "name": "right_clipped",
+    "x": 17,
+    "y": 12,
+    "input_width": 8,
+    "color": 198,
+    "clip": [
+      0,
+      20,
+      10,
+      20
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 17,
+    "clipped_width": 3,
+    "left_clip_amount": 0,
+    "right_clip_amount": 5,
+    "start_plane": 1,
+    "remap_flag": 2,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        30
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "d351f8e1030b1deed439ce6f5556c8648e035e9941573757b0b110c1701920e6",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "315a216d5f512851e8cdc8b981d162755276f2f16764770d64128c632d6af002"
+  },
+  {
+    "name": "fully_right_clipped_rejected",
+    "x": 20,
+    "y": 13,
+    "input_width": 3,
+    "color": 181,
+    "clip": [
+      0,
+      20,
+      10,
+      20
+    ],
+    "rejected": true,
+    "rejection": "right",
+    "clipped_x": 20,
+    "clipped_width": 0,
+    "left_clip_amount": 0,
+    "right_clip_amount": 3,
+    "start_plane": 0,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 0,
+    "port_writes": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f7594ae85813fe11fb346518c3a188ebb85c350b112f66e192f94bafa220a44c"
+  },
+  {
+    "name": "single_pixel_plane_zero",
+    "x": 20,
+    "y": 21,
+    "input_width": 1,
+    "color": 164,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 20,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        1
+      ]
+    ],
+    "port_writes_sha256": "9c5f6b06fe969d936d1f2664d60736aa85bd40fff8532b09c7a46fdc5cb85a1f",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2d70c7823f3912102948cd3270f046a401197375a94e8579e5e809de414b3259"
+  },
+  {
+    "name": "single_pixel_plane_one",
+    "x": 21,
+    "y": 22,
+    "input_width": 1,
+    "color": 147,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 21,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 2,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        2
+      ]
+    ],
+    "port_writes_sha256": "89ed40b5e64b22ab8a0b70b2ec1e23e5a63b6eff6e3b91721a32b67acc3c28f3",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "0f10d36edca2b5800db41e748b857598f3645f9d83d14b1419cc5ed4620c6f9a"
+  },
+  {
+    "name": "single_pixel_plane_two",
+    "x": 22,
+    "y": 23,
+    "input_width": 1,
+    "color": 130,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 22,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 2,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        4
+      ]
+    ],
+    "port_writes_sha256": "c3aad6ab4f51f35d4855ec6829786ed8809022f7bde427ddcba124b59c4cecde",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "40fdadd9500c775a3235fd2d670052a605d2769387e446392669f6d1c91eccff"
+  },
+  {
+    "name": "single_pixel_plane_three",
+    "x": 23,
+    "y": 24,
+    "input_width": 1,
+    "color": 113,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 23,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 3,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        120
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "e984ecadc99958c3b91d504dc982f6de8252af523fcf25bd81a650437ae95163",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f5ae5285f374893a2138b2e83e44b03c53c68314b4ea18806bb5868031322728"
+  },
+  {
+    "name": "aligned_full_group",
+    "x": 24,
+    "y": 25,
+    "input_width": 4,
+    "color": 96,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 24,
+    "clipped_width": 4,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 2,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "bf6e8c5b04d6145fbdd61b93f82c541b7514c9beb51fba82a9bc18fcd260466a",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "ed307b2468a3e7372826424f7b7109feceafdce20d70bfdaf543c63815ffb305"
+  },
+  {
+    "name": "leading_middle_and_trailing_groups",
+    "x": 25,
+    "y": 26,
+    "input_width": 10,
+    "color": 95,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 25,
+    "clipped_width": 10,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 4,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        30
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        7
+      ]
+    ],
+    "port_writes_sha256": "c142a2266c430945a6b05d933ddc30d6f4b3b0c3a87e6aafbb3f0e929409d33c",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "765d6886c3d45bcffdeaf565e0123ae397b8d0bb2a6ec56e2a98164aef61d500"
+  },
+  {
+    "name": "remap_plane_zero_uneven_counts",
+    "x": 28,
+    "y": 27,
+    "input_width": 7,
+    "color": 78,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 28,
+    "clipped_width": 7,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 1,
+    "plane_counts": [
+      2,
+      2,
+      2,
+      1
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "603a82f6c79661645db681ef6c8d116991b8d681433febc672971a23ac6038ad",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e973262d51d288eafc1eaab9a4e8696cf5f176b76d4fe9ec7eb0b3b43faba44f"
+  },
+  {
+    "name": "remap_plane_one_uneven_counts",
+    "x": 29,
+    "y": 28,
+    "input_width": 6,
+    "color": 61,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 29,
+    "clipped_width": 6,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 3,
+    "plane_counts": [
+      2,
+      2,
+      1,
+      1
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ]
+    ],
+    "port_writes_sha256": "17f9c9373b185382e9032d93cf9505e01892a7f8dea66e80efa9c710217f1991",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "95a8757c960ca7092c4f01e25f9959f87ae59125edfc7769ce853385ad333035"
+  },
+  {
+    "name": "remap_plane_two_uneven_counts",
+    "x": 30,
+    "y": 29,
+    "input_width": 5,
+    "color": 44,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 30,
+    "clipped_width": 5,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 2,
+    "remap_flag": 129,
+    "plane_counts": [
+      2,
+      1,
+      1,
+      1
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ]
+    ],
+    "port_writes_sha256": "44f6f0cbf2e9d41f543b30d44a26e48aae5ca166e5bc012bb63108c22bec6c80",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e949064f7439bc7728598cbd40e2cd97d82252a5f67c85ee1d2e0fe3da028068"
+  },
+  {
+    "name": "remap_plane_three_even_counts",
+    "x": 31,
+    "y": 30,
+    "input_width": 8,
+    "color": 27,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 31,
+    "clipped_width": 8,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 3,
+    "remap_flag": 255,
+    "plane_counts": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "41a024f3dd4e8cbfd4a17c96f19d3a490d9f1dd6fef2162142327159bd4e190b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "43fbeaacd72a972e39fdfec1cb9b7ab51a8982548da20c0899a034b0cbf6bad2"
+  },
+  {
+    "name": "fill_output_offset_wrap",
+    "x": 0,
+    "y": 0,
+    "input_width": 12,
+    "color": 248,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 0,
+    "clipped_width": 12,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 65534,
+    "port_write_count": 2,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "bf6e8c5b04d6145fbdd61b93f82c541b7514c9beb51fba82a9bc18fcd260466a",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "cfe70178a5d611ab44c0118fbbc7ea8027d672d353dd046d38d23fbe327151db"
+  },
+  {
+    "name": "remap_output_offset_wrap",
+    "x": 3,
+    "y": 0,
+    "input_width": 9,
+    "color": 231,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 3,
+    "clipped_width": 9,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 3,
+    "remap_flag": 1,
+    "plane_counts": [
+      3,
+      2,
+      2,
+      2
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 65535,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "41a024f3dd4e8cbfd4a17c96f19d3a490d9f1dd6fef2162142327159bd4e190b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "ffc4714fdd461a9c044aadf0e2266b6073541ff1b138b128ff8b7f5320d0dbbf"
+  },
+  {
+    "name": "remap_plane_zero_final_pointer_carry",
+    "x": 0,
+    "y": 0,
+    "input_width": 1,
+    "color": 216,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 0,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 1,
+    "plane_counts": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "direction_flag": false,
+    "framebuffer_offset": 65535,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "603a82f6c79661645db681ef6c8d116991b8d681433febc672971a23ac6038ad",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4a102f6778de863afd9a72112ea8d0c3dad11395933081fa49fba3776fd93c34"
+  },
+  {
+    "name": "inherited_backward_fill_direction",
+    "x": 25,
+    "y": 31,
+    "input_width": 10,
+    "color": 214,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 25,
+    "clipped_width": 10,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": true,
+    "framebuffer_offset": 768,
+    "port_write_count": 4,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        30
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        7
+      ]
+    ],
+    "port_writes_sha256": "c142a2266c430945a6b05d933ddc30d6f4b3b0c3a87e6aafbb3f0e929409d33c",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "386004ed10f98bcb766b55705e69c10becfb9841aed6b4b82227ae0cb5c93ef9"
+  },
+  {
+    "name": "inherited_backward_remap_direction",
+    "x": 27,
+    "y": 32,
+    "input_width": 9,
+    "color": 197,
+    "clip": [
+      0,
+      100,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 27,
+    "clipped_width": 9,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 3,
+    "remap_flag": 1,
+    "plane_counts": [
+      3,
+      2,
+      2,
+      2
+    ],
+    "direction_flag": true,
+    "framebuffer_offset": 768,
+    "port_write_count": 5,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "41a024f3dd4e8cbfd4a17c96f19d3a490d9f1dd6fef2162142327159bd4e190b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f83ab6c9678e9cb3fcf2756844c914fd2de46df20107c281379728a126eaf046"
+  },
+  {
+    "name": "full_word_coordinates_and_row_wrap",
+    "x": 33057,
+    "y": 33059,
+    "input_width": 8,
+    "color": 180,
+    "clip": [
+      33024,
+      33280,
+      33024,
+      33280
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 33057,
+    "clipped_width": 8,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 1,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 65520,
+    "port_write_count": 4,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        30
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        1
+      ]
+    ],
+    "port_writes_sha256": "ba2e2d2545f2413b69261a2777360da3d2563491c5455df6a17f4983c89c7452",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "bf63f8bc071cfdb97b5e02941fff926666d4e97d54fdd66a206421d266ec6dfe"
+  },
+  {
+    "name": "left_negate_overflow_preserves_wrapped_count",
+    "x": 0,
+    "y": 0,
+    "input_width": 1,
+    "color": 163,
+    "clip": [
+      32768,
+      256,
+      0,
+      10
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 32768,
+    "clipped_width": 32769,
+    "left_clip_amount": 32768,
+    "right_clip_amount": 0,
+    "start_plane": 0,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        15
+      ],
+      [
+        965,
+        1,
+        1
+      ]
+    ],
+    "port_writes_sha256": "9c5f6b06fe969d936d1f2664d60736aa85bd40fff8532b09c7a46fdc5cb85a1f",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "c1a6effcbb740118ccab8c30f8f2846999bc7bbbc296642bc5fe71b729e290ca"
+  },
+  {
+    "name": "right_signed_compare_honors_subtract_overflow",
+    "x": 32767,
+    "y": 2,
+    "input_width": 1,
+    "color": 146,
+    "clip": [
+      0,
+      32767,
+      0,
+      10
+    ],
+    "rejected": false,
+    "rejection": "",
+    "clipped_x": 32767,
+    "clipped_width": 1,
+    "left_clip_amount": 0,
+    "right_clip_amount": 0,
+    "start_plane": 3,
+    "remap_flag": 0,
+    "plane_counts": [],
+    "direction_flag": false,
+    "framebuffer_offset": 768,
+    "port_write_count": 3,
+    "port_writes": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        120
+      ],
+      [
+        965,
+        1,
+        15
+      ]
+    ],
+    "port_writes_sha256": "e984ecadc99958c3b91d504dc982f6de8252af523fcf25bd81a650437ae95163",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "c20ce91af395a3787b53e9ee1e64a7ece60b3c60830dc8e85a9a635434d34843"
+  }
+]
