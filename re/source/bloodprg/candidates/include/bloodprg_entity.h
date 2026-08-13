@@ -63,7 +63,8 @@ typedef struct bloodprg_sprite_source_extent {
 typedef void CB_NEAR bloodprg_sprite_blitter(
         volatile bloodprg_entity_record *record);
 
-extern volatile bloodprg_entity_record bloodprg_entity_table[]; /* GS:0x6212 */
+extern volatile bloodprg_entity_record CB_GAME_DATA
+        bloodprg_entity_table[]; /* GS:0x6212 */
 extern volatile bloodprg_dirty_rect bloodprg_clip_bounds; /* GS:0x5235 */
 extern volatile cb_u16 bloodprg_clip_snapshot_flags; /* GS:0x5249 */
 extern volatile bloodprg_dirty_rect bloodprg_dirty_rect_list[]; /* GS:0x6612 */
@@ -131,6 +132,8 @@ void CB_FAR entity_object_populate(cb_u16 entity_id,
 #pragma aux bloodprg_sprite_blitter parm [di] modify exact []
 #pragma aux entity_object_populate \
         parm caller [ax] [dx] [bx] [cx] modify exact []
+#pragma aux entity_record_setter \
+        parm caller [ax] [es di] [bx] [cx] modify exact []
 #pragma aux entity_flag_state_transition parm [ax]
 #pragma aux sprite_slot_position_update parm [ax] [bx] [cx]
 #pragma aux sprite_slot_extent_update parm [ax] [cx] [dx] [es si]

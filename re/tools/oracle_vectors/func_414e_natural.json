@@ -1,0 +1,680 @@
+[
+  {
+    "name": "frame_equal_count_rejected",
+    "entity_id": 1,
+    "entity_record_offset": 25138,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 3,
+    "frame_index": 3,
+    "signed_frame_index": 3,
+    "packed_table_offset": 4624,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12544,
+      16896
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4352,
+      8704
+    ],
+    "flag_source": "signed_frame_compare",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "919aa3acb5bec7d0d9e2ebf4fd060f18212a333c0000000069727b848d969fa8",
+    "record_after": "919aa3acb5bec7d0d9e2ebf4fd060f18212a333c0000000069727b848d969fa8",
+    "resource_sha256": "4731b0eed6ab2ed842026d7c229faf40cb67ee491e16cbf456eb2d95a98eead2",
+    "game_data_sha256": "4a21fad7273ee581d2a21a71db4834975ab13ece97a39cb9fbd7c61492a6be70"
+  },
+  {
+    "name": "frame_greater_count_rejected",
+    "entity_id": 2,
+    "entity_record_offset": 25170,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 3,
+    "frame_index": 4,
+    "signed_frame_index": 4,
+    "packed_table_offset": 4628,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12545,
+      16897
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4609,
+      8977
+    ],
+    "flag_source": "signed_frame_compare",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "98a1aab3bcc5ced7e0e9f2fb040d161f28313a43000000007079828b949da6af",
+    "record_after": "98a1aab3bcc5ced7e0e9f2fb040d161f28313a43000000007079828b949da6af",
+    "resource_sha256": "c7e315ef372be15ba511c085d9feda2fb1e1857fcbfb0af7f1b686623ec8c3e2",
+    "game_data_sha256": "334494ef8b2fd43c34bf1f85c9508613bb45a4571d51d56ac71570a418a665ec"
+  },
+  {
+    "name": "signed_negative_count_rejects_zero",
+    "entity_id": 3,
+    "entity_record_offset": 25202,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 65535,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12546,
+      16898
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4866,
+      9250
+    ],
+    "flag_source": "signed_frame_compare",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "9fa8b1bac3ccd5dee7f0f9020b141d262f38414a00000000778089929ba4adb6",
+    "record_after": "9fa8b1bac3ccd5dee7f0f9020b141d262f38414a00000000778089929ba4adb6",
+    "resource_sha256": "bf0030c3860c8361475b41638e5c374f7ec0ecc87260e58875439ec9788b48b4",
+    "game_data_sha256": "6a2c1981e3e14bdc4fe6c5e79f24dc74167372aecc7c4c6332295ad1a55e112a"
+  },
+  {
+    "name": "initialize_both_committed_extents",
+    "entity_id": 4,
+    "entity_record_offset": 25234,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 42405,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      4660,
+      22136
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      5123,
+      9523
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "a6afb8c1cad3dce5eef70009121b242d363f4851000000007e879099a2abb4bd",
+    "record_after": "8700b8c1041210500314332534127856363f4851341278567e879099a2abb4bd",
+    "resource_sha256": "67c3d01b17fe762be3881be3fa00f85e290605146cb64836ab171e94357683f3",
+    "game_data_sha256": "683dbb39127ea9f2f8e002e78e3e2c17239096e8c6da8d8448b428745f50aa4f"
+  },
+  {
+    "name": "preserve_both_committed_extents",
+    "entity_id": 5,
+    "entity_record_offset": 25266,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 65531,
+    "frame_count": 3,
+    "frame_index": 1,
+    "signed_frame_index": 1,
+    "packed_table_offset": 4616,
+    "packed_frame": 565,
+    "decoded_frame": [
+      20515,
+      4617
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12548,
+      16900
+    ],
+    "committed_extents_before": [
+      43690,
+      48059
+    ],
+    "draw_position": [
+      5380,
+      9796
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "record_before": "adb6bfc8d1dae3ecf5fe071019222b343d464f58aaaabbbb858e97a0a9b2bbc4",
+    "record_after": "8300bfc80912235004154426043104423d464f58aaaabbbb858e97a0a9b2bbc4",
+    "resource_sha256": "b3e42af179075594a8d0a56dad92dab7bb9bdba733f7e8c997f5f0b826f18984",
+    "game_data_sha256": "d8e440be4c0bd251dfc71270b452a82e48b247e0812c40909c35971c78e382df"
+  },
+  {
+    "name": "initialize_width_only",
+    "entity_id": 6,
+    "entity_record_offset": 25298,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12549,
+      16901
+    ],
+    "committed_extents_before": [
+      0,
+      30583
+    ],
+    "draw_position": [
+      5637,
+      10069
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "b4bdc6cfd8e1eaf3fc050e172029323b444d565f000077778c959ea7b0b9c2cb",
+    "record_after": "8700c6cf041210500516552705310542444d565f053177778c959ea7b0b9c2cb",
+    "resource_sha256": "5a059c3e1bda0162f2c3ac5030d2fd6cd509eb824a5276e6b0cde7ffcdc3b287",
+    "game_data_sha256": "0c6e16c59ff70b8d8562815966a00ae9f6ef952a18bdcafe04fef761586c215b"
+  },
+  {
+    "name": "initialize_height_only",
+    "entity_id": 7,
+    "entity_record_offset": 25330,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12550,
+      16902
+    ],
+    "committed_extents_before": [
+      26214,
+      0
+    ],
+    "draw_position": [
+      5894,
+      10342
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "bbc4cdd6dfe8f1fa030c151e273039424b545d6666660000939ca5aeb7c0c9d2",
+    "record_after": "8700cdd60412105006176628063106424b545d6666660642939ca5aeb7c0c9d2",
+    "resource_sha256": "e015a0d526be2567819c4bd49c257e02906f07079ad58da641c07caa5dcc9c5d",
+    "game_data_sha256": "077e74907313318f8611b655e7f6eaae6513c470716aadd9f880257c20c97148"
+  },
+  {
+    "name": "negative_frame_index_reads_wrapped_header",
+    "entity_id": 8,
+    "entity_record_offset": 25362,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 1,
+    "frame_index": 65535,
+    "signed_frame_index": -1,
+    "packed_table_offset": 4608,
+    "packed_frame": 65540,
+    "decoded_frame": [
+      24576,
+      4616
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12551,
+      16903
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6151,
+      10615
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "c2cbd4dde6eff8010a131c252e374049525b646d000000009aa3acb5bec7d0d9",
+    "record_after": "8700d4dd081200600718772907310742525b646d073107429aa3acb5bec7d0d9",
+    "resource_sha256": "b9f828b3e0f3585bd227505dce672eaf2e5ae739a8246fdf0c0244f9de429fe7",
+    "game_data_sha256": "e4ebfe20323c51a9e88881c3796db9de98278450ebad77b3cbdbbab70f5264d9"
+  },
+  {
+    "name": "frame_index_multiply_wrap",
+    "entity_id": 9,
+    "entity_record_offset": 25394,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 32767,
+    "frame_index": 16384,
+    "signed_frame_index": 16384,
+    "packed_table_offset": 4612,
+    "packed_frame": 839,
+    "decoded_frame": [
+      20532,
+      4619
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12552,
+      16904
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6408,
+      10888
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "c9d2dbe4edf6ff08111a232c353e475059626b7400000000a1aab3bcc5ced7e0",
+    "record_after": "8700dbe40b1234500819882a0831084259626b7408310842a1aab3bcc5ced7e0",
+    "resource_sha256": "ed0de2de4c7a76e4cfd1037d512b445c9eb13aa4ef7cd41b205241dba3966221",
+    "game_data_sha256": "065cbce749fb91b3954cd43d01c831d3aa2f909199219566a022d5b59e9dcb55"
+  },
+  {
+    "name": "entity_index_wrap",
+    "entity_id": 2050,
+    "entity_record_offset": 25170,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 0,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4612
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12553,
+      16905
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6665,
+      11161
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "d0d9e2ebf4fd060f18212a333c454e576069727b00000000a8b1bac3ccd5dee7",
+    "record_after": "8300e2eb04121050091a992b093109426069727b09310942a8b1bac3ccd5dee7",
+    "resource_sha256": "eed90df944c30cb3e8923c7c89a1e83c62f17261cc9c25cd4cc0e1a0c9914bd7",
+    "game_data_sha256": "7bb6f7311cfee668d7eddaced2ff76a8619b17b63ef425b427d6d4ba3a8a4791"
+  },
+  {
+    "name": "arbitrary_resource_offset",
+    "entity_id": 11,
+    "entity_record_offset": 25458,
+    "resource_pointer": [
+      20480,
+      4660
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4664,
+    "packed_frame": 265,
+    "decoded_frame": [
+      20496,
+      4673
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12554,
+      16906
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6922,
+      11434
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "d7e0e9f2fb040d161f28313a434c555e6770798200000000afb8c1cad3dce5ee",
+    "record_after": "8700e9f2411210500a1baa2c0a310a42677079820a310a42afb8c1cad3dce5ee",
+    "resource_sha256": "74806480d9110b92a89e2a3bcaa92911599cd44b620d63ec2eaa1f97f07624b2",
+    "game_data_sha256": "bae3cb10604e1c9544f2a985d790a7aab96e2a58d1890376a414c40ca751ac99"
+  },
+  {
+    "name": "resource_offset_wraps_decoded_offset",
+    "entity_id": 12,
+    "entity_record_offset": 25490,
+    "resource_pointer": [
+      20480,
+      65528
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 65532,
+    "packed_frame": 270,
+    "decoded_frame": [
+      20496,
+      10
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12555,
+      16907
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7179,
+      11707
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "dee7f0f9020b141d262f38414a535c656e77808900000000b6bfc8d1dae3ecf5",
+    "record_after": "8700f0f90a0010500b1cbb2d0b310b426e7780890b310b42b6bfc8d1dae3ecf5",
+    "resource_sha256": "d0643bebb4528215293664558b1683e473632744c3a1752d112fb2d8700dca54",
+    "game_data_sha256": "3e59618074bf7cd8b01e45e2b1e4c07b366b43f321471c8117e78dad2ee19f45"
+  },
+  {
+    "name": "packed_high_bits_select_low_segment_delta",
+    "entity_id": 13,
+    "entity_record_offset": 25522,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 2882339342,
+    "decoded_frame": [
+      8224,
+      4626
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12556,
+      16908
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7436,
+      11980
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "e5eef70009121b242d363f48515a636c757e879000000000bdc6cfd8e1eaf3fc",
+    "record_after": "8700f700121220200c1dcc2e0c310c42757e87900c310c42bdc6cfd8e1eaf3fc",
+    "resource_sha256": "10a87e6f8832e3a77b9562a2a6f3e73ab0e37fa089fa6a9f165f202376c12e77",
+    "game_data_sha256": "4dc87c07e390c7b1aa80a01a37ff14f773c4e5aa3c338e41550889ce7ca89b57"
+  },
+  {
+    "name": "packed_segment_selector_wrap",
+    "entity_id": 14,
+    "entity_record_offset": 25554,
+    "resource_pointer": [
+      65520,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 526,
+    "decoded_frame": [
+      16,
+      4626
+    ],
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12557,
+      16909
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7693,
+      12253
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "ecf5fe071019222b343d464f58616a737c858e9700000000c4cdd6dfe8f1fa03",
+    "record_after": "8700fe07121210000d1edd2f0d310d427c858e970d310d42c4cdd6dfe8f1fa03",
+    "resource_sha256": "0ab064f415fe7fb220a2e6bfa358cd24b8d79befcfe2e2998600bd2e29ad6465",
+    "game_data_sha256": "5ac08d09461492ed8e0efe3d1f3f12c091970f19c465dc4c521cee38e4e1c871"
+  },
+  {
+    "name": "backward_direction_is_irrelevant",
+    "entity_id": 15,
+    "entity_record_offset": 25586,
+    "resource_pointer": [
+      20480,
+      4608
+    ],
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4612,
+    "packed_frame": 320,
+    "decoded_frame": [
+      20500,
+      4612
+    ],
+    "accepted": true,
+    "direction_flag": true,
+    "extent_source": [
+      4369,
+      8738
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7950,
+      12526
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "f3fc050e172029323b444d565f68717a838c959e00000000cbd4dde6eff8010a",
+    "record_after": "8700050e041214500e1fee3011112222838c959e11112222cbd4dde6eff8010a",
+    "resource_sha256": "bf3ec2d72ce5e23b38e10866a97e4886cdf9e9834a85d153172c486e5cb7a974",
+    "game_data_sha256": "4ef756396c1d77c38e4db71468a9c2d988995ec25dfda441950187758cedf7ba"
+  }
+]
