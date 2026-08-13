@@ -2644,6 +2644,416 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_camera_matrix_update_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 591
+    body_hash = "6f5317ac95a203f579dc60dd859573d7eb7f965bc22fc5298ade3e47b1ae2511"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xB000
+    stack_segment = 0xD000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("a55a69967887")
+    mask32 = 0xFFFFFFFF
+    cases = (
+        (
+            "positive_rounding",
+            0x0000,
+            0x0000,
+            0x0000,
+            0x0000,
+            (0, 1, 2, 3, 4, 5, 7, 8, 0xFFFFFFFF),
+            (0x00000000, 0x7FFF0001, 0x8000FFFF),
+        ),
+        (
+            "negative_rounding_and_masking",
+            0xFFFF,
+            0x8003,
+            0x1006,
+            0xFFFF,
+            (
+                0xFFFFFFFF,
+                0xFFFFFFFD,
+                0xFFFFFFFC,
+                0xFFFFFFFB,
+                0xFFFFFFF9,
+                0xFFFFFFF8,
+                0xFFFFFFF7,
+                0x00000004,
+                0x0000000C,
+            ),
+            (0x12345678, 0x89ABCDEF, 0x0FEDCBA9),
+        ),
+        (
+            "wrapped_angle_sums",
+            0x0FFC,
+            0x0FFC,
+            0x0FFC,
+            0x7FFF,
+            (0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000),
+            (0xFFFFFFFF, 0x80000000, 0x7FFFFFFF),
+        ),
+        (
+            "delta_sign_boundaries",
+            0x0802,
+            0x0C03,
+            0xF805,
+            0x8000,
+            (
+                0x7FFFFFFC,
+                0x7FFFFFFF,
+                0x80000000,
+                0x80000004,
+                0x80000007,
+                0xFFFFFFFC,
+                0x00000004,
+                0x40000004,
+                0xC0000004,
+            ),
+            (0x7FFFFFFC, 0x80000004, 0xFFFF0001),
+        ),
+        (
+            "product_and_dot_overflow",
+            0x0554,
+            0x0AA8,
+            0x0EEC,
+            0x4001,
+            (
+                0x70000004,
+                0x90000004,
+                0x1234567C,
+                0xFEDCBA9C,
+                0x60000004,
+                0xA0000004,
+                0x7FFFFFF8,
+                0x80000008,
+                0xFFFFFFFF,
+            ),
+            (0x13572468, 0x24681357, 0xA5A55A5A),
+        ),
+        (
+            "position_high_words_feed_view",
+            0x0337,
+            0x066A,
+            0x099D,
+            0xFFFE,
+            (0x24, 0x44, 0x64, 0x84, 0xA4, 0xC4, 0xE4, 0x104, 0x124),
+            (0x0000FFFF, 0xFFFF0000, 0x7FFF8000),
+        ),
+    )
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= mask32
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def sample(memory: bytearray, angle: int) -> tuple[int, int]:
+        offset = 0x0036 + (angle & 0x0FFC)
+        return (
+            signed_word(get_u16(memory, offset)),
+            signed_word(get_u16(memory, offset + 2)),
+        )
+
+    def target_matrix(
+        memory: bytearray, pitch: int, pan: int, secondary: int
+    ) -> list[int]:
+        target = [0] * 9
+        _cosine, sine = sample(memory, pitch)
+        target[7] = (-2 * sine) & mask32
+
+        combined = (pan + secondary) & 0x0FFC
+        first_cos, first_sin = sample(memory, pitch - combined)
+        second_cos, second_sin = sample(memory, pitch + combined)
+        cosine_half_difference = (first_cos - second_cos) >> 1
+        sine_half_sum = (first_sin + second_sin) >> 1
+        axis_cos, axis_sin = sample(memory, combined)
+        correction = cosine_half_difference + axis_sin
+        target[3] = correction & mask32
+        target[2] = (-correction) & mask32
+        correction = sine_half_sum + axis_cos
+        target[0] = correction & mask32
+        target[5] = correction & mask32
+
+        combined = (pan - secondary) & 0x0FFC
+        first_cos, first_sin = sample(memory, pitch - combined)
+        second_cos, second_sin = sample(memory, pitch + combined)
+        cosine_half_difference = (first_cos - second_cos) >> 1
+        sine_half_sum = (first_sin + second_sin) >> 1
+        axis_cos, axis_sin = sample(memory, combined)
+        correction = axis_sin - cosine_half_difference
+        target[3] = (target[3] - correction) & mask32
+        target[2] = (target[2] - correction) & mask32
+        correction = axis_cos - sine_half_sum
+        target[0] = (target[0] + correction) & mask32
+        target[5] = (target[5] - correction) & mask32
+
+        first_cos, first_sin = sample(memory, secondary + pitch)
+        second_cos, second_sin = sample(memory, secondary - pitch)
+        target[4] = (first_cos + second_cos) & mask32
+        target[1] = (-(first_sin + second_sin)) & mask32
+
+        first_cos, first_sin = sample(memory, pan + pitch)
+        second_cos, second_sin = sample(memory, pan - pitch)
+        target[8] = (first_cos + second_cos) & mask32
+        target[6] = (first_sin + second_sin) & mask32
+        return target
+
+    def add_flags_32(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+        left &= mask32
+        right &= mask32
+        total = left + right
+        result = total & mask32
+        return {
+            "cf": total > mask32,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": ((left & 0xF) + (right & 0xF)) > 0xF,
+            "zf": result == 0,
+            "sf": bool(result & 0x80000000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": bool((~(left ^ right) & (left ^ result) & 0x80000000)),
+        }
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            pitch_input,
+            pan_input,
+            secondary_input,
+            depth_input,
+            desired_deltas,
+            positions,
+        ) = case
+        data_before = bytearray(
+            (offset * 31 + case_index * 19 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        for table_index in range(1024):
+            cosine = (
+                table_index * 0x9E37 + case_index * 0x2105 + 0x1357
+            ) & 0xFFFF
+            sine = (
+                table_index * 0x6D2B + case_index * 0x4211 + 0xA5A5
+            ) & 0xFFFF
+            put_u16(data_before, 0x0036 + table_index * 4, cosine)
+            put_u16(data_before, 0x0038 + table_index * 4, sine)
+        put_u16(data_before, 0x22F6, pitch_input)
+        put_u16(data_before, 0x22F8, pan_input)
+        put_u16(data_before, 0x22FA, secondary_input)
+        put_u16(data_before, 0x22FC, depth_input)
+        for index, position in enumerate(positions):
+            put_u32(data_before, 0x22EA + index * 4, position)
+
+        pitch = pitch_input & 0x0FFC
+        pan = pan_input & 0x0FFC
+        secondary = secondary_input & 0x0FFC
+        target = target_matrix(data_before, pitch, pan, secondary)
+        for index, desired_delta in enumerate(desired_deltas):
+            put_u32(
+                data_before,
+                0x22BA + index * 4,
+                target[index] - desired_delta,
+            )
+
+        data_expected = bytearray(data_before)
+        put_u16(data_expected, 0x0030, pan)
+        put_u16(data_expected, 0x0032, pitch)
+        put_u16(data_expected, 0x0034, secondary)
+        for index, value in enumerate(target):
+            put_u32(data_expected, 0x2284 + index * 4, value)
+
+        matrix: list[int] = []
+        for index in range(9):
+            current = get_u32(data_expected, 0x22BA + index * 4)
+            delta = (target[index] - current) & mask32
+            step = signed_dword(delta) >> 3
+            current = (current + step + ((delta >> 2) & 1)) & mask32
+            matrix.append(current)
+            put_u32(data_expected, 0x22BA + index * 4, current)
+
+        depth_factor = (-signed_word(depth_input)) & mask32
+        last_full_product = 0
+        for index in range(3):
+            product = (matrix[index + 6] * depth_factor) & mask32
+            last_full_product = (
+                signed_dword(matrix[index + 6]) * signed_dword(depth_factor)
+            )
+            position = get_u32(data_expected, 0x22EA + index * 4)
+            position = (position + (signed_dword(product) >> 3)) & mask32
+            put_u32(data_expected, 0x22EA + index * 4, position)
+
+        view = [
+            signed_word(get_u16(data_expected, offset))
+            for offset in (0x22EC, 0x22F0, 0x22F4)
+        ]
+        results = [0, 0, 0]
+        partial_row_zero = 0
+        final_left = 0
+        for row in (2, 1, 0):
+            terms = [
+                (matrix[row * 3 + column] * (view[column] & mask32)) & mask32
+                for column in range(3)
+            ]
+            partial = (terms[0] + terms[1]) & mask32
+            result = (partial + terms[2]) & mask32
+            results[row] = result
+            put_u32(data_expected, 0x22DE + row * 4, result)
+            if row == 0:
+                partial_row_zero = partial
+                final_left = terms[2]
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F6789A + case_index,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        code_before = bytes(image)
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            code_before,
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        if bytes(machine.mem_read(0, len(image))) != code_before:
+            raise AssertionError(f"{module}:{entry:#x} {name}: code changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = results[0]
+        expected_registers["ebx"] = view[0] & mask32
+        expected_registers["ecx"] = view[1] & mask32
+        expected_registers["edx"] = (last_full_product >> 32) & mask32
+        expected_registers["esi"] = view[2] & mask32
+        expected_registers["edi"] = (initial["edi"] & 0xFFFF0000) | 0x22DE
+        expected_registers["ebp"] = partial_row_zero
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        expected_flags = add_flags_32(final_left, partial_row_zero, initial_flags)
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "normalized_angles": [pitch, pan, secondary],
+                "depth_step": signed_word(depth_input),
+                "target_matrix": [signed_dword(value) for value in target],
+                "camera_matrix": [signed_dword(value) for value in matrix],
+                "camera_position": [
+                    signed_dword(get_u32(data_expected, 0x22EA + index * 4))
+                    for index in range(3)
+                ],
+                "view": view,
+                "result": [signed_dword(value) for value in results],
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
     relative = (value + origin) & 0xFFFF
     windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
@@ -9681,6 +10091,16 @@ def main() -> int:
         amer_slot2_steer_update_vectors(0x1A5C),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x1DD8),
+        ("croolis", 0x1E1D),
+        ("scrut", 0x1EDD),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_camera_matrix_update_vectors(module, entry),
+            args.check,
+        )
     for module, entry, cursor_offset in (
         ("amer", 0x0B0F, 0x1BC2),
         ("croolis", 0x0B50, 0x1B2E),

@@ -2416,6 +2416,23 @@ drop-in integration still needs the original live geometry `DS`, raster `ES`
 and later `DS`, and active-directory `FS` contract installed around the
 natural function.
 
+The alien overlays' camera-matrix routines at AMER `0x001DD8`, CROOLIS
+`0x001E1D`, and SCRUT `0x001EDD` are byte-identical 151-instruction/591-byte
+bodies. Eighteen raw-overlay executions prove 12-bit angle masking and wrapped
+table addressing, all positive and negative rounded-one-eighth boundaries,
+signed-delta boundaries, low-32-bit multiply and dot-product overflow, and the
+camera-position high words feeding the final view vector. They also verify all
+nine target and smoothed matrix dwords, three translated positions, three dot
+products, scratch-angle publication, registers, flags, stack, and segment
+ownership.
+
+The natural candidate uses typed four-byte trig samples and explicit unsigned
+modular arithmetic. Open Watcom medium `-3 -ox -mm -zdp` compiles it
+warning-free to 330 instructions/913 bytes with four static `__U4M` call sites;
+Turbo C 2.01 medium emits 490 instructions. The original uses 32-bit register
+instructions directly in its 16-bit code segment, so neither compiler recreates
+its arithmetic shape. No inline assembly was added to force that shape.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2454,6 +2471,7 @@ LCS and then mnemonic similarity:
 | `xdb_slot2_dispatch_or_init` | medium, `-ox -zdp`, register | 33/42 | 0.0303 | 0.6970 | 0.1212 |
 | `xdb_amer_slot2_return_update` | medium, `-ox -zdp`, register | 29/37 | 0.0690 | 0.7241 | 0.1724 |
 | `xdb_amer_slot2_steer_update` | medium, `-ox -zdp`, register | 18/47 | 0.0556 | 0.5556 | 0.2222 |
+| `xdb_alien_camera_matrix_update` | medium, `-ox -zdp`, register | 151/330 | 0.0066 | 0.6358 | 0.0331 |
 | `xdb_slot3_update_or_init` | medium, `-ox -zdp`, register | 76/109 | 0.0263 | 0.6842 | 0.0658 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |

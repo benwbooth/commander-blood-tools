@@ -46,6 +46,11 @@ typedef struct xdb_alien_ring_entry {
     xdb_i16 field_006;
 } xdb_alien_ring_entry;
 
+typedef struct xdb_alien_trig_sample {
+    xdb_i16 cosine;
+    xdb_i16 sine;
+} xdb_alien_trig_sample;
+
 typedef struct xdb_alien_state {
     xdb_u8 field_000[0x0b0];
     xdb_i16 field_0b0;
@@ -116,12 +121,20 @@ typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
+extern volatile xdb_i16 xdb_alien_matrix_angle_pan; /* DS:0x0030 */
+extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
+extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
 extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
+extern volatile xdb_alien_trig_sample xdb_alien_angle_table[]; /* DS:0x0036 */
 extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
 extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
 extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
 extern volatile xdb_i16 xdb_alien_mouse_filter_x; /* DS:0x1058 */
 extern volatile xdb_u16 xdb_alien_control_latch; /* DS:0x2282 */
+extern volatile xdb_i32 xdb_alien_camera_target_matrix[9]; /* DS:0x2284 */
+extern volatile xdb_i32 xdb_alien_camera_matrix[9]; /* DS:0x22BA */
+extern volatile xdb_i32 xdb_alien_camera_result[3]; /* DS:0x22DE */
+extern volatile xdb_i32 xdb_alien_camera_position[3]; /* DS:0x22EA */
 extern volatile xdb_i16 xdb_alien_camera_pitch; /* DS:0x22F6 */
 extern volatile xdb_i16 xdb_alien_camera_pan; /* DS:0x22F8 */
 extern volatile xdb_i16 xdb_alien_camera_pan_secondary; /* DS:0x22FA */
@@ -209,6 +222,9 @@ void XDB_NEAR xdb_scrut_method_slot_3_update_or_init(
 void XDB_NEAR xdb_amer_mouse_camera_step(void);
 void XDB_NEAR xdb_croolis_mouse_camera_step(void);
 void XDB_NEAR xdb_scrut_mouse_camera_step(void);
+void XDB_NEAR xdb_amer_camera_matrix_update(void);
+void XDB_NEAR xdb_croolis_camera_matrix_update(void);
+void XDB_NEAR xdb_scrut_camera_matrix_update(void);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
@@ -308,6 +324,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #pragma aux xdb_amer_mouse_camera_step modify exact [ax bx cx dx]
 #pragma aux xdb_croolis_mouse_camera_step modify exact [ax bx cx dx]
 #pragma aux xdb_scrut_mouse_camera_step modify exact [ax bx cx dx]
+#pragma aux xdb_amer_camera_matrix_update \
+        modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_croolis_camera_matrix_update \
+        modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_scrut_camera_matrix_update \
+        modify exact [ax bx cx dx si di bp]
 #endif
 
 #endif

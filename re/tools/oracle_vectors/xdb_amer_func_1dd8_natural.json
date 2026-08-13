@@ -1,0 +1,356 @@
+[
+  {
+    "name": "positive_rounding",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      0,
+      0,
+      0
+    ],
+    "depth_step": 0,
+    "target_matrix": [
+      9902,
+      46262,
+      46262,
+      0,
+      9902,
+      -46262,
+      -46262,
+      46262,
+      9902
+    ],
+    "camera_matrix": [
+      9902,
+      46261,
+      46260,
+      -3,
+      9899,
+      -46266,
+      -46268,
+      46255,
+      9903
+    ],
+    "camera_position": [
+      0,
+      2147418113,
+      -2147418113
+    ],
+    "view": [
+      0,
+      32767,
+      -32768
+    ],
+    "result": [
+      -13493,
+      1840404821,
+      1191136081
+    ],
+    "data_sha256": "5963e3d264d875e4a156c396bf8371dd08995ddda6252e5d55aa2257c4be93fc",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_rounding_and_masking",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      4092,
+      0,
+      4
+    ],
+    "depth_step": -1,
+    "target_matrix": [
+      17592,
+      22078,
+      -6910,
+      11862,
+      42278,
+      -65148,
+      31596,
+      -19734,
+      17592
+    ],
+    "camera_matrix": [
+      17593,
+      22081,
+      -6906,
+      11866,
+      42284,
+      -65141,
+      31604,
+      -19737,
+      17582
+    ],
+    "camera_position": [
+      305423846,
+      -1985231797,
+      267244606
+    ],
+    "view": [
+      4660,
+      -30293,
+      4077
+    ],
+    "result": [
+      -615072115,
+      -1491193509,
+      816849395
+    ],
+    "data_sha256": "37b452f0f4a518c6fd4b8cc413023501640430db4b9baf697afa9337ca064151",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_angle_sums",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      4092,
+      4092,
+      4092
+    ],
+    "depth_step": 32767,
+    "target_matrix": [
+      -35756,
+      -9528,
+      3162,
+      -24552,
+      19028,
+      -25910,
+      9528,
+      -53560,
+      19028
+    ],
+    "camera_matrix": [
+      -35770,
+      -9556,
+      3106,
+      -24664,
+      18804,
+      -26358,
+      8632,
+      -55352,
+      15444
+    ],
+    "camera_position": [
+      -35355594,
+      -1920768775,
+      2084226953
+    ],
+    "view": [
+      -540,
+      -29309,
+      31802
+    ],
+    "result": [
+      398169616,
+      -1376044992,
+      2108800576
+    ],
+    "data_sha256": "164d0d07d26c8b0216807eed0857658d6fd45d5ad01ccbd00f103c96d9063cc0",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "delta_sign_boundaries",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      2048,
+      3072,
+      2052
+    ],
+    "depth_step": -32768,
+    "target_matrix": [
+      23244,
+      19962,
+      -28994,
+      -5034,
+      10554,
+      49182,
+      -53840,
+      31824,
+      -42292
+    ],
+    "camera_matrix": [
+      -1879024944,
+      -1879028229,
+      1879019198,
+      1879043155,
+      1879058740,
+      49186,
+      -53843,
+      -939492275,
+      939481801
+    ],
+    "camera_position": [
+      1926942716,
+      -2017144828,
+      -173305855
+    ],
+    "view": [
+      29402,
+      -30780,
+      -2645
+    ],
+    "result": [
+      -1196411594,
+      -65991372,
+      -168970615
+    ],
+    "data_sha256": "c8d39f7bf74497bc8951ab5351474c02d660ec5553a64d9af2f15e4d82c2edbf",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "product_and_dot_overflow",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      1364,
+      2728,
+      3820
+    ],
+    "depth_step": 16385,
+    "target_matrix": [
+      33250,
+      53596,
+      8044,
+      29638,
+      -16080,
+      15546,
+      1262,
+      -12384,
+      11234
+    ],
+    "camera_matrix": [
+      -1644133921,
+      1644220761,
+      -267234368,
+      16732286,
+      -1409302227,
+      1409301687,
+      -1879046923,
+      1879035801,
+      11235
+    ],
+    "camera_position": [
+      556760009,
+      401297763,
+      -1538900771
+    ],
+    "view": [
+      8495,
+      6123,
+      -23482
+    ],
+    "result": [
+      726575396,
+      -660587909,
+      744831616
+    ],
+    "data_sha256": "35b9e7f1fd4826d0b6452e9f861cfbd39edbc6a01dc881d242685f7bf09056d4",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "position_high_words_feed_view",
+    "module": "amer",
+    "entry": 7640,
+    "normalized_angles": [
+      820,
+      1640,
+      2460
+    ],
+    "depth_step": -2,
+    "target_matrix": [
+      14604,
+      39794,
+      -15726,
+      16494,
+      -25310,
+      11028,
+      36272,
+      -46802,
+      14604
+    ],
+    "camera_matrix": [
+      14573,
+      39735,
+      -15813,
+      16379,
+      -25453,
+      10857,
+      36073,
+      -47029,
+      14349
+    ],
+    "camera_position": [
+      74553,
+      -77294,
+      2147454467
+    ],
+    "view": [
+      1,
+      -2,
+      32767
+    ],
+    "result": [
+      -518209468,
+      355818604,
+      470303814
+    ],
+    "data_sha256": "3b4b310fda7ea1241b071201d396d25c55e629625e13153bedfadd5abd11743e",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]
