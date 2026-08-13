@@ -390,6 +390,31 @@ original DS:SI/ES:DI string-instruction ABI. The sole caller at `0x00A82C`
 overwrites SI and restores CX after the call, so the binary's cursor/count
 outputs are deliberately absent from the source-level `void` API.
 
+For `0x00A914`, nine direct vectors prove the checksum-`0xAD` payload grammar.
+The six-byte header supplies output and staging extents plus flags. Flag bit 2
+selects an optional four-byte prefix, bit 6 selects AABC literal bias `0x00` or
+`0x80`, and bit 7 selects one of two run-token layouts. AABC expands staged
+values into the destination tail before the main pass consumes MSB-first
+control words interleaved with descriptor bytes. Both layouts support literals,
+fixed 2/3/4-byte runs, and variable runs whose descriptor nibbles carry the
+next length or request an extra length byte. Cases cover both pending-length
+states, both extended-length paths, a second control word with source wrap,
+empty output, and a fixed run that deliberately overshoots the declared end.
+They also verify both original code-byte stores, exact AABC entry state and
+stack frame, compressed-cursor handoff, every final cursor/register, memory
+ownership, flags, stack, and near return.
+
+The one-function natural candidate uses a typed six-byte header, direct far
+pointers, and the recovered AABC function. It passes literal bias normally
+instead of mutating executable bytes and uses a mask-based bit reader rather
+than encoding the refill sentinel in carry/zero flags. Open Watcom `-3 -ox
+-mh` compiles the actual candidate and probe warning-free to 212 instructions
+and 525 bytes versus 207/424 original. The probe has a 31.40 percent
+mnemonic-sequence LCS, 45.89 percent mnemonic-multiset overlap, and 2.90
+percent byte-line LCS. Exact replacement still needs the original ambient
+DS:SI/ES:DI/BP ABI, sentinel-flag refill, register residue, and MOVS/STOS/REP
+lowering; those are integration boundaries rather than missing decoder logic.
+
 For `0x00AABC`, thirteen direct vectors prove the shared pair-packed LZ grammar.
 Control zero emits zero. Controls 1 through 127 add a literal bias selected by
 the caller: `0x00A914` and `0x00AB25` patch the two ADD immediates through
@@ -2713,6 +2738,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
 | `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/112 | 0.1000 | 0.6667 | 0.1333 |
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
+| `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |

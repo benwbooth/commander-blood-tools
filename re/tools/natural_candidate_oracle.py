@@ -50375,6 +50375,619 @@ def resource_payload_decode_ab_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_payload_decode_ad_vectors() -> list[dict[str, object]]:
+    entry = 0xA914
+    expected_hash = "b8b6aa14a6315aa039a8e09eb970cc390244b135db8cc51e7ce921ddbfec946d"
+    if hashlib.sha256(EXE[entry : entry + 424]).hexdigest() != expected_hash:
+        raise AssertionError("0xa914: recovered 424-byte body changed")
+
+    class MainStreamEncoder:
+        def __init__(self) -> None:
+            self.stream = bytearray()
+            self.control_position = -1
+            self.control_bits = 16
+            self.control_words: list[int] = []
+
+        def emit_bit(self, value: int) -> None:
+            if self.control_bits == 16:
+                self.control_position = len(self.stream)
+                self.stream.extend(b"\x00\x00")
+                self.control_words.append(0)
+                self.control_bits = 0
+            if value:
+                self.control_words[-1] |= 1 << (15 - self.control_bits)
+                struct.pack_into(
+                    "<H",
+                    self.stream,
+                    self.control_position,
+                    self.control_words[-1],
+                )
+            self.control_bits += 1
+
+        def emit_byte(self, value: int) -> None:
+            if not 0 <= value <= 0xFF:
+                raise AssertionError("invalid AD descriptor byte")
+            self.stream.append(value)
+
+    def next_variable_length(
+        tokens: list[tuple[object, ...]], start: int
+    ) -> int | None:
+        for token in tokens[start:]:
+            if token[0] == "variable":
+                return int(token[1])
+        return None
+
+    def encode_main(
+        tokens: list[tuple[object, ...]], high_layout: bool
+    ) -> tuple[bytes, list[int]]:
+        encoder = MainStreamEncoder()
+        pending_length = 0
+
+        for token_index, token in enumerate(tokens):
+            kind = str(token[0])
+            if kind == "literal":
+                encoder.emit_bit(0)
+                continue
+
+            encoder.emit_bit(1)
+            if kind == "end":
+                encoder.emit_bit(1)
+                encoder.emit_bit(1)
+                encoder.emit_bit(1)
+                continue
+
+            if kind == "repeat":
+                length = int(token[1])
+                codes = (
+                    {2: (1, 0), 3: (1, 1, 0), 4: (1, 1, 1)}
+                    if high_layout
+                    else {2: (0,), 3: (1, 0), 4: (1, 1, 0)}
+                )
+                if length not in codes:
+                    raise AssertionError("invalid fixed AD run")
+                for bit in codes[length]:
+                    encoder.emit_bit(bit)
+                continue
+
+            if kind != "variable":
+                raise AssertionError(f"unknown AD token {kind}")
+            if high_layout:
+                encoder.emit_bit(0)
+            else:
+                encoder.emit_bit(1)
+                encoder.emit_bit(1)
+                encoder.emit_bit(1)
+
+            length = int(token[1])
+            if pending_length > 4:
+                if length != pending_length:
+                    raise AssertionError("AD pending run length mismatch")
+                pending_length = 0
+                continue
+            if pending_length == 4:
+                if not 20 <= length <= 275:
+                    raise AssertionError("invalid AD pending extended run")
+                encoder.emit_byte(length - 20)
+                pending_length = 0
+                continue
+
+            following_length = next_variable_length(tokens, token_index + 1)
+            low_nibble = (
+                following_length - 4
+                if following_length is not None and 5 <= following_length <= 19
+                else 0
+            )
+            if 5 <= length <= 19:
+                high_nibble = length - 4
+                encoder.emit_byte((high_nibble << 4) | low_nibble)
+            elif 20 <= length <= 275:
+                encoder.emit_byte(low_nibble)
+                encoder.emit_byte(length - 20)
+            else:
+                raise AssertionError("invalid AD variable run")
+            pending_length = low_nibble + 4
+
+        if not tokens or tokens[-1][0] != "end":
+            raise AssertionError("AD test stream lacks terminal token")
+        return bytes(encoder.stream), encoder.control_words
+
+    def encode_staging(values: list[int], literal_bias: int) -> bytes:
+        stream = bytearray()
+        for value in values:
+            if value == 0:
+                stream.append(0)
+                continue
+            control = (value - literal_bias) & 0xFF
+            if not 1 <= control <= 0x7F:
+                raise AssertionError("AD staging value cannot use literal bias")
+            stream.append(control)
+        return bytes(stream)
+
+    class MainStreamReader:
+        def __init__(self, stream: bytes) -> None:
+            self.stream = stream
+            self.cursor = 0
+            self.remaining_bits = 0
+            self.dx = 0
+
+        def read_bit(self) -> int:
+            if self.remaining_bits == 0:
+                if self.cursor + 2 > len(self.stream):
+                    raise AssertionError("AD model exhausted control words")
+                word = struct.unpack_from("<H", self.stream, self.cursor)[0]
+                self.cursor += 2
+                bit = word >> 15
+                self.dx = ((word << 1) | 1) & 0xFFFF
+                self.remaining_bits = 15
+                return bit
+            bit = self.dx >> 15
+            self.dx = (self.dx << 1) & 0xFFFF
+            self.remaining_bits -= 1
+            return bit
+
+        def read_byte(self) -> int:
+            if self.cursor >= len(self.stream):
+                raise AssertionError("AD model exhausted descriptor bytes")
+            value = self.stream[self.cursor]
+            self.cursor += 1
+            return value
+
+    def decode_main(
+        stream: bytes,
+        destination: bytearray,
+        staged_offset: int,
+        output_offset: int,
+        output_end: int,
+        high_layout: bool,
+    ) -> tuple[int, int, int, int, int, int]:
+        reader = MainStreamReader(stream)
+        staged_cursor = staged_offset
+        output_cursor = output_offset
+        pending_length = 0
+        value = 0
+
+        def read_value() -> int:
+            nonlocal staged_cursor
+            result = destination[staged_cursor]
+            staged_cursor = (staged_cursor + 1) & 0xFFFF
+            return result
+
+        def write_run(run_value: int, length: int) -> None:
+            nonlocal output_cursor
+            for _ in range(length):
+                destination[output_cursor] = run_value
+                output_cursor = (output_cursor + 1) & 0xFFFF
+
+        for _ in range(10000):
+            if reader.read_bit() == 0:
+                literal = read_value()
+                destination[output_cursor] = literal
+                output_cursor = (output_cursor + 1) & 0xFFFF
+                continue
+
+            value = read_value()
+            if high_layout:
+                if reader.read_bit() == 0:
+                    run_length = -1
+                elif reader.read_bit() == 0:
+                    run_length = 2
+                elif reader.read_bit() == 0:
+                    run_length = 3
+                else:
+                    if output_cursor >= output_end:
+                        break
+                    run_length = 4
+            else:
+                if reader.read_bit() == 0:
+                    run_length = 2
+                elif reader.read_bit() == 0:
+                    run_length = 3
+                elif reader.read_bit() == 0:
+                    run_length = 4
+                else:
+                    if output_cursor >= output_end:
+                        break
+                    run_length = -1
+
+            if run_length >= 0:
+                write_run(value, run_length)
+                continue
+            if pending_length > 4:
+                run_length = pending_length
+                pending_length = 0
+            elif pending_length == 4:
+                run_length = reader.read_byte() + 20
+                pending_length = 0
+            else:
+                descriptor = reader.read_byte()
+                high_nibble = descriptor >> 4
+                if high_nibble:
+                    run_length = high_nibble + 4
+                else:
+                    run_length = reader.read_byte() + 20
+                pending_length = (descriptor & 0x0F) + 4
+            write_run(value, run_length)
+        else:
+            raise AssertionError("AD model did not reach terminal token")
+
+        return (
+            reader.cursor,
+            staged_cursor,
+            output_cursor,
+            pending_length,
+            reader.dx,
+            value,
+        )
+
+    cases: list[
+        tuple[
+            str,
+            int,
+            bytes,
+            list[tuple[object, ...]],
+            list[int],
+            int,
+            int,
+            int | None,
+        ]
+    ] = [
+        ("low_empty", 0x04, b"", [("end",)], [], 0x0100, 0x2200, 0),
+        (
+            "low_prefix_literals",
+            0x00,
+            b"HEAD",
+            [("literal",)] * 4 + [("end",)],
+            [0, 1, 0x7F, 0x44],
+            0x1111,
+            0x3300,
+            None,
+        ),
+        (
+            "low_fixed_runs",
+            0x04,
+            b"",
+            [("repeat", 2), ("repeat", 3), ("repeat", 4), ("end",)],
+            [0x11, 0x22, 0x33],
+            0x2222,
+            0x4400,
+            None,
+        ),
+        (
+            "low_variable_pending",
+            0x04,
+            b"",
+            [("variable", 6), ("variable", 7), ("end",)],
+            [0x31, 0x42],
+            0x3333,
+            0x5500,
+            None,
+        ),
+        (
+            "low_variable_extended_high_bias",
+            0x44,
+            b"",
+            [("variable", 20), ("variable", 22), ("end",)],
+            [0x91, 0xA2],
+            0x4444,
+            0x6600,
+            None,
+        ),
+        (
+            "high_fixed_runs",
+            0x84,
+            b"",
+            [
+                ("literal",),
+                ("repeat", 2),
+                ("repeat", 3),
+                ("repeat", 4),
+                ("end",),
+            ],
+            [0, 1, 0x7F, 0x52],
+            0x5555,
+            0x7700,
+            None,
+        ),
+        (
+            "high_variable_high_bias",
+            0xC4,
+            b"",
+            [("variable", 6), ("variable", 7), ("end",)],
+            [0x81, 0xFF],
+            0x6666,
+            0x8800,
+            None,
+        ),
+        (
+            "high_control_refill_source_wrap",
+            0x84,
+            b"",
+            [("literal",)] * 17 + [("end",)],
+            list(range(1, 18)),
+            0xFFF0,
+            0x9900,
+            None,
+        ),
+        (
+            "high_fixed_overshoot",
+            0x84,
+            b"",
+            [("repeat", 4), ("end",)],
+            [0x6C],
+            0x7777,
+            0xAA00,
+            3,
+        ),
+    ]
+    source_segment = 0x2000
+    destination_segment = 0x3800
+    stack_segment = 0x7000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, (
+        name,
+        flags,
+        prefix,
+        tokens,
+        staged_values,
+        source_offset,
+        destination_offset,
+        declared_extent,
+    ) in enumerate(cases):
+        high_layout = bool(flags & 0x80)
+        literal_bias = (flags & 0x40) << 1
+        nonterminal_count = sum(token[0] != "end" for token in tokens)
+        if len(staged_values) != nonterminal_count:
+            raise AssertionError(f"0xa914 {name}: staged/token count mismatch")
+
+        main_stream, control_words = encode_main(tokens, high_layout)
+        helper_values = staged_values or [0x31 + literal_bias]
+        staging_stream = encode_staging(helper_values, literal_bias)
+        nominal_extent = sum(
+            1 if token[0] == "literal" else int(token[1])
+            for token in tokens
+            if token[0] != "end"
+        )
+        output_extent = nominal_extent if declared_extent is None else declared_extent
+        checksum = (
+            0xAD
+            - sum(struct.pack("<HHB", output_extent, len(staged_values), flags))
+        ) & 0xFF
+        header = struct.pack(
+            "<HHBB", output_extent, len(staged_values), flags, checksum
+        )
+        resource = header + prefix + staging_stream + main_stream
+        helper_source_offset = (source_offset + 6 + len(prefix)) & 0xFFFF
+        main_source_offset = (helper_source_offset + len(staging_stream)) & 0xFFFF
+        output_offset = (destination_offset + len(prefix)) & 0xFFFF
+        output_end = (output_offset + output_extent) & 0xFFFF
+        staged_offset = (output_end - len(staged_values)) & 0xFFFF
+
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+        for index, value in enumerate(resource):
+            source_before[(source_offset + index) & 0xFFFF] = value
+        destination_before = bytes(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        destination_expected = bytearray(destination_before)
+        for index, value in enumerate(prefix):
+            destination_expected[(destination_offset + index) & 0xFFFF] = value
+        for index, value in enumerate(helper_values):
+            destination_expected[(staged_offset + index) & 0xFFFF] = value
+        (
+            main_consumed,
+            staged_result,
+            output_result,
+            pending_length,
+            bit_buffer,
+            terminal_value,
+        ) = decode_main(
+            main_stream,
+            destination_expected,
+            staged_offset,
+            output_offset,
+            output_end,
+            high_layout,
+        )
+
+        stack_before = bytearray(
+            (offset * 41 + case_index * 17 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x97972468 + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x1800,
+            "gs": 0x5000,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        helper_calls = []
+
+        def capture_helper(machine: Uc, address: int, _size: int) -> None:
+            if address != 0xAABC:
+                return
+            if helper_calls:
+                raise AssertionError(f"0xa914 {name}: duplicate helper call")
+            actual = {
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+            }
+            expected = {
+                "bx": source_offset,
+                "si": helper_source_offset,
+                "di": staged_offset,
+                "bp": output_end,
+                "sp": 0xFEF8,
+                "ds": source_segment,
+                "es": destination_segment,
+            }
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa914 {name}: helper state={actual}, expected={expected}"
+                )
+            expected_saved_ax = (initial["eax"] & 0xFF00) | flags
+            frame = struct.unpack(
+                "<5H", machine.mem_read(stack_segment * 16 + 0xFEF8, 10)
+            )
+            expected_frame = (
+                0xA93D,
+                staged_offset,
+                output_offset,
+                expected_saved_ax,
+                return_address,
+            )
+            if frame != expected_frame:
+                raise AssertionError(
+                    f"0xa914 {name}: helper frame={frame}, expected={expected_frame}"
+                )
+            code_biases = bytes(machine.mem_read(0x0DDD, 1)) + bytes(
+                machine.mem_read(0x0E0D, 1)
+            )
+            if code_biases != bytes((literal_bias, literal_bias)):
+                raise AssertionError(f"0xa914 {name}: literal bias stored late")
+            # The flat CS=0 oracle must mirror the game's segment-relative
+            # writes onto the two AABC immediate bytes before executing it.
+            machine.mem_write(0xAAED, bytes((literal_bias,)))
+            machine.mem_write(0xAB1D, bytes((literal_bias,)))
+            helper_calls.append(actual)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x0DDD, b"\x5a"),
+                (0, 0x0E0D, b"\xa5"),
+                (source_segment, 0, bytes(source_before)),
+                (destination_segment, 0, destination_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture_helper,
+            instruction_count=100000,
+        )
+        if len(helper_calls) != 1:
+            raise AssertionError(f"0xa914 {name}: helper was not called")
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(
+            source_before
+        ):
+            raise AssertionError(f"0xa914 {name}: source changed")
+        if bytes(machine.mem_read(destination_segment * 16, 0x10000)) != bytes(
+            destination_expected
+        ):
+            raise AssertionError(f"0xa914 {name}: decoded output differs")
+        if bytes(machine.mem_read(0x0DDD, 1)) != bytes((literal_bias,)) or bytes(
+            machine.mem_read(0x0E0D, 1)
+        ) != bytes((literal_bias,)):
+            raise AssertionError(f"0xa914 {name}: code bias differs")
+
+        main_source_result = (main_source_offset + main_consumed) & 0xFFFF
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | terminal_value | (terminal_value << 8)
+        expected_registers["ebx"] = (
+            initial["ebx"] & 0xFFFF0000
+        ) | main_source_result
+        expected_registers["ecx"] = (
+            initial["ecx"] & 0xFFFF0000
+        ) | pending_length
+        expected_registers["edx"] = (
+            initial["edx"] & 0xFFFF0000
+        ) | bit_buffer
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | staged_result
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | output_result
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | output_end
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa914 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa914 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa914 {name}: stack sentinel changed")
+
+        expected_flags = sub16_flags(output_result, output_end)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xa914 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        produced = (output_result - output_offset) & 0xFFFF
+        decoded = bytes(
+            destination_expected[(output_offset + index) & 0xFFFF]
+            for index in range(produced)
+        )
+        vectors.append(
+            {
+                "name": name,
+                "flags": flags,
+                "layout": "high" if high_layout else "low",
+                "literal_bias": literal_bias,
+                "prefix_hex": prefix.hex(),
+                "tokens": [list(token) for token in tokens],
+                "staged_values": staged_values,
+                "staging_stream_hex": staging_stream.hex(),
+                "main_stream_hex": main_stream.hex(),
+                "control_words": control_words,
+                "source_offset": source_offset,
+                "main_source_result_offset": main_source_result,
+                "destination_offset": destination_offset,
+                "output_offset": output_offset,
+                "declared_output_extent": output_extent,
+                "actual_output_extent": produced,
+                "decoded_hex": decoded.hex(),
+                "staged_offset": staged_offset,
+                "staged_result_offset": staged_result,
+                "pending_length": pending_length,
+                "result_bit_buffer": bit_buffer,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
     entry = 0xAABC
     expected_hash = "6f9aba91cf84930a552caddcbe3511006f7b3c6cca5ee86f53b57935f6816775"
@@ -53239,6 +53852,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a867_natural.json",
         resource_payload_decode_ab_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a914_natural.json",
+        resource_payload_decode_ad_vectors(),
         args.check,
     )
     update_vector(

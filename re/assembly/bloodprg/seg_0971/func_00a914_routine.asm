@@ -6,6 +6,8 @@
 ; seg_off: 0971:0c04
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: resource_payload_decode_ad
+; label_comment: Expands an AABC-compressed staged value stream into the destination tail, then consumes MSB-first controls to produce literals and two flag-selected layouts of fixed or stateful variable byte runs.
 ; byte_count: 424
 ; boundary: cfg_blocks_61_terminals_23
 ; terminal: jmp 0xa956:10, jmp 0xaa03:1, jmp 0xaa0e:9, jmp 0xaa1c:1, ret:2
