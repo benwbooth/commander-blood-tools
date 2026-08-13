@@ -2760,11 +2760,12 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       per plane with map-mask 0x102/0x202/0x402/0x802) -> Mode-X VRAM. The SCENE
       composites correctly (smooth gradients in the chunky buffer); only the
       subtitle band holds 0xEF. The 0xEF enters the CHUNKY buffer via the span
-      primitive `gfx_clipped_draw` (0x299:0x3321, file 0x3321): it does
-      `les di,gs:[0x5221]` (display buffer) then either a solid `rep stosb al=bp`
-      fill OR, when `gs:[0x5b56]&1`, a PALETTE-REMAP span (`mov al,es:[di];
-      xlatb DS:0x5f11; stosb`). So the subtitle band is filled/remapped to 0xEF.
-      NEXT THREAD: find the subtitle caller of gfx_clipped_draw + why bp/the
+      primitive `gfx_vertical_span` (0x299:0x3321, file 0x3321): it does
+      `les di,gs:[0x5221]` (display buffer), then writes one pixel every 320
+      bytes either as a solid AL fill or, when `gs:[0x5b56]&1`, through a
+      PALETTE-REMAP (`mov al,es:[di]; xlatb DS:0x5f11; mov es:[di],al`). So
+      repeated vertical spans fill/remap the subtitle band to 0xEF.
+      NEXT THREAD: find the subtitle caller of gfx_vertical_span + why BP/the
       remap table 0x5f11 yields 0xEF scramble. ROOT CAUSE FOUND + DOSBox-CONFIRMED
       (2026-07-20): the 0xEF is the subtitle's MATERIALIZE/DISSOLVE effect — the
       chunky-buffer glyph plotter at 0x299:0xc22 (file 0x3c22) drives an LFSR

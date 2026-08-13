@@ -6,8 +6,8 @@
 ; seg_off: 0299:0391
 ; group: seg_0299
 ; provenance: recursive_graph
-; label: gfx_clipped_draw
-; label_comment: clipped graphics draw (3 calls): call 0xbc2; les di,[0x5221] (display buffer); clip bx(x) vs [0x5235]/[0x5237], cx(y) vs [0x5239]; draws with left/top clamp (neg ax; sub dx,ax). A clipped blit/span primitive into the visible page
+; label: gfx_vertical_span
+; label_comment: Primary-framebuffer vertical span. AL=color, BX=x, CX=y, DX=height. Rejects signed-nonpositive heights and x outside signed GS:0x5235..0x5237, clips y/height to GS:0x5239..0x523B with exact 16-bit overflow behavior, computes byte_swap(y)+(y<<6)+x into GS:[0x5221], then advances 320 bytes per pixel while filling with AL or remapping through GS:0x5F11 when GS:0x5B56 bit 0 is set. Remap returns BX=0x5F11; all other paths preserve BX. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003321_gfx_vertical_span.c and re/tools/oracle_vectors/func_3321_natural.json
 ; byte_count: 125
 ; boundary: cfg_blocks_13_terminals_2
 ; terminal: jmp 0x3396:1, retf:1

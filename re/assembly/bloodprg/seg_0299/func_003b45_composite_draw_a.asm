@@ -7,7 +7,7 @@
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: composite_draw_a
-; label_comment: composite shape draw: call 0x32ac + call gfx_clipped_draw 0x3321 (two plot primitives with xchg bp,dx between). Draws a filled/compound shape from the clipped primitives
+; label_comment: composite shape draw: call gfx_horizontal_span 0x32ac + call gfx_vertical_span 0x3321 (two plot primitives with xchg bp,dx between). Draws a filled/compound shape from the clipped primitives
 ; incoming: call@0x000e96->0299:0bb5
 ; incoming: call@0x0014f9->0299:0bb5
 ; incoming: call@0x007a62->0299:0bb5

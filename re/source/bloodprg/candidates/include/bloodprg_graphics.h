@@ -145,7 +145,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
 #pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
-#pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact []
+#pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
 /* Watcom reserves BP, so the fifth helper argument remains stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []
