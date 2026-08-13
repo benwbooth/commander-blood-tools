@@ -2955,6 +2955,35 @@ The remaining gaps are segment placement, direct interrupt/driver boundaries,
 Watcom's word-copy lowering, and compiler calling conventions rather than
 missing SND-bank page logic.
 
+## BLOODPRG SND stream playback candidates
+
+The page backends feed a two-descriptor streaming loop. `0x00BBB3` validates
+the sound, channel, and request gates; reads SND-bank page zero into the shared
+storage; preserves its first six bytes as the prefix for later pages; places
+the second 16 KiB descriptor at storage offset `0x4008`; resets the loaded SND
+driver; and starts descriptor zero. The byte at page-zero offset four is also
+tested for `0xD3` and published as a stream-header mode flag.
+
+`0x00BC50` polls the driver position vector and selects the first descriptor
+whose busy bit is clear. It exits when both are busy and the position is an
+ordinary value, but the sentinel values zero and `0xFFFF` permit a refill of
+the second descriptor. Nonzero pages receive the saved six-byte prefix before
+the 16 KiB bank read. The incremented 16-bit page is compared unsigned with the
+page count; reaching the end applies the recorded final-page byte count and
+wraps the next page to zero. Ordinary positions call the service vector, while
+the two sentinels republish the selected descriptor state and call play.
+
+Six bootstrap and nine refill direct-binary vectors cover all gates, both
+descriptors, both position sentinels, page zero, prefixed pages, the final-page
+boundary, `0xFFFF` page-word wrap, exact callback state, GS-versus-DS ownership,
+and far returns. The recovered C uses an ordinary eight-byte descriptor and
+three narrow loaded-driver ABI boundaries; it does not model CPU registers or
+memory reads. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles both
+actual candidates warning-free: bootstrap is 63 instructions/209 bytes versus
+55/157 original, and refill is 105/293 versus 73/185. The extra code is mostly
+GAME_DATA segment loads, C local preservation, and materialized pointer/Boolean
+operations rather than missing playback logic.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

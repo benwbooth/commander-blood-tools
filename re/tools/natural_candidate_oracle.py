@@ -23518,6 +23518,585 @@ def snd_driver_call_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def snd_stream_start_vectors() -> list[dict[str, object]]:
+    entry = 0xBBB3
+    expected_hash = "e2568920091990dad94d80153b8d6981b474cca099647f0ff716b90198dae376"
+    if hashlib.sha256(EXE[entry : entry + 157]).hexdigest() != expected_hash:
+        raise AssertionError("0xbbb3: recovered 157-byte body changed")
+
+    cases = [
+        ("sound_disabled", 0x00, 0x01, 0x03, False),
+        ("channel_disabled", 0x01, 0x00, 0x03, False),
+        ("no_start_request", 0x01, 0x01, 0x04, False),
+        ("request_bit_zero", 0x01, 0x01, 0x01, False),
+        ("request_bit_one_packed", 0x01, 0x01, 0x02, True),
+        ("both_request_bits", 0xFF, 0xFF, 0xFF, False),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    audio_segment = 0x5000
+    audio_offset = 0x1000
+    stack_segment = 0x9000
+    callback_segment = 0xF000
+    stop_offset = 0x0100
+    play_offset = 0x0200
+    stop_address = callback_segment * 16 + stop_offset
+    play_address = callback_segment * 16 + play_offset
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name, sound_enabled, channel_active, request, packed = case
+        active = bool(sound_enabled & 1 and channel_active & 1 and request & 3)
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        page_data = bytearray(
+            ((index * 29 + case_index * 37 + 5) & 0xFF)
+            for index in range(0x4000)
+        )
+        if packed:
+            page_data[4] = 0xD3
+        elif page_data[4] == 0xD3:
+            page_data[4] ^= 0x80
+        audio_before = bytes(
+            ((index * 11 + case_index * 19 + 0xA5) & 0xFF)
+            for index in range(0x9000)
+        )
+        state_before = bytes(
+            ((index * 17 + case_index * 23 + 0x31) & 0xFF)
+            for index in range(0x40)
+        )
+        data_decoy = bytes((value ^ 0xFF) for value in state_before)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        page_calls = []
+        stop_calls = []
+        play_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xBD09:
+                page_calls.append(
+                    {
+                        "page": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+                machine.mem_write(
+                    audio_segment * 16 + audio_offset,
+                    bytes(page_data),
+                )
+            elif address == stop_address:
+                stop_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "pending": machine.mem_read(
+                            game_segment * 16 + 0x0BA0, 1
+                        )[0],
+                    }
+                )
+            elif address == play_address:
+                play_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "descriptor": bytes(
+                            machine.mem_read(game_segment * 16 + 0x0B89, 8)
+                        ).hex(),
+                    }
+                )
+
+        game_state = bytearray(state_before)
+        game_state[0x0BA0 - 0x0B80] = request
+        game_state[0x0BA3 - 0x0B80] = channel_active
+        game_state[0x0BB7 - 0x0B80 : 0x0BBB - 0x0B80] = struct.pack(
+            "<HH", audio_offset, audio_segment
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xBD09, b"\xc3"),
+                (callback_segment, stop_offset, b"\xcb"),
+                (callback_segment, play_offset, b"\xcb"),
+                (
+                    game_segment,
+                    0x0B80,
+                    bytes(game_state),
+                ),
+                (
+                    data_segment,
+                    0x0B80,
+                    data_decoy,
+                ),
+                (game_segment, 0x0ADE, bytes((sound_enabled,))),
+                (data_segment, 0x0ADE, bytes((sound_enabled ^ 0xFF,))),
+                (
+                    game_segment,
+                    0x0BB7,
+                    struct.pack("<HH", audio_offset, audio_segment),
+                ),
+                (
+                    game_segment,
+                    0x0CDB,
+                    struct.pack("<HH", play_offset, callback_segment),
+                ),
+                (
+                    game_segment,
+                    0x0CDF,
+                    struct.pack("<HH", stop_offset, callback_segment),
+                ),
+                (audio_segment, 0, audio_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if active:
+            expected_page_calls = [
+                {
+                    "page": 0,
+                    "ds": game_segment,
+                    "es": audio_segment,
+                    "di": audio_offset,
+                    "sp": 0xFEF2,
+                }
+            ]
+            if page_calls != expected_page_calls:
+                raise AssertionError(
+                    f"0xbbb3 {name}: page calls={page_calls}, "
+                    f"expected={expected_page_calls}"
+                )
+            if stop_calls != [{"ax": 0, "ds": game_segment, "pending": request}]:
+                raise AssertionError(f"0xbbb3 {name}: stop calls={stop_calls}")
+            if len(play_calls) != 1:
+                raise AssertionError(f"0xbbb3 {name}: play calls={play_calls}")
+            expected_first = struct.pack(
+                "<HHHBB", audio_offset, audio_segment, 0x4000, 1, state_before[0x10]
+            )
+            expected_second = struct.pack(
+                "<HHHBB",
+                (audio_offset + 0x4008) & 0xFFFF,
+                audio_segment,
+                0x4000,
+                0,
+                state_before[0x18],
+            )
+            first = bytes(machine.mem_read(game_segment * 16 + 0x0B89, 8))
+            second = bytes(machine.mem_read(game_segment * 16 + 0x0B91, 8))
+            if first != expected_first or second != expected_second:
+                raise AssertionError(
+                    f"0xbbb3 {name}: descriptors={first.hex()}/{second.hex()}, "
+                    f"expected={expected_first.hex()}/{expected_second.hex()}"
+                )
+            expected_play = {
+                "ax": 0,
+                "si": 0x0B89,
+                "ds": game_segment,
+                "es": audio_segment,
+                "di": (audio_offset + 0x4008) & 0xFFFF,
+                "descriptor": expected_first.hex(),
+            }
+            if play_calls != [expected_play]:
+                raise AssertionError(
+                    f"0xbbb3 {name}: play calls={play_calls}, "
+                    f"expected={[expected_play]}"
+                )
+            state_after = bytes(machine.mem_read(game_segment * 16 + 0x0B80, 0x40))
+            expected_state = bytearray(game_state)
+            expected_state[0x0B89 - 0x0B80 : 0x0B91 - 0x0B80] = expected_first
+            expected_state[0x0B91 - 0x0B80 : 0x0B99 - 0x0B80] = expected_second
+            expected_state[0x0B99 - 0x0B80 : 0x0B9F - 0x0B80] = page_data[:6]
+            expected_state[0x0BA0 - 0x0B80] = 2
+            expected_state[0x0BA2 - 0x0B80] = int(packed)
+            expected_state[0x0BA5 - 0x0B80 : 0x0BA7 - 0x0B80] = struct.pack("<H", 1)
+            expected_state[0x0BA3 - 0x0B80] = channel_active
+            if state_after != bytes(expected_state):
+                raise AssertionError(
+                    f"0xbbb3 {name}: state={state_after.hex()}, "
+                    f"expected={bytes(expected_state).hex()}"
+                )
+            if bytes(machine.mem_read(audio_segment * 16 + audio_offset, 0x4000)) != bytes(page_data):
+                raise AssertionError(f"0xbbb3 {name}: first page differs")
+        else:
+            if page_calls or stop_calls or play_calls:
+                raise AssertionError(
+                    f"0xbbb3 {name}: inactive path called page/driver"
+                )
+            if bytes(machine.mem_read(game_segment * 16 + 0x0B80, 0x40)) != bytes(game_state):
+                raise AssertionError(f"0xbbb3 {name}: inactive state changed")
+
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B80, 0x40)) != data_decoy:
+            raise AssertionError(f"0xbbb3 {name}: DS decoy changed")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbbb3 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbbb3 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "sound_enabled": sound_enabled,
+                "channel_active": channel_active,
+                "start_request": request,
+                "started": active,
+                "first_page": 0 if active else None,
+                "next_page": 1 if active else None,
+                "packed_header": packed if active else None,
+                "first_buffer_state": 1 if active else None,
+                "second_buffer_state": 0 if active else None,
+                "pending_after": 2 if active else request,
+            }
+        )
+
+    return vectors
+
+
+def snd_stream_refill_vectors() -> list[dict[str, object]]:
+    entry = 0xBC50
+    expected_hash = "99c96376cc75ea56f0a0d77f7540549d10bfc80eac3e1be93a131a71a5b9a765"
+    if hashlib.sha256(EXE[entry : entry + 185]).hexdigest() != expected_hash:
+        raise AssertionError("0xbc50: recovered 185-byte body changed")
+
+    cases = [
+        ("sound_disabled", 0, 1, 2, 0, 0, 0x1234, 1, 4, 0x2222),
+        ("channel_disabled", 1, 0, 2, 0, 0, 0x1234, 1, 4, 0x2222),
+        ("stream_inactive", 1, 1, 1, 0, 0, 0x1234, 1, 4, 0x2222),
+        ("both_busy_return", 1, 1, 2, 2, 2, 0x1234, 1, 4, 0x2222),
+        ("first_page_service", 1, 1, 2, 0, 2, 0x1234, 0, 4, 0x2222),
+        ("prefixed_page_service", 1, 1, 2, 0, 2, 0x3456, 2, 5, 0x2222),
+        ("second_buffer_play", 1, 1, 2, 2, 0, 0x0000, 1, 5, 0x2222),
+        ("busy_minus_one_final", 1, 1, 2, 2, 2, 0xFFFF, 3, 4, 0x0123),
+        ("page_word_wrap", 1, 1, 2, 0, 2, 0x2345, 0xFFFF, 5, 0x3456),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    audio_segment = 0x5000
+    audio_offset = 0x1000
+    stack_segment = 0x9000
+    callback_segment = 0xF000
+    position_offset = 0x0100
+    service_offset = 0x0200
+    play_offset = 0x0300
+    position_address = callback_segment * 16 + position_offset
+    service_address = callback_segment * 16 + service_offset
+    play_address = callback_segment * 16 + play_offset
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            sound_enabled,
+            channel_active,
+            pending,
+            first_state,
+            second_state,
+            position,
+            page,
+            page_count,
+            final_bytes,
+        ) = case
+        gated = bool(sound_enabled & 1 and channel_active & 1 and pending & 2)
+        immediate_return = gated and first_state & 2 and second_state & 2 and position not in (0, 0xFFFF)
+        fills = gated and not immediate_return
+        selected_index = 1 if first_state & 2 else 0
+        selected_offset = 0x0B91 if selected_index else 0x0B89
+        destination_offset = (
+            audio_offset + (0x4008 if selected_index else 0)
+        ) & 0xFFFF
+        page_destination = (
+            destination_offset + (6 if page != 0 else 0)
+        ) & 0xFFFF
+        next_page_candidate = (page + 1) & 0xFFFF
+        reaches_end = next_page_candidate >= page_count
+        expected_next_page = 0 if fills and reaches_end else next_page_candidate
+        expected_length = final_bytes if fills and reaches_end else 0x4000
+        callback_kind = (
+            "play" if fills and position in (0, 0xFFFF) else "service" if fills else None
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        header = struct.pack("<HHH", 0x1122, 0x3344, 0x5566)
+        first_descriptor = struct.pack(
+            "<HHHBB", audio_offset, audio_segment, 0x1111, first_state, 0xA5
+        )
+        second_descriptor = struct.pack(
+            "<HHHBB",
+            (audio_offset + 0x4008) & 0xFFFF,
+            audio_segment,
+            0x2222,
+            second_state,
+            0x5A,
+        )
+        game_state = bytearray(
+            ((index * 17 + case_index * 23 + 0x31) & 0xFF)
+            for index in range(0x40)
+        )
+        game_state[0x0B89 - 0x0B80 : 0x0B91 - 0x0B80] = first_descriptor
+        game_state[0x0B91 - 0x0B80 : 0x0B99 - 0x0B80] = second_descriptor
+        game_state[0x0B99 - 0x0B80 : 0x0B9F - 0x0B80] = header
+        game_state[0x0BA0 - 0x0B80] = pending
+        game_state[0x0BA3 - 0x0B80] = channel_active
+        game_state[0x0BA5 - 0x0B80 : 0x0BA7 - 0x0B80] = struct.pack("<H", page)
+        game_state[0x0BA7 - 0x0B80 : 0x0BA9 - 0x0B80] = struct.pack("<H", page_count)
+        game_state[0x0BA9 - 0x0B80 : 0x0BAB - 0x0B80] = struct.pack("<H", final_bytes)
+        game_state[0x0BB7 - 0x0B80 : 0x0BBB - 0x0B80] = struct.pack(
+            "<HH", audio_offset, audio_segment
+        )
+        data_decoy = bytes((value ^ 0xFF) for value in game_state)
+        audio_before = bytes(
+            ((index * 11 + case_index * 19 + 0xA5) & 0xFF)
+            for index in range(0xA000)
+        )
+        page_data = bytes(
+            ((index * 29 + case_index * 37 + 5) & 0xFF)
+            for index in range(0x4000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        position_calls = []
+        page_calls = []
+        driver_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == position_address:
+                call_index = len(position_calls)
+                returned_position = position if call_index == 0 else 0x1234
+                position_calls.append(
+                    {
+                        "ax_before": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "returned": returned_position,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, returned_position)
+            elif address == 0xBD09:
+                prefix = bytes(
+                    machine.mem_read(
+                        audio_segment * 16 + destination_offset,
+                        6,
+                    )
+                )
+                page_calls.append(
+                    {
+                        "page": machine.reg_read(UC_X86_REG_AX),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "prefix": prefix.hex(),
+                    }
+                )
+                machine.mem_write(
+                    audio_segment * 16 + page_destination,
+                    page_data,
+                )
+            elif address in (service_address, play_address):
+                driver_calls.append(
+                    {
+                        "kind": "service" if address == service_address else "play",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "di": machine.reg_read(UC_X86_REG_DI),
+                        "first_state": machine.mem_read(
+                            game_segment * 16 + 0x0B8F, 1
+                        )[0],
+                        "second_state": machine.mem_read(
+                            game_segment * 16 + 0x0B97, 1
+                        )[0],
+                        "length": struct.unpack(
+                            "<H",
+                            machine.mem_read(
+                                game_segment * 16 + selected_offset + 4, 2
+                            ),
+                        )[0],
+                        "next_page": struct.unpack(
+                            "<H",
+                            machine.mem_read(game_segment * 16 + 0x0BA5, 2),
+                        )[0],
+                    }
+                )
+                machine.mem_write(game_segment * 16 + 0x0B8F, b"\x02")
+                machine.mem_write(game_segment * 16 + 0x0B97, b"\x02")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xBD09, b"\xc3"),
+                (callback_segment, position_offset, b"\xcb"),
+                (callback_segment, service_offset, b"\xcb"),
+                (callback_segment, play_offset, b"\xcb"),
+                (game_segment, 0x0B80, bytes(game_state)),
+                (data_segment, 0x0B80, data_decoy),
+                (game_segment, 0x0ADE, bytes((sound_enabled,))),
+                (data_segment, 0x0ADE, bytes((sound_enabled ^ 0xFF,))),
+                (
+                    game_segment,
+                    0x0CDB,
+                    struct.pack("<HH", play_offset, callback_segment),
+                ),
+                (
+                    game_segment,
+                    0x0CEB,
+                    struct.pack("<HH", service_offset, callback_segment),
+                ),
+                (
+                    game_segment,
+                    0x0CF3,
+                    struct.pack("<HH", position_offset, callback_segment),
+                ),
+                (audio_segment, 0, audio_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if not gated:
+            if position_calls or page_calls or driver_calls:
+                raise AssertionError(f"0xbc50 {name}: gated path called driver")
+        elif immediate_return:
+            if len(position_calls) != 1 or page_calls or driver_calls:
+                raise AssertionError(
+                    f"0xbc50 {name}: immediate return calls differ"
+                )
+        else:
+            if len(position_calls) != 2:
+                raise AssertionError(
+                    f"0xbc50 {name}: position calls={position_calls}"
+                )
+            expected_prefix = header if page else audio_before[destination_offset : destination_offset + 6]
+            expected_page_call = {
+                "page": page,
+                "si": selected_offset,
+                "ds": game_segment,
+                "es": audio_segment,
+                "di": page_destination,
+                "prefix": expected_prefix.hex(),
+            }
+            if page_calls != [expected_page_call]:
+                raise AssertionError(
+                    f"0xbc50 {name}: page calls={page_calls}, "
+                    f"expected={[expected_page_call]}"
+                )
+            if len(driver_calls) != 1:
+                raise AssertionError(f"0xbc50 {name}: driver calls={driver_calls}")
+            expected_first_at_callback = 1 if selected_index == 0 else first_state
+            expected_second_at_callback = 1 if selected_index == 1 else second_state
+            if callback_kind == "play":
+                expected_first_at_callback = int(selected_index == 0)
+                expected_second_at_callback = int(selected_index == 1)
+            expected_cursor = page_destination
+            if callback_kind == "play" and expected_cursor != audio_offset:
+                expected_cursor = (expected_cursor - 6) & 0xFFFF
+            expected_driver = {
+                "kind": callback_kind,
+                "ax": 0,
+                "si": selected_offset,
+                "ds": game_segment,
+                "es": audio_segment,
+                "di": expected_cursor,
+                "first_state": expected_first_at_callback,
+                "second_state": expected_second_at_callback,
+                "length": expected_length,
+                "next_page": expected_next_page,
+            }
+            if driver_calls != [expected_driver]:
+                raise AssertionError(
+                    f"0xbc50 {name}: driver={driver_calls}, "
+                    f"expected={[expected_driver]}"
+                )
+            if bytes(machine.mem_read(audio_segment * 16 + page_destination, 0x4000)) != page_data:
+                raise AssertionError(f"0xbc50 {name}: page bytes differ")
+
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B80, 0x40)) != data_decoy:
+            raise AssertionError(f"0xbc50 {name}: DS decoy changed")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbc50 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbc50 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "sound_enabled": sound_enabled,
+                "channel_active": channel_active,
+                "stream_pending": pending,
+                "position": position if gated else None,
+                "selected_buffer": selected_index if fills else None,
+                "page_read": page if fills else None,
+                "header_prefixed": bool(page) if fills else None,
+                "driver_action": callback_kind,
+                "next_page": expected_next_page if fills else page,
+                "selected_length": expected_length if fills else None,
+            }
+        )
+
+    return vectors
+
+
 def snd_bank_page_read_vectors() -> list[dict[str, object]]:
     entry = 0xBD09
     expected_hash = "c4f057a1f1e81d9fb22d0a27a472bcb804659cf240fed7127de452fa2d5dc071"
@@ -30313,6 +30892,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_bb9d_natural.json",
         snd_driver_call_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bbb3_natural.json",
+        snd_stream_start_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bc50_natural.json",
+        snd_stream_refill_vectors(),
         args.check,
     )
     update_vector(

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "sound_disabled",
+    "sound_enabled": 0,
+    "channel_active": 1,
+    "start_request": 3,
+    "started": false,
+    "first_page": null,
+    "next_page": null,
+    "packed_header": null,
+    "first_buffer_state": null,
+    "second_buffer_state": null,
+    "pending_after": 3
+  },
+  {
+    "name": "channel_disabled",
+    "sound_enabled": 1,
+    "channel_active": 0,
+    "start_request": 3,
+    "started": false,
+    "first_page": null,
+    "next_page": null,
+    "packed_header": null,
+    "first_buffer_state": null,
+    "second_buffer_state": null,
+    "pending_after": 3
+  },
+  {
+    "name": "no_start_request",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "start_request": 4,
+    "started": false,
+    "first_page": null,
+    "next_page": null,
+    "packed_header": null,
+    "first_buffer_state": null,
+    "second_buffer_state": null,
+    "pending_after": 4
+  },
+  {
+    "name": "request_bit_zero",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "start_request": 1,
+    "started": true,
+    "first_page": 0,
+    "next_page": 1,
+    "packed_header": false,
+    "first_buffer_state": 1,
+    "second_buffer_state": 0,
+    "pending_after": 2
+  },
+  {
+    "name": "request_bit_one_packed",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "start_request": 2,
+    "started": true,
+    "first_page": 0,
+    "next_page": 1,
+    "packed_header": true,
+    "first_buffer_state": 1,
+    "second_buffer_state": 0,
+    "pending_after": 2
+  },
+  {
+    "name": "both_request_bits",
+    "sound_enabled": 255,
+    "channel_active": 255,
+    "start_request": 255,
+    "started": true,
+    "first_page": 0,
+    "next_page": 1,
+    "packed_header": false,
+    "first_buffer_state": 1,
+    "second_buffer_state": 0,
+    "pending_after": 2
+  }
+]
