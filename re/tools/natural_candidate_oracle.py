@@ -3055,9 +3055,9 @@ def extended_memory_backends_release_vectors() -> list[dict[str, object]]:
             "gs": game_segment,
             "flags": 0x0A93,
         }
-        # Pool order supplied to the fixture is small, resource, secondary, archive.
-        small_ems, resource_ems, secondary_ems, archive_ems = ems_handles
-        small_xms, resource_xms, secondary_xms, archive_xms = xms_handles
+        # Pool order supplied to the fixture is small, resource, secondary, SND bank.
+        small_ems, resource_ems, secondary_ems, snd_bank_ems = ems_handles
+        small_xms, resource_xms, secondary_xms, snd_bank_xms = xms_handles
         state_buffer = bytearray(
             b"\x00" * 4 + b"\xa5\x5a\x69\x96\xc3\x3c\xf0\x0f" + b"\x00" * 16
         )
@@ -3070,8 +3070,8 @@ def extended_memory_backends_release_vectors() -> list[dict[str, object]]:
             resource_ems & 0xFFFF,
             secondary_xms & 0xFFFF,
             secondary_ems & 0xFFFF,
-            archive_xms & 0xFFFF,
-            archive_ems & 0xFFFF,
+            snd_bank_xms & 0xFFFF,
+            snd_bank_ems & 0xFFFF,
             small_xms & 0xFFFF,
             small_ems & 0xFFFF,
         )
@@ -23518,16 +23518,16 @@ def snd_driver_call_vectors() -> list[dict[str, object]]:
     return vectors
 
 
-def ems_transfer_dispatch_vectors() -> list[dict[str, object]]:
+def snd_bank_page_read_vectors() -> list[dict[str, object]]:
     entry = 0xBD09
     expected_hash = "c4f057a1f1e81d9fb22d0a27a472bcb804659cf240fed7127de452fa2d5dc071"
     if hashlib.sha256(EXE[entry : entry + 29]).hexdigest() != expected_hash:
         raise AssertionError("0xbd09: recovered 29-byte body changed")
 
     helper_names = {
-        0xBD26: "ems_map_page_and_copy",
-        0xBD4E: "ems_buffer_setup",
-        0xBD8D: "ems_page_offset_split",
+        0xBD26: "snd_bank_ems_page_read",
+        0xBD4E: "snd_bank_xms_page_read",
+        0xBD8D: "snd_bank_file_page_read",
     }
     data_segment = 0x4000
     game_segment = 0x2C00
@@ -23689,6 +23689,624 @@ def ems_transfer_dispatch_vectors() -> list[dict[str, object]]:
                 "destination_es": extra_segment,
                 "destination_di": destination_offset,
                 "bl_at_call": bl_at_call,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def snd_bank_ems_page_read_vectors() -> list[dict[str, object]]:
+    entry = 0xBD26
+    expected_hash = "db15b3cda28ad812dac847298327127233ee695c460da0f3a6ff517b2ba5a40e"
+    if hashlib.sha256(EXE[entry : entry + 40]).hexdigest() != expected_hash:
+        raise AssertionError("0xbd26: recovered 40-byte body changed")
+
+    cases = [
+        ("first_page", 0x0000, 0x0000, 0x1234, 0x0246, False),
+        ("ordinary_page", 0x0001, 0x2300, 0xABCD, 0x0893, False),
+        ("wrapped_destination", 0x0037, 0xF000, 0x0000, 0x0203, True),
+        ("last_page", 0xFFFF, 0x8000, 0xFFFF, 0x0AD7, False),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    page_frame_segment = 0x5000
+    alternate_page_frame_segment = 0x6000
+    destination_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name, page, destination_offset, handle, response_flags, mutate_frame = case
+        initial = {
+            "eax": 0xA1A10000 | page,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        source = bytes(
+            ((index * 29 + case_index * 71 + 3) & 0xFF)
+            for index in range(0x4000)
+        )
+        destination_before = bytes(
+            ((index * 11 + case_index * 37 + 0xA5) & 0xFF)
+            for index in range(0x10000)
+        )
+        expected_destination = bytearray(destination_before)
+        for index, value in enumerate(source):
+            expected_destination[(destination_offset + index) & 0xFFFF] = value
+        interrupt_calls = []
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        data_handle = handle ^ 0x55AA
+        data_page_frame = page_frame_segment ^ 0x1111
+
+        def interrupt(machine: Uc, number: int) -> None:
+            call = (
+                number,
+                machine.reg_read(UC_X86_REG_AX),
+                machine.reg_read(UC_X86_REG_BX),
+                machine.reg_read(UC_X86_REG_DX),
+                machine.reg_read(UC_X86_REG_DS),
+            )
+            interrupt_calls.append(call)
+            if number != 0x67:
+                raise AssertionError(f"0xbd26 {name}: unexpected INT {number:#x}")
+            if mutate_frame:
+                machine.mem_write(
+                    game_segment * 16 + 0x0A66,
+                    struct.pack("<H", alternate_page_frame_segment),
+                )
+            machine.reg_write(UC_X86_REG_AX, 0x00A5)
+            machine.reg_write(UC_X86_REG_EFLAGS, response_flags)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (page_frame_segment, 0, source),
+                (alternate_page_frame_segment, 0, source[::-1]),
+                (destination_segment, 0, destination_before),
+                (game_segment, 0x0A60, struct.pack("<H", handle)),
+                (
+                    game_segment,
+                    0x0A66,
+                    struct.pack("<H", page_frame_segment),
+                ),
+                (data_segment, 0x0A60, struct.pack("<H", data_handle)),
+                (
+                    data_segment,
+                    0x0A66,
+                    struct.pack("<H", data_page_frame),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+        )
+        expected_call = [
+            (0x67, 0x4400, page, handle, page_frame_segment)
+        ]
+        if interrupt_calls != expected_call:
+            raise AssertionError(
+                f"0xbd26 {name}: calls={interrupt_calls}, expected={expected_call}"
+            )
+        actual_destination = bytes(
+            machine.mem_read(destination_segment * 16, 0x10000)
+        )
+        if actual_destination != bytes(expected_destination):
+            raise AssertionError(f"0xbd26 {name}: 16 KiB page copy differs")
+        if bytes(machine.mem_read(page_frame_segment * 16, 0x4000)) != source:
+            raise AssertionError(f"0xbd26 {name}: page frame changed")
+        expected_page_frame = (
+            alternate_page_frame_segment if mutate_frame else page_frame_segment
+        )
+        if machine.mem_read(game_segment * 16 + 0x0A60, 2) != struct.pack(
+            "<H", handle
+        ):
+            raise AssertionError(f"0xbd26 {name}: SND-bank handle changed")
+        if machine.mem_read(game_segment * 16 + 0x0A66, 2) != struct.pack(
+            "<H", expected_page_frame
+        ):
+            raise AssertionError(f"0xbd26 {name}: page frame global mismatch")
+        if machine.mem_read(data_segment * 16 + 0x0A60, 2) != struct.pack(
+            "<H", data_handle
+        ):
+            raise AssertionError(f"0xbd26 {name}: DS handle decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbd26 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xbd26 {name}: near return changed CS")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        expected_flags = {
+            flag: bool(response_flags & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xbd26 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbd26 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "page": page,
+                "snd_bank_ems_handle": handle,
+                "physical_page": 0,
+                "page_frame_segment": page_frame_segment,
+                "destination_segment": destination_segment,
+                "destination_offset": destination_offset,
+                "bytes_copied": 0x4000,
+                "destination_wraps": destination_offset > 0xC000,
+                "page_frame_changed_during_map": mutate_frame,
+                "source_sha256": hashlib.sha256(source).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def snd_bank_xms_page_read_vectors() -> list[dict[str, object]]:
+    entry = 0xBD4E
+    expected_hash = "264ce031bf2411ec0dd052e40c1d8d50e38c0e05d7c0816f4b7cb86f6089a023"
+    if hashlib.sha256(EXE[entry : entry + 63]).hexdigest() != expected_hash:
+        raise AssertionError("0xbd4e: recovered 63-byte body changed")
+
+    cases = [
+        ("first_page", 0x0000, 0x0100, 0x1234, 0x0246, False),
+        ("second_page", 0x0001, 0x2345, 0xABCD, 0x0893, False),
+        ("ordinary_page", 0x0345, 0x8000, 0x0000, 0x0203, False),
+        ("driver_clobbers", 0xFFFF, 0xF000, 0xFFFF, 0x0AD7, True),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    destination_segment = 0x7000
+    callback_segment = 0xF000
+    callback_offset = 0x0100
+    callback_address = callback_segment * 16 + callback_offset
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name, page, destination_offset, handle, callback_flags, clobber = case
+        initial = {
+            "eax": 0xA1A10000 | page,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        expected_request = struct.pack(
+            "<IHIHHH",
+            0x4000,
+            handle,
+            (page << 14) & 0xFFFFFFFF,
+            0,
+            destination_offset,
+            destination_segment,
+        )
+        callback_calls = []
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        driver_pointer = struct.pack("<HH", callback_offset, callback_segment)
+        data_pointer = struct.pack("<HH", 0x0200, 0xE000)
+        request_before = bytes((0x31 + index * 13) & 0xFF for index in range(16))
+        data_request = bytes((0xA5 - index * 9) & 0xFF for index in range(16))
+        data_handle = handle ^ 0x55AA
+        callback_changes = {
+            "eax": 0xCAFE1234,
+            "ebx": 0xBEEF5678,
+            "ecx": 0x13572468,
+            "edx": 0x24681357,
+            "esi": 0xFACE9ABC,
+            "edi": 0x369C258B,
+            "ebp": 0x48AD37CE,
+            "es": 0x7CE0,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_address:
+                return
+            callback_calls.append(address)
+            actual_entry = {
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ebp": machine.reg_read(UC_X86_REG_EBP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_entry = dict(initial)
+            del expected_entry["flags"]
+            expected_entry["eax"] = 0x00000B00
+            expected_entry["ebx"] = (initial["ebx"] & 0xFFFF0000) | handle
+            expected_entry["esi"] = (initial["esi"] & 0xFFFF0000) | 0x0A6C
+            expected_entry["sp"] = 0xFEF4
+            expected_entry["ds"] = game_segment
+            expected_entry["cs"] = callback_segment
+            expected_entry["ip"] = callback_offset
+            if actual_entry != expected_entry:
+                raise AssertionError(
+                    f"0xbd4e {name}: callback={actual_entry}, "
+                    f"expected={expected_entry}"
+                )
+            stack_words = struct.unpack(
+                "<HHHHHHH",
+                machine.mem_read(stack_segment * 16 + 0xFEF4, 14),
+            )
+            expected_stack = (
+                0xBD88,
+                0,
+                initial["eax"] & 0xFFFF,
+                initial["ebx"] & 0xFFFF,
+                initial["esi"] & 0xFFFF,
+                initial["ds"],
+                return_address,
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0xbd4e {name}: stack={stack_words}, "
+                    f"expected={expected_stack}"
+                )
+            request = bytes(machine.mem_read(game_segment * 16 + 0x0A6C, 16))
+            if request != expected_request:
+                raise AssertionError(
+                    f"0xbd4e {name}: request={request.hex()}, "
+                    f"expected={expected_request.hex()}"
+                )
+            if clobber:
+                for register, value in callback_changes.items():
+                    machine.reg_write(REGISTERS[register], value)
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (callback_segment, callback_offset, b"\xcb"),
+                (0xE000, 0x0200, b"\xcc"),
+                (game_segment, 0x0A4A, driver_pointer),
+                (game_segment, 0x0A5E, struct.pack("<H", handle)),
+                (game_segment, 0x0A6C, request_before),
+                (data_segment, 0x0A4A, data_pointer),
+                (data_segment, 0x0A5E, struct.pack("<H", data_handle)),
+                (data_segment, 0x0A6C, data_request),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+        if callback_calls != [callback_address]:
+            raise AssertionError(f"0xbd4e {name}: callback calls={callback_calls}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0A6C, 16)) != expected_request:
+            raise AssertionError(f"0xbd4e {name}: final request changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A6C, 16)) != data_request:
+            raise AssertionError(f"0xbd4e {name}: DS request decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0A4A, 4)) != driver_pointer:
+            raise AssertionError(f"0xbd4e {name}: driver pointer changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] &= 0xFFFF
+        expected_registers["sp"] = 0xFF02
+        if clobber:
+            expected_registers.update(callback_changes)
+            expected_registers["eax"] = (
+                callback_changes["eax"] & 0xFFFF0000
+            ) | (initial["eax"] & 0xFFFF)
+            expected_registers["ebx"] = (
+                callback_changes["ebx"] & 0xFFFF0000
+            ) | (initial["ebx"] & 0xFFFF)
+            expected_registers["esi"] = (
+                callback_changes["esi"] & 0xFFFF0000
+            ) | (initial["esi"] & 0xFFFF)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbd4e {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xbd4e {name}: near return changed CS")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        expected_flags = {
+            flag: bool(callback_flags & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xbd4e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbd4e {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "page": page,
+                "snd_bank_xms_handle": handle,
+                "source_offset": (page << 14) & 0xFFFFFFFF,
+                "length": 0x4000,
+                "destination_handle": 0,
+                "destination_segment": destination_segment,
+                "destination_offset": destination_offset,
+                "driver_eax": 0x00000B00,
+                "driver_clobbers_passed_through": clobber,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def snd_bank_file_page_read_vectors() -> list[dict[str, object]]:
+    entry = 0xBD8D
+    expected_hash = "4ad91abe66caeda36b5ba7f2714f2dacabcddd3192b084b7f96c6b28fa9e9cf5"
+    if hashlib.sha256(EXE[entry : entry + 42]).hexdigest() != expected_hash:
+        raise AssertionError("0xbd8d: recovered 42-byte body changed")
+
+    cases = [
+        ("first_page", 0x0000, 0x0100, 0x1234, 0x0000, 0x4000, 0x0202, 0x0246, False),
+        ("second_page", 0x0001, 0x2345, 0xABCD, 0x4000, 0x3FFF, 0x0203, 0x0893, False),
+        ("seek_error_ignored", 0x0345, 0x7000, 0x0000, 0x0005, 0x0000, 0x0203, 0x0203, True),
+        ("last_page", 0xFFFF, 0x8000, 0xFFFF, 0xC000, 0x4000, 0x0AD7, 0x0AD7, False),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    destination_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            page,
+            destination_offset,
+            handle,
+            seek_return_ax,
+            read_return_ax,
+            seek_flags,
+            read_flags,
+            mutate_handle,
+        ) = case
+        initial = {
+            "eax": 0xA1A10000 | page,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        read_data = bytes(
+            ((index * 17 + case_index * 43 + 7) & 0xFF)
+            for index in range(0x4000)
+        )
+        destination_before = bytes([0xA5 ^ case_index]) * 0x4000
+        interrupt_calls = []
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        data_handle = handle ^ 0x55AA
+
+        def interrupt(machine: Uc, number: int) -> None:
+            call = {
+                "number": number,
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+            }
+            interrupt_calls.append(call)
+            if number != 0x21:
+                raise AssertionError(f"0xbd8d {name}: unexpected INT {number:#x}")
+            if len(interrupt_calls) == 1:
+                if mutate_handle:
+                    machine.mem_write(
+                        game_segment * 16 + 0x0C49,
+                        struct.pack("<H", handle ^ 0xFFFF),
+                    )
+                machine.reg_write(UC_X86_REG_AX, seek_return_ax)
+                machine.reg_write(UC_X86_REG_EFLAGS, seek_flags)
+            elif len(interrupt_calls) == 2:
+                machine.mem_write(
+                    call["ds"] * 16 + call["dx"],
+                    read_data,
+                )
+                machine.reg_write(UC_X86_REG_AX, read_return_ax)
+                machine.reg_write(UC_X86_REG_EFLAGS, read_flags)
+            else:
+                raise AssertionError(f"0xbd8d {name}: too many DOS calls")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (
+                    destination_segment,
+                    destination_offset,
+                    destination_before,
+                ),
+                (game_segment, 0x0C49, struct.pack("<H", handle)),
+                (data_segment, 0x0C49, struct.pack("<H", data_handle)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+        )
+        seek_offset = (page << 14) & 0xFFFFFFFF
+        expected_calls = [
+            {
+                "number": 0x21,
+                "ax": 0x4200,
+                "bx": handle,
+                "cx": (seek_offset >> 16) & 0xFFFF,
+                "dx": seek_offset & 0xFFFF,
+                "ds": data_segment,
+            },
+            {
+                "number": 0x21,
+                "ax": 0x3F00 | (seek_return_ax & 0xFF),
+                "bx": handle,
+                "cx": 0x4000,
+                "dx": destination_offset,
+                "ds": destination_segment,
+            },
+        ]
+        if interrupt_calls != expected_calls:
+            raise AssertionError(
+                f"0xbd8d {name}: calls={interrupt_calls}, "
+                f"expected={expected_calls}"
+            )
+        actual_data = bytes(
+            machine.mem_read(
+                destination_segment * 16 + destination_offset,
+                0x4000,
+            )
+        )
+        if actual_data != read_data:
+            raise AssertionError(f"0xbd8d {name}: read destination differs")
+        expected_stored_handle = handle ^ (0xFFFF if mutate_handle else 0)
+        if machine.mem_read(game_segment * 16 + 0x0C49, 2) != struct.pack(
+            "<H", expected_stored_handle
+        ):
+            raise AssertionError(f"0xbd8d {name}: SND-bank handle mismatch")
+        if machine.mem_read(data_segment * 16 + 0x0C49, 2) != struct.pack(
+            "<H", data_handle
+        ):
+            raise AssertionError(f"0xbd8d {name}: DS handle decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbd8d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xbd8d {name}: near return changed CS")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        expected_flags = {
+            flag: bool(read_flags & mask) for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xbd8d {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbd8d {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "page": page,
+                "snd_bank_file_handle": handle,
+                "seek_offset": seek_offset,
+                "seek_error": bool(seek_flags & 1),
+                "handle_changed_during_seek": mutate_handle,
+                "read_requested": 0x4000,
+                "destination_segment": destination_segment,
+                "destination_offset": destination_offset,
+                "read_sha256": hashlib.sha256(read_data).hexdigest(),
                 "defined_flags": expected_flags,
             }
         )
@@ -29699,7 +30317,22 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_bd09_natural.json",
-        ems_transfer_dispatch_vectors(),
+        snd_bank_page_read_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bd26_natural.json",
+        snd_bank_ems_page_read_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bd4e_natural.json",
+        snd_bank_xms_page_read_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bd8d_natural.json",
+        snd_bank_file_page_read_vectors(),
         args.check,
     )
     update_vector(

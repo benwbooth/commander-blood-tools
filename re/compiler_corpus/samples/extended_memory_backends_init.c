@@ -27,8 +27,8 @@ extern volatile i16 GAME_DATA resource_xms_handle;
 extern volatile i16 GAME_DATA resource_ems_handle;
 extern volatile i16 GAME_DATA secondary_xms_handle;
 extern volatile i16 GAME_DATA secondary_ems_handle;
-extern volatile i16 GAME_DATA archive_xms_handle;
-extern volatile i16 GAME_DATA archive_ems_handle;
+extern volatile i16 GAME_DATA snd_bank_xms_handle;
+extern volatile i16 GAME_DATA snd_bank_ems_handle;
 extern volatile i16 GAME_DATA small_xms_handle;
 extern volatile i16 GAME_DATA small_ems_handle;
 extern volatile u16 GAME_DATA ems_page_frame_segment;
@@ -87,7 +87,7 @@ void FAR extended_memory_backends_init_probe(void)
             registers.h.ah = 0x43u;
             int86(0x67, &registers, &registers);
             if (registers.h.ah == 0u) {
-                archive_ems_handle = (i16)registers.x.dx;
+                snd_bank_ems_handle = (i16)registers.x.dx;
             }
 
             registers.h.ah = 0x41u;
@@ -117,7 +117,7 @@ void FAR extended_memory_backends_init_probe(void)
     if (secondary_ems_handle == -1 && xms_allocate_kb(0x0100u, &handle)) {
         secondary_xms_handle = (i16)handle;
     }
-    if (archive_ems_handle == -1 && xms_allocate_kb(0x05a0u, &handle)) {
-        archive_xms_handle = (i16)handle;
+    if (snd_bank_ems_handle == -1 && xms_allocate_kb(0x05a0u, &handle)) {
+        snd_bank_xms_handle = (i16)handle;
     }
 }

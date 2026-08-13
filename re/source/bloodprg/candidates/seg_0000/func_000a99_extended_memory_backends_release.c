@@ -21,9 +21,9 @@ void CB_FAR extended_memory_backends_release(void)
         registers.x.dx = (cb_u16)secondary_ems_handle;
         int86(0x67, &registers, &registers);
     }
-    if (archive_ems_handle != -1) {
+    if (snd_bank_ems_handle != -1) {
         registers.h.ah = 0x45u;
-        registers.x.dx = (cb_u16)archive_ems_handle;
+        registers.x.dx = (cb_u16)snd_bank_ems_handle;
         int86(0x67, &registers, &registers);
     }
 
@@ -36,7 +36,7 @@ void CB_FAR extended_memory_backends_release(void)
     if (secondary_xms_handle != -1) {
         cb_xms_release((cb_u16)secondary_xms_handle);
     }
-    if (archive_xms_handle != -1) {
-        cb_xms_release((cb_u16)archive_xms_handle);
+    if (snd_bank_xms_handle != -1) {
+        cb_xms_release((cb_u16)snd_bank_xms_handle);
     }
 }

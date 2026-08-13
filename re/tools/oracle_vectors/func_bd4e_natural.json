@@ -1,0 +1,82 @@
+[
+  {
+    "name": "first_page",
+    "page": 0,
+    "snd_bank_xms_handle": 4660,
+    "source_offset": 0,
+    "length": 16384,
+    "destination_handle": 0,
+    "destination_segment": 28672,
+    "destination_offset": 256,
+    "driver_eax": 2816,
+    "driver_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_page",
+    "page": 1,
+    "snd_bank_xms_handle": 43981,
+    "source_offset": 16384,
+    "length": 16384,
+    "destination_handle": 0,
+    "destination_segment": 28672,
+    "destination_offset": 9029,
+    "driver_eax": 2816,
+    "driver_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "ordinary_page",
+    "page": 837,
+    "snd_bank_xms_handle": 0,
+    "source_offset": 13713408,
+    "length": 16384,
+    "destination_handle": 0,
+    "destination_segment": 28672,
+    "destination_offset": 32768,
+    "driver_eax": 2816,
+    "driver_clobbers_passed_through": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "driver_clobbers",
+    "page": 65535,
+    "snd_bank_xms_handle": 65535,
+    "source_offset": 1073725440,
+    "length": 16384,
+    "destination_handle": 0,
+    "destination_segment": 28672,
+    "destination_offset": 61440,
+    "driver_eax": 2816,
+    "driver_clobbers_passed_through": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "first_page",
+    "page": 0,
+    "snd_bank_ems_handle": 4660,
+    "physical_page": 0,
+    "page_frame_segment": 20480,
+    "destination_segment": 28672,
+    "destination_offset": 0,
+    "bytes_copied": 16384,
+    "destination_wraps": false,
+    "page_frame_changed_during_map": false,
+    "source_sha256": "865aef066298849fa264749479a68ab328451c8f8732f52d4cd51d8c593e2122",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary_page",
+    "page": 1,
+    "snd_bank_ems_handle": 43981,
+    "physical_page": 0,
+    "page_frame_segment": 20480,
+    "destination_segment": 28672,
+    "destination_offset": 8960,
+    "bytes_copied": 16384,
+    "destination_wraps": false,
+    "page_frame_changed_during_map": false,
+    "source_sha256": "627d25a10ca87d0e81343f3bcac6f25b64bb39b816f011db52909f1007649ea0",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "wrapped_destination",
+    "page": 55,
+    "snd_bank_ems_handle": 0,
+    "physical_page": 0,
+    "page_frame_segment": 20480,
+    "destination_segment": 28672,
+    "destination_offset": 61440,
+    "bytes_copied": 16384,
+    "destination_wraps": true,
+    "page_frame_changed_during_map": true,
+    "source_sha256": "b45dfef3faa7aac54ece08cd5ab7c216f9c21e36a0547c545a7a89132341cfb7",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "last_page",
+    "page": 65535,
+    "snd_bank_ems_handle": 65535,
+    "physical_page": 0,
+    "page_frame_segment": 20480,
+    "destination_segment": 28672,
+    "destination_offset": 32768,
+    "bytes_copied": 16384,
+    "destination_wraps": false,
+    "page_frame_changed_during_map": false,
+    "source_sha256": "205a4bbe0a4a962902ab305e2f6e200dd27780065b6d28fd7e66fc11cc4e1bcd",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  }
+]

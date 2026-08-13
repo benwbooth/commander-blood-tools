@@ -1,7 +1,7 @@
 [
   {
     "mode": 0,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 4660,
     "destination_es": 18432,
@@ -18,7 +18,7 @@
   },
   {
     "mode": 1,
-    "callee": "ems_buffer_setup",
+    "callee": "snd_bank_xms_page_read",
     "callee_address": 48462,
     "value_ax": 4917,
     "destination_es": 18432,
@@ -35,7 +35,7 @@
   },
   {
     "mode": 2,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 5174,
     "destination_es": 18432,
@@ -52,7 +52,7 @@
   },
   {
     "mode": 3,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 5431,
     "destination_es": 18432,
@@ -69,7 +69,7 @@
   },
   {
     "mode": 4,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 5688,
     "destination_es": 18432,
@@ -86,7 +86,7 @@
   },
   {
     "mode": 5,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 5945,
     "destination_es": 18432,
@@ -103,7 +103,7 @@
   },
   {
     "mode": 6,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 6202,
     "destination_es": 18432,
@@ -120,7 +120,7 @@
   },
   {
     "mode": 7,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 6459,
     "destination_es": 18432,
@@ -137,7 +137,7 @@
   },
   {
     "mode": 8,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 6716,
     "destination_es": 18432,
@@ -154,7 +154,7 @@
   },
   {
     "mode": 9,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 6973,
     "destination_es": 18432,
@@ -171,7 +171,7 @@
   },
   {
     "mode": 10,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 7230,
     "destination_es": 18432,
@@ -188,7 +188,7 @@
   },
   {
     "mode": 11,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 7487,
     "destination_es": 18432,
@@ -205,7 +205,7 @@
   },
   {
     "mode": 12,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 7744,
     "destination_es": 18432,
@@ -222,7 +222,7 @@
   },
   {
     "mode": 13,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 8001,
     "destination_es": 18432,
@@ -239,7 +239,7 @@
   },
   {
     "mode": 14,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 8258,
     "destination_es": 18432,
@@ -256,7 +256,7 @@
   },
   {
     "mode": 15,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 8515,
     "destination_es": 18432,
@@ -273,7 +273,7 @@
   },
   {
     "mode": 16,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 8772,
     "destination_es": 18432,
@@ -290,7 +290,7 @@
   },
   {
     "mode": 17,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 9029,
     "destination_es": 18432,
@@ -307,7 +307,7 @@
   },
   {
     "mode": 18,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 9286,
     "destination_es": 18432,
@@ -324,7 +324,7 @@
   },
   {
     "mode": 19,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 9543,
     "destination_es": 18432,
@@ -341,7 +341,7 @@
   },
   {
     "mode": 20,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 9800,
     "destination_es": 18432,
@@ -358,7 +358,7 @@
   },
   {
     "mode": 21,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 10057,
     "destination_es": 18432,
@@ -375,7 +375,7 @@
   },
   {
     "mode": 22,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 10314,
     "destination_es": 18432,
@@ -392,7 +392,7 @@
   },
   {
     "mode": 23,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 10571,
     "destination_es": 18432,
@@ -409,7 +409,7 @@
   },
   {
     "mode": 24,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 10828,
     "destination_es": 18432,
@@ -426,7 +426,7 @@
   },
   {
     "mode": 25,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 11085,
     "destination_es": 18432,
@@ -443,7 +443,7 @@
   },
   {
     "mode": 26,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 11342,
     "destination_es": 18432,
@@ -460,7 +460,7 @@
   },
   {
     "mode": 27,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 11599,
     "destination_es": 18432,
@@ -477,7 +477,7 @@
   },
   {
     "mode": 28,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 11856,
     "destination_es": 18432,
@@ -494,7 +494,7 @@
   },
   {
     "mode": 29,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 12113,
     "destination_es": 18432,
@@ -511,7 +511,7 @@
   },
   {
     "mode": 30,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 12370,
     "destination_es": 18432,
@@ -528,7 +528,7 @@
   },
   {
     "mode": 31,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 12627,
     "destination_es": 18432,
@@ -545,7 +545,7 @@
   },
   {
     "mode": 32,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 12884,
     "destination_es": 18432,
@@ -562,7 +562,7 @@
   },
   {
     "mode": 33,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 13141,
     "destination_es": 18432,
@@ -579,7 +579,7 @@
   },
   {
     "mode": 34,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 13398,
     "destination_es": 18432,
@@ -596,7 +596,7 @@
   },
   {
     "mode": 35,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 13655,
     "destination_es": 18432,
@@ -613,7 +613,7 @@
   },
   {
     "mode": 36,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 13912,
     "destination_es": 18432,
@@ -630,7 +630,7 @@
   },
   {
     "mode": 37,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 14169,
     "destination_es": 18432,
@@ -647,7 +647,7 @@
   },
   {
     "mode": 38,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 14426,
     "destination_es": 18432,
@@ -664,7 +664,7 @@
   },
   {
     "mode": 39,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 14683,
     "destination_es": 18432,
@@ -681,7 +681,7 @@
   },
   {
     "mode": 40,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 14940,
     "destination_es": 18432,
@@ -698,7 +698,7 @@
   },
   {
     "mode": 41,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 15197,
     "destination_es": 18432,
@@ -715,7 +715,7 @@
   },
   {
     "mode": 42,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 15454,
     "destination_es": 18432,
@@ -732,7 +732,7 @@
   },
   {
     "mode": 43,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 15711,
     "destination_es": 18432,
@@ -749,7 +749,7 @@
   },
   {
     "mode": 44,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 15968,
     "destination_es": 18432,
@@ -766,7 +766,7 @@
   },
   {
     "mode": 45,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 16225,
     "destination_es": 18432,
@@ -783,7 +783,7 @@
   },
   {
     "mode": 46,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 16482,
     "destination_es": 18432,
@@ -800,7 +800,7 @@
   },
   {
     "mode": 47,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 16739,
     "destination_es": 18432,
@@ -817,7 +817,7 @@
   },
   {
     "mode": 48,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 16996,
     "destination_es": 18432,
@@ -834,7 +834,7 @@
   },
   {
     "mode": 49,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 17253,
     "destination_es": 18432,
@@ -851,7 +851,7 @@
   },
   {
     "mode": 50,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 17510,
     "destination_es": 18432,
@@ -868,7 +868,7 @@
   },
   {
     "mode": 51,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 17767,
     "destination_es": 18432,
@@ -885,7 +885,7 @@
   },
   {
     "mode": 52,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 18024,
     "destination_es": 18432,
@@ -902,7 +902,7 @@
   },
   {
     "mode": 53,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 18281,
     "destination_es": 18432,
@@ -919,7 +919,7 @@
   },
   {
     "mode": 54,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 18538,
     "destination_es": 18432,
@@ -936,7 +936,7 @@
   },
   {
     "mode": 55,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 18795,
     "destination_es": 18432,
@@ -953,7 +953,7 @@
   },
   {
     "mode": 56,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 19052,
     "destination_es": 18432,
@@ -970,7 +970,7 @@
   },
   {
     "mode": 57,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 19309,
     "destination_es": 18432,
@@ -987,7 +987,7 @@
   },
   {
     "mode": 58,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 19566,
     "destination_es": 18432,
@@ -1004,7 +1004,7 @@
   },
   {
     "mode": 59,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 19823,
     "destination_es": 18432,
@@ -1021,7 +1021,7 @@
   },
   {
     "mode": 60,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 20080,
     "destination_es": 18432,
@@ -1038,7 +1038,7 @@
   },
   {
     "mode": 61,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 20337,
     "destination_es": 18432,
@@ -1055,7 +1055,7 @@
   },
   {
     "mode": 62,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 20594,
     "destination_es": 18432,
@@ -1072,7 +1072,7 @@
   },
   {
     "mode": 63,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 20851,
     "destination_es": 18432,
@@ -1089,7 +1089,7 @@
   },
   {
     "mode": 64,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 21108,
     "destination_es": 18432,
@@ -1106,7 +1106,7 @@
   },
   {
     "mode": 65,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 21365,
     "destination_es": 18432,
@@ -1123,7 +1123,7 @@
   },
   {
     "mode": 66,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 21622,
     "destination_es": 18432,
@@ -1140,7 +1140,7 @@
   },
   {
     "mode": 67,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 21879,
     "destination_es": 18432,
@@ -1157,7 +1157,7 @@
   },
   {
     "mode": 68,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 22136,
     "destination_es": 18432,
@@ -1174,7 +1174,7 @@
   },
   {
     "mode": 69,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 22393,
     "destination_es": 18432,
@@ -1191,7 +1191,7 @@
   },
   {
     "mode": 70,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 22650,
     "destination_es": 18432,
@@ -1208,7 +1208,7 @@
   },
   {
     "mode": 71,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 22907,
     "destination_es": 18432,
@@ -1225,7 +1225,7 @@
   },
   {
     "mode": 72,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 23164,
     "destination_es": 18432,
@@ -1242,7 +1242,7 @@
   },
   {
     "mode": 73,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 23421,
     "destination_es": 18432,
@@ -1259,7 +1259,7 @@
   },
   {
     "mode": 74,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 23678,
     "destination_es": 18432,
@@ -1276,7 +1276,7 @@
   },
   {
     "mode": 75,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 23935,
     "destination_es": 18432,
@@ -1293,7 +1293,7 @@
   },
   {
     "mode": 76,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 24192,
     "destination_es": 18432,
@@ -1310,7 +1310,7 @@
   },
   {
     "mode": 77,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 24449,
     "destination_es": 18432,
@@ -1327,7 +1327,7 @@
   },
   {
     "mode": 78,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 24706,
     "destination_es": 18432,
@@ -1344,7 +1344,7 @@
   },
   {
     "mode": 79,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 24963,
     "destination_es": 18432,
@@ -1361,7 +1361,7 @@
   },
   {
     "mode": 80,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 25220,
     "destination_es": 18432,
@@ -1378,7 +1378,7 @@
   },
   {
     "mode": 81,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 25477,
     "destination_es": 18432,
@@ -1395,7 +1395,7 @@
   },
   {
     "mode": 82,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 25734,
     "destination_es": 18432,
@@ -1412,7 +1412,7 @@
   },
   {
     "mode": 83,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 25991,
     "destination_es": 18432,
@@ -1429,7 +1429,7 @@
   },
   {
     "mode": 84,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 26248,
     "destination_es": 18432,
@@ -1446,7 +1446,7 @@
   },
   {
     "mode": 85,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 26505,
     "destination_es": 18432,
@@ -1463,7 +1463,7 @@
   },
   {
     "mode": 86,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 26762,
     "destination_es": 18432,
@@ -1480,7 +1480,7 @@
   },
   {
     "mode": 87,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 27019,
     "destination_es": 18432,
@@ -1497,7 +1497,7 @@
   },
   {
     "mode": 88,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 27276,
     "destination_es": 18432,
@@ -1514,7 +1514,7 @@
   },
   {
     "mode": 89,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 27533,
     "destination_es": 18432,
@@ -1531,7 +1531,7 @@
   },
   {
     "mode": 90,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 27790,
     "destination_es": 18432,
@@ -1548,7 +1548,7 @@
   },
   {
     "mode": 91,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 28047,
     "destination_es": 18432,
@@ -1565,7 +1565,7 @@
   },
   {
     "mode": 92,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 28304,
     "destination_es": 18432,
@@ -1582,7 +1582,7 @@
   },
   {
     "mode": 93,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 28561,
     "destination_es": 18432,
@@ -1599,7 +1599,7 @@
   },
   {
     "mode": 94,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 28818,
     "destination_es": 18432,
@@ -1616,7 +1616,7 @@
   },
   {
     "mode": 95,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 29075,
     "destination_es": 18432,
@@ -1633,7 +1633,7 @@
   },
   {
     "mode": 96,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 29332,
     "destination_es": 18432,
@@ -1650,7 +1650,7 @@
   },
   {
     "mode": 97,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 29589,
     "destination_es": 18432,
@@ -1667,7 +1667,7 @@
   },
   {
     "mode": 98,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 29846,
     "destination_es": 18432,
@@ -1684,7 +1684,7 @@
   },
   {
     "mode": 99,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 30103,
     "destination_es": 18432,
@@ -1701,7 +1701,7 @@
   },
   {
     "mode": 100,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 30360,
     "destination_es": 18432,
@@ -1718,7 +1718,7 @@
   },
   {
     "mode": 101,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 30617,
     "destination_es": 18432,
@@ -1735,7 +1735,7 @@
   },
   {
     "mode": 102,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 30874,
     "destination_es": 18432,
@@ -1752,7 +1752,7 @@
   },
   {
     "mode": 103,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 31131,
     "destination_es": 18432,
@@ -1769,7 +1769,7 @@
   },
   {
     "mode": 104,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 31388,
     "destination_es": 18432,
@@ -1786,7 +1786,7 @@
   },
   {
     "mode": 105,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 31645,
     "destination_es": 18432,
@@ -1803,7 +1803,7 @@
   },
   {
     "mode": 106,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 31902,
     "destination_es": 18432,
@@ -1820,7 +1820,7 @@
   },
   {
     "mode": 107,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 32159,
     "destination_es": 18432,
@@ -1837,7 +1837,7 @@
   },
   {
     "mode": 108,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 32416,
     "destination_es": 18432,
@@ -1854,7 +1854,7 @@
   },
   {
     "mode": 109,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 32673,
     "destination_es": 18432,
@@ -1871,7 +1871,7 @@
   },
   {
     "mode": 110,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 32930,
     "destination_es": 18432,
@@ -1888,7 +1888,7 @@
   },
   {
     "mode": 111,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 33187,
     "destination_es": 18432,
@@ -1905,7 +1905,7 @@
   },
   {
     "mode": 112,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 33444,
     "destination_es": 18432,
@@ -1922,7 +1922,7 @@
   },
   {
     "mode": 113,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 33701,
     "destination_es": 18432,
@@ -1939,7 +1939,7 @@
   },
   {
     "mode": 114,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 33958,
     "destination_es": 18432,
@@ -1956,7 +1956,7 @@
   },
   {
     "mode": 115,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 34215,
     "destination_es": 18432,
@@ -1973,7 +1973,7 @@
   },
   {
     "mode": 116,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 34472,
     "destination_es": 18432,
@@ -1990,7 +1990,7 @@
   },
   {
     "mode": 117,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 34729,
     "destination_es": 18432,
@@ -2007,7 +2007,7 @@
   },
   {
     "mode": 118,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 34986,
     "destination_es": 18432,
@@ -2024,7 +2024,7 @@
   },
   {
     "mode": 119,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 35243,
     "destination_es": 18432,
@@ -2041,7 +2041,7 @@
   },
   {
     "mode": 120,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 35500,
     "destination_es": 18432,
@@ -2058,7 +2058,7 @@
   },
   {
     "mode": 121,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 35757,
     "destination_es": 18432,
@@ -2075,7 +2075,7 @@
   },
   {
     "mode": 122,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 36014,
     "destination_es": 18432,
@@ -2092,7 +2092,7 @@
   },
   {
     "mode": 123,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 36271,
     "destination_es": 18432,
@@ -2109,7 +2109,7 @@
   },
   {
     "mode": 124,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 36528,
     "destination_es": 18432,
@@ -2126,7 +2126,7 @@
   },
   {
     "mode": 125,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 36785,
     "destination_es": 18432,
@@ -2143,7 +2143,7 @@
   },
   {
     "mode": 126,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 37042,
     "destination_es": 18432,
@@ -2160,7 +2160,7 @@
   },
   {
     "mode": 127,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 37299,
     "destination_es": 18432,
@@ -2177,7 +2177,7 @@
   },
   {
     "mode": 128,
-    "callee": "ems_page_offset_split",
+    "callee": "snd_bank_file_page_read",
     "callee_address": 48525,
     "value_ax": 37556,
     "destination_es": 18432,
@@ -2194,7 +2194,7 @@
   },
   {
     "mode": 129,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 37813,
     "destination_es": 18432,
@@ -2211,7 +2211,7 @@
   },
   {
     "mode": 130,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 38070,
     "destination_es": 18432,
@@ -2228,7 +2228,7 @@
   },
   {
     "mode": 131,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 38327,
     "destination_es": 18432,
@@ -2245,7 +2245,7 @@
   },
   {
     "mode": 132,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 38584,
     "destination_es": 18432,
@@ -2262,7 +2262,7 @@
   },
   {
     "mode": 133,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 38841,
     "destination_es": 18432,
@@ -2279,7 +2279,7 @@
   },
   {
     "mode": 134,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 39098,
     "destination_es": 18432,
@@ -2296,7 +2296,7 @@
   },
   {
     "mode": 135,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 39355,
     "destination_es": 18432,
@@ -2313,7 +2313,7 @@
   },
   {
     "mode": 136,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 39612,
     "destination_es": 18432,
@@ -2330,7 +2330,7 @@
   },
   {
     "mode": 137,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 39869,
     "destination_es": 18432,
@@ -2347,7 +2347,7 @@
   },
   {
     "mode": 138,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 40126,
     "destination_es": 18432,
@@ -2364,7 +2364,7 @@
   },
   {
     "mode": 139,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 40383,
     "destination_es": 18432,
@@ -2381,7 +2381,7 @@
   },
   {
     "mode": 140,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 40640,
     "destination_es": 18432,
@@ -2398,7 +2398,7 @@
   },
   {
     "mode": 141,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 40897,
     "destination_es": 18432,
@@ -2415,7 +2415,7 @@
   },
   {
     "mode": 142,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 41154,
     "destination_es": 18432,
@@ -2432,7 +2432,7 @@
   },
   {
     "mode": 143,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 41411,
     "destination_es": 18432,
@@ -2449,7 +2449,7 @@
   },
   {
     "mode": 144,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 41668,
     "destination_es": 18432,
@@ -2466,7 +2466,7 @@
   },
   {
     "mode": 145,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 41925,
     "destination_es": 18432,
@@ -2483,7 +2483,7 @@
   },
   {
     "mode": 146,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 42182,
     "destination_es": 18432,
@@ -2500,7 +2500,7 @@
   },
   {
     "mode": 147,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 42439,
     "destination_es": 18432,
@@ -2517,7 +2517,7 @@
   },
   {
     "mode": 148,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 42696,
     "destination_es": 18432,
@@ -2534,7 +2534,7 @@
   },
   {
     "mode": 149,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 42953,
     "destination_es": 18432,
@@ -2551,7 +2551,7 @@
   },
   {
     "mode": 150,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 43210,
     "destination_es": 18432,
@@ -2568,7 +2568,7 @@
   },
   {
     "mode": 151,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 43467,
     "destination_es": 18432,
@@ -2585,7 +2585,7 @@
   },
   {
     "mode": 152,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 43724,
     "destination_es": 18432,
@@ -2602,7 +2602,7 @@
   },
   {
     "mode": 153,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 43981,
     "destination_es": 18432,
@@ -2619,7 +2619,7 @@
   },
   {
     "mode": 154,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 44238,
     "destination_es": 18432,
@@ -2636,7 +2636,7 @@
   },
   {
     "mode": 155,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 44495,
     "destination_es": 18432,
@@ -2653,7 +2653,7 @@
   },
   {
     "mode": 156,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 44752,
     "destination_es": 18432,
@@ -2670,7 +2670,7 @@
   },
   {
     "mode": 157,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 45009,
     "destination_es": 18432,
@@ -2687,7 +2687,7 @@
   },
   {
     "mode": 158,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 45266,
     "destination_es": 18432,
@@ -2704,7 +2704,7 @@
   },
   {
     "mode": 159,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 45523,
     "destination_es": 18432,
@@ -2721,7 +2721,7 @@
   },
   {
     "mode": 160,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 45780,
     "destination_es": 18432,
@@ -2738,7 +2738,7 @@
   },
   {
     "mode": 161,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 46037,
     "destination_es": 18432,
@@ -2755,7 +2755,7 @@
   },
   {
     "mode": 162,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 46294,
     "destination_es": 18432,
@@ -2772,7 +2772,7 @@
   },
   {
     "mode": 163,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 46551,
     "destination_es": 18432,
@@ -2789,7 +2789,7 @@
   },
   {
     "mode": 164,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 46808,
     "destination_es": 18432,
@@ -2806,7 +2806,7 @@
   },
   {
     "mode": 165,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 47065,
     "destination_es": 18432,
@@ -2823,7 +2823,7 @@
   },
   {
     "mode": 166,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 47322,
     "destination_es": 18432,
@@ -2840,7 +2840,7 @@
   },
   {
     "mode": 167,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 47579,
     "destination_es": 18432,
@@ -2857,7 +2857,7 @@
   },
   {
     "mode": 168,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 47836,
     "destination_es": 18432,
@@ -2874,7 +2874,7 @@
   },
   {
     "mode": 169,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 48093,
     "destination_es": 18432,
@@ -2891,7 +2891,7 @@
   },
   {
     "mode": 170,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 48350,
     "destination_es": 18432,
@@ -2908,7 +2908,7 @@
   },
   {
     "mode": 171,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 48607,
     "destination_es": 18432,
@@ -2925,7 +2925,7 @@
   },
   {
     "mode": 172,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 48864,
     "destination_es": 18432,
@@ -2942,7 +2942,7 @@
   },
   {
     "mode": 173,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 49121,
     "destination_es": 18432,
@@ -2959,7 +2959,7 @@
   },
   {
     "mode": 174,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 49378,
     "destination_es": 18432,
@@ -2976,7 +2976,7 @@
   },
   {
     "mode": 175,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 49635,
     "destination_es": 18432,
@@ -2993,7 +2993,7 @@
   },
   {
     "mode": 176,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 49892,
     "destination_es": 18432,
@@ -3010,7 +3010,7 @@
   },
   {
     "mode": 177,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 50149,
     "destination_es": 18432,
@@ -3027,7 +3027,7 @@
   },
   {
     "mode": 178,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 50406,
     "destination_es": 18432,
@@ -3044,7 +3044,7 @@
   },
   {
     "mode": 179,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 50663,
     "destination_es": 18432,
@@ -3061,7 +3061,7 @@
   },
   {
     "mode": 180,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 50920,
     "destination_es": 18432,
@@ -3078,7 +3078,7 @@
   },
   {
     "mode": 181,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 51177,
     "destination_es": 18432,
@@ -3095,7 +3095,7 @@
   },
   {
     "mode": 182,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 51434,
     "destination_es": 18432,
@@ -3112,7 +3112,7 @@
   },
   {
     "mode": 183,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 51691,
     "destination_es": 18432,
@@ -3129,7 +3129,7 @@
   },
   {
     "mode": 184,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 51948,
     "destination_es": 18432,
@@ -3146,7 +3146,7 @@
   },
   {
     "mode": 185,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 52205,
     "destination_es": 18432,
@@ -3163,7 +3163,7 @@
   },
   {
     "mode": 186,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 52462,
     "destination_es": 18432,
@@ -3180,7 +3180,7 @@
   },
   {
     "mode": 187,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 52719,
     "destination_es": 18432,
@@ -3197,7 +3197,7 @@
   },
   {
     "mode": 188,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 52976,
     "destination_es": 18432,
@@ -3214,7 +3214,7 @@
   },
   {
     "mode": 189,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 53233,
     "destination_es": 18432,
@@ -3231,7 +3231,7 @@
   },
   {
     "mode": 190,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 53490,
     "destination_es": 18432,
@@ -3248,7 +3248,7 @@
   },
   {
     "mode": 191,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 53747,
     "destination_es": 18432,
@@ -3265,7 +3265,7 @@
   },
   {
     "mode": 192,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 54004,
     "destination_es": 18432,
@@ -3282,7 +3282,7 @@
   },
   {
     "mode": 193,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 54261,
     "destination_es": 18432,
@@ -3299,7 +3299,7 @@
   },
   {
     "mode": 194,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 54518,
     "destination_es": 18432,
@@ -3316,7 +3316,7 @@
   },
   {
     "mode": 195,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 54775,
     "destination_es": 18432,
@@ -3333,7 +3333,7 @@
   },
   {
     "mode": 196,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 55032,
     "destination_es": 18432,
@@ -3350,7 +3350,7 @@
   },
   {
     "mode": 197,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 55289,
     "destination_es": 18432,
@@ -3367,7 +3367,7 @@
   },
   {
     "mode": 198,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 55546,
     "destination_es": 18432,
@@ -3384,7 +3384,7 @@
   },
   {
     "mode": 199,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 55803,
     "destination_es": 18432,
@@ -3401,7 +3401,7 @@
   },
   {
     "mode": 200,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 56060,
     "destination_es": 18432,
@@ -3418,7 +3418,7 @@
   },
   {
     "mode": 201,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 56317,
     "destination_es": 18432,
@@ -3435,7 +3435,7 @@
   },
   {
     "mode": 202,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 56574,
     "destination_es": 18432,
@@ -3452,7 +3452,7 @@
   },
   {
     "mode": 203,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 56831,
     "destination_es": 18432,
@@ -3469,7 +3469,7 @@
   },
   {
     "mode": 204,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 57088,
     "destination_es": 18432,
@@ -3486,7 +3486,7 @@
   },
   {
     "mode": 205,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 57345,
     "destination_es": 18432,
@@ -3503,7 +3503,7 @@
   },
   {
     "mode": 206,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 57602,
     "destination_es": 18432,
@@ -3520,7 +3520,7 @@
   },
   {
     "mode": 207,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 57859,
     "destination_es": 18432,
@@ -3537,7 +3537,7 @@
   },
   {
     "mode": 208,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 58116,
     "destination_es": 18432,
@@ -3554,7 +3554,7 @@
   },
   {
     "mode": 209,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 58373,
     "destination_es": 18432,
@@ -3571,7 +3571,7 @@
   },
   {
     "mode": 210,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 58630,
     "destination_es": 18432,
@@ -3588,7 +3588,7 @@
   },
   {
     "mode": 211,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 58887,
     "destination_es": 18432,
@@ -3605,7 +3605,7 @@
   },
   {
     "mode": 212,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 59144,
     "destination_es": 18432,
@@ -3622,7 +3622,7 @@
   },
   {
     "mode": 213,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 59401,
     "destination_es": 18432,
@@ -3639,7 +3639,7 @@
   },
   {
     "mode": 214,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 59658,
     "destination_es": 18432,
@@ -3656,7 +3656,7 @@
   },
   {
     "mode": 215,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 59915,
     "destination_es": 18432,
@@ -3673,7 +3673,7 @@
   },
   {
     "mode": 216,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 60172,
     "destination_es": 18432,
@@ -3690,7 +3690,7 @@
   },
   {
     "mode": 217,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 60429,
     "destination_es": 18432,
@@ -3707,7 +3707,7 @@
   },
   {
     "mode": 218,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 60686,
     "destination_es": 18432,
@@ -3724,7 +3724,7 @@
   },
   {
     "mode": 219,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 60943,
     "destination_es": 18432,
@@ -3741,7 +3741,7 @@
   },
   {
     "mode": 220,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 61200,
     "destination_es": 18432,
@@ -3758,7 +3758,7 @@
   },
   {
     "mode": 221,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 61457,
     "destination_es": 18432,
@@ -3775,7 +3775,7 @@
   },
   {
     "mode": 222,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 61714,
     "destination_es": 18432,
@@ -3792,7 +3792,7 @@
   },
   {
     "mode": 223,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 61971,
     "destination_es": 18432,
@@ -3809,7 +3809,7 @@
   },
   {
     "mode": 224,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 62228,
     "destination_es": 18432,
@@ -3826,7 +3826,7 @@
   },
   {
     "mode": 225,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 62485,
     "destination_es": 18432,
@@ -3843,7 +3843,7 @@
   },
   {
     "mode": 226,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 62742,
     "destination_es": 18432,
@@ -3860,7 +3860,7 @@
   },
   {
     "mode": 227,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 62999,
     "destination_es": 18432,
@@ -3877,7 +3877,7 @@
   },
   {
     "mode": 228,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 63256,
     "destination_es": 18432,
@@ -3894,7 +3894,7 @@
   },
   {
     "mode": 229,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 63513,
     "destination_es": 18432,
@@ -3911,7 +3911,7 @@
   },
   {
     "mode": 230,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 63770,
     "destination_es": 18432,
@@ -3928,7 +3928,7 @@
   },
   {
     "mode": 231,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 64027,
     "destination_es": 18432,
@@ -3945,7 +3945,7 @@
   },
   {
     "mode": 232,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 64284,
     "destination_es": 18432,
@@ -3962,7 +3962,7 @@
   },
   {
     "mode": 233,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 64541,
     "destination_es": 18432,
@@ -3979,7 +3979,7 @@
   },
   {
     "mode": 234,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 64798,
     "destination_es": 18432,
@@ -3996,7 +3996,7 @@
   },
   {
     "mode": 235,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 65055,
     "destination_es": 18432,
@@ -4013,7 +4013,7 @@
   },
   {
     "mode": 236,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 65312,
     "destination_es": 18432,
@@ -4030,7 +4030,7 @@
   },
   {
     "mode": 237,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 33,
     "destination_es": 18432,
@@ -4047,7 +4047,7 @@
   },
   {
     "mode": 238,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 290,
     "destination_es": 18432,
@@ -4064,7 +4064,7 @@
   },
   {
     "mode": 239,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 547,
     "destination_es": 18432,
@@ -4081,7 +4081,7 @@
   },
   {
     "mode": 240,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 804,
     "destination_es": 18432,
@@ -4098,7 +4098,7 @@
   },
   {
     "mode": 241,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 1061,
     "destination_es": 18432,
@@ -4115,7 +4115,7 @@
   },
   {
     "mode": 242,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 1318,
     "destination_es": 18432,
@@ -4132,7 +4132,7 @@
   },
   {
     "mode": 243,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 1575,
     "destination_es": 18432,
@@ -4149,7 +4149,7 @@
   },
   {
     "mode": 244,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 1832,
     "destination_es": 18432,
@@ -4166,7 +4166,7 @@
   },
   {
     "mode": 245,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 2089,
     "destination_es": 18432,
@@ -4183,7 +4183,7 @@
   },
   {
     "mode": 246,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 2346,
     "destination_es": 18432,
@@ -4200,7 +4200,7 @@
   },
   {
     "mode": 247,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 2603,
     "destination_es": 18432,
@@ -4217,7 +4217,7 @@
   },
   {
     "mode": 248,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 2860,
     "destination_es": 18432,
@@ -4234,7 +4234,7 @@
   },
   {
     "mode": 249,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 3117,
     "destination_es": 18432,
@@ -4251,7 +4251,7 @@
   },
   {
     "mode": 250,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 3374,
     "destination_es": 18432,
@@ -4268,7 +4268,7 @@
   },
   {
     "mode": 251,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 3631,
     "destination_es": 18432,
@@ -4285,7 +4285,7 @@
   },
   {
     "mode": 252,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 3888,
     "destination_es": 18432,
@@ -4302,7 +4302,7 @@
   },
   {
     "mode": 253,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 4145,
     "destination_es": 18432,
@@ -4319,7 +4319,7 @@
   },
   {
     "mode": 254,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 4402,
     "destination_es": 18432,
@@ -4336,7 +4336,7 @@
   },
   {
     "mode": 255,
-    "callee": "ems_map_page_and_copy",
+    "callee": "snd_bank_ems_page_read",
     "callee_address": 48422,
     "value_ax": 4659,
     "destination_es": 18432,

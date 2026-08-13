@@ -2808,7 +2808,7 @@ handle remains `0xFFFF` receive fallback requests of 0x40, 0x100, 0x100, and
 
 The second routine is not a DOS duplicate-handle operation. It releases valid
 EMS handles through INT 67h AH=45 and then valid XMS handles through driver
-function AH=0x0A, in small/resource/secondary/archive order. Only `0xFFFF` is
+function AH=0x0A, in small/resource/secondary/SND-bank order. Only `0xFFFF` is
 skipped; zero and every other negative-looking word are passed to the driver.
 It deliberately leaves all handle globals unchanged.
 
@@ -2926,6 +2926,34 @@ Open Watcom 1.9 medium emits 13 instructions/32 bytes for deletion versus 12/28
 original, 23/59 for each directory transition versus 18/38, and 31/67 for the
 rectangle versus 19/32. Turbo C 2.01 medium emits 20, 26, 26, and 40
 instructions respectively.
+
+## BLOODPRG SND-bank page backend candidates
+
+The three helpers selected by `0x00BD09` are one logical operation with three
+SND-bank storage backends, not generic EMS arithmetic. `0x00BD26` maps an EMS
+logical page into physical page zero and copies one complete 16 KiB page from
+the EMS page frame. `0x00BD4E` builds a standard XMS move record for the same
+16 KiB extent and invokes XMS function `0x0B`. `0x00BD8D` seeks the `mus.snd`
+fallback file to `page * 0x4000` and performs a 16 KiB DOS read. The recovered
+callers at `0x00BBB3` and `0x00BC50` consume these pages during playback, while
+`0x00BDB7` constructs the selected backing store and creates `mus.snd` for the
+file mode.
+
+Twelve direct-binary vectors prove page offsets from zero through
+`0x3FFFC000`, GS ownership of all handles and driver/page-frame pointers,
+physical EMS page zero, exact XMS record fields and driver entry state, exact
+DOS seek/read registers, forward destination-offset wrap, callback clobber
+boundaries, and final flags. The file backend deliberately attempts the read
+even after a failed seek and ignores both DOS status and returned byte count.
+
+The recovered functions are ordinary C around narrow EMS, XMS, and DOS
+adapters. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual
+candidates warning-free to 34 instructions/61 bytes for EMS versus 23/40
+original, 27/72 for XMS versus 23/63, and 30/57 for DOS-file access versus
+24/42. Separate Turbo C 2.01 medium probes emit 26, 22, and 27 instructions.
+The remaining gaps are segment placement, direct interrupt/driver boundaries,
+Watcom's word-copy lowering, and compiler calling conventions rather than
+missing SND-bank page logic.
 
 ## Interpretation
 

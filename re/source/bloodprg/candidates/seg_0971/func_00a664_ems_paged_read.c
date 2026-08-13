@@ -26,15 +26,15 @@ int CB_NEAR ems_paged_read(cb_u16 byte_count)
         transferred = byte_count;
     } else if ((resource_source_is_banked & 1u) != 0
             && resource_xms_handle != -1) {
-        resource_xms_read_request.length =
+        xms_move_request.length =
                 (cb_u32)byte_count + (byte_count & 1u);
-        resource_xms_read_request.source_handle =
+        xms_move_request.source_handle =
                 (cb_u16)resource_xms_handle;
-        resource_xms_read_request.source_offset = resource_source_offset;
-        resource_xms_read_request.destination_handle = 0;
-        resource_xms_read_request.destination =
+        xms_move_request.source_offset = resource_source_offset;
+        xms_move_request.destination_handle = 0;
+        xms_move_request.destination =
                 list_d8c_buffer + list_d8c_head_offset;
-        cb_xms_move(&resource_xms_read_request);
+        cb_xms_move(&xms_move_request);
         transferred = byte_count;
     } else {
         handle = list_d8c_file_handle;

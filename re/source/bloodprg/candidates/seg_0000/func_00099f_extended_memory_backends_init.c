@@ -55,7 +55,7 @@ void CB_FAR extended_memory_backends_init(void)
             registers.h.ah = 0x43u;
             int86(0x67, &registers, &registers);
             if (registers.h.ah == 0u) {
-                archive_ems_handle = (cb_i16)registers.x.dx;
+                snd_bank_ems_handle = (cb_i16)registers.x.dx;
             }
 
             registers.h.ah = 0x41u;
@@ -85,7 +85,7 @@ void CB_FAR extended_memory_backends_init(void)
     if (secondary_ems_handle == -1 && cb_xms_allocate_kb(0x0100u, &handle)) {
         secondary_xms_handle = (cb_i16)handle;
     }
-    if (archive_ems_handle == -1 && cb_xms_allocate_kb(0x05a0u, &handle)) {
-        archive_xms_handle = (cb_i16)handle;
+    if (snd_bank_ems_handle == -1 && cb_xms_allocate_kb(0x05a0u, &handle)) {
+        snd_bank_xms_handle = (cb_i16)handle;
     }
 }

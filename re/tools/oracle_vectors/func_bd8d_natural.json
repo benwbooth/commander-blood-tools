@@ -1,0 +1,82 @@
+[
+  {
+    "name": "first_page",
+    "page": 0,
+    "snd_bank_file_handle": 4660,
+    "seek_offset": 0,
+    "seek_error": false,
+    "handle_changed_during_seek": false,
+    "read_requested": 16384,
+    "destination_segment": 28672,
+    "destination_offset": 256,
+    "read_sha256": "cce6dac2a6c0956fe47a221db8c8f8cbc26e3735b954f05bea90db3c2cbe646a",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_page",
+    "page": 1,
+    "snd_bank_file_handle": 43981,
+    "seek_offset": 16384,
+    "seek_error": true,
+    "handle_changed_during_seek": false,
+    "read_requested": 16384,
+    "destination_segment": 28672,
+    "destination_offset": 9029,
+    "read_sha256": "40d045153eb58f4a85058e44cc32b17efd711b4dfc6f2ce47b9b89f5d521bd7a",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "seek_error_ignored",
+    "page": 837,
+    "snd_bank_file_handle": 0,
+    "seek_offset": 13713408,
+    "seek_error": true,
+    "handle_changed_during_seek": true,
+    "read_requested": 16384,
+    "destination_segment": 28672,
+    "destination_offset": 28672,
+    "read_sha256": "9564270567f0a9b81c9130675dda231b129479cbd3c4860347e9b8e579a5c138",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "last_page",
+    "page": 65535,
+    "snd_bank_file_handle": 65535,
+    "seek_offset": 1073725440,
+    "seek_error": true,
+    "handle_changed_during_seek": false,
+    "read_requested": 16384,
+    "destination_segment": 28672,
+    "destination_offset": 32768,
+    "read_sha256": "9029d88e98cd674ae8e519ef2f0ec770c5b9673097e58818b3061cf8f130637d",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  }
+]
