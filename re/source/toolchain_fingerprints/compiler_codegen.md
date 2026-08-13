@@ -2572,6 +2572,8 @@ LCS and then mnemonic similarity:
 | `rtc_date_read` | medium, `-ox -zdp`, register | 26/31 | 0.1154 | 0.6538 | 0.2692 |
 | `video_retrace_phase_wait` | medium, `-ox -zdp`, register | 20/23 | 0.1500 | 0.6500 | 0.2500 |
 | `poll_mouse` | medium, `-ox -zdp`, register | 21/33 | 0.2381 | 0.6190 | 0.2381 |
+| `extended_memory_backends_init` | medium, `-ox -zdp`, register | 93/165 | 0.0538 | 0.6667 | 0.0538 |
+| `extended_memory_backends_release` | medium, `-ox -zdp`, register | 45/79 | 0.0667 | 0.7556 | 0.0667 |
 
 ## Alien transform and projection candidate
 
@@ -2792,6 +2794,37 @@ All three natural candidates compile warning-free with Open Watcom 1.9 medium
 33/84 versus 21/60 for mouse polling. The differences are the normal `int86`
 stack frame, default data-segment placement, and structured branches; no
 register-state or memory-access facade is present.
+
+## BLOODPRG EMS and XMS backend candidates
+
+The old labels understate and misidentify `0x00099F` and `0x000A99`. The first
+is the complete four-pool EMS/XMS initializer. It obtains INT 67h but ignores
+the returned offset when checking `EMMXXXX0`: the comparison is against offset
+`000A` in the returned handler segment. A healthy EMS driver receives
+allocations of 4, 16, 16, and 90 pages plus a page-frame query. XMS is then
+detected through INT 2Fh functions 4300h and 4310h, and only pools whose EMS
+handle remains `0xFFFF` receive fallback requests of 0x40, 0x100, 0x100, and
+0x5A0 KiB.
+
+The second routine is not a DOS duplicate-handle operation. It releases valid
+EMS handles through INT 67h AH=45 and then valid XMS handles through driver
+function AH=0x0A, in small/resource/secondary/archive order. Only `0xFFFF` is
+skipped; zero and every other negative-looking word are passed to the driver.
+It deliberately leaves all handle globals unchanged.
+
+Ten raw-binary vectors prove signature and status failure, all fixed pool
+sizes, mixed successes, EMS preference, XMS-only operation, page-frame
+publication even on function failure, vector-offset disregard, callback
+commands, release masks and ordering, state immutability, GS ownership, and
+preservation. The natural source uses normal DOS interrupt APIs plus two typed
+XMS allocation/release declarations at the unavoidable far-driver register
+ABI. Pool policy and state transitions remain ordinary C.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) emits 165 instructions/503
+bytes for initialization versus 93/250 original, and 79/243 for release versus
+45/153. The larger output comes from `int86` records, far signature indexing,
+based globals, and the typed XMS adapter calls; it is a code-generation gap,
+not an emulation layer.
 
 ## Interpretation
 

@@ -1634,6 +1634,515 @@ def poll_mouse_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def extended_memory_backends_init_vectors() -> list[dict[str, object]]:
+    entry = 0x099F
+    expected_hash = "b54827c41368004235c8a04276c50ac29230fed5e95bd77460c7310bee245314"
+    if hashlib.sha256(EXE[entry : entry + 250]).hexdigest() != expected_hash:
+        raise AssertionError("0x099f: recovered 250-byte body changed")
+
+    cases = (
+        {
+            "name": "no_backends",
+            "signature": False,
+            "ems_status": 0,
+            "ems_allocations": (),
+            "page_frame": (0, 0),
+            "xms_present": False,
+            "xms_allocations": (),
+        },
+        {
+            "name": "ems_status_failure",
+            "signature": True,
+            "ems_status": 0x84,
+            "ems_allocations": (),
+            "page_frame": (0, 0),
+            "xms_present": False,
+            "xms_allocations": (),
+        },
+        {
+            "name": "all_ems_success",
+            "signature": True,
+            "ems_status": 0,
+            "ems_allocations": (
+                (True, 0x1101),
+                (True, 0x2202),
+                (True, 0x3303),
+                (True, 0x4404),
+            ),
+            "page_frame": (0, 0xE000),
+            "xms_present": False,
+            "xms_allocations": (),
+        },
+        {
+            "name": "mixed_ems_xms_fallback",
+            "signature": True,
+            "ems_status": 0,
+            "ems_allocations": (
+                (False, 0xA101),
+                (True, 0x2202),
+                (False, 0xA303),
+                (True, 0x4404),
+            ),
+            "page_frame": (0x80, 0xD000),
+            "xms_present": True,
+            "xms_allocations": ((True, 0x5505), (False, 0x6606)),
+        },
+        {
+            "name": "xms_only_mixed_results",
+            "signature": False,
+            "ems_status": 0,
+            "ems_allocations": (),
+            "page_frame": (0, 0),
+            "xms_present": True,
+            "xms_allocations": (
+                (True, 0x7101),
+                (False, 0x7202),
+                (True, 0x7303),
+                (True, 0x7404),
+            ),
+        },
+        {
+            "name": "ems_prevents_xms_allocations",
+            "signature": True,
+            "ems_status": 0,
+            "ems_allocations": (
+                (True, 0x8101),
+                (True, 0x8202),
+                (True, 0x8303),
+                (True, 0x8404),
+            ),
+            "page_frame": (0, 0xC000),
+            "xms_present": True,
+            "xms_allocations": (),
+        },
+    )
+    game_segment = 0x2800
+    data_segment = 0x2000
+    handler_segment = 0x3000
+    handler_offset = 0x2468
+    xms_segment = 0x3400
+    xms_offset = 0x0100
+    xms_linear = xms_segment * 16 + xms_offset
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        signature_present = bool(case["signature"])
+        ems_status = int(case["ems_status"])
+        ems_allocations = tuple(case["ems_allocations"])
+        page_status, page_segment = tuple(case["page_frame"])
+        xms_present = bool(case["xms_present"])
+        xms_allocations = tuple(case["xms_allocations"])
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0A93,
+        }
+        state_before = bytearray(b"\xa5\x5a\x69\x96" + b"\xff" * 24 + b"\xc3\x3c")
+        state_expected = bytearray(state_before)
+        data_decoy = bytes(value ^ 0xFF for value in state_before)
+        calls: list[dict[str, int | bool | str]] = []
+        ems_allocation_index = 0
+        xms_allocation_index = 0
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal ems_allocation_index
+            if number == 0x21:
+                calls.append(
+                    {
+                        "call": "get_vector",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_ES, handler_segment)
+                machine.reg_write(UC_X86_REG_BX, handler_offset)
+                return
+            if number == 0x67:
+                function = machine.reg_read(UC_X86_REG_AX) >> 8
+                if function == 0x40:
+                    calls.append({"call": "ems_status"})
+                    machine.reg_write(
+                        UC_X86_REG_AX,
+                        (machine.reg_read(UC_X86_REG_AX) & 0x00FF)
+                        | (ems_status << 8),
+                    )
+                    return
+                if function == 0x43:
+                    pages = machine.reg_read(UC_X86_REG_BX)
+                    success, handle = ems_allocations[ems_allocation_index]
+                    ems_allocation_index += 1
+                    calls.append(
+                        {
+                            "call": "ems_allocate",
+                            "pages": pages,
+                            "success": bool(success),
+                            "handle": int(handle),
+                        }
+                    )
+                    machine.reg_write(
+                        UC_X86_REG_AX,
+                        (machine.reg_read(UC_X86_REG_AX) & 0x00FF)
+                        | (0 if success else 0x88) << 8,
+                    )
+                    machine.reg_write(UC_X86_REG_DX, int(handle))
+                    return
+                if function == 0x41:
+                    calls.append(
+                        {
+                            "call": "ems_page_frame",
+                            "status": int(page_status),
+                            "segment": int(page_segment),
+                        }
+                    )
+                    machine.reg_write(
+                        UC_X86_REG_AX,
+                        (machine.reg_read(UC_X86_REG_AX) & 0x00FF)
+                        | (int(page_status) << 8),
+                    )
+                    machine.reg_write(UC_X86_REG_BX, int(page_segment))
+                    return
+                raise AssertionError(f"0x099f {name}: unexpected EMS function")
+            if number == 0x2F:
+                ax = machine.reg_read(UC_X86_REG_AX)
+                if ax == 0x4300:
+                    calls.append({"call": "xms_present"})
+                    machine.reg_write(
+                        UC_X86_REG_AX, (ax & 0xFF00) | (0x80 if xms_present else 0)
+                    )
+                    return
+                if ax == 0x4310 and xms_present:
+                    calls.append(
+                        {
+                            "call": "xms_vector",
+                            "offset": xms_offset,
+                            "segment": xms_segment,
+                        }
+                    )
+                    machine.reg_write(UC_X86_REG_BX, xms_offset)
+                    machine.reg_write(UC_X86_REG_ES, xms_segment)
+                    return
+                raise AssertionError(f"0x099f {name}: unexpected XMS multiplex call")
+            raise AssertionError(f"0x099f {name}: unexpected interrupt {number:#x}")
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            nonlocal xms_allocation_index
+            if address != xms_linear:
+                return
+            success, handle = xms_allocations[xms_allocation_index]
+            xms_allocation_index += 1
+            calls.append(
+                {
+                    "call": "xms_allocate",
+                    "function": machine.reg_read(UC_X86_REG_AX) >> 8,
+                    "kilobytes": machine.reg_read(UC_X86_REG_DX),
+                    "success": bool(success),
+                    "handle": int(handle),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 1 if success else 0)
+            machine.reg_write(UC_X86_REG_DX, int(handle))
+
+        handler_signature = b"EMMXXXX0" if signature_present else b"NOT-EMS!"
+        machine = execute(
+            entry,
+            0x0A98,
+            initial,
+            [
+                (0, 0x0397, b"EMMXXXX0"),
+                (handler_segment, 0x000A, handler_signature),
+                (handler_segment, handler_offset + 10, b"OFFSET!!"),
+                (xms_segment, xms_offset, b"\xcb"),
+                (data_segment, 0x0A4A, data_decoy),
+                (game_segment, 0x0A4A, bytes(state_before)),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=callback,
+        )
+
+        ems_destinations = (0x1A, 0x0E, 0x12, 0x16)
+        if signature_present and ems_status == 0:
+            for destination, (success, handle) in zip(
+                ems_destinations, ems_allocations, strict=True
+            ):
+                if success:
+                    struct.pack_into("<H", state_expected, destination, int(handle))
+            struct.pack_into("<H", state_expected, 0x1C, int(page_segment))
+        if xms_present:
+            struct.pack_into("<HH", state_expected, 0, xms_offset, xms_segment)
+            ems_by_pool = tuple(
+                struct.unpack_from("<h", state_expected, destination)[0]
+                for destination in (0x1A, 0x0E, 0x12, 0x16)
+            )
+            xms_destinations = (0x18, 0x0C, 0x10, 0x14)
+            response_index = 0
+            for ems_handle, destination in zip(
+                ems_by_pool, xms_destinations, strict=True
+            ):
+                if ems_handle != -1:
+                    continue
+                success, handle = xms_allocations[response_index]
+                response_index += 1
+                if success:
+                    struct.pack_into("<H", state_expected, destination, int(handle))
+
+        actual_state = bytes(
+            machine.mem_read(game_segment * 16 + 0x0A4A, len(state_expected))
+        )
+        if actual_state != bytes(state_expected):
+            raise AssertionError(
+                f"0x099f {name}: state={actual_state.hex()}, "
+                f"expected={state_expected.hex()}"
+            )
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x0A4A, len(data_decoy))
+        ) != data_decoy:
+            raise AssertionError(f"0x099f {name}: wrote the DS decoy")
+        if ems_allocation_index != len(ems_allocations):
+            raise AssertionError(f"0x099f {name}: EMS allocation count mismatch")
+        if xms_allocation_index != len(xms_allocations):
+            raise AssertionError(f"0x099f {name}: XMS allocation count mismatch")
+        expected_calls: list[dict[str, int | bool | str]] = [
+            {"call": "get_vector", "ax": 0x3567}
+        ]
+        if signature_present:
+            expected_calls.append({"call": "ems_status"})
+            if ems_status == 0:
+                for pages, (success, handle) in zip(
+                    (4, 0x10, 0x10, 0x5A), ems_allocations, strict=True
+                ):
+                    expected_calls.append(
+                        {
+                            "call": "ems_allocate",
+                            "pages": pages,
+                            "success": bool(success),
+                            "handle": int(handle),
+                        }
+                    )
+                expected_calls.append(
+                    {
+                        "call": "ems_page_frame",
+                        "status": int(page_status),
+                        "segment": int(page_segment),
+                    }
+                )
+        expected_calls.append({"call": "xms_present"})
+        if xms_present:
+            expected_calls.append(
+                {
+                    "call": "xms_vector",
+                    "offset": xms_offset,
+                    "segment": xms_segment,
+                }
+            )
+            response_index = 0
+            ems_by_pool = tuple(
+                struct.unpack_from("<h", state_expected, destination)[0]
+                for destination in (0x1A, 0x0E, 0x12, 0x16)
+            )
+            for ems_handle, kilobytes in zip(
+                ems_by_pool, (0x40, 0x100, 0x100, 0x5A0), strict=True
+            ):
+                if ems_handle != -1:
+                    continue
+                success, handle = xms_allocations[response_index]
+                response_index += 1
+                expected_calls.append(
+                    {
+                        "call": "xms_allocate",
+                        "function": 9,
+                        "kilobytes": kilobytes,
+                        "success": bool(success),
+                        "handle": int(handle),
+                    }
+                )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x099f {name}: calls={calls}, expected={expected_calls}"
+            )
+        for register in ("eax", "bx", "ds", "si", "es", "di", "bp", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x099f {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "signature_present": signature_present,
+                "ems_status": ems_status,
+                "xms_present": xms_present,
+                "calls": calls,
+                "state_words": list(struct.unpack("<15H", actual_state)),
+            }
+        )
+    return vectors
+
+
+def extended_memory_backends_release_vectors() -> list[dict[str, object]]:
+    entry = 0x0A99
+    expected_hash = "c2088183669bcd39f1cc2b541d1629478140910fc144a7995df4a72ed9866da1"
+    if hashlib.sha256(EXE[entry : entry + 153]).hexdigest() != expected_hash:
+        raise AssertionError("0x0a99: recovered 153-byte body changed")
+
+    cases = (
+        ("none", (-1, -1, -1, -1), (-1, -1, -1, -1)),
+        (
+            "all",
+            (0x1101, 0x2202, 0x3303, 0x4404),
+            (0x5505, 0x6606, 0x7707, 0x8808),
+        ),
+        (
+            "alternating",
+            (0x0000, -1, 0x7FFF, -1),
+            (-1, 0x8000, -1, 0x0001),
+        ),
+        (
+            "negative_non_sentinel",
+            (0xFFFE, 0x8000, -1, 0xFFFF),
+            (0xFFFF, 0xFFFE, 0x8001, -1),
+        ),
+    )
+    game_segment = 0x2800
+    data_segment = 0x2000
+    xms_segment = 0x3400
+    xms_offset = 0x0100
+    xms_linear = xms_segment * 16 + xms_offset
+    vectors = []
+
+    for case_index, (name, ems_handles, xms_handles) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0A93,
+        }
+        # Pool order supplied to the fixture is small, resource, secondary, archive.
+        small_ems, resource_ems, secondary_ems, archive_ems = ems_handles
+        small_xms, resource_xms, secondary_xms, archive_xms = xms_handles
+        state_buffer = bytearray(
+            b"\x00" * 4 + b"\xa5\x5a\x69\x96\xc3\x3c\xf0\x0f" + b"\x00" * 16
+        )
+        struct.pack_into("<HH", state_buffer, 0, xms_offset, xms_segment)
+        struct.pack_into(
+            "<8H",
+            state_buffer,
+            12,
+            resource_xms & 0xFFFF,
+            resource_ems & 0xFFFF,
+            secondary_xms & 0xFFFF,
+            secondary_ems & 0xFFFF,
+            archive_xms & 0xFFFF,
+            archive_ems & 0xFFFF,
+            small_xms & 0xFFFF,
+            small_ems & 0xFFFF,
+        )
+        state = bytes(state_buffer)
+        data_decoy = bytes(value ^ 0xFF for value in state)
+        calls: list[dict[str, int | str]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x67:
+                raise AssertionError(f"0x0a99 {name}: unexpected INT {number:#x}")
+            calls.append(
+                {
+                    "call": "ems_release",
+                    "function": machine.reg_read(UC_X86_REG_AX) >> 8,
+                    "handle": machine.reg_read(UC_X86_REG_DX),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+            machine.reg_write(UC_X86_REG_DX, 0xBEEF)
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != xms_linear:
+                return
+            calls.append(
+                {
+                    "call": "xms_release",
+                    "function": machine.reg_read(UC_X86_REG_AX) >> 8,
+                    "handle": machine.reg_read(UC_X86_REG_DX),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xCAFE)
+            machine.reg_write(UC_X86_REG_DX, 0xBABE)
+
+        machine = execute(
+            entry,
+            0x0B31,
+            initial,
+            [
+                (xms_segment, xms_offset, b"\xcb"),
+                (data_segment, 0x0A4A, data_decoy),
+                (game_segment, 0x0A4A, state),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=callback,
+        )
+        expected_calls = [
+            {"call": "ems_release", "function": 0x45, "handle": handle & 0xFFFF}
+            for handle in ems_handles
+            if (handle & 0xFFFF) != 0xFFFF
+        ]
+        expected_calls.extend(
+            {
+                "call": "xms_release",
+                "function": 0x0A,
+                "handle": handle & 0xFFFF,
+            }
+            for handle in xms_handles
+            if (handle & 0xFFFF) != 0xFFFF
+        )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x0a99 {name}: calls={calls}, expected={expected_calls}"
+            )
+        if bytes(machine.mem_read(game_segment * 16 + 0x0A4A, len(state))) != state:
+            raise AssertionError(f"0x0a99 {name}: changed backend state")
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x0A4A, len(data_decoy))
+        ) != data_decoy:
+            raise AssertionError(f"0x0a99 {name}: changed DS decoy")
+        for register in (
+            "eax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0a99 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "ems_handles": list(ems_handles),
+                "xms_handles": list(xms_handles),
+                "calls": calls,
+                "state_unchanged": True,
+            }
+        )
+    return vectors
+
+
 def mouse_set_range_vectors() -> list[dict[str, object]]:
     cases = [
         (0x0000, 0x0BB8, 0x0000, 0x00C8),
@@ -27398,6 +27907,16 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_0950_natural.json", rtc_date_read_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_099f_natural.json",
+        extended_memory_backends_init_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0a99_natural.json",
+        extended_memory_backends_release_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_0986_natural.json", bcd_to_binary_vectors(), args.check

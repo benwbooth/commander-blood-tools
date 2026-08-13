@@ -1,0 +1,350 @@
+[
+  {
+    "name": "no_backends",
+    "signature_present": false,
+    "ems_status": 0,
+    "xms_present": false,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "xms_present"
+      }
+    ],
+    "state_words": [
+      23205,
+      38505,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      15555
+    ]
+  },
+  {
+    "name": "ems_status_failure",
+    "signature_present": true,
+    "ems_status": 132,
+    "xms_present": false,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "ems_status"
+      },
+      {
+        "call": "xms_present"
+      }
+    ],
+    "state_words": [
+      23205,
+      38505,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      15555
+    ]
+  },
+  {
+    "name": "all_ems_success",
+    "signature_present": true,
+    "ems_status": 0,
+    "xms_present": false,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "ems_status"
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 4,
+        "success": true,
+        "handle": 4353
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": true,
+        "handle": 8706
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": true,
+        "handle": 13059
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 90,
+        "success": true,
+        "handle": 17412
+      },
+      {
+        "call": "ems_page_frame",
+        "status": 0,
+        "segment": 57344
+      },
+      {
+        "call": "xms_present"
+      }
+    ],
+    "state_words": [
+      23205,
+      38505,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      8706,
+      65535,
+      13059,
+      65535,
+      17412,
+      65535,
+      4353,
+      57344
+    ]
+  },
+  {
+    "name": "mixed_ems_xms_fallback",
+    "signature_present": true,
+    "ems_status": 0,
+    "xms_present": true,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "ems_status"
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 4,
+        "success": false,
+        "handle": 41217
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": true,
+        "handle": 8706
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": false,
+        "handle": 41731
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 90,
+        "success": true,
+        "handle": 17412
+      },
+      {
+        "call": "ems_page_frame",
+        "status": 128,
+        "segment": 53248
+      },
+      {
+        "call": "xms_present"
+      },
+      {
+        "call": "xms_vector",
+        "offset": 256,
+        "segment": 13312
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 64,
+        "success": true,
+        "handle": 21765
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 256,
+        "success": false,
+        "handle": 26118
+      }
+    ],
+    "state_words": [
+      256,
+      13312,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      8706,
+      65535,
+      65535,
+      65535,
+      17412,
+      21765,
+      65535,
+      53248
+    ]
+  },
+  {
+    "name": "xms_only_mixed_results",
+    "signature_present": false,
+    "ems_status": 0,
+    "xms_present": true,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "xms_present"
+      },
+      {
+        "call": "xms_vector",
+        "offset": 256,
+        "segment": 13312
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 64,
+        "success": true,
+        "handle": 28929
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 256,
+        "success": false,
+        "handle": 29186
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 256,
+        "success": true,
+        "handle": 29443
+      },
+      {
+        "call": "xms_allocate",
+        "function": 9,
+        "kilobytes": 1440,
+        "success": true,
+        "handle": 29700
+      }
+    ],
+    "state_words": [
+      256,
+      13312,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      29443,
+      65535,
+      29700,
+      65535,
+      28929,
+      65535,
+      15555
+    ]
+  },
+  {
+    "name": "ems_prevents_xms_allocations",
+    "signature_present": true,
+    "ems_status": 0,
+    "xms_present": true,
+    "calls": [
+      {
+        "call": "get_vector",
+        "ax": 13671
+      },
+      {
+        "call": "ems_status"
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 4,
+        "success": true,
+        "handle": 33025
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": true,
+        "handle": 33282
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 16,
+        "success": true,
+        "handle": 33539
+      },
+      {
+        "call": "ems_allocate",
+        "pages": 90,
+        "success": true,
+        "handle": 33796
+      },
+      {
+        "call": "ems_page_frame",
+        "status": 0,
+        "segment": 49152
+      },
+      {
+        "call": "xms_present"
+      },
+      {
+        "call": "xms_vector",
+        "offset": 256,
+        "segment": 13312
+      }
+    ],
+    "state_words": [
+      256,
+      13312,
+      65535,
+      65535,
+      65535,
+      65535,
+      65535,
+      33282,
+      65535,
+      33539,
+      65535,
+      33796,
+      65535,
+      33025,
+      49152
+    ]
+  }
+]

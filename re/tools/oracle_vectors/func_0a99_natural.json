@@ -1,0 +1,153 @@
+[
+  {
+    "name": "none",
+    "ems_handles": [
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "xms_handles": [
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "calls": [],
+    "state_unchanged": true
+  },
+  {
+    "name": "all",
+    "ems_handles": [
+      4353,
+      8706,
+      13059,
+      17412
+    ],
+    "xms_handles": [
+      21765,
+      26118,
+      30471,
+      34824
+    ],
+    "calls": [
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 4353
+      },
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 8706
+      },
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 13059
+      },
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 17412
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 21765
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 26118
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 30471
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 34824
+      }
+    ],
+    "state_unchanged": true
+  },
+  {
+    "name": "alternating",
+    "ems_handles": [
+      0,
+      -1,
+      32767,
+      -1
+    ],
+    "xms_handles": [
+      -1,
+      32768,
+      -1,
+      1
+    ],
+    "calls": [
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 0
+      },
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 32767
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 32768
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 1
+      }
+    ],
+    "state_unchanged": true
+  },
+  {
+    "name": "negative_non_sentinel",
+    "ems_handles": [
+      65534,
+      32768,
+      -1,
+      65535
+    ],
+    "xms_handles": [
+      65535,
+      65534,
+      32769,
+      -1
+    ],
+    "calls": [
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 65534
+      },
+      {
+        "call": "ems_release",
+        "function": 69,
+        "handle": 32768
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 65534
+      },
+      {
+        "call": "xms_release",
+        "function": 10,
+        "handle": 32769
+      }
+    ],
+    "state_unchanged": true
+  }
+]
