@@ -5508,6 +5508,198 @@ def palette_scene_entries_clear_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def decimal_append_vectors(
+    entry: int,
+    byte_count: int,
+    expected_hash: str,
+    value_bits: int,
+) -> list[dict[str, object]]:
+    label = f"0x{entry:04x}"
+    if hashlib.sha256(EXE[entry : entry + byte_count]).hexdigest() != expected_hash:
+        raise AssertionError(f"{label}: recovered {byte_count}-byte body changed")
+
+    if value_bits == 16:
+        cases = (
+            ("zero", 0, 0x1000, False),
+            ("single_digit", 7, 0x1100, False),
+            ("two_digits", 10, 0x1200, False),
+            ("maximum_positive", 32767, 0x1300, False),
+            ("negative_one", -1, 0x1400, False),
+            ("ordinary_negative", -12345, 0x1500, False),
+            ("minimum_negative_wrap", -32768, 0xFFFC, False),
+            ("backward_zero", 0, 0x1600, True),
+        )
+    elif value_bits == 32:
+        cases = (
+            ("zero", 0, 0x2000, False),
+            ("single_digit", 9, 0x2100, False),
+            ("large_positive", 1000000000, 0x2200, False),
+            ("maximum_positive_wrap", 2147483647, 0xFFF9, False),
+            ("negative_one", -1, 0x2300, False),
+            ("ordinary_negative", -123456789, 0x2400, False),
+            ("minimum_negative", -2147483648, 0x2500, False),
+            ("backward_zero", 0, 0x2600, True),
+        )
+    else:
+        raise AssertionError(f"unsupported decimal width {value_bits}")
+
+    scratch_offset = 0x01C6
+    scratch_end = 11
+    data_segment = 0x3000
+    destination_segment = 0x5000
+    fs_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x6E80 if value_bits == 16 else 0x6EC0
+    defined_mask = 0x0CC5
+    vectors = []
+
+    for case_index, (name, value, destination_offset, direction_set) in enumerate(
+        cases
+    ):
+        raw_value = value & ((1 << value_bits) - 1)
+        initial = {
+            "eax": (raw_value if value_bits == 32 else (0xA5A50000 | raw_value)),
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": (0xFAFA0000 | destination_offset),
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_set else 0),
+        }
+        scratch_before = bytearray(
+            (0x91 + case_index * 11 + index * 13) & 0xFF for index in range(12)
+        )
+        scratch_before[scratch_end] = 0
+        if direction_set:
+            scratch_before[scratch_end - 2] = 0
+        expected_scratch = bytearray(scratch_before)
+
+        magnitude = abs(value)
+        cursor = scratch_end
+        while True:
+            quotient = magnitude // 10
+            cursor -= 1
+            expected_scratch[cursor] = ord("0") + magnitude - quotient * 10
+            magnitude = quotient
+            if magnitude == 0:
+                break
+
+        destination_before = bytes(
+            (0x35 + case_index * 17 + index * 29) & 0xFF for index in range(0x10000)
+        )
+        expected_destination = bytearray(destination_before)
+        source_cursor = cursor
+        output_cursor = destination_offset
+        output_bytes = []
+        direction = -1 if direction_set else 1
+        if value < 0:
+            expected_destination[output_cursor] = ord("-")
+            output_bytes.append(ord("-"))
+            output_cursor = (output_cursor + 1) & 0xFFFF
+        while True:
+            value_byte = expected_scratch[source_cursor]
+            expected_destination[output_cursor] = value_byte
+            output_bytes.append(value_byte)
+            source_cursor += direction
+            output_cursor = (output_cursor + direction) & 0xFFFF
+            if value_byte == 0:
+                break
+            if not 0 <= source_cursor < len(expected_scratch):
+                raise AssertionError(f"{label} {name}: unterminated scratch walk")
+
+        data_decoy = bytes(value ^ 0xA5 for value in scratch_before)
+        fs_decoy = bytes(
+            (0x43 + case_index * 7 + index * 3) & 0xFF for index in range(32)
+        )
+        game_decoy = bytes(
+            (0xD1 - case_index * 9 - index * 5) & 0xFF for index in range(32)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, scratch_offset, bytes(scratch_before)),
+                (data_segment, scratch_offset, data_decoy),
+                (destination_segment, 0, destination_before),
+                (fs_segment, 0x4100, fs_decoy),
+                (game_segment, 0x4200, game_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+        )
+
+        actual_scratch = bytes(machine.mem_read(scratch_offset, 12))
+        if actual_scratch != bytes(expected_scratch):
+            raise AssertionError(
+                f"{label} {name}: scratch={actual_scratch.hex()}, "
+                f"expected={bytes(expected_scratch).hex()}"
+            )
+        actual_destination = bytes(machine.mem_read(destination_segment * 16, 0x10000))
+        if actual_destination != bytes(expected_destination):
+            raise AssertionError(f"{label} {name}: destination differs")
+        if (
+            bytes(machine.mem_read(data_segment * 16 + scratch_offset, 12))
+            != data_decoy
+        ):
+            raise AssertionError(f"{label} {name}: changed DS scratch decoy")
+        if bytes(machine.mem_read(fs_segment * 16 + 0x4100, 32)) != fs_decoy:
+            raise AssertionError(f"{label} {name}: changed FS decoy")
+        if bytes(machine.mem_read(game_segment * 16 + 0x4200, 32)) != game_decoy:
+            raise AssertionError(f"{label} {name}: changed GS decoy")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{label} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{label} {name}: far return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"{label} {name}: stack sentinel changed")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = 0x0044 | (0x0400 if direction_set else 0)
+        if final_flags & defined_mask != expected_flags:
+            raise AssertionError(
+                f"{label} {name}: flags={final_flags & defined_mask:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "value_bits": value_bits,
+                "value": value,
+                "destination_offset": destination_offset,
+                "direction": "backward" if direction_set else "forward",
+                "output_bytes": output_bytes,
+                "final_output_offset": output_cursor,
+                "scratch_after": actual_scratch.hex(),
+                "destination_sha256": hashlib.sha256(actual_destination).hexdigest(),
+                "defined_flags": final_flags & defined_mask,
+            }
+        )
+    return vectors
+
+
 def string_compare_vectors() -> list[dict[str, object]]:
     entry = 0x25A4
     expected_hash = "1691a2639d9965aec2aef0b71864c5f83041c5eccdf86acac625d778f958bdd3"
@@ -47011,6 +47203,26 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_248b_natural.json",
         palette_scene_entries_clear_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_24b2_natural.json",
+        decimal_append_vectors(
+            0x24B2,
+            57,
+            "9883d69c45c5c81c34c7e1ac68698e5d8629a16537d226b69843d8509fa088f0",
+            16,
+        ),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_24eb_natural.json",
+        decimal_append_vectors(
+            0x24EB,
+            71,
+            "a790e7b89b4440bcaecf68020324903f72b9da52639a6713389f9c829287e79b",
+            32,
+        ),
         args.check,
     )
     update_vector(
