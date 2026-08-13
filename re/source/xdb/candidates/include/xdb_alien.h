@@ -50,6 +50,7 @@
 #define XDB_AMER_FRAMEBUFFER_COLUMN_OFFSET 0x0948u
 #define XDB_AMER_BUCKET_CURSOR_OFFSET 0x094au
 #define XDB_AMER_RENDER_CONTINUATION_OFFSET 0x0944u
+#define XDB_AMER_RENDER_MODE_X_OFFSET 0x28d0u
 #define XDB_AMER_CLIPPED_SORT_HEAD_OFFSET 0x0c28u
 #define XDB_AMER_ACTIVE_LIST_HEAD_OFFSET 0x0c2au
 #define XDB_AMER_ACTIVE_LIST_MIDDLE_OFFSET 0x0c84u
@@ -68,6 +69,7 @@
 #define XDB_CROOLIS_FRAMEBUFFER_COLUMN_OFFSET 0x094au
 #define XDB_CROOLIS_BUCKET_CURSOR_OFFSET 0x094cu
 #define XDB_CROOLIS_RENDER_CONTINUATION_OFFSET 0x0946u
+#define XDB_CROOLIS_RENDER_MODE_X_OFFSET 0x2940u
 #define XDB_CROOLIS_CLIPPED_SORT_HEAD_OFFSET 0x0c2au
 #define XDB_CROOLIS_ACTIVE_LIST_HEAD_OFFSET 0x0c2cu
 #define XDB_CROOLIS_ACTIVE_LIST_MIDDLE_OFFSET 0x0c86u
@@ -86,6 +88,7 @@
 #define XDB_SCRUT_FRAMEBUFFER_COLUMN_OFFSET 0x094au
 #define XDB_SCRUT_BUCKET_CURSOR_OFFSET 0x094cu
 #define XDB_SCRUT_RENDER_CONTINUATION_OFFSET 0x0946u
+#define XDB_SCRUT_RENDER_MODE_X_OFFSET 0x2a00u
 #define XDB_SCRUT_CLIPPED_SORT_HEAD_OFFSET 0x0c2au
 #define XDB_SCRUT_ACTIVE_LIST_HEAD_OFFSET 0x0c2cu
 #define XDB_SCRUT_ACTIVE_LIST_MIDDLE_OFFSET 0x0c86u
@@ -108,6 +111,30 @@ typedef void XDB_FAR xdb_alien_frame_function(
         xdb_u16 event,
         xdb_u32 clock);
 typedef xdb_alien_frame_function XDB_FAR *xdb_alien_frame_callback;
+
+typedef struct xdb_alien_api_request {
+    volatile xdb_u16 XDB_FAR *timing_scale;
+    xdb_alien_frame_callback frame_callback;
+} xdb_alien_api_request;
+
+typedef struct xdb_alien_segment_directory {
+    xdb_u16 field_000;
+    xdb_u16 object_segment;
+    xdb_u16 palette_segment;
+    xdb_u16 raster_segment;
+    xdb_u16 field_008;
+    xdb_u16 field_00a;
+    xdb_u16 object_segment_delta;
+    xdb_u16 palette_segment_delta;
+    xdb_u16 raster_segment_delta;
+    xdb_u16 field_012;
+    xdb_u16 field_014;
+    xdb_u32 frame_clock;
+    xdb_u32 last_callback_clock;
+    xdb_u16 callback_countdown;
+    xdb_alien_frame_callback frame_callback;
+} xdb_alien_segment_directory;
+
 typedef void XDB_NEAR xdb_alien_state_function(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
@@ -432,9 +459,17 @@ typedef volatile xdb_alien_biased_state XDB_NEAR *xdb_alien_state_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_alien_method_delta_high; /* CS:0x009B */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_data_segment_delta; /* AMER CS:0x3275 */
+extern volatile xdb_u16 XDB_CODE_DATA
         xdb_amer_data_segment; /* AMER CS:0x3277 */
 extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_data_segment_delta; /* CROOLIS CS:0x32E5 */
+extern volatile xdb_u16 XDB_CODE_DATA
         xdb_croolis_data_segment; /* CROOLIS CS:0x32E7 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_data_segment_delta; /* SCRUT CS:0x33A5 */
 extern volatile xdb_u16 XDB_CODE_DATA
         xdb_scrut_data_segment; /* SCRUT CS:0x33A7 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
@@ -633,6 +668,15 @@ void XDB_NEAR xdb_scrut_method_slot_7_palette_update(
 void XDB_FAR xdb_amer_main(void);
 void XDB_FAR xdb_croolis_main(void);
 void XDB_FAR xdb_scrut_main(void);
+void XDB_FAR xdb_amer_api_entry(
+        const volatile xdb_alien_api_request XDB_FAR *request,
+        xdb_u16 code_segment);
+void XDB_FAR xdb_croolis_api_entry(
+        const volatile xdb_alien_api_request XDB_FAR *request,
+        xdb_u16 code_segment);
+void XDB_FAR xdb_scrut_api_entry(
+        const volatile xdb_alien_api_request XDB_FAR *request,
+        xdb_u16 code_segment);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);

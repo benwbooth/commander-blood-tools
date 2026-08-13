@@ -66,6 +66,15 @@ ALIEN_MAIN_SOURCE = (
     / "croolis"
     / "func_0000a3_main.c"
 )
+ALIEN_ENTRY_SOURCE = (
+    ROOT
+    / "re"
+    / "source"
+    / "xdb"
+    / "candidates"
+    / "croolis"
+    / "func_000000_api_entry.c"
+)
 
 
 @dataclass(frozen=True)
@@ -146,6 +155,13 @@ CASES = (
         executable_name="ALIENM.EXE",
         expected_result="PASS alien main",
         recovered_sources=(ALIEN_MAIN_SOURCE,),
+    ),
+    IntegrationCase(
+        name="alien_entry",
+        source=INTEGRATION_DIR / "alien_entry.c",
+        executable_name="ALIENE.EXE",
+        expected_result="PASS alien entry",
+        recovered_sources=(ALIEN_ENTRY_SOURCE,),
     ),
 )
 

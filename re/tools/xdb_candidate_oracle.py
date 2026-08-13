@@ -3049,6 +3049,378 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_api_entry_vectors(
+    module: str,
+    body_hash: str,
+    data_delta_slot: int,
+    data_segment_slot: int,
+    continuation_offset: int,
+    continuation_target: int,
+) -> list[dict[str, object]]:
+    entry = 0x0000
+    image = load_image(module)
+    if hashlib.sha256(image[:149]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered 149-byte body changed")
+
+    cases = (
+        {
+            "name": "zero_scale",
+            "timing_scale": 0x0000,
+            "code_segment": 0x1000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x1000, 0x1000, 0x1000),
+            "main_delta": None,
+        },
+        {
+            "name": "ordinary_scale",
+            "timing_scale": 0x0001,
+            "code_segment": 0x1000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x0100, 0x0200, 0x0300),
+            "main_delta": None,
+        },
+        {
+            "name": "largest_unclamped_scale",
+            "timing_scale": 0x000F,
+            "code_segment": 0x1000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x1000, 0x1000, 0x1000),
+            "main_delta": None,
+        },
+        {
+            "name": "clamped_scale_and_code_wrap",
+            "timing_scale": 0x0010,
+            "code_segment": 0xF000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x0100, 0x0200, 0x0300),
+            "main_delta": None,
+        },
+        {
+            "name": "shift_sign_rejection",
+            "timing_scale": 0x1000,
+            "code_segment": 0x1000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x1000, 0x1000, 0x1000),
+            "main_delta": None,
+        },
+        {
+            "name": "shift_wrap_and_segment_wrap",
+            "timing_scale": 0x2000,
+            "code_segment": 0x1000,
+            "data_segment": 0xE000,
+            "segment_deltas": (0x3000, 0x3000, 0x3000),
+            "main_delta": None,
+        },
+        {
+            "name": "high_scale_and_zero_final_segment",
+            "timing_scale": 0xFFFF,
+            "code_segment": 0x1000,
+            "data_segment": 0xD000,
+            "segment_deltas": (0x1000, 0x1000, 0x1000),
+            "main_delta": None,
+        },
+        {
+            "name": "main_updates_delta_before_readback",
+            "timing_scale": 0x0007,
+            "code_segment": 0x1000,
+            "data_segment": 0x7000,
+            "segment_deltas": (0x1000, 0x1000, 0x1000),
+            "main_delta": 0x1234,
+        },
+    )
+    caller_data_segment = 0x5200
+    initial_extra_segment = 0x5300
+    initial_fs_segment = 0x5400
+    initial_game_segment = 0x5500
+    stack_segment = 0x6000
+    timing_segment = 0xB000
+    timing_offset = 0x2000
+    request_offset = 0x8000
+    callback = (0x3456, 0x789A)
+    return_segment = 0x5000
+    return_address = 0xF000
+    vectors: list[dict[str, object]] = []
+
+    for case_index, case in enumerate(cases):
+        code_segment = int(case["code_segment"])
+        data_segment = int(case["data_segment"])
+        segment_deltas = tuple(int(value) for value in case["segment_deltas"])
+        data_delta = (data_segment - code_segment) & 0xFFFF
+        segments = []
+        segment = data_segment
+        for delta in segment_deltas:
+            segment = (segment + delta) & 0xFFFF
+            segments.append(segment)
+        final_segment = segments[-1]
+
+        patched_image = bytearray(image)
+        struct.pack_into("<H", patched_image, data_delta_slot, data_delta)
+        struct.pack_into("<H", patched_image, data_segment_slot, 0xA55A)
+        struct.pack_into("<HH", patched_image, 0x0099, 0x5AA5, 0x9669)
+        patched_image[0x00A3] = 0xCB
+
+        directory_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x40)
+        )
+        struct.pack_into("<HHH", directory_before, 0x000C, *segment_deltas)
+        directory_expected = bytearray(directory_before)
+        struct.pack_into("<HHH", directory_expected, 0x0002, *segments)
+        struct.pack_into("<HH", directory_expected, 0x0020, *callback)
+
+        continuation_before = bytes(
+            (index * 37 + case_index * 11 + 5) & 0xFF for index in range(8)
+        )
+        continuation_expected = bytearray(continuation_before)
+        struct.pack_into("<H", continuation_expected, 2, continuation_target)
+
+        timing_before = bytearray(
+            (index * 43 + case_index * 13 + 7) & 0xFF for index in range(6)
+        )
+        struct.pack_into("<H", timing_before, 2, int(case["timing_scale"]))
+        timing_expected = bytearray(timing_before)
+
+        scaled = (int(case["timing_scale"]) << 3) & 0xFFFF
+        if scaled & 0x8000:
+            scaled = 0
+        if scaled >= 0x0080:
+            scaled = 0x007F
+        entry_delta = (scaled - 4) & 0xFFFF
+        final_delta_value = case["main_delta"]
+        if final_delta_value is None:
+            final_delta = entry_delta
+        else:
+            final_delta = int(final_delta_value) & 0xFFFF
+        readback_source = (final_delta + 4) & 0xFFFF
+        timing_result = readback_source >> 3
+        struct.pack_into("<H", timing_expected, 2, timing_result)
+
+        code_expected = bytearray(patched_image)
+        struct.pack_into("<H", code_expected, data_segment_slot, data_segment)
+        struct.pack_into("<HH", code_expected, 0x0099, final_delta, 0)
+
+        request = struct.pack(
+            "<HHHH", timing_offset, timing_segment, callback[0], callback[1]
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_frame = (
+            struct.pack("<HH", return_address, return_segment) + stack_sentinel
+        )
+        host_decoy = bytes(
+            (index * 31 + case_index * 19 + 9) & 0xFF
+            for index in range(0x40)
+        )
+        initial_flags = 0x0A93 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x97978000,
+            "sp": 0xFF00,
+            "ds": caller_data_segment,
+            "es": initial_extra_segment,
+            "fs": initial_fs_segment,
+            "gs": initial_game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        main_entries: list[dict[str, object]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address != code_segment * 16 + 0x00A3:
+                return
+            sp = machine.reg_read(UC_X86_REG_SP)
+            main_entries.append(
+                {
+                    "return_frame": struct.unpack(
+                        "<HH", machine.mem_read(stack_segment * 16 + sp, 4)
+                    ),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "fs": machine.reg_read(UC_X86_REG_FS),
+                    "data_segment": struct.unpack(
+                        "<H",
+                        machine.mem_read(code_segment * 16 + data_segment_slot, 2),
+                    )[0],
+                    "segments": struct.unpack(
+                        "<HHH", machine.mem_read(data_segment * 16 + 2, 6)
+                    ),
+                    "method_delta": struct.unpack(
+                        "<HH", machine.mem_read(code_segment * 16 + 0x0099, 4)
+                    ),
+                    "callback": struct.unpack(
+                        "<HH", machine.mem_read(data_segment * 16 + 0x0020, 4)
+                    ),
+                    "timing_scale": struct.unpack(
+                        "<H",
+                        machine.mem_read(timing_segment * 16 + timing_offset, 2),
+                    )[0],
+                }
+            )
+            if case["main_delta"] is not None:
+                machine.mem_write(
+                    code_segment * 16 + 0x0099,
+                    struct.pack("<H", final_delta),
+                )
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(directory_before)),
+                (
+                    final_segment,
+                    continuation_offset - 2,
+                    continuation_before,
+                ),
+                (timing_segment, timing_offset - 2, bytes(timing_before)),
+                (caller_data_segment, 0, host_decoy),
+                (stack_segment, request_offset, request),
+                (stack_segment, 0xFF00, stack_frame),
+            ],
+            code_handler=code_handler,
+            code_segment=code_segment,
+            return_segment=return_segment,
+            max_instructions=200,
+        )
+
+        expected_main_entry = {
+            "return_frame": (0x0070, code_segment),
+            "ds": data_segment,
+            "es": timing_segment,
+            "fs": data_segment,
+            "data_segment": data_segment,
+            "segments": tuple(segments),
+            "method_delta": (entry_delta, 0),
+            "callback": callback,
+            "timing_scale": int(case["timing_scale"]),
+        }
+        if main_entries != [expected_main_entry]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"main entries={main_entries}, expected={[expected_main_entry]}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        expected_flags = {
+            "cf": bool(readback_source & 0x0004),
+            "pf": (timing_result & 0xFF).bit_count() % 2 == 0,
+            "zf": timing_result == 0,
+            "sf": bool(timing_result & 0x8000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+        }
+        actual_flags = {
+            name: bool(flags_after & flag_masks[name]) for name in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        actual_code = bytes(
+            machine.mem_read(code_segment * 16, len(code_expected))
+        )
+        if actual_code != bytes(code_expected):
+            differing = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_code, code_expected, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"code mismatch at {differing:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x40)) != bytes(
+            directory_expected
+        ):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: directory differs"
+            )
+        if bytes(
+            machine.mem_read(final_segment * 16 + continuation_offset - 2, 8)
+        ) != bytes(continuation_expected):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: continuation differs"
+            )
+        if bytes(
+            machine.mem_read(timing_segment * 16 + timing_offset - 2, 6)
+        ) != bytes(timing_expected):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: timing word differs"
+            )
+        if bytes(machine.mem_read(caller_data_segment * 16, 0x40)) != host_decoy:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: caller DS changed"
+            )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + request_offset, len(request))
+        ) != request:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: request changed"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: stack sentinel changed"
+            )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "code_segment": code_segment,
+                "data_segment": data_segment,
+                "segment_deltas": segment_deltas,
+                "derived_segments": segments,
+                "timing_scale_in": case["timing_scale"],
+                "entry_method_delta": entry_delta,
+                "main_method_delta": case["main_delta"],
+                "timing_scale_out": timing_result,
+                "frame_callback": callback,
+                "render_continuation": {
+                    "segment": final_segment,
+                    "offset": continuation_offset,
+                    "target": continuation_target,
+                },
+                "ordered_callees": [0x00A3],
+                "preserves_all_general_and_segment_registers": True,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def alien_main_vectors(
     module: str,
     entry: int,
@@ -14255,6 +14627,51 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
+    for (
+        module,
+        body_hash,
+        data_delta_slot,
+        data_segment_slot,
+        continuation_offset,
+        continuation_target,
+    ) in (
+        (
+            "amer",
+            "ed2dc63683f89af79b8bb92c96b4302553c81e0055233fe3f7ebd1478e174af3",
+            0x3275,
+            0x3277,
+            0x0944,
+            0x28D0,
+        ),
+        (
+            "croolis",
+            "6fb4e4318577167cf011c7028aad0c8a16224cd78ef7cf43e395998acc82c584",
+            0x32E5,
+            0x32E7,
+            0x0946,
+            0x2940,
+        ),
+        (
+            "scrut",
+            "7d04c0a35e82fbf020b08f8d7278e90f2f552717cc658572fab77cb889b307e7",
+            0x33A5,
+            0x33A7,
+            0x0946,
+            0x2A00,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_0000_natural.json",
+            alien_api_entry_vectors(
+                module,
+                body_hash,
+                data_delta_slot,
+                data_segment_slot,
+                continuation_offset,
+                continuation_target,
+            ),
             args.check,
         )
     for (

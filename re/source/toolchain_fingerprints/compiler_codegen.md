@@ -2712,6 +2712,28 @@ rotation, keyboard publication, cleanup, and DS restoration. Only the segment,
 hardware-port, BIOS, and AX/EDX callback boundaries use narrow compiler
 intrinsics; the owner logic is ordinary structured C.
 
+## Alien far-entry candidate
+
+The three `0x000000` far entries are loader-facing adapters around the alien
+main loops. An 8-byte request at caller `SS:BP` supplies a far pointer to a
+mutable timing word and a far frame callback. The entry derives and publishes
+the data, object, palette, and raster segments, installs the module's renderer
+continuation, converts the timing value through the original wrapping shift,
+signed rejection, and clamp, calls `0x00A3`, then converts the possibly updated
+method delta back into the caller's timing word.
+
+Eight raw-overlay vectors per module prove current-CS relocation and wrap,
+cumulative segment wrap, a zero final segment, every shift/rejection/clamp
+boundary, callback publication, exact pre-main segment and stack state,
+post-main delta mutation and readback, memory ownership, register and segment
+preservation, final defined flags, and far return. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) compiles each natural typed entry warning-free to 52
+instructions/177 bytes versus 56/149 original. The representative CROOLIS
+mnemonic LCS is 36 of 56 and mnemonic multiset overlap is 38 of 56. A linked
+DOS executable verifies the recovered C with a real far request and an
+allocated paragraph-aligned data directory. Current-CS and caller `SS:BP`
+acquisition remain loader ABI adapters rather than game logic.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

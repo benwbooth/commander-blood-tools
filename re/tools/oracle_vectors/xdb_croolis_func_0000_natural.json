@@ -1,0 +1,338 @@
+[
+  {
+    "name": "zero_scale",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 28672,
+    "segment_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "derived_segments": [
+      32768,
+      36864,
+      40960
+    ],
+    "timing_scale_in": 0,
+    "entry_method_delta": 65532,
+    "main_method_delta": null,
+    "timing_scale_out": 0,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 40960,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false
+    }
+  },
+  {
+    "name": "ordinary_scale",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 28672,
+    "segment_deltas": [
+      256,
+      512,
+      768
+    ],
+    "derived_segments": [
+      28928,
+      29440,
+      30208
+    ],
+    "timing_scale_in": 1,
+    "entry_method_delta": 4,
+    "main_method_delta": null,
+    "timing_scale_out": 1,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 30208,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true
+    }
+  },
+  {
+    "name": "largest_unclamped_scale",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 28672,
+    "segment_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "derived_segments": [
+      32768,
+      36864,
+      40960
+    ],
+    "timing_scale_in": 15,
+    "entry_method_delta": 116,
+    "main_method_delta": null,
+    "timing_scale_out": 15,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 40960,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false
+    }
+  },
+  {
+    "name": "clamped_scale_and_code_wrap",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 61440,
+    "data_segment": 28672,
+    "segment_deltas": [
+      256,
+      512,
+      768
+    ],
+    "derived_segments": [
+      28928,
+      29440,
+      30208
+    ],
+    "timing_scale_in": 16,
+    "entry_method_delta": 123,
+    "main_method_delta": null,
+    "timing_scale_out": 15,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 30208,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true
+    }
+  },
+  {
+    "name": "shift_sign_rejection",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 28672,
+    "segment_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "derived_segments": [
+      32768,
+      36864,
+      40960
+    ],
+    "timing_scale_in": 4096,
+    "entry_method_delta": 65532,
+    "main_method_delta": null,
+    "timing_scale_out": 0,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 40960,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false
+    }
+  },
+  {
+    "name": "shift_wrap_and_segment_wrap",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 57344,
+    "segment_deltas": [
+      12288,
+      12288,
+      12288
+    ],
+    "derived_segments": [
+      4096,
+      16384,
+      28672
+    ],
+    "timing_scale_in": 8192,
+    "entry_method_delta": 65532,
+    "main_method_delta": null,
+    "timing_scale_out": 0,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 28672,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true
+    }
+  },
+  {
+    "name": "high_scale_and_zero_final_segment",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 53248,
+    "segment_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "derived_segments": [
+      57344,
+      61440,
+      0
+    ],
+    "timing_scale_in": 65535,
+    "entry_method_delta": 65532,
+    "main_method_delta": null,
+    "timing_scale_out": 0,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 0,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false
+    }
+  },
+  {
+    "name": "main_updates_delta_before_readback",
+    "module": "croolis",
+    "entry": 0,
+    "code_segment": 4096,
+    "data_segment": 28672,
+    "segment_deltas": [
+      4096,
+      4096,
+      4096
+    ],
+    "derived_segments": [
+      32768,
+      36864,
+      40960
+    ],
+    "timing_scale_in": 7,
+    "entry_method_delta": 52,
+    "main_method_delta": 4660,
+    "timing_scale_out": 583,
+    "frame_callback": [
+      13398,
+      30874
+    ],
+    "render_continuation": {
+      "segment": 40960,
+      "offset": 2374,
+      "target": 10560
+    },
+    "ordered_callees": [
+      163
+    ],
+    "preserves_all_general_and_segment_registers": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true
+    }
+  }
+]

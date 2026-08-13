@@ -46,6 +46,11 @@ restoration, initialization, two-context method dispatch, call order, timer
 callback arguments and state, page rotation, keyboard publication, cleanup,
 and the module-specific control-latch clear.
 
+`alien_entry.c` links the recovered CROOLIS `0x0000` host entry, allocates a
+paragraph-aligned data directory, passes a real far timing/callback request,
+and verifies segment derivation, renderer continuation, callback publication,
+the pre-main method delta, a typed main-boundary update, and timing writeback.
+
 The recovered C makes the original implicit raster DS ownership explicit as a
 segment argument from `0x0700` to `0x0D7D`. Raster records, reciprocal values,
 free-list state, and active-list links remain direct typed far-memory accesses;
