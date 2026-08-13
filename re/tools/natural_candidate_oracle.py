@@ -29,6 +29,8 @@ from unicorn import (
     UcError,
 )
 from unicorn.x86_const import (
+    UC_X86_REG_AH,
+    UC_X86_REG_AL,
     UC_X86_INS_IN,
     UC_X86_INS_OUT,
     UC_X86_REG_AX,
@@ -24080,6 +24082,774 @@ def audio_process_ade_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def snd_play_clip_vectors() -> list[dict[str, object]]:
+    entry = 0xB8CD
+    expected_hash = "9c7e53a679ab66f26f0621eb7f70b6da0e348778f2b6183da22c1c5b202ab063"
+    if hashlib.sha256(EXE[entry : entry + 720]).hexdigest() != expected_hash:
+        raise AssertionError("0xb8cd: recovered 720-byte body changed")
+
+    cases = [
+        {
+            "name": "sound_disabled",
+            "sound": 0,
+            "pending": 0,
+            "clip": 0,
+            "backend": "memory",
+        },
+        {
+            "name": "idle_memory",
+            "sound": 1,
+            "pending": 1,
+            "clip": 2,
+            "backend": "memory",
+            "memory_length": 31,
+        },
+        {
+            "name": "idle_ems",
+            "sound": 1,
+            "pending": 0,
+            "clip": 0x8003,
+            "backend": "ems",
+            "start": 0x1234,
+            "length": 97,
+        },
+        {
+            "name": "idle_xms_odd",
+            "sound": 1,
+            "pending": 0,
+            "clip": 0x8004,
+            "backend": "xms",
+            "start": 0x2011,
+            "length": 35,
+        },
+        {
+            "name": "idle_file_short_read",
+            "sound": 1,
+            "pending": 0,
+            "clip": 0x8005,
+            "backend": "file",
+            "start": 0x3456,
+            "length": 41,
+            "read_return": 37,
+        },
+        {
+            "name": "mix_memory_spans_buffers",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 10,
+            "packed": 0,
+            "states": [3, 0],
+            "buffer_lengths": [12, 8],
+            "position": 8,
+        },
+        {
+            "name": "mix_memory_packed",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 6,
+            "packed": 1,
+            "states": [3, 0],
+            "buffer_lengths": [10, 10],
+            "position": 7,
+        },
+        {
+            "name": "mix_second_buffer_selected",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 7,
+            "packed": 0,
+            "states": [1, 3],
+            "buffer_lengths": [9, 11],
+            "position": 9,
+        },
+        {
+            "name": "mix_no_active_buffer",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 9,
+            "packed": 0,
+            "states": [1, 2],
+            "buffer_lengths": [12, 12],
+            "position": 4,
+        },
+        {
+            "name": "mix_position_unavailable",
+            "sound": 1,
+            "pending": 2,
+            "clip": 1,
+            "backend": "memory",
+            "memory_length": 9,
+            "packed": 0,
+            "states": [3, 1],
+            "buffer_lengths": [12, 12],
+            "position": 0xFFFF,
+        },
+        {
+            "name": "mix_ems_cross_page",
+            "sound": 1,
+            "pending": 2,
+            "clip": 0x8006,
+            "backend": "ems",
+            "start": 0x3FF8,
+            "length": 24,
+            "packed": 0,
+            "states": [3, 0],
+            "buffer_lengths": [20, 10],
+            "position": 20,
+        },
+        {
+            "name": "mix_xms_spans_buffers",
+            "sound": 1,
+            "pending": 2,
+            "clip": 0x8007,
+            "backend": "xms",
+            "start": 0x4445,
+            "length": 25,
+            "packed": 0,
+            "states": [3, 0],
+            "buffer_lengths": [15, 10],
+            "position": 15,
+        },
+        {
+            "name": "mix_file_short_read",
+            "sound": 1,
+            "pending": 2,
+            "clip": 0x8008,
+            "backend": "file",
+            "start": 0x5500,
+            "length": 30,
+            "read_return": 22,
+            "packed": 0,
+            "states": [3, 0],
+            "buffer_lengths": [12, 10],
+            "position": 12,
+        },
+    ]
+    game_segment = 0x2C00
+    bank_segment = 0x4000
+    stream_segment = 0x4800
+    stream_offset = 0x1000
+    graphics_segment = 0x5200
+    graphics_offset = 0x0200
+    staging_offset = graphics_offset + 0x7D00
+    ems_segment = 0x6000
+    buffer_segments = [0x7000, 0x7200]
+    buffer_offset = 0x1000
+    stack_segment = game_segment
+    callback_segment = 0xF000
+    play_offset = 0x0100
+    position_offset = 0x0200
+    xms_offset = 0x0300
+    stop_offset = 0x0400
+    play_address = callback_segment * 16 + play_offset
+    position_address = callback_segment * 16 + position_offset
+    xms_address = callback_segment * 16 + xms_offset
+    stop_address = callback_segment * 16 + stop_offset
+    memmove_segment = 0x01CE
+    memmove_offset = 0x0B93
+    memmove_address = memmove_segment * 16 + memmove_offset
+    return_address = 0x6F00
+    voice_handle = 0x2468
+    ems_handle = 0x1357
+    xms_handle = 0x369C
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def mix_expected(
+        before: list[bytearray],
+        source_data: bytes,
+        source_bytes: int,
+        packed: bool,
+        states: list[int],
+        lengths: list[int],
+        position: int,
+    ) -> tuple[list[bytearray], int, list[dict[str, int]]]:
+        after = [bytearray(value) for value in before]
+        operations: list[dict[str, int]] = []
+        selected = 0 if states[0] == 3 else 1
+        if states[selected] != 3 or position == 0xFFFF:
+            return after, 0, operations
+        other = 1 - selected
+        position_delta = (position - lengths[selected]) & 0xFFFF
+        if signed16(position_delta) < 0:
+            position_delta = (-position_delta) & 0xFFFF
+        remaining = source_bytes & 0xFFFF
+        source_cursor = 6
+
+        def apply_mix(buffer_index: int, destination_index: int, count: int) -> None:
+            nonlocal source_cursor
+            original_count = count
+            while count != 0:
+                sample = source_data[source_cursor]
+                if packed:
+                    if (count & 1) == 0:
+                        source_cursor += 1
+                else:
+                    source_cursor += 1
+                destination_value = after[buffer_index][destination_index]
+                after[buffer_index][destination_index] = (
+                    sample + destination_value
+                ) >> 1
+                destination_index += 1
+                count = (count - 1) & 0xFFFF
+            operations.append(
+                {
+                    "buffer": buffer_index,
+                    "bytes": original_count,
+                }
+            )
+
+        if position_delta < lengths[selected]:
+            available = (lengths[selected] - position_delta) & 0xFFFF
+            remaining = (remaining - available) & 0xFFFF
+            mix_count = available if signed16(remaining) >= 0 else source_bytes
+            mix_count = (mix_count - 1) & 0xFFFF
+            if signed16(mix_count) > 0:
+                apply_mix(
+                    selected,
+                    6 + position_delta,
+                    mix_count,
+                )
+
+        if signed16(remaining) > 0:
+            mix_count = min(remaining, lengths[other])
+            mix_count = (mix_count - 1) & 0xFFFF
+            if signed16(mix_count) > 0:
+                apply_mix(other, 6, mix_count)
+
+        return after, source_cursor - 6, operations
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        backend = str(case["backend"])
+        mixing = bool(int(case["pending"]) & 2)
+        clip_value = int(case["clip"])
+        streamed_index = clip_value & 0x3FFF
+        clip_start = int(case.get("start", 0))
+        clip_length = int(case.get("length", 0))
+        read_return = int(case.get("read_return", clip_length))
+        memory_length = int(case.get("memory_length", 0))
+        memory_offset = 0x0200 + case_index * 0x0040
+        data_length = max(clip_length, memory_length + 6, read_return, 64)
+        clip_data = bytes(
+            ((index * 29 + case_index * 37 + 0x31) & 0xFF)
+            for index in range(data_length + 8)
+        )
+        buffer_before = [
+            bytearray(
+                ((index * (11 + buffer_index * 6) + case_index * 19 + 0x55) & 0xFF)
+                for index in range(64)
+            )
+            for buffer_index in range(2)
+        ]
+        states = list(case.get("states", [0, 0]))
+        buffer_lengths = list(case.get("buffer_lengths", [16, 16]))
+        position = int(case.get("position", 0))
+        packed = bool(int(case.get("packed", 0)))
+
+        if mixing and int(case["sound"]) & 1:
+            if backend == "memory":
+                source_bytes = memory_length
+            elif backend == "file":
+                source_bytes = (read_return - 6) & 0xFFFF
+            else:
+                source_bytes = (clip_length - 6) & 0xFFFF
+            if packed:
+                source_bytes = (source_bytes * 2) & 0xFFFF
+            expected_buffers, consumed_source, mix_operations = mix_expected(
+                buffer_before,
+                clip_data,
+                source_bytes,
+                packed,
+                states,
+                buffer_lengths,
+                position,
+            )
+        else:
+            source_bytes = 0
+            expected_buffers = [bytearray(value) for value in buffer_before]
+            consumed_source = 0
+            mix_operations = []
+
+        game = bytearray(0x300)
+        game_base = 0x0A40
+        for index in range(len(game)):
+            game[index] = (index * 13 + case_index * 31 + 0xA7) & 0xFF
+
+        def put_byte(offset: int, value: int) -> None:
+            game[offset - game_base] = value & 0xFF
+
+        def put_word(offset: int, value: int) -> None:
+            struct.pack_into("<H", game, offset - game_base, value & 0xFFFF)
+
+        def put_dword(offset: int, value: int) -> None:
+            struct.pack_into("<I", game, offset - game_base, value & 0xFFFFFFFF)
+
+        def put_pointer(offset: int, pointer_offset: int, segment: int) -> None:
+            struct.pack_into(
+                "<HH", game, offset - game_base, pointer_offset, segment
+            )
+
+        put_pointer(0x0A4A, xms_offset, callback_segment)
+        put_word(0x0A5A, xms_handle if backend == "xms" else 0xFFFF)
+        put_word(0x0A5C, ems_handle if backend == "ems" else 0xFFFF)
+        put_word(0x0A66, ems_segment)
+        put_pointer(0x0ABC, graphics_offset, graphics_segment)
+        put_byte(0x0ADE, int(case["sound"]))
+        put_pointer(0x0B89, buffer_offset, buffer_segments[0])
+        put_word(0x0B8D, buffer_lengths[0])
+        put_byte(0x0B8F, states[0])
+        put_pointer(0x0B91, buffer_offset, buffer_segments[1])
+        put_word(0x0B95, buffer_lengths[1])
+        put_byte(0x0B97, states[1])
+        put_byte(0x0BA0, int(case["pending"]))
+        put_byte(0x0BA2, int(case.get("packed", 0)))
+        put_pointer(0x0BAB, 0xAAAA, 0xBBBB)
+        put_word(0x0BAF, 0xCCCC)
+        put_pointer(0x0BB3, 0, bank_segment)
+        put_pointer(0x0BB7, stream_offset, stream_segment)
+        put_word(0x0C47, voice_handle)
+        put_pointer(0x0CDB, play_offset, callback_segment)
+        put_pointer(0x0CDF, stop_offset, callback_segment)
+        put_pointer(0x0CF3, position_offset, callback_segment)
+
+        if backend == "memory":
+            memory_index = clip_value & 0xFFFF
+            put_word(0x0BBF + memory_index * 4, memory_offset)
+            put_word(0x0BC1 + memory_index * 4, memory_length)
+        else:
+            put_dword(0x0C57 + streamed_index * 4, clip_start)
+            put_dword(
+                0x0C57 + (streamed_index + 1) * 4,
+                clip_start + clip_length,
+            )
+
+        initial = {
+            "eax": (0xA1A10000 | clip_value) + case_index * 0x10000,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": 0x4400,
+            "es": 0x4600,
+            "fs": 0x6400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        stop_calls = []
+        play_calls = []
+        position_calls = []
+        xms_calls = []
+        memmove_calls = []
+        ems_maps = []
+        seeks = []
+        reads = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == stop_address:
+                stop_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                    }
+                )
+            elif address == play_address:
+                descriptor = struct.unpack(
+                    "<HHH",
+                    machine.mem_read(game_segment * 16 + 0x0BAB, 6),
+                )
+                play_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "descriptor": descriptor,
+                    }
+                )
+            elif address == position_address:
+                position_calls.append(
+                    {
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, position)
+            elif address == xms_address:
+                request = struct.unpack(
+                    "<IHIHI",
+                    machine.mem_read(game_segment * 16 + 0x0A6C, 16),
+                )
+                xms_calls.append(
+                    {
+                        "eax": machine.reg_read(UC_X86_REG_EAX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "request": request,
+                    }
+                )
+                destination_linear = request[4]
+                destination_segment = destination_linear >> 16
+                destination_offset = destination_linear & 0xFFFF
+                transfer = clip_data[: request[0]]
+                if len(transfer) < request[0]:
+                    transfer += bytes(request[0] - len(transfer))
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset,
+                    transfer,
+                )
+            elif address == memmove_address:
+                byte_count = machine.reg_read(UC_X86_REG_EAX)
+                source_segment = machine.reg_read(UC_X86_REG_DS)
+                source_offset = machine.reg_read(UC_X86_REG_SI)
+                destination_segment = machine.reg_read(UC_X86_REG_ES)
+                destination_offset = machine.reg_read(UC_X86_REG_DI)
+                memmove_calls.append(
+                    {
+                        "byte_count": byte_count,
+                        "source": [source_offset, source_segment],
+                        "destination": [destination_offset, destination_segment],
+                    }
+                )
+                transfer = bytes(
+                    machine.mem_read(
+                        source_segment * 16 + source_offset,
+                        byte_count,
+                    )
+                )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset,
+                    transfer,
+                )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            if number == 0x67:
+                ems_maps.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "logical_page": machine.reg_read(UC_X86_REG_BX),
+                        "handle": machine.reg_read(UC_X86_REG_DX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+                return
+            if number != 0x21:
+                raise AssertionError(f"0xb8cd {name}: unexpected INT {number:#x}")
+
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x42:
+                offset = (
+                    machine.reg_read(UC_X86_REG_CX) << 16
+                    | machine.reg_read(UC_X86_REG_DX)
+                )
+                seeks.append(
+                    {
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "offset": offset,
+                        "origin": machine.reg_read(UC_X86_REG_AL),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, offset & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DX, offset >> 16)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif function == 0x3F:
+                destination_segment = machine.reg_read(UC_X86_REG_DS)
+                destination_offset = machine.reg_read(UC_X86_REG_DX)
+                requested = machine.reg_read(UC_X86_REG_CX)
+                reads.append(
+                    {
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "destination": [destination_offset, destination_segment],
+                        "requested": requested,
+                    }
+                )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset,
+                    clip_data[:read_return],
+                )
+                machine.reg_write(UC_X86_REG_AX, read_return)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            else:
+                raise AssertionError(
+                    f"0xb8cd {name}: unexpected INT 21h function {function:#x}"
+                )
+
+        memory = [
+            (0, return_address, b"\xcc"),
+            (callback_segment, play_offset, b"\xcb"),
+            (callback_segment, position_offset, b"\xcb"),
+            (callback_segment, xms_offset, b"\xcb"),
+            (callback_segment, stop_offset, b"\xcb"),
+            (memmove_segment, memmove_offset, b"\xcb"),
+            (game_segment, game_base, bytes(game)),
+            (bank_segment, memory_offset, clip_data),
+            (buffer_segments[0], buffer_offset, bytes(buffer_before[0])),
+            (buffer_segments[1], buffer_offset, bytes(buffer_before[1])),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<HH", return_address, 0) +
+                bytes.fromhex("69965aa5c33c"),
+            ),
+        ]
+        if backend == "ems":
+            memory.append(
+                (
+                    ems_segment,
+                    clip_start & 0x3FFF,
+                    clip_data,
+                )
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=100000,
+        )
+
+        active = bool(int(case["sound"]) & 1)
+        expected_stop_count = int(active and not mixing)
+        expected_play_count = int(active and not mixing)
+        if len(stop_calls) != expected_stop_count:
+            raise AssertionError(
+                f"0xb8cd {name}: stop calls={stop_calls}, "
+                f"expected count={expected_stop_count}"
+            )
+        if len(play_calls) != expected_play_count:
+            raise AssertionError(
+                f"0xb8cd {name}: play calls={play_calls}, "
+                f"expected count={expected_play_count}"
+            )
+        if stop_calls and stop_calls[0] != {"ax": 0, "ds": game_segment}:
+            raise AssertionError(f"0xb8cd {name}: stop state={stop_calls[0]}")
+
+        expected_descriptor = None
+        if expected_play_count:
+            if backend == "memory":
+                expected_descriptor = (memory_offset, bank_segment, memory_length)
+            else:
+                descriptor_length = read_return if backend == "file" else clip_length
+                expected_descriptor = (
+                    stream_offset,
+                    stream_segment,
+                    descriptor_length,
+                )
+            expected_play = {
+                "ax": 0,
+                "ds": game_segment,
+                "si": 0x0BAB,
+                "descriptor": expected_descriptor,
+            }
+            if play_calls[0] != expected_play:
+                raise AssertionError(
+                    f"0xb8cd {name}: play={play_calls[0]}, "
+                    f"expected={expected_play}"
+                )
+
+        expected_position_count = int(
+            active and mixing and 3 in states
+        )
+        if len(position_calls) != expected_position_count:
+            raise AssertionError(
+                f"0xb8cd {name}: position calls={position_calls}, "
+                f"expected count={expected_position_count}"
+            )
+        expected_position_ds = {
+            "memory": bank_segment,
+            "ems": ems_segment,
+            "xms": graphics_segment,
+            "file": graphics_segment,
+        }[backend]
+        for call in position_calls:
+            if call != {"ds": expected_position_ds, "sp": 0xFEE8}:
+                raise AssertionError(f"0xb8cd {name}: position state={call}")
+
+        if backend == "ems" and active:
+            first_page = clip_start >> 14
+            expected_maps = [
+                {
+                    "ax": 0x4400 + physical,
+                    "logical_page": first_page + physical,
+                    "handle": ems_handle,
+                    "ds": ems_segment,
+                }
+                for physical in range(4)
+            ]
+            if ems_maps != expected_maps:
+                raise AssertionError(
+                    f"0xb8cd {name}: EMS maps={ems_maps}, expected={expected_maps}"
+                )
+        elif ems_maps:
+            raise AssertionError(f"0xb8cd {name}: unexpected EMS maps={ems_maps}")
+
+        expected_memmove_count = int(
+            active and not mixing and backend == "ems"
+        )
+        if len(memmove_calls) != expected_memmove_count:
+            raise AssertionError(
+                f"0xb8cd {name}: memmove calls={memmove_calls}, "
+                f"expected count={expected_memmove_count}"
+            )
+        if memmove_calls:
+            expected_memmove = {
+                "byte_count": clip_length,
+                "source": [clip_start & 0x3FFF, ems_segment],
+                "destination": [stream_offset, stream_segment],
+            }
+            if memmove_calls[0] != expected_memmove:
+                raise AssertionError(
+                    f"0xb8cd {name}: memmove={memmove_calls[0]}, "
+                    f"expected={expected_memmove}"
+                )
+
+        expected_xms_count = int(active and backend == "xms")
+        if len(xms_calls) != expected_xms_count:
+            raise AssertionError(
+                f"0xb8cd {name}: XMS calls={xms_calls}, "
+                f"expected count={expected_xms_count}"
+            )
+        if xms_calls:
+            destination = (
+                (graphics_segment << 16) | staging_offset
+                if mixing
+                else (stream_segment << 16) | stream_offset
+            )
+            expected_request = (
+                clip_length + (clip_length & 1),
+                xms_handle,
+                clip_start,
+                0,
+                destination,
+            )
+            call = xms_calls[0]
+            if call["request"] != expected_request or call["eax"] != 0x0B00:
+                raise AssertionError(
+                    f"0xb8cd {name}: XMS call={call}, "
+                    f"expected request={expected_request}"
+                )
+
+        expected_file_count = int(active and backend == "file")
+        if len(seeks) != expected_file_count or len(reads) != expected_file_count:
+            raise AssertionError(
+                f"0xb8cd {name}: seeks={seeks}, reads={reads}, "
+                f"expected count={expected_file_count}"
+            )
+        if seeks:
+            if seeks[0] != {
+                "handle": voice_handle,
+                "offset": clip_start,
+                "origin": 0,
+            }:
+                raise AssertionError(f"0xb8cd {name}: seek={seeks[0]}")
+            expected_destination = (
+                [0x7D00, graphics_segment]
+                if mixing
+                else [stream_offset, stream_segment]
+            )
+            expected_read = {
+                "handle": voice_handle,
+                "destination": expected_destination,
+                "requested": clip_length,
+            }
+            if reads[0] != expected_read:
+                raise AssertionError(
+                    f"0xb8cd {name}: read={reads[0]}, expected={expected_read}"
+                )
+
+        for buffer_index in range(2):
+            actual = bytes(
+                machine.mem_read(
+                    buffer_segments[buffer_index] * 16 + buffer_offset,
+                    64,
+                )
+            )
+            if actual != bytes(expected_buffers[buffer_index]):
+                raise AssertionError(
+                    f"0xb8cd {name}: buffer {buffer_index} mismatch"
+                )
+
+        if expected_play_count and backend in ("ems", "xms", "file"):
+            copied_length = (
+                read_return if backend == "file" else clip_length
+            )
+            actual = bytes(
+                machine.mem_read(
+                    stream_segment * 16 + stream_offset,
+                    copied_length,
+                )
+            )
+            if actual != clip_data[:copied_length]:
+                raise AssertionError(f"0xb8cd {name}: staged clip mismatch")
+
+        pending_after = machine.mem_read(
+            game_segment * 16 + 0x0BA0, 1
+        )[0]
+        expected_pending = 0 if expected_stop_count else int(case["pending"])
+        if pending_after != expected_pending:
+            raise AssertionError(
+                f"0xb8cd {name}: pending={pending_after}, "
+                f"expected={expected_pending}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        del expected_registers["eax"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb8cd {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb8cd {name}: far return did not restore CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != bytes.fromhex(
+            "69965aa5c33c"
+        ):
+            raise AssertionError(f"0xb8cd {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "clip_index": clip_value,
+                "mode": "mix" if mixing else "play",
+                "backend": backend,
+                "descriptor": list(expected_descriptor)
+                if expected_descriptor is not None
+                else None,
+                "ems_maps": ems_maps,
+                "xms_move_count": len(xms_calls),
+                "file_read_count": len(reads),
+                "position_calls": len(position_calls),
+                "mix_operations": mix_operations,
+                "source_bytes": source_bytes,
+                "source_data_bytes_consumed": consumed_source,
+            }
+        )
+
+    return vectors
+
+
 def snd_driver_call_vectors() -> list[dict[str, object]]:
     entry = 0xBB9D
     expected_hash = "e7fc7b7a0177bf7cbb2bd10dad92f9144b1bb5af1d5fb5d71b53b43f03ac725b"
@@ -32524,6 +33294,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b7e3_natural.json",
         audio_process_ade_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b8cd_natural.json",
+        snd_play_clip_vectors(),
         args.check,
     )
     update_vector(

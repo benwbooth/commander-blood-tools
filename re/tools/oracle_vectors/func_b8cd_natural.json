@@ -1,0 +1,296 @@
+[
+  {
+    "name": "sound_disabled",
+    "clip_index": 0,
+    "mode": "play",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "idle_memory",
+    "clip_index": 2,
+    "mode": "play",
+    "backend": "memory",
+    "descriptor": [
+      576,
+      16384,
+      31
+    ],
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "idle_ems",
+    "clip_index": 32771,
+    "mode": "play",
+    "backend": "ems",
+    "descriptor": [
+      4096,
+      18432,
+      97
+    ],
+    "ems_maps": [
+      {
+        "ax": 17408,
+        "logical_page": 0,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17409,
+        "logical_page": 1,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17410,
+        "logical_page": 2,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17411,
+        "logical_page": 3,
+        "handle": 4951,
+        "ds": 24576
+      }
+    ],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "idle_xms_odd",
+    "clip_index": 32772,
+    "mode": "play",
+    "backend": "xms",
+    "descriptor": [
+      4096,
+      18432,
+      35
+    ],
+    "ems_maps": [],
+    "xms_move_count": 1,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "idle_file_short_read",
+    "clip_index": 32773,
+    "mode": "play",
+    "backend": "file",
+    "descriptor": [
+      4096,
+      18432,
+      37
+    ],
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 1,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 0,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "mix_memory_spans_buffers",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 7
+      },
+      {
+        "buffer": 1,
+        "bytes": 1
+      }
+    ],
+    "source_bytes": 10,
+    "source_data_bytes_consumed": 8
+  },
+  {
+    "name": "mix_memory_packed",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 6
+      },
+      {
+        "buffer": 1,
+        "bytes": 4
+      }
+    ],
+    "source_bytes": 12,
+    "source_data_bytes_consumed": 5
+  },
+  {
+    "name": "mix_second_buffer_selected",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 1,
+        "bytes": 6
+      }
+    ],
+    "source_bytes": 7,
+    "source_data_bytes_consumed": 6
+  },
+  {
+    "name": "mix_no_active_buffer",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 0,
+    "mix_operations": [],
+    "source_bytes": 9,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "mix_position_unavailable",
+    "clip_index": 1,
+    "mode": "mix",
+    "backend": "memory",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [],
+    "source_bytes": 9,
+    "source_data_bytes_consumed": 0
+  },
+  {
+    "name": "mix_ems_cross_page",
+    "clip_index": 32774,
+    "mode": "mix",
+    "backend": "ems",
+    "descriptor": null,
+    "ems_maps": [
+      {
+        "ax": 17408,
+        "logical_page": 0,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17409,
+        "logical_page": 1,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17410,
+        "logical_page": 2,
+        "handle": 4951,
+        "ds": 24576
+      },
+      {
+        "ax": 17411,
+        "logical_page": 3,
+        "handle": 4951,
+        "ds": 24576
+      }
+    ],
+    "xms_move_count": 0,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 17
+      }
+    ],
+    "source_bytes": 18,
+    "source_data_bytes_consumed": 17
+  },
+  {
+    "name": "mix_xms_spans_buffers",
+    "clip_index": 32775,
+    "mode": "mix",
+    "backend": "xms",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 1,
+    "file_read_count": 0,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 14
+      },
+      {
+        "buffer": 1,
+        "bytes": 3
+      }
+    ],
+    "source_bytes": 19,
+    "source_data_bytes_consumed": 17
+  },
+  {
+    "name": "mix_file_short_read",
+    "clip_index": 32776,
+    "mode": "mix",
+    "backend": "file",
+    "descriptor": null,
+    "ems_maps": [],
+    "xms_move_count": 0,
+    "file_read_count": 1,
+    "position_calls": 1,
+    "mix_operations": [
+      {
+        "buffer": 0,
+        "bytes": 11
+      },
+      {
+        "buffer": 1,
+        "bytes": 3
+      }
+    ],
+    "source_bytes": 16,
+    "source_data_bytes_consumed": 14
+  }
+]

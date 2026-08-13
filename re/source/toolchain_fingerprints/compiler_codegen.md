@@ -2973,6 +2973,40 @@ instructions/258 bytes. The shipped routine is also 93 instructions, occupying
 234 bytes. The remaining differences are segment selection, register saves,
 and branch encoding under the C ABI, not missing selector logic.
 
+## BLOODPRG SND clip player candidate
+
+`0x00B8CD` is the common consumer for the selector's compact and streamed clip
+indices. With no active streamed playback, it first stops the loaded sound
+driver, then constructs the six-byte descriptor at game-data offset `0x0BAB`.
+Nonnegative indices select the compact conventional-memory table at `0x0BBF`;
+negative indices discard the marker bits and select adjacent 32-bit offsets at
+`0x0C57`. Streamed clip bytes come from four mapped EMS pages, an XMS move into
+shared storage, or a seek/read from `son.snd`. The complete clip, including its
+six-byte header, is then passed to the loaded driver's play entry.
+
+When streamed playback is already active, the same sources feed the mix path.
+It skips the six-byte clip header, selects the first stream descriptor whose
+state is exactly three, asks the driver for its current position, and averages
+source bytes into the remainder of that buffer and then the other buffer. The
+original deliberately mixes one fewer byte than each selected extent. Packed
+mode doubles the logical sample count and advances the source only on even
+count values, reproducing each source sample twice. The recovered C states
+those pointer and byte operations directly.
+
+Thirteen direct-binary vectors cover sound gating, idle and active modes, all
+four storage backends, the shipped `SS == GS` table invariant, four-page EMS
+maps, exact XMS records, DOS short reads, stop-before-play ordering, descriptor
+fields, both active-buffer choices, no-active and position-`0xFFFF` exits,
+packed and unpacked source cadence, and spillover into the second buffer. The
+vectors also distinguish XMS staging at `graphics_work_surface + 0x7D00` from
+the file path's hardcoded offset `0x7D00` in that pointer's segment.
+
+Open Watcom compiles the actual candidate warning-free to 332 instructions/984
+bytes versus 266/720 original. The remaining size is ordinary structure,
+far-pointer, and callback lowering around logic already proven against the raw
+routine; exact integration still requires fixed data placement and narrow
+driver, position, EMS, XMS, and DOS ABI adapters.
+
 ## BLOODPRG SND-bank page backend candidates
 
 The three helpers selected by `0x00BD09` are one logical operation with three
