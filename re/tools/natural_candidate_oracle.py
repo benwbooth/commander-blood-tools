@@ -6837,6 +6837,387 @@ def resource_file_load_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def file_create_and_write_vectors() -> list[dict[str, object]]:
+    entry = 0x2B6B
+    expected_hash = "0b549eeef7b59edae933c92a723fb2754c842b432857f60eca52fb2aaac88b71"
+    if hashlib.sha256(EXE[entry : entry + 131]).hexdigest() != expected_hash:
+        raise AssertionError("0x2b6b: recovered 131-byte body changed")
+
+    cases = [
+        {
+            "name": "small_file",
+            "byte_count": 7,
+            "write_counts": [7],
+        },
+        {
+            "name": "create_failure",
+            "byte_count": 17,
+            "create_success": False,
+        },
+        {
+            "name": "empty_file_writes_zero_once",
+            "byte_count": 0,
+            "write_counts": [0],
+        },
+        {
+            "name": "low_word_above_nominal_chunk",
+            "byte_count": 0x8305,
+            "write_counts": [0x8305],
+        },
+        {
+            "name": "high_word_uses_7d00_then_low_word",
+            "byte_count": 0x10005,
+            "write_counts": [0x7D00, 0x8305],
+        },
+        {
+            "name": "partial_writes_and_offset_wrap",
+            "byte_count": 0x7D07,
+            "write_counts": [0x7000, 0x0D05, 2],
+            "source_offset": 0xFFFC,
+        },
+        {
+            "name": "write_carry_is_ignored",
+            "byte_count": 4,
+            "write_counts": [4],
+            "write_error": True,
+        },
+        {
+            "name": "close_carry_is_ignored",
+            "byte_count": 1,
+            "write_counts": [1],
+            "close_error": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    source_segment = 0x5000
+    stack_segment = 0x9000
+    path_offset = 0x4100
+    return_address = 0x6F20
+    stack_sentinel = bytes.fromhex("1ee187785aa5c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        byte_count = int(case["byte_count"])
+        write_counts = [int(value) for value in case.get("write_counts", [])]
+        create_success = bool(case.get("create_success", True))
+        write_error = bool(case.get("write_error", False))
+        close_error = bool(case.get("close_error", False))
+        source_offset = int(case.get("source_offset", 0x0123))
+        file_handle = 0x4300 + case_index
+        initial_shared_handle = 0xA600 + case_index
+        initial_remaining = 0xB7B80000 + case_index
+        path = f"WRITE{case_index:02d}.SAV".encode("ascii") + b"\0"
+        source_region = bytes(
+            ((index * 37 + case_index * 53) & 0xFF)
+            for index in range(0x20000)
+        )
+        calls: list[dict[str, object]] = []
+        write_index = 0
+
+        initial = {
+            "eax": byte_count,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | path_offset,
+            "edi": 0xF6F60000 | source_offset,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": source_segment,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def game_u32(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<I", machine.mem_read(game_segment * 16 + offset, 4)
+            )[0]
+
+        def game_u16(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x27C3:
+                return
+            calls.append(
+                {
+                    "call": "startup_write_directory_enter",
+                    "byte_count": machine.reg_read(UC_X86_REG_EAX),
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "source": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ],
+                    "remaining_before": game_u32(machine, 0x0A92),
+                    "return_frame": return_frame(machine),
+                }
+            )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal write_index
+            if number != 0x21:
+                raise AssertionError(f"0x2b6b {name}: unexpected INT {number:#x}")
+
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x3C00:
+                call = {
+                    "call": "dos_create_truncate",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                    "remaining": game_u32(machine, 0x0A92),
+                    "success": create_success,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, path_offset]:
+                    raise AssertionError(f"0x2b6b {name}: create path={call['path']}")
+                if call["attributes"] != 0 or call["remaining"] != byte_count:
+                    raise AssertionError(f"0x2b6b {name}: create state={call}")
+                machine.reg_write(
+                    UC_X86_REG_AX,
+                    file_handle if create_success else 5,
+                )
+                set_carry(machine, not create_success)
+                return
+
+            if function == 0x4000:
+                if write_index >= len(write_counts):
+                    raise AssertionError(f"0x2b6b {name}: unexpected extra write")
+                remaining = game_u32(machine, 0x0A92)
+                returned = write_counts[write_index]
+                failed = write_error and write_index == 0
+                segment = machine.reg_read(UC_X86_REG_DS)
+                offset = machine.reg_read(UC_X86_REG_DX)
+                requested = machine.reg_read(UC_X86_REG_CX)
+                payload_prefix = list(
+                    machine.mem_read(segment * 16 + offset, min(requested, 8))
+                )
+                call = {
+                    "call": "dos_write",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "source": [segment, offset],
+                    "requested": requested,
+                    "returned": returned,
+                    "remaining_before": remaining,
+                    "carry": failed,
+                    "shared_handle": game_u16(machine, 0x0A84),
+                    "payload_prefix": payload_prefix,
+                }
+                calls.append(call)
+                if call["handle"] != file_handle:
+                    raise AssertionError(f"0x2b6b {name}: write handle={call['handle']}")
+                if call["shared_handle"] != file_handle:
+                    raise AssertionError(f"0x2b6b {name}: shared handle differs")
+                if returned > requested:
+                    raise AssertionError(f"0x2b6b {name}: fixture over-reports write")
+                machine.reg_write(UC_X86_REG_AX, returned)
+                set_carry(machine, failed)
+                write_index += 1
+                return
+
+            if function == 0x3E00:
+                call = {
+                    "call": "dos_close",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "shared_handle": game_u16(machine, 0x0A84),
+                    "carry": close_error,
+                }
+                calls.append(call)
+                if (
+                    call["handle"] != file_handle
+                    or call["shared_handle"] != file_handle
+                ):
+                    raise AssertionError(f"0x2b6b {name}: close state={call}")
+                machine.reg_write(UC_X86_REG_AX, 5 if close_error else 0)
+                set_carry(machine, close_error)
+                return
+
+            raise AssertionError(
+                f"0x2b6b {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x27C3, b"\xcb"),
+                (data_segment, path_offset, path),
+                (source_segment, 0, source_region),
+                (
+                    game_segment,
+                    0x0A84,
+                    struct.pack("<H", initial_shared_handle),
+                ),
+                (
+                    game_segment,
+                    0x0A92,
+                    struct.pack("<I", initial_remaining),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+        )
+
+        expected_names = ["startup_write_directory_enter", "dos_create_truncate"]
+        if create_success:
+            expected_names.extend("dos_write" for _ in write_counts)
+            expected_names.append("dos_close")
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x2b6b {name}: calls={actual_names}, expected={expected_names}"
+            )
+        if calls[0] != {
+            "call": "startup_write_directory_enter",
+            "byte_count": byte_count,
+            "path": [data_segment, path_offset],
+            "source": [source_segment, source_offset],
+            "remaining_before": initial_remaining,
+            "return_frame": [0x2B77, 0],
+        }:
+            raise AssertionError(f"0x2b6b {name}: directory call={calls[0]}")
+
+        expected_segment = source_segment
+        expected_offset = source_offset
+        remaining = byte_count
+        write_calls = [call for call in calls if call["call"] == "dos_write"]
+        if create_success:
+            if sum(write_counts) != byte_count or write_index != len(write_counts):
+                raise AssertionError(f"0x2b6b {name}: write accounting differs")
+            for call, returned in zip(write_calls, write_counts, strict=True):
+                expected_request = (
+                    0x7D00 if (remaining >> 16) != 0 else remaining & 0xFFFF
+                )
+                if call["source"] != [expected_segment, expected_offset]:
+                    raise AssertionError(
+                        f"0x2b6b {name}: source={call['source']}, "
+                        f"expected={[expected_segment, expected_offset]}"
+                    )
+                if call["requested"] != expected_request:
+                    raise AssertionError(
+                        f"0x2b6b {name}: request={call['requested']:#x}, "
+                        f"expected={expected_request:#x}"
+                    )
+                if call["remaining_before"] != remaining:
+                    raise AssertionError(f"0x2b6b {name}: remaining sequence differs")
+                region_offset = (
+                    expected_segment * 16
+                    + expected_offset
+                    - source_segment * 16
+                )
+                expected_prefix = list(
+                    source_region[
+                        region_offset : region_offset + min(expected_request, 8)
+                    ]
+                )
+                if call["payload_prefix"] != expected_prefix:
+                    raise AssertionError(f"0x2b6b {name}: source payload differs")
+                remaining = (remaining - returned) & 0xFFFFFFFF
+                expected_segment = (expected_segment + (returned >> 4)) & 0xFFFF
+                expected_offset = (expected_offset + (returned & 0x0F)) & 0xFFFF
+
+        expected_return = byte_count if create_success else 0
+        if machine.reg_read(UC_X86_REG_EAX) != expected_return:
+            raise AssertionError(
+                f"0x2b6b {name}: eax={machine.reg_read(UC_X86_REG_EAX):#x}, "
+                f"expected={expected_return:#x}"
+            )
+        expected_handle = file_handle if create_success else initial_shared_handle
+        if game_u16(machine, 0x0A84) != expected_handle:
+            raise AssertionError(f"0x2b6b {name}: final shared handle differs")
+        expected_remaining = 0 if create_success else byte_count
+        if game_u32(machine, 0x0A92) != expected_remaining:
+            raise AssertionError(f"0x2b6b {name}: final remaining differs")
+        if bytes(machine.mem_read(data_segment * 16 + path_offset, len(path))) != path:
+            raise AssertionError(f"0x2b6b {name}: path changed")
+        if bytes(
+            machine.mem_read(
+                source_segment * 16,
+                len(source_region),
+            )
+        ) != source_region:
+            raise AssertionError(f"0x2b6b {name}: source changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        del expected_registers["eax"]
+        del expected_registers["edx"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2b6b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        expected_dx = path_offset if not create_success else expected_offset
+        expected_edx = (int(initial["edx"]) & 0xFFFF0000) | expected_dx
+        if machine.reg_read(UC_X86_REG_EDX) != expected_edx:
+            raise AssertionError(
+                f"0x2b6b {name}: edx={machine.reg_read(UC_X86_REG_EDX):#x}, "
+                f"expected={expected_edx:#x}"
+            )
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_carry = close_error if create_success else False
+        if bool(flags & 1) != expected_carry:
+            raise AssertionError(f"0x2b6b {name}: final carry differs")
+        if not create_success and (flags & 0x40) == 0:
+            raise AssertionError(f"0x2b6b {name}: create-failure zero flag differs")
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2b6b {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x2b6b {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "byte_count": byte_count,
+                "create_success": create_success,
+                "write_counts": write_counts,
+                "write_carry_ignored": write_error,
+                "close_carry_ignored": close_error,
+                "returned_size": expected_return,
+                "final_shared_handle": expected_handle,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_load_by_id_vectors() -> list[dict[str, object]]:
     entry = 0x287B
     expected_hash = "2ef711193074fd2dbc1bb93c3f9cf3698fe854d1c77940b18eecb5dad2b5dd91"
@@ -36345,6 +36726,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_2abb_natural.json",
         resource_file_load_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2b6b_natural.json",
+        file_create_and_write_vectors(),
         args.check,
     )
     update_vector(

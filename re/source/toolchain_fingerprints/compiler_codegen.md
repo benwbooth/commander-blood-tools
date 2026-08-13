@@ -3082,6 +3082,35 @@ actual natural candidate warning-free to 92 instructions/269 bytes versus
 ES:DI entry, the selector's BX result, direct DOS conventions, and complete
 preservation; the loading algorithm itself is natural C.
 
+Routine `0x002B6B` is not merely a file-create wrapper. Its sole known caller
+passes a save-file path in DS:SI, a source buffer in ES:DI, and a 32-bit byte
+count in EAX. The routine first enters the configured write directory, publishes
+the count at `GS:0x0A92`, creates or truncates the path with attributes zero,
+and publishes the resulting handle at `GS:0x0A84`. Create failure returns zero
+after the count publication but leaves the previous shared handle untouched.
+
+The successful path is a do-while write loop. Its request is the low word of
+the remaining count whenever the high word is zero; `0x7D00` is selected only
+while the high word is nonzero. It can therefore request more than `0x7D00`
+bytes for a low-word-only remainder. Returned AX is subtracted regardless of
+carry. The far source advances through independent 16-bit operations,
+`segment += AX >> 4` and `offset += AX & 15`, so offset wrap does not carry into
+the segment and moves the physical address backward by 64 KiB. An empty file
+still produces one zero-byte write; a zero-byte write against a nonempty count
+would leave the original loop running. Completion closes the handle and returns
+the original EAX count. Write and close errors are otherwise ignored.
+
+Eight patched-directory and DOS-interrupt vectors cover create failure, empty
+input, low-word requests above `0x7D00`, a full 32-bit count, partial writes,
+source-offset wrap, ignored write and close carry, exact path/source identities,
+payload prefixes, shared state, register and segment preservation, the raw DX
+side effect, flags, and far return. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) compiles the actual natural candidate warning-free to
+53 instructions/161 bytes versus 54/131 original. Replacement linking needs a
+narrow EAX plus DS:SI/ES:DI entry adapter, direct DOS conventions, fixed
+`GAME_DATA` placement, and preservation/output adaptation; no assembly is
+needed for the write algorithm.
+
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
 horizontal span at `y+height-1`. All endpoint arithmetic is wrapping 16-bit

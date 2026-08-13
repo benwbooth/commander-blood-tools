@@ -1,0 +1,576 @@
+[
+  {
+    "name": "small_file",
+    "byte_count": 7,
+    "create_success": true,
+    "write_counts": [
+      7
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 7,
+    "final_shared_handle": 17152,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 7,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289152,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 7,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17152,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 7,
+        "returned": 7,
+        "remaining_before": 7,
+        "carry": false,
+        "shared_handle": 17152,
+        "payload_prefix": [
+          15,
+          52,
+          89,
+          126,
+          163,
+          200,
+          237
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17152,
+        "shared_handle": 17152,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "create_failure",
+    "byte_count": 17,
+    "create_success": false,
+    "write_counts": [],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 0,
+    "final_shared_handle": 42497,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 17,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289153,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 17,
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "empty_file_writes_zero_once",
+    "byte_count": 0,
+    "create_success": true,
+    "write_counts": [
+      0
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 0,
+    "final_shared_handle": 17154,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 0,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289154,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 0,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17154,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 0,
+        "returned": 0,
+        "remaining_before": 0,
+        "carry": false,
+        "shared_handle": 17154,
+        "payload_prefix": []
+      },
+      {
+        "call": "dos_close",
+        "handle": 17154,
+        "shared_handle": 17154,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "low_word_above_nominal_chunk",
+    "byte_count": 33541,
+    "create_success": true,
+    "write_counts": [
+      33541
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 33541,
+    "final_shared_handle": 17155,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 33541,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289155,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 33541,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17155,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 33541,
+        "returned": 33541,
+        "remaining_before": 33541,
+        "carry": false,
+        "shared_handle": 17155,
+        "payload_prefix": [
+          174,
+          211,
+          248,
+          29,
+          66,
+          103,
+          140,
+          177
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17155,
+        "shared_handle": 17155,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "high_word_uses_7d00_then_low_word",
+    "byte_count": 65541,
+    "create_success": true,
+    "write_counts": [
+      32000,
+      33541
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 65541,
+    "final_shared_handle": 17156,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 65541,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289156,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 65541,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17156,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 65541,
+        "carry": false,
+        "shared_handle": 17156,
+        "payload_prefix": [
+          227,
+          8,
+          45,
+          82,
+          119,
+          156,
+          193,
+          230
+        ]
+      },
+      {
+        "call": "dos_write",
+        "handle": 17156,
+        "source": [
+          22480,
+          291
+        ],
+        "requested": 33541,
+        "returned": 33541,
+        "remaining_before": 33541,
+        "carry": false,
+        "shared_handle": 17156,
+        "payload_prefix": [
+          227,
+          8,
+          45,
+          82,
+          119,
+          156,
+          193,
+          230
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17156,
+        "shared_handle": 17156,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "partial_writes_and_offset_wrap",
+    "byte_count": 32007,
+    "create_success": true,
+    "write_counts": [
+      28672,
+      3333,
+      2
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": false,
+    "returned_size": 32007,
+    "final_shared_handle": 17157,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 32007,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          65532
+        ],
+        "remaining_before": 3082289157,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 32007,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17157,
+        "source": [
+          20480,
+          65532
+        ],
+        "requested": 32007,
+        "returned": 28672,
+        "remaining_before": 32007,
+        "carry": false,
+        "shared_handle": 17157,
+        "payload_prefix": [
+          117,
+          154,
+          191,
+          228,
+          9,
+          46,
+          83,
+          120
+        ]
+      },
+      {
+        "call": "dos_write",
+        "handle": 17157,
+        "source": [
+          22272,
+          65532
+        ],
+        "requested": 3335,
+        "returned": 3333,
+        "remaining_before": 3335,
+        "carry": false,
+        "shared_handle": 17157,
+        "payload_prefix": [
+          117,
+          154,
+          191,
+          228,
+          9,
+          46,
+          83,
+          120
+        ]
+      },
+      {
+        "call": "dos_write",
+        "handle": 17157,
+        "source": [
+          22480,
+          1
+        ],
+        "requested": 2,
+        "returned": 2,
+        "remaining_before": 2,
+        "carry": false,
+        "shared_handle": 17157,
+        "payload_prefix": [
+          46,
+          83
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17157,
+        "shared_handle": 17157,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "write_carry_is_ignored",
+    "byte_count": 4,
+    "create_success": true,
+    "write_counts": [
+      4
+    ],
+    "write_carry_ignored": true,
+    "close_carry_ignored": false,
+    "returned_size": 4,
+    "final_shared_handle": 17158,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 4,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289158,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 4,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17158,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 4,
+        "returned": 4,
+        "remaining_before": 4,
+        "carry": true,
+        "shared_handle": 17158,
+        "payload_prefix": [
+          77,
+          114,
+          151,
+          188
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17158,
+        "shared_handle": 17158,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "close_carry_is_ignored",
+    "byte_count": 1,
+    "create_success": true,
+    "write_counts": [
+      1
+    ],
+    "write_carry_ignored": false,
+    "close_carry_ignored": true,
+    "returned_size": 1,
+    "final_shared_handle": 17159,
+    "calls": [
+      {
+        "call": "startup_write_directory_enter",
+        "byte_count": 1,
+        "path": [
+          9216,
+          16640
+        ],
+        "source": [
+          20480,
+          291
+        ],
+        "remaining_before": 3082289159,
+        "return_frame": [
+          11127,
+          0
+        ]
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "remaining": 1,
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 17159,
+        "source": [
+          20480,
+          291
+        ],
+        "requested": 1,
+        "returned": 1,
+        "remaining_before": 1,
+        "carry": false,
+        "shared_handle": 17159,
+        "payload_prefix": [
+          130
+        ]
+      },
+      {
+        "call": "dos_close",
+        "handle": 17159,
+        "shared_handle": 17159,
+        "carry": true
+      }
+    ]
+  }
+]

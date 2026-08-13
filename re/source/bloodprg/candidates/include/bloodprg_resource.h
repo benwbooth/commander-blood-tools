@@ -108,6 +108,10 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 
 cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
+cb_u32 CB_FAR file_create_and_write(
+        const volatile char CB_FAR *path,
+        const volatile cb_u8 CB_FAR *source,
+        cb_u32 byte_count); /* 0x01CE:0x088B */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
 void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */
 bloodprg_resource_allocation_result CB_FAR resource_allocate(
