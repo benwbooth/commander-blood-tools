@@ -1,0 +1,153 @@
+[
+  {
+    "name": "zero_same_pointer",
+    "source_linear": 196899,
+    "destination_linear": 196899,
+    "byte_count": 0,
+    "direction": "backward",
+    "chunk_count": 1,
+    "changed_byte_count": 0,
+    "changed_bounds": null,
+    "memory_sha256": "691ed45a080beaea77371c259a557b9039c3f91635de7d2af24af4568da5e913",
+    "incoming_direction_set": false,
+    "direction_cleared": true
+  },
+  {
+    "name": "forward_destination_below",
+    "source_linear": 270391,
+    "destination_linear": 266281,
+    "byte_count": 63,
+    "direction": "forward",
+    "chunk_count": 1,
+    "changed_byte_count": 63,
+    "changed_bounds": [
+      266281,
+      266343
+    ],
+    "memory_sha256": "3aea3b36398dd15d1715c543d95237738741e6f9c9676b8e2f05fbc915430bcb",
+    "incoming_direction_set": true,
+    "direction_cleared": true
+  },
+  {
+    "name": "forward_disjoint",
+    "source_linear": 217127,
+    "destination_linear": 290841,
+    "byte_count": 257,
+    "direction": "forward",
+    "chunk_count": 1,
+    "changed_byte_count": 257,
+    "changed_bounds": [
+      290841,
+      291097
+    ],
+    "memory_sha256": "fecaeecf1724db392bcb591b09fc848af6be5561311e92559c648cd573dfd033",
+    "incoming_direction_set": false,
+    "direction_cleared": true
+  },
+  {
+    "name": "backward_overlap_unaligned",
+    "source_linear": 327715,
+    "destination_linear": 327723,
+    "byte_count": 33,
+    "direction": "backward",
+    "chunk_count": 1,
+    "changed_byte_count": 0,
+    "changed_bounds": null,
+    "memory_sha256": "421468af1ea74add345782802db3926b4e5b5e9291701c31db73be4a0c51d01f",
+    "incoming_direction_set": true,
+    "direction_cleared": true
+  },
+  {
+    "name": "backward_touching_boundary",
+    "source_linear": 344080,
+    "destination_linear": 344096,
+    "byte_count": 16,
+    "direction": "backward",
+    "chunk_count": 1,
+    "changed_byte_count": 16,
+    "changed_bounds": [
+      344100,
+      344115
+    ],
+    "memory_sha256": "895afd87e92fc148f721d9b9231969761151ffa67e0c4e3cba5feff55aec3022",
+    "incoming_direction_set": false,
+    "direction_cleared": true
+  },
+  {
+    "name": "backward_same_pointer",
+    "source_linear": 356352,
+    "destination_linear": 356352,
+    "byte_count": 19,
+    "direction": "backward",
+    "chunk_count": 1,
+    "changed_byte_count": 0,
+    "changed_bounds": null,
+    "memory_sha256": "b8f88f12f0cd1fd4e4ae1782d246a5faf5cfa150c78f47d328f0edd14636629d",
+    "incoming_direction_set": true,
+    "direction_cleared": true
+  },
+  {
+    "name": "forward_exact_chunk",
+    "source_linear": 458752,
+    "destination_linear": 131072,
+    "byte_count": 64000,
+    "direction": "forward",
+    "chunk_count": 2,
+    "changed_byte_count": 63743,
+    "changed_bounds": [
+      131072,
+      195071
+    ],
+    "memory_sha256": "a6b3a2e8635bd2a615fa5c6f62c66ac040e85162802a9c6a0638ef0ca8ffd452",
+    "incoming_direction_set": false,
+    "direction_cleared": true
+  },
+  {
+    "name": "wrapped_count_final_chunk",
+    "source_linear": 458752,
+    "destination_linear": 131072,
+    "byte_count": 4294967295,
+    "direction": "forward",
+    "chunk_count": 1,
+    "changed_byte_count": 65270,
+    "changed_bounds": [
+      131072,
+      196606
+    ],
+    "memory_sha256": "b829bfa7f4487556a5a838e25d2dbbe22ba7298e2847a2cc75afc28be20e32f5",
+    "incoming_direction_set": true,
+    "direction_cleared": true
+  },
+  {
+    "name": "forward_multiple_chunks",
+    "source_linear": 413703,
+    "destination_linear": 196613,
+    "byte_count": 64019,
+    "direction": "forward",
+    "chunk_count": 2,
+    "changed_byte_count": 63760,
+    "changed_bounds": [
+      196613,
+      260631
+    ],
+    "memory_sha256": "8f2bfbb535efa9e9539c511f82775d9b8388cb4ad1d05d1a158530280b94da8a",
+    "incoming_direction_set": false,
+    "direction_cleared": true
+  },
+  {
+    "name": "backward_multiple_chunks",
+    "source_linear": 360448,
+    "destination_linear": 360464,
+    "byte_count": 64019,
+    "direction": "backward",
+    "chunk_count": 2,
+    "changed_byte_count": 63783,
+    "changed_bounds": [
+      360462,
+      424483
+    ],
+    "memory_sha256": "90755ae65441d340f3f27c1c145a5f7c92e7eaef55fe1f9cf5ce473c252a3f97",
+    "incoming_direction_set": true,
+    "direction_cleared": true
+  }
+]

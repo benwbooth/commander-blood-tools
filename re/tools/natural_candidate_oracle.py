@@ -5271,6 +5271,235 @@ def binary_u32_sqrt_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def far_memmove_vectors() -> list[dict[str, object]]:
+    entry = 0x2E73
+    expected_hash = "d7644d9198fc977af470a84a24d3e6898c5b0566c644ed196ea0ce845e158342"
+    if hashlib.sha256(EXE[entry : entry + 237]).hexdigest() != expected_hash:
+        raise AssertionError("0x2e73: recovered 237-byte body changed")
+
+    cases = [
+        ("zero_same_pointer", 0x3000, 0x0123, 0x3000, 0x0123, 0),
+        ("forward_destination_below", 0x4100, 0x1037, 0x4000, 0x1029, 63),
+        ("forward_disjoint", 0x3400, 0x1027, 0x4600, 0x1019, 257),
+        ("backward_overlap_unaligned", 0x4F00, 0x1023, 0x4F00, 0x102B, 33),
+        ("backward_touching_boundary", 0x5300, 0x1010, 0x5300, 0x1020, 16),
+        ("backward_same_pointer", 0x5600, 0x1000, 0x5600, 0x1000, 19),
+        ("forward_exact_chunk", 0x6F00, 0x1000, 0x1F00, 0x1000, 0xFA00),
+        ("wrapped_count_final_chunk", 0x6F00, 0x1000, 0x1F00, 0x1000, 0xFFFFFFFF),
+        ("forward_multiple_chunks", 0x6400, 0x1007, 0x2F00, 0x1005, 0xFA13),
+        ("backward_multiple_chunks", 0x5700, 0x1000, 0x5700, 0x1010, 0xFA13),
+    ]
+    region_start = 0x18000
+    region_end = 0x82000
+    stack_segment = 0xA000
+    return_address = 0x6F00
+    vectors = []
+
+    def signed32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    for case_index, case in enumerate(cases):
+        name, source_segment, source_offset, destination_segment, destination_offset, byte_count = case
+        source_linear = source_segment * 16 + source_offset
+        destination_linear = destination_segment * 16 + destination_offset
+        state = 0xC0B10D94 ^ (case_index * 0x9E3779B9)
+        initial_region = bytearray(region_end - region_start)
+        for index in range(len(initial_region)):
+            state ^= (state << 13) & 0xFFFFFFFF
+            state ^= state >> 17
+            state ^= (state << 5) & 0xFFFFFFFF
+            state &= 0xFFFFFFFF
+            initial_region[index] = state >> 24
+        expected_region = bytearray(initial_region)
+
+        def copy_bytes(source_address: int, destination_address: int, size: int) -> None:
+            source_index = source_address - region_start
+            destination_index = destination_address - region_start
+            if not 0 <= source_index <= len(expected_region) - size:
+                raise AssertionError(
+                    f"0x2e73 {name}: source {source_address:#x}/{size:#x} outside oracle region"
+                )
+            if not 0 <= destination_index <= len(expected_region) - size:
+                raise AssertionError(
+                    f"0x2e73 {name}: destination {destination_address:#x}/{size:#x} "
+                    "outside oracle region"
+                )
+            value = bytes(expected_region[source_index : source_index + size])
+            expected_region[destination_index : destination_index + size] = value
+
+        source_cursor = source_linear
+        destination_cursor = destination_linear
+        source_limit = (source_linear + byte_count) & 0xFFFFFFFF
+        backward = not (
+            signed32(source_linear) > signed32(destination_linear)
+            or signed32(source_limit) < signed32(destination_linear)
+        )
+        remaining = byte_count
+        chunk_count = 0
+
+        if not backward:
+            while True:
+                source_pointer = (
+                    (((source_cursor >> 4) & 0xFFFF) << 4)
+                    + (source_cursor & 0x0F)
+                )
+                destination_pointer = (
+                    (((destination_cursor >> 4) & 0xFFFF) << 4)
+                    + (destination_cursor & 0x0F)
+                )
+                remaining_after_chunk = (remaining - 0xFA00) & 0xFFFFFFFF
+                final_chunk = signed32(remaining_after_chunk) < 0
+                chunk_bytes = (remaining & 0xFFFF) if final_chunk else 0xFA00
+                word_count, tail_bytes = divmod(chunk_bytes, 4)
+                for _ in range(word_count):
+                    copy_bytes(source_pointer, destination_pointer, 4)
+                    source_pointer += 4
+                    destination_pointer += 4
+                for _ in range(tail_bytes):
+                    copy_bytes(source_pointer, destination_pointer, 1)
+                    source_pointer += 1
+                    destination_pointer += 1
+                chunk_count += 1
+                if final_chunk:
+                    break
+                remaining = remaining_after_chunk
+                source_cursor = (source_cursor + 0xFA00) & 0xFFFFFFFF
+                destination_cursor = (destination_cursor + 0xFA00) & 0xFFFFFFFF
+        else:
+            source_cursor = source_limit
+            destination_cursor = (destination_linear + byte_count) & 0xFFFFFFFF
+            while True:
+                source_cursor = (source_cursor - 0xFA00) & 0xFFFFFFFF
+                destination_cursor = (destination_cursor - 0xFA00) & 0xFFFFFFFF
+                source_pointer = (
+                    (((source_cursor >> 4) & 0xFFFF) << 4) + 0xFA00
+                )
+                destination_pointer = (
+                    (((destination_cursor >> 4) & 0xFFFF) << 4) + 0xFA00
+                )
+                remaining_after_chunk = (remaining - 0xFA00) & 0xFFFFFFFF
+                final_chunk = signed32(remaining_after_chunk) < 0
+                chunk_bytes = (remaining & 0xFFFF) if final_chunk else 0xFA00
+                word_count, tail_bytes = divmod(chunk_bytes, 4)
+                for _ in range(word_count):
+                    copy_bytes(source_pointer, destination_pointer, 4)
+                    source_pointer -= 4
+                    destination_pointer -= 4
+                for _ in range(tail_bytes):
+                    copy_bytes(source_pointer, destination_pointer, 1)
+                    source_pointer -= 1
+                    destination_pointer -= 1
+                chunk_count += 1
+                if final_chunk:
+                    break
+                remaining = remaining_after_chunk
+
+        direction_set = bool(case_index & 1)
+        initial = {
+            "eax": byte_count,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D45678,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x2C00,
+            "gs": 0x2800,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if direction_set else 0),
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        path_hits = []
+
+        def capture(_machine: Uc, address: int, _size: int) -> None:
+            if address == 0x2EC0:
+                path_hits.append("forward")
+            elif address == 0x2F0B:
+                path_hits.append("backward")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, region_start, bytes(initial_region)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=300000,
+        )
+
+        actual_region = bytes(machine.mem_read(region_start, len(initial_region)))
+        if actual_region != bytes(expected_region):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_region, expected_region, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x2e73 {name}: memory differs at {region_start + mismatch:#x}: "
+                f"actual={actual_region[mismatch]:#x}, "
+                f"expected={expected_region[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2e73 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2e73 {name}: far return CS mismatch")
+        if machine.reg_read(UC_X86_REG_EFLAGS) & 0x0400:
+            raise AssertionError(f"0x2e73 {name}: direction flag remains set")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x2e73 {name}: stack sentinel changed")
+
+        expected_path = "backward" if backward else "forward"
+        if not path_hits or any(hit != expected_path for hit in path_hits):
+            raise AssertionError(
+                f"0x2e73 {name}: path hits={path_hits}, expected={expected_path}"
+            )
+        changed = [
+            region_start + index
+            for index, (before, after) in enumerate(
+                zip(initial_region, expected_region, strict=True)
+            )
+            if before != after
+        ]
+        vectors.append(
+            {
+                "name": name,
+                "source_linear": source_linear,
+                "destination_linear": destination_linear,
+                "byte_count": byte_count,
+                "direction": expected_path,
+                "chunk_count": chunk_count,
+                "changed_byte_count": len(changed),
+                "changed_bounds": [min(changed), max(changed)] if changed else None,
+                "memory_sha256": hashlib.sha256(actual_region).hexdigest(),
+                "incoming_direction_set": direction_set,
+                "direction_cleared": True,
+            }
+        )
+
+    return vectors
+
+
 def composite_draw_a_vectors() -> list[dict[str, object]]:
     entry = 0x3B45
     expected_hash = "244b88c80dc7d12184b6a54d14e89ec241265ffff99a902cdc64a4ba07c8c539"
@@ -32796,6 +33025,9 @@ def main() -> int:
         VECTOR_ROOT / "func_2e33_natural.json",
         binary_u32_sqrt_vectors(),
         args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2e73_natural.json", far_memmove_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_2f90_natural.json",

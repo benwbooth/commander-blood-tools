@@ -3089,6 +3089,33 @@ drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
 
+## BLOODPRG far memmove candidate
+
+`0x002E73` is a hand-optimized segmented-memory move boundary rather than a
+normal compiler `_fmemmove`. It consumes a 32-bit byte count in `EAX`, source
+in `DS:SI`, and destination in `ES:DI`; converts both pointers to signed linear
+addresses; selects forward or backward traversal; and renormalizes each pointer
+after at most 64,000 bytes. Each chunk moves dwords first and then zero to three
+tail bytes.
+
+The natural candidate deliberately retains behavior that a textbook `memmove`
+would erase. Equality between source end and destination selects the backward
+path, backward dwords begin at the normalized endpoint before decrementing, and
+unaligned overlapping endpoints can normalize onto the same physical address.
+Ten direct-binary vectors cover those cases plus zero length, same pointers,
+both forward branches, exact and multiple 64,000-byte chunks, wrapped 32-bit
+final-chunk selection, register and segment preservation, final `CLD`, and
+`RETF`.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 216 instructions/586 bytes versus 99/237 original. Its C16
+pragma language cannot name `EAX`, and it rejects the combined `DS:SI` and
+`ES:DI` parameter declaration for this body. The natural source therefore uses
+Watcom's ordinary representable ABI: destination in `DX:AX`, source in `CX:BX`,
+and the count on the stack. A binary-mixing build needs a narrow ABI adapter;
+the move logic itself is recovered and contains no register-state or memory
+emulation layer.
+
 ## BLOODPRG SND bank loader candidate
 
 `0x00C005` parses the SND bank structure used by the clip player: a four-byte
