@@ -3598,6 +3598,39 @@ declaration-only same-DS alias gives the call its observed `SI`, `ES:DI`, `AX`,
 `BX`, and `DX` ABI. The only inline assembly is two guarded save/restore pairs
 for incoming AX and ES, which Watcom otherwise treats as caller-volatile.
 
+## BLOODPRG nav-chart list builder candidate
+
+`0x00721A` rebuilds the nav chart's visible-object list. It first calls the
+independently recovered active-object builder with EAX and CX zero, then walks
+the signed offsets at `DS:0x6A16` until any negative word. For each nonnegative
+offset it adds the offset to the far record base at `DS:0x6724` and keeps the
+object when its kind has any bit in `0x0118`: planet `0x08`, ship `0x10`, or
+black hole `0x100`. The accepted offsets and the exact negative terminator are
+written through BP to `SS:0x2AD3`, and AX returns the accepted count. The
+earlier assembly annotation incorrectly called that destination DS-relative;
+the original instruction's BP base proves SS ownership, with the shipped
+`SS=DS` setup making it the same near-data object during the game.
+
+Seven patched-helper vectors verify the helper's call frame and zero inputs,
+call-before-scan ordering, empty and mixed lists, the exact mask, `0x8000` and
+`0xFFFE` termination, nonzero record-base offsets, maximum positive offsets,
+SS output against DS/GS/ES decoys, count, register and segment preservation,
+stack balance, final flags, and far return. A reverse-direction vector records
+the binary's inherited `LODSW` behavior outside the normal clear-DF C runtime
+domain.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles both the probe and the
+actual candidate without warnings to 31 instructions/60 bytes versus the
+original 33/63. The mnemonic-sequence LCS is 69.70 percent and the mnemonic
+multiset overlap is 78.79 percent. The natural function uses typed object
+headers, pointers, and a signed terminator test with no inline assembly.
+Watcom reloads the far record pointer inside the loop and uses ordinary DS
+near data for the output. It also calls the argument-free helper before
+materializing zero and returns only the C-visible AX value instead of clearing
+upper EAX. Those helper-entry registers, fixed placement under the runtime
+`SS=DS` invariant, upper EAX, and the clear direction flag are the remaining
+integration boundaries.
+
 ## BLOODPRG ship HUD palette snapshot candidate
 
 `0x008C96` is a navigation/HUD reset routine rather than a generic VM-segment

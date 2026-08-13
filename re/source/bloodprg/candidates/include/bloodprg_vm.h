@@ -141,10 +141,15 @@ typedef struct bloodprg_dic_lookup_result {
 extern bloodprg_vm_directory_ptr vm_record_directory; /* DS:0x672C; runtime DS=GS */
 extern bloodprg_vm_directory_ptr CB_GAME_DATA
         vm_record_directory_gs; /* explicit GS:0x672C alias */
-extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
+/* GS writer at 0x00604E, DS reader at 0x00721A; runtime DS=GS. */
+extern volatile cb_u16 vm_active_object_offsets[]; /* 0x6A16 */
+/* SS:0x2AD3 in the binary; runtime SS=DS makes this ordinary near data. */
+extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 #if defined(__WATCOMC__)
 #pragma aux object_heap_access modify exact []
+#pragma aux active_object_list_build modify exact []
+#pragma aux nav_chart_list_build value [ax] modify exact [ax]
 #pragma aux vm_patch_stream_build value [ax] modify exact [ax]
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
@@ -191,6 +196,8 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
 void CB_NEAR object_heap_access(void);       /* 0x00149B */
+void CB_NEAR active_object_list_build(void); /* 0x00604E */
+cb_u16 CB_FAR nav_chart_list_build(void);    /* 0x00721A */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */

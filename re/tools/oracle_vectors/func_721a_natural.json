@@ -1,0 +1,375 @@
+[
+  {
+    "name": "empty_list",
+    "source_before_helper": [
+      4369,
+      65535
+    ],
+    "active_object_offsets": [
+      65535
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 256
+    },
+    "object_kinds": {},
+    "nav_chart_offsets": [
+      65535
+    ],
+    "count": 0,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        4369,
+        65535
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "mixed_kind_filter",
+    "source_before_helper": [
+      256,
+      512,
+      768,
+      1024,
+      65535
+    ],
+    "active_object_offsets": [
+      256,
+      512,
+      768,
+      1024,
+      65535
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 512
+    },
+    "object_kinds": {
+      "0x0100": 8,
+      "0x0200": 2,
+      "0x0300": 256,
+      "0x0400": 280
+    },
+    "nav_chart_offsets": [
+      256,
+      768,
+      1024,
+      65535
+    ],
+    "count": 3,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        256,
+        512,
+        768,
+        1024,
+        65535
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "exact_mask_and_high_bits",
+    "source_before_helper": [
+      16,
+      32,
+      48,
+      64,
+      65534
+    ],
+    "active_object_offsets": [
+      16,
+      32,
+      48,
+      64,
+      65534
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 768
+    },
+    "object_kinds": {
+      "0x0010": 1,
+      "0x0020": 16,
+      "0x0030": 272,
+      "0x0040": 32776
+    },
+    "nav_chart_offsets": [
+      32,
+      48,
+      64,
+      65534
+    ],
+    "count": 3,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        16,
+        32,
+        48,
+        64,
+        65534
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "negative_8000_terminator",
+    "source_before_helper": [
+      4660,
+      32768,
+      22136
+    ],
+    "active_object_offsets": [
+      4660,
+      32768,
+      22136
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 1024
+    },
+    "object_kinds": {
+      "0x1234": 8,
+      "0x5678": 280
+    },
+    "nav_chart_offsets": [
+      4660,
+      32768
+    ],
+    "count": 1,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        4660,
+        32768,
+        22136
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "record_pointer_base_and_max_positive_offset",
+    "source_before_helper": [
+      0,
+      256,
+      32767,
+      65535
+    ],
+    "active_object_offsets": [
+      0,
+      256,
+      32767,
+      65535
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 12544
+    },
+    "object_kinds": {
+      "0x0000": 8,
+      "0x0100": 2,
+      "0x7fff": 256
+    },
+    "nav_chart_offsets": [
+      0,
+      32767,
+      65535
+    ],
+    "count": 2,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        0,
+        256,
+        32767,
+        65535
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "helper_rebuild_precedes_scan",
+    "source_before_helper": [
+      17476,
+      65535
+    ],
+    "active_object_offsets": [
+      546,
+      819,
+      65535
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 1536
+    },
+    "object_kinds": {
+      "0x0222": 16,
+      "0x0333": 4
+    },
+    "nav_chart_offsets": [
+      546,
+      65535
+    ],
+    "count": 1,
+    "direction": "forward",
+    "natural_c_domain": true,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        17476,
+        65535
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "source_before_helper": [
+      256,
+      512,
+      65535
+    ],
+    "active_object_offsets": [
+      256,
+      512,
+      65535
+    ],
+    "record_pointer": {
+      "segment": 16384,
+      "offset": 2048
+    },
+    "object_kinds": {
+      "0x0100": 8,
+      "0x0200": 16
+    },
+    "nav_chart_offsets": [
+      256,
+      512,
+      65535
+    ],
+    "count": 2,
+    "direction": "backward",
+    "natural_c_domain": false,
+    "helper_call": {
+      "eax": 0,
+      "ebx": 2998018885,
+      "cx": 0,
+      "ds": 8192,
+      "es": 24576,
+      "gs": 28672,
+      "sp": 65264,
+      "return_ip": 29225,
+      "source_before": [
+        256,
+        512,
+        65535
+      ]
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": true
+    }
+  }
+]
