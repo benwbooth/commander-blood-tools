@@ -2905,6 +2905,447 @@ def back_buffer_wrapper_vectors(
     return vectors
 
 
+def page_offset_helper_vectors() -> list[dict[str, object]]:
+    entry = 0x17AF
+    expected_hash = "3669a5ba5a7f728a031ad39d931654f2c8b4a52ef374246fa174195b948253db"
+    if hashlib.sha256(EXE[entry : entry + 42]).hexdigest() != expected_hash:
+        raise AssertionError("0x17af: recovered 42-byte body changed")
+
+    cases = (
+        ("both_zero", 0x0000, 0x0000, 0x03D4),
+        ("ordinary", 0x0001, 0x1234, 0x03B4),
+        ("first_negative", 0x8000, 0x2345, 0x03D4),
+        ("second_negative", 0x3456, 0xFFFF, 0x03B4),
+        ("maximum_positive", 0x7FFF, 0x7FFF, 0x03D4),
+        ("both_negative", 0xC000, 0x8001, 0x03B4),
+        ("high_positive_wraps_sign", 0x7000, 0x6000, 0xFFFF),
+        ("offset_words_wrap_independently", 0x4000, 0x7F00, 0x0000),
+    )
+    data_segment = 0x3000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x6E00
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    for case_index, (name, draw_offset, screen_offset, crtc_port) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if case_index & 1 else 0),
+        }
+        draw_segment = 0x1111 + case_index
+        screen_segment = 0x2222 + case_index
+        pointer_region = struct.pack(
+            "<HHHH", draw_offset, draw_segment, screen_offset, screen_segment
+        )
+        game_decoy = bytes(value ^ 0xA5 for value in pointer_region)
+        extra_marker = bytes(
+            (0xC1 - index * 9 - case_index) & 0xFF for index in range(32)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        port_writes: list[tuple[int, int, int]] = []
+
+        def output_port(_machine: Uc, port: int, size: int, value: int) -> None:
+            port_writes.append((port, size, value))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x5219, pointer_region),
+                (data_segment, 0x0A9E, struct.pack("<H", crtc_port)),
+                (game_segment, 0x5219, game_decoy),
+                (game_segment, 0x0A9E, struct.pack("<H", crtc_port ^ 0xFFFF)),
+                (extra_segment, 0x0100, extra_marker),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            output_handler=output_port,
+        )
+
+        expected_draw = 0 if draw_offset & 0x8000 else (draw_offset + 0x4000) & 0xFFFF
+        expected_screen = (
+            0 if screen_offset & 0x8000 else (screen_offset + 0x4000) & 0xFFFF
+        )
+        expected_pointers = struct.pack(
+            "<HHHH",
+            expected_draw,
+            draw_segment,
+            expected_screen,
+            screen_segment,
+        )
+        actual_pointers = bytes(machine.mem_read(data_segment * 16 + 0x5219, 8))
+        if actual_pointers != expected_pointers:
+            raise AssertionError(
+                f"0x17af {name}: pointers={actual_pointers.hex()}, "
+                f"expected={expected_pointers.hex()}"
+            )
+        expected_output = [(crtc_port, 2, (expected_screen & 0xFF00) | 0x000C)]
+        if port_writes != expected_output:
+            raise AssertionError(
+                f"0x17af {name}: ports={port_writes}, expected={expected_output}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | (
+            (expected_screen & 0xFF00) | 0x000C
+        )
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | crtc_port
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x17af {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x17af {name}: near return changed CS")
+
+        expected_flags = (
+            {
+                "cf": False,
+                "pf": True,
+                "af": False,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+            if screen_offset & 0x8000
+            else add16_flags(screen_offset, 0x4000)
+        )
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(final_flags & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x17af {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(game_segment * 16 + 0x5219, 8)) != game_decoy:
+            raise AssertionError(f"0x17af {name}: changed GS pointer decoy")
+        if (
+            struct.unpack("<H", machine.mem_read(game_segment * 16 + 0x0A9E, 2))[0]
+            != crtc_port ^ 0xFFFF
+        ):
+            raise AssertionError(f"0x17af {name}: changed GS port decoy")
+        if (
+            bytes(machine.mem_read(extra_segment * 16 + 0x0100, len(extra_marker)))
+            != extra_marker
+        ):
+            raise AssertionError(f"0x17af {name}: changed unrelated memory")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x17af {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "draw_offset_before": draw_offset,
+                "draw_offset_after": expected_draw,
+                "screen_offset_before": screen_offset,
+                "screen_offset_after": expected_screen,
+                "crtc_port": crtc_port,
+                "port_write": list(port_writes[0]),
+                "final_ax": machine.reg_read(UC_X86_REG_AX),
+                "defined_flags": actual_flags,
+            }
+        )
+    return vectors
+
+
+def main_loop_hud_refresh_vectors() -> list[dict[str, object]]:
+    entry = 0x1A93
+    expected_hash = "8c191f412037f0fb6d4877e5fbbccb0bd32232216a8ce9e3e7a8855ae632cf67"
+    if hashlib.sha256(EXE[entry : entry + 64]).hexdigest() != expected_hash:
+        raise AssertionError("0x1a93: recovered 64-byte body changed")
+
+    renderer_entry = 0x2E28
+    retrace_entry = 0x05D7
+    return_address = 0x6E40
+    data_segment = 0x3000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    cases = (
+        ("disabled_zero", 0x00, 0x5000, 0x0000, 0x0202),
+        ("disabled_other_bit", 0x02, 0x5100, 0x1234, 0x0603),
+        ("disabled_high_bit", 0x80, 0x5200, 0xFFF0, 0x0287),
+        ("enabled_zero_offset", 0x01, 0x5300, 0x0000, 0x0202),
+        ("enabled_other_bits", 0x03, 0x5400, 0x2345, 0x0293),
+        ("enabled_offset_wrap", 0xFF, 0x5500, 0xFFF0, 0x0247),
+        ("enabled_backward_direction", 0x01, 0x5600, 0x0100, 0x0603),
+    )
+    renderer_flags = 0x0246
+    retrace_flags = 0x0297
+    defined_mask = 0x0CC5
+    vectors = []
+
+    for case_index, (
+        name,
+        gate,
+        screen_segment,
+        screen_offset,
+        entry_flags,
+    ) in enumerate(cases):
+        enabled = bool(gate & 1)
+        backward = bool(entry_flags & 0x0400)
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000 + case_index,
+            "fs": 0x6000 + case_index,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": entry_flags,
+        }
+        text = b"HUD STATUS\x00" + bytes([0xA5]) * 5
+        text_decoy = bytes(value ^ 0xFF for value in text)
+        pointer_region = bytearray(
+            (0x31 + index * 7 + case_index) & 0xFF for index in range(32)
+        )
+        struct.pack_into("<HH", pointer_region, 0x0D, screen_offset, screen_segment)
+        game_pointer_decoy = bytes(value ^ 0x5A for value in pointer_region)
+        screen_before = bytes(
+            (index * 37 + case_index * 19 + 5) & 0xFF for index in range(0x10000)
+        )
+        expected_screen = bytearray(screen_before)
+        clear_start = (screen_offset + 0x1D2E) & 0xFFFF
+        cursor = clear_start
+        if enabled:
+            direction = -1 if backward else 1
+            for _row in range(14):
+                for _column in range(20):
+                    expected_screen[cursor] = 0
+                    cursor = (cursor + direction) & 0xFFFF
+                cursor = (cursor + 0x003C) & 0xFFFF
+        final_di = cursor if enabled else initial["edi"] & 0xFFFF
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        calls: list[dict[str, object]] = []
+        port_writes: list[tuple[int, int, int]] = []
+
+        def output_port(_machine: Uc, port: int, size: int, value: int) -> None:
+            port_writes.append((port, size, value))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (renderer_entry, retrace_entry):
+                return
+            is_renderer = address == renderer_entry
+            call = {
+                "callee": (
+                    "planar_ui_text_render_10row"
+                    if is_renderer
+                    else "video_retrace_phase_wait"
+                ),
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ecx": machine.reg_read(UC_X86_REG_ECX),
+                "edx": machine.reg_read(UC_X86_REG_EDX),
+                "esi": machine.reg_read(UC_X86_REG_ESI),
+                "edi": machine.reg_read(UC_X86_REG_EDI),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0CD7,
+            }
+            expected_call = {
+                "callee": call["callee"],
+                "eax": (initial["eax"] & 0xFFFF0000) | 0x0FE8,
+                "ebx": (initial["ebx"] & 0xFFFF0000) | 0x0087,
+                "ecx": initial["ecx"] & 0xFFFF0000,
+                "edx": (initial["edx"] & 0xFFFF0000) | 0x0060,
+                "esi": (initial["esi"] & 0xFFFF0000) | 0x0166,
+                "edi": (initial["edi"] & 0xFFFF0000) | final_di,
+                "ds": data_segment,
+                "es": screen_segment,
+                "gs": game_segment,
+                "ss": stack_segment,
+                "sp": 0xFEF8,
+                "cs": 0x0299 if is_renderer else 0,
+                "ip": 0x0498 if is_renderer else 0x05D7,
+                "flags": 0,
+            }
+            if is_renderer:
+                final_row_start = (clear_start + 13 * (40 if backward else 80)) & 0xFFFF
+                add_left = (final_row_start + (-20 if backward else 20)) & 0xFFFF
+                carry = add_left + 0x003C > 0xFFFF
+                expected_call["flags"] = (entry_flags & 0x0400) | 0x0046 | int(carry)
+            else:
+                expected_call["flags"] = renderer_flags & 0x0CD7
+            if call != expected_call:
+                raise AssertionError(
+                    f"0x1a93 {name}: call={call}, expected={expected_call}"
+                )
+            expected_stack = (
+                (0x1ACB if is_renderer else 0x1AD0),
+                0,
+                initial["es"],
+                initial["esi"] & 0xFFFF,
+                return_address,
+            )
+            stack_words = struct.unpack(
+                "<5H", machine.mem_read(stack_segment * 16 + 0xFEF8, 10)
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x1a93 {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            if bytes(machine.mem_read(screen_segment * 16, 0x10000)) != bytes(
+                expected_screen
+            ):
+                raise AssertionError(
+                    f"0x1a93 {name}: framebuffer differs before {call['callee']}"
+                )
+            calls.append(call)
+
+        renderer_stub = b"\x68" + struct.pack("<H", renderer_flags) + b"\x9d\xcb"
+        retrace_stub = b"\x68" + struct.pack("<H", retrace_flags) + b"\x9d\xcb"
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, renderer_entry, renderer_stub),
+                (0, retrace_entry, retrace_stub),
+                (data_segment, 0x0166, text),
+                (game_segment, 0x0166, text_decoy),
+                (data_segment, 0x0ADF, bytes([gate])),
+                (game_segment, 0x0ADF, bytes([gate ^ 0xFF])),
+                (data_segment, 0x5210, bytes(pointer_region)),
+                (game_segment, 0x5210, game_pointer_decoy),
+                (screen_segment, 0, screen_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            output_handler=output_port,
+        )
+
+        expected_calls = (
+            ["planar_ui_text_render_10row", "video_retrace_phase_wait"]
+            if enabled
+            else []
+        )
+        if [call["callee"] for call in calls] != expected_calls:
+            raise AssertionError(f"0x1a93 {name}: calls={calls}")
+        expected_outputs = [(0x03C4, 2, 0x0F02)] if enabled else []
+        if port_writes != expected_outputs:
+            raise AssertionError(
+                f"0x1a93 {name}: ports={port_writes}, expected={expected_outputs}"
+            )
+        if bytes(machine.mem_read(screen_segment * 16, 0x10000)) != bytes(
+            expected_screen
+        ):
+            raise AssertionError(f"0x1a93 {name}: final framebuffer differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if enabled:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 0x0FE8
+            expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0x0087
+            expected_registers["ecx"] = initial["ecx"] & 0xFFFF0000
+            expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | 0x0060
+            expected_registers["edi"] = (initial["edi"] & 0xFFFF0000) | final_di
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1a93 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1a93 {name}: near return changed CS")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if enabled:
+            expected_defined_flags = retrace_flags & defined_mask
+        else:
+            expected_defined_flags = (entry_flags & 0x0400) | 0x0044
+        if final_flags & defined_mask != expected_defined_flags:
+            raise AssertionError(
+                f"0x1a93 {name}: flags={final_flags & defined_mask:#x}, "
+                f"expected={expected_defined_flags:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x0166, len(text))) != text:
+            raise AssertionError(f"0x1a93 {name}: changed HUD text")
+        if (
+            bytes(machine.mem_read(game_segment * 16 + 0x0166, len(text_decoy)))
+            != text_decoy
+        ):
+            raise AssertionError(f"0x1a93 {name}: changed GS text decoy")
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x5210, len(pointer_region))
+        ) != bytes(pointer_region):
+            raise AssertionError(f"0x1a93 {name}: changed screen pointer")
+        if (
+            bytes(machine.mem_read(game_segment * 16 + 0x5210, len(game_pointer_decoy)))
+            != game_pointer_decoy
+        ):
+            raise AssertionError(f"0x1a93 {name}: changed GS pointer decoy")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x1a93 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "gate": gate,
+                "enabled": enabled,
+                "direction": "backward" if backward else "forward",
+                "screen_pointer": {
+                    "offset": screen_offset,
+                    "segment": screen_segment,
+                },
+                "clear_start": clear_start,
+                "final_di": final_di,
+                "port_writes": [list(write) for write in port_writes],
+                "calls": calls,
+                "framebuffer_sha256": hashlib.sha256(
+                    bytes(expected_screen)
+                ).hexdigest(),
+                "final_flags": final_flags & defined_mask,
+            }
+        )
+    return vectors
+
+
 def startup_directory_transition_vectors(
     entry: int,
     return_address: int,
@@ -46427,6 +46868,11 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "func_17af_natural.json",
+        page_offset_helper_vectors(),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "func_17d9_natural.json",
         back_buffer_wrapper_vectors(
             0x17D9,
@@ -46442,6 +46888,11 @@ def main() -> int:
             0x00E3,
             "2b151a4f13e91f729130c124f06634dc898d53789c5477c0e8a8f019793160fe",
         ),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1a93_natural.json",
+        main_loop_hud_refresh_vectors(),
         args.check,
     )
     update_vector(

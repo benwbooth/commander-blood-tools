@@ -1,0 +1,278 @@
+[
+  {
+    "name": "disabled_zero",
+    "gate": 0,
+    "enabled": false,
+    "direction": "forward",
+    "screen_pointer": {
+      "offset": 0,
+      "segment": 20480
+    },
+    "clear_start": 7470,
+    "final_di": 30874,
+    "port_writes": [],
+    "calls": [],
+    "framebuffer_sha256": "9a9c632a833825b30fc67fe19283dd0ba0d3cb7969824ffed5da102a1af8ba96",
+    "final_flags": 68
+  },
+  {
+    "name": "disabled_other_bit",
+    "gate": 2,
+    "enabled": false,
+    "direction": "backward",
+    "screen_pointer": {
+      "offset": 4660,
+      "segment": 20736
+    },
+    "clear_start": 12130,
+    "final_di": 30875,
+    "port_writes": [],
+    "calls": [],
+    "framebuffer_sha256": "f426499a7ef7b251ab3b3879c184865feae9c8579efc7120a86558e7ff799e57",
+    "final_flags": 1092
+  },
+  {
+    "name": "disabled_high_bit",
+    "gate": 128,
+    "enabled": false,
+    "direction": "forward",
+    "screen_pointer": {
+      "offset": 65520,
+      "segment": 20992
+    },
+    "clear_start": 7454,
+    "final_di": 30876,
+    "port_writes": [],
+    "calls": [],
+    "framebuffer_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15",
+    "final_flags": 68
+  },
+  {
+    "name": "enabled_zero_offset",
+    "gate": 1,
+    "enabled": true,
+    "direction": "forward",
+    "screen_pointer": {
+      "offset": 0,
+      "segment": 21248
+    },
+    "clear_start": 7470,
+    "final_di": 8590,
+    "port_writes": [
+      [
+        964,
+        2,
+        3842
+      ]
+    ],
+    "calls": [
+      {
+        "callee": "planar_ui_text_render_10row",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696590,
+        "ds": 12288,
+        "es": 21248,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 665,
+        "ip": 1176,
+        "flags": 70
+      },
+      {
+        "callee": "video_retrace_phase_wait",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696590,
+        "ds": 12288,
+        "es": 21248,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 0,
+        "ip": 1495,
+        "flags": 70
+      }
+    ],
+    "framebuffer_sha256": "34a2a7e48868f0d40ecf8854a588a9c2a91ee8ced0a1d0435ec151c9f871c787",
+    "final_flags": 133
+  },
+  {
+    "name": "enabled_other_bits",
+    "gate": 3,
+    "enabled": true,
+    "direction": "forward",
+    "screen_pointer": {
+      "offset": 9029,
+      "segment": 21504
+    },
+    "clear_start": 16499,
+    "final_di": 17619,
+    "port_writes": [
+      [
+        964,
+        2,
+        3842
+      ]
+    ],
+    "calls": [
+      {
+        "callee": "planar_ui_text_render_10row",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210705619,
+        "ds": 12288,
+        "es": 21504,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 665,
+        "ip": 1176,
+        "flags": 70
+      },
+      {
+        "callee": "video_retrace_phase_wait",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210705619,
+        "ds": 12288,
+        "es": 21504,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 0,
+        "ip": 1495,
+        "flags": 70
+      }
+    ],
+    "framebuffer_sha256": "c16aab5e26574141274ef81d9b48ab63e7bf010eeacd3f16cde7a6e85637b33c",
+    "final_flags": 133
+  },
+  {
+    "name": "enabled_offset_wrap",
+    "gate": 255,
+    "enabled": true,
+    "direction": "forward",
+    "screen_pointer": {
+      "offset": 65520,
+      "segment": 21760
+    },
+    "clear_start": 7454,
+    "final_di": 8574,
+    "port_writes": [
+      [
+        964,
+        2,
+        3842
+      ]
+    ],
+    "calls": [
+      {
+        "callee": "planar_ui_text_render_10row",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696574,
+        "ds": 12288,
+        "es": 21760,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 665,
+        "ip": 1176,
+        "flags": 70
+      },
+      {
+        "callee": "video_retrace_phase_wait",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696574,
+        "ds": 12288,
+        "es": 21760,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 0,
+        "ip": 1495,
+        "flags": 70
+      }
+    ],
+    "framebuffer_sha256": "a1fae982974b87c123f5bf2b257b2651b8a8c18a530b2712405b5678f7aa13a7",
+    "final_flags": 133
+  },
+  {
+    "name": "enabled_backward_direction",
+    "gate": 1,
+    "enabled": true,
+    "direction": "backward",
+    "screen_pointer": {
+      "offset": 256,
+      "segment": 22016
+    },
+    "clear_start": 7726,
+    "final_di": 8286,
+    "port_writes": [
+      [
+        964,
+        2,
+        3842
+      ]
+    ],
+    "calls": [
+      {
+        "callee": "planar_ui_text_render_10row",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696286,
+        "ds": 12288,
+        "es": 22016,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 665,
+        "ip": 1176,
+        "flags": 1094
+      },
+      {
+        "callee": "video_retrace_phase_wait",
+        "eax": 2779058152,
+        "ebx": 3065380999,
+        "ecx": 3351707648,
+        "edx": 3638034528,
+        "esi": 3924361574,
+        "edi": 4210696286,
+        "ds": 12288,
+        "es": 22016,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65272,
+        "cs": 0,
+        "ip": 1495,
+        "flags": 70
+      }
+    ],
+    "framebuffer_sha256": "bf6409d711712cec86da1dbc27f495e267c587563d25b37044f85dbd5a53a180",
+    "final_flags": 133
+  }
+]

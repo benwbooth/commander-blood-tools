@@ -8,6 +8,7 @@ typedef const cb_u8 CB_FAR *bloodprg_font_ptr;
 extern volatile cb_u8 CB_GAME_DATA saved_video_mode; /* GS:0x5232 */
 extern volatile cb_u16 cmos_seconds_pair;    /* CS:0x0AEE */
 extern volatile cb_u16 CB_GAME_DATA video_crtc_base_port; /* GS:0x0A9E */
+extern volatile cb_u16 video_crtc_base_port_ds; /* DS:0x0A9E alias */
 extern volatile cb_u8 CB_GAME_DATA video_retrace_phase;   /* GS:0x0B12 */
 extern volatile cb_u16 CB_GAME_DATA video_calibration_ticks; /* GS:0x0B35 */
 extern bloodprg_font_ptr CB_GAME_DATA bios_font_8x8; /* GS:0x5225 */
@@ -47,6 +48,7 @@ cb_u32 CB_NEAR cb_bios_font_8x8_get(void);
 #pragma aux cb_bios_font_8x8_get = \
         "mov ax,1130h" "mov bh,3" "int 10h" "mov ax,bp" "mov dx,es" \
         value [dx ax] modify exact [ax bx dx es bp]
+#pragma aux video_retrace_phase_wait modify exact []
 #pragma aux vga_palette_write parm [si]
 #endif
 

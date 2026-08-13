@@ -1,0 +1,178 @@
+[
+  {
+    "name": "both_zero",
+    "draw_offset_before": 0,
+    "draw_offset_after": 16384,
+    "screen_offset_before": 0,
+    "screen_offset_after": 16384,
+    "crtc_port": 980,
+    "port_write": [
+      980,
+      2,
+      16396
+    ],
+    "final_ax": 16396,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ordinary",
+    "draw_offset_before": 1,
+    "draw_offset_after": 16385,
+    "screen_offset_before": 4660,
+    "screen_offset_after": 21044,
+    "crtc_port": 948,
+    "port_write": [
+      948,
+      2,
+      21004
+    ],
+    "final_ax": 21004,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_negative",
+    "draw_offset_before": 32768,
+    "draw_offset_after": 0,
+    "screen_offset_before": 9029,
+    "screen_offset_after": 25413,
+    "crtc_port": 980,
+    "port_write": [
+      980,
+      2,
+      25356
+    ],
+    "final_ax": 25356,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_negative",
+    "draw_offset_before": 13398,
+    "draw_offset_after": 29782,
+    "screen_offset_before": 65535,
+    "screen_offset_after": 0,
+    "crtc_port": 948,
+    "port_write": [
+      948,
+      2,
+      12
+    ],
+    "final_ax": 12,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_positive",
+    "draw_offset_before": 32767,
+    "draw_offset_after": 49151,
+    "screen_offset_before": 32767,
+    "screen_offset_after": 49151,
+    "crtc_port": 980,
+    "port_write": [
+      980,
+      2,
+      48908
+    ],
+    "final_ax": 48908,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "both_negative",
+    "draw_offset_before": 49152,
+    "draw_offset_after": 0,
+    "screen_offset_before": 32769,
+    "screen_offset_after": 0,
+    "crtc_port": 948,
+    "port_write": [
+      948,
+      2,
+      12
+    ],
+    "final_ax": 12,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_positive_wraps_sign",
+    "draw_offset_before": 28672,
+    "draw_offset_after": 45056,
+    "screen_offset_before": 24576,
+    "screen_offset_after": 40960,
+    "crtc_port": 65535,
+    "port_write": [
+      65535,
+      2,
+      40972
+    ],
+    "final_ax": 40972,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "offset_words_wrap_independently",
+    "draw_offset_before": 16384,
+    "draw_offset_after": 32768,
+    "screen_offset_before": 32512,
+    "screen_offset_after": 48896,
+    "crtc_port": 0,
+    "port_write": [
+      0,
+      2,
+      48908
+    ],
+    "final_ax": 48908,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

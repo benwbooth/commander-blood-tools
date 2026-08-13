@@ -37,6 +37,16 @@ extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_draw_framebuffer; /* GS:0x5219 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_screen_buffer; /* GS:0x521D */
+extern volatile cb_i16
+        graphics_draw_page_offset; /* DS:0x5219 offset-word alias */
+extern volatile cb_i16
+        graphics_screen_page_offset; /* DS:0x521D offset-word alias */
+extern bloodprg_graphics_buffer_ptr
+        graphics_screen_buffer_ds; /* DS:0x521D far-pointer alias */
+extern volatile cb_u8
+        main_loop_hud_refresh_enabled; /* DS:0x0ADF */
+extern const cb_u8
+        main_loop_hud_text[]; /* DS:0x0166 */
 extern cb_u32 palette_low_5251_dwords[]; /* caller ES:0x5251 */
 extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
@@ -136,6 +146,8 @@ void CB_FAR chunky_to_planar_framebuffer(
         const volatile cb_u8 CB_FAR *source); /* 0x0299:0x0F3E */
 cb_i16 CB_FAR back_buffer_init(void); /* 0x008B:0x0929 */
 cb_i16 CB_FAR backbuffer_clear_flags(void); /* 0x008B:0x0967 */
+void CB_NEAR page_offset_helper(void); /* 0x0017AF */
+void CB_NEAR main_loop_hud_refresh(void); /* 0x001A93 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
@@ -173,6 +185,15 @@ void CB_FAR planar_ui_text_render_10row(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x003428 */
+#if defined(__WATCOMC__)
+void CB_FAR planar_ui_text_render_10row_ds(
+        const cb_u8 CB_NEAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color);
+#else
+#define planar_ui_text_render_10row_ds planar_ui_text_render_10row
+#endif
 void CB_FAR planar_dialogue_text_render(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -211,6 +232,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux chunky_to_planar_framebuffer parm [ds si] modify exact [dx]
 #pragma aux back_buffer_init value [ax] modify exact [ax dx]
 #pragma aux backbuffer_clear_flags value [ax] modify exact [ax dx]
+#pragma aux page_offset_helper modify exact [ax dx]
+#pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
@@ -223,6 +246,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
         parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux planar_ui_text_render_10row \
         parm [ds si] [bx] [dx] [ax] modify exact []
+#pragma aux planar_ui_text_render_10row_ds "planar_ui_text_render_10row_" \
+        parm [si] [bx] [dx] [ax] modify exact []
 #pragma aux planar_dialogue_text_render \
         parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux subtitle_reveal_draw_wrapper \
