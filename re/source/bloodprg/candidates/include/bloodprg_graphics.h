@@ -17,6 +17,18 @@ extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_back_buffer; /* GS:0x5229 */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_ship_palette_limit; /* GS:0x24F3 */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_scene_palette_limit; /* GS:0x274F */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_palette_refresh; /* GS:0x5B53 */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_palette_dirty; /* GS:0x5B55 */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_transparent_zero; /* GS:0x5B57 */
+extern volatile cb_u8 CB_GAME_DATA
+        pbm_live_palette[768]; /* GS:0x5251 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_draw_framebuffer; /* GS:0x5219 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA

@@ -6837,6 +6837,573 @@ def resource_file_load_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def pbm_byte_run_stream(transparent: bool) -> tuple[bytes, bytes, int]:
+    stream = bytearray()
+    output = bytearray([0xCC] * 64000 if transparent else [0] * 64000)
+    cursor = 0
+
+    def repeat(count: int, value: int) -> None:
+        nonlocal cursor
+        stream.extend(((1 - count) & 0xFF, value))
+        if not transparent or value != 0:
+            output[cursor : cursor + count] = bytes((value,)) * count
+        cursor += count
+
+    def literal(values: bytes) -> None:
+        nonlocal cursor
+        stream.append(len(values) - 1)
+        stream.extend(values)
+        for value in values:
+            if not transparent or value != 0:
+                output[cursor] = value
+            cursor += 1
+
+    if transparent:
+        repeat(5, 0)
+        literal(bytes((1, 0, 2, 0, 3)))
+        repeat(4, 7)
+        for run in range(496):
+            repeat(129, 0 if (run & 1) == 0 else ((run * 13 + 17) & 0xFF))
+        repeat(2, 9)
+    else:
+        literal(bytes((1, 2, 0, 4)))
+        repeat(2, 0)
+        for run in range(496):
+            repeat(129, (run * 13 + 17) & 0xFF)
+        repeat(10, 0xA7)
+
+    if cursor != 64000:
+        raise AssertionError(f"PBM stream covers {cursor} bytes, expected 64000")
+    return bytes(stream), bytes(output), stream[-1]
+
+
+def pbm_image_load_and_decode_vectors() -> list[dict[str, object]]:
+    entry = 0x2BFD
+    expected_hash = "3cc1de8ec905520a04c6ef34c7b6724a97a5143ada29276bf0219ec12bc4a055"
+    if hashlib.sha256(EXE[entry : entry + 339]).hexdigest() != expected_hash:
+        raise AssertionError("0x2bfd: recovered 339-byte body changed")
+
+    cases = [
+        {
+            "name": "embedded_opaque_full_palette_read_error_ignored",
+            "embedded_flag": 3,
+            "content": "normal",
+            "palette_refresh": 3,
+            "read_return": 7,
+            "read_error": True,
+            "size_high": 0xA5A50000,
+        },
+        {
+            "name": "standalone_transparent_palette_limited_by_scene",
+            "embedded_flag": 0,
+            "content": "normal",
+            "transparent": True,
+            "in_place": True,
+            "palette_refresh": 1,
+            "scene_palette_limit": 0x80,
+            "size_high": 0x5A5A0000,
+        },
+        {
+            "name": "find_failure_uses_wrapped_stale_dta",
+            "embedded_flag": 0,
+            "content": "normal",
+            "palette_refresh": 0,
+            "find_success": False,
+            "dta_offset": 0xFFF0,
+        },
+        {
+            "name": "palette_refresh_bit_zero_skips_update",
+            "embedded_flag": 1,
+            "content": "normal",
+            "palette_refresh": 2,
+            "scene_palette_limit": 1,
+        },
+        {
+            "name": "embedded_palette_limited_by_ship",
+            "embedded_flag": 1,
+            "content": "normal",
+            "palette_refresh": 1,
+            "ship_palette_limit": 0x80,
+        },
+        {
+            "name": "body_marker_beyond_declared_extent",
+            "embedded_flag": 1,
+            "content": "normal",
+            "file_size_override": 795,
+        },
+        {
+            "name": "standalone_open_failure",
+            "embedded_flag": 0,
+            "content": "normal",
+            "open_success": False,
+        },
+        {
+            "name": "pbm_marker_missing",
+            "embedded_flag": 1,
+            "content": "pbm_missing",
+        },
+        {
+            "name": "pbm_first_byte_at_final_extent_byte_fails",
+            "embedded_flag": 1,
+            "content": "pbm_final_byte",
+        },
+        {
+            "name": "cmap_marker_missing",
+            "embedded_flag": 1,
+            "content": "cmap_missing",
+        },
+        {
+            "name": "body_marker_missing",
+            "embedded_flag": 1,
+            "content": "body_missing",
+        },
+        {
+            "name": "direction_flag_searches_backward",
+            "embedded_flag": 1,
+            "content": "normal",
+            "direction_flag": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    dta_segment = 0x4200
+    file_segment = 0x5000
+    output_segment = 0x7000
+    stack_segment = 0x9000
+    path_offset = 0x4100
+    default_file_buffer_end = 0xF000
+    default_output_offset = 0x0100
+    return_address = 0x6F60
+    stack_sentinel = bytes.fromhex("1ee12dd23cc34bb4")
+    palette_seed = bytes((0xC0 + (index & 0x1F)) for index in range(768))
+    output_seed = bytes((0xCC,)) * 64000
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        embedded_flag = int(case["embedded_flag"])
+        embedded = (embedded_flag & 1) != 0
+        content = str(case["content"])
+        transparent = bool(case.get("transparent", False))
+        palette_refresh = int(case.get("palette_refresh", 0))
+        ship_palette_limit = int(case.get("ship_palette_limit", 0))
+        scene_palette_limit = int(case.get("scene_palette_limit", 0))
+        find_success = bool(case.get("find_success", True))
+        open_success = bool(case.get("open_success", True))
+        read_error = bool(case.get("read_error", False))
+        direction_flag = bool(case.get("direction_flag", False))
+        in_place = bool(case.get("in_place", False))
+        dta_offset = int(case.get("dta_offset", 0x0200))
+        size_high = int(case.get("size_high", 0))
+        embedded_handle = 0x3100 + case_index
+        standalone_handle = 0x4100 + case_index
+        path = f"PBM{case_index:02d}.LBM".encode("ascii") + b"\0"
+        palette_source = bytes(
+            ((index * 37 + case_index * 29 + 11) & 0xFF)
+            for index in range(768)
+        )
+
+        decoded_output: bytes | None = None
+        last_value = 0
+        if content == "normal":
+            stream, decoded_output, last_value = pbm_byte_run_stream(transparent)
+            payload = (
+                b"\x11Pno!"
+                + b"PBM "
+                + b"\x22Cno!"
+                + b"CMAP"
+                + struct.pack(">I", len(palette_source))
+                + palette_source
+                + b"\x33Bno!"
+                + b"BODY"
+                + struct.pack(">I", len(stream))
+                + stream
+            )
+        elif content == "body_missing":
+            payload = (
+                b"PBM "
+                + b"CMAP"
+                + struct.pack(">I", len(palette_source))
+                + palette_source
+                + b"\x11\x22\x33\x44"
+            )
+        elif content == "cmap_missing":
+            payload = b"\x11Pno!PBM \x01\x02\x03\x04\x05"
+        elif content == "pbm_final_byte":
+            payload = b"\x11\x22\x33\x44P"
+        elif content == "pbm_missing":
+            payload = b"\x11\x22\x33\x44\x55\x66\x77"
+        else:
+            raise AssertionError(f"0x2bfd {name}: unknown content {content}")
+
+        payload_size = len(payload)
+        file_size = int(case.get("file_size_override", payload_size))
+        if file_size > payload_size:
+            raise AssertionError(f"0x2bfd {name}: extent exceeds payload")
+        file_buffer_end = 0 if in_place else default_file_buffer_end
+        output_offset = 0 if in_place else default_output_offset
+        case_output_segment = file_segment if in_place else output_segment
+        file_start = (file_buffer_end - file_size) & 0xFFFF
+        read_return = int(case.get("read_return", file_size))
+        beyond_extent_seed = payload[file_size:]
+        dta_size_offset = (dta_offset + 0x1A) & 0xFFFF
+        initial_dirty = 0xA0 + case_index
+        calls: list[dict[str, object]] = []
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | path_offset,
+            "edi": 0xF6F60000 | file_buffer_end,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": file_segment,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x2693:
+                return
+            calls.append(
+                {
+                    "call": "resource_source_select",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "return_frame": return_frame(machine),
+                }
+            )
+            machine.mem_write(
+                game_segment * 16 + 0x0AE2, bytes((embedded_flag,))
+            )
+            if embedded:
+                machine.mem_write(
+                    game_segment * 16 + 0x0A8E,
+                    struct.pack("<I", size_high | file_size),
+                )
+                machine.reg_write(UC_X86_REG_BX, embedded_handle)
+            else:
+                machine.reg_write(UC_X86_REG_BX, 0x7100 + case_index)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21:
+                raise AssertionError(f"0x2bfd {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x2F00:
+                calls.append({"call": "dos_get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+                return
+            if function == 0x4E00:
+                call = {
+                    "call": "dos_find_first",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                    "success": find_success,
+                }
+                calls.append(call)
+                if find_success:
+                    machine.mem_write(
+                        dta_segment * 16 + dta_size_offset,
+                        struct.pack("<I", size_high | file_size),
+                    )
+                machine.reg_write(UC_X86_REG_AX, 0 if find_success else 2)
+                set_carry(machine, not find_success)
+                return
+            if function == 0x3D00:
+                calls.append(
+                    {
+                        "call": "dos_open_read_only",
+                        "path": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_DX),
+                        ],
+                        "success": open_success,
+                    }
+                )
+                machine.reg_write(
+                    UC_X86_REG_AX, standalone_handle if open_success else 2
+                )
+                set_carry(machine, not open_success)
+                return
+            if function == 0x3F00:
+                call = {
+                    "call": "dos_read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "destination": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "returned": read_return,
+                    "carry": read_error,
+                }
+                calls.append(call)
+                if call["destination"] != [file_segment, file_start]:
+                    raise AssertionError(
+                        f"0x2bfd {name}: read destination={call['destination']}"
+                    )
+                if call["requested"] != file_size:
+                    raise AssertionError(
+                        f"0x2bfd {name}: read request={call['requested']}"
+                    )
+                machine.mem_write(
+                    file_segment * 16 + file_start, payload[:file_size]
+                )
+                machine.reg_write(UC_X86_REG_AX, read_return)
+                set_carry(machine, read_error)
+                return
+            if function == 0x3E00:
+                calls.append(
+                    {
+                        "call": "dos_close",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 6)
+                set_carry(machine, True)
+                return
+            raise AssertionError(
+                f"0x2bfd {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x2693, b"\xcb"),
+                (0, 0x090E, b"PBM \0CMAP\0BODY\0"),
+                (data_segment, path_offset, path),
+                (file_segment, 0xC000, bytes((0x6D,)) * 0x4000),
+                (
+                    file_segment,
+                    (file_start + file_size) & 0xFFFF,
+                    beyond_extent_seed,
+                ),
+                (case_output_segment, output_offset, output_seed),
+                (
+                    game_segment,
+                    0x0A8E,
+                    struct.pack("<I", size_high | file_size),
+                ),
+                (game_segment, 0x0AE2, bytes((embedded_flag ^ 0xFF,))),
+                (
+                    game_segment,
+                    0x24F3,
+                    bytes((ship_palette_limit,)),
+                ),
+                (
+                    game_segment,
+                    0x274F,
+                    bytes((scene_palette_limit,)),
+                ),
+                (
+                    game_segment,
+                    0x5229,
+                    struct.pack("<HH", output_offset, case_output_segment),
+                ),
+                (game_segment, 0x5251, palette_seed),
+                (game_segment, 0x5B53, bytes((palette_refresh,))),
+                (game_segment, 0x5B55, bytes((initial_dirty,))),
+                (game_segment, 0x5B57, bytes((1 if transparent else 0,))),
+                (
+                    dta_segment,
+                    dta_size_offset,
+                    struct.pack("<I", size_high | file_size),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=500000,
+        )
+
+        expected_names = ["resource_source_select"]
+        if not embedded:
+            expected_names.extend(
+                ("dos_get_dta", "dos_find_first", "dos_open_read_only")
+            )
+        if embedded or open_success:
+            expected_names.append("dos_read")
+            if not embedded:
+                expected_names.append("dos_close")
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x2bfd {name}: calls={actual_names}, expected={expected_names}"
+            )
+        if calls[0] != {
+            "call": "resource_source_select",
+            "path": [data_segment, path_offset],
+            "return_frame": [0x2C0C, 0],
+        }:
+            raise AssertionError(f"0x2bfd {name}: selector call={calls[0]}")
+
+        succeeded = content == "normal" and not direction_flag and (
+            embedded or open_success
+        )
+        if succeeded:
+            expected_eax = last_value
+        elif not embedded and not open_success:
+            expected_eax = (initial["eax"] & 0xFFFF0000) | 0xFFFF
+        elif content == "cmap_missing":
+            expected_eax = 0x5041FFFF
+        elif content == "body_missing":
+            expected_eax = 0x5944FFFF
+        else:
+            expected_eax = 0x204DFFFF
+        actual_eax = machine.reg_read(UC_X86_REG_EAX)
+        if actual_eax != expected_eax:
+            raise AssertionError(
+                f"0x2bfd {name}: eax={actual_eax:#x}, expected={expected_eax:#x}"
+            )
+
+        expected_palette = bytearray(palette_seed)
+        expected_dirty = initial_dirty
+        expected_palette_bytes = 0
+        if content in {"normal", "body_missing"} and (palette_refresh & 1) != 0:
+            expected_dirty = 1
+            expected_palette_bytes = (
+                576 if (ship_palette_limit | scene_palette_limit) else 768
+            )
+            expected_palette[:expected_palette_bytes] = bytes(
+                value >> 2
+                for value in palette_source[:expected_palette_bytes]
+            )
+        actual_palette = bytes(
+            machine.mem_read(game_segment * 16 + 0x5251, 768)
+        )
+        if actual_palette != bytes(expected_palette):
+            raise AssertionError(f"0x2bfd {name}: palette differs")
+        actual_dirty = machine.mem_read(game_segment * 16 + 0x5B55, 1)[0]
+        if actual_dirty != expected_dirty:
+            raise AssertionError(
+                f"0x2bfd {name}: dirty={actual_dirty:#x}, expected={expected_dirty:#x}"
+            )
+
+        expected_output = decoded_output if succeeded else output_seed
+        if expected_output is None:
+            expected_output = output_seed
+        if succeeded and transparent and in_place:
+            output_model = bytearray(output_seed)
+            for index, byte in enumerate(payload):
+                destination = (file_start + index) & 0xFFFF
+                if destination < 64000:
+                    output_model[destination] = byte
+            source = 0
+            destination = 0
+            remaining_pixels = 64000
+            while remaining_pixels != 0:
+                control = stream[source]
+                source += 1
+                if control >= 0x80:
+                    count = ((-control) & 0xFF) + 1
+                    value = stream[source]
+                    source += 1
+                    if value != 0:
+                        output_model[destination : destination + count] = bytes(
+                            (value,)
+                        ) * count
+                    destination += count
+                else:
+                    count = control + 1
+                    for _ in range(count):
+                        value = stream[source]
+                        source += 1
+                        if value != 0:
+                            output_model[destination] = value
+                        destination += 1
+                remaining_pixels -= count
+            expected_output = bytes(output_model)
+        actual_output = bytes(
+            machine.mem_read(case_output_segment * 16 + output_offset, 64000)
+        )
+        if actual_output != expected_output:
+            mismatch = next(
+                index
+                for index, pair in enumerate(zip(actual_output, expected_output, strict=True))
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x2bfd {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {expected_output[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["eax"]
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2bfd {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2bfd {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x2bfd {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "embedded_flag": embedded_flag,
+                "content": content,
+                "file_size": file_size,
+                "payload_size": payload_size,
+                "file_size_high_word_ignored": size_high >> 16,
+                "find_success": find_success if not embedded else None,
+                "open_success": open_success if not embedded else None,
+                "read_return": read_return if embedded or open_success else None,
+                "read_carry_ignored": read_error,
+                "direction_flag": direction_flag,
+                "in_place": in_place,
+                "palette_refresh": palette_refresh,
+                "palette_bytes_written": expected_palette_bytes,
+                "transparent_zero": transparent,
+                "return_eax": actual_eax,
+                "output_sha256": hashlib.sha256(actual_output).hexdigest(),
+                "output_head": list(actual_output[:16]),
+                "output_tail": list(actual_output[-16:]),
+                "palette_sha256": hashlib.sha256(actual_palette).hexdigest(),
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_file_load_to_xms_vectors() -> list[dict[str, object]]:
     entry = 0x2901
     expected_hash = "7a06ef7c766e9919b6c8ca3a09ae979c3b659525dec95187edf2b171a94ded45"
@@ -37830,6 +38397,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_29f2_natural.json",
         resource_file_load_to_ems_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2bfd_natural.json",
+        pbm_image_load_and_decode_vectors(),
         args.check,
     )
     update_vector(

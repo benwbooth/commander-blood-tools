@@ -6,8 +6,8 @@
 ; seg_off: 01ce:091d
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: resource_file_load
-; label_comment: resource file load: pass DS:SI to source selector 0x2693, take the selected extent from GS:0x0A8E, and read the standalone file or embedded payload
+; label: pbm_image_load_and_decode
+; label_comment: loads an embedded or standalone PBM image below caller ES:DI, finds PBM /CMAP/BODY chunks, optionally converts 768 or 576 palette bytes to VGA six-bit values, and decodes exactly 64000 pixels with ByteRun1-style signed-control RLE (including 0x80 as a 129-byte repeat) to GS:[0x5229] with optional zero transparency
 ; incoming: call@0x0017ee->01ce:091d
 ; incoming: call@0x00182c->01ce:091d
 ; incoming: call@0x0018da->01ce:091d

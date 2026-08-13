@@ -1,0 +1,1019 @@
+[
+  {
+    "name": "embedded_opaque_full_palette_read_error_ignored",
+    "embedded_flag": 3,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 42405,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 7,
+    "read_carry_ignored": true,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 3,
+    "palette_bytes_written": 768,
+    "transparent_zero": false,
+    "return_eax": 167,
+    "output_sha256": "f36a47f76a6cb1b5aa587350a79fa47b38fbdb9a8636167dc71817a7872c404b",
+    "output_head": [
+      1,
+      2,
+      0,
+      4,
+      0,
+      0,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167
+    ],
+    "palette_sha256": "e66f7ad5c10629966975faa2ed7fe7a740d7c50a8f5fb9b66d7ff4026d7ddbb1",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12544,
+        "destination": [
+          20480,
+          59636
+        ],
+        "requested": 1804,
+        "returned": 7,
+        "carry": true
+      }
+    ]
+  },
+  {
+    "name": "standalone_transparent_palette_limited_by_scene",
+    "embedded_flag": 0,
+    "content": "normal",
+    "file_size": 1807,
+    "payload_size": 1807,
+    "file_size_high_word_ignored": 23130,
+    "find_success": true,
+    "open_success": true,
+    "read_return": 1807,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": true,
+    "palette_refresh": 1,
+    "palette_bytes_written": 576,
+    "transparent_zero": true,
+    "return_eax": 9,
+    "output_sha256": "ab2111e00924af9465b69e8452d45f24849af07f762f86629f1124e37c54a453",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      1,
+      204,
+      2,
+      204,
+      3,
+      7,
+      7,
+      7,
+      7,
+      204,
+      204
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      9,
+      9
+    ],
+    "palette_sha256": "d960e400606a1d0ac1d5aef216cd5172803264acafbc9c4d76f68c9f40c9af29",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16641,
+        "destination": [
+          20480,
+          63729
+        ],
+        "requested": 1807,
+        "returned": 1807,
+        "carry": false
+      },
+      {
+        "call": "dos_close",
+        "handle": 16641
+      }
+    ]
+  },
+  {
+    "name": "find_failure_uses_wrapped_stale_dta",
+    "embedded_flag": 0,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": false,
+    "open_success": true,
+    "read_return": 1804,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 167,
+    "output_sha256": "f36a47f76a6cb1b5aa587350a79fa47b38fbdb9a8636167dc71817a7872c404b",
+    "output_head": [
+      1,
+      2,
+      0,
+      4,
+      0,
+      0,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": false
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16642,
+        "destination": [
+          20480,
+          59636
+        ],
+        "requested": 1804,
+        "returned": 1804,
+        "carry": false
+      },
+      {
+        "call": "dos_close",
+        "handle": 16642
+      }
+    ]
+  },
+  {
+    "name": "palette_refresh_bit_zero_skips_update",
+    "embedded_flag": 1,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 1804,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 2,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 167,
+    "output_sha256": "f36a47f76a6cb1b5aa587350a79fa47b38fbdb9a8636167dc71817a7872c404b",
+    "output_head": [
+      1,
+      2,
+      0,
+      4,
+      0,
+      0,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12547,
+        "destination": [
+          20480,
+          59636
+        ],
+        "requested": 1804,
+        "returned": 1804,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "embedded_palette_limited_by_ship",
+    "embedded_flag": 1,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 1804,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 1,
+    "palette_bytes_written": 576,
+    "transparent_zero": false,
+    "return_eax": 167,
+    "output_sha256": "f36a47f76a6cb1b5aa587350a79fa47b38fbdb9a8636167dc71817a7872c404b",
+    "output_head": [
+      1,
+      2,
+      0,
+      4,
+      0,
+      0,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167
+    ],
+    "palette_sha256": "1b1df90978a94564f1426efd4092fb537752ae4b670f3bd9e2cf3dbfd892eaae",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12548,
+        "destination": [
+          20480,
+          59636
+        ],
+        "requested": 1804,
+        "returned": 1804,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "body_marker_beyond_declared_extent",
+    "embedded_flag": 1,
+    "content": "normal",
+    "file_size": 795,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 795,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 167,
+    "output_sha256": "f36a47f76a6cb1b5aa587350a79fa47b38fbdb9a8636167dc71817a7872c404b",
+    "output_head": [
+      1,
+      2,
+      0,
+      4,
+      0,
+      0,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17
+    ],
+    "output_tail": [
+      52,
+      52,
+      52,
+      52,
+      52,
+      52,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167,
+      167
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12549,
+        "destination": [
+          20480,
+          60645
+        ],
+        "requested": 795,
+        "returned": 795,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "standalone_open_failure",
+    "embedded_flag": 0,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": true,
+    "open_success": false,
+    "read_return": null,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 2711748607,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "pbm_marker_missing",
+    "embedded_flag": 1,
+    "content": "pbm_missing",
+    "file_size": 7,
+    "payload_size": 7,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 7,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 541982719,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12551,
+        "destination": [
+          20480,
+          61433
+        ],
+        "requested": 7,
+        "returned": 7,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "pbm_first_byte_at_final_extent_byte_fails",
+    "embedded_flag": 1,
+    "content": "pbm_final_byte",
+    "file_size": 5,
+    "payload_size": 5,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 5,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 541982719,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12552,
+        "destination": [
+          20480,
+          61435
+        ],
+        "requested": 5,
+        "returned": 5,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "cmap_marker_missing",
+    "embedded_flag": 1,
+    "content": "cmap_missing",
+    "file_size": 14,
+    "payload_size": 14,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 14,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 1346502655,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12553,
+        "destination": [
+          20480,
+          61426
+        ],
+        "requested": 14,
+        "returned": 14,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "body_marker_missing",
+    "embedded_flag": 1,
+    "content": "body_missing",
+    "file_size": 784,
+    "payload_size": 784,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 784,
+    "read_carry_ignored": false,
+    "direction_flag": false,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 1497694207,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12554,
+        "destination": [
+          20480,
+          60656
+        ],
+        "requested": 784,
+        "returned": 784,
+        "carry": false
+      }
+    ]
+  },
+  {
+    "name": "direction_flag_searches_backward",
+    "embedded_flag": 1,
+    "content": "normal",
+    "file_size": 1804,
+    "payload_size": 1804,
+    "file_size_high_word_ignored": 0,
+    "find_success": null,
+    "open_success": null,
+    "read_return": 1804,
+    "read_carry_ignored": false,
+    "direction_flag": true,
+    "in_place": false,
+    "palette_refresh": 0,
+    "palette_bytes_written": 0,
+    "transparent_zero": false,
+    "return_eax": 541982719,
+    "output_sha256": "d8a1bcee927f04b8c192c63fffcaa2690f9179fee34bdea9f7561b323b099c47",
+    "output_head": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "output_tail": [
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204,
+      204
+    ],
+    "palette_sha256": "1a6f3947b450b35b41b1fe10a6ea9173b7d2c17c2d05a4d18f9b03613c693700",
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          11276,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12555,
+        "destination": [
+          20480,
+          59636
+        ],
+        "requested": 1804,
+        "returned": 1804,
+        "carry": false
+      }
+    ]
+  }
+]
