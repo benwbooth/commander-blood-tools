@@ -15,6 +15,11 @@ typedef struct bloodprg_resource_resolve_result {
     cb_u16 loaded;
 } bloodprg_resource_resolve_result;
 
+typedef struct bloodprg_resource_allocation_result {
+    cb_i16 status;
+    volatile cb_u8 CB_FAR *destination;
+} bloodprg_resource_allocation_result;
+
 typedef struct bloodprg_resource_descriptor {
     cb_u8 flags;
     cb_u8 variant;
@@ -35,6 +40,9 @@ typedef struct bloodprg_dos_dta {
 
 extern volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
 extern volatile cb_u16 resource_resident_handles[256]; /* FS:0x0800 */
+extern volatile cb_u16 resource_eviction_handles[256]; /* FS:0x0A00 */
+extern volatile cb_u16 resource_current_handle; /* FS:0x0C00 */
+extern volatile cb_u16 resource_current_entry_offset; /* FS:0x0C02 */
 extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */
 extern volatile cb_u16 resource_pool_end_segment; /* GS:0x0A6A */
 extern volatile bloodprg_resource_index_entry resource_index[]; /* DS:0x1FB5 */
@@ -68,6 +76,8 @@ cb_u32 CB_FAR resource_file_load(const volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
 void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */
+bloodprg_resource_allocation_result CB_FAR resource_allocate(
+        cb_u16 handle, cb_u32 byte_count); /* 0x04B9:0x0000 */
 bloodprg_resource_resolve_result CB_FAR resource_handle_resolve(
         cb_u16 handle); /* 0x04B9:0x0190 */
 cb_u32 CB_FAR resource_get_field4(cb_u16 handle); /* 0x04B9:0x01AC */
@@ -93,5 +103,6 @@ int CB_NEAR cb_dos_create_game_file(
 cb_u16 CB_NEAR cb_dos_write(cb_u16 handle,
         const volatile cb_u8 CB_FAR *source, cb_u16 byte_count);
 int CB_NEAR resource_switch(cb_u16 resource_id); /* 0x009F8E */
+void CB_FAR cb_resource_allocation_failure(cb_u16 error_code);
 
 #endif

@@ -571,6 +571,29 @@ emits 58 instructions. The natural function uses one scalar byte-copy loop. The
 binary instead splits rows by source alignment and width remainder, then uses
 four specialized combinations of `REP MOVSD` and `REP MOVSB`.
 
+Resource allocator `0x005190` has eight direct vectors. They prove loaded-handle
+reuse, 16-byte rounding, zero-size allocation, signed-negative size comparison,
+the three result states, and both ordinary and special-resource destination
+pointers. The special path preserves a non-obvious assembly alias: after DS is
+changed to the new resource segment, the shared ready tail marks and resolves
+the entry at `DS:(handle * 8)`, not the original FS handle-table entry.
+
+The allocator scans the FS resident list for a literal `0xFFFF`, gathers
+unlocked candidates newest-first into the adjacent eviction list, and accepts
+eviction only when the wrapped signed deficit becomes strictly negative. An
+exact deficit of zero calls the fatal allocation boundary and returns `-1`.
+Successful eviction runs the real recovered `0x00529C` compactor before writing
+the new table record, resident terminator, free-byte count, and pool-end segment.
+One vector removes two resources around a locked middle entry and verifies the
+resulting 32-byte physical compaction.
+
+Open Watcom compiles the actual typed candidate warning-free; `-3 -ox -mm`
+emits 171 instructions/492 bytes versus 91/248 original. Natural C uses a
+structured `{status,destination}` result and an explicit byte-count argument.
+Binary replacement therefore needs a narrow AX/EBP input and AX/DS:SI output
+adapter plus FS/GS placement. No allocator logic is represented as register or
+memory emulation.
+
 Resource-release gate `0x005288` has six patched-callee direct vectors. They
 prove clear, unrelated, individual, and combined loaded-flag paths, 16-bit
 `handle * 8` wrap, AX propagation, read-only handle-table access, full register

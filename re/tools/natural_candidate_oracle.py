@@ -8804,6 +8804,398 @@ def resource_release_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_allocate_vectors() -> list[dict[str, object]]:
+    entry = 0x5190
+    expected_hash = "8a3cab21e7ae6a9c952f5a78826d986db329184368f10b612abe98b79fe14d24"
+    if hashlib.sha256(EXE[entry : entry + 248]).hexdigest() != expected_hash:
+        raise AssertionError("0x5190: recovered 248-byte body changed")
+
+    cases = [
+        {
+            "name": "reuse_loaded_unlocked",
+            "handle": 5,
+            "requested": 0x23,
+            "free": 0x100,
+            "pool_end": 0x6004,
+            "residents": [5],
+            "entries": {5: (0x6000, 0x0001, 0x40)},
+        },
+        {
+            "name": "allocate_rounds_up",
+            "handle": 10,
+            "requested": 0x21,
+            "free": 0x100,
+            "pool_end": 0x6010,
+            "residents": [1, 2],
+            "entries": {
+                1: (0x6000, 0x0001, 0x80),
+                2: (0x6008, 0x0003, 0x80),
+                10: (0xA5A5, 0xA500, 0xDEADBEEF),
+            },
+        },
+        {
+            "name": "allocate_zero_size",
+            "handle": 10,
+            "requested": 0,
+            "free": 0,
+            "pool_end": 0x6000,
+            "residents": [],
+            "entries": {10: (0xA5A5, 0x0000, 0xDEADBEEF)},
+        },
+        {
+            "name": "special_resource_returns_ready",
+            "handle": 10,
+            "requested": 0x11,
+            "free": 0x40,
+            "pool_end": 0x6000,
+            "residents": [],
+            "entries": {10: (0xA5A5, 0x0004, 0xDEADBEEF)},
+        },
+        {
+            "name": "signed_negative_size_allocates",
+            "handle": 10,
+            "requested": 0x80000001,
+            "free": 0x20,
+            "pool_end": 0x6000,
+            "residents": [],
+            "entries": {10: (0xA5A5, 0x0000, 0xDEADBEEF)},
+        },
+        {
+            "name": "exact_eviction_deficit_fails",
+            "handle": 10,
+            "requested": 0x40,
+            "free": 0x10,
+            "pool_end": 0x6003,
+            "residents": [1],
+            "entries": {
+                1: (0x6000, 0x0001, 0x30),
+                10: (0xA5A5, 0x0000, 0xDEADBEEF),
+            },
+        },
+        {
+            "name": "protected_resource_cannot_evict",
+            "handle": 10,
+            "requested": 0x40,
+            "free": 0,
+            "pool_end": 0x6008,
+            "residents": [1],
+            "entries": {
+                1: (0x6000, 0x0003, 0x80),
+                10: (0xA5A5, 0x0000, 0xDEADBEEF),
+            },
+        },
+        {
+            "name": "reverse_eviction_compacts_and_allocates",
+            "handle": 10,
+            "requested": 0x70,
+            "free": 0x10,
+            "pool_end": 0x6009,
+            "residents": [1, 2, 3],
+            "entries": {
+                1: (0x6000, 0x0001, 0x40),
+                2: (0x6004, 0x0003, 0x20),
+                3: (0x6006, 0x0001, 0x30),
+                10: (0xA5A5, 0x0000, 0xDEADBEEF),
+            },
+        },
+    ]
+    table_segment = 0x3800
+    state_segment = 0x2C00
+    pool_base_segment = 0x6000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    vectors = []
+
+    def signed32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        handle = int(case["handle"])
+        requested = int(case["requested"])
+        free_bytes = int(case["free"])
+        pool_end = int(case["pool_end"])
+        residents = [int(value) for value in case["residents"]]
+        entries = {
+            int(entry_handle): [int(value) for value in values]
+            for entry_handle, values in case["entries"].items()
+        }
+        table = bytearray(
+            (index * 17 + case_index * 29 + 5) & 0xFF
+            for index in range(0x0C20)
+        )
+        for entry_handle, values in entries.items():
+            struct.pack_into("<HHI", table, entry_handle * 8, *values)
+        for position, resident in enumerate([*residents, 0xFFFF]):
+            struct.pack_into("<H", table, 0x0800 + position * 2, resident)
+        initial_table = bytes(table)
+        pool = bytearray(
+            (index * 31 + case_index * 23 + 9) & 0xFF
+            for index in range(0x5000)
+        )
+        expected_pool = bytearray(pool)
+        expected_table = bytearray(table)
+        expected_entries = {key: list(value) for key, value in entries.items()}
+        expected_residents = list(residents)
+        expected_evictions = []
+        expected_failure = False
+        expected_status = -1
+        expected_segment = None
+        expected_free = free_bytes
+        expected_pool_end = pool_end
+        rounded = (requested + 15) & 0xFFFFFFF0
+
+        target = expected_entries[handle]
+        if target[1] & 3:
+            target[1] |= 2
+            expected_status = 1
+            expected_segment = target[0]
+        else:
+            if signed32(rounded) > signed32(expected_free):
+                deficit = (rounded - expected_free) & 0xFFFFFFFF
+                for resident in reversed(expected_residents):
+                    resident_entry = expected_entries[resident]
+                    if resident_entry[1] & 2:
+                        continue
+                    expected_evictions.append(resident)
+                    deficit = (deficit - resident_entry[2]) & 0xFFFFFFFF
+                    if signed32(deficit) <= 0:
+                        break
+                if signed32(deficit) >= 0:
+                    expected_failure = True
+                else:
+                    for evicted in expected_evictions:
+                        position = expected_residents.index(evicted)
+                        released = expected_entries[evicted]
+                        released_segment, released_flags, released_size = released
+                        paragraphs = (released_size >> 4) & 0xFFFF
+                        released[1] = released_flags & 0xFFFC
+                        expected_free = (expected_free + released_size) & 0xFFFFFFFF
+                        expected_pool_end = (expected_pool_end - paragraphs) & 0xFFFF
+                        following = expected_residents[position + 1 :]
+                        moved_bytes = 0
+                        for shifted in following:
+                            shifted_entry = expected_entries[shifted]
+                            shifted_entry[0] = (shifted_entry[0] - paragraphs) & 0xFFFF
+                            moved_bytes = (moved_bytes + shifted_entry[2]) & 0xFFFFFFFF
+                        if moved_bytes:
+                            source_index = (
+                                (released_segment + paragraphs - pool_base_segment)
+                                * 16
+                            )
+                            destination_index = (
+                                (released_segment - pool_base_segment) * 16
+                            )
+                            payload = bytes(
+                                expected_pool[
+                                    source_index : source_index + moved_bytes
+                                ]
+                            )
+                            expected_pool[
+                                destination_index : destination_index + moved_bytes
+                            ] = payload
+                        del expected_residents[position]
+
+            if not expected_failure:
+                target = expected_entries[handle]
+                target[0] = expected_pool_end
+                target[1] |= 3
+                target[2] = rounded
+                expected_free = (expected_free - rounded) & 0xFFFFFFFF
+                expected_pool_end = (
+                    expected_pool_end + ((rounded >> 4) & 0xFFFF)
+                ) & 0xFFFF
+                expected_residents.append(handle)
+                expected_segment = target[0]
+                expected_status = 1 if target[1] & 0x000C else 0
+                if expected_status == 1:
+                    special_offset = (
+                        (target[0] - pool_base_segment) * 16 + handle * 8
+                    )
+                    special_segment, special_flags = struct.unpack_from(
+                        "<HH", expected_pool, special_offset
+                    )
+                    struct.pack_into(
+                        "<H", expected_pool, special_offset + 2,
+                        special_flags | 2,
+                    )
+                    expected_segment = special_segment
+
+        struct.pack_into("<H", expected_table, 0x0C00, handle)
+        struct.pack_into("<H", expected_table, 0x0C02, (handle * 8) & 0xFFFF)
+        for entry_handle, values in expected_entries.items():
+            struct.pack_into("<HHI", expected_table, entry_handle * 8, *values)
+        for position, resident in enumerate([*expected_residents, 0xFFFF]):
+            struct.pack_into("<H", expected_table, 0x0800 + position * 2, resident)
+        if signed32(rounded) > signed32(free_bytes):
+            for position, evicted in enumerate(expected_evictions):
+                struct.pack_into("<H", expected_table, 0x0A00 + position * 2, evicted)
+            struct.pack_into(
+                "<H", expected_table, 0x0A00 + len(expected_evictions) * 2, 0xFFFF
+            )
+
+        initial = {
+            "eax": 0xA1A10000 | handle,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": requested,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": 0x2800,
+            "fs": table_segment,
+            "gs": state_segment,
+            "ss": stack_segment,
+            "flags": 0x0293,
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        failure_calls = []
+        free_calls = []
+        memmove_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x0775:
+                failure_calls.append(machine.reg_read(UC_X86_REG_AX))
+            elif address == 0x529C:
+                free_calls.append(machine.reg_read(UC_X86_REG_AX))
+            elif address == 0x5302:
+                byte_count = machine.reg_read(UC_X86_REG_EAX)
+                source_segment = machine.reg_read(UC_X86_REG_DS)
+                source_offset = machine.reg_read(UC_X86_REG_SI)
+                destination_segment = machine.reg_read(UC_X86_REG_ES)
+                destination_offset = machine.reg_read(UC_X86_REG_DI)
+                memmove_calls.append(
+                    {
+                        "byte_count": byte_count,
+                        "source": [source_segment, source_offset],
+                        "destination": [destination_segment, destination_offset],
+                    }
+                )
+                payload = bytes(
+                    machine.mem_read(
+                        source_segment * 16 + source_offset, byte_count
+                    )
+                )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset, payload
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x0775, b"\xcb"),
+                (0, 0x5302, b"\x90" * 5),
+                (table_segment, 0, initial_table),
+                (state_segment, 0x0A46, struct.pack("<I", free_bytes)),
+                (state_segment, 0x0A6A, struct.pack("<H", pool_end)),
+                (pool_base_segment, 0, bytes(pool)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=200000,
+        )
+
+        actual_table = bytes(machine.mem_read(table_segment * 16, len(table)))
+        if actual_table != bytes(expected_table):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_table, expected_table, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x5190 {name}: table differs at {mismatch:#x}: "
+                f"actual={actual_table[mismatch]:#x}, "
+                f"expected={expected_table[mismatch]:#x}"
+            )
+        actual_free = struct.unpack(
+            "<I", machine.mem_read(state_segment * 16 + 0x0A46, 4)
+        )[0]
+        actual_pool_end = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x0A6A, 2)
+        )[0]
+        if actual_free != expected_free or actual_pool_end != expected_pool_end:
+            raise AssertionError(
+                f"0x5190 {name}: accounting={actual_free:#x}/{actual_pool_end:#x}, "
+                f"expected={expected_free:#x}/{expected_pool_end:#x}"
+            )
+        actual_pool = bytes(machine.mem_read(pool_base_segment * 16, len(pool)))
+        if actual_pool != bytes(expected_pool):
+            raise AssertionError(f"0x5190 {name}: compacted pool differs")
+        if failure_calls != ([2] if expected_failure else []):
+            raise AssertionError(
+                f"0x5190 {name}: failure calls={failure_calls}, "
+                f"expected={([2] if expected_failure else [])}"
+            )
+        if free_calls != ([] if expected_failure else expected_evictions):
+            raise AssertionError(
+                f"0x5190 {name}: free calls={free_calls}, "
+                f"expected={([] if expected_failure else expected_evictions)}"
+            )
+
+        expected_registers = {
+            register: value
+            for register, value in initial.items()
+            if register not in ("eax", "esi", "ds", "flags")
+        }
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x5190 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        expected_ax = 0xFFFF if expected_failure else expected_status & 0xFFFF
+        actual_eax = machine.reg_read(UC_X86_REG_EAX)
+        if actual_eax != (initial["eax"] & 0xFFFF0000) | expected_ax:
+            raise AssertionError(
+                f"0x5190 {name}: eax={actual_eax:#x}, expected low={expected_ax:#x}"
+            )
+        if not expected_failure:
+            if machine.reg_read(UC_X86_REG_DS) != expected_segment:
+                raise AssertionError(
+                    f"0x5190 {name}: DS={machine.reg_read(UC_X86_REG_DS):#x}, "
+                    f"expected={expected_segment:#x}"
+                )
+            if machine.reg_read(UC_X86_REG_SI) != 0:
+                raise AssertionError(f"0x5190 {name}: SI result is not zero")
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x5190 {name}: far return CS mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x5190 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "handle": handle,
+                "requested_bytes": requested,
+                "rounded_bytes": rounded,
+                "status": expected_status,
+                "destination_segment": expected_segment,
+                "resident_before": residents,
+                "resident_after": expected_residents,
+                "evictions": expected_evictions,
+                "allocation_failure": expected_failure,
+                "free_bytes_after": expected_free,
+                "pool_end_after": expected_pool_end,
+                "memmove_calls": memmove_calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_free_inner_vectors() -> list[dict[str, object]]:
     table_segment = 0x3800
     state_segment = 0x2C00
@@ -33383,6 +33775,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_509d_natural.json",
         dirty_rects_copy_secondary_to_primary_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5190_natural.json",
+        resource_allocate_vectors(),
         args.check,
     )
     update_vector(

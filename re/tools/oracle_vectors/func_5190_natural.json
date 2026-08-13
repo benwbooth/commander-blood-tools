@@ -1,0 +1,171 @@
+[
+  {
+    "name": "reuse_loaded_unlocked",
+    "handle": 5,
+    "requested_bytes": 35,
+    "rounded_bytes": 48,
+    "status": 1,
+    "destination_segment": 24576,
+    "resident_before": [
+      5
+    ],
+    "resident_after": [
+      5
+    ],
+    "evictions": [],
+    "allocation_failure": false,
+    "free_bytes_after": 256,
+    "pool_end_after": 24580,
+    "memmove_calls": []
+  },
+  {
+    "name": "allocate_rounds_up",
+    "handle": 10,
+    "requested_bytes": 33,
+    "rounded_bytes": 48,
+    "status": 0,
+    "destination_segment": 24592,
+    "resident_before": [
+      1,
+      2
+    ],
+    "resident_after": [
+      1,
+      2,
+      10
+    ],
+    "evictions": [],
+    "allocation_failure": false,
+    "free_bytes_after": 208,
+    "pool_end_after": 24595,
+    "memmove_calls": []
+  },
+  {
+    "name": "allocate_zero_size",
+    "handle": 10,
+    "requested_bytes": 0,
+    "rounded_bytes": 0,
+    "status": 0,
+    "destination_segment": 24576,
+    "resident_before": [],
+    "resident_after": [
+      10
+    ],
+    "evictions": [],
+    "allocation_failure": false,
+    "free_bytes_after": 0,
+    "pool_end_after": 24576,
+    "memmove_calls": []
+  },
+  {
+    "name": "special_resource_returns_ready",
+    "handle": 10,
+    "requested_bytes": 17,
+    "rounded_bytes": 32,
+    "status": 1,
+    "destination_segment": 7678,
+    "resident_before": [],
+    "resident_after": [
+      10
+    ],
+    "evictions": [],
+    "allocation_failure": false,
+    "free_bytes_after": 32,
+    "pool_end_after": 24578,
+    "memmove_calls": []
+  },
+  {
+    "name": "signed_negative_size_allocates",
+    "handle": 10,
+    "requested_bytes": 2147483649,
+    "rounded_bytes": 2147483664,
+    "status": 0,
+    "destination_segment": 24576,
+    "resident_before": [],
+    "resident_after": [
+      10
+    ],
+    "evictions": [],
+    "allocation_failure": false,
+    "free_bytes_after": 2147483664,
+    "pool_end_after": 24577,
+    "memmove_calls": []
+  },
+  {
+    "name": "exact_eviction_deficit_fails",
+    "handle": 10,
+    "requested_bytes": 64,
+    "rounded_bytes": 64,
+    "status": -1,
+    "destination_segment": null,
+    "resident_before": [
+      1
+    ],
+    "resident_after": [
+      1
+    ],
+    "evictions": [
+      1
+    ],
+    "allocation_failure": true,
+    "free_bytes_after": 16,
+    "pool_end_after": 24579,
+    "memmove_calls": []
+  },
+  {
+    "name": "protected_resource_cannot_evict",
+    "handle": 10,
+    "requested_bytes": 64,
+    "rounded_bytes": 64,
+    "status": -1,
+    "destination_segment": null,
+    "resident_before": [
+      1
+    ],
+    "resident_after": [
+      1
+    ],
+    "evictions": [],
+    "allocation_failure": true,
+    "free_bytes_after": 0,
+    "pool_end_after": 24584,
+    "memmove_calls": []
+  },
+  {
+    "name": "reverse_eviction_compacts_and_allocates",
+    "handle": 10,
+    "requested_bytes": 112,
+    "rounded_bytes": 112,
+    "status": 0,
+    "destination_segment": 24578,
+    "resident_before": [
+      1,
+      2,
+      3
+    ],
+    "resident_after": [
+      2,
+      10
+    ],
+    "evictions": [
+      3,
+      1
+    ],
+    "allocation_failure": false,
+    "free_bytes_after": 16,
+    "pool_end_after": 24585,
+    "memmove_calls": [
+      {
+        "byte_count": 32,
+        "source": [
+          24580,
+          0
+        ],
+        "destination": [
+          24576,
+          0
+        ]
+      }
+    ]
+  }
+]
