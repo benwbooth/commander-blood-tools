@@ -13,7 +13,7 @@ bloodprg_layout_offset_result CB_FAR layout_offset_calc(cb_u16 columns,
     x = (cb_u16)((320u - width) >> 1);
     y = (cb_u16)((200u - height) >> 1);
 
-    blit_coord_guard_c(0, x, y, width, height);
+    framebuffer_rect_fill(0, x, y, width, height);
     composite_draw_a(0x0fu, x, y, width, height);
 
     return ((cb_u32)(cb_u16)(y + 2u) << 16)

@@ -12085,6 +12085,613 @@ def framebuffer_noise_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def framebuffer_rect_fill_vectors() -> list[dict[str, object]]:
+    entry = 0x3C6C
+    expected_hash = "7fbccd05a4ce5360379a0050d0e0bdecbcc40f7f6e41958f18b27d866078349a"
+    if hashlib.sha256(EXE[entry : entry + 271]).hexdigest() != expected_hash:
+        raise AssertionError("0x3c6c: recovered 271-byte body changed")
+
+    cases = [
+        {
+            "name": "zero_width_rejected",
+            "color": 0xEF,
+            "x": 10,
+            "y": 10,
+            "width": 0,
+            "height": 5,
+        },
+        {
+            "name": "negative_width_rejected",
+            "color": 0xEE,
+            "x": 10,
+            "y": 10,
+            "width": 0x8000,
+            "height": 5,
+        },
+        {
+            "name": "zero_height_rejected",
+            "color": 0xED,
+            "x": 10,
+            "y": 10,
+            "width": 5,
+            "height": 0,
+        },
+        {
+            "name": "negative_height_rejected",
+            "color": 0xEC,
+            "x": 10,
+            "y": 10,
+            "width": 5,
+            "height": 0x8000,
+        },
+        {
+            "name": "fully_left_clipped_rejected",
+            "color": 0xEB,
+            "x": 5,
+            "y": 10,
+            "width": 5,
+            "height": 3,
+            "left": 10,
+        },
+        {
+            "name": "left_clipped",
+            "color": 0xDA,
+            "x": 5,
+            "y": 10,
+            "width": 8,
+            "height": 3,
+            "left": 10,
+        },
+        {
+            "name": "right_endpoint_exact",
+            "color": 0xC9,
+            "x": 14,
+            "y": 11,
+            "width": 6,
+            "height": 3,
+            "right": 20,
+        },
+        {
+            "name": "right_clipped",
+            "color": 0xB8,
+            "x": 17,
+            "y": 12,
+            "width": 8,
+            "height": 3,
+            "right": 20,
+        },
+        {
+            "name": "fully_right_clipped_rejected",
+            "color": 0xA7,
+            "x": 20,
+            "y": 12,
+            "width": 3,
+            "height": 3,
+            "right": 20,
+        },
+        {
+            "name": "fully_top_clipped_rejected",
+            "color": 0x96,
+            "x": 10,
+            "y": 5,
+            "width": 5,
+            "height": 5,
+            "top": 10,
+        },
+        {
+            "name": "top_clipped",
+            "color": 0x85,
+            "x": 10,
+            "y": 5,
+            "width": 5,
+            "height": 8,
+            "top": 10,
+        },
+        {
+            "name": "bottom_endpoint_exact",
+            "color": 0x74,
+            "x": 11,
+            "y": 14,
+            "width": 6,
+            "height": 6,
+            "bottom": 20,
+        },
+        {
+            "name": "bottom_clipped",
+            "color": 0x63,
+            "x": 12,
+            "y": 17,
+            "width": 8,
+            "height": 8,
+            "bottom": 20,
+        },
+        {
+            "name": "fully_bottom_clipped_rejected",
+            "color": 0x52,
+            "x": 13,
+            "y": 20,
+            "width": 3,
+            "height": 3,
+            "bottom": 20,
+        },
+        {
+            "name": "small_byte_only_width_three",
+            "color": 0x41,
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 2,
+        },
+        {
+            "name": "adjusted_dword_zero_width_four",
+            "color": 0x30,
+            "x": 1,
+            "y": 2,
+            "width": 4,
+            "height": 2,
+        },
+        {
+            "name": "leading_dwords_and_trailing",
+            "color": 0x2F,
+            "x": 1,
+            "y": 2,
+            "width": 11,
+            "height": 2,
+        },
+        {
+            "name": "leading_and_dwords",
+            "color": 0x1E,
+            "x": 2,
+            "y": 3,
+            "width": 10,
+            "height": 2,
+        },
+        {
+            "name": "dwords_and_trailing",
+            "color": 0x0D,
+            "x": 4,
+            "y": 4,
+            "width": 10,
+            "height": 2,
+        },
+        {
+            "name": "dwords_only_color_zero",
+            "color": 0,
+            "x": 4,
+            "y": 5,
+            "width": 8,
+            "height": 2,
+        },
+        {
+            "name": "full_screen",
+            "color": 0xE0,
+            "x": 0,
+            "y": 0,
+            "width": 320,
+            "height": 200,
+        },
+        {
+            "name": "backward_direction_all_components",
+            "color": 0xEF,
+            "x": 1,
+            "y": 2,
+            "width": 11,
+            "height": 2,
+            "direction_flag": True,
+        },
+        {
+            "name": "output_offset_wrap",
+            "color": 0x91,
+            "x": 1,
+            "y": 0,
+            "width": 3,
+            "height": 2,
+            "display_offset": 0xFFFE,
+        },
+        {
+            "name": "height_low_byte_zero_draws_256_rows",
+            "color": 0x82,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 0x0100,
+            "bottom": 0x0200,
+        },
+        {
+            "name": "full_word_coordinates_and_row_wrap",
+            "color": 0x73,
+            "x": 0x8120,
+            "y": 0x8123,
+            "width": 8,
+            "height": 8,
+            "left": 0x8100,
+            "right": 0x8200,
+            "top": 0x8100,
+            "bottom": 0x8200,
+            "display_offset": 0xFFF0,
+        },
+        {
+            "name": "right_signed_compare_skips_positive_wrapped_delta",
+            "color": 0x64,
+            "x": 0x7FFF,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "right": 0x7FFF,
+        },
+        {
+            "name": "bottom_signed_compare_skips_positive_wrapped_delta",
+            "color": 0x55,
+            "x": 0,
+            "y": 0x7FFF,
+            "width": 1,
+            "height": 1,
+            "bottom": 0x7FFF,
+        },
+    ]
+
+    data_segment = 0x4000
+    game_segment = 0x6000
+    output_segment = 0x7000
+    trap_output_segment = 0x8000
+    stack_segment = 0xA000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("c128d239e34af45b")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic16_flags(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x8000) != 0,
+            "of": False,
+        }
+
+    def is_jle(flags: dict[str, bool]) -> bool:
+        return flags["zf"] or flags["sf"] != flags["of"]
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        color = int(case["color"])
+        x = int(case["x"])
+        y = int(case["y"])
+        width = int(case["width"])
+        height = int(case["height"])
+        left = int(case.get("left", 0))
+        right = int(case.get("right", 320))
+        top = int(case.get("top", 0))
+        bottom = int(case.get("bottom", 200))
+        display_offset = int(case.get("display_offset", 0x0300))
+        direction_flag = bool(case.get("direction_flag", False))
+        direction = -1 if direction_flag else 1
+
+        data_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        data_memory[0x5221:0x5225] = struct.pack(
+            "<HH", 0x1111, trap_output_segment
+        )
+        data_memory[0x5235:0x523D] = struct.pack(
+            "<4H", 0x7000, 0x7001, 0x7002, 0x7003
+        )
+        initial_data = bytes(data_memory)
+
+        game_memory = bytearray(
+            (index * 31 + case_index * 7 + 0x51) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory[0x5221:0x5225] = struct.pack(
+            "<HH", display_offset, output_segment
+        )
+        game_memory[0x5235:0x523D] = struct.pack(
+            "<4H", left, right, top, bottom
+        )
+        initial_game = bytes(game_memory)
+
+        stack_memory = bytearray(
+            (index * 29 + case_index * 31 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        output_seed = bytes(
+            (index * 37 + case_index * 41 + 0x2B) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+        trap_output_seed = bytes(
+            (index * 43 + case_index * 47 + 0x19) & 0xFF
+            for index in range(0x10000)
+        )
+
+        clipped_x = x
+        clipped_y = y
+        clipped_width = width
+        clipped_height = height
+        rejected = False
+        rejected_at = ""
+        clip_amounts = [0, 0, 0, 0]
+        fill_path = "rejected"
+        rows_drawn = 0
+        packed_path = False
+        expected_flags = logic16_flags(clipped_width)
+
+        if is_jle(expected_flags):
+            rejected = True
+            rejected_at = "width"
+        else:
+            expected_flags = logic16_flags(clipped_height)
+            if is_jle(expected_flags):
+                rejected = True
+                rejected_at = "height"
+
+        if not rejected:
+            left_delta = (clipped_x - left) & 0xFFFF
+            expected_flags = sub16_flags(clipped_x, left)
+            if left_delta & 0x8000:
+                clip_amounts[0] = (-left_delta) & 0xFFFF
+                original_width = clipped_width
+                clipped_width = (clipped_width + left_delta) & 0xFFFF
+                expected_flags = add16_flags(original_width, left_delta)
+                if is_jle(expected_flags):
+                    rejected = True
+                    rejected_at = "left"
+                else:
+                    clipped_x = left
+
+        if not rejected:
+            span_end = (clipped_x + clipped_width) & 0xFFFF
+            right_delta = (span_end - right) & 0xFFFF
+            expected_flags = sub16_flags(span_end, right)
+            if not is_jle(expected_flags):
+                clip_amounts[1] = right_delta
+                original_width = clipped_width
+                clipped_width = (clipped_width - right_delta) & 0xFFFF
+                expected_flags = sub16_flags(original_width, right_delta)
+                if is_jle(expected_flags):
+                    rejected = True
+                    rejected_at = "right"
+
+        if not rejected:
+            top_delta = (clipped_y - top) & 0xFFFF
+            expected_flags = sub16_flags(clipped_y, top)
+            if top_delta & 0x8000:
+                clip_amounts[2] = (-top_delta) & 0xFFFF
+                original_height = clipped_height
+                clipped_height = (clipped_height + top_delta) & 0xFFFF
+                expected_flags = add16_flags(original_height, top_delta)
+                if is_jle(expected_flags):
+                    rejected = True
+                    rejected_at = "top"
+                else:
+                    clipped_y = top
+
+        if not rejected:
+            span_end = (clipped_y + clipped_height) & 0xFFFF
+            bottom_delta = (span_end - bottom) & 0xFFFF
+            expected_flags = sub16_flags(span_end, bottom)
+            if not is_jle(expected_flags):
+                clip_amounts[3] = bottom_delta
+                original_height = clipped_height
+                clipped_height = (clipped_height - bottom_delta) & 0xFFFF
+                expected_flags = sub16_flags(original_height, bottom_delta)
+                if is_jle(expected_flags):
+                    rejected = True
+                    rejected_at = "bottom"
+
+        input_ax = (((0x40 + case_index * 7) & 0xFF) << 8) | color
+        initial_eax = 0xA1A10000 | input_ax
+        expected_eax = initial_eax
+
+        if not rejected:
+            row_offset = (
+                ((clipped_y << 8) | (clipped_y >> 8)) + (clipped_y << 6)
+            ) & 0xFFFF
+            pixel = (display_offset + row_offset + clipped_x) & 0xFFFF
+            row_skip = (320 - clipped_width) & 0xFFFF
+            start_mod = pixel & 3
+            remainder = clipped_width & 3
+            quotient = clipped_width >> 2
+            quotient_high = quotient & 0xFF00
+
+            byte_counts: list[int]
+            if quotient == 0:
+                fill_path = "byte_only_small"
+                byte_counts = [remainder]
+                dword_rep_count = 0
+            else:
+                borrow = int(remainder < start_mod)
+                adjusted_low = ((quotient & 0xFF) - borrow) & 0xFF
+                difference = (remainder - start_mod) & 0xFF
+                if adjusted_low == 0:
+                    fill_path = "byte_only_adjusted"
+                    byte_counts = [
+                        quotient_high | (((difference & 3) + start_mod) & 0xFF)
+                    ]
+                    dword_rep_count = 0
+                else:
+                    trailing = difference & 3
+                    packed_path = True
+                    dword_rep_count = quotient_high | adjusted_low
+                    if start_mod and trailing:
+                        fill_path = "leading_dwords_trailing"
+                    elif start_mod:
+                        fill_path = "leading_dwords"
+                    elif trailing:
+                        fill_path = "dwords_trailing"
+                    else:
+                        fill_path = "dwords_only"
+                    byte_counts = [
+                        quotient_high | start_mod,
+                        quotient_high | trailing,
+                    ]
+                    repeated_word = color | (color << 8)
+                    expected_eax = (repeated_word << 16) | input_ax
+
+            rows_drawn = clipped_height & 0xFF
+            if rows_drawn == 0:
+                rows_drawn = 256
+            last_row_add_left = pixel
+
+            def write_bytes(cursor: int, count: int) -> int:
+                for _ in range(count):
+                    output_model[cursor] = color
+                    cursor = (cursor + direction) & 0xFFFF
+                return cursor
+
+            def write_dwords(cursor: int, count: int) -> int:
+                for _ in range(count):
+                    for byte_index in range(4):
+                        output_model[(cursor + byte_index) & 0xFFFF] = color
+                    cursor = (cursor + 4 * direction) & 0xFFFF
+                return cursor
+
+            for _ in range(rows_drawn):
+                if packed_path:
+                    pixel = write_bytes(pixel, byte_counts[0])
+                    pixel = write_dwords(pixel, dword_rep_count)
+                    pixel = write_bytes(pixel, byte_counts[1])
+                else:
+                    pixel = write_bytes(pixel, byte_counts[0])
+                last_row_add_left = pixel
+                pixel = (pixel + row_skip) & 0xFFFF
+
+            add_flags = add16_flags(last_row_add_left, row_skip)
+            expected_flags = {
+                "cf": add_flags["cf"],
+                "pf": True,
+                "af": False,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+
+        initial = {
+            "eax": initial_eax,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C30000 | y,
+            "edx": 0xD4D40000 | width,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97970000 | height,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, initial_data),
+                (game_segment, 0, initial_game),
+                (output_segment, 0, output_seed),
+                (trap_output_segment, 0, trap_output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            instruction_count=1000000,
+        )
+
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3c6c {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != initial_data:
+            raise AssertionError(f"0x3c6c {name}: DS decoy changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != initial_game:
+            raise AssertionError(f"0x3c6c {name}: GS data changed")
+        if bytes(
+            machine.mem_read(trap_output_segment * 16, 0x10000)
+        ) != trap_output_seed:
+            raise AssertionError(f"0x3c6c {name}: DS display decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = expected_eax
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3c6c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3c6c {name}: far return CS differs")
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3c6c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x3c6c {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3c6c {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "color": color,
+                "input_rect": [x, y, width, height],
+                "clip": [left, right, top, bottom],
+                "rejected": rejected,
+                "rejected_at": rejected_at,
+                "clipped_rect": [
+                    clipped_x,
+                    clipped_y,
+                    clipped_width,
+                    clipped_height,
+                ],
+                "clip_amounts": clip_amounts,
+                "fill_path": fill_path,
+                "rows_drawn": rows_drawn,
+                "packed_color_path": packed_path,
+                "display_offset": display_offset,
+                "direction_flag": direction_flag,
+                "eax_after": expected_eax,
+                "defined_flags": expected_flags,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def framebuffer_rect_palette_remap_vectors() -> list[dict[str, object]]:
     entry = 0x339E
     expected_hash = "3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac"
@@ -44193,6 +44800,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3b85_natural.json",
         framebuffer_noise_rect_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3c6c_natural.json",
+        framebuffer_rect_fill_vectors(),
         args.check,
     )
     update_vector(

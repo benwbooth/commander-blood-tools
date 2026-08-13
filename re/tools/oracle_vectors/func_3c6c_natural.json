@@ -1,0 +1,1213 @@
+[
+  {
+    "name": "zero_width_rejected",
+    "color": 239,
+    "input_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711699695,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "negative_width_rejected",
+    "color": 238,
+    "input_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711701486,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "zero_height_rejected",
+    "color": 237,
+    "input_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711703277,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "negative_height_rejected",
+    "color": 236,
+    "input_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711705068,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "6895bb6cf9200b8d222cba70a7a45fdfac5c39f8c0aeba83f5feca101c2eef52"
+  },
+  {
+    "name": "fully_left_clipped_rejected",
+    "color": 235,
+    "input_rect": [
+      5,
+      10,
+      5,
+      3
+    ],
+    "clip": [
+      10,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "left",
+    "clipped_rect": [
+      5,
+      10,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711706859,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5789fc6de164d558e8d75c7e498b4d55000b46ba920f30a84ba1e25ec7532c83"
+  },
+  {
+    "name": "left_clipped",
+    "color": 218,
+    "input_rect": [
+      5,
+      10,
+      8,
+      3
+    ],
+    "clip": [
+      10,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 3,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711708634,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "599b9aa212c56f6902be9a95c58a30638903ffeaece17bb21ae3837bc056c499"
+  },
+  {
+    "name": "right_endpoint_exact",
+    "color": 201,
+    "input_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "leading_dwords",
+    "rows_drawn": 3,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 3385420489,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "d846e4f59f8ceff991d77c52e25639566a99e254837f6dc9438d5818083d7254"
+  },
+  {
+    "name": "right_clipped",
+    "color": 184,
+    "input_rect": [
+      17,
+      12,
+      8,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      17,
+      12,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      5,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 3,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711712184,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5980850290594500d4a295b1098271e56906463b32fc5e0e28a38159cb85bc2a"
+  },
+  {
+    "name": "fully_right_clipped_rejected",
+    "color": 167,
+    "input_rect": [
+      20,
+      12,
+      3,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "right",
+    "clipped_rect": [
+      20,
+      12,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      3,
+      0,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711713959,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f7594ae85813fe11fb346518c3a188ebb85c350b112f66e192f94bafa220a44c"
+  },
+  {
+    "name": "fully_top_clipped_rejected",
+    "color": 150,
+    "input_rect": [
+      10,
+      5,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      10,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "top",
+    "clipped_rect": [
+      10,
+      5,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711715734,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2a908039b8f9acf35f2e5a389d786fc4d7bad9a2abbf86ee61f0345b8f3f2320"
+  },
+  {
+    "name": "top_clipped",
+    "color": 133,
+    "input_rect": [
+      10,
+      5,
+      5,
+      8
+    ],
+    "clip": [
+      0,
+      320,
+      10,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "fill_path": "byte_only_adjusted",
+    "rows_drawn": 3,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711717509,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "284c2d7923969753883c17ecb72df169b4d50c9179948156d70466bb23fd8290"
+  },
+  {
+    "name": "bottom_endpoint_exact",
+    "color": 116,
+    "input_rect": [
+      11,
+      14,
+      6,
+      6
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      11,
+      14,
+      6,
+      6
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_adjusted",
+    "rows_drawn": 6,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711719284,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4eb39388e4874ffe11e1fdde98212884f02dc2ed394d9602d99ffa3a61c6fe22"
+  },
+  {
+    "name": "bottom_clipped",
+    "color": 99,
+    "input_rect": [
+      12,
+      17,
+      8,
+      8
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      12,
+      17,
+      8,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      5
+    ],
+    "fill_path": "dwords_only",
+    "rows_drawn": 3,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 1667470435,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "01a0bfd50cd0523abd736f3d61738091c8d5cd6f15ce7fe0ee240f81e43d4385"
+  },
+  {
+    "name": "fully_bottom_clipped_rejected",
+    "color": 82,
+    "input_rect": [
+      13,
+      20,
+      3,
+      3
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "bottom",
+    "clipped_rect": [
+      13,
+      20,
+      3,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      3
+    ],
+    "fill_path": "rejected",
+    "rows_drawn": 0,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711722834,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "a6a294e085ff6b4d4283abd4369e06b25eecea5eba4520dc56c4c2330599e186"
+  },
+  {
+    "name": "small_byte_only_width_three",
+    "color": 65,
+    "input_rect": [
+      3,
+      2,
+      3,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      3,
+      2,
+      3,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 2,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711724609,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "c062002e49dd59b89e5fb03e35aaf664601c2a04165cedabcb233104fd91dc21"
+  },
+  {
+    "name": "adjusted_dword_zero_width_four",
+    "color": 48,
+    "input_rect": [
+      1,
+      2,
+      4,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      1,
+      2,
+      4,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_adjusted",
+    "rows_drawn": 2,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711726384,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "453e3283861f811abd3c6483d87e0b0ba8b7df97c25e7abea6b78bbbb6637dd1"
+  },
+  {
+    "name": "leading_dwords_and_trailing",
+    "color": 47,
+    "input_rect": [
+      1,
+      2,
+      11,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      1,
+      2,
+      11,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "leading_dwords_trailing",
+    "rows_drawn": 2,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 791654447,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4ef17973bbd481aad822e688b772440090d936fdcc3567a218cdc1817231dfc4"
+  },
+  {
+    "name": "leading_and_dwords",
+    "color": 30,
+    "input_rect": [
+      2,
+      3,
+      10,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      2,
+      3,
+      10,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "leading_dwords",
+    "rows_drawn": 2,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 505329438,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "91bb88bf100176e652be5f28148e9111bbc38d899c48d20d963e7e3d9f4ef07c"
+  },
+  {
+    "name": "dwords_and_trailing",
+    "color": 13,
+    "input_rect": [
+      4,
+      4,
+      10,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      4,
+      4,
+      10,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "dwords_trailing",
+    "rows_drawn": 2,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 219004429,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "cbc36b09dcb8fa436f3ece37ca08bc06863e3c8f44943802638eec37b6aa17a4"
+  },
+  {
+    "name": "dwords_only_color_zero",
+    "color": 0,
+    "input_rect": [
+      4,
+      5,
+      8,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      4,
+      5,
+      8,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "dwords_only",
+    "rows_drawn": 2,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 50432,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2031f757264c5f73d48cd31ea36c618b28a332209235df02a296ca06243e1557"
+  },
+  {
+    "name": "full_screen",
+    "color": 224,
+    "input_rect": [
+      0,
+      0,
+      320,
+      200
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      0,
+      0,
+      320,
+      200
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "dwords_only",
+    "rows_drawn": 200,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 3772828896,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "55f3c3d7f2bb1b12af71236badd02655e289dac9f132cef123da402b45cb6d77"
+  },
+  {
+    "name": "backward_direction_all_components",
+    "color": 239,
+    "input_rect": [
+      1,
+      2,
+      11,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      1,
+      2,
+      11,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "leading_dwords_trailing",
+    "rows_drawn": 2,
+    "packed_color_path": true,
+    "display_offset": 768,
+    "direction_flag": true,
+    "eax_after": 4025471983,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5708bd0923635e36b7411bf3902118aa043a258117c975a799c697ffa0dc07f7"
+  },
+  {
+    "name": "output_offset_wrap",
+    "color": 145,
+    "input_rect": [
+      1,
+      0,
+      3,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      1,
+      0,
+      3,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 2,
+    "packed_color_path": false,
+    "display_offset": 65534,
+    "direction_flag": false,
+    "eax_after": 2711739025,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4c3998d69254fa8d396fe78e02436609cb7316275d96047e389cf1aa429ba24a"
+  },
+  {
+    "name": "height_low_byte_zero_draws_256_rows",
+    "color": 130,
+    "input_rect": [
+      0,
+      0,
+      1,
+      256
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      512
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      0,
+      0,
+      1,
+      256
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 256,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711740802,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2be8a7b5d51b8094a59a68c95e5f1c558083e5b2fe93ff48e8d49fbbc1b02885"
+  },
+  {
+    "name": "full_word_coordinates_and_row_wrap",
+    "color": 115,
+    "input_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip": [
+      33024,
+      33280,
+      33024,
+      33280
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "leading_dwords_trailing",
+    "rows_drawn": 8,
+    "packed_color_path": true,
+    "display_offset": 65520,
+    "direction_flag": false,
+    "eax_after": 1936975987,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "71cb95efc7b356002ee794e1ce9cb1576253120ec40dd04dd2742744342620be"
+  },
+  {
+    "name": "right_signed_compare_skips_positive_wrapped_delta",
+    "color": 100,
+    "input_rect": [
+      32767,
+      0,
+      1,
+      1
+    ],
+    "clip": [
+      0,
+      32767,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      32767,
+      0,
+      1,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 1,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711744356,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "01b80547355ae80dd504dbd3ac71d8a8e2c5f998e82d22d1d20b9cfd15023c9e"
+  },
+  {
+    "name": "bottom_signed_compare_skips_positive_wrapped_delta",
+    "color": 85,
+    "input_rect": [
+      0,
+      32767,
+      1,
+      1
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      32767
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      0,
+      32767,
+      1,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "fill_path": "byte_only_small",
+    "rows_drawn": 1,
+    "packed_color_path": false,
+    "display_offset": 768,
+    "direction_flag": false,
+    "eax_after": 2711746133,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "39eaf0c2f81752f5eafb617819c63774a02f5854d29d2732a3c09b57f0ab762b"
+  }
+]
