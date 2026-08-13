@@ -1,0 +1,556 @@
+[
+  {
+    "name": "complete_zero",
+    "total_steps": 0,
+    "initial_step": 0,
+    "result_step": 0,
+    "source_offset": 4608,
+    "target_offset": 8704,
+    "source": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "target": [
+      -10,
+      -20,
+      -30,
+      -40
+    ],
+    "active": false,
+    "interpolated_u16": null,
+    "helper_call": null,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "complete_six",
+    "total_steps": 6,
+    "initial_step": 6,
+    "result_step": 6,
+    "source_offset": 4864,
+    "target_offset": 8960,
+    "source": [
+      100,
+      80,
+      60,
+      40
+    ],
+    "target": [
+      20,
+      30,
+      40,
+      50
+    ],
+    "active": false,
+    "interpolated_u16": null,
+    "helper_call": null,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "first_step",
+    "total_steps": 4,
+    "initial_step": 0,
+    "result_step": 1,
+    "source_offset": 5120,
+    "target_offset": 9216,
+    "source": [
+      120,
+      80,
+      40,
+      20
+    ],
+    "target": [
+      100,
+      50,
+      32,
+      16
+    ],
+    "active": true,
+    "interpolated_u16": [
+      105,
+      57,
+      34,
+      17
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 105,
+      "cx": 57,
+      "dx": 34,
+      "bp": 17,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "divide_before_multiply",
+    "total_steps": 4,
+    "initial_step": 1,
+    "result_step": 2,
+    "source_offset": 5376,
+    "target_offset": 9472,
+    "source": [
+      17,
+      13,
+      41,
+      29
+    ],
+    "target": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "active": true,
+    "interpolated_u16": [
+      12,
+      18,
+      34,
+      36
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 12,
+      "cx": 18,
+      "dx": 34,
+      "bp": 36,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "final_active_step",
+    "total_steps": 6,
+    "initial_step": 5,
+    "result_step": 6,
+    "source_offset": 5632,
+    "target_offset": 9728,
+    "source": [
+      -40,
+      80,
+      -120,
+      160
+    ],
+    "target": [
+      -100,
+      200,
+      -300,
+      400
+    ],
+    "active": true,
+    "interpolated_u16": [
+      65496,
+      80,
+      65416,
+      160
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 65496,
+      "cx": 80,
+      "dx": 65416,
+      "bp": 160,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mixed_signed_rect",
+    "total_steps": 5,
+    "initial_step": 2,
+    "result_step": 3,
+    "source_offset": 5888,
+    "target_offset": 9984,
+    "source": [
+      -29500,
+      29500,
+      -901,
+      901
+    ],
+    "target": [
+      -30000,
+      30000,
+      -1234,
+      1234
+    ],
+    "active": true,
+    "interpolated_u16": [
+      35836,
+      29700,
+      64500,
+      1036
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 35836,
+      "cx": 29700,
+      "dx": 64500,
+      "bp": 1036,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "negative_total",
+    "total_steps": 254,
+    "initial_step": 1,
+    "result_step": 2,
+    "source_offset": 6144,
+    "target_offset": 10240,
+    "source": [
+      0,
+      0,
+      46,
+      -46
+    ],
+    "target": [
+      100,
+      -100,
+      300,
+      -300
+    ],
+    "active": true,
+    "interpolated_u16": [
+      200,
+      65336,
+      554,
+      64982
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 200,
+      "cx": 65336,
+      "dx": 554,
+      "bp": 64982,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "current_wrap",
+    "total_steps": 4,
+    "initial_step": 255,
+    "result_step": 0,
+    "source_offset": 6400,
+    "target_offset": 10496,
+    "source": [
+      50,
+      -50,
+      70,
+      -70
+    ],
+    "target": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "active": true,
+    "interpolated_u16": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 10,
+      "cx": 20,
+      "dx": 30,
+      "bp": 40,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "wrapped_delta",
+    "total_steps": 4,
+    "initial_step": 1,
+    "result_step": 2,
+    "source_offset": 6656,
+    "target_offset": 10752,
+    "source": [
+      -32760,
+      32760,
+      -32760,
+      32760
+    ],
+    "target": [
+      32760,
+      -32760,
+      32760,
+      -32760
+    ],
+    "active": true,
+    "interpolated_u16": [
+      32768,
+      32768,
+      32768,
+      32768
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 32768,
+      "cx": 32768,
+      "dx": 32768,
+      "bp": 32768,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "offset_wrap",
+    "total_steps": 3,
+    "initial_step": 1,
+    "result_step": 2,
+    "source_offset": 65530,
+    "target_offset": 65520,
+    "source": [
+      106,
+      -106,
+      209,
+      -209
+    ],
+    "target": [
+      100,
+      -100,
+      200,
+      -200
+    ],
+    "active": true,
+    "interpolated_u16": [
+      104,
+      65432,
+      206,
+      65330
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 104,
+      "cx": 65432,
+      "dx": 206,
+      "bp": 65330,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "quotient_edges",
+    "total_steps": 1,
+    "initial_step": 0,
+    "result_step": 1,
+    "source_offset": 7168,
+    "target_offset": 11264,
+    "source": [
+      -28,
+      227,
+      299,
+      -400
+    ],
+    "target": [
+      100,
+      100,
+      300,
+      -400
+    ],
+    "active": true,
+    "interpolated_u16": [
+      65508,
+      227,
+      299,
+      65136
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 65508,
+      "cx": 227,
+      "dx": 299,
+      "bp": 65136,
+      "df": false
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "backward_source_walk",
+    "total_steps": 4,
+    "initial_step": 1,
+    "result_step": 2,
+    "source_offset": 7424,
+    "target_offset": 11520,
+    "source": [
+      17,
+      13,
+      41,
+      29
+    ],
+    "target": [
+      10,
+      20,
+      30,
+      40
+    ],
+    "active": true,
+    "interpolated_u16": [
+      12,
+      18,
+      34,
+      36
+    ],
+    "helper_call": {
+      "callee": "framebuffer_rect_palette_remap",
+      "cs": 665,
+      "ip": 1038,
+      "sp": 65264,
+      "ds": 12288,
+      "si": 19744,
+      "bx": 12,
+      "cx": 18,
+      "dx": 34,
+      "bp": 36,
+      "df": true
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  }
+]

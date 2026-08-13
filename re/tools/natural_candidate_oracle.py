@@ -5801,6 +5801,323 @@ def vm_patch_stream_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def framebuffer_rect_interpolate_and_remap_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1E5D
+    expected_hash = "d10a38f7b513426a28ffb9f8cb926da1132159fdeeea5a161db3aa5705f7a8b1"
+    if hashlib.sha256(EXE[entry : entry + 100]).hexdigest() != expected_hash:
+        raise AssertionError("0x1e5d: recovered 100-byte body changed")
+
+    cases = (
+        ("complete_zero", 0x00, 0x00, 0x1200, 0x2200,
+         (10, 20, 30, 40), (-10, -20, -30, -40)),
+        ("complete_six", 0x06, 0x06, 0x1300, 0x2300,
+         (100, 80, 60, 40), (20, 30, 40, 50)),
+        ("first_step", 0x04, 0x00, 0x1400, 0x2400,
+         (120, 80, 40, 20), (100, 50, 32, 16)),
+        ("divide_before_multiply", 0x04, 0x01, 0x1500, 0x2500,
+         (17, 13, 41, 29), (10, 20, 30, 40)),
+        ("final_active_step", 0x06, 0x05, 0x1600, 0x2600,
+         (-40, 80, -120, 160), (-100, 200, -300, 400)),
+        ("mixed_signed_rect", 0x05, 0x02, 0x1700, 0x2700,
+         (-29500, 29500, -901, 901), (-30000, 30000, -1234, 1234)),
+        ("negative_total", 0xFE, 0x01, 0x1800, 0x2800,
+         (0, 0, 46, -46), (100, -100, 300, -300)),
+        ("current_wrap", 0x04, 0xFF, 0x1900, 0x2900,
+         (50, -50, 70, -70), (10, 20, 30, 40)),
+        ("wrapped_delta", 0x04, 0x01, 0x1A00, 0x2A00,
+         (-32760, 32760, -32760, 32760),
+         (32760, -32760, 32760, -32760)),
+        ("offset_wrap", 0x03, 0x01, 0xFFFA, 0xFFF0,
+         (106, -106, 209, -209), (100, -100, 200, -200)),
+        ("quotient_edges", 0x01, 0x00, 0x1C00, 0x2C00,
+         (-28, 227, 299, -400), (100, 100, 300, -400)),
+        ("backward_source_walk", 0x04, 0x01, 0x1D00, 0x2D00,
+         (17, 13, 41, 29), (10, 20, 30, 40)),
+    )
+    data_segment = 0x3000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x8000
+    stack_segment = 0x9000
+    callback_entry = 0x0299 * 16 + 0x040E
+    callback_return = 0x1EB6
+    return_address = 0x6E20
+    defined_mask = 0x0CD5
+    remap_offset = 0x4D20
+    vectors = []
+
+    def signed8(value: int) -> int:
+        value &= 0xFF
+        return value - 0x100 if value & 0x80 else value
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def trunc_divide(dividend: int, divisor: int) -> int:
+        quotient = abs(dividend) // abs(divisor)
+        return -quotient if (dividend < 0) != (divisor < 0) else quotient
+
+    def write_words(
+        buffer: bytearray,
+        offset: int,
+        values: tuple[int, ...],
+        stride: int = 2,
+    ) -> None:
+        for index, value in enumerate(values):
+            word_offset = (offset + index * stride) & 0xFFFF
+            packed = struct.pack("<H", value & 0xFFFF)
+            buffer[word_offset] = packed[0]
+            buffer[(word_offset + 1) & 0xFFFF] = packed[1]
+
+    def subtract8_flags(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": ((left ^ right ^ result) & 0x10) != 0,
+            "zf": result == 0,
+            "sf": (result & 0x80) != 0,
+            "of": (((left ^ right) & (left ^ result)) & 0x80) != 0,
+        }
+
+    def flags_dict(value: int) -> dict[str, bool]:
+        return {
+            "cf": bool(value & 0x0001),
+            "pf": bool(value & 0x0004),
+            "af": bool(value & 0x0010),
+            "zf": bool(value & 0x0040),
+            "sf": bool(value & 0x0080),
+            "df": bool(value & 0x0400),
+            "of": bool(value & 0x0800),
+        }
+
+    for case_index, (
+        name,
+        total_steps,
+        current_step,
+        source_offset,
+        target_offset,
+        source_words,
+        target_words,
+    ) in enumerate(cases):
+        active = total_steps != current_step
+        next_step = (current_step + 1) & 0xFF if active else current_step
+        expected_rect = []
+        if active:
+            divisor = signed8(total_steps)
+            if divisor == 0:
+                raise AssertionError(f"0x1e5d {name}: active zero divisor")
+            for source_word, target_word in zip(source_words, target_words):
+                delta = signed16((source_word & 0xFFFF) - (target_word & 0xFFFF))
+                quotient = trunc_divide(delta, divisor)
+                if not -128 <= quotient <= 127:
+                    raise AssertionError(
+                        f"0x1e5d {name}: byte quotient overflow {quotient}"
+                    )
+                expected_rect.append(
+                    ((target_word & 0xFFFF) + quotient * signed8(next_step))
+                    & 0xFFFF
+                )
+
+        data_before = bytearray(
+            (offset * 23 + (offset >> 7) * 17 + case_index * 31 + 0x29) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x0AC8, remap_offset)
+        data_before[0x0ADA] = total_steps
+        data_before[0x0ADB] = current_step
+        source_stride = -2 if name == "backward_source_walk" else 2
+        write_words(data_before, source_offset, source_words, source_stride)
+        write_words(data_before, target_offset, target_words)
+        expected_data = bytearray(data_before)
+        expected_data[0x0ADB] = next_step
+
+        game_before = bytes(
+            (offset * 19 + case_index * 43 + 0x51) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 13 + case_index * 47 + 0x73) & 0xFF
+            for offset in range(0x10000)
+        )
+        backward = name == "backward_source_walk"
+        initial_flags = 0x0202 | (
+            0x0400 if backward or (not active and case_index & 1) else 0
+        )
+        helper_flags = 0x0295 | (0x0C40 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 + source_offset,
+            "edi": 0xF6F60000 + target_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        calls = []
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_entry:
+                return
+            call = {
+                "callee": "framebuffer_rect_palette_remap",
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "df": bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x0400),
+            }
+            expected_call = {
+                "callee": "framebuffer_rect_palette_remap",
+                "cs": 0x0299,
+                "ip": 0x040E,
+                "sp": 0xFEF0,
+                "ds": data_segment,
+                "si": remap_offset,
+                "bx": expected_rect[0],
+                "cx": expected_rect[1],
+                "dx": expected_rect[2],
+                "bp": expected_rect[3],
+                "df": backward,
+            }
+            if call != expected_call:
+                raise AssertionError(
+                    f"0x1e5d {name}: call={call}, expected={expected_call}"
+                )
+            if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+                expected_data
+            ):
+                raise AssertionError(f"0x1e5d {name}: step store was not before call")
+            stack_words = struct.unpack(
+                "<10H", machine.mem_read(stack_segment * 16 + 0xFEF0, 20)
+            )
+            expected_stack = (
+                callback_return,
+                0,
+                initial["esi"] & 0xFFFF,
+                initial["ebp"] & 0xFFFF,
+                initial["edx"] & 0xFFFF,
+                initial["ecx"] & 0xFFFF,
+                initial["ebx"] & 0xFFFF,
+                initial["eax"] & 0xFFFF,
+                return_address,
+                0,
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x1e5d {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            calls.append(call)
+            machine.reg_write(UC_X86_REG_AX, 0xE001 + case_index)
+            machine.reg_write(UC_X86_REG_BX, 0xE102 + case_index)
+            machine.reg_write(UC_X86_REG_CX, 0xE203 + case_index)
+            machine.reg_write(UC_X86_REG_DX, 0xE304 + case_index)
+            machine.reg_write(UC_X86_REG_BP, 0xE405 + case_index)
+            machine.reg_write(UC_X86_REG_SI, 0xE506 + case_index)
+            machine.reg_write(UC_X86_REG_EFLAGS, helper_flags)
+
+        stack_sentinel = bytes.fromhex("5aa5966987783cc3")
+        try:
+            machine = execute(
+                entry,
+                return_address,
+                initial,
+                [
+                    (0, callback_entry, b"\xcb"),
+                    (0, return_address, b"\xcc"),
+                    (data_segment, 0, bytes(data_before)),
+                    (game_segment, 0, game_before),
+                    (extra_segment, 0, extra_before),
+                    (
+                        stack_segment,
+                        0xFF00,
+                        struct.pack("<HH", return_address, 0) + stack_sentinel,
+                    ),
+                ],
+                code_handler=callback,
+                instruction_count=512,
+            )
+        except RuntimeError as error:
+            raise RuntimeError(f"0x1e5d {name}: {error}") from error
+
+        expected_call_count = 1 if active else 0
+        if len(calls) != expected_call_count:
+            raise AssertionError(
+                f"0x1e5d {name}: calls={len(calls)}, expected={expected_call_count}"
+            )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1e5d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1e5d {name}: far return did not restore CS")
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            expected_data
+        ):
+            raise AssertionError(f"0x1e5d {name}: data state mismatch")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x1e5d {name}: GS decoy changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x1e5d {name}: ES decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 8)) != stack_sentinel:
+            raise AssertionError(f"0x1e5d {name}: stack sentinel changed")
+
+        if active:
+            expected_flags = (helper_flags & defined_mask) & ~0x0001
+        else:
+            compare_flags = subtract8_flags(total_steps, current_step)
+            expected_flags = (initial_flags & 0x0400) | 0x0001
+            for flag, bit in (
+                ("pf", 0x0004),
+                ("af", 0x0010),
+                ("zf", 0x0040),
+                ("sf", 0x0080),
+                ("of", 0x0800),
+            ):
+                if compare_flags[flag]:
+                    expected_flags |= bit
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS) & defined_mask
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x1e5d {name}: flags={actual_flags:#x}, expected={expected_flags:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "total_steps": total_steps,
+                "initial_step": current_step,
+                "result_step": next_step,
+                "source_offset": source_offset,
+                "target_offset": target_offset,
+                "source": list(source_words),
+                "target": list(target_words),
+                "active": active,
+                "interpolated_u16": expected_rect if active else None,
+                "helper_call": calls[0] if calls else None,
+                "defined_flags": flags_dict(actual_flags),
+            }
+        )
+
+    return vectors
+
+
 def palette_transition_step_vectors() -> list[dict[str, object]]:
     entry = 0x1F78
     expected_hash = "fcf9037274a0cac487a1ce94f3feed6c8a699d01aaaec22163ddf555d8e6368c"
@@ -48910,6 +49227,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1d94_natural.json",
         vm_patch_stream_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1e5d_natural.json",
+        framebuffer_rect_interpolate_and_remap_step_vectors(),
         args.check,
     )
     update_vector(

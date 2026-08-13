@@ -3,6 +3,7 @@
 
 #include "bloodprg_common.h"
 #include "bloodprg_hardware.h"
+#include "bloodprg_input.h"
 
 typedef volatile cb_u8 CB_FAR *bloodprg_graphics_buffer_ptr;
 
@@ -61,6 +62,12 @@ extern volatile cb_u8
         palette_transition_first; /* DS:0x5B51 */
 extern volatile cb_u8
         palette_transition_last; /* DS:0x5B52 */
+extern const cb_u8 CB_NEAR *
+        framebuffer_transition_remap_table; /* DS:0x0AC8 */
+extern volatile cb_u8
+        framebuffer_transition_total_steps; /* DS:0x0ADA */
+extern volatile cb_u8
+        framebuffer_transition_current_step; /* DS:0x0ADB */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_bottom_row; /* GS:0x523B */
 extern volatile cb_i16 CB_GAME_DATA graphics_clip_left; /* GS:0x5235 */
@@ -141,6 +148,17 @@ void CB_FAR framebuffer_rect_palette_remap(
         cb_u16 y,
         cb_u16 width,
         cb_u16 height); /* 0x0299:0x040E */
+#if defined(__WATCOMC__)
+void CB_FAR framebuffer_rect_palette_remap_ds_bp(
+        const cb_u8 CB_NEAR *remap_table,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u16 width,
+        cb_u16 height);
+#endif
+void CB_FAR framebuffer_rect_interpolate_and_remap_step(
+        const bloodprg_rect_i16 CB_NEAR *source,
+        const bloodprg_rect_i16 CB_NEAR *target); /* 0x001E5D */
 void CB_FAR gfx_clipped_span_fill(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width); /* 0x0299:0x0A2B */
 void CB_FAR gfx_clipped_planar_vertical_span(cb_u8 color, cb_u16 x,
@@ -261,6 +279,16 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
 #pragma aux framebuffer_rect_palette_remap \
         parm caller [ds si] [bx] [cx] [dx] modify exact []
+/* Watcom reserves BP, so evaluate all five C arguments before installing the
+ * height register around the real far call. */
+#pragma aux framebuffer_rect_palette_remap_ds_bp = \
+        "push bp" \
+        "mov bp,ax" \
+        "call far ptr framebuffer_rect_palette_remap" \
+        "pop bp" \
+        parm [si] [bx] [cx] [dx] [ax] modify exact []
+#pragma aux framebuffer_rect_interpolate_and_remap_step \
+        parm [si] [di] modify exact []
 #pragma aux gfx_clipped_span_fill parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_clipped_planar_vertical_span \
         parm [ax] [bx] [cx] [dx] modify exact []

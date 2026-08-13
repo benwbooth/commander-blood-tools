@@ -3511,6 +3511,38 @@ extra code materializes three far segments in locals and switches ES around
 ordinary structure accesses; it does not indicate missing loop or record
 logic.
 
+## BLOODPRG framebuffer rectangle interpolation candidate
+
+`0x001E5D` is a shared rectangle transition primitive used by navigation,
+presentation, location-panel, and ship-3D callers. It takes source and target
+four-word signed rectangles in `DS:SI` and `DS:DI`. Equal raw bytes at
+`DS:0x0ADA` and `DS:0x0ADB` report completion through carry without drawing.
+Otherwise it increments the current byte, then independently computes each
+component as `target + ((source-target)/total)*current`. The division happens
+before multiplication, with a signed 16-bit delta, signed-byte divisor and
+quotient, and signed-byte current step. It calls the independently recovered
+rectangle remapper with the table at the near pointer `DS:0x0AC8` and the
+interpolated rectangle in `BX/CX/DX/BP`.
+
+Twelve patched-remapper vectors prove two completion states, first/middle/final
+active steps, divide-before-multiply truncation, negative totals, current-byte
+wrap, signed-word delta wrap, quotient edges, source-offset wrap, and inherited
+reverse-DF `LODSW` traversal. They also verify the exact helper frame and
+registers, the step store before the call, DS ownership against segment decoys,
+full register/segment preservation, helper flags followed by carry clear,
+completion compare flags followed by carry set, stack integrity, and `RETF`.
+
+Open Watcom 1.9 medium (`-3 -ox -mm`) compiles the actual candidate without
+warnings to 80 instructions/180 bytes versus the original 48/100. Mnemonic
+sequence LCS is 64.58 percent and mnemonic-multiset overlap is 87.5 percent.
+The compiler promotes the byte division and multiplication to signed 16-bit
+operations with explicit sign extension. A four-instruction inline call
+adapter installs the fifth argument in reserved `BP`; guarded AX preservation
+and final `STC`/`CLC` express the otherwise unavailable binary ABI. The natural
+C body is valid for the game's clear-DF, non-overflowing signed-byte quotient
+domain; inherited reverse DF and byte-quotient overflow remain explicit binary
+integration boundaries.
+
 ## BLOODPRG palette transition step candidate
 
 `0x001F78` is a palette transition step, not only a progress counter. An
