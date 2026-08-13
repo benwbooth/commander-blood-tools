@@ -3485,6 +3485,32 @@ four `__U4M` calls for the natural 32-bit products where the original constructs
 compiler-lowering boundaries; the recovered request and timing logic itself is
 now represented directly in C with no inline assembly.
 
+## BLOODPRG VM patch stream builder candidate
+
+`0x001D94` is the inverse of `vm_patch_stream_apply`, not merely the pointer
+setup helper suggested by its old label. It walks the 20-byte VM directory at
+`GS:0x672C` until the `0xFFFF` object-offset sentinel. Every entry whose kind
+is exactly 2 contributes a packed `{u16 object_offset, u8 current_value}`
+record to the work buffer at `GS:0x0ABC`, and AX returns three times the number
+of emitted records. The saved-state caller writes that resulting byte count
+and buffer directly to disk.
+
+Four direct-binary vectors verify empty and mixed directories, the exact kind
+comparison, early sentinel termination, high object offsets, packed output,
+the work-buffer pointer offset, all saved registers and segments, near return,
+and the final sentinel-comparison flags. They also prove that the offset half
+of the script pointer at `GS:0x671C` is ignored: directory object offsets are
+absolute offsets within that pointer's segment, matching the inverse applier.
+This distinction is represented by a narrow `MK_FP` boundary in otherwise
+ordinary typed C.
+
+Open Watcom 1.9 medium (`-3 -ox -mm`) compiles the actual candidate without
+warnings to 44 instructions/108 bytes versus the original 32/68. The mnemonic
+sequence LCS is 71.88 percent and mnemonic-multiset overlap is 75 percent. The
+extra code materializes three far segments in locals and switches ES around
+ordinary structure accesses; it does not indicate missing loop or record
+logic.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

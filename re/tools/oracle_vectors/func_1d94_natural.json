@@ -1,0 +1,144 @@
+[
+  {
+    "name": "empty_directory",
+    "directory_entries": [],
+    "script_pointer_offset_ignored": 16640,
+    "work_offset": 512,
+    "emitted_records": [],
+    "byte_count": 0,
+    "work_sha256": "ab25dd6a322f329f19c60e82828147862f8fa83c2fdb479518a61f54fdb280f5",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mixed_kinds",
+    "directory_entries": [
+      {
+        "object_offset": 16,
+        "entry_kind": 2
+      },
+      {
+        "object_offset": 8738,
+        "entry_kind": 1
+      },
+      {
+        "object_offset": 13107,
+        "entry_kind": 2
+      }
+    ],
+    "script_pointer_offset_ignored": 16640,
+    "work_offset": 9216,
+    "emitted_records": [
+      {
+        "target_offset": 16,
+        "value": 164
+      },
+      {
+        "target_offset": 13107,
+        "value": 222
+      }
+    ],
+    "byte_count": 6,
+    "work_sha256": "5a6826665845a3f1b688386ef64c4bb7b6f19ab7cbc6f5c181210669e75b2905",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_two_is_exact",
+    "directory_entries": [
+      {
+        "object_offset": 0,
+        "entry_kind": 0
+      },
+      {
+        "object_offset": 1,
+        "entry_kind": 1
+      },
+      {
+        "object_offset": 2,
+        "entry_kind": 2
+      },
+      {
+        "object_offset": 3,
+        "entry_kind": 3
+      },
+      {
+        "object_offset": 254,
+        "entry_kind": 258
+      }
+    ],
+    "script_pointer_offset_ignored": 16640,
+    "work_offset": 20992,
+    "emitted_records": [
+      {
+        "target_offset": 2,
+        "value": 241
+      }
+    ],
+    "byte_count": 3,
+    "work_sha256": "2904b775481ec948eb3e8a510fc43567e53bf020aa15cf3b616444db7d779a09",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absolute_script_offsets",
+    "directory_entries": [
+      {
+        "object_offset": 65534,
+        "entry_kind": 2
+      },
+      {
+        "object_offset": 32768,
+        "entry_kind": 2
+      },
+      {
+        "object_offset": 32767,
+        "entry_kind": 2
+      }
+    ],
+    "script_pointer_offset_ignored": 16640,
+    "work_offset": 65520,
+    "emitted_records": [
+      {
+        "target_offset": 65534,
+        "value": 202
+      },
+      {
+        "target_offset": 32768,
+        "value": 231
+      },
+      {
+        "target_offset": 32767,
+        "value": 4
+      }
+    ],
+    "byte_count": 9,
+    "work_sha256": "21e1384002eb9e3fc104f5fd5edc5ac8737f19cbe2c2ef5efec74baf458122f5",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

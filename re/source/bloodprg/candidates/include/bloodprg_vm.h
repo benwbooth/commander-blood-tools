@@ -90,6 +90,19 @@ typedef struct bloodprg_vm_directory_entry {
     cb_u16 entry_kind;
 } bloodprg_vm_directory_entry;
 
+typedef const volatile bloodprg_vm_directory_entry CB_FAR *
+        bloodprg_vm_directory_ptr;
+
+#pragma pack(1)
+typedef struct bloodprg_vm_patch_record {
+    cb_u16 target_offset;
+    cb_u8 value;
+} bloodprg_vm_patch_record;
+#pragma pack()
+
+typedef char bloodprg_vm_patch_record_size_must_be_3[
+        sizeof(bloodprg_vm_patch_record) == 3 ? 1 : -1];
+
 typedef struct bloodprg_vm_object_header {
     cb_u16 kind;
     cb_u8 flags;
@@ -119,11 +132,14 @@ typedef struct bloodprg_dic_lookup_result {
     int matched;
 } bloodprg_dic_lookup_result;
 
-extern const volatile bloodprg_vm_directory_entry CB_FAR *vm_record_directory; /* GS:0x672C */
+extern bloodprg_vm_directory_ptr vm_record_directory; /* DS:0x672C; runtime DS=GS */
+extern bloodprg_vm_directory_ptr CB_GAME_DATA
+        vm_record_directory_gs; /* explicit GS:0x672C alias */
 extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 
 #if defined(__WATCOMC__)
 #pragma aux object_heap_access modify exact []
+#pragma aux vm_patch_stream_build value [ax] modify exact [ax]
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
@@ -171,6 +187,7 @@ void CB_NEAR object_heap_access(void);       /* 0x00149B */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
+cb_u16 CB_NEAR vm_patch_stream_build(void);  /* 0x001D94 */
 #if defined(__WATCOMC__)
 #pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif

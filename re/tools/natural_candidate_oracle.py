@@ -5575,6 +5575,232 @@ def vm_patch_stream_apply_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_patch_stream_build_vectors() -> list[dict[str, object]]:
+    entry = 0x1D94
+    expected_hash = "dcd48c0f477c455a519ca60894afa403d371b1bff858f5ec024dd5137794a1d8"
+    if hashlib.sha256(EXE[entry : entry + 68]).hexdigest() != expected_hash:
+        raise AssertionError("0x1d94: recovered 68-byte body changed")
+
+    cases = (
+        ("empty_directory", [], 0x0200),
+        (
+            "mixed_kinds",
+            [(0x0010, 2), (0x2222, 1), (0x3333, 2)],
+            0x2400,
+        ),
+        (
+            "kind_two_is_exact",
+            [(0x0000, 0), (0x0001, 1), (0x0002, 2), (0x0003, 3), (0x00FE, 0x0102)],
+            0x5200,
+        ),
+        (
+            "absolute_script_offsets",
+            [(0xFFFE, 2), (0x8000, 2), (0x7FFF, 2)],
+            0xFFF0,
+        ),
+    )
+    game_segment = 0x1000
+    work_segment = 0x3000
+    script_segment = 0x5000
+    directory_segment = 0x7000
+    data_segment = 0x9000
+    es_decoy_segment = 0xB000
+    stack_segment = 0xD000
+    fs_decoy_segment = 0xE000
+    directory_offset = 0x1200
+    script_pointer_offset = 0x4100
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (name, entries, work_offset) in enumerate(cases):
+        script_before = bytearray(
+            (offset * 37 + (offset >> 8) * 11 + case_index * 23 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        emitted_records = []
+        for entry_index, (object_offset, entry_kind) in enumerate(entries):
+            absolute_value = (0x91 + case_index * 19 + entry_index * 29) & 0xFF
+            relative_offset = (script_pointer_offset + object_offset) & 0xFFFF
+            script_before[object_offset] = absolute_value
+            if relative_offset != object_offset:
+                script_before[relative_offset] = absolute_value ^ 0xFF
+            if entry_kind == 2:
+                emitted_records.append((object_offset, absolute_value))
+
+        trailing_offset = 0x4567
+        trailing_value = (0xD0 + case_index) & 0xFF
+        script_before[trailing_offset] = trailing_value
+
+        directory_before = bytearray(
+            (offset * 13 + case_index * 31 + 0x27) & 0xFF
+            for offset in range(0x10000)
+        )
+        directory_cursor = directory_offset
+        directory_rows = list(entries) + [(0xFFFF, 0xA55A), (trailing_offset, 2)]
+        for row_index, (object_offset, entry_kind) in enumerate(directory_rows):
+            name_bytes = bytes(
+                (0x41 + row_index + column + case_index) & 0x7F
+                for column in range(16)
+            )
+            row = name_bytes + struct.pack("<HH", object_offset, entry_kind)
+            directory_before[directory_cursor : directory_cursor + 20] = row
+            directory_cursor += 20
+
+        work_before = bytes(
+            (offset * 17 + case_index * 43 + 0x39) & 0xFF
+            for offset in range(0x10000)
+        )
+        expected_work = bytearray(work_before)
+        output_cursor = work_offset
+        for object_offset, value in emitted_records:
+            struct.pack_into("<H", expected_work, output_cursor, object_offset)
+            expected_work[output_cursor + 2] = value
+            output_cursor += 3
+
+        work_pointer = struct.pack("<HH", work_offset, work_segment)
+        script_pointer = struct.pack(
+            "<HH", script_pointer_offset, script_segment
+        )
+        directory_pointer = struct.pack(
+            "<HH", directory_offset, directory_segment
+        )
+        decoy_work_pointer = struct.pack("<HH", 0x3300, es_decoy_segment)
+        decoy_script_pointer = struct.pack("<HH", 0x4400, data_segment)
+        decoy_directory_pointer = struct.pack("<HH", 0x5500, fs_decoy_segment)
+        decoy_before = bytes(
+            (offset * 7 + case_index * 53 + 0x61) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": es_decoy_segment,
+            "fs": fs_decoy_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0x0ABC, work_pointer),
+                (game_segment, 0x671C, script_pointer),
+                (game_segment, 0x672C, directory_pointer),
+                (data_segment, 0x0ABC, decoy_work_pointer),
+                (data_segment, 0x671C, decoy_script_pointer),
+                (data_segment, 0x672C, decoy_directory_pointer),
+                (work_segment, 0, work_before),
+                (script_segment, 0, bytes(script_before)),
+                (directory_segment, 0, bytes(directory_before)),
+                (es_decoy_segment, 0, decoy_before),
+                (fs_decoy_segment, 0, decoy_before),
+                (0, return_address, b"\xcc"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            instruction_count=512,
+        )
+
+        byte_count = len(emitted_records) * 3
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | byte_count
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1d94 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1d94 {name}: near return changed CS")
+
+        work_after = bytes(machine.mem_read(work_segment * 16, 0x10000))
+        if work_after != bytes(expected_work):
+            raise AssertionError(f"0x1d94 {name}: patch stream mismatch")
+        if bytes(machine.mem_read(script_segment * 16, 0x10000)) != bytes(
+            script_before
+        ):
+            raise AssertionError(f"0x1d94 {name}: script image changed")
+        if bytes(machine.mem_read(directory_segment * 16, 0x10000)) != bytes(
+            directory_before
+        ):
+            raise AssertionError(f"0x1d94 {name}: directory changed")
+        if bytes(machine.mem_read(es_decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x1d94 {name}: ES decoy changed")
+        if bytes(machine.mem_read(fs_decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x1d94 {name}: FS decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0ABC, 4)) != work_pointer:
+            raise AssertionError(f"0x1d94 {name}: GS work pointer changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x671C, 4)) != script_pointer:
+            raise AssertionError(f"0x1d94 {name}: GS script pointer changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x672C, 4)) != directory_pointer:
+            raise AssertionError(f"0x1d94 {name}: GS directory pointer changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x1d94 {name}: stack sentinel changed")
+
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x1d94 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "directory_entries": [
+                    {"object_offset": object_offset, "entry_kind": entry_kind}
+                    for object_offset, entry_kind in entries
+                ],
+                "script_pointer_offset_ignored": script_pointer_offset,
+                "work_offset": work_offset,
+                "emitted_records": [
+                    {"target_offset": object_offset, "value": value}
+                    for object_offset, value in emitted_records
+                ],
+                "byte_count": byte_count,
+                "work_sha256": hashlib.sha256(expected_work).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def mouse_button_edges_update_vectors() -> list[dict[str, object]]:
     entry = 0x1FBC
     expected_hash = "223c44bf3248ca556f9f5740f65fae46529a1ca556d5a5f3e0a4fa84a99a0ea5"
@@ -48173,6 +48399,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1d74_natural.json",
         vm_patch_stream_apply_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1d94_natural.json",
+        vm_patch_stream_build_vectors(),
         args.check,
     )
     update_vector(

@@ -13,13 +13,6 @@
 #define VM_IMAGE_AT(segment, offset) ((segment) + (offset))
 #endif
 
-#pragma pack(1)
-typedef struct bloodprg_vm_patch_record {
-    cb_u16 target_offset;
-    cb_u8 value;
-} bloodprg_vm_patch_record;
-#pragma pack()
-
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count)
 {
     const volatile bloodprg_vm_patch_record CB_FAR *record;
