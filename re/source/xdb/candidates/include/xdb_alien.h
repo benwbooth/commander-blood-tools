@@ -232,10 +232,23 @@ typedef struct xdb_alien_projection_context {
     xdb_u16 face_count;
 } xdb_alien_projection_context;
 
+typedef struct xdb_alien_primary_render_context {
+    xdb_u8 field_000[0x1c];
+    xdb_u16 vertex_offset;
+    xdb_u8 field_01e[0x02];
+    xdb_u16 vertex_count;
+    xdb_u8 field_022[0x06];
+    xdb_u16 face_offset;
+    xdb_u8 field_02a[0x02];
+    xdb_u16 face_count;
+} xdb_alien_primary_render_context;
+
 typedef char xdb_alien_projection_vertex_size_must_be_0x14[
         sizeof(xdb_alien_projection_vertex) == 0x14 ? 1 : -1];
 typedef char xdb_alien_projection_state_size_must_be_0x5e[
         sizeof(xdb_alien_projection_state) == 0x5e ? 1 : -1];
+typedef char xdb_alien_primary_render_context_size_must_be_0x2e[
+        sizeof(xdb_alien_primary_render_context) == 0x2e ? 1 : -1];
 
 typedef struct xdb_alien_slot7_root_state {
     xdb_u8 field_000[0x12];
@@ -372,6 +385,8 @@ extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
 extern volatile xdb_alien_trig_sample xdb_alien_angle_table[]; /* DS:0x0036 */
 extern volatile xdb_i32 xdb_alien_screen_center_x; /* DS:0x2270 */
 extern volatile xdb_i32 xdb_alien_screen_center_y; /* DS:0x2274 */
+extern volatile xdb_alien_primary_render_context XDB_NEAR
+        *xdb_alien_primary_context_ptr; /* FS:0x2306; FS=DS invariant */
 extern volatile xdb_alien_projection_context XDB_NEAR
         *xdb_alien_active_projection_context; /* FS:0x2278; FS=DS invariant */
 extern volatile xdb_u16 xdb_alien_current_projection_state_offset; /* DS:0x227A */
@@ -513,6 +528,9 @@ void XDB_NEAR xdb_scrut_camera_matrix_update(void);
 void XDB_NEAR xdb_amer_transform_and_project(void);
 void XDB_NEAR xdb_croolis_transform_and_project(void);
 void XDB_NEAR xdb_scrut_transform_and_project(void);
+void XDB_NEAR xdb_amer_project_primary_mesh_then_render(void);
+void XDB_NEAR xdb_croolis_project_primary_mesh_then_render(void);
+void XDB_NEAR xdb_scrut_project_primary_mesh_then_render(void);
 void XDB_NEAR xdb_amer_bucket_faces_then_render(void);
 void XDB_NEAR xdb_croolis_bucket_faces_then_render(void);
 void XDB_NEAR xdb_scrut_bucket_faces_then_render(void);
@@ -650,6 +668,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #pragma aux xdb_croolis_transform_and_project \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_scrut_transform_and_project \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_amer_project_primary_mesh_then_render \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_project_primary_mesh_then_render \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_project_primary_mesh_then_render \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_amer_bucket_faces_then_render \
         modify exact [ax bx cx dx si di bp es]

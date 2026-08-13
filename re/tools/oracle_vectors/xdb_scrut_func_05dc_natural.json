@@ -1,0 +1,589 @@
+[
+  {
+    "name": "negative_depth_accumulator",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 1,
+    "face_count": 1,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": false,
+        "screen_x": -24320,
+        "screen_y": -19968,
+        "clip_flags": 32783
+      }
+    ],
+    "faces": [],
+    "common_clip": 32783,
+    "renderer_state": null,
+    "geometry_sha256": "b36763726cfb7a761aeb730a6102caf5c41ae2f9395856a14afb628f1e9da876",
+    "raster_sha256": "c3a96798d860842b816c37918a44c5bb7bdb0f9dcd30b4b2b69a70d1dee20fe7"
+  },
+  {
+    "name": "positive_depth_shifts_to_zero",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 1,
+    "face_count": 1,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": false,
+        "screen_x": -24320,
+        "screen_y": -19968,
+        "clip_flags": 32783
+      }
+    ],
+    "faces": [],
+    "common_clip": 32783,
+    "renderer_state": null,
+    "geometry_sha256": "9d2838440b3e689a518147010fa658358e597de057797b9cf6cce6702b59b0c4",
+    "raster_sha256": "eba972fed89e3eab787056b3b22e4096ff4df9efa1d9e32f9ed3d10e9af00e16"
+  },
+  {
+    "name": "interior_projection_and_face",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 3,
+    "face_count": 1,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": 150,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": 180,
+        "screen_y": 95,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": 200,
+        "screen_y": 105,
+        "clip_flags": 0
+      }
+    ],
+    "faces": [
+      {
+        "offset": 16384,
+        "vertices": [
+          4096,
+          4116,
+          4136
+        ],
+        "left_x": 150,
+        "bucket_offset": 2682
+      }
+    ],
+    "common_clip": 0,
+    "renderer_state": {
+      "address": 9878,
+      "ds": 28672,
+      "es": 36864,
+      "fs": 20480,
+      "sp": 65276,
+      "return_offset": 1901
+    },
+    "geometry_sha256": "c91c7483e23c4dc2471b179c1cd937ca6a9211d4d87473f175e9514b72a76837",
+    "raster_sha256": "458b56321bb3ceee2e77a0126d0b2ea9d046e951194629d86a990e85f47c3d60"
+  },
+  {
+    "name": "all_four_clip_edges",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 5,
+    "face_count": 2,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": -1,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": 320,
+        "screen_y": 100,
+        "clip_flags": 2
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": 160,
+        "screen_y": -1,
+        "clip_flags": 4
+      },
+      {
+        "offset": 4156,
+        "valid_depth": true,
+        "screen_x": 160,
+        "screen_y": 200,
+        "clip_flags": 8
+      },
+      {
+        "offset": 4176,
+        "valid_depth": true,
+        "screen_x": 160,
+        "screen_y": 100,
+        "clip_flags": 0
+      }
+    ],
+    "faces": [
+      {
+        "offset": 16384,
+        "vertices": [
+          4096,
+          4116,
+          4176
+        ],
+        "left_x": -1,
+        "bucket_offset": 2382
+      },
+      {
+        "offset": 16392,
+        "vertices": [
+          4136,
+          4156,
+          4176
+        ],
+        "left_x": 160,
+        "bucket_offset": 2702
+      }
+    ],
+    "common_clip": 0,
+    "renderer_state": {
+      "address": 9878,
+      "ds": 28672,
+      "es": 36864,
+      "fs": 20480,
+      "sp": 65276,
+      "return_offset": 1901
+    },
+    "geometry_sha256": "79a14edb36c9cf26469140f44a143c60e446b2d1fb9cc5d0acc6100b2701ad7a",
+    "raster_sha256": "06931474e96b5aee17c5b1a1f2f7f4d18d2178ec73b1c85236f3ec40ffef923d"
+  },
+  {
+    "name": "common_left_clip_rejection",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 3,
+    "face_count": 1,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": -200,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": -180,
+        "screen_y": 95,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": -170,
+        "screen_y": 105,
+        "clip_flags": 1
+      }
+    ],
+    "faces": [],
+    "common_clip": 1,
+    "renderer_state": null,
+    "geometry_sha256": "96f1a1bec0159fd266c98d93c20fd921f10ae85ffec6ece03c81f2189353fa5e",
+    "raster_sha256": "eaac0d1b1108cbf81279ab94bc88550b4792b5613168d3c42b521224c24a0d11"
+  },
+  {
+    "name": "both_rotations_and_ties",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 12,
+    "face_count": 4,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": 30,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": 20,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": 10,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4156,
+        "valid_depth": true,
+        "screen_x": 30,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4176,
+        "valid_depth": true,
+        "screen_x": 10,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4196,
+        "valid_depth": true,
+        "screen_x": 20,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4216,
+        "valid_depth": true,
+        "screen_x": 20,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4236,
+        "valid_depth": true,
+        "screen_x": 10,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4256,
+        "valid_depth": true,
+        "screen_x": 10,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4276,
+        "valid_depth": true,
+        "screen_x": 10,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4296,
+        "valid_depth": true,
+        "screen_x": 20,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4316,
+        "valid_depth": true,
+        "screen_x": 20,
+        "screen_y": 100,
+        "clip_flags": 0
+      }
+    ],
+    "faces": [
+      {
+        "offset": 16384,
+        "vertices": [
+          4136,
+          4096,
+          4116
+        ],
+        "left_x": 10,
+        "bucket_offset": 2402
+      },
+      {
+        "offset": 16392,
+        "vertices": [
+          4176,
+          4196,
+          4156
+        ],
+        "left_x": 10,
+        "bucket_offset": 2402
+      },
+      {
+        "offset": 16400,
+        "vertices": [
+          4236,
+          4256,
+          4216
+        ],
+        "left_x": 10,
+        "bucket_offset": 2402
+      },
+      {
+        "offset": 16408,
+        "vertices": [
+          4276,
+          4296,
+          4316
+        ],
+        "left_x": 10,
+        "bucket_offset": 2402
+      }
+    ],
+    "common_clip": 0,
+    "renderer_state": {
+      "address": 9878,
+      "ds": 28672,
+      "es": 36864,
+      "fs": 20480,
+      "sp": 65276,
+      "return_offset": 1901
+    },
+    "geometry_sha256": "65a7b28cc444e7638e83d6892c92c57df005b8c32bb65af6ba5ceb9a3259d448",
+    "raster_sha256": "086da7fa588ed841ccb73abdc21a258f81db8d636fc9e17ed59c13276d84ada9"
+  },
+  {
+    "name": "face_clip_and_width_boundaries",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 9,
+    "face_count": 3,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": -10,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": -9,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": -8,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4156,
+        "valid_depth": true,
+        "screen_x": -100,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4176,
+        "valid_depth": true,
+        "screen_x": 399,
+        "screen_y": 100,
+        "clip_flags": 2
+      },
+      {
+        "offset": 4196,
+        "valid_depth": true,
+        "screen_x": 0,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4216,
+        "valid_depth": true,
+        "screen_x": -100,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4236,
+        "valid_depth": true,
+        "screen_x": 400,
+        "screen_y": 100,
+        "clip_flags": 2
+      },
+      {
+        "offset": 4256,
+        "valid_depth": true,
+        "screen_x": 0,
+        "screen_y": 100,
+        "clip_flags": 0
+      }
+    ],
+    "faces": [
+      {
+        "offset": 16384,
+        "vertices": [
+          4096,
+          4116,
+          4136
+        ],
+        "left_x": -10,
+        "bucket_offset": null
+      },
+      {
+        "offset": 16392,
+        "vertices": [
+          4156,
+          4176,
+          4196
+        ],
+        "left_x": -100,
+        "bucket_offset": 2382
+      },
+      {
+        "offset": 16400,
+        "vertices": [
+          4216,
+          4236,
+          4256
+        ],
+        "left_x": -100,
+        "bucket_offset": null
+      }
+    ],
+    "common_clip": 0,
+    "renderer_state": {
+      "address": 9878,
+      "ds": 28672,
+      "es": 36864,
+      "fs": 20480,
+      "sp": 65276,
+      "return_offset": 1901
+    },
+    "geometry_sha256": "2d236abf6112a577133a5e6008239889f950de8dd123ca179de664d8684b2f81",
+    "raster_sha256": "a977948e00e292cedfdb7d4194e85feeb96bc7edf4c3d984173eb73ac14a8dbe"
+  },
+  {
+    "name": "negative_bucket_and_lifo_links",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 6,
+    "face_count": 2,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": -20,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": 0,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": 15,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4156,
+        "valid_depth": true,
+        "screen_x": -20,
+        "screen_y": 100,
+        "clip_flags": 1
+      },
+      {
+        "offset": 4176,
+        "valid_depth": true,
+        "screen_x": 8,
+        "screen_y": 100,
+        "clip_flags": 0
+      },
+      {
+        "offset": 4196,
+        "valid_depth": true,
+        "screen_x": 4,
+        "screen_y": 100,
+        "clip_flags": 0
+      }
+    ],
+    "faces": [
+      {
+        "offset": 16384,
+        "vertices": [
+          4096,
+          4116,
+          4136
+        ],
+        "left_x": -20,
+        "bucket_offset": 2382
+      },
+      {
+        "offset": 16392,
+        "vertices": [
+          4156,
+          4176,
+          4196
+        ],
+        "left_x": -20,
+        "bucket_offset": 2382
+      }
+    ],
+    "common_clip": 0,
+    "renderer_state": {
+      "address": 9878,
+      "ds": 28672,
+      "es": 36864,
+      "fs": 20480,
+      "sp": 65276,
+      "return_offset": 1901
+    },
+    "geometry_sha256": "95f3c01c13493236b187ed51088dcbe42720d80c54c1410254664e581930da77",
+    "raster_sha256": "db35950abb5240bfee936898256459a1ea122e959626493bf0ae216f298fda4b"
+  },
+  {
+    "name": "modular_products_and_centers",
+    "module": "scrut",
+    "entry": 1500,
+    "vertex_count": 3,
+    "face_count": 1,
+    "vertices": [
+      {
+        "offset": 4096,
+        "valid_depth": true,
+        "screen_x": 12743,
+        "screen_y": -28454,
+        "clip_flags": 6
+      },
+      {
+        "offset": 4116,
+        "valid_depth": true,
+        "screen_x": 13703,
+        "screen_y": -23009,
+        "clip_flags": 6
+      },
+      {
+        "offset": 4136,
+        "valid_depth": true,
+        "screen_x": 13382,
+        "screen_y": 31,
+        "clip_flags": 5
+      }
+    ],
+    "faces": [],
+    "common_clip": 4,
+    "renderer_state": null,
+    "geometry_sha256": "9673e569a48d5a46bf0530197b6cda993d005c64e7e592fc9515a0c629ddcbe0",
+    "raster_sha256": "657273d86fdb6db9f759a86cb02594a90d87a09288ebd5ed67193d5e44c11af2"
+  }
+]

@@ -3047,6 +3047,521 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_primary_mesh_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    renderer_entry: int,
+    bucket_base: int,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 403
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    geometry_segment = 0x7000
+    raster_segment = 0x9000
+    extra_segment = 0xB000
+    game_segment = 0xC000
+    stack_segment = 0xD000
+    return_address = 0xF000
+    context_offset = 0x3000
+    vertex_offset = 0x1000
+    face_offset = 0x4000
+    mask32 = 0xFFFFFFFF
+    stack_sentinel = bytes.fromhex("a55a69967887")
+    projection_matrix = (
+        0x00000100,
+        0,
+        0,
+        0,
+        0x00000100,
+        0,
+        0,
+        0,
+        0x00010000,
+    )
+    cases = (
+        {
+            "name": "negative_depth_accumulator",
+            "matrix": (0, 0, 0, 0, 0, 0, 1, 0, 0),
+            "center": (160, 100),
+            "vertices": ((-1, 2, 3),),
+            "faces": ((0, 0, 0),),
+        },
+        {
+            "name": "positive_depth_shifts_to_zero",
+            "matrix": (0, 0, 0, 0, 0, 0, 1, 0, 0),
+            "center": (160, 100),
+            "vertices": ((255, 1, 0),),
+            "faces": ((0, 0, 0),),
+        },
+        {
+            "name": "interior_projection_and_face",
+            "matrix": projection_matrix,
+            "center": (160, 100),
+            "vertices": ((-10, 0, 1), (20, 5, 1), (40, -5, 1)),
+            "faces": ((0, 1, 2),),
+        },
+        {
+            "name": "all_four_clip_edges",
+            "matrix": projection_matrix,
+            "center": (160, 100),
+            "vertices": (
+                (-161, 0, 1),
+                (160, 0, 1),
+                (0, 101, 1),
+                (0, -100, 1),
+                (0, 0, 1),
+            ),
+            "faces": ((0, 1, 4), (2, 3, 4)),
+        },
+        {
+            "name": "common_left_clip_rejection",
+            "matrix": projection_matrix,
+            "center": (0, 100),
+            "vertices": ((-200, 0, 1), (-180, 5, 1), (-170, -5, 1)),
+            "faces": ((0, 1, 2),),
+        },
+        {
+            "name": "both_rotations_and_ties",
+            "matrix": projection_matrix,
+            "center": (0, 100),
+            "vertices": (
+                (30, 0, 1),
+                (20, 0, 1),
+                (10, 0, 1),
+                (30, 0, 1),
+                (10, 0, 1),
+                (20, 0, 1),
+                (20, 0, 1),
+                (10, 0, 1),
+                (10, 0, 1),
+                (10, 0, 1),
+                (20, 0, 1),
+                (20, 0, 1),
+            ),
+            "faces": ((0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)),
+        },
+        {
+            "name": "face_clip_and_width_boundaries",
+            "matrix": projection_matrix,
+            "center": (0, 100),
+            "vertices": (
+                (-10, 0, 1),
+                (-9, 0, 1),
+                (-8, 0, 1),
+                (-100, 0, 1),
+                (399, 0, 1),
+                (0, 0, 1),
+                (-100, 0, 1),
+                (400, 0, 1),
+                (0, 0, 1),
+            ),
+            "faces": ((0, 1, 2), (3, 4, 5), (6, 7, 8)),
+        },
+        {
+            "name": "negative_bucket_and_lifo_links",
+            "matrix": projection_matrix,
+            "center": (0, 100),
+            "vertices": (
+                (-20, 0, 1),
+                (0, 0, 1),
+                (15, 0, 1),
+                (-20, 0, 1),
+                (8, 0, 1),
+                (4, 0, 1),
+            ),
+            "faces": ((0, 1, 2), (3, 4, 5)),
+        },
+        {
+            "name": "modular_products_and_centers",
+            "matrix": (
+                0x7FFFFFFF,
+                0x90000004,
+                0x1234567C,
+                0xFEDCBA9C,
+                0x60000004,
+                0xA0000004,
+                0,
+                0,
+                0x00010000,
+            ),
+            "center": (0x7FFFFFF0, 0x80000020),
+            "vertices": (
+                (32767, -32768, 1),
+                (-32768, 32767, 2),
+                (0, 0, 1),
+            ),
+            "faces": ((0, 1, 2),),
+        },
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= mask32
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def dot_product(
+        matrix: tuple[int, ...],
+        row: int,
+        coordinates: tuple[int, int, int],
+    ) -> int:
+        accumulator = 0
+        for column, coordinate in enumerate(coordinates):
+            accumulator += (
+                (matrix[row * 3 + column] & mask32)
+                * (coordinate & mask32)
+            )
+        return accumulator & mask32
+
+    def signed_divide(numerator: int, denominator: int) -> int:
+        quotient = abs(numerator) // abs(denominator)
+        if (numerator < 0) != (denominator < 0):
+            quotient = -quotient
+        return quotient
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        geometry_before = bytearray(
+            (offset * 13 + case_index * 23 + 9) & 0xFF
+            for offset in range(0x10000)
+        )
+        raster_before = bytearray(
+            (offset * 7 + case_index * 31 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        matrix = case["matrix"]
+        center = case["center"]
+        vertices = case["vertices"]
+        faces = case["faces"]
+
+        put_u16(data_before, 0x0002, geometry_segment)
+        put_u16(data_before, 0x0006, raster_segment)
+        put_u32(data_before, 0x2270, center[0])
+        put_u32(data_before, 0x2274, center[1])
+        put_u16(data_before, 0x227C, 0xA100 + case_index)
+        put_u16(data_before, 0x227E, 0xB200 + case_index)
+        put_u16(data_before, 0x2280, 0xC300 + case_index)
+        for matrix_index, value in enumerate(matrix):
+            put_u32(data_before, 0x22BA + matrix_index * 4, value)
+        put_u16(data_before, 0x2306, context_offset)
+        put_u16(data_before, context_offset + 0x1C, vertex_offset)
+        put_u16(data_before, context_offset + 0x20, len(vertices))
+        put_u16(data_before, context_offset + 0x28, face_offset)
+        put_u16(data_before, context_offset + 0x2C, len(faces))
+
+        vertex_offsets = []
+        for vertex_index, coordinates in enumerate(vertices):
+            current_offset = vertex_offset + vertex_index * 0x14
+            vertex_offsets.append(current_offset)
+            for coordinate_index, coordinate in enumerate(coordinates):
+                put_u16(
+                    geometry_before,
+                    current_offset + 4 + coordinate_index * 2,
+                    coordinate,
+                )
+            put_u16(geometry_before, current_offset + 0x0A, 0xA100 + vertex_index)
+            put_u16(geometry_before, current_offset + 0x0C, 0xB200 + vertex_index)
+            put_u32(geometry_before, current_offset + 0x0E, 0xC3C40000 + vertex_index)
+            put_u16(geometry_before, current_offset + 0x12, 0xD500 + vertex_index)
+
+        face_offsets = []
+        for face_index, vertex_indices in enumerate(faces):
+            current_offset = face_offset + face_index * 8
+            face_offsets.append(current_offset)
+            put_u16(geometry_before, current_offset, 0xE600 + face_index)
+            for index, vertex_index in enumerate(vertex_indices):
+                put_u16(
+                    geometry_before,
+                    current_offset + 2 + index * 2,
+                    vertex_offsets[vertex_index],
+                )
+
+        data_expected = bytearray(data_before)
+        geometry_expected = bytearray(geometry_before)
+        raster_expected = bytearray(raster_before)
+        common_clip = 0x800F
+        vertex_results = []
+        for vertex_index, coordinates in enumerate(vertices):
+            current_offset = vertex_offsets[vertex_index]
+            clip_flags = 0x800F
+            projected_x = get_u16(geometry_expected, current_offset + 0x0A)
+            projected_y = get_u16(geometry_expected, current_offset + 0x0C)
+            depth_accumulator = dot_product(matrix, 2, coordinates)
+            valid = False
+            if signed_dword(depth_accumulator) >= 0:
+                depth = signed_dword(depth_accumulator) >> 8
+                if depth != 0:
+                    screen_x_accumulator = dot_product(matrix, 0, coordinates)
+                    screen_y_accumulator = dot_product(matrix, 1, coordinates)
+                    screen_x = signed_divide(
+                        signed_dword(screen_x_accumulator),
+                        depth,
+                    )
+                    screen_y = signed_divide(
+                        signed_dword(screen_y_accumulator),
+                        depth,
+                    )
+                    screen_y = signed_dword(-screen_y)
+                    screen_x = signed_dword(screen_x + center[0])
+                    clip_flags = 0
+                    if screen_x < 0:
+                        clip_flags = 0x0001
+                    if screen_x >= 320:
+                        clip_flags = 0x0002
+                    screen_y = signed_dword(screen_y + center[1])
+                    if screen_y < 0:
+                        clip_flags |= 0x0004
+                    if screen_y >= 200:
+                        clip_flags |= 0x0008
+                    common_clip &= clip_flags
+                    projected_x = screen_x & 0xFFFF
+                    projected_y = screen_y & 0xFFFF
+                    put_u16(geometry_expected, current_offset + 0x0A, projected_x)
+                    put_u16(geometry_expected, current_offset + 0x0C, projected_y)
+                    valid = True
+            put_u16(geometry_expected, current_offset + 0x12, clip_flags)
+            vertex_results.append(
+                {
+                    "offset": current_offset,
+                    "valid_depth": valid,
+                    "screen_x": signed_word(projected_x),
+                    "screen_y": signed_word(projected_y),
+                    "clip_flags": clip_flags,
+                }
+            )
+
+        put_u16(data_expected, 0x227C, 0)
+        put_u16(data_expected, 0x227E, common_clip)
+        put_u16(data_expected, 0x2280, 0)
+        face_results = []
+        if common_clip == 0:
+            for face_index, vertex_indices in enumerate(faces):
+                current_face_offset = face_offsets[face_index]
+                offsets = [vertex_offsets[index] for index in vertex_indices]
+                clips = [
+                    get_u16(geometry_expected, offset + 0x12)
+                    for offset in offsets
+                ]
+                x_values = [
+                    signed_word(get_u16(geometry_expected, offset + 0x0A))
+                    for offset in offsets
+                ]
+                bucket_offset = None
+                if clips[0] & clips[1] & clips[2] == 0:
+                    if x_values[1] > x_values[2]:
+                        if x_values[0] >= x_values[2]:
+                            offsets = [offsets[2], offsets[0], offsets[1]]
+                            x_values = [x_values[2], x_values[0], x_values[1]]
+                    elif x_values[0] > x_values[1]:
+                        offsets = [offsets[1], offsets[2], offsets[0]]
+                        x_values = [x_values[1], x_values[2], x_values[0]]
+                    for index, value in enumerate(offsets):
+                        put_u16(
+                            geometry_expected,
+                            current_face_offset + 2 + index * 2,
+                            value,
+                        )
+
+                    span_1 = (x_values[1] - x_values[0]) & 0xFFFF
+                    span_2 = (x_values[2] - x_values[0]) & 0xFFFF
+                    if span_1 < 500 and span_2 < 500:
+                        doubled_x = (x_values[0] << 1) & 0xFFFF
+                        bucket_offset = bucket_base
+                        if signed_word(doubled_x) >= 0:
+                            bucket_offset = (bucket_offset + doubled_x) & 0xFFFF
+                        previous_head = get_u16(raster_expected, bucket_offset)
+                        put_u16(
+                            raster_expected,
+                            bucket_offset,
+                            current_face_offset,
+                        )
+                        put_u16(
+                            geometry_expected,
+                            current_face_offset,
+                            previous_head,
+                        )
+                face_results.append(
+                    {
+                        "offset": current_face_offset,
+                        "vertices": offsets,
+                        "left_x": x_values[0],
+                        "bucket_offset": bucket_offset,
+                    }
+                )
+
+        patched_image = bytearray(image)
+        patched_image[renderer_entry] = 0xC3
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F6789A + case_index,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 11 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 19 + case_index + 13) & 0xFF for offset in range(0x10000)
+        )
+        renderer_states: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == renderer_entry:
+                stack_pointer = machine.reg_read(UC_X86_REG_SP)
+                renderer_states.append(
+                    {
+                        "address": address,
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "fs": machine.reg_read(UC_X86_REG_FS),
+                        "sp": stack_pointer,
+                        "return_offset": struct.unpack(
+                            "<H",
+                            machine.mem_read(
+                                stack_segment * 16 + stack_pointer,
+                                2,
+                            ),
+                        )[0],
+                    }
+                )
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100000,
+            code_handler=code_handler,
+        )
+        expected_renderer_states = (
+            [
+                {
+                    "address": renderer_entry,
+                    "ds": geometry_segment,
+                    "es": raster_segment,
+                    "fs": data_segment,
+                    "sp": 0xFEFC,
+                    "return_offset": entry + 401,
+                }
+            ]
+            if common_clip == 0
+            else []
+        )
+        if renderer_states != expected_renderer_states:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"renderer states {renderer_states}, "
+                f"expected {expected_renderer_states}"
+            )
+        for segment, expected, owner in (
+            (data_segment, bytes(data_expected), "data"),
+            (geometry_segment, bytes(geometry_expected), "geometry"),
+            (raster_segment, bytes(raster_expected), "raster"),
+            (extra_segment, extra_before, "initial-extra"),
+            (game_segment, game_before, "game"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(0x10000)
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{owner} differs at {differences}"
+                )
+        if bytes(machine.mem_read(0, len(image))) != bytes(patched_image):
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: code changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: stack changed")
+
+        expected_registers = {
+            "esi": (initial["esi"] & 0xFFFF0000)
+            | (
+                face_offset + len(faces) * 8
+                if common_clip == 0
+                else vertex_offset + len(vertices) * 0x14
+            ),
+            "sp": 0xFF02,
+            "ds": data_segment,
+            "es": raster_segment if common_clip == 0 else geometry_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "vertex_count": len(vertices),
+                "face_count": len(faces),
+                "vertices": vertex_results,
+                "faces": face_results,
+                "common_clip": common_clip,
+                "renderer_state": (
+                    renderer_states[0] if renderer_states else None
+                ),
+                "geometry_sha256": hashlib.sha256(geometry_expected).hexdigest(),
+                "raster_sha256": hashlib.sha256(raster_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_face_bucket_vectors(
     module: str,
     entry: int,
@@ -12707,6 +13222,40 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
+    for module, entry, body_hash, renderer_entry, bucket_base in (
+        (
+            "amer",
+            0x059B,
+            "e8b8889034e477f80bc9bb2a2cc0c3877220804facb2c40371e03acac5a9e744",
+            0x2572,
+            0x094C,
+        ),
+        (
+            "croolis",
+            0x05DC,
+            "9acc15fa9730c092561bf9b60ef6aeede36f3f4491cbd5131b9a53ff491bed09",
+            0x25D6,
+            0x094E,
+        ),
+        (
+            "scrut",
+            0x05DC,
+            "e30b562918452a15fd9eeecf6b06ca502bd49f1223f313416b4ef2d05baf359b",
+            0x2696,
+            0x094E,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_primary_mesh_vectors(
+                module,
+                entry,
+                body_hash,
+                renderer_entry,
+                bucket_base,
+            ),
             args.check,
         )
     for (

@@ -2651,6 +2651,22 @@ and complete segment-owned memory. Open Watcom 1.9 medium (`-3 -ox -mm -zdp
 SCRUT to 128/391. Turbo C 2.01 medium (`-mm -O -Z`) emits 193 instructions for
 the representative CROOLIS form. Neither compiler is an exact codegen match.
 
+## Alien primary-mesh projection candidate
+
+The AMER `0x059b` and CROOLIS/SCRUT `0x05dc` routines are shared
+125-instruction/403-byte primary-mesh stages. They project one context's
+20-byte vertices through the camera matrix, reject a wholly clipped mesh,
+rotate and bucket its 8-byte faces, and call the existing sibling renderer.
+
+Nine patched-renderer raw-overlay vectors per module verify both invalid-depth
+paths, all clip edges, low-32-bit product overflow, valid whole-mesh rejection,
+both face rotations and ties, per-face clipping, width 499/500, negative
+buckets, LIFO links, complete memory ownership, and renderer suppression or
+invocation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
+natural typed source warning-free to 239 instructions/739 bytes. Turbo C 2.01
+medium (`-mm -O -Z`) emits 324 instructions. Neither compiler matches the
+original code generation.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
