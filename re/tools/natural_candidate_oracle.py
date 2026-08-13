@@ -5508,6 +5508,497 @@ def palette_scene_entries_clear_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def palette_blend_remap_table_vectors() -> list[dict[str, object]]:
+    entry = 0x22E0
+    expected_hash = "ffc21fec39315ead7e4c402542613eaadc680af73b2eff8e39d531d5e23b13c3"
+    if hashlib.sha256(EXE[entry : entry + 229]).hexdigest() != expected_hash:
+        raise AssertionError("0x22e0: recovered 229-byte body changed")
+
+    unique_palette = bytes(
+        component
+        for index in range(256)
+        for component in (index & 0x3F, index >> 6, (index * 17 + 9) & 0x3F)
+    )
+    duplicate_palette = bytes(
+        component
+        for index in range(256)
+        for component in (
+            index & 0x3F,
+            (index * 3) & 0x3F,
+            (index * 5) & 0x3F,
+        )
+    )
+    cases = (
+        ("zero_percent_later_ties", 0, (19, 27, 41), duplicate_palette),
+        ("half_darkening", 50, (0, 0, 0), unique_palette),
+        ("full_target", 100, (17, 2, 42), unique_palette),
+        ("no_match_preserves", 100, (63, 63, 63), bytes(768)),
+    )
+    data_segment = 0x3000
+    extra_segment = 0x5000
+    fs_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    destination_offset = 0x6011
+    return_address = 0x6F00
+    defined_mask = 0x0CD5
+    vectors = []
+
+    for case_index, (name, percent, target, palette) in enumerate(cases):
+        table_before = bytes(
+            (0x31 + case_index * 23 + index * 37) & 0xFF for index in range(256)
+        )
+        expected_table = bytearray(table_before)
+        source_weight = (100 - percent) & 0xFFFF
+        scaled_target = tuple(percent * value // 100 for value in target)
+        for source in range(256):
+            blended = tuple(
+                (
+                    (palette[source * 3 + component] * source_weight) // 100
+                    + scaled_target[component]
+                )
+                & 0xFFFF
+                for component in range(3)
+            )
+            best_distance = 0x0BB8
+            best_index = -1
+            for candidate in range(256):
+                distance = 0
+                for component in range(3):
+                    delta = (
+                        blended[component] - palette[candidate * 3 + component]
+                    ) & 0xFFFF
+                    if delta & 0x8000:
+                        delta = (-delta) & 0xFFFF
+                    distance = (distance + delta * delta) & 0xFFFF
+                if distance <= best_distance:
+                    best_distance = distance
+                    best_index = candidate
+            if best_index >= 0:
+                expected_table[source] = best_index
+
+        initial = {
+            "eax": 0xA5A50000 | ((-percent) & 0xFFFF),
+            "ebx": 0xB6B60000 | target[0],
+            "ecx": 0xC7C70000 | target[1],
+            "edx": 0xD8D80000 | target[2],
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA0000 | destination_offset,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        data_decoy = bytes(value ^ 0x5A for value in palette)
+        extra_decoy = bytes(value ^ 0xA5 for value in table_before)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x5251, data_decoy),
+                (extra_segment, destination_offset, extra_decoy),
+                (game_segment, 0x5251, palette),
+                (game_segment, destination_offset, table_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            instruction_count=5_000_000,
+        )
+
+        actual_table = bytes(
+            machine.mem_read(game_segment * 16 + destination_offset, 256)
+        )
+        if actual_table != bytes(expected_table):
+            raise AssertionError(f"0x22e0 {name}: remap table differs")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5251, 768)) != palette:
+            raise AssertionError(f"0x22e0 {name}: changed live palette")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5251, 768)) != data_decoy:
+            raise AssertionError(f"0x22e0 {name}: changed DS palette decoy")
+        if (
+            bytes(machine.mem_read(extra_segment * 16 + destination_offset, 256))
+            != extra_decoy
+        ):
+            raise AssertionError(f"0x22e0 {name}: wrote through entry ES")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x22e0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x22e0 {name}: far return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x22e0 {name}: stack sentinel changed")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if final_flags & defined_mask != 0x0084:
+            raise AssertionError(
+                f"0x22e0 {name}: flags={final_flags & defined_mask:#x}, expected=0x84"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "percent": percent,
+                "target": list(target),
+                "palette_sha256": hashlib.sha256(palette).hexdigest(),
+                "initial_table_sha256": hashlib.sha256(table_before).hexdigest(),
+                "result_table_sha256": hashlib.sha256(actual_table).hexdigest(),
+                "changed_entries": sum(
+                    left != right for left, right in zip(table_before, actual_table)
+                ),
+                "distinct_results": len(set(actual_table)),
+                "defined_flags": final_flags & defined_mask,
+            }
+        )
+    return vectors
+
+
+def palette_range_interpolate_vectors() -> list[dict[str, object]]:
+    entry = 0x23C5
+    expected_hash = "cc5aa75531534b4ad46005afe9348397b3c8b309bbf9d2e5885007eb9c24c130"
+    if hashlib.sha256(EXE[entry : entry + 104]).hexdigest() != expected_hash:
+        raise AssertionError("0x23c5: recovered 104-byte body changed")
+
+    cases = (
+        ("zero_single", 0, 0, 0),
+        ("full_range", 100, 0, 255),
+        ("half_subrange", 50, 5, 12),
+        ("negative_extrapolation", -50, 100, 103),
+        ("third_truncation", 33, 220, 223),
+    )
+    source_segment = 0x3000
+    source_offset = 0x1800
+    target_segment = 0x5000
+    target_offset = 0x2400
+    fs_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x6F40
+    defined_mask = 0x0CD5
+    source_palette = bytes(
+        component
+        for index in range(256)
+        for component in (
+            (index * 7 + 3) & 0x3F,
+            (index * 11 + 19) & 0x3F,
+            (index * 13 + 37) & 0x3F,
+        )
+    )
+    target_palette = bytes(
+        component
+        for index in range(256)
+        for component in (
+            (63 - index * 5) & 0x3F,
+            (41 - index * 9) & 0x3F,
+            (23 - index * 15) & 0x3F,
+        )
+    )
+    vectors = []
+
+    def signed8(value: int) -> int:
+        return value - 0x100 if value & 0x80 else value
+
+    def signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
+        quotient = abs(dividend) // abs(divisor)
+        if (dividend < 0) != (divisor < 0):
+            quotient = -quotient
+        return quotient, dividend - quotient * divisor
+
+    def add8_flags(left: int, right: int) -> int:
+        result = (left + right) & 0xFF
+        flags = 0
+        if left + right > 0xFF:
+            flags |= 0x0001
+        if result.bit_count() % 2 == 0:
+            flags |= 0x0004
+        if ((left ^ right ^ result) & 0x10) != 0:
+            flags |= 0x0010
+        if result == 0:
+            flags |= 0x0040
+        if result & 0x80:
+            flags |= 0x0080
+        if ((~(left ^ right) & (left ^ result)) & 0x80) != 0:
+            flags |= 0x0800
+        return flags
+
+    for case_index, (name, percent, first, last) in enumerate(cases):
+        palette_before = bytes(
+            (0x71 + case_index * 13 + index * 17) & 0xFF for index in range(768)
+        )
+        expected_palette = bytearray(palette_before)
+        final_quotient = 0
+        final_remainder = 0
+        final_target = 0
+        for entry_index in range(first, last + 1):
+            for component in range(3):
+                offset = entry_index * 3 + component
+                delta = signed8(
+                    (source_palette[offset] - target_palette[offset]) & 0xFF
+                )
+                final_quotient, final_remainder = signed_divide(delta * percent, 100)
+                final_target = target_palette[offset]
+                expected_palette[offset] = (final_target + final_quotient) & 0xFF
+
+        percent_raw = percent & 0xFF
+        initial = {
+            "eax": 0xA5A55A00 | percent_raw,
+            "ebx": 0xB6B60000 | first,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D80000 | last,
+            "esi": 0xE9E90000 | source_offset,
+            "edi": 0xFAFA0000 | target_offset,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": target_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        fs_decoy = bytes(
+            (0x19 + case_index * 7 + index * 5) & 0xFF for index in range(64)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, source_offset, source_palette),
+                (target_segment, target_offset, target_palette),
+                (fs_segment, 0x3300, fs_decoy),
+                (game_segment, 0x5251, palette_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+        )
+
+        actual_palette = bytes(machine.mem_read(game_segment * 16 + 0x5251, 768))
+        if actual_palette != bytes(expected_palette):
+            raise AssertionError(f"0x23c5 {name}: interpolated palette differs")
+        if (
+            bytes(machine.mem_read(source_segment * 16 + source_offset, 768))
+            != source_palette
+        ):
+            raise AssertionError(f"0x23c5 {name}: changed source palette")
+        if (
+            bytes(machine.mem_read(target_segment * 16 + target_offset, 768))
+            != target_palette
+        ):
+            raise AssertionError(f"0x23c5 {name}: changed target palette")
+        if bytes(machine.mem_read(fs_segment * 16 + 0x3300, 64)) != fs_decoy:
+            raise AssertionError(f"0x23c5 {name}: changed FS decoy")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | (
+            ((final_remainder & 0xFF) << 8) | ((final_target + final_quotient) & 0xFF)
+        )
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0x6400 | percent_raw
+        range_difference = (last - first) & 0xFFFF
+        final_result = (final_target + final_quotient) & 0xFF
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | (
+            (range_difference & 0xFF00) | final_result
+        )
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x23c5 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x23c5 {name}: far return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x23c5 {name}: stack sentinel changed")
+
+        expected_flags = add8_flags(final_target, final_quotient & 0xFF)
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if final_flags & defined_mask != expected_flags:
+            raise AssertionError(
+                f"0x23c5 {name}: flags={final_flags & defined_mask:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "percent": percent,
+                "first": first,
+                "last": last,
+                "updated_components": (last - first + 1) * 3,
+                "result_palette_sha256": hashlib.sha256(actual_palette).hexdigest(),
+                "final_ax": machine.reg_read(UC_X86_REG_AX),
+                "final_bx": machine.reg_read(UC_X86_REG_BX),
+                "final_dx": machine.reg_read(UC_X86_REG_DX),
+                "defined_flags": final_flags & defined_mask,
+            }
+        )
+    return vectors
+
+
+def tint_table_build_banked_vectors() -> list[dict[str, object]]:
+    entry = 0x242D
+    expected_hash = "fa951f30b87b00b6bcd2badbb4fc0c8bc664233194e9cc84ac8d6258eb97c869"
+    if hashlib.sha256(EXE[entry : entry + 94]).hexdigest() != expected_hash:
+        raise AssertionError("0x242d: recovered 94-byte body changed")
+
+    cases = (
+        ("console_bank", 0x00E0, 0),
+        ("low_bank", 0x0000, 7),
+        ("middle_bank", 0x0020, 19),
+        ("upper_valid_bank", 0x00F0, 31),
+    )
+    data_segment = 0x3000
+    extra_segment = 0x5000
+    fs_segment = 0x6000
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    destination_offset = 0x6011
+    return_address = 0x6F80
+    defined_mask = 0x0CD5
+    vectors = []
+
+    for case_index, (name, bank_base, palette_bias) in enumerate(cases):
+        palette = bytes(
+            component
+            for index in range(256)
+            for component in (
+                (index + palette_bias) & 0x3F,
+                (index * 3 + palette_bias * 2) & 0x3F,
+                (index * 5 + palette_bias * 3) & 0x3F,
+            )
+        )
+        table_before = bytes(
+            (0x43 + case_index * 29 + index * 11) & 0xFF for index in range(256)
+        )
+        expected_table = bytearray(256)
+        final_ax = 0
+        for index in range(256):
+            red, green, blue = palette[index * 3 : index * 3 + 3]
+            shade = (red * 3 + green * 6 + blue) // 28
+            if shade > 15:
+                shade = 15
+            mapped = (bank_base + shade) & 0xFFFF
+            if bank_base <= index <= bank_base + 15:
+                final_value = index
+                ax_value = (mapped & 0xFF00) | (index & 0xFF)
+            else:
+                final_value = mapped
+                ax_value = mapped
+            expected_table[index] = final_value & 0xFF
+            final_ax = ax_value
+
+        initial = {
+            "eax": 0xA5A50000 | bank_base,
+            "ebx": 0xB6B60000 | destination_offset,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        data_decoy = bytes(value ^ 0xA5 for value in palette)
+        extra_decoy = bytes(value ^ 0x5A for value in table_before)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0x5251, data_decoy),
+                (extra_segment, destination_offset, extra_decoy),
+                (game_segment, 0x5251, palette),
+                (game_segment, destination_offset, table_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+        )
+
+        actual_table = bytes(
+            machine.mem_read(game_segment * 16 + destination_offset, 256)
+        )
+        if actual_table != bytes(expected_table):
+            raise AssertionError(f"0x242d {name}: bank remap table differs")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5251, 768)) != palette:
+            raise AssertionError(f"0x242d {name}: changed live palette")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5251, 768)) != data_decoy:
+            raise AssertionError(f"0x242d {name}: changed DS palette decoy")
+        if (
+            bytes(machine.mem_read(extra_segment * 16 + destination_offset, 256))
+            != extra_decoy
+        ):
+            raise AssertionError(f"0x242d {name}: wrote through entry ES")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | final_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0x0100
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x242d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x242d {name}: far return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x242d {name}: stack sentinel changed")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if final_flags & defined_mask != 0x0014:
+            raise AssertionError(
+                f"0x242d {name}: flags={final_flags & defined_mask:#x}, expected=0x14"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "bank_base": bank_base,
+                "palette_sha256": hashlib.sha256(palette).hexdigest(),
+                "result_table_sha256": hashlib.sha256(actual_table).hexdigest(),
+                "result_min": min(actual_table),
+                "result_max": max(actual_table),
+                "distinct_results": len(set(actual_table)),
+                "identity_entries": sum(
+                    index == value for index, value in enumerate(actual_table)
+                ),
+                "final_ax": machine.reg_read(UC_X86_REG_AX),
+                "defined_flags": final_flags & defined_mask,
+            }
+        )
+    return vectors
+
+
 def decimal_append_vectors(
     entry: int,
     byte_count: int,
@@ -47198,6 +47689,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1fbc_natural.json",
         mouse_button_edges_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_22e0_natural.json",
+        palette_blend_remap_table_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_23c5_natural.json",
+        palette_range_interpolate_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_242d_natural.json",
+        tint_table_build_banked_vectors(),
         args.check,
     )
     update_vector(

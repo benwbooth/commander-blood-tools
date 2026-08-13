@@ -150,6 +150,21 @@ void CB_NEAR page_offset_helper(void); /* 0x0017AF */
 void CB_NEAR main_loop_hud_refresh(void); /* 0x001A93 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
+cb_i16 CB_FAR palette_blend_remap_table_build(
+        cb_i16 negative_percent,
+        cb_u16 target_red,
+        cb_u16 target_green,
+        cb_u16 target_blue,
+        volatile cb_u8 CB_GAME_DATA *table); /* 0x0022E0 */
+void CB_FAR palette_range_interpolate(
+        const cb_u8 CB_FAR *source,
+        const cb_u8 CB_FAR *target,
+        cb_i8 percent,
+        cb_u16 first,
+        cb_u16 last); /* 0x0023C5 */
+void CB_FAR tint_table_build_banked(
+        cb_u16 bank_base,
+        volatile cb_u8 CB_GAME_DATA *table); /* 0x00242D */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
 cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
         int use_main_font); /* 0x0030CD */
@@ -234,6 +249,10 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux backbuffer_clear_flags value [ax] modify exact [ax dx]
 #pragma aux page_offset_helper modify exact [ax dx]
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
+#pragma aux palette_blend_remap_table_build \
+        parm [ax] [bx] [cx] [dx] [di] value [ax] modify exact []
+#pragma aux tint_table_build_banked \
+        parm [ax] [bx] modify exact [ax bx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "zero_single",
+    "percent": 0,
+    "first": 0,
+    "last": 0,
+    "updated_components": 3,
+    "result_palette_sha256": "48046a479bda57404a6efea04a30a3d719c427ab8b3eb092c2be7151e1c031d5",
+    "final_ax": 23,
+    "final_bx": 25600,
+    "final_dx": 23,
+    "defined_flags": 4
+  },
+  {
+    "name": "full_range",
+    "percent": 100,
+    "first": 0,
+    "last": 255,
+    "updated_components": 768,
+    "result_palette_sha256": "e5abc162cdf70bcf27252c20ab33449455eb26f5e46b71d2c950e5b3e141acec",
+    "final_ax": 24,
+    "final_bx": 25700,
+    "final_dx": 24,
+    "defined_flags": 5
+  },
+  {
+    "name": "half_subrange",
+    "percent": 50,
+    "first": 5,
+    "last": 12,
+    "updated_components": 24,
+    "result_palette_sha256": "6966d88eae050c7354bea1ab2d1e52d0639b83cdfce571f6c0e37acb30ca30ec",
+    "final_ax": 18,
+    "final_bx": 25650,
+    "final_dx": 18,
+    "defined_flags": 21
+  },
+  {
+    "name": "negative_extrapolation",
+    "percent": -50,
+    "first": 100,
+    "last": 103,
+    "updated_components": 12,
+    "result_palette_sha256": "b1debf1d849b38ddfb407167fb73ef35a833d5094f652a43083192eec6b42065",
+    "final_ax": 5,
+    "final_bx": 25806,
+    "final_dx": 5,
+    "defined_flags": 21
+  },
+  {
+    "name": "third_truncation",
+    "percent": 33,
+    "first": 220,
+    "last": 223,
+    "updated_components": 12,
+    "result_palette_sha256": "2dc4dad6870d178d245990c78306dc8d5801b48b566b4fcc2991d2244fbd7e38",
+    "final_ax": 12822,
+    "final_bx": 25633,
+    "final_dx": 22,
+    "defined_flags": 0
+  }
+]

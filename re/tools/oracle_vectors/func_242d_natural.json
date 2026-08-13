@@ -1,0 +1,50 @@
+[
+  {
+    "name": "console_bank",
+    "bank_base": 224,
+    "palette_sha256": "6f2e0abca7a5de5bdbf3991cdce548373cbcdf14270239b7d78c1f3d56cb50a0",
+    "result_table_sha256": "744bc1540e3274bdd666fe4b01baa2006215fdbf5f07897d9e1a58463127da43",
+    "result_min": 224,
+    "result_max": 239,
+    "distinct_results": 16,
+    "identity_entries": 16,
+    "final_ax": 239,
+    "defined_flags": 20
+  },
+  {
+    "name": "low_bank",
+    "bank_base": 0,
+    "palette_sha256": "df33cb7d81502db60a118dc30f27bd57974a5e13c83a11c8ccbff8c41f6a43b7",
+    "result_table_sha256": "9065b62494fef467a2722f1290749a2793f31b9fe31e006ba92f9a1604f0f59a",
+    "result_min": 0,
+    "result_max": 15,
+    "distinct_results": 16,
+    "identity_entries": 16,
+    "final_ax": 3,
+    "defined_flags": 20
+  },
+  {
+    "name": "middle_bank",
+    "bank_base": 32,
+    "palette_sha256": "5890e9bbbb993d6ee0247d4a035073809c1d46a0d8304397c04cb94b6a93fb75",
+    "result_table_sha256": "e8fab0aa76b058913c3d6df15c16ef431b3e93a009f1f6b42fa276ef195b688b",
+    "result_min": 32,
+    "result_max": 47,
+    "distinct_results": 16,
+    "identity_entries": 16,
+    "final_ax": 43,
+    "defined_flags": 20
+  },
+  {
+    "name": "upper_valid_bank",
+    "bank_base": 240,
+    "palette_sha256": "7719240367945be18f4b085daa72a558eba9ebfd1daa14664185043552e54649",
+    "result_table_sha256": "efa4b386904894b5c9a585c1eae3dacf75bd9d11948c9b039d0e6a2df06eb936",
+    "result_min": 240,
+    "result_max": 255,
+    "distinct_results": 16,
+    "identity_entries": 16,
+    "final_ax": 255,
+    "defined_flags": 20
+  }
+]
