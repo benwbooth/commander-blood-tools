@@ -6,8 +6,8 @@
 ; seg_off: 0299:0498
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: graphics_plot_modex
-; label_comment: SEG 0x299:0x498: mode-X pixel/span plot. Inputs bx=x, dx=y, al=colour. Bounds-check dx vs gs:[0x5239](min+0xa)/[0x523b](max). Address = screen_buffer_far_ptr(gs:0x521d) + y*80 (ax=y<<4 + dx=y<<6) + x/4 (bx>>2); plane = x&3 (cl=bl&3) selected via the VGA map-mask. Confirms mode-X layout: byte offset = y*80 + x/4, plane = x&3. The game's core rendering primitive (my engine's linear y*320+x framebuffer yields the same pixel)
+; label: planar_ui_text_render_10row
+; label_comment: Mode-X square-caps text renderer. DS:SI=NUL text, BX=x, DX=y, AL=color. Clears GS:0x27CD, clips ten-row text against GS:0x5239/0x523B, maps characters through GS:0x7362, reads advances at GS:0x7412, and reads ten big-endian glyph words from SS:0x7442+index*20. It addresses the full GS:[0x521D] framebuffer as y*80+x/4, rotates VGA sequencer map masks 0x11/0x22/0x44/0x88 across four passes, and writes transparent sparse glyph pixels. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003428_planar_ui_text_render_10row.c and re/tools/oracle_vectors/func_3428_natural.json
 ; incoming: call@0x001ac6->0299:0498
 ; byte_count: 326
 ; boundary: cfg_blocks_34_terminals_6

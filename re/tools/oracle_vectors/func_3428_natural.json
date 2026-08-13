@@ -1,0 +1,624 @@
+[
+  {
+    "name": "above_bottom_clipped_before_port_or_text",
+    "x": 17,
+    "y": 101,
+    "color": 239,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": true,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 0,
+    "port_writes_head": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "top_minus_height_edge_clipped",
+    "x": 23,
+    "y": 10,
+    "color": 232,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": true,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 0,
+    "port_writes_head": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "empty_string_selects_map_mask_register_only",
+    "x": 31,
+    "y": 11,
+    "color": 122,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": false,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 1,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ]
+    ],
+    "port_writes_sha256": "096eb04ec98c30a587795042fa87c90314ba036aa7126ce6c31ecdcceb7950b0",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "single_glyph_starting_plane_zero",
+    "x": 20,
+    "y": 37,
+    "color": 209,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 7,
+    "port_write_count": 5,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "603a82f6c79661645db681ef6c8d116991b8d681433febc672971a23ac6038ad",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6889ee5b2c94e0f4e0056e136cab1a4997dd02a3f0fc272a6a3764e97997bc6b"
+  },
+  {
+    "name": "single_glyph_starting_plane_one",
+    "x": 21,
+    "y": 41,
+    "color": 0,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 11,
+    "port_write_count": 5,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ]
+    ],
+    "port_writes_sha256": "17f9c9373b185382e9032d93cf9505e01892a7f8dea66e80efa9c710217f1991",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "08f97f30c697bf7bb586f1c0edb27ff47972eb8d7eb5b187714f25692b5bb796"
+  },
+  {
+    "name": "single_glyph_starting_plane_two",
+    "x": 22,
+    "y": 45,
+    "color": 85,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 9,
+    "port_write_count": 5,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ]
+    ],
+    "port_writes_sha256": "44f6f0cbf2e9d41f543b30d44a26e48aae5ca166e5bc012bb63108c22bec6c80",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e3223698a8887332e49c87f8a14b3aa2c0dfa237a711fc98ced86daea7a11f9b"
+  },
+  {
+    "name": "single_glyph_starting_plane_three",
+    "x": 23,
+    "y": 49,
+    "color": 145,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 14,
+    "port_write_count": 5,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "41a024f3dd4e8cbfd4a17c96f19d3a490d9f1dd6fef2162142327159bd4e190b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "8fd035e43633eafa29151b26f5738d96271f766193e2c07df7167787097452e8"
+  },
+  {
+    "name": "two_glyphs_signed_advances_cross_plane_boundary",
+    "x": 19,
+    "y": 53,
+    "color": 199,
+    "clip_top": 50,
+    "clip_bottom": 140,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 2,
+    "port_write_count": 9,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ]
+    ],
+    "port_writes_sha256": "aae5dc827c576aafba5f5f5a078190f7133ee2e4fa2742375059942f3061120b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7e8731c33f86c25460991bcb406205574cd62de1861d74303e988214910d3bc4"
+  },
+  {
+    "name": "source_offset_wrap",
+    "x": 46,
+    "y": 61,
+    "color": 167,
+    "clip_top": 60,
+    "clip_bottom": 150,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 65535,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 18,
+    "port_write_count": 9,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "da50d3dfb897ea808b0920bae138fcb19232903e8fc1d4121a4e63feda0b5792",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6cffc043386f0ea8608663de8bdc18e16e5e26f463e6238996e265f29bd38fc0"
+  },
+  {
+    "name": "inherited_backward_source_direction",
+    "x": 67,
+    "y": 73,
+    "color": 60,
+    "clip_top": 70,
+    "clip_bottom": 160,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 12288,
+    "screen_offset": 768,
+    "direction_flag": true,
+    "draw_width": 18,
+    "port_write_count": 9,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ]
+    ],
+    "port_writes_sha256": "4a4c2e43d4661261eeb25155a5926c5cb6619197964aebb1a3a299ed912d543b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "b9fac5758cdf0a8b773b8151eaa2cf88bc471b9e41da556a4120d54870eea3d5"
+  },
+  {
+    "name": "full_word_row_formula_and_output_wrap",
+    "x": 4663,
+    "y": 33059,
+    "color": 109,
+    "clip_top": 33024,
+    "clip_bottom": 65535,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "screen_offset": 65520,
+    "direction_flag": false,
+    "draw_width": 15,
+    "port_write_count": 5,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "41a024f3dd4e8cbfd4a17c96f19d3a490d9f1dd6fef2162142327159bd4e190b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "cd63e5766453fbe94fa43b7433d1a0339f6e6e7ebb1412ffd479acb7037ef052"
+  },
+  {
+    "name": "width_accumulator_wrap_with_positive_advance",
+    "x": 0,
+    "y": 0,
+    "color": 232,
+    "clip_top": 5,
+    "clip_bottom": 199,
+    "clipped": false,
+    "characters_drawn": 517,
+    "text_offset": 12800,
+    "screen_offset": 768,
+    "direction_flag": false,
+    "draw_width": 123,
+    "port_write_count": 2069,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "12c9b49de7d9433bfef165ff13da6eb3bedf6e1a9db960663d08dc3e18a64b3b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6030576f88b6b292398e5cd53be1b537e424657f30178b98fc912cbaa507101f"
+  }
+]

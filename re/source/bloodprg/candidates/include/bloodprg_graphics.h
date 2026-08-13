@@ -141,6 +141,11 @@ void CB_FAR square_caps_text_draw_display(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x003106 */
+void CB_FAR planar_ui_text_render_10row(
+        const cb_u8 CB_FAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color); /* 0x003428 */
 void CB_FAR main_font_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -166,6 +171,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux font8x8_text_draw_display \
         parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
 #pragma aux square_caps_text_draw_display \
+        parm [ds si] [bx] [dx] [ax] modify exact []
+#pragma aux planar_ui_text_render_10row \
         parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux main_font_text_draw_display \
         parm [ds si] [bx] [dx] [ax] modify exact []

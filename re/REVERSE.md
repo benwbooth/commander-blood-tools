@@ -2097,7 +2097,9 @@ Named targets that are already tied to code behavior:
   `0x5F11` and `0x6011` for UI/HUD and transition effects. Its lower edge uses
   X-right `DS:0x5237`, not Y-bottom `DS:0x523B`, matching sibling `0x003B85`.
 - `0x0299:0x0498` (`planar_ui_text_render_10row`): renders 10-row UI text
-  through VGA plane masks into framebuffer pointer `GS:0x521D`.
+  through VGA plane masks into framebuffer pointer `GS:0x521D`. It uses the
+  square-caps tables at `GS:0x7362/0x7412` and `SS:0x7442`, addresses pixels as
+  `y*80+x/4`, and rotates masks `0x11/0x22/0x44/0x88` across four plane passes.
 - `0x0299:0x05DE` (`planar_dialogue_text_render`): renders dialogue-font text
   through VGA plane masks into framebuffer pointer `GS:0x5219`; reached by the
   line-layout dialogue path at file `0x72F6`.
