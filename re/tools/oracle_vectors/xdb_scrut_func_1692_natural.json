@@ -1,0 +1,132 @@
+[
+  {
+    "name": "existing_callback_tail_jump",
+    "module": "scrut",
+    "entry": 5778,
+    "path": "callback",
+    "state": 9118,
+    "callback_entry": {
+      "si": 9118,
+      "di": 12288,
+      "sp": 65280
+    },
+    "control_state": -32767,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "two_states_positive_seed",
+    "module": "scrut",
+    "entry": 5778,
+    "path": "initialize",
+    "state_base": 16384,
+    "state_count": 2,
+    "loop_iterations": 1,
+    "last_state": 16572,
+    "random_before": 0,
+    "random_after": 0,
+    "context_random": 0,
+    "seed_before": 4660,
+    "seed_after": 4960,
+    "data_sha256": "50a9b15d22728d8f953ad27be40203e93dda1bd6a563b16373fec403ed1d0326",
+    "fs_sha256": "b27d99a8e6de8a7778b18ae989fe2b968f39e32c33b57fa32f3033ac326ecb90",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "three_states_negative_seed",
+    "module": "scrut",
+    "entry": 5778,
+    "path": "initialize",
+    "state_base": 17408,
+    "state_count": 3,
+    "loop_iterations": 2,
+    "last_state": 17690,
+    "random_before": 64,
+    "random_after": 32767,
+    "context_random": 65278,
+    "seed_before": 32769,
+    "seed_after": 33069,
+    "data_sha256": "853c877d165aa93a5cb7ef8fd77b56e75c03dffdd6d20c776760815778077be9",
+    "fs_sha256": "19d555f36a75781184b2fc367557375ad15020c1f3c673cc522dd81b61ac95a7",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "count_one_full_loop",
+    "module": "scrut",
+    "entry": 5778,
+    "path": "initialize",
+    "state_base": 18432,
+    "state_count": 1,
+    "loop_iterations": 65536,
+    "last_state": 18526,
+    "random_before": 32769,
+    "random_after": 768,
+    "context_random": 6,
+    "seed_before": 32767,
+    "seed_after": 33067,
+    "data_sha256": "917678b90e5f872bd3aa643e52e4e05febd882e67b1a354f38d57c042a1ab104",
+    "fs_sha256": "5c91341d0693b8a1106a5bfcf119795012079e4444936df61d57044e902d5d6d",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "count_zero_65535_loops",
+    "module": "scrut",
+    "entry": 5778,
+    "path": "initialize",
+    "state_base": 65440,
+    "state_count": 0,
+    "loop_iterations": 65535,
+    "last_state": 65440,
+    "random_before": 65535,
+    "random_after": 65534,
+    "context_random": 65022,
+    "seed_before": 65535,
+    "seed_after": 299,
+    "data_sha256": "f05a55a31fda22e7310f353342f4fcdc97f82a9403974bbf9ea005b95df0bf61",
+    "fs_sha256": "d988c68586be1a367a34e82c2456651aea22d08d5bfbe90ebbfbf3677f936496",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

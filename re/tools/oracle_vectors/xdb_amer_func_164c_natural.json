@@ -1,0 +1,128 @@
+[
+  {
+    "name": "existing_callback_tail_jump",
+    "module": "amer",
+    "entry": 5708,
+    "path": "callback",
+    "state": 9118,
+    "callback_entry": {
+      "si": 9118,
+      "di": 12288,
+      "sp": 65280
+    },
+    "control_state": -32767,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "random_zero",
+    "module": "amer",
+    "entry": 5708,
+    "path": "initialize",
+    "state_base": 16384,
+    "state_count": 1,
+    "loop_iterations": 0,
+    "last_state": 16478,
+    "random_before": 0,
+    "random_after": 0,
+    "context_random": 0,
+    "seed_before": null,
+    "seed_after": null,
+    "data_sha256": "043ca1488a4477b17fde336fffc56c22f2924faec934f584432d37379013faca",
+    "fs_sha256": "b27d99a8e6de8a7778b18ae989fe2b968f39e32c33b57fa32f3033ac326ecb90",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "random_carry",
+    "module": "amer",
+    "entry": 5708,
+    "path": "initialize",
+    "state_base": 17408,
+    "state_count": 3,
+    "loop_iterations": 0,
+    "last_state": 17502,
+    "random_before": 64,
+    "random_after": 32767,
+    "context_random": 32767,
+    "seed_before": null,
+    "seed_after": null,
+    "data_sha256": "331cef125fe514842dae8d79ed6f6cbd3d48464fb985bf2b0f486b284ebbb038",
+    "fs_sha256": "19d555f36a75781184b2fc367557375ad15020c1f3c673cc522dd81b61ac95a7",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "random_high",
+    "module": "amer",
+    "entry": 5708,
+    "path": "initialize",
+    "state_base": 18432,
+    "state_count": 0,
+    "loop_iterations": 0,
+    "last_state": 18526,
+    "random_before": 32769,
+    "random_after": 768,
+    "context_random": 768,
+    "seed_before": null,
+    "seed_after": null,
+    "data_sha256": "9335b66be1241672cecf57b435acf88190b808953f7e71007ea51efb008c13de",
+    "fs_sha256": "5c91341d0693b8a1106a5bfcf119795012079e4444936df61d57044e902d5d6d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "state_wrap",
+    "module": "amer",
+    "entry": 5708,
+    "path": "initialize",
+    "state_base": 65440,
+    "state_count": 2,
+    "loop_iterations": 0,
+    "last_state": 65534,
+    "random_before": 65535,
+    "random_after": 65534,
+    "context_random": 65534,
+    "seed_before": null,
+    "seed_after": null,
+    "data_sha256": "47785ae8ffb862168357ff91c7c7d182d505d7f83848fa4d02d9a22b0b071faa",
+    "fs_sha256": "d988c68586be1a367a34e82c2456651aea22d08d5bfbe90ebbfbf3677f936496",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

@@ -79,6 +79,24 @@ struct xdb_alien_method_context {
             xdb_u16 cursor;
             xdb_i16 previous;
         } sample_state;
+        struct {
+            xdb_u16 field_038;
+            xdb_u8 field_03a[0x06];
+            xdb_u16 random_value;
+        } amer_slot2;
+        struct {
+            xdb_u16 duration;
+            xdb_u16 field_03a;
+            xdb_i32 signed_seed;
+            xdb_u8 field_040[0x02];
+            xdb_u16 random_value;
+        } croolis_slot2;
+        struct {
+            xdb_u16 duration;
+            xdb_i32 signed_seed;
+            xdb_u8 field_03e[0x04];
+            xdb_u16 random_value;
+        } scrut_slot2;
     } continuation;
 };
 
@@ -97,6 +115,7 @@ extern volatile xdb_i16 xdb_alien_camera_pan; /* DS:0x22F8 */
 extern volatile xdb_i16 xdb_alien_camera_pan_secondary; /* DS:0x22FA */
 extern volatile xdb_i16 xdb_alien_camera_depth_step; /* DS:0x22FC */
 extern volatile xdb_u16 xdb_alien_exit_requested; /* FS:0x226E; FS=DS invariant */
+extern volatile xdb_u16 xdb_alien_random_state; /* FS:0x105C; FS=DS invariant */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_key_event; /* CS:0x0095 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_code_flags; /* CS:0x02FC */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -114,6 +133,8 @@ extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_generation; /* CS:0x0DA1 *
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot3_ring_cursor; /* CS:0x0D5D */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot3_ring_cursor; /* CS:0x0DB5 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_ring_cursor; /* CS:0x0DA3 */
+extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot2_seed; /* CS:0x16A2 */
+extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_amer_slot3_ring[]; /* CS:0x0D63 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_croolis_slot3_ring[]; /* CS:0x0DBB */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_scrut_slot3_ring[]; /* CS:0x0DA9 */
@@ -160,6 +181,12 @@ void XDB_NEAR xdb_croolis_method_slot_10_bounds_then_wrap(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_method_slot_10_bounds_then_wrap(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_slot_2_dispatch_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_2_4_dispatch_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_2_4_dispatch_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_method_slot_3_update_or_init(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_method_slot_3_update_or_init(
@@ -187,6 +214,12 @@ void XDB_NEAR xdb_croolis_slot3_update(
 void XDB_NEAR xdb_scrut_slot3_initial_update(
         xdb_alien_biased_state XDB_NEAR *state);
 void XDB_NEAR xdb_scrut_slot3_update(
+        xdb_alien_biased_state XDB_NEAR *state);
+void XDB_NEAR xdb_amer_slot2_update(
+        xdb_alien_biased_state XDB_NEAR *state);
+void XDB_NEAR xdb_croolis_slot2_update(
+        xdb_alien_biased_state XDB_NEAR *state);
+void XDB_NEAR xdb_scrut_slot2_update(
         xdb_alien_biased_state XDB_NEAR *state);
 
 #if defined(__WATCOMC__)
@@ -224,6 +257,12 @@ void XDB_NEAR xdb_scrut_slot3_update(
 #pragma aux xdb_croolis_method_slot_10_bounds_then_wrap \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_method_slot_10_bounds_then_wrap \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_method_slot_2_dispatch_or_init \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_croolis_method_slot_2_4_dispatch_or_init \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_scrut_method_slot_2_4_dispatch_or_init \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_amer_method_slot_3_update_or_init \
         parm [di] modify exact [ax bx cx dx si di bp]

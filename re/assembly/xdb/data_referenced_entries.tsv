@@ -1,0 +1,7 @@
+module	entry	evidence	status
+xdb_amer	0x001688	adjacent reset entry sets callback 0x1692 and field +0x58 before falling through	pending_boundary_recovery
+xdb_amer	0x001692	callback pointer stored by method-table slot 2 at 0x001677	pending_boundary_recovery
+xdb_croolis	0x00171d	adjacent reset entry sets callback 0x1727 and field +0x58 before falling through	pending_boundary_recovery
+xdb_croolis	0x001727	callback pointer stored by method-table slots 2/4 at 0x0016fe	pending_boundary_recovery
+xdb_scrut	0x001711	adjacent reset entry sets callback 0x171b and field +0x58 before falling through	pending_boundary_recovery
+xdb_scrut	0x00171b	callback pointer stored by method-table slots 2/4 at 0x0016e7	pending_boundary_recovery

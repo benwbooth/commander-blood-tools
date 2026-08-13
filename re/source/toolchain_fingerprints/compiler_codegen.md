@@ -2064,6 +2064,43 @@ and addresses the exit global through DS; this is logically equivalent in the
 recompiled overlay under the entry routine's established DS=FS invariant but
 is not segment-prefix-identical code generation.
 
+The alien slot-2 family is recovered as three natural callback dispatchers and
+initializers: AMER `0x00164C`, CROOLIS `0x0016A4`, and SCRUT `0x001692`.
+CROOLIS and SCRUT also share these routines through method-table slot 4. Five
+raw-overlay vectors per sibling prove the nonzero-control tail jump with the
+original `SI`, `DI`, and stack; the `FS:0x105C` random-state owner against
+distinct `DS` data; both rotate/subtract transformations; the signed
+code-segment seed load and wrapped increment; every initialized context/state
+field; 94-byte pointer wrap; registers, flags, and near return. CROOLIS copies
+the low word of each later state's Z position, while SCRUT copies both the X
+and Z low words. Their unconditional `DEC`/`LOOP` body executes 65,536 times
+for count one and 65,535 times for count zero; both cases are run and compared
+over the complete data segment.
+
+The natural source uses typed overlapping context views and the period `_rotr`
+library intrinsic, followed by a signed high-bit adjustment equivalent to the
+original `SBB AX,0`. It contains no inline assembly or register-state model.
+The plain random-state global relies on the same overlay-entry `FS=DS`
+invariant already required by slot 10. Open Watcom `-3 -ox -mm -zdp -we`
+compiles all 54 current XDB candidates without warnings. The actual AMER,
+CROOLIS, and SCRUT slot-2 candidates are respectively 22 instructions/66
+bytes, 42/131, and 44/137 versus originals of 17/60, 33/121, and 35/127.
+Watcom retains `ROR`, code-segment seed access, signed publication, state
+layout, and wrapped loops; it uses different scratch registers and emits a
+nested callback `CALL; RET` instead of the original tail `JMP`. Turbo C 2.01
+medium accepts the standalone CROOLIS probe but emits 72 instructions and a
+far `_rotr` library call. Exact overlay replacement therefore still needs a
+narrow callback tail adapter, while consistently recompiled callers and
+callbacks preserve the natural control flow.
+
+The initializer stores callback offsets AMER `0x1692`, CROOLIS `0x1727`, and
+SCRUT `0x171B`. These are separate state-machine routines beginning after the
+slot-2 returns, not blocks owned by the recovered slot-2 functions. Inspection
+also exposed adjacent reset entries at `0x1688`, `0x171D`, and `0x1711`.
+`re/assembly/xdb/data_referenced_entries.tsv` keeps all six entries pending
+until their complete boundaries and incoming function-pointer references are
+recovered.
+
 The AMER `0x001286`, CROOLIS `0x0012DE`, and SCRUT `0x0012CC` slot-3 entries
 were initially inventoried as only their common 45-byte callback tails. Each
 zero-state branch actually jumps backward into a 291-byte initializer directly
@@ -2369,6 +2406,7 @@ LCS and then mnemonic similarity:
 | `xdb_mouse_position_set` | medium, `-ox`, register | 5/5 | 0.4000 | 1.0000 | 0.6000 |
 | `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
 | `xdb_wrap_positions` | medium, `-ox -zdp`, register | 31/34 | 0.0323 | 0.5484 | 0.0645 |
+| `xdb_slot2_dispatch_or_init` | medium, `-ox -zdp`, register | 33/42 | 0.0303 | 0.6970 | 0.1212 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |

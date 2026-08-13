@@ -1657,6 +1657,414 @@ def alien_slot3_update_or_init_vectors(
     return vectors
 
 
+def alien_slot2_dispatch_or_init_vectors(
+    module: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    seed_offset: int | None,
+    seed_step: int,
+    initial_callback: int,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte slot-2 body changed"
+        )
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context_offset = 0x3000
+    return_address = 0xF000
+    callback_stub = 0xF100
+    callback_stub_bytes = bytes.fromhex(
+        "b8 11 11 bb 22 22 b9 33 33 ba 44 44 c3"
+    )
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        for index, byte in enumerate(value):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def transform_random(value: int) -> int:
+        rotated = ((value >> 7) | (value << 9)) & 0xFFFF
+        return (rotated - ((value >> 6) & 1)) & 0xFFFF
+
+    def patterned(multiplier: int, addend: int) -> bytes:
+        return bytes(
+            (offset * multiplier + addend) & 0xFF
+            for offset in range(0x10000)
+        )
+
+    def initial_registers(case_index: int, flags: int) -> dict[str, int]:
+        return {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4567 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | ((0x5678 + case_index) & 0xFFFF),
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags,
+        }
+
+    def compare_segment(
+        machine: Uc, segment: int, expected: bytes, name: str
+    ) -> None:
+        actual = bytes(machine.mem_read(segment * 16, 0x10000))
+        if actual == expected:
+            return
+        differences = [
+            (offset, actual[offset], expected[offset])
+            for offset in range(0x10000)
+            if actual[offset] != expected[offset]
+        ][:8]
+        raise AssertionError(
+            f"{module}:{entry:#x} {name}: segment {segment:#x} "
+            f"differs at {differences}"
+        )
+
+    def compare_registers(
+        machine: Uc, expected: dict[str, int], name: str
+    ) -> None:
+        for register, value in expected.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != value:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={value:#x}"
+                )
+
+    def compare_flags(
+        machine: Uc, expected: dict[str, bool], name: str
+    ) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected
+        }
+        if actual != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual}, expected={expected}"
+            )
+
+    # A nonzero control word must tail-jump through the first biased state.
+    state_base = 0x2340
+    state = (state_base + 0x5E) & 0xFFFF
+    data_before = bytearray(patterned(37, 11))
+    put_u16(data_before, context_offset + 0x16, state_base)
+    put_u16(data_before, context_offset + 0x36, 0x8001)
+    put_u16(data_before, state + 0x0E, callback_stub)
+    code_before = bytearray(image)
+    code_before[return_address] = 0xCC
+    code_before[callback_stub : callback_stub + len(callback_stub_bytes)] = (
+        callback_stub_bytes
+    )
+    fs_before = patterned(17, 5)
+    extra_before = patterned(13, 7)
+    game_before = patterned(11, 9)
+    initial_flags = 0x0693
+    initial = initial_registers(0, initial_flags)
+    callback_entries: list[dict[str, int]] = []
+
+    def callback_handler(
+        machine: Uc, address: int, _size: int, _data: object
+    ) -> None:
+        if address == callback_stub:
+            callback_entries.append(
+                {
+                    "si": machine.reg_read(UC_X86_REG_ESI) & 0xFFFF,
+                    "di": machine.reg_read(UC_X86_REG_EDI) & 0xFFFF,
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+
+    machine = execute(
+        bytes(code_before),
+        entry,
+        return_address,
+        initial,
+        [
+            (data_segment, 0, bytes(data_before)),
+            (extra_segment, 0, extra_before),
+            (fs_segment, 0, fs_before),
+            (game_segment, 0, game_before),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+        code_handler=callback_handler,
+    )
+    expected_callback = {"si": state, "di": context_offset, "sp": 0xFF00}
+    if callback_entries != [expected_callback]:
+        raise AssertionError(
+            f"{module}:{entry:#x} callback dispatch: "
+            f"entries={callback_entries}, expected={[expected_callback]}"
+        )
+    compare_segment(machine, data_segment, bytes(data_before), "callback dispatch")
+    compare_segment(machine, extra_segment, extra_before, "callback dispatch")
+    compare_segment(machine, fs_segment, fs_before, "callback dispatch")
+    compare_segment(machine, game_segment, game_before, "callback dispatch")
+    expected_registers = dict(initial)
+    del expected_registers["flags"]
+    expected_registers.update(
+        {
+            "eax": (initial["eax"] & 0xFFFF0000) | 0x1111,
+            "ebx": (initial["ebx"] & 0xFFFF0000) | 0x2222,
+            "ecx": (initial["ecx"] & 0xFFFF0000) | 0x3333,
+            "edx": (initial["edx"] & 0xFFFF0000) | 0x4444,
+            "esi": (initial["esi"] & 0xFFFF0000) | state,
+            "sp": 0xFF02,
+        }
+    )
+    compare_registers(machine, expected_registers, "callback dispatch")
+    expected_flags = {
+        "cf": False,
+        "pf": False,
+        "zf": False,
+        "sf": True,
+        "if": True,
+        "df": True,
+        "of": False,
+    }
+    compare_flags(machine, expected_flags, "callback dispatch")
+    if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+        raise AssertionError(f"{module}:{entry:#x} callback dispatch: stack changed")
+    vectors.append(
+        {
+            "name": "existing_callback_tail_jump",
+            "module": module,
+            "entry": entry,
+            "path": "callback",
+            "state": state,
+            "callback_entry": expected_callback,
+            "control_state": -32767,
+            "defined_flags": expected_flags,
+        }
+    )
+
+    if module == "amer":
+        init_cases = (
+            ("random_zero", 0x4000, 1, 0x0000, 0),
+            ("random_carry", 0x4400, 3, 0x0040, 0),
+            ("random_high", 0x4800, 0, 0x8001, 0),
+            ("state_wrap", 0xFFA0, 2, 0xFFFF, 0),
+        )
+    else:
+        init_cases = (
+            ("two_states_positive_seed", 0x4000, 2, 0x0000, 0x1234),
+            ("three_states_negative_seed", 0x4400, 3, 0x0040, 0x8001),
+            ("count_one_full_loop", 0x4800, 1, 0x8001, 0x7FFF),
+            ("count_zero_65535_loops", 0xFFA0, 0, 0xFFFF, 0xFFFF),
+        )
+
+    for case_index, case in enumerate(init_cases):
+        name, state_base, state_count, random_before, seed_before = case
+        data_before = bytearray(patterned(29, case_index * 17 + 3))
+        put_u16(data_before, context_offset + 0x16, state_base)
+        put_u16(data_before, context_offset + 0x1A, state_count)
+        put_u16(data_before, context_offset + 0x36, 0)
+        data_expected = bytearray(data_before)
+        fs_before = bytearray(patterned(19, case_index * 23 + 5))
+        put_u16(fs_before, 0x105C, random_before)
+        fs_expected = bytearray(fs_before)
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        code_expected = bytearray(code_before)
+        if seed_offset is not None:
+            put_u16(code_before, seed_offset, seed_before)
+            put_u16(code_expected, seed_offset, seed_before + seed_step)
+
+        first_random = transform_random(random_before)
+        second_random = transform_random(first_random)
+        put_u16(fs_expected, 0x105C, first_random)
+        state = (state_base + 0x5E) & 0xFFFF
+        put_u16(data_expected, context_offset + 0x36, 1)
+        previous_state = state
+
+        if module == "amer":
+            put_u16(data_expected, context_offset + 0x38, 0)
+            put_u16(data_expected, context_offset + 0x40, first_random)
+            put_u16(data_expected, state + 0x0E, initial_callback)
+            put_u16(data_expected, state + 0x50, first_random & 0x0FFC)
+            put_u16(data_expected, state + 0x58, 0x14)
+            loop_iterations = 0
+        else:
+            signed_seed = seed_before
+            if signed_seed & 0x8000:
+                signed_seed -= 0x10000
+            put_u16(data_expected, context_offset + 0x38, 0x32)
+            if module == "croolis":
+                put_u16(data_expected, context_offset + 0x3A, 0)
+                put_u32(data_expected, context_offset + 0x3C, signed_seed)
+            else:
+                put_u32(data_expected, context_offset + 0x3A, signed_seed)
+            put_u16(data_expected, context_offset + 0x42, second_random)
+            put_u16(data_expected, state + 0x0E, initial_callback)
+            put_u16(data_expected, state + 0x50, second_random & 0x0FFC)
+            put_u16(data_expected, state + 0x52, 0)
+            put_u16(data_expected, state + 0x54, 0)
+            put_u16(data_expected, state + 0x56, 0)
+            put_u16(data_expected, state + 0x58, 0)
+            if module == "scrut":
+                put_u16(data_expected, state + 0x5A, 0)
+
+            remaining = (state_count - 1) & 0xFFFF
+            loop_iterations = 0
+            while True:
+                previous_state = state
+                state = (state + 0x5E) & 0xFFFF
+                if module == "croolis":
+                    put_u16(
+                        data_expected,
+                        state + 0x56,
+                        get_u16(data_expected, state + 0x4A),
+                    )
+                else:
+                    put_u16(
+                        data_expected,
+                        state + 0x56,
+                        get_u16(data_expected, state + 0x42),
+                    )
+                    put_u16(
+                        data_expected,
+                        state + 0x5A,
+                        get_u16(data_expected, state + 0x4A),
+                    )
+                loop_iterations += 1
+                remaining = (remaining - 1) & 0xFFFF
+                if remaining == 0:
+                    break
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = initial_registers(case_index, initial_flags)
+        extra_before = patterned(13, case_index + 7)
+        game_before = patterned(11, case_index + 9)
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, bytes(fs_before)),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=600000,
+        )
+        compare_segment(machine, data_segment, bytes(data_expected), name)
+        compare_segment(machine, extra_segment, extra_before, name)
+        compare_segment(machine, fs_segment, bytes(fs_expected), name)
+        compare_segment(machine, game_segment, game_before, name)
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != bytes(code_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code data changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | state
+        expected_registers["sp"] = 0xFF02
+        if module == "amer":
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | (first_random & 0x0FFC)
+        else:
+            expected_registers["ecx"] &= 0xFFFF0000
+            ax_field = 0x4A if module == "croolis" else 0x42
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | get_u16(data_expected, state + ax_field)
+            seed_high = 0xFFFF0000 if seed_before & 0x8000 else 0
+            bx_low = (seed_before + seed_step) & 0xFFFF
+            if module == "scrut":
+                bx_low = get_u16(data_expected, state + 0x4A)
+            expected_registers["ebx"] = seed_high | bx_low
+        compare_registers(machine, expected_registers, name)
+
+        if module == "amer":
+            masked = first_random & 0x0FFC
+            expected_flags = {
+                "cf": False,
+                "pf": (masked & 0xFF).bit_count() % 2 == 0,
+                "zf": masked == 0,
+                "sf": False,
+                "if": bool(initial_flags & 0x0200),
+                "df": bool(initial_flags & 0x0400),
+                "of": False,
+            }
+        else:
+            expected_flags = add_flags_16(previous_state, 0x5E, initial_flags)
+        compare_flags(machine, expected_flags, name)
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "path": "initialize",
+                "state_base": state_base,
+                "state_count": state_count,
+                "loop_iterations": loop_iterations,
+                "last_state": state,
+                "random_before": random_before,
+                "random_after": first_random,
+                "context_random": (
+                    first_random if module == "amer" else second_random
+                ),
+                "seed_before": seed_before if seed_offset is not None else None,
+                "seed_after": (
+                    (seed_before + seed_step) & 0xFFFF
+                    if seed_offset is not None
+                    else None
+                ),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "fs_sha256": hashlib.sha256(fs_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
     relative = (value + origin) & 0xFFFF
     windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
@@ -8632,6 +9040,56 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_slot10_bounds_then_wrap_vectors(module, entry, wrap_entry),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        body_size,
+        body_hash,
+        seed_offset,
+        seed_step,
+        initial_callback,
+    ) in (
+        (
+            "amer",
+            0x164C,
+            60,
+            "76e7934fa691d1e8042a8e1ca78b50085c911d0e2da12cb828c86344cdb92ec1",
+            None,
+            0,
+            0x1692,
+        ),
+        (
+            "croolis",
+            0x16A4,
+            121,
+            "6da3c5d246e0202a486757484c491c49745638c5c36ad1fef6361d56d1346377",
+            0x16A2,
+            0x00FA,
+            0x1727,
+        ),
+        (
+            "scrut",
+            0x1692,
+            127,
+            "93ab5fc7e70f4185f3af1c80581ad143fe9a5835c8a1ae937b70c347bf03615f",
+            0x1690,
+            0x012C,
+            0x171B,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot2_dispatch_or_init_vectors(
+                module,
+                entry,
+                body_size,
+                body_hash,
+                seed_offset,
+                seed_step,
+                initial_callback,
+            ),
             args.check,
         )
     for module, entry, cursor_offset in (
