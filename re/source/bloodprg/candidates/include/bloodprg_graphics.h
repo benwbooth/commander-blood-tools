@@ -63,6 +63,12 @@ extern const cb_u8 CB_GAME_DATA
         main_font_draw_glyphs[]; /* SS:0x7908 */
 extern volatile cb_u16 CB_GAME_DATA
         main_font_draw_width; /* GS:0x27CD */
+extern const cb_u8 CB_GAME_DATA
+        subtitle_console_character_map[256]; /* GS:0x70FA */
+extern const cb_u8 CB_GAME_DATA
+        subtitle_console_glyphs[]; /* SS:0x71AA */
+extern volatile cb_u16 CB_GAME_DATA
+        subtitle_reveal_cursor; /* GS:0x5E58 */
 extern const cb_u8 selected_mask_rows[][32]; /* DS:0x7BB8 */
 extern volatile cb_i8 selected_mask_index; /* DS:0x27E3 */
 
@@ -151,6 +157,10 @@ void CB_FAR planar_dialogue_text_render(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x00356E */
+void CB_FAR subtitle_reveal_draw_wrapper(
+        const cb_u8 CB_NEAR *line,
+        cb_u16 x,
+        cb_u16 y); /* 0x003630 */
 void CB_FAR main_font_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -181,6 +191,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
         parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux planar_dialogue_text_render \
         parm [ds si] [bx] [dx] [ax] modify exact []
+#pragma aux subtitle_reveal_draw_wrapper \
+        parm [si] [bx] [dx] modify exact []
 #pragma aux main_font_text_draw_display \
         parm [ds si] [bx] [dx] [ax] modify exact []
 #endif

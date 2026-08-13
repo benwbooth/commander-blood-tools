@@ -2107,6 +2107,12 @@ Named targets that are already tied to code behavior:
   and writes a fifth mask value after each glyph to restore its starting plane.
 - `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
   reached from file `0x94EE` after loading the `DS:0x5E5C/0x5E5E` text origin.
+  It scans one CR-terminated line, compares every current text offset against
+  reveal cursor `GS:0x5E58`, stops once that signed distance becomes negative,
+  and uses colors `0xFD/0xFE/0xFF` at distances greater than one, one, and zero.
+  The fixed-width glyph map is at `GS:0x70FA`, with eight rows per glyph at
+  `SS:0x71AA`; four VGA plane passes advance each processed character by eight
+  pixels even when a high-bit map entry suppresses its glyph.
 - `0x0299:0x075A` (`small_text_render`): NUL-terminated string renderer using the
   5-row small-font tables at `0x6FA8/0x7028`.
 - `0x0299:0x0A2B` / `0x0B23` (`planar_horizontal_line_draw` /

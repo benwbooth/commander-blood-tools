@@ -8543,6 +8543,390 @@ def planar_dialogue_text_render_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def subtitle_reveal_draw_wrapper_vectors() -> list[dict[str, object]]:
+    entry = 0x3630
+    expected_hash = "92b974665ae76fd5b36a0b4e503813b7aa8cf7f601076e459ceb0c4e0a5f3a21"
+    if hashlib.sha256(EXE[entry : entry + 186]).hexdigest() != expected_hash:
+        raise AssertionError("0x3630: recovered 186-byte body changed")
+
+    cases = [
+        {
+            "name": "negative_reveal_distance_selects_plane_without_drawing",
+            "text": b"A\r",
+            "x": 20,
+            "y": 37,
+            "reveal_delta": 0xFFFF,
+            "mapping": {0x41: 2},
+        },
+        {
+            "name": "reveal_cursor_character_uses_ff_plane_zero",
+            "text": b"A\r",
+            "x": 20,
+            "y": 39,
+            "reveal_delta": 0,
+            "mapping": {0x41: 3},
+        },
+        {
+            "name": "reveal_cursor_plus_one_uses_fe_plane_one",
+            "text": b"A\r",
+            "x": 21,
+            "y": 43,
+            "reveal_delta": 1,
+            "mapping": {0x41: 4},
+        },
+        {
+            "name": "unrevealed_tail_uses_fd_plane_two",
+            "text": b"A\r",
+            "x": 22,
+            "y": 47,
+            "reveal_delta": 2,
+            "mapping": {0x41: 5},
+        },
+        {
+            "name": "starting_plane_three_wraps_row_and_mask",
+            "text": b"A\r",
+            "x": 23,
+            "y": 51,
+            "reveal_delta": 9,
+            "mapping": {0x41: 6},
+        },
+        {
+            "name": "reveal_distance_low_byte_wrap_uses_ff",
+            "text": b"A\r",
+            "x": 28,
+            "y": 55,
+            "reveal_delta": 0x0100,
+            "mapping": {0x41: 7},
+        },
+        {
+            "name": "two_glyphs_stop_before_carriage_return",
+            "text": b"AB\rZ",
+            "x": 19,
+            "y": 59,
+            "reveal_delta": 0x23,
+            "mapping": {0x41: 8, 0x42: 9, 0x5A: 10},
+        },
+        {
+            "name": "reveal_cursor_stops_before_line_end",
+            "text": b"ABCD\r",
+            "x": 24,
+            "y": 61,
+            "reveal_delta": 1,
+            "mapping": {0x41: 18, 0x42: 19, 0x43: 20, 0x44: 21},
+        },
+        {
+            "name": "high_bit_map_entry_skips_but_advances",
+            "text": b"XA\r",
+            "x": 31,
+            "y": 63,
+            "reveal_delta": 1,
+            "mapping": {0x58: 0xFF, 0x41: 11},
+        },
+        {
+            "name": "source_offset_wrap",
+            "text": b"AB\r",
+            "text_offset": 0xFFFF,
+            "x": 46,
+            "y": 67,
+            "reveal_delta": 2,
+            "mapping": {0x41: 12, 0x42: 13},
+        },
+        {
+            "name": "inherited_backward_source_direction",
+            "text": b"AB\r",
+            "text_offset": 0x3000,
+            "x": 67,
+            "y": 73,
+            "reveal_delta": 0,
+            "mapping": {0x41: 14, 0x42: 15},
+            "direction_flag": True,
+        },
+        {
+            "name": "full_word_row_formula_and_output_wrap",
+            "text": b"C\r",
+            "framebuffer_offset": 0xFFF0,
+            "x": 0x1237,
+            "y": 0x8123,
+            "reveal_delta": 0x7FFF,
+            "mapping": {0x43: 16},
+        },
+        {
+            "name": "line_length_low_byte_zero_processes_256_characters",
+            "text": b"A" * 256 + b"\r",
+            "x": 0,
+            "y": 0,
+            "reveal_delta": 0x0100,
+            "mapping": {0x41: 17},
+        },
+    ]
+
+    text_segment = 0x2000
+    game_segment = 0x4000
+    output_segment = 0x7000
+    stack_segment = 0xA000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("e12dd23cc34bb45a")
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        text = bytes(case["text"])
+        text_offset = int(case.get("text_offset", 0x3200))
+        framebuffer_offset = int(case.get("framebuffer_offset", 0x0300))
+        x = int(case["x"])
+        y = int(case["y"])
+        reveal_delta = int(case["reveal_delta"])
+        direction_flag = bool(case.get("direction_flag", False))
+        direction = -1 if direction_flag else 1
+        mapping = {
+            int(character): int(glyph_index)
+            for character, glyph_index in dict(case.get("mapping", {})).items()
+        }
+
+        text_memory = bytearray(
+            (index * 13 + case_index * 19 + 5) & 0xFF
+            for index in range(0x10000)
+        )
+        for index, value in enumerate(text):
+            text_memory[(text_offset + direction * index) & 0xFFFF] = value
+
+        game_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        for character, glyph_index in mapping.items():
+            game_memory[(0x70FA + character) & 0xFFFF] = glyph_index
+        reveal_cursor = (text_offset + reveal_delta) & 0xFFFF
+        game_memory[0x5219:0x521D] = struct.pack(
+            "<HH", framebuffer_offset, output_segment
+        )
+        game_memory[0x5E58:0x5E5A] = struct.pack("<H", reveal_cursor)
+
+        stack_memory = bytearray(
+            (index * 29 + case_index * 31 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        for glyph_index in set(mapping.values()):
+            if glyph_index & 0x80:
+                continue
+            patterns = (
+                0x00,
+                0x80,
+                0x41,
+                0x01,
+                0xFF,
+                0x0F,
+                0x81,
+                (glyph_index * 0x11 + case_index * 7) & 0xFF,
+            )
+            glyph_offset = (0x71AA + glyph_index * 8) & 0xFFFF
+            for row, bits in enumerate(patterns):
+                stack_memory[(glyph_offset + row) & 0xFFFF] = bits
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        output_seed = bytes(
+            (index * 37 + case_index * 41 + 0x2B) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+        row_offset = ((y << 4) + (y << 6)) & 0xFFFF
+        glyph_origin = (
+            framebuffer_offset + row_offset + (x >> 2)
+        ) & 0xFFFF
+        plane = x & 3
+        map_mask = (0x11 << plane) & 0xFF
+        expected_ports = [(0x3C4, 1, 2)]
+        characters_processed = 0
+        glyphs_drawn = 0
+        colors = []
+        marker_index = text.index(0x0D)
+        character_count = marker_index & 0xFF
+        maximum_characters = character_count if character_count != 0 else 256
+        text_cursor = text_offset
+        final_character_origin = glyph_origin
+        stopped_at_reveal = False
+
+        while characters_processed < maximum_characters:
+            expected_ports.append((0x3C5, 1, map_mask))
+            current_reveal_distance = (reveal_cursor - text_cursor) & 0xFFFF
+            if current_reveal_distance & 0x8000:
+                expected_flags = sub16_flags(reveal_cursor, text_cursor)
+                stopped_at_reveal = True
+                break
+
+            reveal_low = current_reveal_distance & 0xFF
+            if reveal_low == 0:
+                color = 0xFF
+            elif reveal_low == 1:
+                color = 0xFE
+            else:
+                color = 0xFD
+            colors.append(color)
+            character = text_memory[text_cursor]
+            text_cursor = (text_cursor + direction) & 0xFFFF
+            glyph_index = game_memory[(0x70FA + character) & 0xFFFF]
+            final_character_origin = glyph_origin
+            if (glyph_index & 0x80) == 0:
+                glyphs_drawn += 1
+                glyph_offset = (0x71AA + glyph_index * 8) & 0xFFFF
+                for plane_number in range(4):
+                    row_origin = (
+                        glyph_origin
+                        + (1 if plane + plane_number >= 4 else 0)
+                    ) & 0xFFFF
+                    for row in range(8):
+                        row_bits = stack_memory[(glyph_offset + row) & 0xFFFF]
+                        if row_bits & (0x80 >> plane_number):
+                            output_model[row_origin] = color
+                        if row_bits & (0x08 >> plane_number):
+                            output_model[(row_origin + 1) & 0xFFFF] = color
+                        row_origin = (row_origin + 80) & 0xFFFF
+                    map_mask = ((map_mask << 1) | (map_mask >> 7)) & 0xFF
+                    expected_ports.append((0x3C5, 1, map_mask))
+            glyph_origin = (glyph_origin + 2) & 0xFFFF
+            characters_processed += 1
+
+        if not stopped_at_reveal:
+            expected_flags = {
+                "cf": add16_flags(final_character_origin, 2)["cf"],
+                "pf": True,
+                "af": False,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+
+        initial = {
+            "eax": 0xA1A15A70 + case_index,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D40000 | y,
+            "esi": 0xE5E50000 | text_offset,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": text_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+        actual_ports = []
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            actual_ports.append((port, size, value))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (text_segment, 0, bytes(text_memory)),
+                (game_segment, 0, bytes(game_memory)),
+                (output_segment, 0, output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            output_handler=output_port,
+            instruction_count=2000000,
+        )
+
+        if actual_ports != expected_ports:
+            mismatch = next(
+                (
+                    index
+                    for index, pair in enumerate(zip(actual_ports, expected_ports))
+                    if pair[0] != pair[1]
+                ),
+                min(len(actual_ports), len(expected_ports)),
+            )
+            raise AssertionError(
+                f"0x3630 {name}: port mismatch at {mismatch}; "
+                f"actual={actual_ports[mismatch:mismatch + 4]}, "
+                f"expected={expected_ports[mismatch:mismatch + 4]}, "
+                f"counts={len(actual_ports)}/{len(expected_ports)}"
+            )
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3630 {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3630 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3630 {name}: far return CS differs")
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3630 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x3630 {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3630 {name}: stack sentinel changed")
+
+        port_bytes = b"".join(
+            struct.pack("<HBB", port, size, value)
+            for port, size, value in actual_ports
+        )
+        vectors.append(
+            {
+                "name": name,
+                "x": x,
+                "y": y,
+                "text_offset": text_offset,
+                "framebuffer_offset": framebuffer_offset,
+                "reveal_delta": reveal_delta,
+                "colors": colors,
+                "direction_flag": direction_flag,
+                "characters_processed": characters_processed,
+                "glyphs_drawn": glyphs_drawn,
+                "stopped_at_reveal": stopped_at_reveal,
+                "port_write_count": len(actual_ports),
+                "port_writes_head": [list(item) for item in actual_ports[:10]],
+                "port_writes_sha256": hashlib.sha256(port_bytes).hexdigest(),
+                "defined_flags": expected_flags,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def main_font_text_draw_display_vectors() -> list[dict[str, object]]:
     entry = 0x3192
     expected_hash = "2c83af0acf062fa3fa48bb64c99d7af3f1e36640ac25ef84cf9a0ddf4d06d3b2"
@@ -41692,6 +42076,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_356e_natural.json",
         planar_dialogue_text_render_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3630_natural.json",
+        subtitle_reveal_draw_wrapper_vectors(),
         args.check,
     )
     update_vector(

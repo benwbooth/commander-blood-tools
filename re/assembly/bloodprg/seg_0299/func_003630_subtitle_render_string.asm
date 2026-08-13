@@ -6,8 +6,8 @@
 ; seg_off: 0299:06a0
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: subtitle_render_string
-; label_comment: REAL subtitle glyph blitter: fixed-width console font (ascii map DS:0x70fa=file0x1451A, glyphs DS:0x71aa=file0x145CA); draws to mode-X buffer; color 0xff stepping 0xfe/0xfd at reveal edge. Ported: font::BoldConsoleFont + engine::draw_subtitle_revealed (green fade from baked palette 0xfd/0xfe/0xff) || NARROWER EARLIER READING `gfx_draw_mode_d`: graphics draw setup: di=si; es=ds; al=0xd (draw mode/colour 13). Sets up a draw operation into the display buffer with mode 0xd || MERGED 2026-07-25 (audit-fixes #133): one address, two names, the shorter describing a prologue or a single facet. Kept because a narrow reading records a true observation; renamed away because it is not what the routine IS.
+; label: subtitle_reveal_draw_wrapper
+; label_comment: Mode-X subtitle reveal renderer. DS:SI points to a CR-terminated line, BX=x, and DX=y. It scans the line length, addresses full GS:[0x5219] as y*80+x/4, and compares each current text offset with GS:0x5E58. Signed-negative distance stops drawing; low distances 0/1/other select colors FF/FE/FD. Characters map through GS:0x70FA; high-bit results skip glyph writes but retain fixed eight-pixel advance. Four plane passes read paired bits from SS:0x71AA+glyph*8 under rotating masks. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003630_subtitle_reveal_draw_wrapper.c and re/tools/oracle_vectors/func_3630_natural.json
 ; incoming: call@0x0094ee->0299:06a0
 ; byte_count: 186
 ; boundary: cfg_blocks_16_terminals_1
