@@ -39558,6 +39558,465 @@ def matrix_table_clear_2a1b_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bridge_panorama_frame_load_vectors() -> list[dict[str, object]]:
+    entry = 0x981B
+    expected_hash = "15f5ca552b2f2c16e3836a20d958494931366820d788599c0d068a5b44c09910"
+    if hashlib.sha256(EXE[entry : entry + 158]).hexdigest() != expected_hash:
+        raise AssertionError("0x981b: recovered 158-byte body changed")
+
+    cases = [
+        {
+            "name": "station_zero_palette_clear",
+            "frame": 2,
+            "directory": (0x00123456, 18),
+            "stale_directory": (0x81234567, 20),
+            "station": 0,
+            "stale_station": 2,
+            "directory_success": True,
+            "chunk_success": True,
+            "refresh_before": 0,
+        },
+        {
+            "name": "callback_sets_palette_refresh",
+            "frame": 7,
+            "directory": (0x10203040, 22),
+            "stale_directory": (0x90A0B0C0, 24),
+            "station": 3,
+            "stale_station": 1,
+            "directory_success": True,
+            "chunk_success": True,
+            "refresh_before": 0,
+            "callback_refresh": 1,
+            "mutate_palette": True,
+        },
+        {
+            "name": "frame_wrap_high_directory_fields_and_buffer_wrap",
+            "frame": 0xFFFF,
+            "directory": (0x89ABCDEF, 0x12340012),
+            "stale_directory": (0x76543210, 20),
+            "station": 1,
+            "stale_station": 3,
+            "directory_success": True,
+            "chunk_success": True,
+            "refresh_before": 1,
+            "chunk_offset": 0xFFF8,
+        },
+        {
+            "name": "directory_read_failure_uses_stale_entry",
+            "frame": 0x1234,
+            "directory": (0x11112222, 18),
+            "stale_directory": (0x76543210, 0xFEDC0014),
+            "station": 2,
+            "stale_station": 0,
+            "directory_success": False,
+            "chunk_success": True,
+            "refresh_before": 0,
+        },
+        {
+            "name": "chunk_read_failure_uses_stale_header",
+            "frame": 0x8001,
+            "directory": (0x55667788, 26),
+            "stale_directory": (0x01020304, 18),
+            "station": 3,
+            "stale_station": 1,
+            "directory_success": True,
+            "chunk_success": False,
+            "refresh_before": 1,
+        },
+        {
+            "name": "unchecked_station_index_four",
+            "frame": 9,
+            "directory": (0x0A0B0C0D, 16),
+            "stale_directory": (0x0E0F1011, 18),
+            "station": 4,
+            "stale_station": 2,
+            "directory_success": True,
+            "chunk_success": True,
+            "refresh_before": 0,
+        },
+        {
+            "name": "callback_clears_bit_zero_with_high_bits_set",
+            "frame": 0x2000,
+            "directory": (0xCAFEBABE, 18),
+            "stale_directory": (0xDEADC0DE, 20),
+            "station": 2,
+            "stale_station": 3,
+            "directory_success": True,
+            "chunk_success": True,
+            "refresh_before": 0xFF,
+            "callback_refresh": 0xFE,
+            "mutate_palette": True,
+        },
+    ]
+
+    unpack_entry = 0x01CE * 16 + 0x0A70
+    data_segment = 0x2000
+    game_segment = 0x4000
+    buffer_segment = 0x6000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0x7600
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def write_wrapped(memory: bytearray, offset: int, payload: bytes) -> None:
+        for index, value in enumerate(payload):
+            memory[(offset + index) & 0xFFFF] = value
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        frame = int(case["frame"])
+        directory = tuple(case["directory"])
+        stale_directory = tuple(case["stale_directory"])
+        directory_success = bool(case["directory_success"])
+        chunk_success = bool(case["chunk_success"])
+        station_index = int(case["station"])
+        stale_station = int(case["stale_station"])
+        chunk_offset = int(case.get("chunk_offset", 0x3100 + case_index * 0x180))
+        handle = 0x4B10 + case_index
+        active_directory = directory if directory_success else stale_directory
+        requested_count = int(active_directory[1]) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 29 + case_index * 41 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x0AC4, handle)
+        struct.pack_into("<II", data_before, 0x0AD2, *stale_directory)
+        struct.pack_into("<HH", data_before, 0x5221, chunk_offset, buffer_segment)
+        data_expected = bytearray(data_before)
+        if directory_success:
+            struct.pack_into("<II", data_expected, 0x0AD2, *directory)
+
+        buffer_before = bytearray(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31 + 0x35) & 0xFF
+            for offset in range(0x10000)
+        )
+        stale_box = bytes(
+            (0xD0 + case_index * 7 + index * 5) & 0xFF for index in range(8)
+        )
+        write_wrapped(
+            buffer_before,
+            chunk_offset,
+            stale_box + struct.pack("<H", stale_station),
+        )
+        loaded_box = bytes(
+            (0x20 + case_index * 13 + index * 9) & 0xFF for index in range(8)
+        )
+        chunk_payload = bytearray(
+            (0x80 + case_index * 19 + index * 3) & 0xFF
+            for index in range(requested_count)
+        )
+        if requested_count < 10:
+            raise AssertionError(f"0x981b {name}: test chunk is shorter than header")
+        chunk_payload[:8] = loaded_box
+        chunk_payload[8:10] = struct.pack("<H", station_index)
+        buffer_expected = bytearray(buffer_before)
+        if chunk_success:
+            write_wrapped(buffer_expected, chunk_offset, bytes(chunk_payload))
+            selected_box = loaded_box
+            selected_station = station_index
+        else:
+            selected_box = stale_box
+            selected_station = stale_station
+
+        game_before = bytearray(
+            (offset * 31 + (offset >> 8) * 7 + case_index * 37 + 0x51) & 0xFF
+            for offset in range(0x10000)
+        )
+        refresh_before = int(case["refresh_before"])
+        game_before[0x5B53] = refresh_before
+        game_before[0x5251:0x5551] = bytes(
+            (index * 5 + case_index * 43 + 0x17) & 0xFF for index in range(768)
+        )
+        game_before[0x5B58:0x5E58] = bytes(
+            (index * 11 + case_index * 47 + 0x6D) & 0xFF for index in range(768)
+        )
+        game_at_callback = bytearray(game_before)
+        for record_index in range(4):
+            box_offset = 0x2A1B + record_index * 24 + 12
+            game_at_callback[box_offset : box_offset + 8] = b"\xff" * 8
+        selected_offset = 0x2A1B + selected_station * 24 + 12
+        game_at_callback[selected_offset : selected_offset + 8] = selected_box
+
+        game_expected = bytearray(game_at_callback)
+        callback_refresh = int(case.get("callback_refresh", refresh_before))
+        game_expected[0x5B53] = callback_refresh
+        if bool(case.get("mutate_palette", False)):
+            game_expected[0x5B58:0x5E58] = bytes(
+                (index * 13 + case_index * 53 + 0xA1) & 0xFF for index in range(768)
+            )
+        if callback_refresh & 1:
+            game_expected[0x5251:0x5551] = game_expected[0x5B58:0x5E58]
+
+        extra_before = bytes(
+            (offset * 13 + (offset >> 8) * 3 + case_index * 17 + 0x73) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A10000 | frame,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x8000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls = []
+        callbacks = []
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                flags | 1 if carry else flags & ~1,
+            )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            call_index = len(calls)
+            if number != 0x21 or call_index >= 4:
+                raise AssertionError(
+                    f"0x981b {name}: unexpected INT {number:#x} call {call_index}"
+                )
+
+            function = machine.reg_read(UC_X86_REG_AH)
+            if call_index in (0, 2):
+                if function != 0x42 or machine.reg_read(UC_X86_REG_AL) != 0:
+                    raise AssertionError(
+                        f"0x981b {name}: seek function AX="
+                        f"{machine.reg_read(UC_X86_REG_AX):#x}"
+                    )
+                offset = (machine.reg_read(UC_X86_REG_CX) << 16) | machine.reg_read(
+                    UC_X86_REG_DX
+                )
+                expected_offset = (
+                    (frame << 3) & 0xFFFF
+                    if call_index == 0
+                    else int(active_directory[0])
+                )
+                if (
+                    machine.reg_read(UC_X86_REG_BX) != handle
+                    or offset != expected_offset
+                ):
+                    raise AssertionError(f"0x981b {name}: seek handle/offset differs")
+                carry = (case_index + call_index) % 3 == 1
+                result_ax = 0xA100 + call_index + case_index * 4
+                call = {
+                    "call": "dos_seek_absolute",
+                    "handle": handle,
+                    "offset": offset,
+                    "carry_ignored": carry,
+                    "result_ax_ignored": result_ax,
+                }
+            else:
+                if function != 0x3F:
+                    raise AssertionError(
+                        f"0x981b {name}: read function AH={function:#x}"
+                    )
+                destination = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_DX),
+                ]
+                requested = machine.reg_read(UC_X86_REG_CX)
+                if call_index == 1:
+                    expected_destination = [data_segment, 0x0AD2]
+                    expected_requested = 8
+                    success = directory_success
+                    if success:
+                        machine.mem_write(
+                            data_segment * 16 + 0x0AD2,
+                            struct.pack("<II", *directory),
+                        )
+                else:
+                    expected_destination = [buffer_segment, chunk_offset]
+                    expected_requested = requested_count
+                    success = chunk_success
+                    if success:
+                        for index, value in enumerate(chunk_payload):
+                            machine.mem_write(
+                                buffer_segment * 16 + ((chunk_offset + index) & 0xFFFF),
+                                bytes((value,)),
+                            )
+                if (
+                    machine.reg_read(UC_X86_REG_BX) != handle
+                    or destination != expected_destination
+                    or requested != expected_requested
+                ):
+                    raise AssertionError(
+                        f"0x981b {name}: read handle/destination/count differs"
+                    )
+                carry = not success
+                result_ax = requested if success else 5
+                call = {
+                    "call": "dos_read",
+                    "handle": handle,
+                    "destination": destination,
+                    "requested": requested,
+                    "carry_ignored": carry,
+                    "result_ax_ignored": result_ax,
+                }
+
+            calls.append(call)
+            machine.reg_write(UC_X86_REG_AX, result_ax)
+            set_carry(machine, carry)
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != unpack_entry:
+                return
+            if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+                game_at_callback
+            ):
+                raise AssertionError(f"0x981b {name}: state before unpack differs")
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            callback = {
+                "call": "bridge_panorama_frame_unpack",
+                "source": [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ],
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "sp": stack_pointer,
+                "return_frame": list(
+                    struct.unpack(
+                        "<HH",
+                        machine.mem_read(stack_segment * 16 + stack_pointer, 4),
+                    )
+                ),
+            }
+            expected_callback = {
+                "call": "bridge_panorama_frame_unpack",
+                "source": [buffer_segment, (chunk_offset + 10) & 0xFFFF],
+                "es": game_segment,
+                "gs": game_segment,
+                "sp": 0xFEE6,
+                "return_frame": [0x9893, 0],
+            }
+            if callback != expected_callback:
+                raise AssertionError(
+                    f"0x981b {name}: callback={callback}, expected={expected_callback}"
+                )
+            callbacks.append(callback)
+            machine.mem_write(game_segment * 16 + 0x5B53, bytes((callback_refresh,)))
+            if bool(case.get("mutate_palette", False)):
+                machine.mem_write(
+                    game_segment * 16 + 0x5B58,
+                    bytes(game_expected[0x5B58:0x5E58]),
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, unpack_entry, b"\xcb"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (buffer_segment, 0, bytes(buffer_before)),
+                (extra_segment, 0, extra_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=1024,
+        )
+
+        if len(calls) != 4 or len(callbacks) != 1:
+            raise AssertionError(
+                f"0x981b {name}: calls={len(calls)}, callbacks={len(callbacks)}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(data_expected):
+            raise AssertionError(f"0x981b {name}: DS state mismatch")
+        if bytes(machine.mem_read(buffer_segment * 16, 0x10000)) != bytes(
+            buffer_expected
+        ):
+            raise AssertionError(f"0x981b {name}: chunk buffer mismatch")
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(game_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_game, game_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(f"0x981b {name}: GS state mismatch at {mismatch:#x}")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x981b {name}: ES decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x981b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x981b {name}: near return changed CS")
+        if (
+            bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel)))
+            != stack_sentinel
+        ):
+            raise AssertionError(f"0x981b {name}: stack sentinel changed")
+
+        test_result = callback_refresh & 1
+        expected_flags = {
+            "cf": False,
+            "pf": test_result == 0,
+            "zf": test_result == 0,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {flag: bool(flags_after & mask) for flag, mask in masks.items()}
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x981b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if flags_after & 0x0400:
+            raise AssertionError(f"0x981b {name}: direction flag changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "frame": frame,
+                "directory_seek_offset": (frame << 3) & 0xFFFF,
+                "directory_read_success": directory_success,
+                "active_directory": list(active_directory),
+                "chunk_read_count_low_word": requested_count,
+                "chunk_read_success": chunk_success,
+                "chunk_pointer": [buffer_segment, chunk_offset],
+                "selected_station_unchecked": selected_station,
+                "selected_box": list(selected_box),
+                "palette_refresh_before": refresh_before,
+                "palette_refresh_after_unpack": callback_refresh,
+                "palette_copied": bool(callback_refresh & 1),
+                "dos_calls": calls,
+                "unpack_call": callbacks[0],
+                "game_state_sha256": hashlib.sha256(actual_game).hexdigest(),
+                "buffer_state_sha256": hashlib.sha256(buffer_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_projection_matrix_build_vectors() -> list[dict[str, object]]:
     entry = 0x98B9
     expected_hash = "ee9cefae7bb3c3bcc0acfa72dd6f6f3731e166b91b2e15c3d3e62eee82653bb5"
@@ -50825,6 +51284,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_963f_natural.json",
         matrix_table_clear_2a1b_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_981b_natural.json",
+        bridge_panorama_frame_load_vectors(),
         args.check,
     )
     update_vector(

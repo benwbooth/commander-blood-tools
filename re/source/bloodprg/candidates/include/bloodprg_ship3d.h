@@ -21,6 +21,23 @@
 #define SHIP_3D_HUD_PALETTE_FIRST 128u
 #define SHIP_3D_HUD_PALETTE_COLORS 64u
 #define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
+#define BRIDGE_PANORAMA_STATION_COUNT 4u
+
+typedef struct bridge_panorama_directory_entry {
+    cb_u32 file_offset;
+    cb_u32 byte_count;
+} bridge_panorama_directory_entry;
+
+typedef struct bridge_panorama_station_record {
+    cb_u8 prefix[12];
+    cb_i16 orb_box[4];
+    cb_u8 suffix[4];
+} bridge_panorama_station_record;
+
+typedef char bridge_panorama_directory_entry_size_must_be_8[
+        sizeof(bridge_panorama_directory_entry) == 8 ? 1 : -1];
+typedef char bridge_panorama_station_record_size_must_be_24[
+        sizeof(bridge_panorama_station_record) == 24 ? 1 : -1];
 
 typedef struct ship_3d_projection_context {
     cb_i32 matrix[9];
@@ -85,6 +102,11 @@ extern volatile cb_u8 CB_GAME_DATA
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_x; /* GS:0x2F65 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_y; /* GS:0x2F67 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_z; /* GS:0x2F69 */
+extern volatile cb_u16 bridge_panorama_file_handle; /* DS:0x0AC4 */
+extern volatile bridge_panorama_directory_entry
+        bridge_panorama_directory; /* DS:0x0AD2 */
+extern volatile bridge_panorama_station_record CB_GAME_DATA
+        bridge_panorama_stations[]; /* GS:0x2A1B */
 
 #if defined(__WATCOMC__)
 #pragma aux binary_u32_sqrt parm [dx ax] value [ax] modify exact [ax]

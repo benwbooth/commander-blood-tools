@@ -17,6 +17,8 @@ extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
+extern bloodprg_graphics_buffer_ptr
+        bridge_panorama_load_buffer; /* DS:0x5221 alias */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_back_buffer; /* GS:0x5229 */
 extern volatile cb_u8 CB_GAME_DATA
@@ -35,6 +37,8 @@ extern volatile char CB_GAME_DATA
         backbuffer_clear_image_path[]; /* DS:0x00E3 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_live_palette[768]; /* GS:0x5251 */
+extern volatile cb_u8 CB_GAME_DATA
+        bridge_panorama_palette[768]; /* GS:0x5B58 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_draw_framebuffer; /* GS:0x5219 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
@@ -229,6 +233,13 @@ void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
 void CB_FAR bridge_panorama_frame_unpack(
         const cb_u8 CB_FAR *source); /* 0x002D50 */
+#if defined(__WATCOMC__)
+/* Ordinary C ABI name used when recovered C calls recovered C. */
+void CB_FAR bridge_panorama_frame_unpack_c(
+        const cb_u8 CB_FAR *source);
+#else
+#define bridge_panorama_frame_unpack_c bridge_panorama_frame_unpack
+#endif
 const cb_u8 CB_FAR *CB_FAR font8x8_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,

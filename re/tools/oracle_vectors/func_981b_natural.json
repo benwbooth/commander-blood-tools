@@ -1,0 +1,639 @@
+[
+  {
+    "name": "station_zero_palette_clear",
+    "frame": 2,
+    "directory_seek_offset": 16,
+    "directory_read_success": true,
+    "active_directory": [
+      1193046,
+      18
+    ],
+    "chunk_read_count_low_word": 18,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      12544
+    ],
+    "selected_station_unchecked": 0,
+    "selected_box": [
+      32,
+      41,
+      50,
+      59,
+      68,
+      77,
+      86,
+      95
+    ],
+    "palette_refresh_before": 0,
+    "palette_refresh_after_unpack": 0,
+    "palette_copied": false,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19216,
+        "offset": 16,
+        "carry_ignored": false,
+        "result_ax_ignored": 41216
+      },
+      {
+        "call": "dos_read",
+        "handle": 19216,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19216,
+        "offset": 1193046,
+        "carry_ignored": false,
+        "result_ax_ignored": 41218
+      },
+      {
+        "call": "dos_read",
+        "handle": 19216,
+        "destination": [
+          24576,
+          12544
+        ],
+        "requested": 18,
+        "carry_ignored": false,
+        "result_ax_ignored": 18
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        12554
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "e7d06dcdbddc2acc661d3914808a23813dc7f6c7e1aae19e4abc84b144946263",
+    "buffer_state_sha256": "7ef4c405030872c90b3e74f8cfa9468385f9ba64f3e8ed7b13da35fb6251d0e2",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "callback_sets_palette_refresh",
+    "frame": 7,
+    "directory_seek_offset": 56,
+    "directory_read_success": true,
+    "active_directory": [
+      270544960,
+      22
+    ],
+    "chunk_read_count_low_word": 22,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      12928
+    ],
+    "selected_station_unchecked": 3,
+    "selected_box": [
+      45,
+      54,
+      63,
+      72,
+      81,
+      90,
+      99,
+      108
+    ],
+    "palette_refresh_before": 0,
+    "palette_refresh_after_unpack": 1,
+    "palette_copied": true,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19217,
+        "offset": 56,
+        "carry_ignored": true,
+        "result_ax_ignored": 41220
+      },
+      {
+        "call": "dos_read",
+        "handle": 19217,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19217,
+        "offset": 270544960,
+        "carry_ignored": false,
+        "result_ax_ignored": 41222
+      },
+      {
+        "call": "dos_read",
+        "handle": 19217,
+        "destination": [
+          24576,
+          12928
+        ],
+        "requested": 22,
+        "carry_ignored": false,
+        "result_ax_ignored": 22
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        12938
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "643d1cdd9dc7382c4314e2012e620dc5fb3564a336cc7e258090e8f5dffb0c46",
+    "buffer_state_sha256": "007a340a5a381faf59f35e33753a21218ed5fffa006f9c37ddca55f0cc838650",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "frame_wrap_high_directory_fields_and_buffer_wrap",
+    "frame": 65535,
+    "directory_seek_offset": 65528,
+    "directory_read_success": true,
+    "active_directory": [
+      2309737967,
+      305397778
+    ],
+    "chunk_read_count_low_word": 18,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      65528
+    ],
+    "selected_station_unchecked": 1,
+    "selected_box": [
+      58,
+      67,
+      76,
+      85,
+      94,
+      103,
+      112,
+      121
+    ],
+    "palette_refresh_before": 1,
+    "palette_refresh_after_unpack": 1,
+    "palette_copied": true,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19218,
+        "offset": 65528,
+        "carry_ignored": false,
+        "result_ax_ignored": 41224
+      },
+      {
+        "call": "dos_read",
+        "handle": 19218,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19218,
+        "offset": 2309737967,
+        "carry_ignored": true,
+        "result_ax_ignored": 41226
+      },
+      {
+        "call": "dos_read",
+        "handle": 19218,
+        "destination": [
+          24576,
+          65528
+        ],
+        "requested": 18,
+        "carry_ignored": false,
+        "result_ax_ignored": 18
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        2
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "f4255e7671d6153f0d5df1f82f872c80f804b9b83ed5326f3757368bd621989c",
+    "buffer_state_sha256": "b3a1d0619b2e91364af492a261702866580e6e65509f712d1f87f8c374c52d53",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_read_failure_uses_stale_entry",
+    "frame": 4660,
+    "directory_seek_offset": 37280,
+    "directory_read_success": false,
+    "active_directory": [
+      1985229328,
+      4275830804
+    ],
+    "chunk_read_count_low_word": 20,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      13696
+    ],
+    "selected_station_unchecked": 2,
+    "selected_box": [
+      71,
+      80,
+      89,
+      98,
+      107,
+      116,
+      125,
+      134
+    ],
+    "palette_refresh_before": 0,
+    "palette_refresh_after_unpack": 0,
+    "palette_copied": false,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19219,
+        "offset": 37280,
+        "carry_ignored": false,
+        "result_ax_ignored": 41228
+      },
+      {
+        "call": "dos_read",
+        "handle": 19219,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": true,
+        "result_ax_ignored": 5
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19219,
+        "offset": 1985229328,
+        "carry_ignored": false,
+        "result_ax_ignored": 41230
+      },
+      {
+        "call": "dos_read",
+        "handle": 19219,
+        "destination": [
+          24576,
+          13696
+        ],
+        "requested": 20,
+        "carry_ignored": false,
+        "result_ax_ignored": 20
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        13706
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "ab811c7ade1eea4077a902498d3293ba05e14677b1d3916ec577b8834ff93270",
+    "buffer_state_sha256": "56dce2bdcdb3705fa755414539fe1f484ad5176735b6b2f50eaed299d5c9cdae",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "chunk_read_failure_uses_stale_header",
+    "frame": 32769,
+    "directory_seek_offset": 8,
+    "directory_read_success": true,
+    "active_directory": [
+      1432778632,
+      26
+    ],
+    "chunk_read_count_low_word": 26,
+    "chunk_read_success": false,
+    "chunk_pointer": [
+      24576,
+      14080
+    ],
+    "selected_station_unchecked": 1,
+    "selected_box": [
+      236,
+      241,
+      246,
+      251,
+      0,
+      5,
+      10,
+      15
+    ],
+    "palette_refresh_before": 1,
+    "palette_refresh_after_unpack": 1,
+    "palette_copied": true,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19220,
+        "offset": 8,
+        "carry_ignored": true,
+        "result_ax_ignored": 41232
+      },
+      {
+        "call": "dos_read",
+        "handle": 19220,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19220,
+        "offset": 1432778632,
+        "carry_ignored": false,
+        "result_ax_ignored": 41234
+      },
+      {
+        "call": "dos_read",
+        "handle": 19220,
+        "destination": [
+          24576,
+          14080
+        ],
+        "requested": 26,
+        "carry_ignored": true,
+        "result_ax_ignored": 5
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        14090
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "32eab2f24a411ebc25d45fa68c835cc5e00e476a3fd51ea9b2526f7702e73193",
+    "buffer_state_sha256": "157d5019d17c6ed84477b5ac5875b948ebbe1b1cf49ff90f3f32f6f5439077ab",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unchecked_station_index_four",
+    "frame": 9,
+    "directory_seek_offset": 72,
+    "directory_read_success": true,
+    "active_directory": [
+      168496141,
+      16
+    ],
+    "chunk_read_count_low_word": 16,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      14464
+    ],
+    "selected_station_unchecked": 4,
+    "selected_box": [
+      97,
+      106,
+      115,
+      124,
+      133,
+      142,
+      151,
+      160
+    ],
+    "palette_refresh_before": 0,
+    "palette_refresh_after_unpack": 0,
+    "palette_copied": false,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19221,
+        "offset": 72,
+        "carry_ignored": false,
+        "result_ax_ignored": 41236
+      },
+      {
+        "call": "dos_read",
+        "handle": 19221,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19221,
+        "offset": 168496141,
+        "carry_ignored": true,
+        "result_ax_ignored": 41238
+      },
+      {
+        "call": "dos_read",
+        "handle": 19221,
+        "destination": [
+          24576,
+          14464
+        ],
+        "requested": 16,
+        "carry_ignored": false,
+        "result_ax_ignored": 16
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        14474
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "f187f193c1a939f7f7af0c9172b3ae7219d4121a0d1de08ba99cb4de4c8b8b96",
+    "buffer_state_sha256": "452a3edcaf96dbc37802ebf7635fd656873b0c0e999779381c08507b13c2b077",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "callback_clears_bit_zero_with_high_bits_set",
+    "frame": 8192,
+    "directory_seek_offset": 0,
+    "directory_read_success": true,
+    "active_directory": [
+      3405691582,
+      18
+    ],
+    "chunk_read_count_low_word": 18,
+    "chunk_read_success": true,
+    "chunk_pointer": [
+      24576,
+      14848
+    ],
+    "selected_station_unchecked": 2,
+    "selected_box": [
+      110,
+      119,
+      128,
+      137,
+      146,
+      155,
+      164,
+      173
+    ],
+    "palette_refresh_before": 255,
+    "palette_refresh_after_unpack": 254,
+    "palette_copied": false,
+    "dos_calls": [
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19222,
+        "offset": 0,
+        "carry_ignored": false,
+        "result_ax_ignored": 41240
+      },
+      {
+        "call": "dos_read",
+        "handle": 19222,
+        "destination": [
+          8192,
+          2770
+        ],
+        "requested": 8,
+        "carry_ignored": false,
+        "result_ax_ignored": 8
+      },
+      {
+        "call": "dos_seek_absolute",
+        "handle": 19222,
+        "offset": 3405691582,
+        "carry_ignored": false,
+        "result_ax_ignored": 41242
+      },
+      {
+        "call": "dos_read",
+        "handle": 19222,
+        "destination": [
+          24576,
+          14848
+        ],
+        "requested": 18,
+        "carry_ignored": false,
+        "result_ax_ignored": 18
+      }
+    ],
+    "unpack_call": {
+      "call": "bridge_panorama_frame_unpack",
+      "source": [
+        24576,
+        14858
+      ],
+      "es": 16384,
+      "gs": 16384,
+      "sp": 65254,
+      "return_frame": [
+        39059,
+        0
+      ]
+    },
+    "game_state_sha256": "6eecb190ede620d9b96ade4abb76e354c59b20a31a2c8bf89241d597b0363784",
+    "buffer_state_sha256": "c8bfe832dc91fdb52aed9925a44974d4774379d47a4f7fef8b55e68679800dc2",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

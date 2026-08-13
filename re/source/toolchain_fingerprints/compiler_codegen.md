@@ -3683,6 +3683,39 @@ pointer as scalar words instead of the binary's EAX plus dword stack slot; the
 unused incoming BX values at the earlier helpers and EAX upper-half result
 remain explicit binary-ABI boundaries.
 
+## BLOODPRG bridge panorama frame-loader candidate
+
+`0x00981B` consumes the frame in AX and performs four DOS operations on the
+TB.BIG handle at `DS:0x0AC4`: seek to `low16(frame * 8)`, read the eight-byte
+directory record into `DS:0x0AD2`, seek to its 32-bit file offset, and read
+`low16(byte_count)` bytes through the far pointer at `DS:0x5221`. It never
+checks carry, returned AX, or a short-read count. The loaded header contains an
+eight-byte box followed by an unchecked station index. The routine clears four
+24-byte station-record boxes at `GS:0x2A1B`, overwrites the selected box, and
+far-calls the panorama unpacker with `DS:SI=chunk+10`. Only after that call does
+it test `GS:0x5B53` bit zero and optionally copy 768 bytes from `GS:0x5B58` to
+the live palette at `GS:0x5251`.
+
+Seven direct-binary vectors intercept only `INT 21h` and the far unpack call.
+They prove the exact DOS sequence, 16-bit frame and size truncation, wrapped
+buffer offsets, continued execution after failed seeks and reads, stale
+directory/header consumption, the four-record reset, unchecked station index
+four, state visible at unpack entry, callback palette/flag mutations, post-call
+bit gating, segment isolation, complete register restoration, final TEST
+flags, stack integrity, and the near return. These are deliberate compatibility
+requirements in the natural candidate, including the unsafe station lookup and
+ignored I/O status.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 92 instructions/219 bytes versus the original 67/158. The
+mnemonic-sequence LCS is 67.16 percent and mnemonic-multiset overlap is 77.61
+percent. Watcom uses ordinary calls for the DOS helpers, emits word-based far
+copies for the box and palette, and materializes typed pointer arithmetic. The
+original unpack routine's raw `DS:SI` entry remains separately documented; the
+natural loader reserves an ordinary far-pointer C-to-C name for a source
+rebuild. Binding the natural unpack implementation under that name is an
+explicit future link step, not another assembly routine or a hidden emulator.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
