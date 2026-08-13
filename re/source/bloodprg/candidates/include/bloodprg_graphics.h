@@ -117,6 +117,8 @@ void CB_FAR framebuffer_rect_palette_remap(
         cb_u16 height); /* 0x0299:0x040E */
 void CB_FAR gfx_clipped_span_fill(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width); /* 0x0299:0x0A2B */
+void CB_FAR gfx_clipped_planar_vertical_span(cb_u8 color, cb_u16 x,
+        cb_u16 y, cb_u16 height); /* 0x0299:0x0B23 */
 void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0BB5 */
 void CB_FAR blit_coord_guard_c(cb_u8 color, cb_u16 x, cb_u16 y,
@@ -186,6 +188,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux framebuffer_rect_palette_remap \
         parm caller [ds si] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_clipped_span_fill parm [ax] [bx] [cx] [dx] modify exact []
+#pragma aux gfx_clipped_planar_vertical_span \
+        parm [ax] [bx] [cx] [dx] modify exact []
 /* The remapper recovers entry BP; the other fifth arguments remain stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []

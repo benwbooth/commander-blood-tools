@@ -9902,6 +9902,516 @@ def gfx_clipped_span_fill_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def gfx_clipped_planar_vertical_span_vectors() -> list[dict[str, object]]:
+    entry = 0x3AB3
+    expected_hash = "07aed887cd435f177d260509859785a43910cf689dc0b5d0a8d3a7115b1f280f"
+    if hashlib.sha256(EXE[entry : entry + 146]).hexdigest() != expected_hash:
+        raise AssertionError("0x3AB3: recovered 146-byte body changed")
+
+    cases = [
+        {
+            "name": "zero_height_rejected",
+            "x": 10,
+            "y": 20,
+            "height": 0,
+            "color": 0xEF,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "negative_height_rejected",
+            "x": 10,
+            "y": 20,
+            "height": 0x8000,
+            "color": 0xEE,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "signed_column_left_rejected",
+            "x": 0xFFF5,
+            "y": 10,
+            "height": 7,
+            "color": 0xED,
+            "left": 0xFFF6,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "right_column_is_exclusive",
+            "x": 30,
+            "y": 10,
+            "height": 7,
+            "color": 0xEC,
+            "left": 10,
+            "right": 30,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "fully_top_clipped_rejected",
+            "x": 10,
+            "y": 5,
+            "height": 5,
+            "color": 0xEB,
+            "left": 0,
+            "right": 30,
+            "top": 10,
+            "bottom": 30,
+        },
+        {
+            "name": "top_clipped_color_zero",
+            "x": 10,
+            "y": 5,
+            "height": 8,
+            "color": 0,
+            "left": 0,
+            "right": 30,
+            "top": 10,
+            "bottom": 30,
+        },
+        {
+            "name": "bottom_endpoint_exact",
+            "x": 11,
+            "y": 14,
+            "height": 6,
+            "color": 0xD7,
+            "left": 0,
+            "right": 30,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "bottom_clipped",
+            "x": 12,
+            "y": 17,
+            "height": 8,
+            "color": 0xC6,
+            "left": 0,
+            "right": 30,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "fully_bottom_clipped_rejected",
+            "x": 13,
+            "y": 20,
+            "height": 3,
+            "color": 0xB5,
+            "left": 0,
+            "right": 30,
+            "top": 10,
+            "bottom": 20,
+        },
+        {
+            "name": "solid_plane_zero",
+            "x": 20,
+            "y": 21,
+            "height": 4,
+            "color": 0xA4,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "solid_plane_one",
+            "x": 21,
+            "y": 22,
+            "height": 5,
+            "color": 0,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "solid_plane_two",
+            "x": 22,
+            "y": 23,
+            "height": 6,
+            "color": 0x82,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "solid_plane_three",
+            "x": 23,
+            "y": 24,
+            "height": 7,
+            "color": 0x71,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+        },
+        {
+            "name": "remap_bit_zero_selected",
+            "x": 24,
+            "y": 25,
+            "height": 8,
+            "color": 0x60,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 1,
+        },
+        {
+            "name": "remap_high_bits_ignored",
+            "x": 25,
+            "y": 26,
+            "height": 9,
+            "color": 0x5F,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 0x81,
+        },
+        {
+            "name": "even_remap_flag_selects_solid",
+            "x": 26,
+            "y": 27,
+            "height": 4,
+            "color": 0x4E,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "remap_flag": 2,
+        },
+        {
+            "name": "output_offset_wrap",
+            "x": 27,
+            "y": 0,
+            "height": 5,
+            "color": 0x3D,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "framebuffer_offset": 0xFFF0,
+            "remap_flag": 1,
+        },
+        {
+            "name": "inherited_backward_direction_is_ignored",
+            "x": 28,
+            "y": 29,
+            "height": 6,
+            "color": 0x2C,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 50,
+            "direction_flag": True,
+        },
+        {
+            "name": "full_word_coordinates_and_row_wrap",
+            "x": 0x8122,
+            "y": 0x8123,
+            "height": 8,
+            "color": 0x1B,
+            "left": 0x8100,
+            "right": 0x8200,
+            "top": 0x8100,
+            "bottom": 0x8200,
+            "framebuffer_offset": 0xFFF0,
+        },
+        {
+            "name": "top_negate_overflow_preserves_wrapped_count",
+            "x": 0,
+            "y": 0,
+            "height": 1,
+            "color": 0xF8,
+            "left": 0,
+            "right": 100,
+            "top": 0x8000,
+            "bottom": 0x0100,
+        },
+        {
+            "name": "bottom_signed_compare_honors_subtract_overflow",
+            "x": 1,
+            "y": 0x7FFF,
+            "height": 1,
+            "color": 0xE7,
+            "left": 0,
+            "right": 100,
+            "top": 0,
+            "bottom": 0x7FFF,
+        },
+    ]
+
+    data_segment = 0x2000
+    game_segment = 0x4000
+    output_segment = 0x7000
+    stack_segment = 0xA000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("e12dd23cc34bb45a")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logical_flags(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x8000) != 0,
+            "of": False,
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        x = int(case["x"])
+        y = int(case["y"])
+        height = int(case["height"])
+        color = int(case["color"])
+        left = int(case["left"])
+        right = int(case["right"])
+        top = int(case["top"])
+        bottom = int(case["bottom"])
+        framebuffer_offset = int(case.get("framebuffer_offset", 0x0300))
+        remap_flag = int(case.get("remap_flag", 0))
+        direction_flag = bool(case.get("direction_flag", False))
+
+        data_memory = bytes(
+            (index * 13 + case_index * 19 + 5) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory[0x5219:0x521D] = struct.pack(
+            "<HH", framebuffer_offset, output_segment
+        )
+        game_memory[0x5235:0x523D] = struct.pack(
+            "<4H", left, right, top, bottom
+        )
+        game_memory[0x5B56] = remap_flag
+        for value in range(256):
+            game_memory[0x5F11 + value] = (
+                (value * 73 + case_index * 11) ^ 0xA5
+            ) & 0xFF
+
+        stack_memory = bytearray(
+            (index * 29 + case_index * 31 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        output_seed = bytes(
+            (index * 37 + case_index * 41 + 0x2B) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+
+        clipped_y = y
+        clipped_height = height
+        top_clipped = 0
+        bottom_clipped = 0
+        rejected = False
+        rejection = ""
+        expected_flags: dict[str, bool]
+
+        if height == 0 or (height & 0x8000) != 0:
+            rejected = True
+            rejection = "height"
+            expected_flags = logical_flags(height)
+        elif signed16(x) < signed16(left):
+            rejected = True
+            rejection = "left"
+            expected_flags = sub16_flags(x, left)
+        elif signed16(x) >= signed16(right):
+            rejected = True
+            rejection = "right"
+            expected_flags = sub16_flags(x, right)
+        else:
+            expected_flags = {}
+
+        if not rejected:
+            top_delta = (clipped_y - top) & 0xFFFF
+            if top_delta & 0x8000:
+                top_clipped = (-top_delta) & 0xFFFF
+                original_height = clipped_height
+                clipped_height = (clipped_height - top_clipped) & 0xFFFF
+                if signed16(original_height) <= signed16(top_clipped):
+                    rejected = True
+                    rejection = "top"
+                    expected_flags = sub16_flags(original_height, top_clipped)
+                else:
+                    clipped_y = top
+
+        if not rejected:
+            span_end = (clipped_y + clipped_height) & 0xFFFF
+            bottom_delta = (span_end - bottom) & 0xFFFF
+            if signed16(span_end) > signed16(bottom):
+                bottom_clipped = bottom_delta
+                original_height = clipped_height
+                clipped_height = (clipped_height - bottom_delta) & 0xFFFF
+                if signed16(original_height) <= signed16(bottom_delta):
+                    rejected = True
+                    rejection = "bottom"
+                    expected_flags = sub16_flags(original_height, bottom_delta)
+
+        expected_ports = []
+        plane = x & 3
+        row_offset = ((clipped_y << 4) + (clipped_y << 6)) & 0xFFFF
+        first_pixel = (
+            framebuffer_offset + row_offset + (x >> 2)
+        ) & 0xFFFF
+
+        if not rejected:
+            sequencer_word = 2 | ((1 << plane) << 8)
+            expected_ports.append((0x3C4, 2, sequencer_word))
+            pixel = first_pixel
+            for _ in range(clipped_height):
+                if remap_flag & 1:
+                    output_model[pixel] = game_memory[
+                        0x5F11 + output_model[pixel]
+                    ]
+                else:
+                    output_model[pixel] = color
+                final_pixel = pixel
+                pixel = (pixel + 80) & 0xFFFF
+            expected_flags = add16_flags(final_pixel, 80)
+
+        initial = {
+            "eax": 0xA1A15A00 | color,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C30000 | y,
+            "edx": 0xD4D40000 | height,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+        actual_ports = []
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            actual_ports.append((port, size, value))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, data_memory),
+                (game_segment, 0, bytes(game_memory)),
+                (output_segment, 0, output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            output_handler=output_port,
+            instruction_count=1000000,
+        )
+
+        if actual_ports != expected_ports:
+            raise AssertionError(
+                f"0x3AB3 {name}: ports={actual_ports}, expected={expected_ports}"
+            )
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3AB3 {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3AB3 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3AB3 {name}: far return CS differs")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3AB3 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x3AB3 {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3AB3 {name}: stack sentinel changed")
+
+        port_bytes = b"".join(
+            struct.pack("<HBI", port, size, value)
+            for port, size, value in actual_ports
+        )
+        vectors.append(
+            {
+                "name": name,
+                "x": x,
+                "input_y": y,
+                "input_height": height,
+                "color": color,
+                "clip": [left, right, top, bottom],
+                "rejected": rejected,
+                "rejection": rejection,
+                "clipped_y": clipped_y,
+                "clipped_height": clipped_height,
+                "top_clip_amount": top_clipped,
+                "bottom_clip_amount": bottom_clipped,
+                "plane": plane,
+                "remap_flag": remap_flag,
+                "direction_flag": direction_flag,
+                "framebuffer_offset": framebuffer_offset,
+                "first_pixel_offset": first_pixel,
+                "port_writes": [list(item) for item in actual_ports],
+                "port_writes_sha256": hashlib.sha256(port_bytes).hexdigest(),
+                "defined_flags": expected_flags,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def main_font_text_draw_display_vectors() -> list[dict[str, object]]:
     entry = 0x3192
     expected_hash = "2c83af0acf062fa3fa48bb64c99d7af3f1e36640ac25ef84cf9a0ddf4d06d3b2"
@@ -43066,6 +43576,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_39bb_natural.json",
         gfx_clipped_span_fill_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3ab3_natural.json",
+        gfx_clipped_planar_vertical_span_vectors(),
         args.check,
     )
     update_vector(
