@@ -3342,6 +3342,37 @@ warning-free to 37 instructions/82 bytes versus 38/74 original. A replacement
 link needs only a narrow DI/DS:DX/EBP adapter; the parser logic itself is fully
 represented in natural C.
 
+## BLOODPRG XMS resource loader candidate
+
+The old `file_open_wrapper` label for `0x002901` described only its standalone
+setup. The routine owns the full XMS loader. It selects an embedded archive entry
+or standalone file, accepts stale DTA size data after a failed FindFirst, and
+reads every chunk through the unchanged caller-owned `ES:DI` staging buffer.
+The standalone open failure exits before publishing a handle or changing XMS
+state.
+
+Each DOS read nominally requests 0x7D00 bytes. The routine subtracts returned
+`AX` regardless of carry, rounds that count up to even, and builds the packed XMS
+move request at `GS:0x0A6C`: conventional source handle zero, source pointer at
+the staging buffer, destination handle `GS:0x0A56`, and destination offset from
+`GS:0x0A4E`. The destination advances by a fixed 0x7D00 after every read, not by
+the returned count, so a partial read deliberately leaves a gap. Empty input
+still performs one zero-byte read and XMS move; DOS and XMS errors are ignored.
+
+Ten raw-binary vectors cover embedded flags one and three, standalone success,
+stale DTA data, open failure, empty and full 32-bit extents, odd-length padding,
+partial reads, and ignored errors. They also prove two raw ABI dependencies: the
+32-bit subtraction inherits upper `ECX`, and the `STOSD`/`STOSW` request builder
+inherits DF. The explicit DF-set vector shows the stores running backward into
+neighboring globals. Natural C uses the intended zero-upper-ECX, clear-DF
+contract; replacement adapters must establish both conditions.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual natural
+candidate warning-free to 106 instructions/339 bytes versus 91/241 original.
+Exact replacement still needs narrow DS:SI/ES:DI, DOS/XMS call, GS-placement,
+ABI-normalization, and preservation adapters; the loader and request-building
+logic are represented directly in typed C.
+
 ## BLOODPRG EMS resource loader candidate
 
 The old `path_build_call_2693` label for `0x0029F2` covered only the first call.

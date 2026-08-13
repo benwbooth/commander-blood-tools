@@ -27,7 +27,7 @@ const cb_u8 CB_NEAR *CB_NEAR index_lookup_1fd7(
         if (resource_ems_handle != -1) {
             resource_file_load_to_ems(byte_parser_index_path_2137);
         } else if (resource_xms_handle != -1) {
-            file_open_wrapper(byte_parser_index_path_2137,
+            resource_file_load_to_xms(byte_parser_index_path_2137,
                     byte_parser_back_buffer);
         }
     }

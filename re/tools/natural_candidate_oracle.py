@@ -6837,6 +6837,614 @@ def resource_file_load_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_file_load_to_xms_vectors() -> list[dict[str, object]]:
+    entry = 0x2901
+    expected_hash = "7a06ef7c766e9919b6c8ca3a09ae979c3b659525dec95187edf2b171a94ded45"
+    if hashlib.sha256(EXE[entry : entry + 241]).hexdigest() != expected_hash:
+        raise AssertionError("0x2901: recovered 241-byte body changed")
+
+    cases = [
+        {
+            "name": "embedded_odd_single_move",
+            "embedded_flag": 1,
+            "byte_count": 7,
+            "read_counts": [7],
+        },
+        {
+            "name": "embedded_bit_zero_and_full_u32",
+            "embedded_flag": 3,
+            "byte_count": 0x10005,
+            "read_counts": [0x7D00, 0x7D00, 0x0605],
+        },
+        {
+            "name": "standalone_find_success",
+            "embedded_flag": 0,
+            "byte_count": 11,
+            "read_counts": [11],
+        },
+        {
+            "name": "find_failure_uses_stale_dta",
+            "embedded_flag": 0,
+            "byte_count": 13,
+            "read_counts": [13],
+            "find_success": False,
+            "dta_offset": 0xFFF0,
+        },
+        {
+            "name": "standalone_open_failure",
+            "embedded_flag": 0,
+            "byte_count": 17,
+            "open_success": False,
+        },
+        {
+            "name": "empty_file_moves_zero_bytes",
+            "embedded_flag": 0,
+            "byte_count": 0,
+            "read_counts": [0],
+        },
+        {
+            "name": "partial_reads_use_fixed_xms_stride",
+            "embedded_flag": 0,
+            "byte_count": 0x7D07,
+            "read_counts": [0x7001, 0x0D04, 2],
+        },
+        {
+            "name": "xms_and_read_errors_are_ignored",
+            "embedded_flag": 1,
+            "byte_count": 4,
+            "read_counts": [4],
+            "xms_error": True,
+            "read_error": True,
+        },
+        {
+            "name": "nonzero_upper_ecx_keeps_nominal_request",
+            "embedded_flag": 1,
+            "byte_count": 7,
+            "read_counts": [7],
+            "ecx_high": 0xC3C30000,
+        },
+        {
+            "name": "direction_flag_reverses_request_stores",
+            "embedded_flag": 1,
+            "byte_count": 4,
+            "read_counts": [4],
+            "direction_flag": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    dta_segment = 0x4200
+    staging_segment = 0x5000
+    callback_segment = 0x7000
+    callback_offset = 0x0100
+    callback_address = callback_segment * 16 + callback_offset
+    stack_segment = 0x9000
+    path_offset = 0x4100
+    staging_offset = 0x5200
+    return_address = 0x6F20
+    stack_sentinel = bytes.fromhex("3cc387e11e785aa5")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        embedded_flag = int(case["embedded_flag"])
+        embedded = (embedded_flag & 1) != 0
+        byte_count = int(case["byte_count"])
+        read_counts = [int(value) for value in case.get("read_counts", [])]
+        find_success = bool(case.get("find_success", True))
+        open_success = bool(case.get("open_success", True))
+        xms_error = bool(case.get("xms_error", False))
+        read_error = bool(case.get("read_error", False))
+        dta_offset = int(case.get("dta_offset", 0x0200))
+        dta_size_offset = (dta_offset + 0x1A) & 0xFFFF
+        ecx_high = int(case.get("ecx_high", 0))
+        direction_flag = bool(case.get("direction_flag", False))
+        embedded_handle = 0x3100 + case_index
+        standalone_handle = 0x4100 + case_index
+        selected_handle = embedded_handle if embedded else standalone_handle
+        xms_handle = 0x5200 + case_index
+        initial_shared_handle = 0xA700 + case_index
+        initial_archive_size = 0xB8B90000 + case_index
+        initial_archive_remaining = 0xC9CA0000 + case_index
+        initial_source_remaining = 0xDADB0000 + case_index
+        initial_storage_cursor = 0xEBEC0000 + case_index
+        initial_request = bytes.fromhex("a55a69968778c33cf00f1ee1d22d4bb4")
+        request_decoy = bytes.fromhex("4bb42dd21ee10ff03cc3877869965aa5")
+        backward_store_seed = bytes.fromhex("1ee12dd23cc34bb45aa56996")
+        path = f"XMS{case_index:02d}.DAT".encode("ascii") + b"\0"
+        staging_seed = bytes([0xA5]) * (0x7D00 + 2)
+        staging_model = bytearray(staging_seed)
+        calls: list[dict[str, object]] = []
+        read_index = 0
+        move_index = 0
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": ecx_high | (0x3450 + case_index),
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | path_offset,
+            "edi": 0xF6F60000 | staging_offset,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": staging_segment,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def game_u32(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<I", machine.mem_read(game_segment * 16 + offset, 4)
+            )[0]
+
+        def game_u16(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal move_index
+            if address == 0x2693:
+                calls.append(
+                    {
+                        "call": "resource_source_select",
+                        "path": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_DX),
+                        ],
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "return_frame": return_frame(machine),
+                    }
+                )
+                machine.mem_write(
+                    game_segment * 16 + 0x0AE2, bytes((embedded_flag,))
+                )
+                if embedded:
+                    machine.mem_write(
+                        game_segment * 16 + 0x0A8E,
+                        struct.pack("<I", byte_count),
+                    )
+                    machine.mem_write(
+                        game_segment * 16 + 0x0A92,
+                        struct.pack("<I", byte_count),
+                    )
+                    machine.reg_write(UC_X86_REG_BX, embedded_handle)
+                else:
+                    machine.reg_write(UC_X86_REG_BX, 0x7100 + case_index)
+                return
+
+            if address != callback_address:
+                return
+            if move_index >= len(read_counts):
+                raise AssertionError(f"0x2901 {name}: unexpected XMS move")
+            request = bytes(machine.mem_read(game_segment * 16 + 0x0A6C, 16))
+            (
+                length,
+                source_handle,
+                source_offset,
+                source_segment,
+                destination_handle,
+                destination_offset,
+            ) = struct.unpack("<IHHHHI", request)
+            call = {
+                "call": "xms_move",
+                "function": machine.reg_read(UC_X86_REG_EAX),
+                "request": [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ],
+                "length": length,
+                "source_handle": source_handle,
+                "source": [source_segment, source_offset],
+                "destination_handle": destination_handle,
+                "destination_offset": destination_offset,
+                "cursor_after": game_u32(machine, 0x0A4E),
+                "success": not xms_error,
+                "return_frame": return_frame(machine),
+            }
+            calls.append(call)
+            expected_length = (read_counts[move_index] + 1) & ~1
+            expected_request_image = bytearray(initial_request)
+            if direction_flag:
+                struct.pack_into("<I", expected_request_image, 0, expected_length)
+            else:
+                expected_request_image[:] = struct.pack(
+                    "<IHHHHI",
+                    expected_length,
+                    0,
+                    staging_offset,
+                    staging_segment,
+                    xms_handle,
+                    move_index * 0x7D00,
+                )
+            (
+                expected_length_field,
+                expected_source_handle,
+                expected_source_offset,
+                expected_source_segment,
+                expected_destination_handle,
+                expected_destination_offset,
+            ) = struct.unpack("<IHHHHI", expected_request_image)
+            expected_call = {
+                "call": "xms_move",
+                "function": 0x0B00,
+                "request": [game_segment, 0x0A6C],
+                "length": expected_length_field,
+                "source_handle": expected_source_handle,
+                "source": [expected_source_segment, expected_source_offset],
+                "destination_handle": expected_destination_handle,
+                "destination_offset": expected_destination_offset,
+                "cursor_after": (move_index + 1) * 0x7D00,
+                "success": not xms_error,
+                "return_frame": [0x29BC, 0],
+            }
+            if call != expected_call:
+                raise AssertionError(
+                    f"0x2901 {name}: XMS move={call}, expected={expected_call}"
+                )
+            if not direction_flag:
+                actual_source = bytes(
+                    machine.mem_read(
+                        staging_segment * 16 + staging_offset, expected_length
+                    )
+                )
+                if actual_source != bytes(staging_model[:expected_length]):
+                    raise AssertionError(f"0x2901 {name}: XMS source bytes differ")
+                call["source_sha256"] = hashlib.sha256(actual_source).hexdigest()
+                call["rounded_tail"] = (
+                    actual_source[-1] if expected_length else None
+                )
+            machine.reg_write(UC_X86_REG_AX, 0 if xms_error else 1)
+            move_index += 1
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_index
+            if number != 0x21:
+                raise AssertionError(f"0x2901 {name}: unexpected INT {number:#x}")
+
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x2F00:
+                calls.append({"call": "dos_get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+                return
+
+            if function == 0x4E00:
+                call = {
+                    "call": "dos_find_first",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                    "success": find_success,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, path_offset]:
+                    raise AssertionError(f"0x2901 {name}: find path={call['path']}")
+                if call["attributes"] != 0:
+                    raise AssertionError(f"0x2901 {name}: find attributes differ")
+                if find_success:
+                    machine.mem_write(
+                        dta_segment * 16 + dta_size_offset,
+                        struct.pack("<I", byte_count),
+                    )
+                    machine.reg_write(UC_X86_REG_AX, 0)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                set_carry(machine, not find_success)
+                return
+
+            if function == 0x3D00:
+                call = {
+                    "call": "dos_open_read_only",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "archive_remaining": game_u32(machine, 0x0A8E),
+                    "source_remaining": game_u32(machine, 0x0A92),
+                    "success": open_success,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, path_offset]:
+                    raise AssertionError(f"0x2901 {name}: open path={call['path']}")
+                if (
+                    call["archive_remaining"] != byte_count
+                    or call["source_remaining"] != byte_count
+                ):
+                    raise AssertionError(f"0x2901 {name}: open state={call}")
+                machine.reg_write(
+                    UC_X86_REG_AX,
+                    standalone_handle if open_success else 2,
+                )
+                set_carry(machine, not open_success)
+                return
+
+            if function == 0x3F00:
+                if read_index >= len(read_counts):
+                    raise AssertionError(f"0x2901 {name}: unexpected extra read")
+                remaining = game_u32(machine, 0x0A92)
+                effective_request = ecx_high | 0x7D00
+                difference = (remaining - effective_request) & 0xFFFFFFFF
+                expected_request = 0x7D00
+                if difference & 0x80000000:
+                    expected_request = remaining & 0xFFFF
+                returned = read_counts[read_index]
+                failed = read_error and read_index == 0
+                call = {
+                    "call": "dos_read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "destination": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "returned": returned,
+                    "remaining_before": remaining,
+                    "carry": failed,
+                    "shared_handle": game_u16(machine, 0x0A84),
+                    "cursor_before": game_u32(machine, 0x0A4E),
+                }
+                calls.append(call)
+                if call["handle"] != selected_handle:
+                    raise AssertionError(f"0x2901 {name}: read handle differs")
+                if call["destination"] != [staging_segment, staging_offset]:
+                    raise AssertionError(
+                        f"0x2901 {name}: read destination differs"
+                    )
+                if call["requested"] != expected_request:
+                    raise AssertionError(
+                        f"0x2901 {name}: request={call['requested']:#x}, "
+                        f"expected={expected_request:#x}"
+                    )
+                if call["shared_handle"] != selected_handle:
+                    raise AssertionError(f"0x2901 {name}: shared handle differs")
+                expected_cursor = read_index * 0x7D00
+                if call["cursor_before"] != expected_cursor:
+                    raise AssertionError(f"0x2901 {name}: cursor sequence differs")
+                payload = bytes(
+                    ((index * 31 + read_index * 43 + case_index * 59) & 0xFF)
+                    for index in range(returned)
+                )
+                staging_model[:returned] = payload
+                if payload:
+                    machine.mem_write(
+                        staging_segment * 16 + staging_offset, payload
+                    )
+                machine.reg_write(UC_X86_REG_AX, returned)
+                set_carry(machine, failed)
+                read_index += 1
+                return
+
+            if function == 0x3E00:
+                call = {
+                    "call": "dos_close",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "shared_handle": game_u16(machine, 0x0A84),
+                }
+                calls.append(call)
+                if (
+                    call["handle"] != standalone_handle
+                    or call["shared_handle"] != standalone_handle
+                ):
+                    raise AssertionError(f"0x2901 {name}: close state={call}")
+                machine.reg_write(UC_X86_REG_AX, 0)
+                set_carry(machine, False)
+                return
+
+            raise AssertionError(
+                f"0x2901 {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x2693, b"\xcb"),
+                (callback_segment, callback_offset, b"\xcb"),
+                (data_segment, path_offset, path),
+                (staging_segment, staging_offset, staging_seed),
+                (data_segment, 0x0A6C, request_decoy),
+                (
+                    game_segment,
+                    0x0A4A,
+                    struct.pack("<HH", callback_offset, callback_segment),
+                ),
+                (
+                    game_segment,
+                    0x0A4E,
+                    struct.pack("<I", initial_storage_cursor),
+                ),
+                (
+                    game_segment,
+                    0x0A52,
+                    struct.pack("<I", initial_archive_size),
+                ),
+                (game_segment, 0x0A56, struct.pack("<H", xms_handle)),
+                (game_segment, 0x0A60, backward_store_seed),
+                (game_segment, 0x0A6C, initial_request),
+                (
+                    game_segment,
+                    0x0A84,
+                    struct.pack("<H", initial_shared_handle),
+                ),
+                (
+                    game_segment,
+                    0x0A8E,
+                    struct.pack("<I", initial_archive_remaining),
+                ),
+                (
+                    game_segment,
+                    0x0A92,
+                    struct.pack("<I", initial_source_remaining),
+                ),
+                (
+                    game_segment,
+                    0x0AE2,
+                    bytes((embedded_flag ^ 0xFF,)),
+                ),
+                (
+                    dta_segment,
+                    dta_size_offset,
+                    struct.pack("<I", byte_count),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+        )
+
+        expected_names = ["resource_source_select"]
+        if not embedded:
+            expected_names.extend(("dos_get_dta", "dos_find_first", "dos_open_read_only"))
+        if embedded or open_success:
+            for _ in read_counts:
+                expected_names.extend(("dos_read", "xms_move"))
+            if not embedded:
+                expected_names.append("dos_close")
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x2901 {name}: calls={actual_names}, expected={expected_names}"
+            )
+        if calls[0] != {
+            "call": "resource_source_select",
+            "path": [data_segment, path_offset],
+            "si": path_offset,
+            "return_frame": [0x2911, 0],
+        }:
+            raise AssertionError(f"0x2901 {name}: selector call={calls[0]}")
+
+        if embedded or open_success:
+            if sum(read_counts) != byte_count or read_index != len(read_counts):
+                raise AssertionError(f"0x2901 {name}: read accounting differs")
+            if move_index != len(read_counts):
+                raise AssertionError(f"0x2901 {name}: XMS accounting differs")
+
+        expected_handle = (
+            selected_handle if embedded or open_success else initial_shared_handle
+        )
+        if game_u16(machine, 0x0A84) != expected_handle:
+            raise AssertionError(f"0x2901 {name}: final shared handle differs")
+        expected_cursor = (
+            len(read_counts) * 0x7D00
+            if embedded or open_success
+            else initial_storage_cursor
+        )
+        if game_u32(machine, 0x0A4E) != expected_cursor:
+            raise AssertionError(f"0x2901 {name}: final storage cursor differs")
+        expected_archive_size = (
+            byte_count if embedded or open_success else initial_archive_size
+        )
+        if game_u32(machine, 0x0A52) != expected_archive_size:
+            raise AssertionError(f"0x2901 {name}: final archive size differs")
+        expected_remaining = byte_count if not embedded and not open_success else 0
+        if game_u32(machine, 0x0A92) != expected_remaining:
+            raise AssertionError(f"0x2901 {name}: final remaining differs")
+        if game_u32(machine, 0x0A8E) != byte_count:
+            raise AssertionError(f"0x2901 {name}: archive remaining differs")
+        if bytes(machine.mem_read(data_segment * 16 + path_offset, len(path))) != path:
+            raise AssertionError(f"0x2901 {name}: path changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A6C, 16)) != request_decoy:
+            raise AssertionError(f"0x2901 {name}: DS request decoy changed")
+        expected_backward_store = bytearray(backward_store_seed)
+        if direction_flag:
+            final_destination_offset = (len(read_counts) - 1) * 0x7D00
+            struct.pack_into(
+                "<I", expected_backward_store, 0, final_destination_offset
+            )
+            struct.pack_into("<H", expected_backward_store, 4, staging_segment)
+            struct.pack_into("<H", expected_backward_store, 6, staging_offset)
+            struct.pack_into("<H", expected_backward_store, 8, 0)
+        actual_backward_store = bytes(
+            machine.mem_read(game_segment * 16 + 0x0A60, 12)
+        )
+        if actual_backward_store != bytes(expected_backward_store):
+            raise AssertionError(
+                f"0x2901 {name}: backward-store window differs"
+            )
+        if bytes(
+            machine.mem_read(
+                staging_segment * 16 + staging_offset, len(staging_model)
+            )
+        ) != bytes(staging_model):
+            raise AssertionError(f"0x2901 {name}: final staging bytes differ")
+        if not embedded and not open_success:
+            actual_request = bytes(
+                machine.mem_read(game_segment * 16 + 0x0A6C, 16)
+            )
+            if actual_request != initial_request:
+                raise AssertionError(f"0x2901 {name}: failed-open request changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2901 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if not embedded and not open_success:
+            if (flags & 0x41) != 0x40:
+                raise AssertionError(f"0x2901 {name}: failure flags differ")
+        elif embedded and (flags & 0x41) != 0:
+            raise AssertionError(f"0x2901 {name}: embedded completion flags differ")
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2901 {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x2901 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "embedded_flag": embedded_flag,
+                "byte_count": byte_count,
+                "find_success": find_success if not embedded else None,
+                "open_success": open_success if not embedded else None,
+                "read_counts": read_counts,
+                "xms_errors_ignored": xms_error,
+                "read_carry_ignored": read_error,
+                "upper_ecx": ecx_high,
+                "direction_flag": direction_flag,
+                "backward_store_window": (
+                    list(actual_backward_store) if direction_flag else None
+                ),
+                "final_storage_cursor": expected_cursor,
+                "final_archive_size": expected_archive_size,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_file_load_to_ems_vectors() -> list[dict[str, object]]:
     entry = 0x29F2
     expected_hash = "5fb6e58818cf21a363df36ed0fb7601aadb7a0ba13e78244c3b8aa2b15d20cfa"
@@ -37212,6 +37820,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_28ca_natural.json",
         resource_name_lookup_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2901_natural.json",
+        resource_file_load_to_xms_vectors(),
         args.check,
     )
     update_vector(

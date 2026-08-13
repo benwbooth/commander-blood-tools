@@ -1,0 +1,949 @@
+[
+  {
+    "name": "embedded_odd_single_move",
+    "embedded_flag": 1,
+    "byte_count": 7,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      7
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 7,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12544,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 7,
+        "returned": 7,
+        "remaining_before": 7,
+        "carry": false,
+        "shared_handle": 12544,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 8,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20992,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "eaebda2fd7a4d62a3fc8bdfd2b14a25dd9264d662dff7a9fa596fef40a2a824e",
+        "rounded_tail": 165
+      }
+    ]
+  },
+  {
+    "name": "embedded_bit_zero_and_full_u32",
+    "embedded_flag": 3,
+    "byte_count": 65541,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      32000,
+      32000,
+      1541
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 96000,
+    "final_archive_size": 65541,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12545,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 65541,
+        "carry": false,
+        "shared_handle": 12545,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 32000,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20993,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "b009b094600ee4e0f792633b9fe7a7a31636ebaab522cdef9345f0b65fd842d7",
+        "rounded_tail": 28
+      },
+      {
+        "call": "dos_read",
+        "handle": 12545,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 33541,
+        "carry": false,
+        "shared_handle": 12545,
+        "cursor_before": 32000
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 32000,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20993,
+        "destination_offset": 32000,
+        "cursor_after": 64000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "49bdea9c83accdc69fa286bf542586e3f79f34d6830b4d890fe828f1c68d95ba",
+        "rounded_tail": 71
+      },
+      {
+        "call": "dos_read",
+        "handle": 12545,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 1541,
+        "returned": 1541,
+        "remaining_before": 1541,
+        "carry": false,
+        "shared_handle": 12545,
+        "cursor_before": 64000
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 1542,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20993,
+        "destination_offset": 64000,
+        "cursor_after": 96000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "93b57a2563222179388e90b3c3a3dd54e2d575b17095cbaa32f73ced9596891e",
+        "rounded_tail": 1
+      }
+    ]
+  },
+  {
+    "name": "standalone_find_success",
+    "embedded_flag": 0,
+    "byte_count": 11,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      11
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 11,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_remaining": 11,
+        "source_remaining": 11,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16642,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 11,
+        "returned": 11,
+        "remaining_before": 11,
+        "carry": false,
+        "shared_handle": 16642,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 12,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20994,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "bc9d1c3f865012081fa79affdbf2e309b9b8ec8edc576a29ecd1ba66f727a1d0",
+        "rounded_tail": 165
+      },
+      {
+        "call": "dos_close",
+        "handle": 16642,
+        "shared_handle": 16642
+      }
+    ]
+  },
+  {
+    "name": "find_failure_uses_stale_dta",
+    "embedded_flag": 0,
+    "byte_count": 13,
+    "find_success": false,
+    "open_success": true,
+    "read_counts": [
+      13
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 13,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": false
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_remaining": 13,
+        "source_remaining": 13,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16643,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 13,
+        "returned": 13,
+        "remaining_before": 13,
+        "carry": false,
+        "shared_handle": 16643,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 14,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20995,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "b12bd29e36c8cc840d9c2a68ba32e1c13c7e8e9e3eb472b0a84627a5d965af3c",
+        "rounded_tail": 165
+      },
+      {
+        "call": "dos_close",
+        "handle": 16643,
+        "shared_handle": 16643
+      }
+    ]
+  },
+  {
+    "name": "standalone_open_failure",
+    "embedded_flag": 0,
+    "byte_count": 17,
+    "find_success": true,
+    "open_success": false,
+    "read_counts": [],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 3958112260,
+    "final_archive_size": 3099131908,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_remaining": 17,
+        "source_remaining": 17,
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "empty_file_moves_zero_bytes",
+    "embedded_flag": 0,
+    "byte_count": 0,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      0
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 0,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_remaining": 0,
+        "source_remaining": 0,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16645,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 0,
+        "returned": 0,
+        "remaining_before": 0,
+        "carry": false,
+        "shared_handle": 16645,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 0,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20997,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rounded_tail": null
+      },
+      {
+        "call": "dos_close",
+        "handle": 16645,
+        "shared_handle": 16645
+      }
+    ]
+  },
+  {
+    "name": "partial_reads_use_fixed_xms_stride",
+    "embedded_flag": 0,
+    "byte_count": 32007,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      28673,
+      3332,
+      2
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 96000,
+    "final_archive_size": 32007,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_remaining": 32007,
+        "source_remaining": 32007,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16646,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 32000,
+        "returned": 28673,
+        "remaining_before": 32007,
+        "carry": false,
+        "shared_handle": 16646,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 28674,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20998,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "5e86689ccdf051093355874feaf9dafdfbc3171eeb7c6b59410656538e728960",
+        "rounded_tail": 165
+      },
+      {
+        "call": "dos_read",
+        "handle": 16646,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 3334,
+        "returned": 3332,
+        "remaining_before": 3334,
+        "carry": false,
+        "shared_handle": 16646,
+        "cursor_before": 32000
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 3332,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20998,
+        "destination_offset": 32000,
+        "cursor_after": 64000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "94b92637df33ecb4d3a088727a820e91262fc84706d6e24b962c06bf64b24845",
+        "rounded_tail": 234
+      },
+      {
+        "call": "dos_read",
+        "handle": 16646,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 2,
+        "returned": 2,
+        "remaining_before": 2,
+        "carry": false,
+        "shared_handle": 16646,
+        "cursor_before": 64000
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 2,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20998,
+        "destination_offset": 64000,
+        "cursor_after": 96000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "ac0140c0a3cd88ff821c6b68a1d0de9df61154488fc2adc5cde62696fefe8dd8",
+        "rounded_tail": 215
+      },
+      {
+        "call": "dos_close",
+        "handle": 16646,
+        "shared_handle": 16646
+      }
+    ]
+  },
+  {
+    "name": "xms_and_read_errors_are_ignored",
+    "embedded_flag": 1,
+    "byte_count": 4,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      4
+    ],
+    "xms_errors_ignored": true,
+    "read_carry_ignored": true,
+    "upper_ecx": 0,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 4,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12551,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 4,
+        "returned": 4,
+        "remaining_before": 4,
+        "carry": true,
+        "shared_handle": 12551,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 4,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 20999,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": false,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "e8a3575e73078111df56cf7848a2e8b092291fcdbd96ec18aa1c3261d36c28b3",
+        "rounded_tail": 250
+      }
+    ]
+  },
+  {
+    "name": "nonzero_upper_ecx_keeps_nominal_request",
+    "embedded_flag": 1,
+    "byte_count": 7,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      7
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 3284336640,
+    "direction_flag": false,
+    "backward_store_window": null,
+    "final_storage_cursor": 32000,
+    "final_archive_size": 7,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12552,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 32000,
+        "returned": 7,
+        "remaining_before": 7,
+        "carry": false,
+        "shared_handle": 12552,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 8,
+        "source_handle": 0,
+        "source": [
+          20480,
+          20992
+        ],
+        "destination_handle": 21000,
+        "destination_offset": 0,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ],
+        "source_sha256": "2ae03b0266367b9fe74d5a24948bd78edf6388254525d1e46bf29f1fd23e369f",
+        "rounded_tail": 165
+      }
+    ]
+  },
+  {
+    "name": "direction_flag_reverses_request_stores",
+    "embedded_flag": 1,
+    "byte_count": 4,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      4
+    ],
+    "xms_errors_ignored": false,
+    "read_carry_ignored": false,
+    "upper_ecx": 0,
+    "direction_flag": true,
+    "backward_store_window": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      80,
+      0,
+      82,
+      0,
+      0,
+      105,
+      150
+    ],
+    "final_storage_cursor": 32000,
+    "final_archive_size": 4,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10513,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12553,
+        "destination": [
+          20480,
+          20992
+        ],
+        "requested": 4,
+        "returned": 4,
+        "remaining_before": 4,
+        "carry": false,
+        "shared_handle": 12553,
+        "cursor_before": 0
+      },
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "request": [
+          11264,
+          2668
+        ],
+        "length": 4,
+        "source_handle": 30855,
+        "source": [
+          4080,
+          15555
+        ],
+        "destination_handle": 57630,
+        "destination_offset": 3024825810,
+        "cursor_after": 32000,
+        "success": true,
+        "return_frame": [
+          10684,
+          0
+        ]
+      }
+    ]
+  }
+]

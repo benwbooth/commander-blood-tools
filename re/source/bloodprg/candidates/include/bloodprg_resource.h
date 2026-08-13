@@ -109,6 +109,8 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 
 cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
+void CB_FAR resource_file_load_to_xms(volatile char CB_FAR *path,
+        volatile cb_u8 CB_FAR *staging_buffer); /* 0x01CE:0x0621 */
 void CB_FAR resource_file_load_to_ems(
         volatile char CB_FAR *path); /* 0x01CE:0x0712 */
 cb_u32 CB_FAR file_create_and_write(

@@ -88,7 +88,7 @@ const cb_u8 CB_NEAR *CB_NEAR music_voc_name_patcher(
 
 void CB_FAR resource_file_load_to_ems(
         volatile char CB_FAR *path); /* 0x01CE:0712 */
-void CB_FAR file_open_wrapper(cb_game_char_ptr path,
-        cb_far_u8_ptr destination); /* 0x01CE:0621 */
+void CB_FAR resource_file_load_to_xms(volatile char CB_FAR *path,
+        volatile cb_u8 CB_FAR *staging_buffer); /* 0x01CE:0621 */
 
 #endif
