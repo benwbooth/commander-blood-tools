@@ -44,7 +44,7 @@ void CB_NEAR startup_option_apply(char *token)
 
                 /* The shipped WRI argument ends in a separator to remove. */
                 if (destination == startup_write_directory) {
-                    startup_current_drive = 0u;
+                    startup_original_drive = 0u;
                 } else {
                     destination[-1] = '\0';
                 }

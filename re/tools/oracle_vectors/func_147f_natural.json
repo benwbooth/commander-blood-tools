@@ -1,0 +1,89 @@
+[
+  {
+    "name": "all_skip",
+    "paths": [
+      "xONE",
+      "xTWO",
+      "xTHREE",
+      "xFOUR"
+    ],
+    "delete_calls": [],
+    "final_dx": 3607,
+    "final_cx": 0
+  },
+  {
+    "name": "all_empty",
+    "paths": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "delete_calls": [
+      {
+        "offset": 3543,
+        "path": ""
+      },
+      {
+        "offset": 3559,
+        "path": ""
+      },
+      {
+        "offset": 3575,
+        "path": ""
+      },
+      {
+        "offset": 3591,
+        "path": ""
+      }
+    ],
+    "final_dx": 3607,
+    "final_cx": 0
+  },
+  {
+    "name": "mixed",
+    "paths": [
+      "xKEEP",
+      "ONE.TMP",
+      "x",
+      "TWO.$$$"
+    ],
+    "delete_calls": [
+      {
+        "offset": 3559,
+        "path": "ONE.TMP"
+      },
+      {
+        "offset": 3591,
+        "path": "TWO.$$$"
+      }
+    ],
+    "final_dx": 3607,
+    "final_cx": 0
+  },
+  {
+    "name": "case_sensitive_marker",
+    "paths": [
+      "XUPPER",
+      "xlower",
+      "z.dat",
+      "last.tmp"
+    ],
+    "delete_calls": [
+      {
+        "offset": 3543,
+        "path": "XUPPER"
+      },
+      {
+        "offset": 3575,
+        "path": "z.dat"
+      },
+      {
+        "offset": 3591,
+        "path": "last.tmp"
+      }
+    ],
+    "final_dx": 3607,
+    "final_cx": 0
+  }
+]

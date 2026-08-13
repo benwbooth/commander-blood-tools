@@ -2894,6 +2894,39 @@ emits 168, 138, and 36 instructions. Watcom's Mode-X mnemonic LCS is 68 of 84;
 most size growth comes from `int86` setup, segment-qualified globals, and
 structured port expressions rather than different game logic.
 
+## BLOODPRG output-directory and rectangle candidates
+
+Shutdown context resolves three misleading or incomplete startup labels. The
+`0x00147F` routine does not open `DD7`; it iterates four 16-byte transient path
+slots at `DS:0DD7`, skips only records beginning with lowercase `x`, and issues
+DOS delete-file AH=41 for every other record. Immediately around that call,
+`0x0027C3` enters the `WRI` output directory and `0x0027E9` restores the launch
+directory. Both gate on `GS:0AE0` bit zero, select zero-based DOS drive bytes,
+ignore DOS errors, and replace the whole flag byte after the CHDIR attempt.
+
+This call sequence also corrects the startup data names: byte `01B8` is the WRI
+target drive, byte `01B9` is the saved original drive, `01BA` is the WRI path,
+and `01DA` is the original launch path. The natural C maps zero-based DOS drive
+numbers to the one-based `_dos_setdrive` library API, then uses `chdir`; Turbo C
+uses `<dir.h>` for that declaration while Watcom uses `<direct.h>`.
+
+The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
+horizontal span at the top, vertical spans at the left and `x+width-1`, then a
+horizontal span at `y+height-1`. All endpoint arithmetic is wrapping 16-bit
+arithmetic, including zero extents. The original passes color/x/y/width in
+AX/BX/CX/DX and height in BP. Watcom reserves BP, so the natural five-argument
+function requires a narrow eventual ABI adapter even though the four-call game
+logic is ordinary C.
+
+Sixteen direct-binary vectors prove all deletion marker paths, exact DOS calls,
+all four low flag combinations for both directory transitions, drive and path
+ownership, error-agnostic flag replacement, rectangle call order, full register
+arguments, same-CS far-call frames, zero and wrapped endpoints, and preservation.
+Open Watcom 1.9 medium emits 13 instructions/32 bytes for deletion versus 12/28
+original, 23/59 for each directory transition versus 18/38, and 31/67 for the
+rectangle versus 19/32. Turbo C 2.01 medium emits 20, 26, 26, and 40
+instructions respectively.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

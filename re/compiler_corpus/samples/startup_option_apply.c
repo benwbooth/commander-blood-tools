@@ -39,7 +39,7 @@ static const startup_option startup_options[] = {
     {{'\0', '\0', '\0'}, 0u,              0x00u}
 };
 
-extern u8 current_drive;
+extern u8 original_drive;
 extern char write_directory[32];
 extern volatile u8 GAME_DATA audio_driver_id;
 extern volatile u16 GAME_DATA audio_configuration;
@@ -69,7 +69,7 @@ void NEAR startup_option_apply_probe(char *token)
                     *destination++ = *suffix++;
                 }
                 if (destination == write_directory) {
-                    current_drive = 0u;
+                    original_drive = 0u;
                 } else {
                     destination[-1] = '\0';
                 }

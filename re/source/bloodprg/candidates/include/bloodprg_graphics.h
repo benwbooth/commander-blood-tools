@@ -57,6 +57,10 @@ typedef struct bloodprg_gfx_scanline_state {
 
 bloodprg_layout_offset_result CB_FAR layout_offset_calc(cb_u16 columns,
         cb_u16 rows); /* 0x000E62 */
+void CB_FAR gfx_horizontal_span(cb_u8 color, cb_u16 x, cb_u16 y,
+        cb_u16 width); /* 0x0299:0x031C */
+void CB_FAR gfx_vertical_span(cb_u8 color, cb_u16 x, cb_u16 y,
+        cb_u16 height); /* 0x0299:0x0391 */
 void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0BB5 */
 void CB_FAR blit_coord_guard_c(cb_u8 color, cb_u16 x, cb_u16 y,
@@ -81,6 +85,8 @@ void CB_FAR fullscreen_copy_to_backbuffer(
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
+#pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
+#pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact []
 /* Watcom reserves BP, so the fifth helper argument remains stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []

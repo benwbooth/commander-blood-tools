@@ -2405,6 +2405,260 @@ def startup_option_apply_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def startup_transient_files_delete_vectors() -> list[dict[str, object]]:
+    entry = 0x147F
+    expected_hash = "df3e0a226e075adb120a93e1abd3cd0a5d166fd1e32dc7ccf91cfc2fa2c7c06d"
+    if hashlib.sha256(EXE[entry : entry + 28]).hexdigest() != expected_hash:
+        raise AssertionError("0x147f: recovered 28-byte body changed")
+
+    cases = (
+        ("all_skip", ("xONE", "xTWO", "xTHREE", "xFOUR")),
+        ("all_empty", ("", "", "", "")),
+        ("mixed", ("xKEEP", "ONE.TMP", "x", "TWO.$$$")),
+        ("case_sensitive_marker", ("XUPPER", "xlower", "z.dat", "last.tmp")),
+    )
+    data_segment = 0x2800
+    vectors = []
+
+    for case_index, (name, paths) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6C62468 + case_index,
+            "ecx": 0xC7D7369C + case_index,
+            "edx": 0xD8E855AA + case_index,
+            "esi": 0xE9F96789 + case_index,
+            "edi": 0xFA0A789A + case_index,
+            "ebp": 0x0B1B1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": 0x3000,
+            "flags": 0x0A93,
+        }
+        table = b"".join(
+            path.encode("ascii") + bytes(16 - len(path)) for path in paths
+        )
+        calls: list[dict[str, int | str]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21 or machine.reg_read(UC_X86_REG_AX) != 0x4100:
+                raise AssertionError(f"0x147f {name}: unexpected interrupt")
+            offset = machine.reg_read(UC_X86_REG_DX)
+            path_bytes = bytearray()
+            for index in range(64):
+                value = machine.mem_read(data_segment * 16 + offset + index, 1)[0]
+                if value == 0:
+                    break
+                path_bytes.append(value)
+            calls.append(
+                {
+                    "offset": offset,
+                    "path": path_bytes.decode("ascii"),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 2)
+
+        machine = execute(
+            entry,
+            0x149A,
+            initial,
+            [(data_segment, 0x0DD7, table)],
+            interrupt_handler=interrupt,
+        )
+        expected_calls = [
+            {"offset": 0x0DD7 + index * 16, "path": path}
+            for index, path in enumerate(paths)
+            if not path.startswith("x")
+        ]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x147f {name}: calls={calls}, expected={expected_calls}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x0DD7, 64)) != table:
+            raise AssertionError(f"0x147f {name}: changed path table")
+        if machine.reg_read(UC_X86_REG_ECX) != (initial["ecx"] & 0xFFFF0000):
+            raise AssertionError(f"0x147f {name}: wrong final ECX")
+        if machine.reg_read(UC_X86_REG_EDX) != 0x0E17:
+            raise AssertionError(f"0x147f {name}: wrong final EDX")
+        for register in ("ebx", "esi", "edi", "ebp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x147f {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "paths": list(paths),
+                "delete_calls": calls,
+                "final_dx": machine.reg_read(UC_X86_REG_DX),
+                "final_cx": machine.reg_read(UC_X86_REG_CX),
+            }
+        )
+    return vectors
+
+
+def startup_directory_transition_vectors(
+    entry: int,
+    return_address: int,
+    expected_hash: str,
+    entering: bool,
+) -> list[dict[str, object]]:
+    if hashlib.sha256(EXE[entry : entry + 38]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered 38-byte body changed")
+
+    game_segment = 0x2800
+    data_segment = 0x2000
+    vectors = []
+    for case_index, initial_flag in enumerate((0, 1, 2, 3)):
+        name = f"flag_{initial_flag}"
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0A93,
+        }
+        write_drive = 3
+        original_drive = 2
+        write_directory = b"D:\\CAPTURE\x00" + b"\xcc" * 21
+        original_directory = b"C:\\CBLOOD\x00" + b"\xdd" * 22
+        calls: list[dict[str, int | str]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21:
+                raise AssertionError(f"{entry:#x} {name}: unexpected INT")
+            ax = machine.reg_read(UC_X86_REG_AX)
+            dx = machine.reg_read(UC_X86_REG_DX)
+            ds = machine.reg_read(UC_X86_REG_DS)
+            function = ax >> 8
+            if function == 0x0E:
+                calls.append(
+                    {
+                        "function": "select_drive",
+                        "drive": dx & 0xFF,
+                        "dx": dx,
+                        "ds": ds,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, (ax & 0xFF00) | 0x1A)
+                machine.reg_write(UC_X86_REG_DX, 0xDEAD)
+                return
+            if function == 0x3B:
+                path_bytes = bytearray()
+                for index in range(32):
+                    value = machine.mem_read(ds * 16 + dx + index, 1)[0]
+                    if value == 0:
+                        break
+                    path_bytes.append(value)
+                calls.append(
+                    {
+                        "function": "change_directory",
+                        "offset": dx,
+                        "path": path_bytes.decode("ascii"),
+                        "ax": ax,
+                        "ds": ds,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xBEEF)
+                machine.reg_write(UC_X86_REG_DX, 0xCAFE)
+                return
+            raise AssertionError(f"{entry:#x} {name}: DOS function {function:#x}")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0x01B8, bytes((write_drive, original_drive))),
+                (game_segment, 0x01BA, write_directory),
+                (game_segment, 0x01DA, original_directory),
+                (game_segment, 0x0AE0, bytes((initial_flag,))),
+                (data_segment, 0x01B8, b"\xf3\xf2"),
+                (data_segment, 0x01BA, b"DS-WRITE\x00" + b"\xee" * 23),
+                (data_segment, 0x01DA, b"DS-ORIGINAL\x00" + b"\xff" * 20),
+                (data_segment, 0x0AE0, bytes((initial_flag ^ 0xFF,))),
+            ],
+            interrupt_handler=interrupt,
+        )
+        active = (initial_flag & 1) != 0
+        executes = not active if entering else active
+        if executes:
+            drive = write_drive if entering else original_drive
+            offset = 0x01BA if entering else 0x01DA
+            path = "D:\\CAPTURE" if entering else "C:\\CBLOOD"
+            expected_calls = [
+                {
+                    "function": "select_drive",
+                    "drive": drive,
+                    "dx": (initial["dx"] & 0xFF00) | drive,
+                    "ds": game_segment,
+                },
+                {
+                    "function": "change_directory",
+                    "offset": offset,
+                    "path": path,
+                    "ax": 0x3B1A,
+                    "ds": game_segment,
+                },
+            ]
+            expected_flag = 1 if entering else 0
+        else:
+            expected_calls = []
+            expected_flag = initial_flag
+        if calls != expected_calls:
+            raise AssertionError(
+                f"{entry:#x} {name}: calls={calls}, expected={expected_calls}"
+            )
+        actual_flag = machine.mem_read(game_segment * 16 + 0x0AE0, 1)[0]
+        if actual_flag != expected_flag:
+            raise AssertionError(
+                f"{entry:#x} {name}: flag={actual_flag}, expected={expected_flag}"
+            )
+        if machine.mem_read(game_segment * 16 + 0x01BA, 32) != write_directory:
+            raise AssertionError(f"{entry:#x} {name}: changed write directory")
+        if machine.mem_read(game_segment * 16 + 0x01DA, 32) != original_directory:
+            raise AssertionError(f"{entry:#x} {name}: changed original directory")
+        if machine.mem_read(data_segment * 16 + 0x0AE0, 1) != bytes(
+            (initial_flag ^ 0xFF,)
+        ):
+            raise AssertionError(f"{entry:#x} {name}: changed DS flag decoy")
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"{entry:#x} {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "initial_flag": initial_flag,
+                "calls": calls,
+                "final_flag": actual_flag,
+            }
+        )
+    return vectors
+
+
+def startup_write_directory_enter_vectors() -> list[dict[str, object]]:
+    return startup_directory_transition_vectors(
+        0x27C3,
+        0x27E8,
+        "13fabd2f516c822ed776e53c3c177d99d5ab54d5e02bbb9a6d557d256693426a",
+        True,
+    )
+
+
+def startup_original_directory_restore_vectors() -> list[dict[str, object]]:
+    return startup_directory_transition_vectors(
+        0x27E9,
+        0x280E,
+        "eb6b6b6954b87081c3141b81b9cd0507f5065eabb570dd365a600725a3cd650c",
+        False,
+    )
+
+
 def extended_memory_backends_init_vectors() -> list[dict[str, object]]:
     entry = 0x099F
     expected_hash = "b54827c41368004235c8a04276c50ac29230fed5e95bd77460c7310bee245314"
@@ -5012,6 +5266,128 @@ def binary_u32_sqrt_vectors() -> list[dict[str, object]]:
             }
         )
 
+    return vectors
+
+
+def composite_draw_a_vectors() -> list[dict[str, object]]:
+    entry = 0x3B45
+    expected_hash = "244b88c80dc7d12184b6a54d14e89ec241265ffff99a902cdc64a4ba07c8c539"
+    if hashlib.sha256(EXE[entry : entry + 32]).hexdigest() != expected_hash:
+        raise AssertionError("0x3b45: recovered 32-byte body changed")
+
+    cases = (
+        ("ordinary", 0x12EF, 10, 20, 5, 7),
+        ("single_pixel", 0xA580, 0, 0, 1, 1),
+        ("zero_extents", 0x0001, 0x1234, 0x5678, 0, 0),
+        ("wrapping_edges", 0xFF7F, 0xFFFE, 0xFFFD, 5, 7),
+    )
+    vectors = []
+
+    for case_index, (name, color, x, y, width, height) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A50000 | color,
+            "bx": x,
+            "cx": y,
+            "dx": width,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": height,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": 0x2800,
+            "flags": 0x0A93,
+        }
+        calls: list[dict[str, int | str]] = []
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0x32AC, 0x3321):
+                return
+            sp = machine.reg_read(UC_X86_REG_SP)
+            ss = machine.reg_read(UC_X86_REG_SS)
+            return_offset, return_segment = struct.unpack(
+                "<HH", machine.mem_read(ss * 16 + sp, 4)
+            )
+            calls.append(
+                {
+                    "primitive": "horizontal" if address == 0x32AC else "vertical",
+                    "color_word": machine.reg_read(UC_X86_REG_AX),
+                    "x": machine.reg_read(UC_X86_REG_BX),
+                    "y": machine.reg_read(UC_X86_REG_CX),
+                    "extent": machine.reg_read(UC_X86_REG_DX),
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "return_offset": return_offset,
+                    "return_segment": return_segment,
+                }
+            )
+
+        machine = execute(
+            entry,
+            0x3B64,
+            initial,
+            [(0, 0x32AC, b"\xcb"), (0, 0x3321, b"\xcb")],
+            code_handler=callback,
+        )
+        expected_calls = [
+            {
+                "primitive": "horizontal",
+                "color_word": color,
+                "x": x,
+                "y": y,
+                "extent": width,
+                "bp": height,
+                "return_offset": 0x3B4A,
+                "return_segment": 0,
+            },
+            {
+                "primitive": "vertical",
+                "color_word": color,
+                "x": x,
+                "y": y,
+                "extent": height,
+                "bp": width,
+                "return_offset": 0x3B50,
+                "return_segment": 0,
+            },
+            {
+                "primitive": "vertical",
+                "color_word": color,
+                "x": (x + width - 1) & 0xFFFF,
+                "y": y,
+                "extent": height,
+                "bp": width,
+                "return_offset": 0x3B57,
+                "return_segment": 0,
+            },
+            {
+                "primitive": "horizontal",
+                "color_word": color,
+                "x": x,
+                "y": (y + height - 1) & 0xFFFF,
+                "extent": width,
+                "bp": height,
+                "return_offset": 0x3B63,
+                "return_segment": 0,
+            },
+        ]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x3b45 {name}: calls={calls}, expected={expected_calls}"
+            )
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x3b45 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "color_word": color,
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "calls": calls,
+            }
+        )
     return vectors
 
 
@@ -28684,6 +29060,21 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "func_147f_natural.json",
+        startup_transient_files_delete_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_27c3_natural.json",
+        startup_write_directory_enter_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_27e9_natural.json",
+        startup_original_directory_restore_vectors(),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "func_093b_natural.json", rtc_time_read_vectors(), args.check
     )
     update_vector(
@@ -28822,6 +29213,9 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_30cd_natural.json", text_width_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3b45_natural.json", composite_draw_a_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_3d7b_natural.json",

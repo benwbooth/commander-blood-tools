@@ -1,0 +1,202 @@
+[
+  {
+    "name": "ordinary",
+    "color_word": 4847,
+    "x": 10,
+    "y": 20,
+    "width": 5,
+    "height": 7,
+    "calls": [
+      {
+        "primitive": "horizontal",
+        "color_word": 4847,
+        "x": 10,
+        "y": 20,
+        "extent": 5,
+        "bp": 7,
+        "return_offset": 15178,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 4847,
+        "x": 10,
+        "y": 20,
+        "extent": 7,
+        "bp": 5,
+        "return_offset": 15184,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 4847,
+        "x": 14,
+        "y": 20,
+        "extent": 7,
+        "bp": 5,
+        "return_offset": 15191,
+        "return_segment": 0
+      },
+      {
+        "primitive": "horizontal",
+        "color_word": 4847,
+        "x": 10,
+        "y": 26,
+        "extent": 5,
+        "bp": 7,
+        "return_offset": 15203,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "single_pixel",
+    "color_word": 42368,
+    "x": 0,
+    "y": 0,
+    "width": 1,
+    "height": 1,
+    "calls": [
+      {
+        "primitive": "horizontal",
+        "color_word": 42368,
+        "x": 0,
+        "y": 0,
+        "extent": 1,
+        "bp": 1,
+        "return_offset": 15178,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 42368,
+        "x": 0,
+        "y": 0,
+        "extent": 1,
+        "bp": 1,
+        "return_offset": 15184,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 42368,
+        "x": 0,
+        "y": 0,
+        "extent": 1,
+        "bp": 1,
+        "return_offset": 15191,
+        "return_segment": 0
+      },
+      {
+        "primitive": "horizontal",
+        "color_word": 42368,
+        "x": 0,
+        "y": 0,
+        "extent": 1,
+        "bp": 1,
+        "return_offset": 15203,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "zero_extents",
+    "color_word": 1,
+    "x": 4660,
+    "y": 22136,
+    "width": 0,
+    "height": 0,
+    "calls": [
+      {
+        "primitive": "horizontal",
+        "color_word": 1,
+        "x": 4660,
+        "y": 22136,
+        "extent": 0,
+        "bp": 0,
+        "return_offset": 15178,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 1,
+        "x": 4660,
+        "y": 22136,
+        "extent": 0,
+        "bp": 0,
+        "return_offset": 15184,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 1,
+        "x": 4659,
+        "y": 22136,
+        "extent": 0,
+        "bp": 0,
+        "return_offset": 15191,
+        "return_segment": 0
+      },
+      {
+        "primitive": "horizontal",
+        "color_word": 1,
+        "x": 4660,
+        "y": 22135,
+        "extent": 0,
+        "bp": 0,
+        "return_offset": 15203,
+        "return_segment": 0
+      }
+    ]
+  },
+  {
+    "name": "wrapping_edges",
+    "color_word": 65407,
+    "x": 65534,
+    "y": 65533,
+    "width": 5,
+    "height": 7,
+    "calls": [
+      {
+        "primitive": "horizontal",
+        "color_word": 65407,
+        "x": 65534,
+        "y": 65533,
+        "extent": 5,
+        "bp": 7,
+        "return_offset": 15178,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 65407,
+        "x": 65534,
+        "y": 65533,
+        "extent": 7,
+        "bp": 5,
+        "return_offset": 15184,
+        "return_segment": 0
+      },
+      {
+        "primitive": "vertical",
+        "color_word": 65407,
+        "x": 2,
+        "y": 65533,
+        "extent": 7,
+        "bp": 5,
+        "return_offset": 15191,
+        "return_segment": 0
+      },
+      {
+        "primitive": "horizontal",
+        "color_word": 65407,
+        "x": 65534,
+        "y": 3,
+        "extent": 5,
+        "bp": 7,
+        "return_offset": 15203,
+        "return_segment": 0
+      }
+    ]
+  }
+]
