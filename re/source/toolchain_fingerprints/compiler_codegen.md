@@ -3511,6 +3511,30 @@ extra code materializes three far segments in locals and switches ES around
 ordinary structure accesses; it does not indicate missing loop or record
 logic.
 
+## BLOODPRG ship HUD palette snapshot candidate
+
+`0x008C96` is a navigation/HUD reset routine rather than a generic VM-segment
+thunk. It first far-calls `0x04DA:0x1C53`, the HUD element updater, then copies
+`0x30` dwords from `GS:0x53D1` to `GS:0x5CD8`. The source is byte 384 of the
+live 768-byte DAC palette at `GS:0x5251`, so the 192-byte copy snapshots exactly
+colors 128 through 191 after the HUD update. It finally resets the ship-camera
+origin at `GS:0x2F65` to `(10000, 12000, 0)`.
+
+Four patched-callee vectors execute the original wrapper while isolating only
+the HUD callee. They verify the exact far-call frame, mutate selected palette
+bytes in the callee to prove call-before-copy ordering, cover the forward and
+inherited-DF `REP MOVSD` extents, isolate GS from DS/ES decoys, and verify the
+camera stores, selective low-word register restoration, callee BX/DX/FS and
+upper-half pass-through, unchanged callee flags, stack, and far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm`) compiles the actual natural candidate
+without warnings to 29 instructions/63 bytes versus the original 26/56. The
+mnemonic-sequence LCS is 73.08 percent and mnemonic-multiset overlap is 88.46
+percent. Watcom lowers `_fmemcpy` to `REP MOVSW` plus a residual byte copy,
+where the binary uses `REP MOVSD`; they are equivalent under the shipped C
+runtime's clear-DF invariant, while the direct reverse-DF vector records the
+non-runtime difference explicitly.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

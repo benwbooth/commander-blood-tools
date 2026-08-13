@@ -1,0 +1,169 @@
+[
+  {
+    "name": "forward_copy",
+    "hud_call": {
+      "callee": "draw_hud_element_2bc7",
+      "cs": 1242,
+      "ip": 7251,
+      "sp": 65262,
+      "ds": 12288,
+      "es": 20480,
+      "gs": 4096,
+      "flags": 145
+    },
+    "source_offset": 21457,
+    "source_palette_first": 128,
+    "destination_offset": 23768,
+    "copied_bytes": 192,
+    "direction": "forward",
+    "source_mutations": [],
+    "camera": {
+      "x": 10000,
+      "y": 12000,
+      "z": 0
+    },
+    "game_data_sha256": "b20531a3bca48b3de41c3725d62634c9c4f963b00f382a4be21fca61e44dd228",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "hud_call_updates_palette",
+    "hud_call": {
+      "callee": "draw_hud_element_2bc7",
+      "cs": 1242,
+      "ip": 7251,
+      "sp": 65262,
+      "ds": 12288,
+      "es": 20480,
+      "gs": 4096,
+      "flags": 145
+    },
+    "source_offset": 21457,
+    "source_palette_first": 128,
+    "destination_offset": 23768,
+    "copied_bytes": 192,
+    "direction": "forward",
+    "source_mutations": [
+      {
+        "relative_offset": 0,
+        "value": 17
+      },
+      {
+        "relative_offset": 95,
+        "value": 34
+      },
+      {
+        "relative_offset": 191,
+        "value": 51
+      }
+    ],
+    "camera": {
+      "x": 10000,
+      "y": 12000,
+      "z": 0
+    },
+    "game_data_sha256": "4b3d7a2e40ffc6994c7a0500ab5f7c8855de36e7d6faee40efa9dfb4cf8b29c9",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "backward_direction",
+    "hud_call": {
+      "callee": "draw_hud_element_2bc7",
+      "cs": 1242,
+      "ip": 7251,
+      "sp": 65262,
+      "ds": 12288,
+      "es": 20480,
+      "gs": 4096,
+      "flags": 145
+    },
+    "source_offset": 21457,
+    "source_palette_first": 128,
+    "destination_offset": 23768,
+    "copied_bytes": 192,
+    "direction": "backward",
+    "source_mutations": [
+      {
+        "relative_offset": 4,
+        "value": 68
+      },
+      {
+        "relative_offset": 128,
+        "value": 85
+      }
+    ],
+    "camera": {
+      "x": 10000,
+      "y": 12000,
+      "z": 0
+    },
+    "game_data_sha256": "b830cf51d3e8ae0aee79195a433b9f2455fbe8d2133fc157bc3af53f6b3a96c9",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": true,
+      "of": true
+    }
+  },
+  {
+    "name": "callee_register_passthrough",
+    "hud_call": {
+      "callee": "draw_hud_element_2bc7",
+      "cs": 1242,
+      "ip": 7251,
+      "sp": 65262,
+      "ds": 12288,
+      "es": 20480,
+      "gs": 4096,
+      "flags": 145
+    },
+    "source_offset": 21457,
+    "source_palette_first": 128,
+    "destination_offset": 23768,
+    "copied_bytes": 192,
+    "direction": "forward",
+    "source_mutations": [
+      {
+        "relative_offset": 31,
+        "value": 102
+      },
+      {
+        "relative_offset": 160,
+        "value": 119
+      }
+    ],
+    "camera": {
+      "x": 10000,
+      "y": 12000,
+      "z": 0
+    },
+    "game_data_sha256": "c1869e199f092da9e2ac112a4baa99b1756bdbd73b7070fd256aefa0107652fb",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "df": false,
+      "of": true
+    }
+  }
+]

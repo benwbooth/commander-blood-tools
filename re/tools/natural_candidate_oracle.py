@@ -5801,6 +5801,238 @@ def vm_patch_stream_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_hud_palette_snapshot_and_camera_reset_vectors() -> list[dict[str, object]]:
+    entry = 0x8C96
+    expected_hash = "f42a501f52c61d36a9b2deb444f2743502a69ae48ed908599ab15756d67212e6"
+    if hashlib.sha256(EXE[entry : entry + 56]).hexdigest() != expected_hash:
+        raise AssertionError("0x8c96: recovered 56-byte body changed")
+
+    cases = (
+        ("forward_copy", False, []),
+        ("hud_call_updates_palette", False, [(0, 0x11), (95, 0x22), (191, 0x33)]),
+        ("backward_direction", True, [(4, 0x44), (128, 0x55)]),
+        ("callee_register_passthrough", False, [(31, 0x66), (160, 0x77)]),
+    )
+    game_segment = 0x1000
+    data_segment = 0x3000
+    es_decoy_segment = 0x5000
+    fs_initial_segment = 0x7000
+    stack_segment = 0x9000
+    callback_ds = 0xB000
+    callback_es = 0xC000
+    callback_fs = 0xD000
+    callback_entry = 0x4DA * 16 + 0x1C53
+    callback_return = 0x8CA2
+    return_address = 0x6F00
+    flag_mask = 0x0CD5
+    vectors = []
+
+    for case_index, (name, backward, source_mutations) in enumerate(cases):
+        game_before = bytearray(
+            (offset * 31 + (offset >> 8) * 7 + case_index * 47 + 0x19) & 0xFF
+            for offset in range(0x10000)
+        )
+        expected_game = bytearray(game_before)
+        for relative_offset, value in source_mutations:
+            expected_game[0x53D1 + relative_offset] = value
+
+        source_after_callback = bytes(expected_game)
+        for index in range(0x30):
+            delta = index * 4
+            source_offset = 0x53D1 - delta if backward else 0x53D1 + delta
+            destination_offset = 0x5CD8 - delta if backward else 0x5CD8 + delta
+            expected_game[destination_offset : destination_offset + 4] = (
+                source_after_callback[source_offset : source_offset + 4]
+            )
+        struct.pack_into("<hhh", expected_game, 0x2F65, 10000, 12000, 0)
+
+        decoy_before = bytes(
+            (offset * 13 + case_index * 29 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": es_decoy_segment,
+            "fs": fs_initial_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293,
+        }
+        callback_registers = {
+            "eax": 0x1A1AE001 + case_index,
+            "ebx": 0x2B2BE102 + case_index,
+            "ecx": 0x3C3CE203 + case_index,
+            "edx": 0x4D4DE304 + case_index,
+            "esi": 0x5E5EE405 + case_index,
+            "edi": 0x6F6FE506 + case_index,
+            "ebp": 0x7070E607 + case_index,
+        }
+        callback_flags = (0x08D5 | (0x0400 if backward else 0)) & flag_mask
+        calls = []
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_entry:
+                return
+            call = {
+                "callee": "draw_hud_element_2bc7",
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "flags": machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask,
+            }
+            calls.append(call)
+            expected_call = {
+                "callee": "draw_hud_element_2bc7",
+                "cs": 0x04DA,
+                "ip": 0x1C53,
+                "sp": 0xFEEE,
+                "ds": data_segment,
+                "es": es_decoy_segment,
+                "gs": game_segment,
+                "flags": initial["flags"] & flag_mask,
+            }
+            if call != expected_call:
+                raise AssertionError(
+                    f"0x8c96 {name}: HUD call={call}, expected={expected_call}"
+                )
+            stack_words = struct.unpack(
+                "<11H", machine.mem_read(stack_segment * 16 + 0xFEEE, 22)
+            )
+            expected_stack = (
+                callback_return,
+                0,
+                initial["ecx"] & 0xFFFF,
+                initial["esi"] & 0xFFFF,
+                initial["edi"] & 0xFFFF,
+                initial["es"],
+                initial["ds"],
+                initial["eax"] & 0xFFFF,
+                initial["ebp"] & 0xFFFF,
+                return_address,
+                0,
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x8c96 {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            for register, value in callback_registers.items():
+                machine.reg_write(REGISTERS[register], value)
+            machine.reg_write(UC_X86_REG_DS, callback_ds)
+            machine.reg_write(UC_X86_REG_ES, callback_es)
+            machine.reg_write(UC_X86_REG_FS, callback_fs)
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+            for relative_offset, value in source_mutations:
+                machine.mem_write(
+                    game_segment * 16 + 0x53D1 + relative_offset,
+                    bytes((value,)),
+                )
+
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, callback_entry, b"\xcb"),
+                (0, return_address, b"\xcc"),
+                (game_segment, 0, bytes(game_before)),
+                (data_segment, 0, decoy_before),
+                (es_decoy_segment, 0, decoy_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=callback,
+            instruction_count=512,
+        )
+
+        if len(calls) != 1:
+            raise AssertionError(f"0x8c96 {name}: calls={calls}")
+        expected_registers = {
+            "eax": (callback_registers["eax"] & 0xFFFF0000)
+            | (initial["eax"] & 0xFFFF),
+            "ebx": callback_registers["ebx"],
+            "ecx": (callback_registers["ecx"] & 0xFFFF0000)
+            | (initial["ecx"] & 0xFFFF),
+            "edx": callback_registers["edx"],
+            "esi": (callback_registers["esi"] & 0xFFFF0000)
+            | (initial["esi"] & 0xFFFF),
+            "edi": (callback_registers["edi"] & 0xFFFF0000)
+            | (initial["edi"] & 0xFFFF),
+            "ebp": (callback_registers["ebp"] & 0xFFFF0000)
+            | (initial["ebp"] & 0xFFFF),
+            "sp": 0xFF04,
+            "ds": initial["ds"],
+            "es": initial["es"],
+            "fs": callback_fs,
+            "gs": initial["gs"],
+            "ss": initial["ss"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8c96 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8c96 {name}: far return did not restore CS")
+        if machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask != callback_flags:
+            raise AssertionError(f"0x8c96 {name}: callback flags did not pass through")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            expected_game
+        ):
+            raise AssertionError(f"0x8c96 {name}: game data mismatch")
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x8c96 {name}: DS decoy changed")
+        if bytes(machine.mem_read(es_decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x8c96 {name}: ES decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x8c96 {name}: stack sentinel changed")
+
+        defined_flags = {
+            "cf": bool(callback_flags & 0x0001),
+            "pf": bool(callback_flags & 0x0004),
+            "af": bool(callback_flags & 0x0010),
+            "zf": bool(callback_flags & 0x0040),
+            "sf": bool(callback_flags & 0x0080),
+            "df": bool(callback_flags & 0x0400),
+            "of": bool(callback_flags & 0x0800),
+        }
+        vectors.append(
+            {
+                "name": name,
+                "hud_call": calls[0],
+                "source_offset": 0x53D1,
+                "source_palette_first": 128,
+                "destination_offset": 0x5CD8,
+                "copied_bytes": 192,
+                "direction": "backward" if backward else "forward",
+                "source_mutations": [
+                    {"relative_offset": offset, "value": value}
+                    for offset, value in source_mutations
+                ],
+                "camera": {"x": 10000, "y": 12000, "z": 0},
+                "game_data_sha256": hashlib.sha256(expected_game).hexdigest(),
+                "defined_flags": defined_flags,
+            }
+        )
+
+    return vectors
+
+
 def mouse_button_edges_update_vectors() -> list[dict[str, object]]:
     entry = 0x1FBC
     expected_hash = "223c44bf3248ca556f9f5740f65fae46529a1ca556d5a5f3e0a4fa84a99a0ea5"
@@ -48404,6 +48636,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1d94_natural.json",
         vm_patch_stream_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8c96_natural.json",
+        ship_3d_hud_palette_snapshot_and_camera_reset_vectors(),
         args.check,
     )
     update_vector(

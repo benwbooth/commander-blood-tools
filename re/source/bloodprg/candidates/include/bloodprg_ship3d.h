@@ -18,6 +18,9 @@
 #define SHIP_3D_FIELD_SELECTOR_PARENT_LINK 0x0011u
 #define SHIP_3D_SOURCE_BITSET_SELECTOR 0x0005u
 #define SHIP_3D_SOURCE_BITSET_KIND 0x0002u
+#define SHIP_3D_HUD_PALETTE_FIRST 128u
+#define SHIP_3D_HUD_PALETTE_COLORS 64u
+#define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
 
 typedef struct ship_3d_projection_context {
     cb_i32 matrix[9];
@@ -77,6 +80,11 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_left;    /* GS:0x5235 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_right;   /* GS:0x5237 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_top;     /* GS:0x5239 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
+extern volatile cb_u8 CB_GAME_DATA
+        ship_3d_hud_palette_snapshot[SHIP_3D_HUD_PALETTE_BYTES]; /* GS:0x5CD8 */
+extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_x; /* GS:0x2F65 */
+extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_y; /* GS:0x2F67 */
+extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_z; /* GS:0x2F69 */
 
 #if defined(__WATCOMC__)
 #pragma aux binary_u32_sqrt parm [dx ax] value [ax] modify exact [ax]
@@ -90,6 +98,8 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #pragma aux ship_3d_point_cloud_randomize modify exact [ax cx es]
 #pragma aux ship_3d_depth_scroll_step modify exact [ax]
+#pragma aux ship_3d_hud_palette_snapshot_and_camera_reset \
+        modify exact [bx dx]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -110,6 +120,8 @@ void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
 void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
+void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */
+void CB_FAR ship_3d_hud_palette_snapshot_and_camera_reset(void); /* 0x008C96 */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,
