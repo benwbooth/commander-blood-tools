@@ -75,7 +75,8 @@ extern volatile cb_u32 resource_index_start;        /* game data:0x0D78 */
 extern volatile cb_u32 resource_index_remaining;    /* game data:0x0D7C */
 extern volatile cb_u32 resource_source_offset;      /* game data:0x0D84 */
 extern volatile cb_u32 resource_source_remaining;   /* game data:0x0D88 */
-extern volatile cb_u32 resource_archive_size;       /* game data:0x0A52 */
+extern volatile cb_u32 CB_GAME_DATA
+        resource_archive_size;                      /* GS:0x0A52 */
 extern volatile cb_u16 CB_GAME_DATA
         resource_archive_handle;                    /* GS:0x0A86 */
 extern volatile cb_u16 CB_GAME_DATA
@@ -108,6 +109,8 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 
 cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
+void CB_FAR resource_file_load_to_ems(
+        volatile char CB_FAR *path); /* 0x01CE:0x0712 */
 cb_u32 CB_FAR file_create_and_write(
         const volatile char CB_FAR *path,
         const volatile cb_u8 CB_FAR *source,

@@ -3342,6 +3342,37 @@ warning-free to 37 instructions/82 bytes versus 38/74 original. A replacement
 link needs only a narrow DI/DS:DX/EBP adapter; the parser logic itself is fully
 represented in natural C.
 
+## BLOODPRG EMS resource loader candidate
+
+The old `path_build_call_2693` label for `0x0029F2` covered only the first call.
+The routine owns the complete EMS loading path. It selects an embedded archive
+entry or a standalone file, obtains the standalone size from the wrapping DTA
+field even when FindFirst reports failure, and publishes the selected handle.
+It then maps two consecutive logical EMS pages to physical pages zero and one
+before every read into the EMS page frame.
+
+Reads use a nominal 0x8000-byte request, reduced to the low remaining word when
+the signed 32-bit difference is negative. Returned `AX` is subtracted even when
+DOS carry is set; EMS mapping status is also ignored. The do-while shape means
+an empty file still maps two pages and issues a zero-byte read. Standalone files
+are closed, embedded archive handles remain open, and the original extent is
+published only after the remaining count reaches zero.
+
+Nine raw-binary vectors cover embedded flag values one and three, standalone
+success, stale DTA data, open failure, an empty file, a full 32-bit extent,
+partial reads that remap page pairs, ignored EMS/read errors, and a nonzero upper
+`ECX`. They verify call order, every request and mapping, GS state, preservation,
+and far return. The raw body writes only `CX` before a 32-bit subtraction and
+therefore inherits upper `ECX`; its caller also operates on `CX` without proving
+the upper half. Natural C expresses the intended zero-upper-half contract, while
+a replacement adapter must establish it explicitly.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual natural
+candidate warning-free to 98 instructions/288 bytes versus 73/201 original.
+Exact replacement still needs narrow DS:SI, DOS/EMS interrupt, GS-placement,
+upper-ECX, and preservation adapters; no loader logic is left in an emulation
+layer.
+
 ## BLOODPRG resource file loader candidate
 
 The old table-access label for `0x003FC7` hid the complete named-resource file

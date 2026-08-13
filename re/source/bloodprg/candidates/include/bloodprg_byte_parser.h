@@ -86,7 +86,8 @@ const cb_u8 CB_NEAR *CB_NEAR fs_name_area_read(
 const cb_u8 CB_NEAR *CB_NEAR music_voc_name_patcher(
     const cb_u8 CB_NEAR *script_bytes); /* 0x0077A9 */
 
-void CB_FAR path_build_call_2693(cb_game_char_ptr path); /* 0x01CE:0712 */
+void CB_FAR resource_file_load_to_ems(
+        volatile char CB_FAR *path); /* 0x01CE:0712 */
 void CB_FAR file_open_wrapper(cb_game_char_ptr path,
         cb_far_u8_ptr destination); /* 0x01CE:0621 */
 
