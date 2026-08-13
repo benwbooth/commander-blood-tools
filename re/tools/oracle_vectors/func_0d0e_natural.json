@@ -1,0 +1,152 @@
+[
+  {
+    "name": "unchanged",
+    "driver": {
+      "x": 291,
+      "y": 1110,
+      "buttons": 0
+    },
+    "previous": {
+      "x": 291,
+      "y": 1110,
+      "idle": 41216
+    },
+    "moved": false,
+    "stored_idle": 41216,
+    "interrupt": {
+      "number": 51,
+      "ax": 3,
+      "bx": 9320,
+      "cx": 13980,
+      "dx": 21930
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "x_changed",
+    "driver": {
+      "x": 292,
+      "y": 1110,
+      "buttons": 1
+    },
+    "previous": {
+      "x": 291,
+      "y": 1110,
+      "idle": 41489
+    },
+    "moved": true,
+    "stored_idle": 0,
+    "interrupt": {
+      "number": 51,
+      "ax": 3,
+      "bx": 9321,
+      "cx": 13981,
+      "dx": 21931
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "y_changed",
+    "driver": {
+      "x": 291,
+      "y": 1111,
+      "buttons": 2
+    },
+    "previous": {
+      "x": 291,
+      "y": 1110,
+      "idle": 41762
+    },
+    "moved": true,
+    "stored_idle": 0,
+    "interrupt": {
+      "number": 51,
+      "ax": 3,
+      "bx": 9322,
+      "cx": 13982,
+      "dx": 21932
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "both_changed",
+    "driver": {
+      "x": 32768,
+      "y": 32767,
+      "buttons": 65535
+    },
+    "previous": {
+      "x": 32767,
+      "y": 32768,
+      "idle": 42035
+    },
+    "moved": true,
+    "stored_idle": 0,
+    "interrupt": {
+      "number": 51,
+      "ax": 3,
+      "bx": 9323,
+      "cx": 13983,
+      "dx": 21933
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "unsigned_wrap_compare",
+    "driver": {
+      "x": 0,
+      "y": 65535,
+      "buttons": 165
+    },
+    "previous": {
+      "x": 65535,
+      "y": 65535,
+      "idle": 42308
+    },
+    "moved": true,
+    "stored_idle": 0,
+    "interrupt": {
+      "number": 51,
+      "ax": 3,
+      "bx": 9324,
+      "cx": 13984,
+      "dx": 21934
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

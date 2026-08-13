@@ -2569,6 +2569,9 @@ LCS and then mnemonic similarity:
 | `restore_timer_isr_hook` | medium, `-ox -zdp`, register | 20/22 | 0.2500 | 0.8500 | 0.3000 |
 | `install_ctrl_break_handler` | medium, `-ox -zdp`, register | 15/13 | 0.0667 | 0.7333 | 0.0667 |
 | `mouse_reset_hide` | medium, `-ox -zdp`, register | 19/27 | 0.2632 | 0.5263 | 0.2632 |
+| `rtc_date_read` | medium, `-ox -zdp`, register | 26/31 | 0.1154 | 0.6538 | 0.2692 |
+| `video_retrace_phase_wait` | medium, `-ox -zdp`, register | 20/23 | 0.1500 | 0.6500 | 0.2500 |
+| `poll_mouse` | medium, `-ox -zdp`, register | 21/33 | 0.2381 | 0.6190 | 0.2381 |
 
 ## Alien transform and projection candidate
 
@@ -2763,6 +2766,32 @@ versus 32/78 for timer installation, 24/52 versus 20/41 for timer restoration,
 27/78 versus 19/31 for mouse initialization. The source preserves the natural
 DOS API boundary; exact code shape would require narrow segment and direct-INT
 adapters rather than replacing the game logic with an emulation layer.
+
+## BLOODPRG date, retrace, and mouse polling candidates
+
+The `0x000950` date routine reads BIOS RTC function 4 and decodes day, month,
+and year with the recovered `0x000986` helper. It sign-extends each decoded
+byte. Its century decision is not a heuristic calendar rule: only raw CH
+`0x13` selects 1900, while every other value selects 2000. Six raw-binary
+vectors include ordinary dates, CH `0x19`, zero, and invalid high BCD bytes and
+prove all stores, the branch, helper behavior, preservation, GS ownership, and
+final arithmetic flags.
+
+The `0x000BD7` routine is a calibrated VGA retrace wait. A zero phase performs
+no port read, phase one waits for status bit 3 to clear, and every other
+nonzero phase waits for it to set at the wrapping 16-bit port `crtc_base+6`.
+Five scripted-port vectors prove both polarities, repeated polling, immediate
+completion, port wrap, read-only state, registers, and flags. The `0x000D0E`
+mouse poll publishes INT 33h function 3 results and resets its idle word only
+when x or y changes; five vectors prove every movement path and the original
+x-comparison short-circuit precedence.
+
+All three natural candidates compile warning-free with Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`). Generated versus original instruction/byte counts are
+31/77 versus 26/54 for date read, 23/43 versus 20/40 for retrace wait, and
+33/84 versus 21/60 for mouse polling. The differences are the normal `int86`
+stack frame, default data-segment placement, and structured branches; no
+register-state or memory-access facade is present.
 
 ## Interpretation
 

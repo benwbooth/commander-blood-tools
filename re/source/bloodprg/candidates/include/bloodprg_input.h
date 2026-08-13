@@ -18,10 +18,14 @@ extern volatile cb_i16 mouse_x;                     /* DS:0x0A2A */
 extern volatile cb_i16 mouse_y;                     /* DS:0x0A2C */
 extern volatile cb_u16 mouse_button_state;          /* DS:0x0A2E */
 extern volatile cb_u16 mouse_previous_button_state; /* DS:0x0A30 */
+extern volatile cb_i16 mouse_last_x;                 /* GS:0x0A38 */
+extern volatile cb_i16 mouse_last_y;                 /* GS:0x0A3A */
 extern volatile cb_u8 mouse_primary_pressed;        /* DS:0x0A3E */
 extern volatile cb_u8 mouse_secondary_pressed;      /* DS:0x0A3F */
 extern volatile cb_u8 mouse_press_pending;          /* DS:0x0A40 */
+extern volatile cb_u16 mouse_motion_idle_counter;   /* GS:0x0B3B */
 
+void CB_FAR poll_mouse(void); /* 0x000D0E */
 cb_u16 CB_NEAR mouse_button_edges_update(void); /* 0x001FBC */
 void CB_NEAR mouse_hit_test(const bloodprg_rect_i16 CB_NEAR *rect,
         volatile cb_u8 CB_NEAR *flags); /* 0x008269 */

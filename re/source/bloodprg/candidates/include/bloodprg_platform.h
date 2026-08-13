@@ -4,9 +4,13 @@
 #include "bloodprg_common.h"
 
 extern volatile cb_i16 rtc_hour;        /* GS:0x0AA6 */
+extern volatile cb_i16 rtc_day;         /* GS:0x0AA8 */
+extern volatile cb_i16 rtc_month;       /* GS:0x0AAA */
+extern volatile cb_i16 rtc_year;        /* GS:0x0AAC */
 extern volatile cb_u8 cdrom_present;    /* GS:0x0AE6 */
 
 void CB_FAR rtc_time_read(void);        /* 0x00093B */
+void CB_FAR rtc_date_read(void);        /* 0x000950 */
 void CB_NEAR detect_cdrom(void);        /* 0x000B32 */
 void CB_FAR mouse_set_ranges(cb_u16 min_x, cb_u16 max_x,
         cb_u16 min_y, cb_u16 max_y);    /* 0x000D4A */

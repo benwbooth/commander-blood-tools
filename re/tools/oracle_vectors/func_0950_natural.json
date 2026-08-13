@@ -1,0 +1,158 @@
+[
+  {
+    "name": "century_13_path",
+    "bcd": {
+      "century": 19,
+      "year": 148,
+      "month": 18,
+      "day": 49
+    },
+    "stored": {
+      "year": 1994,
+      "month": 12,
+      "day": 31
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1076
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "century_20_path",
+    "bcd": {
+      "century": 32,
+      "year": 36,
+      "month": 8,
+      "day": 7
+    },
+    "stored": {
+      "year": 2024,
+      "month": 8,
+      "day": 7
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1077
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "bcd_19_uses_else_path",
+    "bcd": {
+      "century": 25,
+      "year": 153,
+      "month": 17,
+      "day": 48
+    },
+    "stored": {
+      "year": 2099,
+      "month": 11,
+      "day": 30
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1078
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "all_zero",
+    "bcd": {
+      "century": 0,
+      "year": 0,
+      "month": 0,
+      "day": 0
+    },
+    "stored": {
+      "year": 2000,
+      "month": 0,
+      "day": 0
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1079
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_invalid_bcd",
+    "bcd": {
+      "century": 255,
+      "year": 255,
+      "month": 254,
+      "day": 253
+    },
+    "stored": {
+      "year": 1909,
+      "month": -92,
+      "day": -93
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1080
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_valid_digits",
+    "bcd": {
+      "century": 19,
+      "year": 121,
+      "month": 89,
+      "day": 89
+    },
+    "stored": {
+      "year": 1979,
+      "month": 59,
+      "day": 59
+    },
+    "interrupt": {
+      "number": 26,
+      "ax": 1081
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

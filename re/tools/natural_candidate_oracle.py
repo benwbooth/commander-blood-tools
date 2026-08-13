@@ -172,6 +172,30 @@ def execute(
     return machine
 
 
+def add16_flags(left: int, right: int) -> dict[str, bool]:
+    result = (left + right) & 0xFFFF
+    return {
+        "cf": left + right > 0xFFFF,
+        "pf": (result & 0xFF).bit_count() % 2 == 0,
+        "af": ((left ^ right ^ result) & 0x10) != 0,
+        "zf": result == 0,
+        "sf": (result & 0x8000) != 0,
+        "of": ((~(left ^ right) & (left ^ result)) & 0x8000) != 0,
+    }
+
+
+def sub16_flags(left: int, right: int) -> dict[str, bool]:
+    result = (left - right) & 0xFFFF
+    return {
+        "cf": left < right,
+        "pf": (result & 0xFF).bit_count() % 2 == 0,
+        "af": ((left ^ right ^ result) & 0x10) != 0,
+        "zf": result == 0,
+        "sf": (result & 0x8000) != 0,
+        "of": (((left ^ right) & (left ^ result)) & 0x8000) != 0,
+    }
+
+
 def cmos_rtc_read_vectors() -> list[dict[str, object]]:
     vectors = []
     for seconds in (0x00, 0x01, 0x09, 0x10, 0x59, 0x80, 0xFE, 0xFF):
@@ -1186,6 +1210,425 @@ def rtc_time_read_vectors() -> list[dict[str, object]]:
                 "stored_word": actual_word,
                 "interrupt_ax": interrupts[0][1],
                 "preserved_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+    return vectors
+
+
+def rtc_date_read_vectors() -> list[dict[str, object]]:
+    entry = 0x0950
+    expected_hash = "f39e5811197c4750660ae551ca7b3fb80f75ea8ef5e99107e2ccc23c504ba763"
+    if hashlib.sha256(EXE[entry : entry + 54]).hexdigest() != expected_hash:
+        raise AssertionError("0x0950: recovered 54-byte body changed")
+
+    data_segment = 0x2000
+    state_segment = 0x2800
+    cases = (
+        ("century_13_path", 0x13, 0x94, 0x12, 0x31),
+        ("century_20_path", 0x20, 0x24, 0x08, 0x07),
+        ("bcd_19_uses_else_path", 0x19, 0x99, 0x11, 0x30),
+        ("all_zero", 0x00, 0x00, 0x00, 0x00),
+        ("signed_invalid_bcd", 0xFF, 0xFF, 0xFE, 0xFD),
+        ("high_valid_digits", 0x13, 0x79, 0x59, 0x59),
+    )
+    vectors = []
+
+    for case_index, (name, century, year_bcd, month_bcd, day_bcd) in enumerate(
+        cases
+    ):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": state_segment,
+            "flags": 0x0A93,
+        }
+        state_before = bytes(
+            (index * 37 + case_index * 11 + 5) & 0xFF for index in range(8)
+        )
+        data_decoy = bytes(value ^ 0xA5 for value in state_before)
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                }
+            )
+            machine.reg_write(
+                UC_X86_REG_CX, ((century & 0xFF) << 8) | year_bcd
+            )
+            machine.reg_write(
+                UC_X86_REG_DX, ((month_bcd & 0xFF) << 8) | day_bcd
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+            machine.reg_write(UC_X86_REG_EFLAGS, 0x0643)
+
+        machine = execute(
+            entry,
+            0x0985,
+            initial,
+            [
+                (data_segment, 0x0AA6, data_decoy),
+                (state_segment, 0x0AA6, state_before),
+            ],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = [
+            {"number": 0x1A, "ax": 0x0400 | (initial["eax"] & 0xFF)}
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x0950 {name}: interrupts={interrupts}")
+
+        def decoded_signed(value: int) -> int:
+            decoded = (((value >> 4) * 10) + (value & 0x0F)) & 0xFF
+            return decoded if decoded < 0x80 else decoded - 0x100
+
+        day = decoded_signed(day_bcd)
+        month = decoded_signed(month_bcd)
+        year_low = decoded_signed(year_bcd)
+        year_base = 1900 if century == 0x13 else 2000
+        year = (year_low + year_base) & 0xFFFF
+        expected_state = bytearray(state_before)
+        struct.pack_into("<HHH", expected_state, 2, day & 0xFFFF, month & 0xFFFF, year)
+        actual_state = bytes(
+            machine.mem_read(state_segment * 16 + 0x0AA6, len(state_before))
+        )
+        if actual_state != bytes(expected_state):
+            raise AssertionError(
+                f"0x0950 {name}: state={actual_state.hex()}, "
+                f"expected={expected_state.hex()}"
+            )
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x0AA6, len(data_decoy))
+        ) != data_decoy:
+            raise AssertionError(f"0x0950 {name}: wrote the DS decoy")
+        for register in (
+            "eax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0950 {name}: changed {register}")
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = add16_flags(year_low & 0xFFFF, year_base)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x0950 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "bcd": {
+                    "century": century,
+                    "year": year_bcd,
+                    "month": month_bcd,
+                    "day": day_bcd,
+                },
+                "stored": {"year": year, "month": month, "day": day},
+                "interrupt": interrupts[0],
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def video_retrace_phase_wait_vectors() -> list[dict[str, object]]:
+    entry = 0x0BD7
+    expected_hash = "a22e3eda60d05ab9a97801a19f060a212a2d5c4fd8f87d4318aff1bd504823c0"
+    if hashlib.sha256(EXE[entry : entry + 40]).hexdigest() != expected_hash:
+        raise AssertionError("0x0bd7: recovered 40-byte body changed")
+
+    data_segment = 0x2000
+    state_segment = 0x2800
+    cases = (
+        ("disabled", 0x00, 0x03D4, ()),
+        ("phase_one_direct", 0x01, 0x03D4, (0x00,)),
+        ("phase_one_wait", 0x01, 0x03B4, (0xFF, 0x18, 0x07)),
+        ("phase_two_wait", 0x02, 0x03D4, (0x00, 0x07, 0x08)),
+        ("phase_ff_wrapped_port", 0xFF, 0xFFFC, (0xF7, 0xFF)),
+    )
+    vectors = []
+
+    for case_index, (name, phase, crtc_base, input_values) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": state_segment,
+            "flags": 0x0A93,
+        }
+        status_port = (crtc_base + 6) & 0xFFFF
+        reads: list[tuple[int, int, int]] = []
+        input_iterator = iter(input_values)
+
+        def input_port(_machine: Uc, port: int, size: int) -> int:
+            try:
+                value = next(input_iterator)
+            except StopIteration as error:
+                raise AssertionError(f"0x0bd7 {name}: unexpected extra read") from error
+            reads.append((port, size, value))
+            return value
+
+        state_before = struct.pack("<H", crtc_base) + bytes([phase, 0xA5])
+        data_decoy = bytes(value ^ 0x5A for value in state_before)
+        machine = execute(
+            entry,
+            0x0BFE,
+            initial,
+            [
+                (data_segment, 0x0A9E, data_decoy[:2]),
+                (data_segment, 0x0B12, data_decoy[2:]),
+                (state_segment, 0x0A9E, state_before[:2]),
+                (state_segment, 0x0B12, state_before[2:]),
+            ],
+            input_handler=input_port,
+        )
+        if len(reads) != len(input_values):
+            raise AssertionError(f"0x0bd7 {name}: reads={reads}")
+        if any((port, size) != (status_port, 1) for port, size, _ in reads):
+            raise AssertionError(f"0x0bd7 {name}: wrong port reads={reads}")
+        if bytes(machine.mem_read(state_segment * 16 + 0x0A9E, 2)) != state_before[:2]:
+            raise AssertionError(f"0x0bd7 {name}: changed CRTC base")
+        if bytes(machine.mem_read(state_segment * 16 + 0x0B12, 2)) != state_before[2:]:
+            raise AssertionError(f"0x0bd7 {name}: changed phase state")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A9E, 2)) != data_decoy[:2]:
+            raise AssertionError(f"0x0bd7 {name}: changed DS CRTC decoy")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B12, 2)) != data_decoy[2:]:
+            raise AssertionError(f"0x0bd7 {name}: changed DS phase decoy")
+        for register in (
+            "eax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0bd7 {name}: changed {register}")
+        expected_flags = {
+            "cf": False,
+            "pf": phase == 0,
+            "zf": phase == 0,
+            "sf": False,
+            "of": False,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x0bd7 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "phase": phase,
+                "crtc_base": crtc_base,
+                "status_port": status_port,
+                "input_values": list(input_values),
+                "reads": [list(item) for item in reads],
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def poll_mouse_vectors() -> list[dict[str, object]]:
+    entry = 0x0D0E
+    expected_hash = "285c0d1c7d58630dd6764b8ac8cf090ad50d226c16a28801183e60259b6fc717"
+    if hashlib.sha256(EXE[entry : entry + 60]).hexdigest() != expected_hash:
+        raise AssertionError("0x0d0e: recovered 60-byte body changed")
+
+    data_segment = 0x2000
+    state_segment = 0x2800
+    cases = (
+        ("unchanged", 0x0123, 0x0456, 0x0123, 0x0456, 0x0000),
+        ("x_changed", 0x0124, 0x0456, 0x0123, 0x0456, 0x0001),
+        ("y_changed", 0x0123, 0x0457, 0x0123, 0x0456, 0x0002),
+        ("both_changed", 0x8000, 0x7FFF, 0x7FFF, 0x8000, 0xFFFF),
+        ("unsigned_wrap_compare", 0x0000, 0xFFFF, 0xFFFF, 0xFFFF, 0x00A5),
+    )
+    vectors = []
+
+    for case_index, (name, x, y, last_x, last_y, buttons) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": state_segment,
+            "flags": 0x0A93,
+        }
+        input_before = bytes(
+            (index * 31 + case_index * 13 + 7) & 0xFF for index in range(18)
+        )
+        input_expected = bytearray(input_before)
+        struct.pack_into("<HHH", input_expected, 0, x, y, buttons)
+        moved = x != last_x or y != last_y
+        struct.pack_into(
+            "<HH", input_expected, 14, x if moved else last_x, y if moved else last_y
+        )
+        idle_before = (0xA100 + case_index * 0x111) & 0xFFFF
+        idle_expected = 0 if moved else idle_before
+        data_decoy = bytes(value ^ 0xA5 for value in input_before)
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+            machine.reg_write(UC_X86_REG_BX, buttons)
+            machine.reg_write(UC_X86_REG_CX, x)
+            machine.reg_write(UC_X86_REG_DX, y)
+            machine.reg_write(UC_X86_REG_EFLAGS, 0x0643)
+
+        state_with_last = bytearray(input_before)
+        struct.pack_into("<HH", state_with_last, 14, last_x, last_y)
+        machine = execute(
+            entry,
+            0x0D49,
+            initial,
+            [
+                (data_segment, 0x0A2A, data_decoy),
+                (data_segment, 0x0B3B, struct.pack("<H", idle_before ^ 0xFFFF)),
+                (state_segment, 0x0A2A, bytes(state_with_last)),
+                (state_segment, 0x0B3B, struct.pack("<H", idle_before)),
+            ],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = [
+            {
+                "number": 0x33,
+                "ax": 3,
+                "bx": initial["bx"],
+                "cx": initial["cx"],
+                "dx": initial["dx"],
+            }
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x0d0e {name}: interrupts={interrupts}")
+        actual_input = bytes(
+            machine.mem_read(state_segment * 16 + 0x0A2A, len(input_expected))
+        )
+        if actual_input != bytes(input_expected):
+            raise AssertionError(
+                f"0x0d0e {name}: state={actual_input.hex()}, "
+                f"expected={input_expected.hex()}"
+            )
+        actual_idle = struct.unpack(
+            "<H", machine.mem_read(state_segment * 16 + 0x0B3B, 2)
+        )[0]
+        if actual_idle != idle_expected:
+            raise AssertionError(
+                f"0x0d0e {name}: idle={actual_idle:#x}, expected={idle_expected:#x}"
+            )
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x0A2A, len(data_decoy))
+        ) != data_decoy:
+            raise AssertionError(f"0x0d0e {name}: wrote the DS decoy")
+        if struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0B3B, 2)
+        )[0] != (idle_before ^ 0xFFFF):
+            raise AssertionError(f"0x0d0e {name}: wrote the DS idle decoy")
+        for register in (
+            "eax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0d0e {name}: changed {register}")
+        compared_left, compared_right = (
+            (x, last_x) if x != last_x else (y, last_y)
+        )
+        expected_flags = sub16_flags(compared_left, compared_right)
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x0d0e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "driver": {"x": x, "y": y, "buttons": buttons},
+                "previous": {"x": last_x, "y": last_y, "idle": idle_before},
+                "moved": moved,
+                "stored_idle": actual_idle,
+                "interrupt": interrupts[0],
+                "defined_flags": expected_flags,
             }
         )
     return vectors
@@ -26954,6 +27397,9 @@ def main() -> int:
         VECTOR_ROOT / "func_093b_natural.json", rtc_time_read_vectors(), args.check
     )
     update_vector(
+        VECTOR_ROOT / "func_0950_natural.json", rtc_date_read_vectors(), args.check
+    )
+    update_vector(
         VECTOR_ROOT / "func_0986_natural.json", bcd_to_binary_vectors(), args.check
     )
     update_vector(
@@ -26977,9 +27423,17 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "func_0bd7_natural.json",
+        video_retrace_phase_wait_vectors(),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "func_0cef_natural.json",
         mouse_reset_hide_vectors(),
         args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0d0e_natural.json", poll_mouse_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_0b32_natural.json", detect_cdrom_vectors(), args.check

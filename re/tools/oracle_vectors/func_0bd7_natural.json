@@ -1,0 +1,139 @@
+[
+  {
+    "name": "disabled",
+    "phase": 0,
+    "crtc_base": 980,
+    "status_port": 986,
+    "input_values": [],
+    "reads": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_one_direct",
+    "phase": 1,
+    "crtc_base": 980,
+    "status_port": 986,
+    "input_values": [
+      0
+    ],
+    "reads": [
+      [
+        986,
+        1,
+        0
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_one_wait",
+    "phase": 1,
+    "crtc_base": 948,
+    "status_port": 954,
+    "input_values": [
+      255,
+      24,
+      7
+    ],
+    "reads": [
+      [
+        954,
+        1,
+        255
+      ],
+      [
+        954,
+        1,
+        24
+      ],
+      [
+        954,
+        1,
+        7
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_two_wait",
+    "phase": 2,
+    "crtc_base": 980,
+    "status_port": 986,
+    "input_values": [
+      0,
+      7,
+      8
+    ],
+    "reads": [
+      [
+        986,
+        1,
+        0
+      ],
+      [
+        986,
+        1,
+        7
+      ],
+      [
+        986,
+        1,
+        8
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "phase_ff_wrapped_port",
+    "phase": 255,
+    "crtc_base": 65532,
+    "status_port": 2,
+    "input_values": [
+      247,
+      255
+    ],
+    "reads": [
+      [
+        2,
+        1,
+        247
+      ],
+      [
+        2,
+        1,
+        255
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
