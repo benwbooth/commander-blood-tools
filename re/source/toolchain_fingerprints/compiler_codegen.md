@@ -2224,24 +2224,34 @@ Natural C exposes those two segment selectors as typed arguments. Watcom emits
 6 instructions with stack arguments. Exact integration needs only the
 `AX/DX` to `DS/ES` sorter-entry adapter.
 
-Ten direct vectors prove the complete `0x000700` face bucket sorter. The
-routine walks 8-byte faces and 20-byte projected vertices, rejects triangles
-whose three clip masks share a bit, rotates the signed lowest-X vertex into
-slot zero, rejects either modular unsigned X span at 400 or more, and prepends
-accepted faces to the column bucket selected by doubled X. The matrix covers
-both rotation paths, the original `x0 == x2` tie rotation, both width rejects,
-negative and high-doubled-X bucket clamping, three-face prepend order, exact
-renderer fallthrough, and count zero's 65,536 iterations.
+Ten sorter vectors and seven complete owner vectors prove the merged
+`0x000700..0x000D7C` face renderer. The initial loop walks 8-byte faces and
+20-byte projected vertices, rejects triangles whose clip masks share a bit,
+rotates the signed lowest-X vertex into slot zero, rejects modular spans at 400
+or more, and prepends accepted faces to the corresponding column bucket. The
+fallthrough renderer initializes a 200-record free list, activates faces
+through `0x000D7D`, constructs depth-ordered vertical span boundaries, samples
+the 256x256 texture, and draws Mode-X, four-plane, or linear framebuffer
+columns. It then advances current or secondary edges, returns expired records
+to the free list, insertion-sorts crossings, and continues through column 319.
 
-The actual candidate compiles warning-free with Open Watcom. Its best tested
-shape is medium model `-3 -ox -mm -zdp`: 83 instructions/226 bytes versus the
-original 47/117. The compiler retains the two signed sort branches, two span
-checks, bucket calculation, and `DEC/JNE` loop, but uses a stack frame and far
-pointer temporaries because the source exposes geometry/raster segments rather
-than assuming live `DS`/`ES`. Turbo C 2.01 medium emits 132 instructions. The
-remaining integration boundaries map the original FS active-data globals to C
-data addressing and the physical fallthrough into `0x000775` to a normal
-typed call.
+The full-owner vectors cover empty initialization, negative-Y clipping,
+stepped edges and texture coordinates, all three framebuffer continuations,
+exact VGA plane words, both `0x000CCA` and `0x000D19` secondary-edge paths, the
+`0x000D5E` removal path, and complete sweep termination. Separate control-flow
+analysis proves that `0x000775`, `0x000848`, `0x000849`, and `0x000C2A` have no
+call entries: they are respectively the physical renderer fallthrough, shared
+return, active-list insertion back edge, and affine inner-loop head. They are
+now merged into the single true owner.
+
+The actual candidate compiles warning-free with Open Watcom medium model
+`-3 -ox -mm -zdp` to 959 instructions/2876 bytes versus the original 543
+instructions/1661 bytes. The generated code retains typed far geometry,
+raster, texture, and framebuffer pointers plus the narrow VGA word-output
+intrinsic; it contains no register machine or generic memory-access layer.
+Exact integration still needs the original live geometry `DS`, raster `ES` and
+later `DS`, and active-directory `FS` contract installed around the natural
+function.
 
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for

@@ -1,0 +1,303 @@
+[
+  {
+    "name": "empty_bucket_table",
+    "module": "manu3",
+    "entry": 1909,
+    "pool_records": 200,
+    "free_head": 2674,
+    "bucket_cursor": 1670,
+    "vga_outputs": []
+  },
+  {
+    "name": "mode_x_plane_one",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 5,
+    "continuation": 2784,
+    "active_columns": 1,
+    "pixels": [
+      {
+        "x": 5,
+        "y": 2,
+        "value": 165
+      },
+      {
+        "x": 5,
+        "y": 3,
+        "value": 202
+      },
+      {
+        "x": 5,
+        "y": 4,
+        "value": 239
+      },
+      {
+        "x": 5,
+        "y": 5,
+        "value": 20
+      }
+    ],
+    "vga_outputs": [
+      [
+        964,
+        2,
+        514
+      ]
+    ],
+    "clipped_sort_keys": [],
+    "record_returned_to_free_list": true
+  },
+  {
+    "name": "linear_three_columns_with_edge_steps",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 2,
+    "continuation": 3030,
+    "active_columns": 3,
+    "pixels": [
+      {
+        "x": 2,
+        "y": 1,
+        "value": 91
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "value": 91
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "value": 128
+      },
+      {
+        "x": 3,
+        "y": 2,
+        "value": 202
+      },
+      {
+        "x": 3,
+        "y": 3,
+        "value": 202
+      },
+      {
+        "x": 3,
+        "y": 4,
+        "value": 239
+      },
+      {
+        "x": 4,
+        "y": 3,
+        "value": 57
+      },
+      {
+        "x": 4,
+        "y": 4,
+        "value": 57
+      },
+      {
+        "x": 4,
+        "y": 5,
+        "value": 94
+      }
+    ],
+    "vga_outputs": [],
+    "clipped_sort_keys": [],
+    "record_returned_to_free_list": true
+  },
+  {
+    "name": "linear_negative_top_clip",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 0,
+    "continuation": 3030,
+    "active_columns": 1,
+    "pixels": [
+      {
+        "x": 0,
+        "y": 0,
+        "value": 63
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "value": 100
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "value": 137
+      }
+    ],
+    "vga_outputs": [],
+    "clipped_sort_keys": [
+      16973824
+    ],
+    "record_returned_to_free_list": true
+  },
+  {
+    "name": "four_plane_sparse_columns",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 0,
+    "continuation": 2724,
+    "active_columns": 5,
+    "pixels": [
+      {
+        "x": 0,
+        "y": 2,
+        "value": 51
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "value": 51
+      },
+      {
+        "x": 4,
+        "y": 2,
+        "value": 199
+      },
+      {
+        "x": 4,
+        "y": 3,
+        "value": 199
+      }
+    ],
+    "vga_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        964,
+        2,
+        3842
+      ]
+    ],
+    "clipped_sort_keys": [],
+    "record_returned_to_free_list": true
+  },
+  {
+    "name": "secondary_left_edge_switch",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 0,
+    "continuation": 3030,
+    "active_columns": 3,
+    "pixels": [
+      {
+        "x": 0,
+        "y": 1,
+        "value": 91
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "value": 128
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "value": 165
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "value": 202
+      },
+      {
+        "x": 1,
+        "y": 2,
+        "value": 75
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "value": 112
+      },
+      {
+        "x": 1,
+        "y": 4,
+        "value": 149
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "value": 112
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "value": 149
+      },
+      {
+        "x": 2,
+        "y": 4,
+        "value": 186
+      }
+    ],
+    "vga_outputs": [],
+    "clipped_sort_keys": [],
+    "record_returned_to_free_list": true
+  },
+  {
+    "name": "secondary_right_edge_switch",
+    "module": "manu3",
+    "entry": 1792,
+    "bucket_column": 0,
+    "continuation": 3030,
+    "active_columns": 3,
+    "pixels": [
+      {
+        "x": 0,
+        "y": 1,
+        "value": 239
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "value": 239
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "value": 20
+      },
+      {
+        "x": 1,
+        "y": 2,
+        "value": 20
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "value": 20
+      },
+      {
+        "x": 1,
+        "y": 4,
+        "value": 57
+      },
+      {
+        "x": 2,
+        "y": 3,
+        "value": 57
+      },
+      {
+        "x": 2,
+        "y": 4,
+        "value": 57
+      },
+      {
+        "x": 2,
+        "y": 5,
+        "value": 94
+      }
+    ],
+    "vga_outputs": [],
+    "clipped_sort_keys": [],
+    "record_returned_to_free_list": true
+  }
+]

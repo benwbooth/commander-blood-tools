@@ -6,7 +6,23 @@
 #define XDB_MANU3_ACTIVE_SLOTS_OFFSET 0x1032u
 #define XDB_MANU3_BUCKET_HEADS_OFFSET 0x0686u
 #define XDB_MANU3_MAX_FACE_WIDTH 0x0190u
+#define XDB_MANU3_SCREEN_WIDTH 0x0140u
+#define XDB_MANU3_SCREEN_HEIGHT 0x00c8u
+#define XDB_MANU3_COLUMN_OFFSET 0x0680u
+#define XDB_MANU3_FRAMEBUFFER_COLUMN_OFFSET 0x0682u
+#define XDB_MANU3_BUCKET_CURSOR_OFFSET 0x0684u
+#define XDB_MANU3_RENDER_CONTINUATION_OFFSET 0x067eu
+#define XDB_MANU3_CLIPPED_SORT_HEAD_OFFSET 0x0962u
 #define XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET 0x0964u
+#define XDB_MANU3_ACTIVE_LIST_MIDDLE_OFFSET 0x09beu
+#define XDB_MANU3_ACTIVE_LIST_TAIL_OFFSET 0x0a18u
+#define XDB_MANU3_ACTIVE_LIST_ROOT_OFFSET 0x0a28u
+#define XDB_MANU3_RASTER_POOL_OFFSET 0x0a72u
+#define XDB_MANU3_RASTER_POOL_COUNT 0x00c8u
+#define XDB_MANU3_RENDER_FOUR_PLANES_OFFSET 0x0aa4u
+#define XDB_MANU3_RENDER_MODE_X_OFFSET 0x0ae0u
+#define XDB_MANU3_RENDER_LINEAR_OFFSET 0x0bd6u
+#define XDB_MANU3_ADVANCE_COLUMN_OFFSET 0x0873u
 #define XDB_MANU3_ADVANCE_SECONDARY_OFFSET 0x0ccau
 #define XDB_MANU3_ADVANCE_SWITCH_OFFSET 0x0d19u
 #define XDB_MANU3_ADVANCE_REMOVE_OFFSET 0x0d5eu
@@ -131,8 +147,20 @@ typedef struct xdb_manu3_raster_record {
     xdb_u16 sort_next;
 } xdb_manu3_raster_record;
 
+/* The span builder overlays these boundary nodes on each record at +0 and +0x10. */
+typedef struct xdb_manu3_span_boundary {
+    xdb_u16 field_000;
+    xdb_u16 flags;
+    xdb_u16 source_offset;
+    xdb_u16 next_boundary_offset;
+    xdb_u16 field_008;
+    xdb_i16 coordinate;
+} xdb_manu3_span_boundary;
+
 typedef char xdb_manu3_raster_record_size_must_be_0x5a[
         sizeof(xdb_manu3_raster_record) == 0x5a ? 1 : -1];
+typedef char xdb_manu3_span_boundary_size_must_be_0x0c[
+        sizeof(xdb_manu3_span_boundary) == 0x0c ? 1 : -1];
 
 typedef struct xdb_manu3_projection_state {
     xdb_u16 parent_offset;
@@ -177,6 +205,8 @@ extern volatile xdb_u16 xdb_manu3_angle_scratch_0; /* DS:0x0022 */
 extern volatile xdb_u16 xdb_manu3_angle_scratch_2; /* DS:0x0024 */
 extern volatile xdb_u16
         xdb_manu3_framebuffer_window_offset; /* SS:0x20CE */
+extern volatile xdb_u16
+        xdb_manu3_linear_framebuffer_segment; /* FS:0x0014 */
 extern volatile xdb_u16 xdb_manu3_framebuffer_segment; /* DS:0x0018 */
 extern volatile xdb_u16 xdb_manu3_tween_phase; /* DS:0x102C */
 extern volatile xdb_u16 xdb_manu3_tween_script_offset; /* DS:0x102E */
@@ -218,7 +248,6 @@ void XDB_NEAR xdb_manu3_face_builder_next(void);
 void XDB_NEAR xdb_manu3_face_bucket_sort(
         xdb_u16 geometry_segment,
         xdb_u16 raster_segment);
-void XDB_NEAR xdb_manu3_span_renderer_init(void);
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 void XDB_NEAR xdb_manu3_face_activate(
@@ -241,8 +270,6 @@ void XDB_NEAR xdb_manu3_face_activate(
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_bucket_sort \
         parm [ax] [dx] modify exact [ax bx cx dx si di bp]
-#pragma aux xdb_manu3_span_renderer_init \
-        modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_activate \

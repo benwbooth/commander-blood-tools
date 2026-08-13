@@ -21,5 +21,5 @@ Routine counts:
 - `bloodprg`: 318
 - `xdb_amer`: 25
 - `xdb_croolis`: 25
-- `xdb_manu3`: 16
+- `xdb_manu3`: 12
 - `xdb_scrut`: 25

@@ -6217,6 +6217,619 @@ def _signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
     return quotient, dividend - quotient * divisor
 
 
+def manu3_full_renderer_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0700
+    renderer_entry = 0x0775
+    face_activate = 0x0D7D
+    image = load_image(module)
+    expected_hash = "a687e5cd5b80445d293f096ee73c2952ad61052dc1613636d24d53fdc1484161"
+    if hashlib.sha256(image[entry:face_activate]).hexdigest() != expected_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered 1661-byte renderer body changed"
+        )
+
+    globals_segment = 0x3000
+    geometry_segment = 0x5000
+    raster_segment = 0x7000
+    texture_segment = 0x9000
+    mode_x_segment = 0xA000
+    linear_segment = 0xB000
+    stack_segment = 0xC000
+    return_address = 0xF000
+    face_offset = 0x1000
+    record_offset = 0x0A72
+    head_offset = 0x0964
+    middle_offset = 0x09BE
+
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def u32(value: int) -> int:
+        return value & 0xFFFFFFFF
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", buffer, offset, u16(value))
+
+    def write_dword(buffer: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", buffer, offset, u32(value))
+
+    def initialize_raster() -> bytearray:
+        raster = bytearray(0x10000)
+        write_word(raster, 0x067E, 0x0AE0)
+        return raster
+
+    vectors: list[dict[str, object]] = []
+
+    raster_before = initialize_raster()
+    globals_before = bytearray(0x10000)
+    write_word(globals_before, 0x0002, geometry_segment)
+    write_word(globals_before, 0x0006, raster_segment)
+    initial = {
+        "eax": 0xA1A1BEEF,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C33456,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F66789,
+        "ebp": 0x9797789A,
+        "sp": 0xFF00,
+        "ds": geometry_segment,
+        "es": raster_segment,
+        "fs": globals_segment,
+        "gs": 0x2800,
+        "ss": stack_segment,
+        "flags": 0x0A93,
+    }
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    outputs: list[tuple[int, int, int]] = []
+
+    def output_handler(
+        _machine: Uc, port: int, size: int, value: int
+    ) -> None:
+        outputs.append((port, size, value))
+
+    machine = execute(
+        image,
+        renderer_entry,
+        return_address,
+        initial,
+        [
+            (0, return_address, b"\xcc"),
+            (globals_segment, 0, bytes(globals_before)),
+            (raster_segment, 0, bytes(raster_before)),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+        max_instructions=10000,
+        output_handler=output_handler,
+    )
+    if outputs:
+        raise AssertionError(f"{module}:{renderer_entry:#x}: empty frame wrote VGA")
+    raster_after = bytes(machine.mem_read(raster_segment * 16, 0x10000))
+    if struct.unpack_from("<HH", raster_after, 0x0680) != (0, 0):
+        raise AssertionError(f"{module}:{renderer_entry:#x}: empty frame cursor differs")
+    if struct.unpack_from("<H", raster_after, 0x0684)[0] != 0x0686:
+        raise AssertionError(f"{module}:{renderer_entry:#x}: empty bucket cursor differs")
+    if struct.unpack_from("<H", raster_after, 0x0908)[0] != record_offset:
+        raise AssertionError(f"{module}:{renderer_entry:#x}: free-list head differs")
+    for index in range(200):
+        offset = record_offset + index * 0x5A
+        expected_next = 0 if index == 199 else offset + 0x5A
+        if struct.unpack_from("<H", raster_after, offset)[0] != expected_next:
+            raise AssertionError(
+                f"{module}:{renderer_entry:#x}: pool link {index} differs"
+            )
+    vectors.append(
+        {
+            "name": "empty_bucket_table",
+            "module": module,
+            "entry": renderer_entry,
+            "pool_records": 200,
+            "free_head": record_offset,
+            "bucket_cursor": 0x0686,
+            "vga_outputs": [],
+        }
+    )
+
+    cases = (
+        {
+            "name": "mode_x_plane_one",
+            "column": 5,
+            "continuation": 0x0AE0,
+            "remaining": 0,
+            "edge_0": 2 << 16,
+            "edge_1": 6 << 16,
+            "texture_u": 0x1200,
+            "texture_v": 0x3400,
+            "texture_du": 0x0100,
+            "texture_dv": 0x0200,
+        },
+        {
+            "name": "linear_three_columns_with_edge_steps",
+            "column": 2,
+            "continuation": 0x0BD6,
+            "remaining": 2,
+            "edge_0": 1 << 16,
+            "edge_1": 4 << 16,
+            "edge_0_step": 1 << 16,
+            "edge_1_step": 1 << 16,
+            "texture_u": 0x1000,
+            "texture_v": 0x2000,
+            "texture_u_step": 0x0300,
+            "texture_v_step": -0x0100,
+            "texture_du": 0x0080,
+            "texture_dv": 0x0100,
+        },
+        {
+            "name": "linear_negative_top_clip",
+            "column": 0,
+            "continuation": 0x0BD6,
+            "remaining": 0,
+            "edge_0": -2 << 16,
+            "edge_1": 3 << 16,
+            "texture_u": 0x2200,
+            "texture_v": 0x1100,
+            "texture_du": 0x0100,
+            "texture_dv": 0x0080,
+            "depth_gradient": 0x00018000,
+        },
+        {
+            "name": "four_plane_sparse_columns",
+            "column": 0,
+            "continuation": 0x0AA4,
+            "remaining": 4,
+            "edge_0": 2 << 16,
+            "edge_1": 4 << 16,
+            "texture_u": 0x0800,
+            "texture_v": 0x1800,
+            "texture_u_step": 0x0100,
+            "texture_du": 0x0080,
+            "texture_dv": 0x0040,
+        },
+        {
+            "name": "secondary_left_edge_switch",
+            "column": 0,
+            "continuation": 0x0BD6,
+            "remaining": 0,
+            "edge_0": 1 << 16,
+            "edge_1": 5 << 16,
+            "texture_u": 0x1000,
+            "texture_v": 0x2000,
+            "texture_du": 0x0100,
+            "advance": 0x0CCA,
+            "secondary_remaining": 1,
+            "secondary_edge": 2 << 16,
+            "secondary_texture_u": 0x4000,
+            "secondary_texture_v": 0x3000,
+            "secondary_texture_u_step": 0x0100,
+        },
+        {
+            "name": "secondary_right_edge_switch",
+            "column": 0,
+            "continuation": 0x0BD6,
+            "remaining": 0,
+            "edge_0": 1 << 16,
+            "edge_1": 4 << 16,
+            "edge_0_step": 1 << 16,
+            "texture_u": 0x1400,
+            "texture_v": 0x2800,
+            "texture_u_step": 0x0100,
+            "texture_du": 0x0080,
+            "advance": 0x0D19,
+            "secondary_remaining": 1,
+            "secondary_edge": 5 << 16,
+            "secondary_edge_step": 1 << 16,
+        },
+    )
+    texture = bytes((offset * 37 + 11) & 0xFF for offset in range(0x10000))
+
+    for case_index, case in enumerate(cases):
+        column = int(case["column"])
+        continuation = int(case["continuation"])
+        geometry_before = bytearray(0x10000)
+        raster_before = initialize_raster()
+        globals_before = bytearray(0x10000)
+        mode_x_expected = bytearray(0x10000)
+        linear_expected = bytearray(0x10000)
+        vertex_offsets = (0x3000, 0x3020, 0x3040)
+
+        write_word(globals_before, 0x0002, geometry_segment)
+        write_word(globals_before, 0x0006, raster_segment)
+        write_word(globals_before, 0x0014, linear_segment)
+        write_word(globals_before, 0x0018, mode_x_segment)
+        write_word(globals_before, 0x2300, face_offset)
+        write_word(globals_before, 0x2304, 1)
+        write_word(raster_before, 0x067E, continuation)
+        write_word(geometry_before, face_offset, 0xA55A)
+        for field_offset, vertex_offset in zip((2, 4, 6), vertex_offsets):
+            write_word(geometry_before, face_offset + field_offset, vertex_offset)
+        for vertex_index, vertex_offset in enumerate(vertex_offsets):
+            write_word(geometry_before, vertex_offset + 0x0A, column + vertex_index)
+            write_word(geometry_before, vertex_offset + 0x12, 0)
+
+        state = {
+            "remaining": int(case["remaining"]),
+            "edge_0": u32(int(case["edge_0"])),
+            "edge_0_step": u32(int(case.get("edge_0_step", 0))),
+            "edge_1": u32(int(case["edge_1"])),
+            "edge_1_step": u32(int(case.get("edge_1_step", 0))),
+            "depth": 0x01000000,
+            "depth_step": 0,
+            "depth_gradient": u32(int(case.get("depth_gradient", 0))),
+            "texture_u": u16(int(case["texture_u"])),
+            "texture_v": u16(int(case["texture_v"])),
+            "texture_u_step": u16(int(case.get("texture_u_step", 0))),
+            "texture_v_step": u16(int(case.get("texture_v_step", 0))),
+            "texture_du": u16(int(case.get("texture_du", 0))),
+            "texture_dv": u16(int(case.get("texture_dv", 0))),
+            "advance": int(case.get("advance", 0x0D5E)),
+            "secondary_remaining": int(case.get("secondary_remaining", 0)),
+            "secondary_edge": u32(int(case.get("secondary_edge", 0))),
+            "secondary_edge_step": u32(
+                int(case.get("secondary_edge_step", 0))
+            ),
+            "secondary_depth": 0x01000000,
+            "secondary_depth_step": 0,
+            "secondary_texture_u": u16(
+                int(case.get("secondary_texture_u", 0))
+            ),
+            "secondary_texture_v": u16(
+                int(case.get("secondary_texture_v", 0))
+            ),
+            "secondary_texture_u_step": u16(
+                int(case.get("secondary_texture_u_step", 0))
+            ),
+            "secondary_texture_v_step": u16(
+                int(case.get("secondary_texture_v_step", 0))
+            ),
+        }
+        expected_outputs: list[tuple[int, int, int]] = []
+        expected_pixels: list[dict[str, int]] = []
+        active_column = column
+        active = True
+        while active:
+            draw = continuation != 0x0AA4 or (active_column & 3) == 0
+            if draw:
+                if continuation == 0x0BD6:
+                    target = linear_expected
+                    base = active_column
+                    stride = 320
+                else:
+                    target = mode_x_expected
+                    base = active_column >> 2
+                    stride = 80
+                    mask = (
+                        0x0F02
+                        if continuation == 0x0AA4
+                        else 0x0002 | (0x0100 << (active_column & 3))
+                    )
+                    expected_outputs.append((0x03C4, 2, mask))
+                start_y = max(i16(state["edge_0"] >> 16), 0)
+                end_y = i16(state["edge_1"] >> 16)
+                relative = start_y - i16(state["edge_0"] >> 16)
+                texture_u = u16(
+                    state["texture_u"] + state["texture_du"] * relative
+                )
+                texture_v = u16(
+                    state["texture_v"] + state["texture_dv"] * relative
+                )
+                for y in range(start_y, end_y):
+                    texture_offset = (texture_u >> 8) | (texture_v & 0xFF00)
+                    value = texture[texture_offset]
+                    output_offset = u16(base + y * stride)
+                    target[output_offset] = value
+                    expected_pixels.append(
+                        {"x": active_column, "y": y, "value": value}
+                    )
+                    texture_u = u16(texture_u + state["texture_du"])
+                    texture_v = u16(texture_v + state["texture_dv"])
+
+            state["remaining"] = i16(state["remaining"] - 1)
+            if state["remaining"] >= 0:
+                state["texture_u"] = u16(
+                    state["texture_u"] + state["texture_u_step"]
+                )
+                state["texture_v"] = u16(
+                    state["texture_v"] + state["texture_v_step"]
+                )
+                state["edge_0"] = u32(state["edge_0"] + state["edge_0_step"])
+                state["edge_1"] = u32(state["edge_1"] + state["edge_1_step"])
+                state["depth"] = u32(state["depth"] + state["depth_step"])
+            elif state["advance"] == 0x0CCA:
+                state["edge_0"] = state["secondary_edge"]
+                state["edge_0_step"] = state["secondary_edge_step"]
+                state["depth"] = state["secondary_depth"]
+                state["depth_step"] = state["secondary_depth_step"]
+                state["texture_u"] = state["secondary_texture_u"]
+                state["texture_v"] = state["secondary_texture_v"]
+                state["texture_u_step"] = state["secondary_texture_u_step"]
+                state["texture_v_step"] = state["secondary_texture_v_step"]
+                state["remaining"] = state["secondary_remaining"]
+                state["advance"] = 0x0D5E
+                state["edge_1"] = u32(state["edge_1"] + state["edge_1_step"])
+            elif state["advance"] == 0x0D19:
+                state["edge_0"] = u32(state["edge_0"] + state["edge_0_step"])
+                state["depth"] = u32(state["depth"] + state["depth_step"])
+                state["texture_u"] = u16(
+                    state["texture_u"] + state["texture_u_step"]
+                )
+                state["texture_v"] = u16(
+                    state["texture_v"] + state["texture_v_step"]
+                )
+                state["edge_1"] = state["secondary_edge"]
+                state["edge_1_step"] = state["secondary_edge_step"]
+                state["remaining"] = state["secondary_remaining"]
+                state["advance"] = 0x0D5E
+            else:
+                active = False
+            active_column += 1
+
+        patched_image = bytearray(image)
+        patched_image[face_activate] = 0xC3
+        activations: list[int] = []
+        clipped_sort_keys: list[int] = []
+        outputs = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == 0x0960:
+                clipped_sort_keys.append(
+                    struct.unpack(
+                        "<I",
+                        machine.mem_read(
+                            raster_segment * 16 + record_offset + 4, 4
+                        ),
+                    )[0]
+                )
+                return
+            if address != face_activate:
+                return
+            activations.append(machine.reg_read(UC_X86_REG_ESI) & 0xFFFF)
+            raster_base = raster_segment * 16
+            next_free = struct.unpack(
+                "<H", machine.mem_read(raster_base + record_offset, 2)
+            )[0]
+            record_data = bytearray(0x5A)
+            write_word(record_data, 0x00, middle_offset)
+            write_dword(record_data, 0x08, state_initial["edge_0"])
+            write_dword(record_data, 0x0C, state_initial["edge_0_step"])
+            write_word(record_data, 0x10, head_offset)
+            write_dword(record_data, 0x18, state_initial["edge_1"])
+            write_dword(record_data, 0x1C, state_initial["edge_1_step"])
+            write_dword(record_data, 0x20, state_initial["depth"])
+            write_dword(record_data, 0x24, state_initial["depth_step"])
+            write_dword(record_data, 0x28, state_initial["depth_gradient"])
+            write_word(record_data, 0x2C, state_initial["advance"])
+            write_word(record_data, 0x2E, state_initial["remaining"])
+            write_word(
+                record_data, 0x30, state_initial["secondary_remaining"]
+            )
+            write_dword(record_data, 0x32, state_initial["secondary_edge"])
+            write_dword(
+                record_data, 0x36, state_initial["secondary_edge_step"]
+            )
+            write_dword(record_data, 0x3A, state_initial["secondary_depth"])
+            write_dword(
+                record_data, 0x3E, state_initial["secondary_depth_step"]
+            )
+            write_word(record_data, 0x42, state_initial["texture_u"])
+            write_word(record_data, 0x44, state_initial["texture_v"])
+            write_word(
+                record_data, 0x46, state_initial["secondary_texture_u"]
+            )
+            write_word(
+                record_data, 0x48, state_initial["secondary_texture_v"]
+            )
+            write_word(record_data, 0x4A, state_initial["texture_u_step"])
+            write_word(record_data, 0x4C, state_initial["texture_v_step"])
+            write_word(
+                record_data, 0x4E, state_initial["secondary_texture_u_step"]
+            )
+            write_word(
+                record_data, 0x50, state_initial["secondary_texture_v_step"]
+            )
+            write_word(record_data, 0x52, state_initial["texture_du"])
+            write_word(record_data, 0x54, state_initial["texture_dv"])
+            write_word(record_data, 0x56, texture_segment)
+            machine.mem_write(raster_base + record_offset, bytes(record_data))
+            machine.mem_write(
+                raster_base + 0x0908, struct.pack("<H", next_free)
+            )
+            machine.mem_write(
+                raster_base + head_offset,
+                struct.pack("<H", record_offset),
+            )
+            machine.mem_write(
+                raster_base + middle_offset + 0x10,
+                struct.pack("<H", record_offset),
+            )
+
+        state_initial = dict(state)
+        state_initial.update(
+            {
+                "remaining": int(case["remaining"]),
+                "edge_0": u32(int(case["edge_0"])),
+                "edge_0_step": u32(int(case.get("edge_0_step", 0))),
+                "edge_1": u32(int(case["edge_1"])),
+                "edge_1_step": u32(int(case.get("edge_1_step", 0))),
+                "depth": 0x01000000,
+                "depth_step": 0,
+                "depth_gradient": u32(int(case.get("depth_gradient", 0))),
+                "texture_u": u16(int(case["texture_u"])),
+                "texture_v": u16(int(case["texture_v"])),
+                "texture_u_step": u16(int(case.get("texture_u_step", 0))),
+                "texture_v_step": u16(int(case.get("texture_v_step", 0))),
+                "texture_du": u16(int(case.get("texture_du", 0))),
+                "texture_dv": u16(int(case.get("texture_dv", 0))),
+                "advance": int(case.get("advance", 0x0D5E)),
+                "secondary_remaining": int(
+                    case.get("secondary_remaining", 0)
+                ),
+                "secondary_edge": u32(int(case.get("secondary_edge", 0))),
+                "secondary_edge_step": u32(
+                    int(case.get("secondary_edge_step", 0))
+                ),
+                "secondary_depth": 0x01000000,
+                "secondary_depth_step": 0,
+                "secondary_texture_u": u16(
+                    int(case.get("secondary_texture_u", 0))
+                ),
+                "secondary_texture_v": u16(
+                    int(case.get("secondary_texture_v", 0))
+                ),
+                "secondary_texture_u_step": u16(
+                    int(case.get("secondary_texture_u_step", 0))
+                ),
+                "secondary_texture_v_step": u16(
+                    int(case.get("secondary_texture_v_step", 0))
+                ),
+            }
+        )
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": globals_segment,
+            "gs": 0x2800,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (globals_segment, 0, bytes(globals_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (texture_segment, 0, texture),
+                (mode_x_segment, 0, bytes(0x10000)),
+                (linear_segment, 0, bytes(0x10000)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=500000,
+            output_handler=output_handler,
+            code_handler=code_handler,
+        )
+        if activations != [face_offset]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: activations={activations}"
+            )
+        expected_clipped_sort_keys = []
+        if i16(state_initial["edge_0"] >> 16) < 0:
+            expected_clipped_sort_keys.append(
+                u32(
+                    state_initial["depth"]
+                    - i16(state_initial["edge_0"] >> 16)
+                    * state_initial["depth_gradient"]
+                )
+            )
+        if clipped_sort_keys != expected_clipped_sort_keys:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: clipped sort keys="
+                f"{clipped_sort_keys}, expected={expected_clipped_sort_keys}"
+            )
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: outputs={outputs}, "
+                f"expected={expected_outputs}"
+            )
+        actual_mode_x = bytes(machine.mem_read(mode_x_segment * 16, 0x10000))
+        actual_linear = bytes(machine.mem_read(linear_segment * 16, 0x10000))
+        if actual_mode_x != bytes(mode_x_expected):
+            differences = [
+                (offset, actual_mode_x[offset], mode_x_expected[offset])
+                for offset in range(0x10000)
+                if actual_mode_x[offset] != mode_x_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: mode-X differs at {differences}"
+            )
+        if actual_linear != bytes(linear_expected):
+            differences = [
+                (offset, actual_linear[offset], linear_expected[offset])
+                for offset in range(0x10000)
+                if actual_linear[offset] != linear_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: linear differs at {differences}"
+            )
+        raster_after = bytes(machine.mem_read(raster_segment * 16, 0x10000))
+        geometry_after = bytes(machine.mem_read(geometry_segment * 16, 0x10000))
+        if struct.unpack_from("<H", geometry_after, face_offset)[0] != 0:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: face bucket link differs"
+            )
+        if struct.unpack_from("<H", raster_after, 0x0908)[0] != record_offset:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: record was not freed"
+            )
+        if struct.unpack_from("<H", raster_after, head_offset)[0] != middle_offset:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: active head differs"
+            )
+        head_skip_boundary = (
+            struct.unpack_from("<H", raster_after, head_offset + 2)[0],
+            struct.unpack_from("<H", raster_after, head_offset + 6)[0],
+        )
+        expected_head_boundary = (
+            0x0974
+            if i16(state_initial["edge_0"] >> 16) < 0
+            else record_offset
+        )
+        if head_skip_boundary != (1, expected_head_boundary):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: head skip boundary="
+                f"{head_skip_boundary}"
+            )
+        if struct.unpack_from("<H", raster_after, middle_offset + 0x10)[0] != head_offset:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: active previous differs"
+            )
+        if struct.unpack_from("<H", raster_after, 0x0680)[0] != 0x013F:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: final column differs"
+            )
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "bucket_column": column,
+                "continuation": continuation,
+                "active_columns": active_column - column,
+                "pixels": expected_pixels,
+                "vga_outputs": [list(item) for item in expected_outputs],
+                "clipped_sort_keys": clipped_sort_keys,
+                "record_returned_to_free_list": True,
+            }
+        )
+
+    return vectors
+
+
 def manu3_tween_constructor_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x01DF
@@ -6607,6 +7220,11 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0700_renderer_natural.json",
+        manu3_full_renderer_vectors(),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0d7d_natural.json",
         manu3_face_activate_vectors(),
         args.check,
@@ -6713,7 +7331,6 @@ def main() -> int:
     for module, entry in (
         ("amer", 0x1DD6),
         ("croolis", 0x1D27),
-        ("manu3", 0x0848),
         ("scrut", 0x1DE7),
     ):
         update_vector(
