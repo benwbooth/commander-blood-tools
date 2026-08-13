@@ -10,6 +10,7 @@ typedef volatile cb_u8 CB_FAR *bloodprg_graphics_buffer_ptr;
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_work_surface; /* GS:0x0ABC */
 extern volatile cb_u8 palette_dirty; /* game data:0x5B55 */
+extern volatile cb_u8 page_flip_transparent_zero; /* DS:0x5B57 */
 extern volatile cb_u8 live_palette[768]; /* game data:0x5251 */
 /* First 192 RGB entries of live_palette, addressed through GS by 0x00248B. */
 extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */

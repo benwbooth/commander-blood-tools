@@ -100,6 +100,10 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_z; /* GS:0x2F69 */
 #pragma aux ship_3d_depth_scroll_step modify exact [ax]
 #pragma aux ship_3d_hud_palette_snapshot_and_camera_reset \
         modify exact [bx dx]
+#pragma aux ship_3d_point_cloud_project modify exact []
+#pragma aux ship_3d_object_sprite_project modify exact []
+#pragma aux bridge_panorama_frame_load parm [ax] modify exact []
+#pragma aux page_flip value [ax] modify exact [ax bx]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
@@ -118,7 +122,11 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
         cb_u16 CB_NEAR *output);              /* 0x00624B */
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
+void CB_FAR ship_3d_point_cloud_project(void); /* 0x009A10 */
+void CB_FAR ship_3d_object_sprite_project(void); /* 0x009B98 */
 void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
+void CB_NEAR bridge_panorama_frame_load(cb_u16 frame); /* 0x00981B */
+cb_u16 CB_FAR page_flip(void); /* 0x00954A */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
 void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */
 void CB_FAR ship_3d_hud_palette_snapshot_and_camera_reset(void); /* 0x008C96 */

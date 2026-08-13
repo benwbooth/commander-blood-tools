@@ -38782,6 +38782,308 @@ def presentation_mode_bits_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def page_flip_vectors() -> list[dict[str, object]]:
+    entry = 0x954A
+    expected_hash = "0a61a944d558d1857c447eea7994d4773fcb3597a0e30041fdb6e259936db9c3"
+    if hashlib.sha256(EXE[entry : entry + 83]).hexdigest() != expected_hash:
+        raise AssertionError("0x954a: recovered 83-byte body changed")
+
+    far_fill = 0x0299 * 16 + 0x0DEB
+    far_commit = 0x0299 * 16 + 0x1467
+    far_dirty_render = 0x0299 * 16 + 0x14E1
+    data_segment = 0x4000
+    game_segment = 0x5000
+    extra_segment = 0x6000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        ("ship_active", 0x23451234, 0x34562345, 0x0001, 0x002A, False, 0x0000),
+        ("ship_active_high_bits", 0x45673456, 0x56784567, 0xFFFF, 0x7FFF, True, 0),
+        ("inactive_zero_frame", 0x67895678, 0x789A6789, 0x0000, 0x0000, False, 0x08D5),
+        ("inactive_other_flag", 0x89AB789A, 0x9ABC89AB, 0x0002, 0x7FFF, False, 0x0455),
+        ("inactive_high_frame", 0xABCD9ABC, 0xBCDEABCD, 0x8000, 0xFFFF, True, 0x0891),
+        ("inactive_signed_frame", 0xFFFF0000, 0x0000FFFF, 0xFFFE, 0x8000, True, 0x04C4),
+        ("ship_active_direction_set", 0x13572468, 0x24681357, 0x0005, 1, False, 0),
+    ]
+    vectors = []
+
+    common_calls = [
+        ("blit_fill_row_5221", far_fill, 0x0299, 0x0DEB, 0xFEF8, 0),
+        ("ship_3d_projection_matrix_build", 0x98B9, 0, 0x98B9, 0xFEF8, 0),
+        ("ship_3d_point_cloud_project", 0x9A10, 0, 0x9A10, 0xFEF8, 0),
+        ("ship_3d_object_sprite_project", 0x9B98, 0, 0x9B98, 0xFEF8, 0),
+        ("sprite_slot_commit_dirty_range", far_commit, 0x0299, 0x1467, 0xFEF8, 0x15),
+        (
+            "sprite_slot_dirty_range_render",
+            far_dirty_render,
+            0x0299,
+            0x14E1,
+            0xFEF8,
+            0x15,
+        ),
+    ]
+
+    for case_index, (
+        name,
+        display_pointer,
+        back_pointer,
+        ship_flags,
+        frame,
+        mutate_display_in_dirty_render,
+        bridge_flags,
+    ) in enumerate(cases):
+        data_before = bytearray(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 37 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<I", data_before, 0x5221, display_pointer)
+        struct.pack_into("<I", data_before, 0x5229, back_pointer)
+        struct.pack_into("<H", data_before, 0x24F3, ship_flags)
+        struct.pack_into("<H", data_before, 0x2795, frame)
+        transparent_before = data_before[0x5B57]
+        dirty_copy_before = data_before[0x5231]
+        expected_data = bytearray(data_before)
+        expected_data[0x5B55] = 1
+        if (ship_flags & 1) == 0:
+            expected_data[0x5B57] = 1
+            expected_data[0x5231] = 1
+
+        game_decoy = bytes(
+            (offset * 31 + (offset >> 8) * 5 + case_index * 19 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_decoy = bytes(
+            (offset * 13 + case_index * 29 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        direction_set = name.endswith("direction_set")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0212 | (0x0400 if direction_set else 0),
+        }
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        calls = []
+        expected_calls = list(common_calls)
+        if (ship_flags & 1) == 0:
+            expected_calls.append(
+                (
+                    "bridge_panorama_frame_load",
+                    0x981B,
+                    0,
+                    0x981B,
+                    0xFEFE,
+                    frame,
+                )
+            )
+        call_by_address = {call[1]: call for call in expected_calls}
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            call = call_by_address.get(address)
+            if call is None:
+                return
+            call_name, _entry, expected_cs, expected_ip, expected_sp, expected_ax = call
+            call_index = len(calls)
+            expected_bx = (
+                0x001F if call_index >= 4 else initial["ebx"] & 0xFFFF
+            )
+            expected_eax = (back_pointer & 0xFFFF0000) | expected_ax
+            expected_ebx = (initial["ebx"] & 0xFFFF0000) | expected_bx
+            display_at_call = struct.unpack(
+                "<I", machine.mem_read(data_segment * 16 + 0x5221, 4)
+            )[0]
+            expected_display = (
+                display_pointer
+                if call_name == "bridge_panorama_frame_load"
+                else back_pointer
+            )
+            actual_call = {
+                "name": call_name,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "eax": machine.reg_read(UC_X86_REG_EAX),
+                "ebx": machine.reg_read(UC_X86_REG_EBX),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "display_pointer": display_at_call,
+                "palette_dirty": machine.mem_read(
+                    data_segment * 16 + 0x5B55, 1
+                )[0],
+            }
+            expected_call = {
+                "name": call_name,
+                "cs": expected_cs,
+                "ip": expected_ip,
+                "sp": expected_sp,
+                "eax": expected_eax,
+                "ebx": expected_ebx,
+                "ds": data_segment,
+                "es": extra_segment,
+                "gs": game_segment,
+                "display_pointer": expected_display,
+                "palette_dirty": 1,
+            }
+            if actual_call != expected_call:
+                raise AssertionError(
+                    f"0x954a {name}: call={actual_call}, expected={expected_call}"
+                )
+            if call_name != "bridge_panorama_frame_load":
+                saved_pointer = struct.unpack(
+                    "<I", machine.mem_read(stack_segment * 16 + 0xFEFC, 4)
+                )[0]
+                if saved_pointer != display_pointer:
+                    raise AssertionError(
+                        f"0x954a {name}: saved display={saved_pointer:#x}, "
+                        f"expected={display_pointer:#x}"
+                    )
+            else:
+                if machine.mem_read(data_segment * 16 + 0x5B57, 1)[0] != 1:
+                    raise AssertionError(f"0x954a {name}: transparent flag not set")
+                if machine.mem_read(data_segment * 16 + 0x5231, 1)[0] != 1:
+                    raise AssertionError(f"0x954a {name}: dirty-copy flag not set")
+                machine.reg_write(UC_X86_REG_EFLAGS, bridge_flags)
+
+            calls.append(actual_call)
+            if (
+                call_name == "sprite_slot_dirty_range_render"
+                and mutate_display_in_dirty_render
+            ):
+                machine.mem_write(
+                    data_segment * 16 + 0x5221,
+                    struct.pack("<I", 0xDEADBEEF),
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x98B9, b"\xcb"),
+                (0, 0x9A10, b"\xcb"),
+                (0, 0x9B98, b"\xcb"),
+                (0, 0x981B, b"\xc3"),
+                (0, far_fill, b"\xcb"),
+                (0, far_commit, b"\xcb"),
+                (0, far_dirty_render, b"\xcb"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_decoy),
+                (extra_segment, 0, extra_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=256,
+        )
+
+        expected_call_names = [call[0] for call in expected_calls]
+        if [call["name"] for call in calls] != expected_call_names:
+            raise AssertionError(
+                f"0x954a {name}: calls={calls}, expected={expected_call_names}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            expected_data
+        ):
+            raise AssertionError(f"0x954a {name}: DS state mismatch")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_decoy:
+            raise AssertionError(f"0x954a {name}: GS decoy changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_decoy:
+            raise AssertionError(f"0x954a {name}: ES decoy changed")
+
+        final_ax = frame if (ship_flags & 1) == 0 else 0x0015
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (back_pointer & 0xFFFF0000) | final_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0x001F
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x954a {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x954a {name}: far return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 8)) != stack_sentinel:
+            raise AssertionError(f"0x954a {name}: stack sentinel changed")
+
+        if (ship_flags & 1) != 0:
+            expected_flags = {
+                "cf": False,
+                "pf": False,
+                "zf": False,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            expected_flags = {
+                "cf": bool(bridge_flags & 0x0001),
+                "pf": bool(bridge_flags & 0x0004),
+                "af": bool(bridge_flags & 0x0010),
+                "zf": bool(bridge_flags & 0x0040),
+                "sf": bool(bridge_flags & 0x0080),
+                "of": bool(bridge_flags & 0x0800),
+            }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_bits = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & flag_bits[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x954a {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != (
+            bool(bridge_flags & 0x0400)
+            if (ship_flags & 1) == 0
+            else direction_set
+        ):
+            raise AssertionError(f"0x954a {name}: direction flag mismatch")
+
+        vectors.append(
+            {
+                "name": name,
+                "display_pointer_before_and_after": display_pointer,
+                "temporary_display_pointer": back_pointer,
+                "ship_flags": ship_flags,
+                "bridge_frame": frame if (ship_flags & 1) == 0 else None,
+                "transparent_before": transparent_before,
+                "transparent_after": expected_data[0x5B57],
+                "dirty_copy_before": dirty_copy_before,
+                "dirty_copy_after": expected_data[0x5231],
+                "calls": calls,
+                "final_ax": final_ax,
+                "final_bx": 0x001F,
+                "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def matrix_table_clear_2a1b_vectors() -> list[dict[str, object]]:
     entry = 0x963F
     expected_hash = "60225baa9b9f1b75e86b7849f4a7b8b9dff1baf628d87ec419d1ed2e67568a32"
@@ -50198,6 +50500,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9510_natural.json",
         presentation_mode_bits_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_954a_natural.json",
+        page_flip_vectors(),
         args.check,
     )
     update_vector(

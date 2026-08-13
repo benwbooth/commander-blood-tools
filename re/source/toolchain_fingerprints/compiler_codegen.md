@@ -3622,6 +3622,34 @@ where the binary uses `REP MOVSD`; they are equivalent under the shipped C
 runtime's clear-DF invariant, while the direct reverse-DF vector records the
 non-runtime difference explicitly.
 
+## BLOODPRG page-flip coordinator candidate
+
+`0x00954A` is the ship/navigation page-flip coordinator. It marks the palette
+dirty, saves the display far pointer at `DS:0x5221`, and temporarily replaces
+it with the back-buffer pointer at `DS:0x5229`. It then clears the display band,
+builds the projection matrix, projects the point cloud and destination sprites,
+and commits and renders the inclusive sprite range `0x15..0x1F`. The original
+display pointer is restored before testing ship-state bit 0. When that bit is
+clear, the routine sets the transparency and dirty-copy bytes and invokes the
+panorama loader with the bridge frame at `DS:0x2795`.
+
+Seven patched-callee vectors isolate only those six always-executed helpers and
+the conditional panorama loader. They verify each exact call frame and order,
+the temporary pointer at every render boundary, restoration after a callback
+deliberately overwrites the current pointer, all state stores, full DS ownership
+against GS/ES decoys, bit-zero-only gating, frame arguments, low AX/BX results,
+callback flag pass-through, stack integrity, and `RETF`.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 45 instructions/136 bytes versus the original 24/83. The
+codegen probe has a 58.33 percent mnemonic-sequence LCS and 79.17 percent
+mnemonic-multiset overlap. Returning `u16` naturally recovers the observed AX
+result, and post-projection volatile range locals keep the sprite arguments at
+their original call boundary. No inline assembly is used. Watcom saves the far
+pointer as scalar words instead of the binary's EAX plus dword stack slot; the
+unused incoming BX values at the earlier helpers and EAX upper-half result
+remain explicit binary-ABI boundaries.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
