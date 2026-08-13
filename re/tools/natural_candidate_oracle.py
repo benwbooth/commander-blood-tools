@@ -5801,6 +5801,280 @@ def vm_patch_stream_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def palette_transition_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1F78
+    expected_hash = "fcf9037274a0cac487a1ce94f3feed6c8a699d01aaaec22163ddf555d8e6368c"
+    if hashlib.sha256(EXE[entry : entry + 68]).hexdigest() != expected_hash:
+        raise AssertionError("0x1f78: recovered 68-byte body changed")
+
+    cases = (
+        ("already_complete", 100, 37, 0, 255, 0xA5),
+        ("zero_step", 0, 0, 1, 4, 0x00),
+        ("ordinary_step", 20, 15, 7, 31, 0x42),
+        ("reaches_complete", 95, 5, 128, 191, 0x7E),
+        ("clamps_above_complete", 90, 20, 32, 63, 0x11),
+        ("starts_above_complete", 101, 0, 192, 255, 0x22),
+        ("negative_result", 0, 0xFFFF, 2, 2, 0x33),
+        ("signed_add_wrap", 0x7FF8, 0x0010, 10, 20, 0x44),
+        ("unsigned_wrap_then_clamp", 0xFFFF, 102, 64, 127, 0x55),
+    )
+    data_segment = 0x3000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x8000
+    stack_segment = 0x9000
+    callback_entry = 0x01CE * 16 + 0x00E5
+    callback_return = 0x1FB5
+    return_address = 0x6F20
+    defined_mask = 0x0CD5
+    vectors = []
+
+    def signed16(value: int) -> int:
+        return value - 0x10000 if value & 0x8000 else value
+
+    def flags_dict(value: int) -> dict[str, bool]:
+        return {
+            "cf": bool(value & 0x0001),
+            "pf": bool(value & 0x0004),
+            "af": bool(value & 0x0010),
+            "zf": bool(value & 0x0040),
+            "sf": bool(value & 0x0080),
+            "df": bool(value & 0x0400),
+            "of": bool(value & 0x0800),
+        }
+
+    for case_index, (
+        name,
+        initial_percent,
+        increment,
+        first,
+        last,
+        dirty_before,
+    ) in enumerate(cases):
+        active = initial_percent != 100
+        result_percent = initial_percent
+        if active:
+            result_percent = (initial_percent + increment) & 0xFFFF
+            if signed16(result_percent) > 100:
+                result_percent = 100
+
+        data_before = bytearray(
+            (offset * 29 + (offset >> 8) * 11 + case_index * 41 + 0x17) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x524D, increment)
+        struct.pack_into("<H", data_before, 0x524F, initial_percent)
+        data_before[0x5B51] = first
+        data_before[0x5B52] = last
+        data_before[0x5B55] = dirty_before
+        expected_data = bytearray(data_before)
+        if active:
+            struct.pack_into("<H", expected_data, 0x524F, result_percent)
+            expected_data[0x5B55] = 1
+
+        game_before = bytes(
+            (offset * 17 + (offset >> 7) * 5 + case_index * 23 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 13 + case_index * 19 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial_flags = 0x0202 | (0x0400 if case_index & 1 else 0)
+        helper_flags = 0x0295 | (0x0C40 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        calls = []
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_entry:
+                return
+            call = {
+                "callee": "palette_range_interpolate",
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "percent_signed_byte": (
+                    (result_percent & 0xFF) - 0x100
+                    if result_percent & 0x80
+                    else result_percent & 0xFF
+                ),
+                "source_sha256": hashlib.sha256(
+                    machine.mem_read(data_segment * 16 + 0x5851, 768)
+                ).hexdigest(),
+                "target_sha256": hashlib.sha256(
+                    machine.mem_read(game_segment * 16 + 0x5551, 768)
+                ).hexdigest(),
+            }
+            expected_call = {
+                "callee": "palette_range_interpolate",
+                "cs": 0x01CE,
+                "ip": 0x00E5,
+                "sp": 0xFEF0,
+                "ds": data_segment,
+                "si": 0x5851,
+                "es": game_segment,
+                "di": 0x5551,
+                "gs": game_segment,
+                "ax": result_percent,
+                "bx": first,
+                "dx": last,
+                "percent_signed_byte": (
+                    (result_percent & 0xFF) - 0x100
+                    if result_percent & 0x80
+                    else result_percent & 0xFF
+                ),
+                "source_sha256": hashlib.sha256(
+                    data_before[0x5851 : 0x5851 + 768]
+                ).hexdigest(),
+                "target_sha256": hashlib.sha256(
+                    game_before[0x5551 : 0x5551 + 768]
+                ).hexdigest(),
+            }
+            if call != expected_call:
+                raise AssertionError(
+                    f"0x1f78 {name}: call={call}, expected={expected_call}"
+                )
+            if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+                expected_data
+            ):
+                raise AssertionError(f"0x1f78 {name}: stores were not before call")
+            stack_words = struct.unpack(
+                "<10H", machine.mem_read(stack_segment * 16 + 0xFEF0, 20)
+            )
+            expected_stack = (
+                callback_return,
+                0,
+                initial["es"],
+                initial["edx"] & 0xFFFF,
+                initial["ebx"] & 0xFFFF,
+                initial["esi"] & 0xFFFF,
+                initial["edi"] & 0xFFFF,
+                initial["eax"] & 0xFFFF,
+                return_address,
+                0,
+            )
+            if stack_words != expected_stack:
+                raise AssertionError(
+                    f"0x1f78 {name}: stack={stack_words}, expected={expected_stack}"
+                )
+            calls.append(call)
+            machine.reg_write(UC_X86_REG_AX, 0xE001 + case_index)
+            machine.reg_write(UC_X86_REG_BX, 0xE102 + case_index)
+            machine.reg_write(UC_X86_REG_DX, 0xE203 + case_index)
+            machine.reg_write(UC_X86_REG_EFLAGS, helper_flags)
+
+        stack_sentinel = bytes.fromhex("5aa5966987783cc3")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, callback_entry, b"\xcb"),
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_before),
+                (extra_segment, 0, extra_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=callback,
+            instruction_count=256,
+        )
+
+        expected_call_count = 1 if active else 0
+        if len(calls) != expected_call_count:
+            raise AssertionError(
+                f"0x1f78 {name}: calls={len(calls)}, expected={expected_call_count}"
+            )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x1f78 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x1f78 {name}: far return did not restore CS")
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            expected_data
+        ):
+            raise AssertionError(f"0x1f78 {name}: data state mismatch")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x1f78 {name}: GS data changed before helper")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x1f78 {name}: ES decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 8)) != stack_sentinel:
+            raise AssertionError(f"0x1f78 {name}: stack sentinel changed")
+
+        if active:
+            expected_flags = helper_flags & defined_mask
+        else:
+            compare_flags = sub16_flags(initial_percent, 100)
+            expected_flags = initial_flags & 0x0400
+            for flag, bit in (
+                ("cf", 0x0001),
+                ("pf", 0x0004),
+                ("af", 0x0010),
+                ("zf", 0x0040),
+                ("sf", 0x0080),
+                ("of", 0x0800),
+            ):
+                if compare_flags[flag]:
+                    expected_flags |= bit
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS) & defined_mask
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x1f78 {name}: flags={actual_flags:#x}, expected={expected_flags:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "initial_percent": initial_percent,
+                "increment": increment,
+                "result_percent": result_percent,
+                "active": active,
+                "first": first,
+                "last": last,
+                "dirty_before": dirty_before,
+                "dirty_after": expected_data[0x5B55],
+                "helper_call": calls[0] if calls else None,
+                "data_sha256": hashlib.sha256(expected_data).hexdigest(),
+                "defined_flags": flags_dict(actual_flags),
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_hud_palette_snapshot_and_camera_reset_vectors() -> list[dict[str, object]]:
     entry = 0x8C96
     expected_hash = "f42a501f52c61d36a9b2deb444f2743502a69ae48ed908599ab15756d67212e6"
@@ -48636,6 +48910,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1d94_natural.json",
         vm_patch_stream_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1f78_natural.json",
+        palette_transition_step_vectors(),
         args.check,
     )
     update_vector(

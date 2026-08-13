@@ -3511,6 +3511,32 @@ extra code materializes three far segments in locals and switches ES around
 ordinary structure accesses; it does not indicate missing loop or record
 logic.
 
+## BLOODPRG palette transition step candidate
+
+`0x001F78` is a palette transition step, not only a progress counter. An
+initial value at `DS:0x524F` returns unchanged only when it is exactly 100.
+Otherwise the routine adds `DS:0x524D` modulo 16 bits, clamps a signed result
+above 100, marks `DS:0x5B55` dirty, stores the new percentage, and calls
+`palette_range_interpolate`. The call interpolates inclusive entries
+`DS:0x5B51..0x5B52` from the saved palette at `DS:0x5851` toward the target at
+`GS:0x5551`; only the percentage's signed low byte is consumed by the helper.
+
+Nine patched-callee vectors execute the original wrapper and cover the exact
+100 no-op, zero and ordinary steps, exact completion, upper clamping, an
+initial value above 100, a negative result, signed overflow, and unsigned wrap
+followed by clamping. They also isolate DS from GS/ES decoys, verify that state
+stores and volatile first/last reads precede the call, inspect the complete far
+frame and register arguments, and prove register/segment preservation, helper
+flag pass-through, stack balance, and `RETF`. The independently verified
+`0x0023C5` oracle covers the interpolation helper itself.
+
+Open Watcom 1.9 medium (`-3 -ox -mm`) compiles the natural candidate without
+warnings to 31 instructions/69 bytes versus the original 31/68. Both the
+mnemonic-sequence LCS and mnemonic-multiset overlap are 83.87 percent. A
+declaration-only same-DS alias gives the call its observed `SI`, `ES:DI`, `AX`,
+`BX`, and `DX` ABI. The only inline assembly is two guarded save/restore pairs
+for incoming AX and ES, which Watcom otherwise treats as caller-volatile.
+
 ## BLOODPRG ship HUD palette snapshot candidate
 
 `0x008C96` is a navigation/HUD reset routine rather than a generic VM-segment

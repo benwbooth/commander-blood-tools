@@ -49,6 +49,18 @@ extern const cb_u8
         main_loop_hud_text[]; /* DS:0x0166 */
 extern cb_u32 palette_low_5251_dwords[]; /* caller ES:0x5251 */
 extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
+extern cb_u8
+        palette_transition_source[768]; /* DS:0x5851 */
+extern cb_u8 CB_GAME_DATA
+        palette_transition_target[768]; /* GS:0x5551 */
+extern volatile cb_u16
+        palette_transition_increment; /* DS:0x524D */
+extern volatile cb_u16
+        palette_transition_percent; /* DS:0x524F */
+extern volatile cb_u8
+        palette_transition_first; /* DS:0x5B51 */
+extern volatile cb_u8
+        palette_transition_last; /* DS:0x5B52 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_bottom_row; /* GS:0x523B */
 extern volatile cb_i16 CB_GAME_DATA graphics_clip_left; /* GS:0x5235 */
@@ -162,6 +174,19 @@ void CB_FAR palette_range_interpolate(
         cb_i8 percent,
         cb_u16 first,
         cb_u16 last); /* 0x0023C5 */
+#if defined(__WATCOMC__)
+void CB_FAR palette_range_interpolate_ds(
+        const cb_u8 CB_NEAR *source,
+        const cb_u8 CB_FAR *target,
+        cb_u16 percent,
+        cb_u16 first,
+        cb_u16 last);
+#else
+#define palette_range_interpolate_ds(source, target, percent, first, last) \
+        palette_range_interpolate( \
+            (source), (target), (cb_i8)(percent), (first), (last))
+#endif
+void CB_FAR palette_transition_step(void); /* 0x001F78 */
 void CB_FAR tint_table_build_banked(
         cb_u16 bank_base,
         volatile cb_u8 CB_GAME_DATA *table); /* 0x00242D */
@@ -251,6 +276,10 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
 #pragma aux palette_blend_remap_table_build \
         parm [ax] [bx] [cx] [dx] [di] value [ax] modify exact []
+#pragma aux palette_range_interpolate_ds "palette_range_interpolate_" \
+        parm [si] [es di] [ax] [bx] [dx] \
+        modify exact []
+#pragma aux palette_transition_step modify exact []
 #pragma aux tint_table_build_banked \
         parm [ax] [bx] modify exact [ax bx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
