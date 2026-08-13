@@ -1,0 +1,352 @@
+[
+  {
+    "name": "lookup_zero_skips_allocation",
+    "resource_id": 3,
+    "filename_offset": 3124,
+    "byte_count": 0,
+    "allocation_status": null,
+    "file_result": null,
+    "success": false,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 3,
+        "filename": [
+          13824,
+          3124
+        ],
+        "filename_backup_offset": 3124,
+        "return_frame": [
+          10390,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "allocation_failure_skips_file_load",
+    "resource_id": 4,
+    "filename_offset": 3140,
+    "byte_count": 305419896,
+    "allocation_status": -1,
+    "file_result": null,
+    "success": false,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 4,
+        "filename": [
+          13824,
+          3140
+        ],
+        "filename_backup_offset": 3140,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 4,
+        "byte_count": 305419896,
+        "filename": [
+          13824,
+          3140
+        ],
+        "filename_backup_offset": 3140,
+        "return_frame": [
+          10400,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "already_loaded_is_success",
+    "resource_id": 25,
+    "filename_offset": 3476,
+    "byte_count": 98306,
+    "allocation_status": 1,
+    "file_result": null,
+    "success": true,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 25,
+        "filename": [
+          13824,
+          3476
+        ],
+        "filename_backup_offset": 3476,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 25,
+        "byte_count": 98306,
+        "filename": [
+          13824,
+          3476
+        ],
+        "filename_backup_offset": 3476,
+        "return_frame": [
+          10400,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "any_positive_allocation_status_is_success",
+    "resource_id": 31,
+    "filename_offset": 3572,
+    "byte_count": 1,
+    "allocation_status": 32767,
+    "file_result": null,
+    "success": true,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 31,
+        "filename": [
+          13824,
+          3572
+        ],
+        "filename_backup_offset": 3572,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 31,
+        "byte_count": 1,
+        "filename": [
+          13824,
+          3572
+        ],
+        "filename_backup_offset": 3572,
+        "return_frame": [
+          10400,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "fresh_buffer_file_failure",
+    "resource_id": 44,
+    "filename_offset": 3780,
+    "byte_count": 32000,
+    "allocation_status": 0,
+    "file_result": 0,
+    "success": false,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 44,
+        "filename": [
+          13824,
+          3780
+        ],
+        "filename_backup_offset": 3780,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 44,
+        "byte_count": 32000,
+        "filename": [
+          13824,
+          3780
+        ],
+        "filename_backup_offset": 3780,
+        "return_frame": [
+          10400,
+          0
+        ]
+      },
+      {
+        "call": "resource_file_load",
+        "filename": [
+          13824,
+          3780
+        ],
+        "destination": [
+          24832,
+          291
+        ],
+        "return_frame": [
+          10418,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "fresh_buffer_file_success",
+    "resource_id": 52,
+    "filename_offset": 3908,
+    "byte_count": 65537,
+    "allocation_status": 0,
+    "file_result": 1,
+    "success": true,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 52,
+        "filename": [
+          13824,
+          3908
+        ],
+        "filename_backup_offset": 3908,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 52,
+        "byte_count": 65537,
+        "filename": [
+          13824,
+          3908
+        ],
+        "filename_backup_offset": 3908,
+        "return_frame": [
+          10400,
+          0
+        ]
+      },
+      {
+        "call": "resource_file_load",
+        "filename": [
+          13824,
+          3908
+        ],
+        "destination": [
+          25088,
+          65534
+        ],
+        "return_frame": [
+          10418,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "full_dword_file_result_is_tested",
+    "resource_id": 63,
+    "filename_offset": 4084,
+    "byte_count": 4294967295,
+    "allocation_status": 0,
+    "file_result": 2147483648,
+    "success": true,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 63,
+        "filename": [
+          13824,
+          4084
+        ],
+        "filename_backup_offset": 4084,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 63,
+        "byte_count": 4294967295,
+        "filename": [
+          13824,
+          4084
+        ],
+        "filename_backup_offset": 4084,
+        "return_frame": [
+          10400,
+          0
+        ]
+      },
+      {
+        "call": "resource_file_load",
+        "filename": [
+          13824,
+          4084
+        ],
+        "destination": [
+          25344,
+          17767
+        ],
+        "return_frame": [
+          10418,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "resource_name_index_wraps_to_sixteen_bits",
+    "resource_id": 65520,
+    "filename_offset": 2820,
+    "byte_count": 2309737967,
+    "allocation_status": 0,
+    "file_result": 65536,
+    "success": true,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "resource_id": 65520,
+        "filename": [
+          13824,
+          2820
+        ],
+        "filename_backup_offset": 2820,
+        "return_frame": [
+          10390,
+          0
+        ]
+      },
+      {
+        "call": "resource_allocate",
+        "resource_id": 65520,
+        "byte_count": 2309737967,
+        "filename": [
+          13824,
+          2820
+        ],
+        "filename_backup_offset": 2820,
+        "return_frame": [
+          10400,
+          0
+        ]
+      },
+      {
+        "call": "resource_file_load",
+        "filename": [
+          13824,
+          2820
+        ],
+        "destination": [
+          25600,
+          35243
+        ],
+        "return_frame": [
+          10418,
+          0
+        ]
+      }
+    ]
+  }
+]

@@ -5716,6 +5716,286 @@ def resource_archive_match_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_load_by_id_vectors() -> list[dict[str, object]]:
+    entry = 0x287B
+    expected_hash = "2ef711193074fd2dbc1bb93c3f9cf3698fe854d1c77940b18eecb5dad2b5dd91"
+    if hashlib.sha256(EXE[entry : entry + 79]).hexdigest() != expected_hash:
+        raise AssertionError("0x287b: recovered 79-byte body changed")
+
+    cases = [
+        {
+            "name": "lookup_zero_skips_allocation",
+            "resource_id": 3,
+            "byte_count": 0,
+            "allocation_status": None,
+            "file_result": None,
+        },
+        {
+            "name": "allocation_failure_skips_file_load",
+            "resource_id": 4,
+            "byte_count": 0x12345678,
+            "allocation_status": -1,
+            "file_result": None,
+        },
+        {
+            "name": "already_loaded_is_success",
+            "resource_id": 25,
+            "byte_count": 0x00018002,
+            "allocation_status": 1,
+            "file_result": None,
+        },
+        {
+            "name": "any_positive_allocation_status_is_success",
+            "resource_id": 31,
+            "byte_count": 1,
+            "allocation_status": 0x7FFF,
+            "file_result": None,
+        },
+        {
+            "name": "fresh_buffer_file_failure",
+            "resource_id": 44,
+            "byte_count": 0x00007D00,
+            "allocation_status": 0,
+            "destination_segment": 0x6100,
+            "destination_offset": 0x0123,
+            "file_result": 0,
+        },
+        {
+            "name": "fresh_buffer_file_success",
+            "resource_id": 52,
+            "byte_count": 0x00010001,
+            "allocation_status": 0,
+            "destination_segment": 0x6200,
+            "destination_offset": 0xFFFE,
+            "file_result": 1,
+        },
+        {
+            "name": "full_dword_file_result_is_tested",
+            "resource_id": 63,
+            "byte_count": 0xFFFFFFFF,
+            "allocation_status": 0,
+            "destination_segment": 0x6300,
+            "destination_offset": 0x4567,
+            "file_result": 0x80000000,
+        },
+        {
+            "name": "resource_name_index_wraps_to_sixteen_bits",
+            "resource_id": 0xFFF0,
+            "byte_count": 0x89ABCDEF,
+            "allocation_status": 0,
+            "destination_segment": 0x6400,
+            "destination_offset": 0x89AB,
+            "file_result": 0x00010000,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    name_segment = 0x3600
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    allocation_address = 0x04B9 * 16
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        resource_id = int(case["resource_id"])
+        byte_count = int(case["byte_count"])
+        allocation_status_value = case["allocation_status"]
+        allocation_status = (
+            None
+            if allocation_status_value is None
+            else int(allocation_status_value)
+        )
+        file_result_value = case["file_result"]
+        file_result = (
+            None if file_result_value is None else int(file_result_value)
+        )
+        destination_segment = int(case.get("destination_segment", 0x6A00))
+        destination_offset = int(case.get("destination_offset", 0x1357))
+        filename_offset = (0x0C04 + ((resource_id << 4) & 0xFFFF)) & 0xFFFF
+        filename = f"RESOURCE{case_index:02d}.DAT".encode("ascii") + b"\0"
+        filename = filename.ljust(16, b"\0")
+        decoy = bytes(value ^ 0xFF for value in filename)
+        initial = {
+            "eax": 0xA1A10000 | resource_id,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2800,
+            "fs": name_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293,
+        }
+        calls: list[dict[str, object]] = []
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x28CA:
+                call = {
+                    "call": "resource_name_lookup",
+                    "resource_id": machine.reg_read(UC_X86_REG_AX),
+                    "filename": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "filename_backup_offset": machine.reg_read(UC_X86_REG_DI),
+                    "return_frame": return_frame(machine),
+                }
+                calls.append(call)
+                machine.reg_write(UC_X86_REG_EBP, byte_count)
+                return
+
+            if address == allocation_address:
+                call = {
+                    "call": "resource_allocate",
+                    "resource_id": machine.reg_read(UC_X86_REG_AX),
+                    "byte_count": machine.reg_read(UC_X86_REG_EBP),
+                    "filename": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "filename_backup_offset": machine.reg_read(UC_X86_REG_DI),
+                    "return_frame": return_frame(machine),
+                }
+                calls.append(call)
+                if allocation_status is None:
+                    raise AssertionError(f"0x287b {name}: unexpected allocation")
+                machine.reg_write(UC_X86_REG_AX, allocation_status & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DS, destination_segment)
+                machine.reg_write(UC_X86_REG_SI, destination_offset)
+                return
+
+            if address == 0x2ABB:
+                call = {
+                    "call": "resource_file_load",
+                    "filename": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "destination": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ],
+                    "return_frame": return_frame(machine),
+                }
+                calls.append(call)
+                if file_result is None:
+                    raise AssertionError(f"0x287b {name}: unexpected file load")
+                machine.reg_write(UC_X86_REG_EAX, file_result)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x28CA, b"\xcb"),
+                (0x04B9, 0, b"\xcb"),
+                (0, 0x2ABB, b"\xcb"),
+                (name_segment, filename_offset, filename),
+                (data_segment, filename_offset, decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_calls: list[dict[str, object]] = [
+            {
+                "call": "resource_name_lookup",
+                "resource_id": resource_id,
+                "filename": [name_segment, filename_offset],
+                "filename_backup_offset": filename_offset,
+                "return_frame": [0x2896, 0],
+            }
+        ]
+        if byte_count != 0:
+            expected_calls.append(
+                {
+                    "call": "resource_allocate",
+                    "resource_id": resource_id,
+                    "byte_count": byte_count,
+                    "filename": [name_segment, filename_offset],
+                    "filename_backup_offset": filename_offset,
+                    "return_frame": [0x28A0, 0],
+                }
+            )
+        if allocation_status == 0:
+            expected_calls.append(
+                {
+                    "call": "resource_file_load",
+                    "filename": [name_segment, filename_offset],
+                    "destination": [destination_segment, destination_offset],
+                    "return_frame": [0x28B2, 0],
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x287b {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        success = (
+            byte_count != 0
+            and allocation_status is not None
+            and allocation_status >= 0
+            and (allocation_status != 0 or file_result != 0)
+        )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = 1 if success else 0
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x287b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x287b {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x287b {name}: stack sentinel changed")
+        if bytes(
+            machine.mem_read(name_segment * 16 + filename_offset, len(filename))
+        ) != filename:
+            raise AssertionError(f"0x287b {name}: filename changed")
+        if bytes(
+            machine.mem_read(data_segment * 16 + filename_offset, len(decoy))
+        ) != decoy:
+            raise AssertionError(f"0x287b {name}: DS name-table decoy changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "resource_id": resource_id,
+                "filename_offset": filename_offset,
+                "byte_count": byte_count,
+                "allocation_status": allocation_status,
+                "file_result": file_result,
+                "success": success,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def bloodprg_strlen_vectors() -> list[dict[str, object]]:
     entry = 0x2665
     expected_hash = "6e2373a08942d4b119e6d1336777d439d7ffb47d63f83afd33cf4113382e2718"
@@ -34924,6 +35204,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_26cf_natural.json",
         resource_archive_match_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_287b_natural.json",
+        resource_load_by_id_vectors(),
         args.check,
     )
     update_vector(

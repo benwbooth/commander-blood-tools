@@ -118,7 +118,7 @@ cb_u16 CB_FAR resource_source_select(
 cb_u16 CB_NEAR resource_archive_match(
         volatile char CB_NEAR *filename); /* 0x01CE:0x03EF */
 cb_u32 CB_FAR resource_name_lookup(
-        const volatile char *filename); /* 0x01CE:0x05EA */
+        const volatile char CB_FAR *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
 
 int CB_FAR resource_load_by_id(cb_u16 resource_id); /* 0x01CE:0x059B */

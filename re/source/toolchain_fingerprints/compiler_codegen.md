@@ -2985,6 +2985,30 @@ The natural function returns zero on a miss; the raw routine leaves incidental
 comparison values in `AL` and the filename offset in `BX`, which its caller
 already ignores when the embedded flag remains clear.
 
+Routine `0x00287B` is the resource-ID load coordinator. It computes the name as
+`resource_name_table[resource_id]`, asks `0x0028CA` for the source byte count,
+and returns failure immediately when that count is zero. It then calls the
+resource allocator with the same ID and byte count. A negative allocator status
+fails, a positive status means the resource was already ready, and zero loads
+the selected file into the allocator's returned destination. The file loader's
+32-bit return is reduced to the coordinator's Boolean success result.
+
+The raw pointer shuffle is fully accounted for rather than copied into C. The
+allocator returns its destination in `DS:SI` while `DI` retains the name-table
+offset; the coordinator swaps the offsets, moves the destination segment to
+`ES`, restores `DS=FS`, and calls the loader with filename `DS:SI` and
+destination `ES:DI`. The natural source carries those as two typed far pointers.
+Eight patched-callee vectors prove every status branch, both file outcomes,
+full-dword file-result testing, 16-bit name-index wrap, FS ownership, all three
+call frames, pointer arguments, preservation, and far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 46 instructions/97 bytes versus 40/79 original. It materializes
+the named `FS_DATA` segment for the filename and uses a normal structured
+allocator result. Replacement linking still needs narrow ABI adapters for the
+lookup's EBP result, allocator's AX/EBP and DS:SI boundary, and loader's
+DS:SI/ES:DI boundary; the coordinator itself requires no assembly.
+
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
 horizontal span at `y+height-1`. All endpoint arithmetic is wrapping 16-bit
@@ -3159,7 +3183,7 @@ uses source and destination address unions, naturally representing transfers in
 both directions without a register or memory facade.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 266 instructions/882 bytes versus 198/590 original. Exact
+warning-free to 267 instructions/884 bytes versus 198/590 original. Exact
 drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
@@ -3264,7 +3288,7 @@ sources, both modes, exact SND table transformations, the `SS == GS` table
 placement, all backend chunk boundaries, EMS maps, every XMS request field,
 `son.snd` close/create/write ordering, source closes, and register/far-return
 preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
-actual candidate warning-free to 243 instructions/713 bytes versus 187/481
+actual candidate warning-free to 245 instructions/722 bytes versus 187/481
 original. Remaining integration work is segment placement and the narrow
 resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
 
