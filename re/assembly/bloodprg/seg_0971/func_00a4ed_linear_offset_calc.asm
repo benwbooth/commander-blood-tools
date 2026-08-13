@@ -6,8 +6,8 @@
 ; seg_off: 0971:07dd
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: linear_offset_calc
-; label_comment: linear screen offset calc (2 calls): bx*256 (xchg al,ah) + bx*64 (shl bx,6) = bx*320; = the y*320 row-offset into the linear buffer. A coordinate->offset helper
+; label: resource_rect_blit
+; label_comment: Copies a packed-row-count rectangle from DS:SI to the ES framebuffer at y*320+x. CH=0xFF selects transparent zero-key drawing; width 320 uses one linear pass, while other widths add a 320-width row pitch.
 ; byte_count: 101
 ; boundary: cfg_blocks_14_terminals_4
 ; terminal: jmp 0xa54f:3, ret:1

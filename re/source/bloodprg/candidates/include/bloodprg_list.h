@@ -78,6 +78,13 @@ void CB_NEAR resource_payload_decode_rect(
         cb_u16 vertical_offset,
         cb_u16 row_width,
         cb_u16 rows);                              /* 0x00AB25 */
+void CB_NEAR resource_rect_blit(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *framebuffer,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u16 width,
+        cb_u16 row_mode);                          /* 0x00A4ED */
 const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination,

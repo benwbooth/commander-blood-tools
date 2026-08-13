@@ -371,6 +371,26 @@ its C ABI rather than the binary's ambient DS:SI, ES:DI, and BP state. There is
 no inline assembly. Natural forward indexing relies on the shipped clear-DF C
 invariant; the reverse vector records the binary behavior outside that domain.
 
+For `0x00A4ED`, nine direct vectors prove the rectangular framebuffer blitter.
+The routine takes its source at DS:SI, destination segment in ES, x/y in DX/BX,
+width in DI, and packed mode/row count in CH/CL. It computes the wrapping
+`y*320+x` destination, copies opaque rows or treats zero as transparent when
+CH is `0xFF`, and uses a single linear pass for width 320. Cases cover pitched
+and full-width copies, row-count zero as 256 pitched iterations, opaque zero
+width, source/destination and coordinate wrap, exact register and stack effects,
+memory ownership, and inherited reverse DF.
+
+The one-function natural candidate exposes ordinary source and framebuffer far
+pointers plus typed scalar dimensions. It contains no register model, memory
+emulator, or inline assembly. Open Watcom `-3 -ox -mh` compiles the actual
+candidate and probe warning-free to 92 instructions and 206 bytes versus
+51/101 original. The probe has a 62.75 percent mnemonic-sequence LCS, 80.39
+percent mnemonic-multiset overlap, and 3.92 percent byte-line LCS; the exact
+instruction LCS is zero. Exact replacement still needs the ambient register
+ABI and string-instruction lowering. Natural pointer traversal assumes the
+shipped clear-DF C invariant, while the reverse vector records the binary's
+out-of-contract behavior.
+
 For `0x00A867`, nine direct vectors prove the complete checksum-`0xAB` payload
 grammar: six skipped header bytes, LSB-first sentinel control words, literals,
 two-bit short lengths, compact and extended 13-bit negative back-references,
@@ -2767,6 +2787,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
+| `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

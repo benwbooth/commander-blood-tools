@@ -52115,6 +52115,188 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_rect_blit_vectors() -> list[dict[str, object]]:
+    entry = 0xA4ED
+    expected_hash = "d68fc64fe931eda8ecabf762096b253b2324a77d9dcc17eb4298953f7d99fbdc"
+    if hashlib.sha256(EXE[entry : entry + 101]).hexdigest() != expected_hash:
+        raise AssertionError("0xa4ed: recovered 101-byte body changed")
+
+    cases = [
+        ("opaque_single", 3, 0x0001, 7, 5, 0x0100, False),
+        ("opaque_rows", 5, 0x0003, 11, 9, 0x1111, False),
+        ("transparent_rows", 4, 0xFF02, 13, 12, 0x2222, False),
+        ("opaque_full_width", 320, 0x0002, 0, 4, 0x3333, False),
+        ("transparent_full_width", 320, 0xFF01, 0, 6, 0x4444, False),
+        ("opaque_zero_rows", 2, 0x0000, 17, 1, 0x5555, False),
+        ("opaque_zero_width", 0, 0x0003, 19, 2, 0x6666, False),
+        ("offset_wrap", 7, 0x0002, 0xFFF0, 0x00FF, 0xFFFC, False),
+        ("opaque_reverse_df", 3, 0x0002, 23, 3, 0x7777, True),
+    ]
+    source_segment = 0x2000
+    destination_segment = 0x5000
+    stack_segment = 0x7000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, (
+        name,
+        width,
+        row_mode,
+        x,
+        y,
+        source_offset,
+        reverse_df,
+    ) in enumerate(cases):
+        rows = row_mode & 0xFF
+        transparent = (row_mode >> 8) == 0xFF
+        step = -1 if reverse_df else 1
+        source_before = bytes(
+            (
+                0
+                if (offset + case_index) % 5 == 0
+                else (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            )
+            for offset in range(0x10000)
+        )
+        destination_before = bytes(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        destination_expected = bytearray(destination_before)
+        source_result = source_offset
+        destination_result = (
+            ((y & 0x00FF) << 8) + (y >> 8) + (y << 6) + x
+        ) & 0xFFFF
+
+        def copy_pixels(count: int) -> None:
+            nonlocal source_result, destination_result
+            for _ in range(count):
+                value = source_before[source_result]
+                if not transparent or value != 0:
+                    destination_expected[destination_result] = value
+                source_result = (source_result + step) & 0xFFFF
+                destination_result = (
+                    destination_result + (1 if transparent else step)
+                ) & 0xFFFF
+
+        if width == 320:
+            count = (rows * width) & 0xFFFF
+            if transparent and count == 0:
+                count = 0x10000
+            copy_pixels(count)
+            row_iterations = rows
+        else:
+            row_iterations = rows if rows != 0 else 0x100
+            pitch = (320 - width) & 0xFFFF
+            for _ in range(row_iterations):
+                count = width
+                if transparent and count == 0:
+                    count = 0x10000
+                copy_pixels(count)
+                destination_result = (destination_result + pitch) & 0xFFFF
+
+        stack_before = bytearray(
+            (offset * 41 + case_index * 17 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B20000 | y,
+            "ecx": 0xC3C30000 | row_mode,
+            "edx": 0xD4D40000 | x,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | width,
+            "ebp": 0x97972468 + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x1800,
+            "gs": 0x6800,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse_df else 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, source_before),
+                (destination_segment, 0, destination_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            instruction_count=500000,
+        )
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != source_before:
+            raise AssertionError(f"0xa4ed {name}: source changed")
+        if bytes(machine.mem_read(destination_segment * 16, 0x10000)) != bytes(
+            destination_expected
+        ):
+            raise AssertionError(f"0xa4ed {name}: destination differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["edx"] = (
+            initial["edx"] & 0xFFFF0000
+        ) | (
+            ((rows * width) >> 16)
+            if width == 320
+            else (initial["edx"] & 0xFF00)
+        )
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | source_result
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | destination_result
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | width
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa4ed {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa4ed {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa4ed {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "width": width,
+                "row_mode": row_mode,
+                "rows": rows,
+                "row_iterations": row_iterations,
+                "transparent_zero": transparent,
+                "x": x,
+                "y": y,
+                "direction": "backward" if reverse_df else "forward",
+                "source_offset": source_offset,
+                "source_result_offset": source_result,
+                "destination_result_offset": destination_result,
+                "changed_bytes": sum(
+                    before != after
+                    for before, after in zip(
+                        destination_before, destination_expected
+                    )
+                ),
+            }
+        )
+
+    return vectors
+
+
 def flag_gated_copy_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x4000
@@ -54600,6 +54782,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_ab25_natural.json",
         resource_payload_decode_rect_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a4ed_natural.json",
+        resource_rect_blit_vectors(),
         args.check,
     )
     update_vector(
