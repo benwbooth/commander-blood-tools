@@ -1,0 +1,111 @@
+[
+  {
+    "name": "sound_disabled",
+    "sound_enabled": 0,
+    "channel_active": 1,
+    "active": false,
+    "source_kind": null,
+    "backend": null,
+    "payload_bytes": null,
+    "read_chunks": [],
+    "page_count": null,
+    "final_page_bytes": null
+  },
+  {
+    "name": "channel_disabled",
+    "sound_enabled": 1,
+    "channel_active": 0,
+    "active": false,
+    "source_kind": null,
+    "backend": null,
+    "payload_bytes": null,
+    "read_chunks": [],
+    "page_count": null,
+    "final_page_bytes": null
+  },
+  {
+    "name": "ems_external_exact_32k",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "ems",
+    "payload_bytes": 32768,
+    "read_chunks": [
+      32768
+    ],
+    "page_count": 2,
+    "final_page_bytes": 16384
+  },
+  {
+    "name": "ems_embedded_partial",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "embedded",
+    "backend": "ems",
+    "payload_bytes": 20480,
+    "read_chunks": [
+      20480
+    ],
+    "page_count": 2,
+    "final_page_bytes": 4096
+  },
+  {
+    "name": "xms_external_two_reads",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "xms",
+    "payload_bytes": 32769,
+    "read_chunks": [
+      32768,
+      1
+    ],
+    "page_count": 3,
+    "final_page_bytes": 1
+  },
+  {
+    "name": "xms_embedded_odd",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "embedded",
+    "backend": "xms",
+    "payload_bytes": 16383,
+    "read_chunks": [
+      16383
+    ],
+    "page_count": 1,
+    "final_page_bytes": 16383
+  },
+  {
+    "name": "file_external_partial",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "standalone",
+    "backend": "file",
+    "payload_bytes": 28673,
+    "read_chunks": [
+      28673
+    ],
+    "page_count": 2,
+    "final_page_bytes": 12289
+  },
+  {
+    "name": "file_embedded_short",
+    "sound_enabled": 1,
+    "channel_active": 1,
+    "active": true,
+    "source_kind": "embedded",
+    "backend": "file",
+    "payload_bytes": 8192,
+    "read_chunks": [
+      8192
+    ],
+    "page_count": 1,
+    "final_page_bytes": 8192
+  }
+]

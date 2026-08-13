@@ -15,12 +15,17 @@ typedef unsigned long u32;
 #define NEAR
 #endif
 
+typedef union xms_address {
+    u32 offset;
+    volatile u8 FAR *pointer;
+} xms_address;
+
 typedef struct xms_move_request {
     u32 length;
     u16 source_handle;
-    u32 source_offset;
+    xms_address source;
     u16 destination_handle;
-    volatile u8 FAR *destination;
+    xms_address destination;
 } xms_move_request;
 
 extern volatile i16 snd_bank_xms_handle;
@@ -36,8 +41,8 @@ void NEAR snd_bank_xms_page_read_probe(u16 page,
 {
     shared_xms_move_request.length = 0x4000u;
     shared_xms_move_request.source_handle = (u16)snd_bank_xms_handle;
-    shared_xms_move_request.source_offset = (u32)page << 14;
+    shared_xms_move_request.source.offset = (u32)page << 14;
     shared_xms_move_request.destination_handle = 0;
-    shared_xms_move_request.destination = destination;
+    shared_xms_move_request.destination.pointer = destination;
     cb_xms_move_probe(&shared_xms_move_request);
 }

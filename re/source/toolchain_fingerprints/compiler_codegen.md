@@ -2984,6 +2984,31 @@ actual candidates warning-free: bootstrap is 63 instructions/209 bytes versus
 GAME_DATA segment loads, C local preservation, and materialized pointer/Boolean
 operations rather than missing playback logic.
 
+## BLOODPRG SND stream source candidate
+
+`0x00BDB7` constructs the backing store consumed by the playback routines. It
+resolves the requested path as either an embedded archive member or a standalone
+file, presents the static WAIT COMMANDER subtitle, seeks past the 26-byte source
+header, and ingests at most 32 KiB per iteration. EMS receives two mapped 16 KiB
+pages per read; XMS receives an even-rounded conventional-to-XMS move request;
+the fallback recreates `mus.snd` and writes each staged chunk. The final read is
+converted into the playback page count and final 16 KiB page extent.
+
+Eight direct-binary vectors cover both activity gates, embedded and standalone
+sources, all three backends, exact read chunks, EMS page maps, all XMS request
+fields, `mus.snd` close/create/write ordering, WAIT prompt state and framebuffer
+restoration, final page accounting, source-handle closes, and low-register/far
+return preservation. The recovered function is ordinary C over typed globals
+and narrow DOS, EMS, XMS, and renderer boundaries. The shared XMS record now
+uses source and destination address unions, naturally representing transfers in
+both directions without a register or memory facade.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 262 instructions/860 bytes versus 198/590 original. Exact
+drop-in integration still requires segment placement and small ABI boundaries,
+most notably the original `resource_name_lookup` result in EBP, but no source
+logic remains represented as register-state emulation.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

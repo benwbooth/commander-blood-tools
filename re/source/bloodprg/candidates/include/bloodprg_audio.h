@@ -27,6 +27,9 @@ extern volatile cb_u16 CB_GAME_DATA snd_stream_next_page; /* GS:0x0BA5 */
 extern volatile cb_u16 CB_GAME_DATA snd_stream_page_count; /* GS:0x0BA7 */
 extern volatile cb_u16 CB_GAME_DATA snd_stream_final_page_bytes; /* GS:0x0BA9 */
 extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_stream_storage; /* GS:0x0BB7 */
+extern volatile cb_u32 CB_GAME_DATA snd_stream_source_remaining; /* GS:0x0A92 */
+extern const volatile char CB_GAME_DATA snd_wait_prompt_text[]; /* GS:0x0190 */
+extern const volatile char CB_GAME_DATA snd_music_temp_filename[]; /* GS:0x00AE */
 
 void CB_NEAR cb_snd_stream_service(cb_u16 command,
         volatile bloodprg_snd_stream_buffer *buffer,
@@ -37,6 +40,7 @@ void CB_NEAR cb_snd_stream_play(cb_u16 command,
 
 #if defined(__WATCOMC__)
 #pragma aux snd_bank_loader parm [ax] [si] modify exact []
+#pragma aux snd_stream_source_load parm [si] modify exact []
 #pragma aux cb_snd_stream_service parm [ax] [si] [es di]
 #pragma aux cb_snd_stream_play parm [ax] [si] [es di]
 #endif
@@ -47,5 +51,7 @@ void CB_FAR snd_bank_loader(
 void CB_FAR snd_driver_call(void);      /* 0x00BB9D */
 void CB_FAR snd_stream_start(void);     /* 0x00BBB3 */
 void CB_FAR snd_stream_refill(void);    /* 0x00BC50 */
+void CB_FAR snd_stream_source_load(
+        const volatile char CB_NEAR *path); /* 0x00BDB7 */
 
 #endif

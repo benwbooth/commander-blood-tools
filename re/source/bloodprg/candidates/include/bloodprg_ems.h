@@ -3,13 +3,26 @@
 
 #include "bloodprg_common.h"
 
+typedef union bloodprg_xms_address {
+    cb_u32 offset;
+    volatile cb_u8 CB_FAR *pointer;
+} bloodprg_xms_address;
+
 typedef struct bloodprg_xms_move_request {
     cb_u32 length;
     cb_u16 source_handle;
-    cb_u32 source_offset;
+    bloodprg_xms_address source;
     cb_u16 destination_handle;
-    volatile cb_u8 CB_FAR *destination;
+    bloodprg_xms_address destination;
 } bloodprg_xms_move_request;
+
+typedef union bloodprg_snd_storage_cursor {
+    cb_u32 xms_offset;
+    struct {
+        cb_u16 logical_page;
+        cb_u16 reserved;
+    } ems;
+} bloodprg_snd_storage_cursor;
 
 typedef void (CB_FAR *bloodprg_xms_driver_entry)(void);
 
@@ -25,6 +38,8 @@ extern volatile cb_i16 CB_GAME_DATA snd_bank_ems_handle; /* GS:0x0A60 */
 extern volatile cb_i16 CB_GAME_DATA small_xms_handle; /* GS:0x0A62 */
 extern volatile cb_i16 CB_GAME_DATA small_ems_handle; /* GS:0x0A64 */
 extern volatile cb_u16 CB_GAME_DATA ems_page_frame_segment; /* GS:0x0A66 */
+extern volatile bloodprg_snd_storage_cursor CB_GAME_DATA
+        snd_storage_cursor; /* GS:0x0A4E */
 extern volatile bloodprg_xms_move_request
         xms_move_request; /* game data:0x0A6C */
 extern volatile cb_u8 CB_FAR ems_page_frame[]; /* segment at GS:0x0A66 */

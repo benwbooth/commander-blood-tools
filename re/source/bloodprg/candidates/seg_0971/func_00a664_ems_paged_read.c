@@ -30,9 +30,9 @@ int CB_NEAR ems_paged_read(cb_u16 byte_count)
                 (cb_u32)byte_count + (byte_count & 1u);
         xms_move_request.source_handle =
                 (cb_u16)resource_xms_handle;
-        xms_move_request.source_offset = resource_source_offset;
+        xms_move_request.source.offset = resource_source_offset;
         xms_move_request.destination_handle = 0;
-        xms_move_request.destination =
+        xms_move_request.destination.pointer =
                 list_d8c_buffer + list_d8c_head_offset;
         cb_xms_move(&xms_move_request);
         transferred = byte_count;

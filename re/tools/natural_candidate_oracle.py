@@ -24097,6 +24097,460 @@ def snd_stream_refill_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def snd_stream_source_load_vectors() -> list[dict[str, object]]:
+    entry = 0xBDB7
+    expected_hash = "ddea3b50a1ab2133d199f5c84fd96458bcf9c7a67446852276c53927875e4381"
+    if hashlib.sha256(EXE[entry : entry + 590]).hexdigest() != expected_hash:
+        raise AssertionError("0xbdb7: recovered 590-byte body changed")
+
+    cases = [
+        ("sound_disabled", 0, 1, "ems", False, 0x2000, 0),
+        ("channel_disabled", 1, 0, "ems", False, 0x2000, 0),
+        ("ems_external_exact_32k", 1, 1, "ems", False, 0x8000, 0),
+        ("ems_embedded_partial", 1, 1, "ems", True, 0x5000, 0x1200),
+        ("xms_external_two_reads", 1, 1, "xms", False, 0x8001, 0),
+        ("xms_embedded_odd", 1, 1, "xms", True, 0x3FFF, 0x2200),
+        ("file_external_partial", 1, 1, "file", False, 0x7001, 0),
+        ("file_embedded_short", 1, 1, "file", True, 0x2000, 0x1234FFF8),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    storage_segment = 0x5000
+    storage_offset = 0x1000
+    page_frame_segment = 0x6000
+    stack_segment = 0x9000
+    callback_segment = 0xF000
+    xms_offset = 0x0100
+    xms_address = callback_segment * 16 + xms_offset
+    path_address = 0x1CE * 16 + 0x03B3
+    directory_address = 0x1CE * 16 + 0x04E3
+    lookup_address = 0x1CE * 16 + 0x05EA
+    reveal_address = 0x71E * 16 + 0x1C15
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            sound_enabled,
+            channel_active,
+            backend,
+            embedded,
+            payload_size,
+            archive_offset,
+        ) = case
+        active = bool(sound_enabled & 1 and channel_active & 1)
+        source_handle = 0x2340 + case_index
+        opened_handle = 0x4560 + case_index
+        temp_handle = 0x6780 + case_index
+        old_temp_handle = 0x1357 if backend == "file" and not embedded else 0
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B20000 | source_handle,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50D2D,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x7000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        source_total = payload_size + 0x1A
+        source_bytes = bytes(
+            ((index * 29 + case_index * 37 + 5) & 0xFF)
+            for index in range(payload_size)
+        )
+        prompt = b"WAIT COMMANDER ...\r\0"
+        path = f"mu\\voice{case_index}.voc".encode("ascii") + b"\0"
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        original_framebuffer = struct.pack("<HH", 0x8000, 0xA000)
+        alternate_framebuffer = struct.pack("<HH", 0x4000, 0xA000)
+        path_calls = []
+        lookup_calls = []
+        reveal_calls = []
+        directory_calls = []
+        dos_calls = []
+        ems_calls = []
+        xms_calls = []
+        written_chunks = []
+        read_cursor = 0
+
+        def code(machine: Uc, address: int, _size: int) -> None:
+            nonlocal read_cursor
+            if address == path_address:
+                path_calls.append(
+                    {
+                        "dx": machine.reg_read(UC_X86_REG_DX),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == lookup_address:
+                lookup_calls.append(
+                    {
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_EBP, source_total)
+            elif address == directory_address:
+                directory_calls.append(
+                    {
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+            elif address == reveal_address:
+                reveal_calls.append(
+                    {
+                        "eax": machine.reg_read(UC_X86_REG_EAX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "text": bytes(
+                            machine.mem_read(game_segment * 16 + 0x0E18, len(prompt))
+                        ).hex(),
+                        "text_end": struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x5E58, 2)
+                        )[0],
+                        "mode": machine.mem_read(game_segment * 16 + 0x27E2, 1)[0],
+                        "phase": struct.unpack(
+                            "<H", machine.mem_read(game_segment * 16 + 0x5E65, 2)
+                        )[0],
+                        "hold": machine.mem_read(game_segment * 16 + 0x67BC, 1)[0],
+                        "framebuffer": bytes(
+                            machine.mem_read(game_segment * 16 + 0x5219, 4)
+                        ).hex(),
+                    }
+                )
+            elif address == xms_address:
+                request = bytes(machine.mem_read(game_segment * 16 + 0x0A6C, 16))
+                xms_calls.append(
+                    {
+                        "eax": machine.reg_read(UC_X86_REG_EAX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "request": request.hex(),
+                    }
+                )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_cursor
+            ax = machine.reg_read(UC_X86_REG_AX)
+            bx = machine.reg_read(UC_X86_REG_BX)
+            cx = machine.reg_read(UC_X86_REG_CX)
+            dx = machine.reg_read(UC_X86_REG_DX)
+            ds = machine.reg_read(UC_X86_REG_DS)
+            if number == 0x67:
+                ems_calls.append(
+                    {
+                        "ax": ax,
+                        "logical_page": bx,
+                        "handle": dx,
+                        "ds": ds,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, ax & 0x00FF)
+                return
+            if number != 0x21:
+                raise AssertionError(f"0xbdb7 {name}: unexpected INT {number:#x}")
+
+            function = ax >> 8
+            if ax == 0x3D00:
+                dos_calls.append({"op": "open", "handle": None, "count": None})
+                machine.reg_write(UC_X86_REG_AX, opened_handle)
+            elif ax == 0x4200:
+                dos_calls.append(
+                    {
+                        "op": "seek",
+                        "handle": bx,
+                        "offset": (cx << 16) | dx,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0)
+                machine.reg_write(UC_X86_REG_DX, 0)
+            elif function == 0x3F:
+                available = payload_size - read_cursor
+                actual = min(cx, available)
+                chunk = source_bytes[read_cursor : read_cursor + actual]
+                machine.mem_write(ds * 16 + dx, chunk)
+                dos_calls.append(
+                    {
+                        "op": "read",
+                        "handle": bx,
+                        "count": cx,
+                        "actual": actual,
+                        "ds": ds,
+                        "dx": dx,
+                    }
+                )
+                read_cursor += actual
+                machine.reg_write(UC_X86_REG_AX, actual)
+            elif function == 0x3E:
+                dos_calls.append({"op": "close", "handle": bx, "count": None})
+                machine.reg_write(UC_X86_REG_AX, 0)
+            elif ax == 0x3C00:
+                dos_calls.append(
+                    {
+                        "op": "create",
+                        "handle": None,
+                        "count": cx,
+                        "ds": ds,
+                        "dx": dx,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, temp_handle)
+            elif function == 0x40:
+                chunk = bytes(machine.mem_read(ds * 16 + dx, cx))
+                written_chunks.append(chunk)
+                dos_calls.append(
+                    {
+                        "op": "write",
+                        "handle": bx,
+                        "count": cx,
+                        "ds": ds,
+                        "dx": dx,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, cx)
+            else:
+                raise AssertionError(
+                    f"0xbdb7 {name}: unexpected INT 21h AX={ax:#x}"
+                )
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                machine.reg_read(UC_X86_REG_EFLAGS) & ~1,
+            )
+
+        ems_handle = 0x1111 if backend == "ems" else 0xFFFF
+        xms_handle = 0x2222 if backend == "xms" else 0xFFFF
+        initial_remaining = source_total if embedded else 0xDEADBEEF
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0x1CE, 0x03B3, b"\xcb"),
+                (0x1CE, 0x04E3, b"\xcb"),
+                (0x1CE, 0x05EA, b"\xcb"),
+                (0x71E, 0x1C15, b"\xcb"),
+                (callback_segment, xms_offset, b"\xcb"),
+                (data_segment, 0x0D2D, path),
+                (game_segment, 0x0190, prompt),
+                (game_segment, 0x0ADE, bytes((sound_enabled,))),
+                (game_segment, 0x0BA3, bytes((channel_active,))),
+                (game_segment, 0x0AE2, bytes((int(embedded),))),
+                (game_segment, 0x0A60, struct.pack("<H", ems_handle)),
+                (game_segment, 0x0A5E, struct.pack("<H", xms_handle)),
+                (game_segment, 0x0A66, struct.pack("<H", page_frame_segment)),
+                (
+                    game_segment,
+                    0x0A4A,
+                    struct.pack("<HH", xms_offset, callback_segment),
+                ),
+                (game_segment, 0x0A8A, struct.pack("<I", archive_offset)),
+                (game_segment, 0x0A92, struct.pack("<I", initial_remaining)),
+                (
+                    game_segment,
+                    0x0BB7,
+                    struct.pack("<HH", storage_offset, storage_segment),
+                ),
+                (game_segment, 0x0C49, struct.pack("<H", old_temp_handle)),
+                (game_segment, 0x00AE, b"mus.snd\0"),
+                (game_segment, 0x5219, original_framebuffer),
+                (game_segment, 0x521D, alternate_framebuffer),
+                (storage_segment, 0, bytes(0xB000)),
+                (page_frame_segment, 0, bytes(0x10000)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=code,
+            instruction_count=200000,
+        )
+
+        if not active:
+            if path_calls or lookup_calls or reveal_calls or dos_calls or ems_calls or xms_calls:
+                raise AssertionError(f"0xbdb7 {name}: gated path performed work")
+        else:
+            expected_path = [{"dx": 0x0D2D, "si": 0x0D2D, "ds": data_segment, "es": game_segment}]
+            if path_calls != expected_path:
+                raise AssertionError(
+                    f"0xbdb7 {name}: path calls={path_calls}, expected={expected_path}"
+                )
+            expected_lookup = [] if embedded else [{"si": 0x0D2D, "ds": data_segment}]
+            if lookup_calls != expected_lookup:
+                raise AssertionError(f"0xbdb7 {name}: lookup calls={lookup_calls}")
+            expected_reveal = {
+                "eax": 0,
+                "ds": game_segment,
+                "es": game_segment,
+                "text": prompt.hex(),
+                "text_end": 0x0E2A,
+                "mode": 2,
+                "phase": 0,
+                "hold": 0,
+                "framebuffer": alternate_framebuffer.hex(),
+            }
+            if reveal_calls != [expected_reveal]:
+                raise AssertionError(
+                    f"0xbdb7 {name}: reveal={reveal_calls}, expected={[expected_reveal]}"
+                )
+            effective_handle = source_handle if embedded else opened_handle
+            seek_calls = [call for call in dos_calls if call["op"] == "seek"]
+            expected_seek_offset = (archive_offset & 0xFFFF0000) | (
+                (archive_offset + 0x1A) & 0xFFFF
+            )
+            expected_seek = [
+                {
+                    "op": "seek",
+                    "handle": effective_handle,
+                    "offset": expected_seek_offset,
+                }
+            ]
+            if seek_calls != expected_seek:
+                raise AssertionError(
+                    f"0xbdb7 {name}: seek={seek_calls}, expected={expected_seek}"
+                )
+            read_calls = [call for call in dos_calls if call["op"] == "read"]
+            expected_chunks = []
+            remaining = payload_size
+            while remaining:
+                chunk = min(0x8000, remaining)
+                expected_chunks.append(chunk)
+                remaining -= chunk
+            if [call["actual"] for call in read_calls] != expected_chunks:
+                raise AssertionError(
+                    f"0xbdb7 {name}: reads={read_calls}, chunks={expected_chunks}"
+                )
+            page_count = len(expected_chunks) * 2
+            last_read = expected_chunks[-1]
+            remainder = last_read & 0x3FFF
+            if remainder == last_read:
+                page_count = (page_count - 1) & 0xFFFF
+            final_bytes = remainder or 0x4000
+            actual_page_count = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x0BA7, 2)
+            )[0]
+            actual_final_bytes = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x0BA9, 2)
+            )[0]
+            if (actual_page_count, actual_final_bytes) != (page_count, final_bytes):
+                raise AssertionError(
+                    f"0xbdb7 {name}: pages/final="
+                    f"{actual_page_count}/{actual_final_bytes}, "
+                    f"expected={page_count}/{final_bytes}"
+                )
+            mode = machine.mem_read(game_segment * 16 + 0x0B9F, 1)[0]
+            expected_mode = {"ems": 0, "xms": 1, "file": 2}[backend]
+            if mode != expected_mode:
+                raise AssertionError(f"0xbdb7 {name}: mode={mode}")
+            if backend == "ems":
+                expected_maps = []
+                logical_page = 0
+                for _chunk in expected_chunks:
+                    expected_maps.extend(
+                        [
+                            {"ax": 0x4400, "logical_page": logical_page, "handle": ems_handle, "ds": page_frame_segment},
+                            {"ax": 0x4401, "logical_page": logical_page + 1, "handle": ems_handle, "ds": page_frame_segment},
+                        ]
+                    )
+                    logical_page += 2
+                if ems_calls != expected_maps or xms_calls or written_chunks:
+                    raise AssertionError(f"0xbdb7 {name}: EMS backend calls differ")
+            elif backend == "xms":
+                if ems_calls or written_chunks or len(xms_calls) != len(expected_chunks):
+                    raise AssertionError(f"0xbdb7 {name}: XMS backend call count differs")
+                destination_offset = 0
+                for call, chunk in zip(xms_calls, expected_chunks, strict=True):
+                    expected_request = struct.pack(
+                        "<IHIHI",
+                        chunk + (chunk & 1),
+                        0,
+                        (storage_segment << 16) | storage_offset,
+                        xms_handle,
+                        destination_offset,
+                    )
+                    if call != {
+                        "eax": 0x00000B00,
+                        "ds": game_segment,
+                        "si": 0x0A6C,
+                        "request": expected_request.hex(),
+                    }:
+                        raise AssertionError(f"0xbdb7 {name}: XMS request={call}")
+                    destination_offset += 0x8000
+            else:
+                if ems_calls or xms_calls or b"".join(written_chunks) != source_bytes:
+                    raise AssertionError(f"0xbdb7 {name}: file payload differs")
+                if len(directory_calls) != 1:
+                    raise AssertionError(f"0xbdb7 {name}: directory calls={directory_calls}")
+                created = [call for call in dos_calls if call["op"] == "create"]
+                if len(created) != 1 or created[0]["dx"] != 0x00AE:
+                    raise AssertionError(f"0xbdb7 {name}: create calls={created}")
+                actual_temp = struct.unpack(
+                    "<H", machine.mem_read(game_segment * 16 + 0x0C49, 2)
+                )[0]
+                if actual_temp != temp_handle:
+                    raise AssertionError(f"0xbdb7 {name}: temp handle={actual_temp:#x}")
+            expected_close = [] if embedded else [effective_handle]
+            if backend == "file" and old_temp_handle:
+                expected_close.insert(0, old_temp_handle)
+            actual_close = [call["handle"] for call in dos_calls if call["op"] == "close"]
+            if actual_close != expected_close:
+                raise AssertionError(
+                    f"0xbdb7 {name}: closes={actual_close}, expected={expected_close}"
+                )
+            if bytes(machine.mem_read(game_segment * 16 + 0x5219, 4)) != original_framebuffer:
+                raise AssertionError(f"0xbdb7 {name}: framebuffer pointer not restored")
+            if machine.mem_read(game_segment * 16 + 0x27E2, 1)[0] != 0:
+                raise AssertionError(f"0xbdb7 {name}: prompt mode not cleared")
+            if machine.mem_read(game_segment * 16 + 0x67B0, 1)[0] != 0:
+                raise AssertionError(f"0xbdb7 {name}: presentation defer not cleared")
+            if struct.unpack("<I", machine.mem_read(game_segment * 16 + 0x0A92, 4))[0] != 0:
+                raise AssertionError(f"0xbdb7 {name}: source bytes remain")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if register in {"eax", "ebx", "ecx", "edx", "esi", "edi"}:
+                actual &= 0xFFFF
+                expected &= 0xFFFF
+            if actual != expected:
+                raise AssertionError(
+                    f"0xbdb7 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0xbdb7 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "sound_enabled": sound_enabled,
+                "channel_active": channel_active,
+                "active": active,
+                "source_kind": "embedded" if embedded else "standalone" if active else None,
+                "backend": backend if active else None,
+                "payload_bytes": payload_size if active else None,
+                "read_chunks": expected_chunks if active else [],
+                "page_count": page_count if active else None,
+                "final_page_bytes": final_bytes if active else None,
+            }
+        )
+
+    return vectors
+
+
 def snd_bank_page_read_vectors() -> list[dict[str, object]]:
     entry = 0xBD09
     expected_hash = "c4f057a1f1e81d9fb22d0a27a472bcb804659cf240fed7127de452fa2d5dc071"
@@ -30902,6 +31356,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_bc50_natural.json",
         snd_stream_refill_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_bdb7_natural.json",
+        snd_stream_source_load_vectors(),
         args.check,
     )
     update_vector(

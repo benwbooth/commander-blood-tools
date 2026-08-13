@@ -75,6 +75,9 @@ bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR path_builder_gs_relative(
         const volatile char *filename); /* 0x01CE:0x03B3 */
+cb_u32 CB_FAR resource_name_lookup(
+        const volatile char *filename); /* 0x01CE:0x05EA */
+/* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
 
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
 void CB_NEAR cb_dos_find_first(const volatile char *path);
@@ -83,6 +86,12 @@ int CB_NEAR cb_dos_open_read_only(const volatile char *path,
 void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
 cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,
         volatile cb_u8 CB_FAR *destination, cb_u16 byte_count);
+void CB_NEAR cb_dos_close(cb_u16 handle);
+int CB_NEAR cb_dos_create_game_file(
+        const volatile char CB_GAME_DATA *path,
+        volatile cb_u16 CB_GAME_DATA *handle);
+cb_u16 CB_NEAR cb_dos_write(cb_u16 handle,
+        const volatile cb_u8 CB_FAR *source, cb_u16 byte_count);
 int CB_NEAR resource_switch(cb_u16 resource_id); /* 0x009F8E */
 
 #endif

@@ -17,6 +17,10 @@ extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_back_buffer; /* GS:0x5229 */
+extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
+        graphics_draw_framebuffer; /* GS:0x5219 */
+extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
+        graphics_screen_buffer; /* GS:0x521D */
 extern cb_u32 palette_low_5251_dwords[]; /* caller ES:0x5251 */
 extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
@@ -82,6 +86,7 @@ void CB_FAR full_screen_blit(
         const cb_u32 CB_NEAR *source); /* 0x003E46 */
 void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
+void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]

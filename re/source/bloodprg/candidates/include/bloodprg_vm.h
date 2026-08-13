@@ -27,6 +27,7 @@ extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
+extern volatile cb_u8 CB_GAME_DATA vm_subtitle_display_mode; /* GS:0x27E2 */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
@@ -40,6 +41,7 @@ extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
 extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
 extern volatile cb_u16 vm_text_menu_end;     /* GS:0x27D3 */
 extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
+extern volatile cb_u16 CB_GAME_DATA vm_text_reveal_phase; /* GS:0x5E65 */
 extern volatile cb_u8 vm_text_display_active; /* GS:0x5E64 */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */

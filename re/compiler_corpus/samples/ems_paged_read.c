@@ -15,12 +15,17 @@ typedef unsigned long u32;
 #define NEAR
 #endif
 
+typedef union xms_address {
+    u32 offset;
+    volatile u8 FAR *pointer;
+} xms_address;
+
 typedef struct xms_move_request {
     u32 length;
     u16 source_handle;
-    u32 source_offset;
+    xms_address source;
     u16 destination_handle;
-    volatile u8 FAR *destination;
+    xms_address destination;
 } xms_move_request;
 
 extern volatile u8 resource_source_is_banked;
@@ -71,9 +76,9 @@ int NEAR ems_paged_read_probe(u16 byte_count)
         shared_xms_move_request.length =
                 (u32)byte_count + (byte_count & 1u);
         shared_xms_move_request.source_handle = (u16)resource_xms_handle;
-        shared_xms_move_request.source_offset = resource_source_offset;
+        shared_xms_move_request.source.offset = resource_source_offset;
         shared_xms_move_request.destination_handle = 0;
-        shared_xms_move_request.destination =
+        shared_xms_move_request.destination.pointer =
                 list_d8c_buffer + list_d8c_head_offset;
         cb_xms_move_probe(&shared_xms_move_request);
         transferred = byte_count;
