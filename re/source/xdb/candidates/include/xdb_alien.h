@@ -16,7 +16,11 @@ typedef xdb_alien_state_function XDB_NEAR *xdb_alien_state_callback;
 struct xdb_alien_biased_state {
     xdb_u8 field_000[0x0e];
     xdb_alien_state_callback callback;
-    xdb_u8 field_010[0x28];
+    xdb_u8 field_010[0x0a];
+    xdb_i32 field_01a;
+    xdb_u8 field_01e[0x14];
+    xdb_i32 field_032;
+    xdb_u8 field_036[0x02];
     xdb_i16 field_038;
     xdb_u8 field_03a[0x02];
     xdb_i16 field_03c;
@@ -242,11 +246,19 @@ void XDB_NEAR xdb_scrut_slot2_update(
 void XDB_NEAR xdb_amer_slot2_return_update(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot2_steer_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot2_finish_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_alien_resume_function parm [di]
 #pragma aux xdb_alien_state_function parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_amer_slot2_return_update \
+        parm [si] [di] modify exact [ax bx cx dx]
+#pragma aux xdb_amer_slot2_steer_update \
         parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_amer_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_croolis_method_slot_11_anchor_state parm [di] value [si] modify exact [si]

@@ -2082,7 +2082,7 @@ library intrinsic, followed by a signed high-bit adjustment equivalent to the
 original `SBB AX,0`. It contains no inline assembly or register-state model.
 The plain random-state global relies on the same overlay-entry `FS=DS`
 invariant already required by slot 10. Open Watcom `-3 -ox -mm -zdp -we`
-compiles all 55 current XDB candidates without warnings. The actual AMER,
+compiles all 56 current XDB candidates without warnings. The actual AMER,
 CROOLIS, and SCRUT slot-2 candidates are respectively 22 instructions/66
 bytes, 42/131, and 44/137 versus originals of 17/60, 33/121, and 35/127.
 Watcom retains `ROR`, code-segment seed access, signed publication, state
@@ -2121,6 +2121,28 @@ normalization, and ownership, but splits each signed dword update into
 `CWD; ADD; ADC`, versus the original 29 instructions/107 bytes. Turbo C 2.01
 medium accepts the same probe but uses stack parameters and emits 85
 instructions.
+
+AMER callback `0x001A5C` is a second independent state-machine owner: 18
+instructions and 68 bytes from its callback store at `0x1A3F` to the return
+immediately before callback `0x1AA0`. It forms a modulo-32-bit steering score
+from signed state words `+0x38/+0x40`, dwords `+0x1A/+0x32`, and the zero-extended
+depth step at `DS:0x22FC`. A negative score turns field `+0x50` by `+32`; a
+nonnegative score turns it by `-32`. It then decrements field `+0x56`, and a
+negative result installs callback `0x1AA0` and resets that countdown to 64.
+
+Seven direct raw-overlay vectors cover positive, negative, zero, product/add
+overflow to the opposite sign, `0x8000` decrement sign wrap, an already-negative
+countdown, field wrap, and a dword operand beginning at effective offset
+`0xFFFE`. They verify complete DS ownership, decoy segments, output registers,
+defined flags, and near return. The one-function natural source uses unsigned
+long products and additions to define the original modulo arithmetic without
+signed-overflow assumptions, then casts only the completed score for its sign
+test. Open Watcom compiles it warning-free to 47 instructions/114 bytes versus
+18/68. Its 16-bit backend calls `__U4M` twice and saves a temporary frame instead
+of emitting the original operand-size-prefixed dword `IMUL`s. Turbo C 2.01
+medium emits 57 instructions. Inline assembly is not justified for semantic
+equivalence; exact drop-in shape would require a compiler that naturally
+inlines those 386 long multiplications.
 
 The AMER `0x001286`, CROOLIS `0x0012DE`, and SCRUT `0x0012CC` slot-3 entries
 were initially inventoried as only their common 45-byte callback tails. Each
@@ -2431,6 +2453,7 @@ LCS and then mnemonic similarity:
 | `xdb_wrap_positions` | medium, `-ox -zdp`, register | 31/34 | 0.0323 | 0.5484 | 0.0645 |
 | `xdb_slot2_dispatch_or_init` | medium, `-ox -zdp`, register | 33/42 | 0.0303 | 0.6970 | 0.1212 |
 | `xdb_amer_slot2_return_update` | medium, `-ox -zdp`, register | 29/37 | 0.0690 | 0.7241 | 0.1724 |
+| `xdb_amer_slot2_steer_update` | medium, `-ox -zdp`, register | 18/47 | 0.0556 | 0.5556 | 0.2222 |
 | `xdb_slot3_update_or_init` | medium, `-ox -zdp`, register | 76/109 | 0.0263 | 0.6842 | 0.0658 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
