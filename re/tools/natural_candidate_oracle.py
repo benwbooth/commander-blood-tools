@@ -50086,6 +50086,295 @@ def resource_payload_decode_dispatch_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_payload_decode_ab_vectors() -> list[dict[str, object]]:
+    entry = 0xA867
+    expected_hash = "68f21ed3bcbe8308592cb8c1c2773657b5066df70b3a5ce647b352863e477d56"
+    if hashlib.sha256(EXE[entry : entry + 173]).hexdigest() != expected_hash:
+        raise AssertionError("0xa867: recovered 173-byte body changed")
+
+    def encode(
+        tokens: list[tuple[object, ...]],
+    ) -> tuple[bytes, bytes, list[int], int]:
+        stream = bytearray((0x31, 0x42, 0x53, 0x64, 0x75, 0x86))
+        output = bytearray()
+        control_words: list[int] = []
+        control_position = -1
+        control_bit_count = 16
+
+        def emit_bit(value: int) -> None:
+            nonlocal control_position, control_bit_count
+            if control_bit_count == 16:
+                control_position = len(stream)
+                stream.extend(b"\x00\x00")
+                control_words.append(0)
+                control_bit_count = 0
+            if value:
+                control_words[-1] |= 1 << control_bit_count
+                struct.pack_into("<H", stream, control_position, control_words[-1])
+            control_bit_count += 1
+
+        def append_match(displacement: int, length: int) -> None:
+            copy_index = len(output) + displacement
+            if copy_index < 0:
+                raise AssertionError("invalid resource decoder test match")
+            for _ in range(length):
+                output.append(output[copy_index])
+                copy_index += 1
+
+        for token in tokens:
+            kind = str(token[0])
+            if kind == "literal":
+                value = int(token[1])
+                emit_bit(1)
+                stream.append(value)
+                output.append(value)
+            elif kind == "short":
+                displacement = int(token[1])
+                length = int(token[2])
+                if not (-128 <= displacement <= -1 and 2 <= length <= 5):
+                    raise AssertionError("invalid short resource decoder token")
+                length_code = length - 2
+                emit_bit(0)
+                emit_bit(0)
+                emit_bit((length_code >> 1) & 1)
+                emit_bit(length_code & 1)
+                stream.append(displacement & 0xFF)
+                append_match(displacement, length)
+            elif kind == "long":
+                displacement = int(token[1])
+                length = int(token[2])
+                if not (-8192 <= displacement <= -1 and 3 <= length <= 257):
+                    raise AssertionError("invalid long resource decoder token")
+                emit_bit(0)
+                emit_bit(1)
+                if length <= 9:
+                    length_code = length - 2
+                    stream.extend(
+                        struct.pack(
+                            "<H",
+                            ((displacement & 0x1FFF) << 3) | length_code,
+                        )
+                    )
+                else:
+                    stream.extend(
+                        struct.pack("<H", (displacement & 0x1FFF) << 3)
+                    )
+                    stream.append(length - 2)
+                append_match(displacement, length)
+            elif kind == "end":
+                emit_bit(0)
+                emit_bit(1)
+                stream.extend(b"\x00\x00\x00")
+            else:
+                raise AssertionError(f"unknown resource decoder token {kind}")
+
+        if not tokens or tokens[-1][0] != "end":
+            raise AssertionError("resource decoder test stream lacks terminator")
+        expected_bp = (
+            (0x8000 | (control_words[-1] >> 1)) >> (control_bit_count - 1)
+        )
+        return bytes(stream), bytes(output), control_words, expected_bp
+
+    cases: list[tuple[str, list[tuple[object, ...]], int, int]] = [
+        ("empty", [("end",)], 0x0100, 0x0200),
+        ("one_literal", [("literal", 0x41), ("end",)], 0x1111, 0x3333),
+        (
+            "control_word_refill",
+            [("literal", 0x20 + index) for index in range(17)] + [("end",)],
+            0x2222,
+            0x4444,
+        ),
+        (
+            "short_overlap_repeat",
+            [("literal", 0x41), ("short", -1, 5), ("end",)],
+            0x3333,
+            0x5555,
+        ),
+        (
+            "short_two_byte_pattern",
+            [
+                ("literal", 0x41),
+                ("literal", 0x42),
+                ("short", -2, 4),
+                ("end",),
+            ],
+            0x4444,
+            0x6666,
+        ),
+        (
+            "long_compact_max_length",
+            [("literal", value) for value in b"ABCDEFGH"]
+            + [("long", -8, 9), ("end",)],
+            0x5555,
+            0x7777,
+        ),
+        (
+            "long_extended_overlap",
+            [("literal", value) for value in b"XYZ"]
+            + [("long", -3, 20), ("end",)],
+            0x6666,
+            0x8888,
+        ),
+        (
+            "destination_wrap",
+            [("literal", value) for value in b"ABCDE"]
+            + [("short", -5, 5), ("end",)],
+            0x7777,
+            0xFFFC,
+        ),
+        (
+            "source_wrap",
+            [("literal", 0x80 + index) for index in range(20)] + [("end",)],
+            0xFFE0,
+            0x9999,
+        ),
+    ]
+    source_segment = 0x2000
+    destination_segment = 0x3800
+    game_segment = 0x5000
+    stack_segment = 0x7000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, (name, tokens, source_offset, destination_offset) in enumerate(
+        cases
+    ):
+        stream, output, control_words, expected_bp = encode(tokens)
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+        for index, value in enumerate(stream):
+            source_before[(source_offset + index) & 0xFFFF] = value
+        destination_before = bytes(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        destination_expected = bytearray(destination_before)
+        for index, value in enumerate(output):
+            destination_expected[(destination_offset + index) & 0xFFFF] = value
+        initial_mode = (0x7100 + case_index * 0x111) & 0xFFFF
+        game_before = bytearray(
+            (offset * 37 + (offset >> 8) * 13 + case_index * 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x0AA0, initial_mode)
+        game_expected = bytearray(game_before)
+        struct.pack_into("<H", game_expected, 0x0AA0, 1)
+        stack_before = bytearray(
+            (offset * 41 + case_index * 17 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x97970000 | ((0x2468 + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x1800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, bytes(source_before)),
+                (destination_segment, 0, destination_before),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            instruction_count=50000,
+        )
+
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(
+            source_before
+        ):
+            raise AssertionError(f"0xa867 {name}: source changed")
+        if bytes(machine.mem_read(destination_segment * 16, 0x10000)) != bytes(
+            destination_expected
+        ):
+            raise AssertionError(f"0xa867 {name}: decoded output differs")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_expected
+        ):
+            raise AssertionError(f"0xa867 {name}: game state differs")
+
+        output_length = len(output) & 0xFFFF
+        final_destination = (destination_offset + output_length) & 0xFFFF
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 0xE000
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | 0xE000
+        expected_registers["ecx"] = (initial["ecx"] & 0xFFFF0000) | output_length
+        if any(token[0] in ("short", "long") for token in tokens):
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFF0000
+            ) | destination_segment
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | ((source_offset + len(stream)) & 0xFFFF)
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | expected_bp
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa867 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa867 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa867 {name}: stack sentinel changed")
+
+        expected_flags = sub16_flags(final_destination, destination_offset)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xa867 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "tokens": [list(token) for token in tokens],
+                "compressed_stream_hex": stream.hex(),
+                "control_words": control_words,
+                "decoded_hex": output.hex(),
+                "source_offset": source_offset,
+                "source_result_offset": (source_offset + len(stream)) & 0xFFFF,
+                "destination_offset": destination_offset,
+                "decoded_length": output_length,
+                "result_bit_buffer": expected_bp,
+                "mode_before": initial_mode,
+                "mode_after": 1,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def flag_gated_copy_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x4000
@@ -52551,6 +52840,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a82c_natural.json",
         resource_payload_decode_dispatch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a867_natural.json",
+        resource_payload_decode_ab_vectors(),
         args.check,
     )
     update_vector(

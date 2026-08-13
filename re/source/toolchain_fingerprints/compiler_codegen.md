@@ -371,6 +371,25 @@ its C ABI rather than the binary's ambient DS:SI, ES:DI, and BP state. There is
 no inline assembly. Natural forward indexing relies on the shipped clear-DF C
 invariant; the reverse vector records the binary behavior outside that domain.
 
+For `0x00A867`, nine direct vectors prove the complete checksum-`0xAB` payload
+grammar: six skipped header bytes, LSB-first sentinel control words, literals,
+two-bit short lengths, compact and extended 13-bit negative back-references,
+overlapping forward copies, and zero-length termination. Cases force a second
+control word and both source and destination offset wrap. They also verify mode
+1 publication, the consumed SI cursor, decoded-byte CX result, final BP bit
+buffer, memory ownership, register effects, flags, stack, and near return.
+
+The natural function uses direct 16-bit far pointers and one ordinary decode
+loop, with no register model, memory emulator, or inline assembly. Open Watcom
+`-3 -ox -mh` compiles the actual candidate warning-free to 120 instructions
+and 280 bytes versus 73/173 original. The probe has a 56.16 percent
+mnemonic-sequence LCS, 65.75 percent mnemonic-multiset overlap, and 9.59
+percent byte-line LCS. Watcom preserves offset-only far-pointer wrap but uses
+scalar pointer operations and ordinary register allocation instead of the
+original DS:SI/ES:DI string-instruction ABI. The sole caller at `0x00A82C`
+overwrites SI and restores CX after the call, so the binary's cursor/count
+outputs are deliberately absent from the source-level `void` API.
+
 For `0x00AD96`, five direct cases execute both forms of this outlined local
 helper from `0x00AB25`. They verify the low-byte-only row decrement, preserved
 high byte, zero-to-255 underflow, 16-bit 320-byte offset wrap, CX/DI reloads,
@@ -2670,6 +2689,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
 | `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
 | `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/112 | 0.1000 | 0.6667 | 0.1333 |
+| `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

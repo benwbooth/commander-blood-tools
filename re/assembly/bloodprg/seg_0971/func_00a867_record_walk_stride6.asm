@@ -6,8 +6,8 @@
 ; seg_off: 0971:0b57
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: record_walk_stride6
-; label_comment: record walk: si+=6; bp=0; lodsw loop. Iterates a table of 6-byte records from si, reading the leading word of each
+; label: resource_payload_decode_ab
+; label_comment: LSB-first control-word decoder selected by the 0xAB six-byte header checksum. Supports literals, two-bit short matches, 13-bit long negative displacements, extended lengths, and a zero-length terminator; returns the consumed source cursor and decoded byte count.
 ; byte_count: 173
 ; boundary: cfg_blocks_17_terminals_4
 ; terminal: jmp 0xa8a0:3, ret:1

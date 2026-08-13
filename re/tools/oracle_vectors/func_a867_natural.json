@@ -1,0 +1,509 @@
+[
+  {
+    "name": "empty",
+    "tokens": [
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "3142536475860200000000",
+    "control_words": [
+      2
+    ],
+    "decoded_hex": "",
+    "source_offset": 256,
+    "source_result_offset": 267,
+    "destination_offset": 512,
+    "decoded_length": 0,
+    "result_bit_buffer": 16384,
+    "mode_before": 28928,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "one_literal",
+    "tokens": [
+      [
+        "literal",
+        65
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586050041000000",
+    "control_words": [
+      5
+    ],
+    "decoded_hex": "41",
+    "source_offset": 4369,
+    "source_result_offset": 4381,
+    "destination_offset": 13107,
+    "decoded_length": 1,
+    "result_bit_buffer": 8192,
+    "mode_before": 29201,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "control_word_refill",
+    "tokens": [
+      [
+        "literal",
+        32
+      ],
+      [
+        "literal",
+        33
+      ],
+      [
+        "literal",
+        34
+      ],
+      [
+        "literal",
+        35
+      ],
+      [
+        "literal",
+        36
+      ],
+      [
+        "literal",
+        37
+      ],
+      [
+        "literal",
+        38
+      ],
+      [
+        "literal",
+        39
+      ],
+      [
+        "literal",
+        40
+      ],
+      [
+        "literal",
+        41
+      ],
+      [
+        "literal",
+        42
+      ],
+      [
+        "literal",
+        43
+      ],
+      [
+        "literal",
+        44
+      ],
+      [
+        "literal",
+        45
+      ],
+      [
+        "literal",
+        46
+      ],
+      [
+        "literal",
+        47
+      ],
+      [
+        "literal",
+        48
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586ffff202122232425262728292a2b2c2d2e2f050030000000",
+    "control_words": [
+      65535,
+      5
+    ],
+    "decoded_hex": "202122232425262728292a2b2c2d2e2f30",
+    "source_offset": 8738,
+    "source_result_offset": 8768,
+    "destination_offset": 17476,
+    "decoded_length": 17,
+    "result_bit_buffer": 8192,
+    "mode_before": 29474,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "short_overlap_repeat",
+    "tokens": [
+      [
+        "literal",
+        65
+      ],
+      [
+        "short",
+        -1,
+        5
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586590041ff000000",
+    "control_words": [
+      89
+    ],
+    "decoded_hex": "414141414141",
+    "source_offset": 13107,
+    "source_result_offset": 13120,
+    "destination_offset": 21845,
+    "decoded_length": 6,
+    "result_bit_buffer": 512,
+    "mode_before": 29747,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "short_two_byte_pattern",
+    "tokens": [
+      [
+        "literal",
+        65
+      ],
+      [
+        "literal",
+        66
+      ],
+      [
+        "short",
+        -2,
+        4
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "31425364758693004142fe000000",
+    "control_words": [
+      147
+    ],
+    "decoded_hex": "414241424142",
+    "source_offset": 17476,
+    "source_result_offset": 17490,
+    "destination_offset": 26214,
+    "decoded_length": 6,
+    "result_bit_buffer": 256,
+    "mode_before": 30020,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "long_compact_max_length",
+    "tokens": [
+      [
+        "literal",
+        65
+      ],
+      [
+        "literal",
+        66
+      ],
+      [
+        "literal",
+        67
+      ],
+      [
+        "literal",
+        68
+      ],
+      [
+        "literal",
+        69
+      ],
+      [
+        "literal",
+        70
+      ],
+      [
+        "literal",
+        71
+      ],
+      [
+        "literal",
+        72
+      ],
+      [
+        "long",
+        -8,
+        9
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586ff0a4142434445464748c7ff000000",
+    "control_words": [
+      2815
+    ],
+    "decoded_hex": "4142434445464748414243444546474841",
+    "source_offset": 21845,
+    "source_result_offset": 21866,
+    "destination_offset": 30583,
+    "decoded_length": 17,
+    "result_bit_buffer": 16,
+    "mode_before": 30293,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "long_extended_overlap",
+    "tokens": [
+      [
+        "literal",
+        88
+      ],
+      [
+        "literal",
+        89
+      ],
+      [
+        "literal",
+        90
+      ],
+      [
+        "long",
+        -3,
+        20
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586570058595ae8ff12000000",
+    "control_words": [
+      87
+    ],
+    "decoded_hex": "58595a58595a58595a58595a58595a58595a58595a5859",
+    "source_offset": 26214,
+    "source_result_offset": 26231,
+    "destination_offset": 34952,
+    "decoded_length": 23,
+    "result_bit_buffer": 512,
+    "mode_before": 30566,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "destination_wrap",
+    "tokens": [
+      [
+        "literal",
+        65
+      ],
+      [
+        "literal",
+        66
+      ],
+      [
+        "literal",
+        67
+      ],
+      [
+        "literal",
+        68
+      ],
+      [
+        "literal",
+        69
+      ],
+      [
+        "short",
+        -5,
+        5
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "3142536475869f054142434445fb000000",
+    "control_words": [
+      1439
+    ],
+    "decoded_hex": "41424344454142434445",
+    "source_offset": 30583,
+    "source_result_offset": 30600,
+    "destination_offset": 65532,
+    "decoded_length": 10,
+    "result_bit_buffer": 32,
+    "mode_before": 30839,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "source_wrap",
+    "tokens": [
+      [
+        "literal",
+        128
+      ],
+      [
+        "literal",
+        129
+      ],
+      [
+        "literal",
+        130
+      ],
+      [
+        "literal",
+        131
+      ],
+      [
+        "literal",
+        132
+      ],
+      [
+        "literal",
+        133
+      ],
+      [
+        "literal",
+        134
+      ],
+      [
+        "literal",
+        135
+      ],
+      [
+        "literal",
+        136
+      ],
+      [
+        "literal",
+        137
+      ],
+      [
+        "literal",
+        138
+      ],
+      [
+        "literal",
+        139
+      ],
+      [
+        "literal",
+        140
+      ],
+      [
+        "literal",
+        141
+      ],
+      [
+        "literal",
+        142
+      ],
+      [
+        "literal",
+        143
+      ],
+      [
+        "literal",
+        144
+      ],
+      [
+        "literal",
+        145
+      ],
+      [
+        "literal",
+        146
+      ],
+      [
+        "literal",
+        147
+      ],
+      [
+        "end"
+      ]
+    ],
+    "compressed_stream_hex": "314253647586ffff808182838485868788898a8b8c8d8e8f2f0090919293000000",
+    "control_words": [
+      65535,
+      47
+    ],
+    "decoded_hex": "808182838485868788898a8b8c8d8e8f90919293",
+    "source_offset": 65504,
+    "source_result_offset": 1,
+    "destination_offset": 39321,
+    "decoded_length": 20,
+    "result_bit_buffer": 1024,
+    "mode_before": 31112,
+    "mode_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
