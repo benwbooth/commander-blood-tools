@@ -103,6 +103,11 @@ void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
 void CB_FAR bridge_panorama_frame_unpack(
         const cb_u8 CB_FAR *source); /* 0x002D50 */
+const cb_u8 CB_FAR *CB_FAR font8x8_text_draw_display(
+        const cb_u8 CB_FAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u16 color_and_limit); /* 0x003066: DH=limit, DL=color */
 void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
@@ -118,6 +123,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux full_screen_blit parm [si] modify exact []
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
 #pragma aux bridge_panorama_frame_unpack parm [ds si]
+#pragma aux font8x8_text_draw_display \
+        parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
 #endif
 
 #endif

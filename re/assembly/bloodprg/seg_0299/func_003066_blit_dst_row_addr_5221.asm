@@ -6,8 +6,8 @@
 ; seg_off: 0299:00d6
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: blit_dst_row_addr_5221
-; label_comment: blit dest-row address: les di,gs:[0x5221] (display page); bx<<6 + <<4 = y*80 row stride. Computes the destination scanline address (sibling of 0x3033)
+; label: font8x8_text_draw_display
+; label_comment: BIOS 8x8 font renderer. AX=x, BX=y, DS:SI=text, DL=color, and DH=maximum characters (zero means 256). Draws set glyph bits to GS:[0x5221] with transparent backgrounds, stopping at NUL or the count, and returns the advanced text offset in SI. Its row term is byte_swap(y)+(y<<6), equal to y*320 for game rows below 256. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003066_font8x8_text_draw_display.c and re/tools/oracle_vectors/func_3066_natural.json
 ; incoming: call@0x0016c9->0299:00d6
 ; incoming: call@0x007d53->0299:00d6
 ; byte_count: 103

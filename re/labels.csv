@@ -514,7 +514,7 @@
 "0x00248B","palette_scene_entries_clear","Clears the first 576 bytes (RGB entries 0..191) of the live GS:0x5251 palette while preserving entries 192..255"
 "0x002532","byte_bit_process_18","byte/bit processor: ah=al; bl=0x18; cx=8 loop; al=bl. 8-iteration per-byte transform (character-cell or mask expansion using stride 0x18)"
 "0x003033","blit_src_row_addr_5221","blit source-row address: lds si,gs:[0x5221] (display page far ptr); ax=cx<<4; cx<<=6 -> row = y*16 + y*64 = y*80 (the mode-X row byte stride). Computes the source scanline address for a copy"
-"0x003066","blit_dst_row_addr_5221","blit dest-row address: les di,gs:[0x5221] (display page); bx<<6 + <<4 = y*80 row stride. Computes the destination scanline address (sibling of 0x3033)"
+"0x003066","font8x8_text_draw_display","BIOS 8x8 font renderer. AX=x, BX=y, DS:SI=text, DL=color, and DH=maximum characters (zero means 256). Draws set glyph bits to GS:[0x5221] with transparent backgrounds, stopping at NUL or the count, and returns the advanced text offset in SI. Its row term is byte_swap(y)+(y<<6), equal to y*320 for game rows below 256."
 "0x003225","clipped_blit_w8_b","clipped blit (sibling of 0x3192): same gs:0x523b height / gs:0x5239 width clip, 8-px span, different reject target 0x32a3"
 "0x00356E","clipped_blit_w10","clipped blit (10-px span variant): cmp dx,gs:[0x523b] height clip; cx=gs:[0x5239]-0xa width clip. Wider-span bounds-checked copy"
 "0x004CD6","entity_coord_accumulate","entity coordinate accumulate: lds si,[di+4] (entity record's +4/+6 data far ptr); add ax,[si+4]; add bx,[si+6]; add dx,[si+4]. Sums the entity's stored x/y offsets into the running screen position"
