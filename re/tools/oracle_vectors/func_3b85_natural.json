@@ -1,0 +1,1048 @@
+[
+  {
+    "name": "zero_width_rejected",
+    "mode": 1,
+    "input_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "negative_width_rejected",
+    "mode": 1,
+    "input_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "zero_height_rejected",
+    "mode": 2,
+    "input_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "negative_height_rejected",
+    "mode": 2,
+    "input_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "6895bb6cf9200b8d222cba70a7a45fdfac5c39f8c0aeba83f5feca101c2eef52"
+  },
+  {
+    "name": "fully_left_clipped_rejected",
+    "mode": 1,
+    "input_rect": [
+      5,
+      10,
+      5,
+      3
+    ],
+    "clip": [
+      10,
+      320,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "left",
+    "clipped_rect": [
+      5,
+      10,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5789fc6de164d558e8d75c7e498b4d55000b46ba920f30a84ba1e25ec7532c83"
+  },
+  {
+    "name": "left_clipped_sparse_ef",
+    "mode": 1,
+    "input_rect": [
+      5,
+      10,
+      8,
+      3
+    ],
+    "clip": [
+      10,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 43008,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6c9d4ba0b9ecb9899e90764545c273fa8c00cb9a3cedd6872eed12a266af1f6b"
+  },
+  {
+    "name": "right_endpoint_exact",
+    "mode": 1,
+    "input_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 32768,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "a21929f84272aebcc252633db820575fc98a6a493b7f29b7d3f6465a2f8803f2"
+  },
+  {
+    "name": "right_clipped_sparse_zero",
+    "mode": 2,
+    "input_rect": [
+      17,
+      12,
+      8,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      17,
+      12,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      5,
+      0,
+      0
+    ],
+    "prng_pattern": 65535,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "91458e695ad2f4b915c725d328d461fc21daaab10feb52739a5a754999b14b94"
+  },
+  {
+    "name": "fully_right_clipped_rejected",
+    "mode": 2,
+    "input_rect": [
+      20,
+      12,
+      3,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "right",
+    "clipped_rect": [
+      20,
+      12,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      3,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f7594ae85813fe11fb346518c3a188ebb85c350b112f66e192f94bafa220a44c"
+  },
+  {
+    "name": "fully_top_clipped_rejected",
+    "mode": 0,
+    "input_rect": [
+      10,
+      5,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      320,
+      10,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "top",
+    "clipped_rect": [
+      10,
+      5,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2a908039b8f9acf35f2e5a389d786fc4d7bad9a2abbf86ee61f0345b8f3f2320"
+  },
+  {
+    "name": "top_clipped_full_toggle",
+    "mode": 0,
+    "input_rect": [
+      10,
+      5,
+      5,
+      8
+    ],
+    "clip": [
+      0,
+      320,
+      10,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "prng_pattern": 40960,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "dc81c4a7aa4eed72d4fb1e83e1adff8a06aa64efbe84534485596315cfc13078"
+  },
+  {
+    "name": "lower_edge_ignores_y_bottom",
+    "mode": 3,
+    "input_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 37449,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2bb1d7582765c999b1b1d2fd4125e66cfd6c5688447e90bc6ecf7aa65c37d5c0"
+  },
+  {
+    "name": "lower_edge_clips_against_x_right",
+    "mode": 65535,
+    "input_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      18,
+      5,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      3
+    ],
+    "prng_pattern": 16912,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "37ce2974121de8b9f703747367179231e554f915c4194cfd2b84f080cedc6829"
+  },
+  {
+    "name": "fully_lower_clipped_against_x_right",
+    "mode": 0,
+    "input_rect": [
+      10,
+      20,
+      5,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      50
+    ],
+    "rejected": true,
+    "rejected_at": "lower",
+    "clipped_rect": [
+      10,
+      20,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      3
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "a6a294e085ff6b4d4283abd4369e06b25eecea5eba4520dc56c4c2330599e186"
+  },
+  {
+    "name": "sparse_word_refresh",
+    "mode": 1,
+    "input_rect": [
+      3,
+      2,
+      17,
+      1
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      3,
+      2,
+      17,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 32769,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f196331cfd6ef9d061f50416982d434ad155211f7eb0f9798c3285ea00ce0060"
+  },
+  {
+    "name": "full_word_refresh",
+    "mode": 3,
+    "input_rect": [
+      3,
+      2,
+      17,
+      1
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      3,
+      2,
+      17,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 32769,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "a3880593573ddb68941c7dcbefdba7d50bc1cdaf46e095dee79058c8aac13352"
+  },
+  {
+    "name": "bitstream_persists_across_rows",
+    "mode": 0,
+    "input_rect": [
+      3,
+      2,
+      9,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      3,
+      2,
+      9,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 53833,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "6a18da09a3ac17ea3021ef43bc3236c0b07ef78bab1d53f761fff51a25ef55bd"
+  },
+  {
+    "name": "row_offset_carry_enters_next_bit",
+    "mode": 0,
+    "input_rect": [
+      0,
+      0,
+      1,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      0,
+      0,
+      1,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 0,
+    "display_offset": 65520,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "65640f9559c1be4e9a03fd4b04aeb760ba0588cf3201eab9c162ee653982c255"
+  },
+  {
+    "name": "full_mode_inherits_backward_direction",
+    "mode": 3,
+    "input_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 40960,
+    "display_offset": 768,
+    "direction_flag": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "854d93a6735bc772d91e0a99c5b0251ec46cfbdedc717abce142325c0d8d29bd"
+  },
+  {
+    "name": "sparse_mode_ignores_backward_direction",
+    "mode": 1,
+    "input_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 40960,
+    "display_offset": 768,
+    "direction_flag": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "8edc8be3afe7628a087185a04dcb4e653643844ef73836ab7f7fd5bce04c217d"
+  },
+  {
+    "name": "full_word_coordinates_and_output_wrap",
+    "mode": 2,
+    "input_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip": [
+      33024,
+      33280,
+      33024,
+      256
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 46803,
+    "display_offset": 65520,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "c9954b02ee4ce3180ade08b008b89d23fba48493cd1a553fbc262f47d082268e"
+  },
+  {
+    "name": "left_add_sign_overflow_rejected",
+    "mode": 1,
+    "input_rect": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "clip": [
+      32768,
+      256,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "left",
+    "clipped_rect": [
+      0,
+      0,
+      32769,
+      1
+    ],
+    "clip_amounts": [
+      32768,
+      0,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "172d2e97f5af177645ad240ec07edd5897ea068e6b0df340912cb75676c6084f"
+  },
+  {
+    "name": "right_delta_sign_controls_rejection",
+    "mode": 1,
+    "input_rect": [
+      32767,
+      0,
+      1,
+      1
+    ],
+    "clip": [
+      0,
+      32767,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "right",
+    "clipped_rect": [
+      32767,
+      0,
+      0,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "eab0861c5ac3815e6dd379bf90d089c8d75afff3548a8db75a8bf06cabd3032f"
+  },
+  {
+    "name": "top_add_sign_overflow_rejected",
+    "mode": 1,
+    "input_rect": [
+      10,
+      0,
+      5,
+      1
+    ],
+    "clip": [
+      0,
+      320,
+      32768,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "top",
+    "clipped_rect": [
+      10,
+      0,
+      5,
+      32769
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      32768,
+      0
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "ee4390afec9047fe961075336c15b42b02289140aa7ed4cdbb2f9cbca8a287e5"
+  },
+  {
+    "name": "lower_delta_sign_controls_rejection",
+    "mode": 1,
+    "input_rect": [
+      10,
+      32767,
+      5,
+      1
+    ],
+    "clip": [
+      0,
+      32767,
+      0,
+      200
+    ],
+    "rejected": true,
+    "rejected_at": "lower",
+    "clipped_rect": [
+      10,
+      32767,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "prng_pattern": 23205,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2175a4f29cb0693e118c86d354cdcc91c26988686485eeeb7649e02334f4855f"
+  }
+]

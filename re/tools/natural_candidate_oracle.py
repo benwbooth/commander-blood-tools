@@ -11478,6 +11478,613 @@ def gfx_vertical_span_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def framebuffer_noise_rect_vectors() -> list[dict[str, object]]:
+    entry = 0x3B85
+    prng_entry = 0x27E2  # Runtime 01CE:0B02.
+    expected_hash = "f20fddb25b109931a6b96df8fac268ae1f3beb6f50889d4e94295ce92a8ec89b"
+    if hashlib.sha256(EXE[entry : entry + 231]).hexdigest() != expected_hash:
+        raise AssertionError("0x3b85: recovered 231-byte body changed")
+
+    cases = [
+        {
+            "name": "zero_width_rejected",
+            "mode": 1,
+            "x": 10,
+            "y": 10,
+            "width": 0,
+            "height": 5,
+        },
+        {
+            "name": "negative_width_rejected",
+            "mode": 1,
+            "x": 10,
+            "y": 10,
+            "width": 0x8000,
+            "height": 5,
+        },
+        {
+            "name": "zero_height_rejected",
+            "mode": 2,
+            "x": 10,
+            "y": 10,
+            "width": 5,
+            "height": 0,
+        },
+        {
+            "name": "negative_height_rejected",
+            "mode": 2,
+            "x": 10,
+            "y": 10,
+            "width": 5,
+            "height": 0x8000,
+        },
+        {
+            "name": "fully_left_clipped_rejected",
+            "mode": 1,
+            "x": 5,
+            "y": 10,
+            "width": 5,
+            "height": 3,
+            "left": 10,
+        },
+        {
+            "name": "left_clipped_sparse_ef",
+            "mode": 1,
+            "x": 5,
+            "y": 10,
+            "width": 8,
+            "height": 3,
+            "left": 10,
+            "pattern": 0xA800,
+        },
+        {
+            "name": "right_endpoint_exact",
+            "mode": 1,
+            "x": 14,
+            "y": 11,
+            "width": 6,
+            "height": 3,
+            "right": 20,
+            "pattern": 0x8000,
+        },
+        {
+            "name": "right_clipped_sparse_zero",
+            "mode": 2,
+            "x": 17,
+            "y": 12,
+            "width": 8,
+            "height": 3,
+            "right": 20,
+            "pattern": 0xFFFF,
+        },
+        {
+            "name": "fully_right_clipped_rejected",
+            "mode": 2,
+            "x": 20,
+            "y": 12,
+            "width": 3,
+            "height": 3,
+            "right": 20,
+        },
+        {
+            "name": "fully_top_clipped_rejected",
+            "mode": 0,
+            "x": 10,
+            "y": 5,
+            "width": 5,
+            "height": 5,
+            "top": 10,
+        },
+        {
+            "name": "top_clipped_full_toggle",
+            "mode": 0,
+            "x": 10,
+            "y": 5,
+            "width": 5,
+            "height": 8,
+            "top": 10,
+            "pattern": 0xA000,
+        },
+        {
+            "name": "lower_edge_ignores_y_bottom",
+            "mode": 3,
+            "x": 10,
+            "y": 18,
+            "width": 5,
+            "height": 5,
+            "right": 30,
+            "bottom": 20,
+            "pattern": 0x9249,
+        },
+        {
+            "name": "lower_edge_clips_against_x_right",
+            "mode": 0xFFFF,
+            "x": 10,
+            "y": 18,
+            "width": 5,
+            "height": 5,
+            "right": 20,
+            "bottom": 50,
+            "pattern": 0x4210,
+        },
+        {
+            "name": "fully_lower_clipped_against_x_right",
+            "mode": 0,
+            "x": 10,
+            "y": 20,
+            "width": 5,
+            "height": 3,
+            "right": 20,
+            "bottom": 50,
+        },
+        {
+            "name": "sparse_word_refresh",
+            "mode": 1,
+            "x": 3,
+            "y": 2,
+            "width": 17,
+            "height": 1,
+            "pattern": 0x8001,
+        },
+        {
+            "name": "full_word_refresh",
+            "mode": 3,
+            "x": 3,
+            "y": 2,
+            "width": 17,
+            "height": 1,
+            "pattern": 0x8001,
+        },
+        {
+            "name": "bitstream_persists_across_rows",
+            "mode": 0,
+            "x": 3,
+            "y": 2,
+            "width": 9,
+            "height": 2,
+            "pattern": 0xD249,
+        },
+        {
+            "name": "row_offset_carry_enters_next_bit",
+            "mode": 0,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2,
+            "display_offset": 0xFFF0,
+            "pattern": 0,
+        },
+        {
+            "name": "full_mode_inherits_backward_direction",
+            "mode": 3,
+            "x": 4,
+            "y": 2,
+            "width": 3,
+            "height": 2,
+            "pattern": 0xA000,
+            "direction_flag": True,
+        },
+        {
+            "name": "sparse_mode_ignores_backward_direction",
+            "mode": 1,
+            "x": 4,
+            "y": 2,
+            "width": 3,
+            "height": 2,
+            "pattern": 0xA000,
+            "direction_flag": True,
+        },
+        {
+            "name": "full_word_coordinates_and_output_wrap",
+            "mode": 2,
+            "x": 0x8120,
+            "y": 0x8123,
+            "width": 8,
+            "height": 8,
+            "left": 0x8100,
+            "right": 0x8200,
+            "top": 0x8100,
+            "bottom": 0x0100,
+            "display_offset": 0xFFF0,
+            "pattern": 0xB6D3,
+        },
+        {
+            "name": "left_add_sign_overflow_rejected",
+            "mode": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "left": 0x8000,
+            "right": 0x0100,
+        },
+        {
+            "name": "right_delta_sign_controls_rejection",
+            "mode": 1,
+            "x": 0x7FFF,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "right": 0x7FFF,
+        },
+        {
+            "name": "top_add_sign_overflow_rejected",
+            "mode": 1,
+            "x": 10,
+            "y": 0,
+            "width": 5,
+            "height": 1,
+            "top": 0x8000,
+        },
+        {
+            "name": "lower_delta_sign_controls_rejection",
+            "mode": 1,
+            "x": 10,
+            "y": 0x7FFF,
+            "width": 5,
+            "height": 1,
+            "right": 0x7FFF,
+        },
+    ]
+
+    data_segment = 0x4000
+    gs_segment = 0x6000
+    output_segment = 0x7000
+    trap_output_segment = 0x8000
+    stack_segment = 0xA000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("b127c238d349e45a")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic16_flags(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x8000) != 0,
+            "of": False,
+        }
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode = int(case["mode"])
+        x = int(case["x"])
+        y = int(case["y"])
+        width = int(case["width"])
+        height = int(case["height"])
+        left = int(case.get("left", 0))
+        right = int(case.get("right", 320))
+        top = int(case.get("top", 0))
+        bottom = int(case.get("bottom", 200))
+        display_offset = int(case.get("display_offset", 0x0300))
+        prng_pattern = int(case.get("pattern", 0x5AA5))
+        pattern = prng_pattern
+        direction_flag = bool(case.get("direction_flag", False))
+        full_direction = -1 if direction_flag else 1
+
+        data_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        data_memory[0x5221:0x5225] = struct.pack(
+            "<HH", display_offset, output_segment
+        )
+        data_memory[0x5235:0x523D] = struct.pack(
+            "<4H", left, right, top, bottom
+        )
+        initial_data = bytes(data_memory)
+
+        gs_memory = bytearray(
+            (index * 31 + case_index * 7 + 0x51) & 0xFF
+            for index in range(0x10000)
+        )
+        gs_memory[0x5221:0x5225] = struct.pack(
+            "<HH", 0x1111, trap_output_segment
+        )
+        gs_memory[0x5235:0x523D] = struct.pack(
+            "<4H", 0x7000, 0x7001, 0x7002, 0x7003
+        )
+        initial_gs = bytes(gs_memory)
+
+        stack_memory = bytearray(
+            (index * 29 + case_index * 31 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        output_seed = bytes(
+            (index * 37 + case_index * 41 + 0x2B) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+        trap_output_seed = bytes(
+            (index * 43 + case_index * 47 + 0x19) & 0xFF
+            for index in range(0x10000)
+        )
+
+        clipped_x = x
+        clipped_y = y
+        clipped_width = width
+        clipped_height = height
+        rejected = False
+        rejected_at = ""
+        clip_amounts = [0, 0, 0, 0]
+        expected_flags = logic16_flags(clipped_width)
+
+        if signed16(clipped_width) <= 0:
+            rejected = True
+            rejected_at = "width"
+        else:
+            expected_flags = logic16_flags(clipped_height)
+            if signed16(clipped_height) <= 0:
+                rejected = True
+                rejected_at = "height"
+
+        if not rejected:
+            left_delta = (clipped_x - left) & 0xFFFF
+            expected_flags = sub16_flags(clipped_x, left)
+            if left_delta & 0x8000:
+                clip_amounts[0] = (-left_delta) & 0xFFFF
+                clipped_width = (clipped_width + left_delta) & 0xFFFF
+                expected_flags = add16_flags(width, left_delta)
+                if signed16(clipped_width) <= 0:
+                    rejected = True
+                    rejected_at = "left"
+                else:
+                    clipped_x = left
+
+        if not rejected:
+            span_end = (clipped_x + clipped_width) & 0xFFFF
+            right_delta = (span_end - right) & 0xFFFF
+            expected_flags = sub16_flags(span_end, right)
+            if (right_delta & 0x8000) == 0:
+                clip_amounts[1] = right_delta
+                original_width = clipped_width
+                clipped_width = (clipped_width - right_delta) & 0xFFFF
+                expected_flags = sub16_flags(original_width, right_delta)
+                if signed16(clipped_width) <= 0:
+                    rejected = True
+                    rejected_at = "right"
+
+        if not rejected:
+            top_delta = (clipped_y - top) & 0xFFFF
+            expected_flags = sub16_flags(clipped_y, top)
+            if top_delta & 0x8000:
+                clip_amounts[2] = (-top_delta) & 0xFFFF
+                original_height = clipped_height
+                clipped_height = (clipped_height + top_delta) & 0xFFFF
+                expected_flags = add16_flags(original_height, top_delta)
+                if signed16(clipped_height) <= 0:
+                    rejected = True
+                    rejected_at = "top"
+                else:
+                    clipped_y = top
+
+        if not rejected:
+            span_end = (clipped_y + clipped_height) & 0xFFFF
+            lower_delta = (span_end - right) & 0xFFFF
+            expected_flags = sub16_flags(span_end, right)
+            if (lower_delta & 0x8000) == 0:
+                clip_amounts[3] = lower_delta
+                original_height = clipped_height
+                clipped_height = (clipped_height - lower_delta) & 0xFFFF
+                expected_flags = sub16_flags(original_height, lower_delta)
+                if signed16(clipped_height) <= 0:
+                    rejected = True
+                    rejected_at = "lower"
+
+        if not rejected:
+            row_offset = (
+                ((clipped_y << 8) | (clipped_y >> 8)) + (clipped_y << 6)
+            ) & 0xFFFF
+            pixel = (display_offset + row_offset + clipped_x) & 0xFFFF
+            row_skip = (320 - clipped_width) & 0xFFFF
+            rotation_bit = 1
+            bits_remaining = 16
+            current_color = 0
+            sparse = mode in (1, 2)
+            sparse_color = 0xEF if mode == 1 else 0
+            last_row_add_left = pixel
+
+            for _ in range(clipped_height):
+                for _ in range(clipped_width):
+                    next_bit = (pattern >> 15) & 1
+                    pattern = ((pattern << 1) | rotation_bit) & 0xFFFF
+                    rotation_bit = next_bit
+
+                    if sparse:
+                        if next_bit:
+                            output_model[pixel] = sparse_color
+                        pixel = (pixel + 1) & 0xFFFF
+                    else:
+                        if next_bit:
+                            current_color ^= 0xEF
+                        output_model[pixel] = current_color
+                        pixel = (pixel + full_direction) & 0xFFFF
+
+                    bits_remaining -= 1
+                    if bits_remaining == 0:
+                        old_pattern = pattern
+                        shift = 4 if sparse else 3
+                        pattern = (
+                            (pattern << shift)
+                            | (rotation_bit << (shift - 1))
+                            | (pattern >> (17 - shift))
+                        ) & 0xFFFF
+                        pattern ^= old_pattern
+                        rotation_bit = 0
+                        bits_remaining = 16
+
+                last_row_add_left = pixel
+                rotation_bit = int(pixel + row_skip > 0xFFFF)
+                pixel = (pixel + row_skip) & 0xFFFF
+            expected_flags = add16_flags(last_row_add_left, row_skip)
+
+        initial = {
+            "eax": 0xA1A10000 | mode,
+            "ebx": 0xB2B20000 | x,
+            "ecx": 0xC3C30000 | y,
+            "edx": 0xD4D40000 | width,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97970000 | height,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": gs_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        prng_calls = []
+
+        def capture_prng(machine: Uc, address: int, _size: int) -> None:
+            if address != prng_entry:
+                return
+            actual_call = {
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "return": list(
+                    struct.unpack(
+                        "<HH",
+                        machine.mem_read(stack_segment * 16 + 0xFEEC, 4),
+                    )
+                ),
+            }
+            prng_calls.append(actual_call)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (
+                    0,
+                    prng_entry,
+                    b"\xb8" + struct.pack("<H", prng_pattern) + b"\xf9\xcb",
+                ),
+                (data_segment, 0, initial_data),
+                (gs_segment, 0, initial_gs),
+                (output_segment, 0, output_seed),
+                (trap_output_segment, 0, trap_output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            code_handler=capture_prng,
+            instruction_count=1000000,
+        )
+
+        expected_call_count = 0 if rejected else 1
+        if len(prng_calls) != expected_call_count:
+            raise AssertionError(
+                f"0x3b85 {name}: PRNG calls={len(prng_calls)}, "
+                f"expected={expected_call_count}"
+            )
+        if prng_calls:
+            expected_call = {
+                "ax": 0xFFFF,
+                "cs": 0x01CE,
+                "ip": 0x0B02,
+                "sp": 0xFEEC,
+                "return": [0x3C13, 0],
+            }
+            if prng_calls[0] != expected_call:
+                raise AssertionError(
+                    f"0x3b85 {name}: PRNG call={prng_calls[0]}, "
+                    f"expected={expected_call}"
+                )
+
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3b85 {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != initial_data:
+            raise AssertionError(f"0x3b85 {name}: DS data changed")
+        if bytes(machine.mem_read(gs_segment * 16, 0x10000)) != initial_gs:
+            raise AssertionError(f"0x3b85 {name}: GS decoy changed")
+        if bytes(
+            machine.mem_read(trap_output_segment * 16, 0x10000)
+        ) != trap_output_seed:
+            raise AssertionError(f"0x3b85 {name}: GS display decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3b85 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3b85 {name}: far return CS differs")
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3b85 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x3b85 {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3b85 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "mode": mode,
+                "input_rect": [x, y, width, height],
+                "clip": [left, right, top, bottom],
+                "rejected": rejected,
+                "rejected_at": rejected_at,
+                "clipped_rect": [
+                    clipped_x,
+                    clipped_y,
+                    clipped_width,
+                    clipped_height,
+                ],
+                "clip_amounts": clip_amounts,
+                "prng_pattern": prng_pattern,
+                "display_offset": display_offset,
+                "direction_flag": direction_flag,
+                "defined_flags": expected_flags,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def framebuffer_rect_palette_remap_vectors() -> list[dict[str, object]]:
     entry = 0x339E
     expected_hash = "3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac"
@@ -43581,6 +44188,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3ab3_natural.json",
         gfx_clipped_planar_vertical_span_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3b85_natural.json",
+        framebuffer_noise_rect_vectors(),
         args.check,
     )
     update_vector(
