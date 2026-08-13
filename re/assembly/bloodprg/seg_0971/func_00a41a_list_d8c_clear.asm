@@ -6,13 +6,13 @@
 ; seg_off: 0971:070a
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: list_d8c_clear
-; label_comment: clear the gs:0xd8c list state (3 calls): xchg gs:[0xd96],bp(=0); clear gs:[0xdaa]. Resets the list's active/pending pointers
+; label: list_d8c_active_present
+; label_comment: Retires the active segment from GS:0x0D96 into GS:0x0DAA, parses its rectangle metadata, and selects direct display drawing, back-buffer drawing plus presentation, or the compressed rectangular decoder.
 ; byte_count: 211
 ; boundary: cfg_blocks_20_terminals_3
 ; terminal: jmp 0xa4cf:1, jmp 0xa4e4:1, retf:1
-; direct_callees: 0x00a4ed, 0x00ab25
-; indirect_calls: 2
+; direct_callees: 0x003e46, 0x00a4ed, 0x00ab25
+; indirect_calls: 0
 ; routine_bytes_sha256: d33eeda97f2b75f7d3446bce71daad29b5c669d95e5958ef7e178d11cf99eeab
 
 00A41A:  55                           push     bp

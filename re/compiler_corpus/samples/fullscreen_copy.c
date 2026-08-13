@@ -27,13 +27,13 @@ void FAR *NEAR _fmemcpy(void FAR *destination,
 typedef volatile u8 FAR *buffer_pointer;
 extern buffer_pointer GAME_DATA display_buffer;
 
-void FAR fullscreen_copy_probe(const u32 NEAR *source);
+void FAR fullscreen_copy_probe(const u32 FAR *source);
 
 #if defined(__WATCOMC__)
-#pragma aux fullscreen_copy_probe parm [si] modify exact []
+#pragma aux fullscreen_copy_probe parm [ds si] modify exact []
 #endif
 
-void FAR fullscreen_copy_probe(const u32 NEAR *source)
+void FAR fullscreen_copy_probe(const u32 FAR *source)
 {
 #if defined(__WATCOMC__)
     _asm push ax;

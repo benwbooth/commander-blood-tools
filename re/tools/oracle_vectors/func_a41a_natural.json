@@ -1,0 +1,355 @@
+[
+  {
+    "name": "inactive",
+    "active": false,
+    "header": 1025,
+    "masked_width": 1,
+    "row_mode": 1,
+    "coordinates": null,
+    "vertical_offset": 0,
+    "adjusted_y": 0,
+    "source_offset": 4096,
+    "payload_offset": 4100,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": false,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [],
+    "result_ax": 12288,
+    "state_sha256": "47ad4eb3c99fae22a7a07b23cf9ddd122db80d62ab09916e1b33f50c9ee669e7"
+  },
+  {
+    "name": "back_buffer_clamped_coordinates",
+    "active": true,
+    "header": 519,
+    "masked_width": 7,
+    "row_mode": 65424,
+    "coordinates": [
+      12,
+      34
+    ],
+    "vertical_offset": 5,
+    "adjusted_y": 39,
+    "source_offset": 4353,
+    "payload_offset": 4361,
+    "direction": "forward",
+    "back_buffer_mode": true,
+    "skip_present": false,
+    "compressed": true,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "resource_rect_blit",
+        "return_ip": 42123,
+        "source": [
+          8192,
+          4361
+        ],
+        "target_segment": 31232,
+        "x": 12,
+        "y": 39,
+        "width": 7,
+        "row_mode": 65410,
+        "sp": 65260
+      },
+      {
+        "call": "full_screen_blit",
+        "return_ip": 42135,
+        "return_cs": 0,
+        "source": [
+          31232,
+          9027
+        ],
+        "sp": 65254
+      }
+    ],
+    "result_ax": 4609,
+    "state_sha256": "9e097bd655973765dbcb10d8b2c60713fcf6f2b6fc331ea0f10e771b6b8422a9"
+  },
+  {
+    "name": "back_buffer_empty_no_coordinates",
+    "active": true,
+    "header": 1029,
+    "masked_width": 5,
+    "row_mode": 4608,
+    "coordinates": null,
+    "vertical_offset": 9,
+    "adjusted_y": 9,
+    "source_offset": 4610,
+    "payload_offset": 4614,
+    "direction": "forward",
+    "back_buffer_mode": true,
+    "skip_present": false,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "full_screen_blit",
+        "return_ip": 42135,
+        "return_cs": 0,
+        "source": [
+          31232,
+          9030
+        ],
+        "sp": 65254
+      }
+    ],
+    "result_ax": 4610,
+    "state_sha256": "9f2c82c26ef5c882034f25da3d6a50e23ad908c26542ce41dde1c5f02a2fd130"
+  },
+  {
+    "name": "display_present_then_clamped_blit",
+    "active": true,
+    "header": 1033,
+    "masked_width": 9,
+    "row_mode": 32656,
+    "coordinates": null,
+    "vertical_offset": 13,
+    "adjusted_y": 13,
+    "source_offset": 4867,
+    "payload_offset": 4871,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": false,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "full_screen_blit",
+        "return_ip": 42159,
+        "return_cs": 0,
+        "source": [
+          31232,
+          9033
+        ],
+        "sp": 65254
+      },
+      {
+        "call": "resource_rect_blit",
+        "return_ip": 42191,
+        "source": [
+          8192,
+          4871
+        ],
+        "target_segment": 26624,
+        "x": 0,
+        "y": 13,
+        "width": 9,
+        "row_mode": 32642,
+        "sp": 65260
+      }
+    ],
+    "result_ax": 4611,
+    "state_sha256": "912c4b85555b28dec5cc9ff2e8c2dc29c24739502849b63122c0c91364d761b5"
+  },
+  {
+    "name": "display_skip_present_unclamped",
+    "active": true,
+    "header": 17,
+    "masked_width": 17,
+    "row_mode": 13456,
+    "coordinates": [
+      21,
+      17
+    ],
+    "vertical_offset": 19,
+    "adjusted_y": 36,
+    "source_offset": 5124,
+    "payload_offset": 5132,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": true,
+    "compressed": false,
+    "unclamped_rows": true,
+    "calls": [
+      {
+        "call": "resource_rect_blit",
+        "return_ip": 42191,
+        "source": [
+          8192,
+          5132
+        ],
+        "target_segment": 26624,
+        "x": 21,
+        "y": 36,
+        "width": 17,
+        "row_mode": 13456,
+        "sp": 65260
+      }
+    ],
+    "result_ax": 4612,
+    "state_sha256": "0af6522dc138af8ece1953f23b2118cfb3ab8c91a0761d795af479a458dcf735"
+  },
+  {
+    "name": "display_skip_empty",
+    "active": true,
+    "header": 1027,
+    "masked_width": 3,
+    "row_mode": 21760,
+    "coordinates": null,
+    "vertical_offset": 23,
+    "adjusted_y": 23,
+    "source_offset": 5381,
+    "payload_offset": 5385,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": true,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [],
+    "result_ax": 4613,
+    "state_sha256": "72e89a544958bfbc2754a89cb2ec8bf694cc47b75a8ffc8e19aaadd3fe379dd6"
+  },
+  {
+    "name": "compressed_present_then_decode",
+    "active": true,
+    "header": 521,
+    "masked_width": 9,
+    "row_mode": 65285,
+    "coordinates": [
+      7,
+      11
+    ],
+    "vertical_offset": 29,
+    "adjusted_y": 40,
+    "source_offset": 5638,
+    "payload_offset": 5646,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": false,
+    "compressed": true,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "full_screen_blit",
+        "return_ip": 42159,
+        "return_cs": 0,
+        "source": [
+          31232,
+          9042
+        ],
+        "sp": 65254
+      },
+      {
+        "call": "resource_payload_decode_rect",
+        "return_ip": 42206,
+        "source": [
+          8192,
+          5638
+        ],
+        "staging_offset": 0,
+        "sp": 65258
+      }
+    ],
+    "result_ax": 0,
+    "state_sha256": "a69a8e7437995650e207c0c58d3ed295486f0783b7459213ed1c0d0dc925bad5"
+  },
+  {
+    "name": "compressed_skip_present",
+    "active": true,
+    "header": 1549,
+    "masked_width": 13,
+    "row_mode": 33031,
+    "coordinates": null,
+    "vertical_offset": 31,
+    "adjusted_y": 31,
+    "source_offset": 5895,
+    "payload_offset": 5899,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": true,
+    "compressed": true,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "resource_payload_decode_rect",
+        "return_ip": 42206,
+        "source": [
+          8192,
+          5895
+        ],
+        "staging_offset": 0,
+        "sp": 65258
+      }
+    ],
+    "result_ax": 0,
+    "state_sha256": "631ee31650155b326143a5542860cb1fc557eda8fbd05dc4655490237fa059c6"
+  },
+  {
+    "name": "coordinate_and_source_wrap",
+    "active": true,
+    "header": 19,
+    "masked_width": 19,
+    "row_mode": 2,
+    "coordinates": [
+      65528,
+      65534
+    ],
+    "vertical_offset": 5,
+    "adjusted_y": 3,
+    "source_offset": 65532,
+    "payload_offset": 4,
+    "direction": "forward",
+    "back_buffer_mode": false,
+    "skip_present": true,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "resource_rect_blit",
+        "return_ip": 42191,
+        "source": [
+          8192,
+          4
+        ],
+        "target_segment": 26624,
+        "x": 65528,
+        "y": 3,
+        "width": 19,
+        "row_mode": 2,
+        "sp": 65260
+      }
+    ],
+    "result_ax": 4616,
+    "state_sha256": "6af7c5362eaf595198fc44b615aca1a80cc0ca130f06843a12f6d901af5de22b"
+  },
+  {
+    "name": "reverse_direction",
+    "active": true,
+    "header": 21,
+    "masked_width": 21,
+    "row_mode": 2,
+    "coordinates": [
+      3,
+      4
+    ],
+    "vertical_offset": 7,
+    "adjusted_y": 11,
+    "source_offset": 6409,
+    "payload_offset": 6401,
+    "direction": "backward",
+    "back_buffer_mode": false,
+    "skip_present": true,
+    "compressed": false,
+    "unclamped_rows": false,
+    "calls": [
+      {
+        "call": "resource_rect_blit",
+        "return_ip": 42191,
+        "source": [
+          8192,
+          6401
+        ],
+        "target_segment": 26624,
+        "x": 3,
+        "y": 11,
+        "width": 21,
+        "row_mode": 2,
+        "sp": 65260
+      }
+    ],
+    "result_ax": 4617,
+    "state_sha256": "969954fbd8bf2568db0517ac670db50492f24dd45482593551b765477b68bd76"
+  }
+]

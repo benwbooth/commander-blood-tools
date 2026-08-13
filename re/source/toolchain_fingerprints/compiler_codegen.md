@@ -391,6 +391,28 @@ ABI and string-instruction lowering. Natural pointer traversal assumes the
 shipped clear-DF C invariant, while the reverse vector records the binary's
 out-of-contract behavior.
 
+For `0x00A41A`, ten direct coordinator vectors prove the complete active-frame
+retirement and rendering decision tree. The routine moves the old active
+segment from GS:0x0D96 to GS:0x0DAA, parses width/flags, packed row mode, and
+optional coordinates, adds the global vertical offset, and marks the frame
+presented. Cases cover inactive return; rectangle drawing to the display or
+back buffer; full-screen presentation before or after drawing; zero-row skips;
+both 130-row clamp policies; compressed rectangular decode; coordinate and
+source wrap; reverse-DF parsing; exact near/far call frames and register state;
+memory ownership, preservation, AX/flags, stack, and far return. Only the
+separately proven `0x003E46`, `0x00A4ED`, and `0x00AB25` callees are stubbed.
+
+The natural function uses direct far pointers, named frame state, and ordinary
+calls to those recovered functions. It has no register model, memory emulator,
+or inline assembly. Open Watcom `-3 -ox -mh` compiles it warning-free to 168
+instructions and 470 bytes versus 87/211 original. The probe has a 12.64
+percent instruction LCS, 58.62 percent mnemonic-sequence LCS, 77.01 percent
+mnemonic-multiset overlap, and 13.79 percent byte-line LCS. Watcom materializes
+far-pointer temporaries and stack-passes rectangle arguments instead of using
+the original ambient DS:SI/ES/BX/CX/DX/DI/BP convention. Reverse DF records the
+binary behavior outside the shipped clear-DF C contract; the two real callers
+discard the original AX and flag residue.
+
 For `0x00A867`, nine direct vectors prove the complete checksum-`0xAB` payload
 grammar: six skipped header bytes, LSB-first sentinel control words, literals,
 two-bit short lengths, compact and extended 13-bit negative back-references,
@@ -2142,24 +2164,29 @@ loop instead of `REP STOSD`. It also relies on the normal clear-DF C ABI instead
 of reproducing the binary's unconditional `CLD`, which remains a narrow
 integration boundary rather than a reason to put assembly into the C logic.
 
-Fullscreen-copy siblings `0x003E46` and `0x003E5B` consume a near source in
-DS:SI, retain both the segment and offset of the display or backbuffer pointer
+Fullscreen-copy siblings `0x003E46` and `0x003E5B` consume a source in DS:SI,
+retain both the segment and offset of the display or backbuffer pointer
 from GS, clear DF, and copy exactly `0x3E80` dwords (64,000 bytes) with `REP
 MOVSD`. Six independent direct vectors per routine prove source and destination
 ownership, nonzero offsets, separate and simultaneous 16-bit offset wrap,
 exact destination extent, immutable source and sibling buffer, full register
 and segment preservation, all non-DF flags, CLD, and far return.
 
-The one-to-one candidates express the operation as ordinary `_fmemcpy`, bind
-the source through SI, and retain the named GAME_DATA far pointer. Four
+The one-to-one candidates express the operation as ordinary `_fmemcpy` and
+retain the named GAME_DATA far pointer. `0x003E46` now exposes its source as a
+natural far pointer bound through DS:SI so recovered C can call it directly;
+`0x003E5B` retains its earlier ambient-DS near declaration. Four
 Watcom-only push/pop instructions preserve AX and ES because the intrinsic's C
 boundary otherwise exposes those implementation registers. Open Watcom `-3
--ox -mm` compiles each actual candidate without warnings to 35 instructions/53
-bytes versus 13/21 original. It uses `REP MOVSW` followed by a zero-byte `REP
-MOVSB` tail and assumes the standard clear-DF C ABI. Turbo C 2.01 medium emits a
-14-instruction wrapper that stack-passes the source and calls its far-memory
-library. The data operation is fully represented in natural C; direct `REP
-MOVSD` and unconditional CLD remain narrow integration/codegen differences.
+-ox -mh` compiles the far-source display form to 36 instructions/54 bytes;
+medium model rejects DS as an explicit parameter because it reserves a fixed
+data segment. The ambient-source back-buffer form remains 35/53 under medium
+model, versus 13/21 original. Watcom uses
+`REP MOVSW` followed by a zero-byte `REP MOVSB` tail and assumes the standard
+clear-DF C ABI. Turbo C 2.01 medium emits a 14-instruction wrapper that
+stack-passes the source and calls its far-memory library. The data operation is
+fully represented in natural C; direct `REP MOVSD` and unconditional CLD remain
+narrow integration/codegen differences.
 
 Three sibling XDB alien slot-11 methods are independently proven state anchors:
 AMER `0x000B0F`, CROOLIS `0x000B50`, and SCRUT `0x000B55`. Seven direct
@@ -2702,7 +2729,7 @@ LCS and then mnemonic similarity:
 | `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
 | `u32_sqrt_newton` | medium, `-ox`, register | 35/49 | 0.2286 | 0.6571 | 0.2571 |
 | `graphics_band_fill` | medium, `-ox`, register | 30/52 | 0.1667 | 0.7667 | 0.2000 |
-| `fullscreen_copy` | medium, `-ox`, register | 13/35 | 0.5385 | 0.9231 | 0.5385 |
+| `fullscreen_copy` | huge, `-ox`, register | 13/36 | 0.5385 | 0.9231 | 0.5385 |
 | `xdb_near_noop` | medium, `-ox`, register | 1/1 | 1.0000 | 1.0000 | 1.0000 |
 | `xdb_anchor_state` | medium, `-ox`, register | 5/5 | 0.2000 | 0.8000 | 0.6000 |
 | `xdb_apply_delta` | medium, `-ox`, register | 6/9 | 0.1667 | 0.6667 | 0.3333 |
@@ -2787,6 +2814,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
+| `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |

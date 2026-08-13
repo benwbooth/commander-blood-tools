@@ -52115,6 +52115,477 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_active_present_vectors() -> list[dict[str, object]]:
+    entry = 0xA41A
+    expected_hash = "d33eeda97f2b75f7d3446bce71daad29b5c669d95e5958ef7e178d11cf99eeab"
+    if hashlib.sha256(EXE[entry : entry + 211]).hexdigest() != expected_hash:
+        raise AssertionError("0xa41a: recovered 211-byte body changed")
+
+    cases = [
+        {
+            "name": "inactive",
+            "active": False,
+        },
+        {
+            "name": "back_buffer_clamped_coordinates",
+            "header": 0x0207,
+            "row_mode": 0xFF90,
+            "coordinates": (12, 34),
+            "vertical_offset": 5,
+            "back_buffer_mode": 1,
+            "compressed": 1,
+        },
+        {
+            "name": "back_buffer_empty_no_coordinates",
+            "header": 0x0405,
+            "row_mode": 0x1200,
+            "coordinates": None,
+            "vertical_offset": 9,
+            "back_buffer_mode": 1,
+        },
+        {
+            "name": "display_present_then_clamped_blit",
+            "header": 0x0409,
+            "row_mode": 0x7F90,
+            "coordinates": None,
+            "vertical_offset": 13,
+        },
+        {
+            "name": "display_skip_present_unclamped",
+            "header": 0x0011,
+            "row_mode": 0x3490,
+            "coordinates": (21, 17),
+            "vertical_offset": 19,
+            "skip_present": 1,
+            "unclamped_rows": 1,
+        },
+        {
+            "name": "display_skip_empty",
+            "header": 0x0403,
+            "row_mode": 0x5500,
+            "coordinates": None,
+            "vertical_offset": 23,
+            "skip_present": 1,
+        },
+        {
+            "name": "compressed_present_then_decode",
+            "header": 0x0209,
+            "row_mode": 0xFF05,
+            "coordinates": (7, 11),
+            "vertical_offset": 29,
+            "compressed": 1,
+        },
+        {
+            "name": "compressed_skip_present",
+            "header": 0x060D,
+            "row_mode": 0x8107,
+            "coordinates": None,
+            "vertical_offset": 31,
+            "skip_present": 1,
+            "compressed": 1,
+        },
+        {
+            "name": "coordinate_and_source_wrap",
+            "header": 0x0013,
+            "row_mode": 0x0002,
+            "coordinates": (0xFFF8, 0xFFFE),
+            "vertical_offset": 5,
+            "skip_present": 1,
+            "active_offset": 0xFFFC,
+        },
+        {
+            "name": "reverse_direction",
+            "header": 0x0015,
+            "row_mode": 0x0002,
+            "coordinates": (3, 4),
+            "vertical_offset": 7,
+            "skip_present": 1,
+            "reverse_df": True,
+        },
+    ]
+    active_segment = 0x2000
+    data_segment = 0x3200
+    staging_segment = 0x4400
+    extra_segment = 0x5600
+    display_segment = 0x6800
+    back_buffer_segment = 0x7A00
+    fs_segment = 0x8C00
+    stack_segment = 0x9E00
+    game_segment = 0xB000
+    return_address = 0x1800
+    full_screen_entry = 0x3846
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        active = bool(case.get("active", True))
+        header = int(case.get("header", 0x0401))
+        row_mode = int(case.get("row_mode", 0x0001))
+        coordinates_value = case.get("coordinates", None)
+        coordinates = (
+            None
+            if coordinates_value is None
+            else tuple(int(value) for value in coordinates_value)
+        )
+        vertical_offset = int(case.get("vertical_offset", 0))
+        back_buffer_mode = int(case.get("back_buffer_mode", 0))
+        skip_present = int(case.get("skip_present", 0))
+        compressed = int(case.get("compressed", 0))
+        unclamped_rows = int(case.get("unclamped_rows", 0))
+        reverse_df = bool(case.get("reverse_df", False))
+        active_offset = int(case.get("active_offset", 0x1000 + case_index * 0x101))
+        requested_id = 0x1200 + case_index
+        back_buffer_offset = 0x2340 + case_index * 3
+        display_offset = 0x4560 + case_index * 5
+
+        active_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        def store_word(offset: int, value: int) -> None:
+            active_before[offset & 0xFFFF] = value & 0xFF
+            active_before[(offset + 1) & 0xFFFF] = value >> 8
+
+        source_cursor = active_offset
+        source_step = -2 if reverse_df else 2
+        for value in (header, row_mode):
+            store_word(source_cursor, value)
+            source_cursor = (source_cursor + source_step) & 0xFFFF
+        if coordinates is not None:
+            for value in coordinates:
+                store_word(source_cursor, value)
+                source_cursor = (source_cursor + source_step) & 0xFFFF
+
+        game_before = bytearray(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x0ABE, staging_segment)
+        struct.pack_into("<H", game_before, 0x0D80, requested_id)
+        struct.pack_into("<H", game_before, 0x0D94, active_offset)
+        struct.pack_into(
+            "<H", game_before, 0x0D96, active_segment if active else 0
+        )
+        struct.pack_into("<H", game_before, 0x0DA4, header)
+        struct.pack_into("<H", game_before, 0x0DA6, row_mode)
+        struct.pack_into("<H", game_before, 0x0DAA, 0xA500 + case_index)
+        game_before[0x0DB8] = 0x60 + case_index
+        game_before[0x0DB9] = back_buffer_mode
+        game_before[0x0DBA] = compressed
+        game_before[0x0DBB] = skip_present
+        game_before[0x0DBD] = unclamped_rows
+        struct.pack_into("<H", game_before, 0x1FA7, vertical_offset)
+        struct.pack_into(
+            "<HH", game_before, 0x5221, display_offset, display_segment
+        )
+        struct.pack_into(
+            "<HH", game_before, 0x5229, back_buffer_offset, back_buffer_segment
+        )
+        game_expected = bytearray(game_before)
+        struct.pack_into("<H", game_expected, 0x0D96, 0)
+        struct.pack_into(
+            "<H", game_expected, 0x0DAA, active_segment if active else 0
+        )
+        if active:
+            game_expected[0x0DB8] = 1
+
+        data_before = bytes(
+            (offset * 31 + (offset >> 8) * 13 + case_index * 19) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 37 + (offset >> 8) * 3 + case_index * 17) & 0xFF
+            for offset in range(0x10000)
+        )
+        display_before = bytes(
+            (offset * 41 + (offset >> 8) * 5 + case_index * 13) & 0xFF
+            for offset in range(0x10000)
+        )
+        back_buffer_before = bytes(
+            (offset * 43 + (offset >> 8) * 9 + case_index * 11) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 47 + case_index * 7 + 0x51) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0C] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A10000 | (0x3000 + case_index),
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse_df else 0x0202,
+        }
+
+        x, y = coordinates if coordinates is not None else (0, 0)
+        adjusted_y = (y + vertical_offset) & 0xFFFF
+        width = header & 0xF9FF
+        rows = row_mode & 0xFF
+        expected_calls = []
+        if active:
+            if back_buffer_mode & 1:
+                effective_row_mode = (
+                    (row_mode & 0xFF00) | min(rows, 0x82)
+                    if rows != 0
+                    else row_mode
+                )
+                if rows != 0:
+                    expected_calls.append(
+                        {
+                            "call": "resource_rect_blit",
+                            "return_ip": 0xA48B,
+                            "source": [active_segment, source_cursor],
+                            "target_segment": back_buffer_segment,
+                            "x": x,
+                            "y": adjusted_y,
+                            "width": width,
+                            "row_mode": effective_row_mode,
+                        }
+                    )
+                expected_calls.append(
+                    {
+                        "call": "full_screen_blit",
+                        "return_ip": 0xA497,
+                        "source": [back_buffer_segment, back_buffer_offset],
+                    }
+                )
+            else:
+                if (skip_present & 1) == 0:
+                    expected_calls.append(
+                        {
+                            "call": "full_screen_blit",
+                            "return_ip": 0xA4AF,
+                            "source": [back_buffer_segment, back_buffer_offset],
+                        }
+                    )
+                if compressed != 0:
+                    expected_calls.append(
+                        {
+                            "call": "resource_payload_decode_rect",
+                            "return_ip": 0xA4DE,
+                            "source": [active_segment, active_offset],
+                            "staging_offset": 0,
+                        }
+                    )
+                elif rows != 0:
+                    effective_rows = rows
+                    if (unclamped_rows & 1) == 0:
+                        effective_rows = min(effective_rows, 0x82)
+                    expected_calls.append(
+                        {
+                            "call": "resource_rect_blit",
+                            "return_ip": 0xA4CF,
+                            "source": [active_segment, source_cursor],
+                            "target_segment": display_segment,
+                            "x": x,
+                            "y": adjusted_y,
+                            "width": width,
+                            "row_mode": (row_mode & 0xFF00) | effective_rows,
+                        }
+                    )
+
+        observed_calls = []
+        callback_flags = (0x0AD7 | (0x0400 if reverse_df else 0))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0xA4ED, 0xAB25, full_screen_entry):
+                return
+            if len(observed_calls) >= len(expected_calls):
+                raise AssertionError(f"0xa41a {name}: unexpected callback")
+            expected = expected_calls[len(observed_calls)]
+            callback_name = {
+                0xA4ED: "resource_rect_blit",
+                0xAB25: "resource_payload_decode_rect",
+                full_screen_entry: "full_screen_blit",
+            }[address]
+            if callback_name != expected["call"]:
+                raise AssertionError(
+                    f"0xa41a {name}: call={callback_name}, expected={expected['call']}"
+                )
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            if callback_name == "full_screen_blit":
+                actual = {
+                    "call": callback_name,
+                    "return_ip": struct.unpack(
+                        "<H", machine.mem_read(stack_segment * 16 + stack_pointer, 2)
+                    )[0],
+                    "return_cs": struct.unpack(
+                        "<H", machine.mem_read(stack_segment * 16 + stack_pointer + 2, 2)
+                    )[0],
+                    "source": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "sp": stack_pointer,
+                }
+                expected_actual = dict(expected)
+                expected_actual.update({"return_cs": 0, "sp": 0xFEE6})
+            elif callback_name == "resource_rect_blit":
+                actual = {
+                    "call": callback_name,
+                    "return_ip": struct.unpack(
+                        "<H", machine.mem_read(stack_segment * 16 + stack_pointer, 2)
+                    )[0],
+                    "source": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "target_segment": machine.reg_read(UC_X86_REG_ES),
+                    "x": machine.reg_read(UC_X86_REG_DX),
+                    "y": machine.reg_read(UC_X86_REG_BX),
+                    "width": machine.reg_read(UC_X86_REG_DI),
+                    "row_mode": machine.reg_read(UC_X86_REG_CX),
+                    "sp": stack_pointer,
+                }
+                expected_actual = dict(expected)
+                expected_actual["sp"] = 0xFEEC
+            else:
+                actual = {
+                    "call": callback_name,
+                    "return_ip": struct.unpack(
+                        "<H", machine.mem_read(stack_segment * 16 + stack_pointer, 2)
+                    )[0],
+                    "source": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "staging_offset": machine.reg_read(UC_X86_REG_DI),
+                    "sp": stack_pointer,
+                }
+                expected_actual = dict(expected)
+                expected_actual["sp"] = 0xFEEA
+            if actual != expected_actual:
+                raise AssertionError(
+                    f"0xa41a {name}: callback={actual}, expected={expected_actual}"
+                )
+            if machine.reg_read(UC_X86_REG_AX) != requested_id:
+                raise AssertionError(f"0xa41a {name}: callback AX differs")
+            if machine.reg_read(UC_X86_REG_BP) != active_segment:
+                raise AssertionError(f"0xa41a {name}: callback BP differs")
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+            observed_calls.append(actual)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xA4ED, b"\xc3"),
+                (0, 0xAB25, b"\xc3"),
+                (0, full_screen_entry, b"\xcb"),
+                (active_segment, 0, bytes(active_before)),
+                (data_segment, 0, data_before),
+                (extra_segment, 0, extra_before),
+                (display_segment, 0, display_before),
+                (back_buffer_segment, 0, back_buffer_before),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+        if len(observed_calls) != len(expected_calls):
+            raise AssertionError(
+                f"0xa41a {name}: calls={observed_calls}, expected={expected_calls}"
+            )
+        for segment, expected, description in (
+            (active_segment, bytes(active_before), "active resource"),
+            (data_segment, data_before, "entry DS"),
+            (extra_segment, extra_before, "entry ES"),
+            (display_segment, display_before, "display"),
+            (back_buffer_segment, back_buffer_before, "back buffer"),
+        ):
+            actual_memory = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual_memory != expected:
+                raise AssertionError(f"0xa41a {name}: {description} changed")
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(game_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_game, game_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0xa41a {name}: game state differs at {mismatch:#x}: "
+                f"{actual_game[mismatch]:#x} != {game_expected[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        if active:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | (0 if compressed and not back_buffer_mode else requested_id)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa41a {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa41a {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa41a {name}: stack sentinel changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        if observed_calls:
+            flag_mask = 0x0CD5
+            expected_flags = callback_flags & flag_mask
+        else:
+            flag_mask = 0x0CC5
+            expected_flags = (0x0244 | (0x0400 if reverse_df else 0)) & flag_mask
+        if flags_after & flag_mask != expected_flags:
+            raise AssertionError(
+                f"0xa41a {name}: flags={flags_after & flag_mask:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "active": active,
+                "header": header,
+                "masked_width": width,
+                "row_mode": row_mode,
+                "coordinates": list(coordinates) if coordinates is not None else None,
+                "vertical_offset": vertical_offset,
+                "adjusted_y": adjusted_y,
+                "source_offset": active_offset,
+                "payload_offset": source_cursor,
+                "direction": "backward" if reverse_df else "forward",
+                "back_buffer_mode": bool(back_buffer_mode & 1),
+                "skip_present": bool(skip_present & 1),
+                "compressed": bool(compressed),
+                "unclamped_rows": bool(unclamped_rows & 1),
+                "calls": observed_calls,
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+                "state_sha256": hashlib.sha256(actual_game).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def resource_rect_blit_vectors() -> list[dict[str, object]]:
     entry = 0xA4ED
     expected_hash = "d68fc64fe931eda8ecabf762096b253b2324a77d9dcc17eb4298953f7d99fbdc"
@@ -54782,6 +55253,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_ab25_natural.json",
         resource_payload_decode_rect_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a41a_natural.json",
+        resource_active_present_vectors(),
         args.check,
     )
     update_vector(

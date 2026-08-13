@@ -228,7 +228,7 @@ void CB_NEAR back_buffer_copy_from(
 void CB_FAR blit_fill_row_5221(cb_u8 color); /* 0x003D7B */
 void CB_FAR back_buffer_fill(cb_u8 color);   /* 0x003DBF */
 void CB_FAR full_screen_blit(
-        const cb_u32 CB_NEAR *source); /* 0x003E46 */
+        const cb_u32 CB_FAR *source); /* 0x003E46 */
 void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
 void CB_FAR bridge_panorama_frame_unpack(
@@ -325,7 +325,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
-#pragma aux full_screen_blit parm [si] modify exact []
+#pragma aux full_screen_blit parm [ds si] modify exact []
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
 #pragma aux bridge_panorama_frame_unpack parm [ds si]
 #pragma aux font8x8_text_draw_display \

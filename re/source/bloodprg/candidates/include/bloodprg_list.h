@@ -36,6 +36,15 @@ extern volatile cb_u16 list_d8c_sequence_index;    /* DS:0x131C */
 extern volatile cb_u8 CB_FAR list_d8c_buffer[];    /* segment at 0x0A7E */
 extern volatile cb_u16 list_d8c_default_entry_segment; /* GS:0x0ABE */
 extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
+extern volatile cb_u16 list_d8c_active_layout;     /* GS:0x0DA4 */
+extern volatile cb_u16 list_d8c_active_row_mode;   /* GS:0x0DA6 */
+extern volatile cb_u16 list_d8c_retired_segment;   /* GS:0x0DAA */
+extern volatile cb_u8 resource_frame_presented;    /* GS:0x0DB8 */
+extern volatile cb_u8 resource_draw_via_back_buffer; /* GS:0x0DB9 */
+extern volatile cb_u8 resource_decode_rectangular; /* GS:0x0DBA */
+extern volatile cb_u8 resource_skip_back_buffer_present; /* GS:0x0DBB */
+extern volatile cb_u8 resource_unclamped_row_count; /* GS:0x0DBD */
+extern volatile cb_u16 resource_vertical_offset;   /* GS:0x1FA7 */
 extern volatile cb_u16 timer_tick_count;          /* DS:0x0B29 */
 extern volatile cb_u16 list_d8c_audio_phase;      /* DS:0x0C41 */
 extern volatile cb_u8 list_d8c_tick_threshold;    /* DS:0x0D77 */
@@ -59,6 +68,7 @@ void CB_NEAR queue_d8c_wrap(cb_u16 byte_count, cb_u16 cursor); /* 0x00A38E */
 int CB_NEAR queue_d8c_has_room(cb_u16 byte_count); /* 0x00A3AD */
 void CB_NEAR queue_d8c_consume(void);            /* 0x00A3D0 */
 int CB_NEAR list_d8c_state_le_one(void);         /* 0x00A40B */
+void CB_FAR list_d8c_active_present(void);       /* 0x00A41A */
 int CB_NEAR flag_test_b17(void);                  /* 0x00A634 */
 void CB_NEAR queue_d8c_enqueue(cb_u16 byte_count); /* 0x00A734 */
 void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
