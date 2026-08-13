@@ -10,6 +10,7 @@
 __pycache__/
 /re/re_loop_sessions
 /re/compiler_corpus/out/
+/re/integration/dos/out/
 /accuracy/captures
 /accuracy/comparisons
 /accuracy/.dosbox.runtime.conf
