@@ -51,6 +51,39 @@ typedef struct xdb_alien_trig_sample {
     xdb_i16 sine;
 } xdb_alien_trig_sample;
 
+typedef struct xdb_alien_slot7_root_state {
+    xdb_u8 field_000[0x12];
+    xdb_i32 field_012;
+    xdb_u8 field_016[0x0c];
+    xdb_i32 field_022;
+    xdb_u8 field_026[0x0c];
+    xdb_i32 field_032;
+    xdb_i32 field_036;
+    xdb_i32 field_03a;
+} xdb_alien_slot7_root_state;
+
+typedef struct xdb_alien_slot7_state {
+    xdb_alien_slot7_root_state XDB_NEAR *root;
+    xdb_u8 field_002[0x34];
+    xdb_i32 field_036;
+    xdb_i32 field_03a;
+    xdb_i32 field_03e;
+    xdb_i32 position_x;
+    xdb_i32 position_y;
+    xdb_u8 field_04a[0x04];
+    xdb_i16 mouse_y;
+    xdb_u16 mouse_x_0;
+    xdb_u16 mouse_x_1;
+} xdb_alien_slot7_state;
+
+typedef union xdb_alien_palette_cycle {
+    struct {
+        xdb_i8 step;
+        xdb_i8 countdown;
+    } fields;
+    xdb_u16 word;
+} xdb_alien_palette_cycle;
+
 typedef struct xdb_alien_state {
     xdb_u8 field_000[0x0b0];
     xdb_i16 field_0b0;
@@ -121,6 +154,7 @@ typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
+extern volatile xdb_u16 xdb_alien_palette_segment; /* DS:0x0004 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan; /* DS:0x0030 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
@@ -143,6 +177,18 @@ extern volatile xdb_u16 xdb_alien_exit_requested; /* FS:0x226E; FS=DS invariant 
 extern volatile xdb_u16 xdb_alien_random_state; /* FS:0x105C; FS=DS invariant */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_key_event; /* CS:0x0095 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_code_flags; /* CS:0x02FC */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_palette_previous_level; /* CS:0x009B */
+extern volatile xdb_alien_palette_cycle XDB_CODE_DATA
+        xdb_alien_palette_cycle_state; /* CS:0x009F */
+extern const volatile xdb_u8 XDB_CODE_DATA
+        xdb_amer_palette_remap[256]; /* AMER CS:0x049B */
+extern const volatile xdb_u8 XDB_CODE_DATA
+        xdb_croolis_palette_remap[256]; /* CROOLIS CS:0x04DC */
+extern const volatile xdb_u8 XDB_CODE_DATA
+        xdb_scrut_palette_remap[256]; /* SCRUT CS:0x04DC */
+extern volatile xdb_u16 xdb_alien_palette_pulse_0; /* DS:0x2536 */
+extern volatile xdb_u16 xdb_alien_palette_pulse_1; /* DS:0x2594 */
+extern volatile xdb_u16 xdb_alien_palette_pulse_2; /* DS:0x25F2 */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -225,6 +271,12 @@ void XDB_NEAR xdb_scrut_mouse_camera_step(void);
 void XDB_NEAR xdb_amer_camera_matrix_update(void);
 void XDB_NEAR xdb_croolis_camera_matrix_update(void);
 void XDB_NEAR xdb_scrut_camera_matrix_update(void);
+void XDB_NEAR xdb_amer_method_slot_7_palette_update(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_7_palette_update(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_7_palette_update(
+        xdb_alien_method_context XDB_NEAR *context);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
@@ -330,6 +382,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_camera_matrix_update \
         modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_method_slot_7_palette_update \
+        parm [di] modify exact [ax bx cx dx si es]
+#pragma aux xdb_croolis_method_slot_7_palette_update \
+        parm [di] modify exact [ax bx cx dx si es]
+#pragma aux xdb_scrut_method_slot_7_palette_update \
+        parm [di] modify exact [ax bx cx dx si es]
 #endif
 
 #endif

@@ -2433,6 +2433,22 @@ Turbo C 2.01 medium emits 490 instructions. The original uses 32-bit register
 instructions directly in its 16-bit code segment, so neither compiler recreates
 its arithmetic shape. No inline assembly was added to force that shape.
 
+Alien method-table slot 7 at AMER `0x000355` and CROOLIS/SCRUT `0x00036A`
+initializes the root transform, links the biased object state, applies
+mouse-derived modular motion, advances a code-resident palette phase, and
+remaps two disjoint byte ranges in a far palette segment. The CROOLIS/SCRUT
+form also decrements a pulse counter and publishes three shifted palette
+values. Twenty-four raw-overlay executions cover every phase exit, countdown
+reversal, ascending and reversed spans, the 63-page split, pulse paths,
+overflowing motion arithmetic, all memory owners, registers, flags, and stack.
+
+The source uses typed root/object records, an explicit far palette pointer, and
+ordinary byte-remap loops. The full CROOLIS/SCRUT original is 121
+instructions/370 bytes; Open Watcom medium emits 203/584 with two `__U4M`
+calls, while Turbo C 2.01 medium emits 272 instructions. The AMER original is
+106/326 and its Watcom candidate is 531 bytes. This remains natural C without
+an emulation or register-state layer.
+
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for
 both versions. For example, Turbo C 2.01's `CH.LIB` `_strlen` member is a
@@ -2472,6 +2488,7 @@ LCS and then mnemonic similarity:
 | `xdb_amer_slot2_return_update` | medium, `-ox -zdp`, register | 29/37 | 0.0690 | 0.7241 | 0.1724 |
 | `xdb_amer_slot2_steer_update` | medium, `-ox -zdp`, register | 18/47 | 0.0556 | 0.5556 | 0.2222 |
 | `xdb_alien_camera_matrix_update` | medium, `-ox -zdp`, register | 151/330 | 0.0066 | 0.6358 | 0.0331 |
+| `xdb_alien_slot7_palette_update` | medium, `-ox -zdp`, register | 121/203 | 0.0165 | 0.5785 | 0.0579 |
 | `xdb_slot3_update_or_init` | medium, `-ox -zdp`, register | 76/109 | 0.0263 | 0.6842 | 0.0658 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |

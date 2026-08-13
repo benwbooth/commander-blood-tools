@@ -3054,6 +3054,446 @@ def alien_camera_matrix_update_vectors(
     return vectors
 
 
+def alien_slot7_palette_update_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    if module == "amer":
+        body_size = 326
+        body_hash = "ece70386a3be89e1fee265e7a6574ab62278cba59efa250d2bbe20bd19a17249"
+        remap_offset = 0x049B
+        has_pulse = False
+    else:
+        body_size = 370
+        body_hash = "7835f5dd49d2936d8747723768ac7008a4ed64a11b3791df33e35222bec184f8"
+        remap_offset = 0x04DC
+        has_pulse = True
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+    remap_hash = "6af1ae4b4333d445ca410bb39b95986483a032741a6928c7ce6a8b776ffd56e9"
+    if hashlib.sha256(image[remap_offset : remap_offset + 256]).hexdigest() != remap_hash:
+        raise AssertionError(f"{module}:{entry:#x}: palette remap changed")
+
+    data_segment = 0x5000
+    palette_segment = 0x7000
+    extra_segment = 0x9000
+    fs_segment = 0xB000
+    game_segment = 0xC000
+    stack_segment = 0xE000
+    context = 0x3000
+    root = 0x4000
+    state = root + 0x005E
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("a55a69967887")
+    mask32 = 0xFFFFFFFF
+    cases = (
+        ("phase_above_range", 0x0081, 0x0020, 1, 2, 0x0000),
+        ("next_phase_negative", 0x007F, 0x0070, 1, 2, 0x0001),
+        ("stationary_phase", 0x0040, 0x0040, 0, 2, 0x0002),
+        ("high_palette_forward", 0x003C, 0x0038, -4, 2, 0x0003),
+        ("low_palette_forward", 0x0064, 0x0060, -4, 1, 0x0004),
+        ("cross_palette_ranges", 0x0050, 0x003C, -2, 3, 0x0005),
+        ("swapped_palette_ranges", 0x003C, 0x0050, 2, 4, 0x0100),
+        ("countdown_flip", 0x0060, 0x0064, -3, 0, 0xFFFF),
+    )
+    mouse_cases = (
+        (0, 0),
+        (1, -1),
+        (-1, 1),
+        (0x7FFF, -0x8000),
+        (-0x8000, 0x7FFF),
+        (0x1234, -0x2345),
+        (-0x3456, 0x4567),
+        (0x5A5A, -0x6B6B),
+    )
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= mask32
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def with_low_word(value: int, low: int) -> int:
+        return (value & 0xFFFF0000) | (low & 0xFFFF)
+
+    def sub_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+        left &= 0xFFFF
+        right &= 0xFFFF
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": (left & 0xF) < (right & 0xF),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": bool(((left ^ right) & (left ^ result) & 0x8000)),
+        }
+
+    def add_flags_8(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+        left &= 0xFF
+        right &= 0xFF
+        total = left + right
+        result = total & 0xFF
+        return {
+            "cf": total > 0xFF,
+            "pf": result.bit_count() % 2 == 0,
+            "af": ((left & 0xF) + (right & 0xF)) > 0xF,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": bool((~(left ^ right) & (left ^ result) & 0x80)),
+        }
+
+    def remap_pages(
+        palette: bytearray,
+        remap: bytes,
+        first_page: int,
+        last_page: int,
+        first_byte: int,
+        last_byte: int,
+    ) -> int:
+        last_word = 0
+        for page in range(first_page, last_page):
+            base = (page << 8) & 0xFFFF
+            for offset in range(first_byte, last_byte, 2):
+                low_offset = (base + offset) & 0xFFFF
+                high_offset = (low_offset + 1) & 0xFFFF
+                low = remap[palette[low_offset]]
+                high = remap[palette[high_offset]]
+                palette[low_offset] = low
+                palette[high_offset] = high
+                last_word = low | (high << 8)
+        return last_word
+
+    for case_index, case in enumerate(cases):
+        name, level, previous, step, countdown, code_flags = case
+        mouse_x, mouse_y = mouse_cases[case_index]
+        data_before = bytearray(
+            (offset * 29 + case_index * 31 + 11) & 0xFF
+            for offset in range(0x10000)
+        )
+        palette_before = bytearray(
+            (offset * 37 + case_index * 43 + 17) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, 0x0004, palette_segment)
+        put_u16(data_before, 0x002A, mouse_x)
+        put_u16(data_before, 0x002C, mouse_y)
+        put_u16(data_before, context + 0x16, root)
+        put_u32(data_before, state + 0x36, 0x70000004 + case_index * 0x11111111)
+        put_u32(data_before, state + 0x3A, 0x90000004 - case_index * 0x01020304)
+        put_u32(data_before, state + 0x3E, 0x80000100 + case_index * 0x1234567)
+        put_u32(data_before, state + 0x42, 0x7FFFFFFC - case_index * 0x10203)
+        put_u32(data_before, state + 0x46, 0x80000004 + case_index * 0x20304)
+
+        code_before = bytearray(image)
+        put_u16(code_before, 0x0099, level)
+        put_u16(code_before, 0x009B, previous)
+        control = ((countdown & 0xFF) << 8) | (step & 0xFF)
+        put_u16(code_before, 0x009F, control)
+        put_u16(code_before, 0x02FC, code_flags)
+        code_expected = bytearray(code_before)
+        data_expected = bytearray(data_before)
+        palette_expected = bytearray(palette_before)
+
+        put_u32(data_expected, root + 0x36, 0)
+        put_u32(data_expected, root + 0x3A, 0)
+        put_u32(data_expected, root + 0x12, 0x00008000)
+        put_u32(data_expected, root + 0x22, 0x00008000)
+        put_u32(data_expected, root + 0x32, 0x00008000)
+        put_u16(data_expected, state, root)
+
+        scaled = signed_dword(get_u32(data_expected, state + 0x3E)) >> 8
+        delta_y = (-60 * scaled) & mask32
+        delta_x = (scaled * (mouse_x & mask32)) & mask32
+        delta_x = (signed_dword(delta_x) >> 2) & mask32
+        delta_x = (delta_x - get_u32(data_expected, state + 0x36)) & mask32
+        delta_y = (delta_y - get_u32(data_expected, state + 0x3A)) & mask32
+        delta_x = (signed_dword(delta_x) >> 16) & mask32
+        delta_y = (signed_dword(delta_y) >> 16) & mask32
+        put_u16(data_expected, state + 0x52, (mouse_x << 2) & 0xFFFF)
+        put_u16(data_expected, state + 0x50, (mouse_x << 2) & 0xFFFF)
+        put_u16(data_expected, state + 0x4E, -mouse_y)
+        put_u32(
+            data_expected,
+            state + 0x42,
+            get_u32(data_expected, state + 0x42) + delta_x,
+        )
+        put_u32(
+            data_expected,
+            state + 0x46,
+            get_u32(data_expected, state + 0x46) + delta_y,
+        )
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+
+        eax = mouse_x & mask32
+        eax = with_low_word(eax, mouse_x << 2)
+        ebx = (-signed_word(mouse_y)) & mask32
+        ecx = delta_x
+        edx = delta_y
+        esi = with_low_word(initial["esi"], state)
+        es_after = extra_segment
+
+        if has_pulse:
+            ecx = with_low_word(ecx, code_flags)
+            if code_flags != 0:
+                pulse = (code_flags - 1) & 0xFFFF
+                put_u16(code_expected, 0x02FC, pulse)
+                shift = pulse & 3
+                ecx = with_low_word(ecx, shift)
+                eax = with_low_word(eax, 10 << shift)
+                ebx = with_low_word(ebx, 13 << shift)
+                edx = with_low_word(edx, 11 << shift)
+                put_u16(data_expected, 0x2536, 10 << shift)
+                put_u16(data_expected, 0x2594, 13 << shift)
+                put_u16(data_expected, 0x25F2, 11 << shift)
+
+        eax = with_low_word(eax, level)
+        expected_flags = sub_flags_16(level, 0x0080, initial_flags)
+        palette_path = "phase_above_range"
+        if level <= 0x0080:
+            lower = (0x0080 - level) & 0xFFFF
+            upper = (0x0080 - previous) & 0xFFFF
+            esi = with_low_word(esi, lower)
+            edx = with_low_word(edx, upper)
+            put_u16(code_expected, 0x009B, level)
+            ebx = with_low_word(ebx, control)
+            next_level = ((level & 0xFF) + (step & 0xFF)) & 0xFF
+            eax = (eax & 0xFFFFFF00) | next_level
+            expected_flags = add_flags_8(level, step, initial_flags)
+            palette_path = "next_phase_negative"
+            if (next_level & 0x80) == 0:
+                next_countdown = (countdown - 1) & 0xFF
+                next_step = step & 0xFF
+                if next_countdown & 0x80:
+                    next_countdown = 3
+                    next_step = (-next_step) & 0xFF
+                next_control = (next_countdown << 8) | next_step
+                ebx = with_low_word(ebx, next_control)
+                put_u16(code_expected, 0x009F, next_control)
+                put_u16(code_expected, 0x0099, next_level)
+                expected_flags = sub_flags_16(lower, upper, initial_flags)
+                palette_path = "stationary"
+                if lower != upper:
+                    if signed_word(lower) > signed_word(upper):
+                        lower, upper = upper, lower
+                    esi = with_low_word(esi, lower)
+                    edx = with_low_word(edx, upper)
+                    eax = with_low_word(eax, palette_segment)
+                    ebx = with_low_word(ebx, remap_offset)
+                    es_after = palette_segment
+                    remap = bytes(code_expected[remap_offset : remap_offset + 256])
+                    high_lower = max(lower - 0x003F, 0)
+                    high_upper = max(upper - 0x003F, 0)
+                    last_word = 0
+                    if high_lower != high_upper:
+                        last_word = remap_pages(
+                            palette_expected,
+                            remap,
+                            high_lower,
+                            high_upper,
+                            0x1E,
+                            0x100,
+                        )
+                        ecx = with_low_word(ecx, 0x0071)
+                    low_lower = min(lower, 0x003F)
+                    low_upper = min(upper, 0x003F)
+                    esi = with_low_word(esi, low_lower)
+                    edx = with_low_word(edx, low_upper - low_lower)
+                    if low_lower != low_upper:
+                        last_word = remap_pages(
+                            palette_expected,
+                            remap,
+                            low_lower,
+                            low_upper,
+                            0,
+                            0x1E,
+                        )
+                        esi = with_low_word(esi, low_upper << 8)
+                        edx = with_low_word(edx, 0)
+                        ecx = with_low_word(ecx, 0x000F)
+                        palette_path = "high_and_low" if high_lower != high_upper else "low"
+                    else:
+                        edx = with_low_word(edx, 0)
+                        palette_path = "high"
+                    eax = with_low_word(eax, last_word)
+                    expected_flags = sub_flags_16(1, 1, initial_flags)
+
+        extra_before = bytes(
+            (offset * 13 + case_index + 3) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 17 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (palette_segment, 0, bytes(palette_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100000,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10000)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code differs at {differences}"
+            )
+        actual_palette = bytes(machine.mem_read(palette_segment * 16, 0x10000))
+        if actual_palette != bytes(palette_expected):
+            differences = [
+                (offset, actual_palette[offset], palette_expected[offset])
+                for offset in range(0x10000)
+                if actual_palette[offset] != palette_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: palette differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers.update(
+            {
+                "eax": eax,
+                "ebx": ebx,
+                "ecx": ecx,
+                "edx": edx,
+                "esi": esi,
+                "es": es_after,
+                "sp": 0xFF02,
+            }
+        )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        changed_palette_bytes = sum(
+            actual != before
+            for actual, before in zip(palette_expected, palette_before)
+        )
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "path": palette_path,
+                "mouse": [signed_word(mouse_x), signed_word(mouse_y)],
+                "position_after": [
+                    signed_dword(get_u32(data_expected, state + offset))
+                    for offset in (0x42, 0x46)
+                ],
+                "level_before": level,
+                "level_after": get_u16(code_expected, 0x0099),
+                "previous_after": get_u16(code_expected, 0x009B),
+                "control_after": get_u16(code_expected, 0x009F),
+                "pulse_after": get_u16(code_expected, 0x02FC),
+                "changed_palette_bytes": changed_palette_bytes,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "palette_sha256": hashlib.sha256(palette_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
     relative = (value + origin) & 0xFFFF
     windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
@@ -10099,6 +10539,16 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_camera_matrix_update_vectors(module, entry),
+            args.check,
+        )
+    for module, entry in (
+        ("amer", 0x0355),
+        ("croolis", 0x036A),
+        ("scrut", 0x036A),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot7_palette_update_vectors(module, entry),
             args.check,
         )
     for module, entry, cursor_offset in (
