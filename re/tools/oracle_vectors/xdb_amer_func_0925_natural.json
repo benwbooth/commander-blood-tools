@@ -1,0 +1,263 @@
+[
+  {
+    "name": "inside_zero",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 16384,
+    "biased_state": 16478,
+    "bounds": {
+      "first_signed": 0,
+      "second_signed": 0,
+      "unsigned_axis": 0
+    },
+    "accumulator_before": 0,
+    "accumulator_after": 64,
+    "exit_before": 42240,
+    "exit_after": 1,
+    "final_path": "exit_requested",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "inclusive_limits",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 16896,
+    "biased_state": 16990,
+    "bounds": {
+      "first_signed": -100,
+      "second_signed": 100,
+      "unsigned_axis": 100
+    },
+    "accumulator_before": 64,
+    "accumulator_after": 128,
+    "exit_before": 42241,
+    "exit_after": 1,
+    "final_path": "exit_requested",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "unsigned_axis_above",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 17408,
+    "biased_state": 17502,
+    "bounds": {
+      "first_signed": 0,
+      "second_signed": 0,
+      "unsigned_axis": 101
+    },
+    "accumulator_before": 32767,
+    "accumulator_after": 32831,
+    "exit_before": 42242,
+    "exit_after": 42242,
+    "final_path": "unsigned_axis_rejected",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "unsigned_axis_high_bit",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 17920,
+    "biased_state": 18014,
+    "bounds": {
+      "first_signed": 0,
+      "second_signed": 0,
+      "unsigned_axis": 65535
+    },
+    "accumulator_before": 65472,
+    "accumulator_after": 0,
+    "exit_before": 42243,
+    "exit_after": 42243,
+    "final_path": "unsigned_axis_rejected",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "first_signed_axis_above",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 18432,
+    "biased_state": 18526,
+    "bounds": {
+      "first_signed": 101,
+      "second_signed": 0,
+      "unsigned_axis": 0
+    },
+    "accumulator_before": 4660,
+    "accumulator_after": 4724,
+    "exit_before": 42244,
+    "exit_after": 42244,
+    "final_path": "first_signed_axis_above",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_signed_axis_below",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 18944,
+    "biased_state": 19038,
+    "bounds": {
+      "first_signed": -101,
+      "second_signed": 0,
+      "unsigned_axis": 0
+    },
+    "accumulator_before": 43981,
+    "accumulator_after": 44045,
+    "exit_before": 42245,
+    "exit_after": 42245,
+    "final_path": "first_signed_axis_below",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "second_signed_axis_above",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 19456,
+    "biased_state": 19550,
+    "bounds": {
+      "first_signed": 0,
+      "second_signed": 101,
+      "unsigned_axis": 0
+    },
+    "accumulator_before": 32768,
+    "accumulator_after": 32832,
+    "exit_before": 42246,
+    "exit_after": 42246,
+    "final_path": "second_signed_axis_above",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "second_signed_axis_below",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 19968,
+    "biased_state": 20062,
+    "bounds": {
+      "first_signed": 0,
+      "second_signed": -101,
+      "unsigned_axis": 0
+    },
+    "accumulator_before": 192,
+    "accumulator_after": 256,
+    "exit_before": 42247,
+    "exit_after": 42247,
+    "final_path": "second_signed_axis_below",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "state_pointer_wrap",
+    "module": "amer",
+    "entry": 2341,
+    "state_base": 65472,
+    "biased_state": 30,
+    "bounds": {
+      "first_signed": -100,
+      "second_signed": -100,
+      "unsigned_axis": 100
+    },
+    "accumulator_before": 65534,
+    "accumulator_after": 62,
+    "exit_before": 42248,
+    "exit_after": 1,
+    "final_path": "exit_requested",
+    "falls_through_to": 2392,
+    "fallthrough_stack_unchanged": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  }
+]

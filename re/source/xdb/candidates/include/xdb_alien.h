@@ -7,11 +7,17 @@
 #define XDB_ALIEN_FIELD_DELTA 0x000fu
 
 typedef struct xdb_alien_biased_state {
-    xdb_u8 field_000[0x42];
+    xdb_u8 field_000[0x38];
+    xdb_i16 field_038;
+    xdb_u8 field_03a[0x02];
+    xdb_i16 field_03c;
+    xdb_u8 field_03e[0x02];
+    xdb_u16 field_040;
     xdb_i32 position_x;
     xdb_i32 position_y;
     xdb_i32 position_z;
-    xdb_u8 field_04e[0x04];
+    xdb_u8 field_04e[0x02];
+    xdb_u16 field_050;
     xdb_i16 field_052;
     xdb_u8 field_054[0x0a];
 } xdb_alien_biased_state;
@@ -67,6 +73,7 @@ extern volatile xdb_i16 xdb_alien_camera_pitch; /* DS:0x22F6 */
 extern volatile xdb_i16 xdb_alien_camera_pan; /* DS:0x22F8 */
 extern volatile xdb_i16 xdb_alien_camera_pan_secondary; /* DS:0x22FA */
 extern volatile xdb_i16 xdb_alien_camera_depth_step; /* DS:0x22FC */
+extern volatile xdb_u16 xdb_alien_exit_requested; /* FS:0x226E; FS=DS invariant */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_key_event; /* CS:0x0095 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_code_flags; /* CS:0x02FC */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -112,6 +119,12 @@ void XDB_NEAR xdb_croolis_method_slot_6_wrap_positions(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_method_slot_6_wrap_positions(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_slot_10_bounds_then_wrap(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_10_bounds_then_wrap(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_10_bounds_then_wrap(
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_mouse_camera_step(void);
 void XDB_NEAR xdb_croolis_mouse_camera_step(void);
 void XDB_NEAR xdb_scrut_mouse_camera_step(void);
@@ -151,6 +164,12 @@ void XDB_NEAR xdb_scrut_resume_1c45(
 #pragma aux xdb_croolis_method_slot_6_wrap_positions \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_method_slot_6_wrap_positions \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_method_slot_10_bounds_then_wrap \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_croolis_method_slot_10_bounds_then_wrap \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_scrut_method_slot_10_bounds_then_wrap \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_amer_mouse_camera_step modify exact [ax bx cx dx]
 #pragma aux xdb_croolis_mouse_camera_step modify exact [ax bx cx dx]

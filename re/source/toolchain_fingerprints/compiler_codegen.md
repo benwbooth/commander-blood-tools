@@ -2046,6 +2046,24 @@ sign extension, 94-byte traversal, and decrement loop, but uses `BX`, `CWD`,
 split word stores, and `DEC/JNE`; scratch registers and final flags therefore
 differ. Turbo C 2.01 medium emits 56 instructions with a stack argument.
 
+The byte-identical slot-10 preludes at AMER `0x000925`, CROOLIS `0x000966`, and
+SCRUT `0x000966` add `0x40` to state `+0x50`, request overlay exit only when
+unsigned word `+0x40` is at most 100 and signed words `+0x38/+0x3C` both lie in
+the inclusive `-100..100` range, then fall through directly into the sibling
+slot-6 wrapper. Nine patched-tail raw-overlay vectors per sibling cover every
+rejecting field, both inclusive boundaries, the high-bit unsigned case, field
+wrap, near-pointer wrap, DS/FS isolation, complete machine state, and the exact
+stack-neutral entry into slot 6.
+
+Open Watcom `-3 -ox -mm -zdp -we` compiles all three actual candidates without
+warnings to the same 17-instruction count and a tail `JMP`, at 61 bytes versus
+51 original. The extra bytes are chiefly relocatable near conditional branches
+to the separately compiled tail rather than the original short branches into
+the immediately adjacent routine. Watcom also uses `BX` for the state cursor
+and addresses the exit global through DS; this is logically equivalent in the
+recompiled overlay under the entry routine's established DS=FS invariant but
+is not segment-prefix-identical code generation.
+
 The byte-identical AMER `0x0002F0`, CROOLIS `0x000305`, and SCRUT `0x000305`
 VGA helpers are recovered as natural counted palette and framebuffer clears,
 two page-global assignments, two word-sized VGA control writes, and two

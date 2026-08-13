@@ -958,6 +958,256 @@ def mouse_camera_step_vectors(
     return vectors
 
 
+def alien_slot10_bounds_then_wrap_vectors(
+    module: str, entry: int, wrap_entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = wrap_entry - entry
+    expected_hash = "a6786d7561c37e5e6e2359d0d8bd9a28781b7f0f5196eeebf3c66d262ddb781d"
+    if hashlib.sha256(image[entry:wrap_entry]).hexdigest() != expected_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte body changed"
+        )
+
+    cases = (
+        ("inside_zero", 0x4000, 0, 0, 0, 0x0000, True),
+        ("inclusive_limits", 0x4200, -100, 100, 100, 0x0040, True),
+        ("unsigned_axis_above", 0x4400, 0, 0, 101, 0x7FFF, False),
+        ("unsigned_axis_high_bit", 0x4600, 0, 0, 0xFFFF, 0xFFC0, False),
+        ("first_signed_axis_above", 0x4800, 101, 0, 0, 0x1234, False),
+        ("first_signed_axis_below", 0x4A00, -101, 0, 0, 0xABCD, False),
+        ("second_signed_axis_above", 0x4C00, 0, 101, 0, 0x8000, False),
+        ("second_signed_axis_below", 0x4E00, 0, -101, 0, 0x00C0, False),
+        ("state_pointer_wrap", 0xFFC0, -100, -100, 100, 0xFFFE, True),
+    )
+    patched_image = bytearray(image)
+    patched_image[wrap_entry] = 0xC3
+    data_segment = 0x3000
+    extra_segment = 0x5000
+    active_segment = 0x7000
+    game_segment = 0x9000
+    stack_segment = 0xB000
+    context_offset = 0x3000
+    return_address = 0xF000
+    vectors = []
+
+    def word(value: int) -> int:
+        return value & 0xFFFF
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    for case_index, (
+        name,
+        state_base,
+        first_signed,
+        second_signed,
+        unsigned_axis,
+        accumulator,
+        should_request_exit,
+    ) in enumerate(cases):
+        state = (state_base + 0x005E) & 0xFFFF
+        data_before = bytearray(
+            ((offset * 29 + case_index * 17 + 3) & 0xFF)
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, context_offset + 0x16, state_base)
+        for offset, value in (
+            (0x38, first_signed),
+            (0x3C, second_signed),
+            (0x40, unsigned_axis),
+            (0x50, accumulator),
+        ):
+            struct.pack_into("<H", data_before, (state + offset) & 0xFFFF, word(value))
+        data_expected = bytearray(data_before)
+        accumulator_after = word(accumulator + 0x40)
+        struct.pack_into("<H", data_expected, (state + 0x50) & 0xFFFF, accumulator_after)
+
+        active_before = bytearray(
+            ((offset * 31 + case_index * 23 + 5) & 0xFF)
+            for offset in range(0x10000)
+        )
+        exit_before = word(0xA500 + case_index)
+        struct.pack_into("<H", active_before, 0x226E, exit_before)
+        active_expected = bytearray(active_before)
+        exit_after = 1 if should_request_exit else exit_before
+        struct.pack_into("<H", active_expected, 0x226E, exit_after)
+
+        if unsigned_axis > 100:
+            final_ax = word(unsigned_axis)
+            compare_right = 100
+            final_path = "unsigned_axis_rejected"
+        elif first_signed > 100:
+            final_ax = word(first_signed)
+            compare_right = 100
+            final_path = "first_signed_axis_above"
+        elif first_signed < -100:
+            final_ax = word(first_signed)
+            compare_right = word(-100)
+            final_path = "first_signed_axis_below"
+        elif second_signed > 100:
+            final_ax = word(second_signed)
+            compare_right = 100
+            final_path = "second_signed_axis_above"
+        else:
+            final_ax = word(second_signed)
+            compare_right = word(-100)
+            final_path = (
+                "second_signed_axis_below"
+                if second_signed < -100
+                else "exit_requested"
+            )
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": active_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        decoys = (
+            bytes((offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)),
+            bytes((offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)),
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        wrap_entries: list[dict[str, int]] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == wrap_entry:
+                wrap_entries.append(
+                    {
+                        "di": machine.reg_read(UC_X86_REG_EDI) & 0xFFFF,
+                        "si": machine.reg_read(UC_X86_REG_ESI) & 0xFFFF,
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "fs": machine.reg_read(UC_X86_REG_FS),
+                    }
+                )
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, decoys[0]),
+                (active_segment, 0, bytes(active_before)),
+                (game_segment, 0, decoys[1]),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=code_handler,
+        )
+
+        expected_entry = {
+            "di": context_offset,
+            "si": state,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "fs": active_segment,
+        }
+        if wrap_entries != [expected_entry]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: wrap entries={wrap_entries}, "
+                f"expected={[expected_entry]}"
+            )
+        for segment, expected, label in (
+            (data_segment, data_expected, "data"),
+            (extra_segment, decoys[0], "extra"),
+            (active_segment, active_expected, "active"),
+            (game_segment, decoys[1], "game"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, len(expected)))
+            if actual != bytes(expected):
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(len(expected))
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: {label} differs at {differences}"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | final_ax
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | state
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        expected_flags = sub_flags_16(final_ax, compare_right, initial_flags)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "state_base": state_base,
+                "biased_state": state,
+                "bounds": {
+                    "first_signed": signed_word(first_signed),
+                    "second_signed": signed_word(second_signed),
+                    "unsigned_axis": word(unsigned_axis),
+                },
+                "accumulator_before": word(accumulator),
+                "accumulator_after": accumulator_after,
+                "exit_before": exit_before,
+                "exit_after": exit_after,
+                "final_path": final_path,
+                "falls_through_to": wrap_entry,
+                "fallthrough_stack_unchanged": True,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
     relative = (value + origin) & 0xFFFF
     windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
@@ -7858,6 +8108,16 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             wrap_positions_vectors(module, entry),
+            args.check,
+        )
+    for module, entry, wrap_entry in (
+        ("amer", 0x0925, 0x0958),
+        ("croolis", 0x0966, 0x0999),
+        ("scrut", 0x0966, 0x0999),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot10_bounds_then_wrap_vectors(module, entry, wrap_entry),
             args.check,
         )
     for module, entry, cursor_offset in (
