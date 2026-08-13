@@ -3,6 +3,14 @@
 
 #include "bloodprg_common.h"
 
+typedef struct bloodprg_resource_decode_result {
+    const volatile cb_u8 CB_FAR *source;
+    volatile cb_u8 CB_FAR *destination;
+} bloodprg_resource_decode_result;
+
+typedef char bloodprg_resource_decode_result_size_must_be_8[
+        sizeof(bloodprg_resource_decode_result) == 8 ? 1 : -1];
+
 extern volatile cb_u16 list_d8c_base_segment;      /* GS:0x0A7E */
 extern volatile cb_u8 state_flag_b17;              /* GS:0x0B17 */
 extern volatile cb_u16 list_d8c_file_handle;       /* game data:0x0D5B */
@@ -32,6 +40,7 @@ extern volatile cb_u16 timer_tick_count;          /* DS:0x0B29 */
 extern volatile cb_u16 list_d8c_audio_phase;      /* DS:0x0C41 */
 extern volatile cb_u8 list_d8c_tick_threshold;    /* DS:0x0D77 */
 extern volatile cb_u16 list_d8c_previous_tick;    /* DS:0x0DA2 */
+extern volatile cb_u16 CB_GAME_DATA resource_decode_mode; /* GS:0x0AA0 */
 
 void CB_NEAR close_file_d5b(void);              /* 0x00A141 */
 volatile cb_u8 CB_FAR *CB_NEAR resource_palette_blocks_apply(
@@ -56,6 +65,16 @@ void CB_NEAR list_d8c_bounds_init(void);        /* 0x00A73E */
 void CB_NEAR list_d8c_wrap_bounds_reset(void);  /* 0x00A744 */
 void CB_FAR list_d8c_init(void);                /* 0x00A757 */
 volatile cb_u8 CB_FAR *CB_NEAR list_d8c_palette_blocks_apply(void); /* 0x00A778 */
+void CB_NEAR resource_payload_decode_ab(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *destination);       /* 0x00A867 */
+void CB_NEAR resource_payload_decode_ad(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *destination);       /* 0x00A914 */
+bloodprg_resource_decode_result CB_NEAR resource_payload_decode_dispatch(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *destination,
+        cb_u16 alternate_destination_segment);     /* 0x00A82C */
 
 #if defined(__WATCOMC__)
 #pragma aux resource_palette_blocks_apply \

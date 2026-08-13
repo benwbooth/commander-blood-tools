@@ -6,6 +6,8 @@
 ; seg_off: 0971:0b1c
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: resource_payload_decode_dispatch
+; label_comment: Clears destination-offset bit 9, sums six source-header bytes modulo 256, dispatches checksum 0xAB to the record-stream decoder and checksum 0xAD to the alternate-segment decoder, and otherwise leaves the source unchanged.
 ; byte_count: 59
 ; boundary: cfg_blocks_5_terminals_2
 ; terminal: ret:2

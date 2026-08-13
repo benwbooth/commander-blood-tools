@@ -49797,6 +49797,295 @@ def mem_copy_words_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_payload_decode_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0xA82C
+    expected_hash = "75ac345da65c1258183340faaf1505164d8b4b53fc2f2b1288a95d0b31c730ee"
+    if hashlib.sha256(EXE[entry : entry + 59]).hexdigest() != expected_hash:
+        raise AssertionError("0xa82c: recovered 59-byte body changed")
+
+    cases = [
+        ("ordinary_low", [1, 2, 3, 4, 5, 6], 0x0100, 0x03FF, False, 0x0247),
+        ("ordinary_below_ab", [0, 0, 0, 0, 0, 0xAA], 0x1111, 0xFEFF, False, 0x0282),
+        ("ordinary_above_ab", [0, 0, 0, 0, 0, 0xAC], 0x2222, 0x0200, False, 0x0212),
+        ("checksum_ab", [1, 2, 3, 4, 5, 0x9C], 0x3333, 0xA7FF, False, 0x0AD7),
+        ("checksum_ad", [1, 2, 3, 4, 5, 0x9E], 0x4444, 0xB6AA, False, 0x0293),
+        ("checksum_ab_source_wrap", [0x80, 1, 2, 3, 4, 0x21], 0xFFFD, 0xFFFF, False, 0x0647),
+        ("checksum_ad_sum_wrap", [0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xBC], 0x5555, 0x1357, False, 0x0202),
+        ("checksum_ab_reverse_df", [0x20, 0x21, 0x22, 0x23, 0x24, 1], 0x0002, 0x0246, True, 0x0603),
+    ]
+    source_segment = 0x2000
+    destination_segment = 0x3800
+    game_segment = 0x5000
+    alternate_segment = 0x6800
+    stack_segment = 0x8000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    callback_changes = {
+        "ax": 0xCAFE,
+        "bx": 0x1357,
+        "cx": 0x2468,
+        "dx": 0x369C,
+        "si": 0x48AD,
+        "di": 0x5ABE,
+        "bp": 0x6BCF,
+    }
+    vectors = []
+
+    def subtract8_flags(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": result.bit_count() % 2 == 0,
+            "af": bool((left ^ right ^ result) & 0x10),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    for case_index, (
+        name,
+        header_bytes,
+        source_offset,
+        destination_offset,
+        reverse_df,
+        callback_flags,
+    ) in enumerate(cases):
+        checksum = sum(header_bytes) & 0xFF
+        path = "ad" if checksum == 0xAD else "ab" if checksum == 0xAB else "none"
+        masked_destination = destination_offset & 0xFDFF
+        initial_mode = (0x7100 + case_index * 0x101) & 0xFFFF
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 5 + case_index * 13) & 0xFF
+            for offset in range(0x10000)
+        )
+        step = -1 if reverse_df else 1
+        for index, value in enumerate(header_bytes):
+            source_before[(source_offset + index * step) & 0xFFFF] = value
+        destination_before = bytes(
+            (offset * 23 + (offset >> 8) * 7 + case_index * 19) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 29 + (offset >> 8) * 11 + case_index * 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x0AA0, initial_mode)
+        game_expected = bytearray(game_before)
+        if path == "ad":
+            struct.pack_into("<H", game_expected, 0x0AA0, 3)
+
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": (0xE5E50000 | source_offset),
+            "edi": (0xF6F60000 | destination_offset),
+            "ebp": (0x97970000 | alternate_segment),
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x1800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse_df else 0x0202,
+        }
+        stack_before = bytearray(
+            (offset * 31 + case_index * 17 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (0xA867, 0xA914):
+                return
+            kind = "ab" if address == 0xA867 else "ad"
+            if kind != path or calls:
+                raise AssertionError(f"0xa82c {name}: unexpected {kind} call")
+            actual = {
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+            }
+            expected = {
+                "ax": (checksum << 8) | header_bytes[-1],
+                "bx": initial["ebx"] & 0xFFFF,
+                "cx": initial["ecx"] & 0xFFFF,
+                "dx": initial["edx"] & 0xFFFF,
+                "si": source_offset,
+                "di": masked_destination,
+                "bp": alternate_segment,
+                "sp": 0xFEFA,
+                "ds": source_segment,
+                "es": alternate_segment if kind == "ad" else destination_segment,
+            }
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa82c {name}: {kind} state={actual}, expected={expected}"
+                )
+            frame = struct.unpack(
+                "<4H", machine.mem_read(stack_segment * 16 + 0xFEFA, 8)
+            )
+            expected_frame = (
+                0xA85E if kind == "ad" else 0xA84D,
+                masked_destination,
+                initial["ecx"] & 0xFFFF,
+                return_address,
+            )
+            if frame != expected_frame:
+                raise AssertionError(
+                    f"0xa82c {name}: {kind} frame={frame}, expected={expected_frame}"
+                )
+            mode_at_call = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x0AA0, 2)
+            )[0]
+            expected_mode = 3 if kind == "ad" else initial_mode
+            if mode_at_call != expected_mode:
+                raise AssertionError(f"0xa82c {name}: mode stored out of order")
+            calls.append(kind)
+            for register, value in callback_changes.items():
+                machine.reg_write(REGISTERS[register], value)
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xA867, b"\xc3"),
+                (0, 0xA914, b"\xc3"),
+                (source_segment, 0, bytes(source_before)),
+                (destination_segment, 0, destination_before),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+        )
+
+        expected_calls = [] if path == "none" else [path]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0xa82c {name}: calls={calls}, expected={expected_calls}"
+            )
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(
+            source_before
+        ):
+            raise AssertionError(f"0xa82c {name}: source changed")
+        if bytes(machine.mem_read(destination_segment * 16, 0x10000)) != (
+            destination_before
+        ):
+            raise AssertionError(f"0xa82c {name}: destination changed by stub")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_expected
+        ):
+            raise AssertionError(f"0xa82c {name}: game state differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        expected_registers["edi"] = (
+            expected_registers["edi"] & 0xFFFF0000
+        ) | masked_destination
+        if path == "none":
+            expected_registers["eax"] = (
+                expected_registers["eax"] & 0xFFFF0000
+            ) | (checksum << 8) | header_bytes[-1]
+        elif path == "ab":
+            for register in ("eax", "ebx", "edx", "ebp"):
+                expected_registers[register] = (
+                    expected_registers[register] & 0xFFFF0000
+                ) | callback_changes[register[1:]]
+            expected_registers["esi"] = (
+                expected_registers["esi"] & 0xFFFF0000
+            ) | callback_changes["di"]
+        else:
+            expected_registers["eax"] = (
+                expected_registers["eax"] & 0xFFFF0000
+            ) | alternate_segment
+            for register in ("ebx", "edx", "ebp"):
+                expected_registers[register] = (
+                    expected_registers[register] & 0xFFFF0000
+                ) | callback_changes[register[1:]]
+            expected_registers["esi"] &= 0xFFFF0000
+            expected_registers["ds"] = alternate_segment
+            expected_registers["es"] = alternate_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa82c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa82c {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa82c {name}: stack sentinel changed")
+
+        if path == "none":
+            expected_flags = subtract8_flags(checksum, 0xAB)
+        elif path == "ab":
+            masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+            expected_flags = {
+                flag: bool(callback_flags & mask) for flag, mask in masks.items()
+            }
+        else:
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xa82c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "header_bytes_in_read_order": header_bytes,
+                "checksum": checksum,
+                "direction": "backward" if reverse_df else "forward",
+                "path": path,
+                "masked_destination_offset": masked_destination,
+                "source_result_offset": (
+                    0 if path == "ad"
+                    else masked_destination if path == "ab"
+                    else source_offset
+                ),
+                "source_result_segment": (
+                    alternate_segment if path == "ad" else source_segment
+                ),
+                "destination_result_segment": (
+                    alternate_segment if path == "ad" else destination_segment
+                ),
+                "mode_before": initial_mode,
+                "mode_after": 3 if path == "ad" else initial_mode,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def flag_gated_copy_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x4000
@@ -52258,6 +52547,11 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_a7e6_natural.json", mem_copy_words_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a82c_natural.json",
+        resource_payload_decode_dispatch_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_ad96_natural.json",
