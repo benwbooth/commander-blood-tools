@@ -12692,6 +12692,206 @@ def framebuffer_rect_fill_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vga_planar_to_chunky_vectors() -> list[dict[str, object]]:
+    entry = 0x3E70
+    expected_hash = "fccf6f984ecd00f605ffb78207e8357ee8105cd23fc3476a6b8f2a293da4f057"
+    if hashlib.sha256(EXE[entry : entry + 94]).hexdigest() != expected_hash:
+        raise AssertionError("0x3e70: recovered 94-byte body changed")
+
+    cases = [
+        {
+            "name": "aligned_buffers",
+            "source_offset": 0,
+            "destination_offset": 0,
+            "direction_flag": False,
+        },
+        {
+            "name": "arbitrary_offsets",
+            "source_offset": 0x1234,
+            "destination_offset": 0x2468,
+            "direction_flag": False,
+        },
+        {
+            "name": "source_offset_wrap",
+            "source_offset": 0xF800,
+            "destination_offset": 0x0310,
+            "direction_flag": False,
+        },
+        {
+            "name": "destination_offset_wrap",
+            "source_offset": 0x0200,
+            "destination_offset": 0xF900,
+            "direction_flag": False,
+        },
+        {
+            "name": "backward_direction_is_cleared",
+            "source_offset": 0x4000,
+            "destination_offset": 0x8000,
+            "direction_flag": True,
+        },
+    ]
+
+    source_segment = 0xA000
+    destination_segment = 0x7000
+    stack_segment = 0xC000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("d129e23af34b045c")
+    expected_ports = [
+        (0x03CE, 2, 0x0004),
+        (0x03CE, 2, 0x0104),
+        (0x03CE, 2, 0x0204),
+        (0x03CE, 2, 0x0304),
+    ]
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        source_offset = int(case["source_offset"])
+        destination_offset = int(case["destination_offset"])
+        direction_flag = bool(case["direction_flag"])
+
+        source_seed = bytes(
+            ((index * 37 + (index >> 8) * 11 + case_index * 43) ^ 0xA5)
+            & 0xFF
+            for index in range(0x10000)
+        )
+        destination_seed = bytes(
+            (index * 29 + case_index * 31 + 0x5B) & 0xFF
+            for index in range(0x10000)
+        )
+        destination_model = bytearray(destination_seed)
+        for plane in range(4):
+            for index in range(16000):
+                source_index = (source_offset + index) & 0xFFFF
+                destination_index = (
+                    destination_offset + plane + index * 4
+                ) & 0xFFFF
+                destination_model[destination_index] = source_seed[source_index]
+
+        stack_memory = bytearray(
+            (index * 17 + case_index * 19 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x4800,
+            "gs": 0x5000,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        port_writes = []
+
+        def capture_output(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            port_writes.append((port, size, value))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, source_seed),
+                (destination_segment, 0, destination_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            output_handler=capture_output,
+            instruction_count=500000,
+        )
+
+        if port_writes != expected_ports:
+            raise AssertionError(
+                f"0x3e70 {name}: ports={port_writes}, expected={expected_ports}"
+            )
+        source_after = bytes(machine.mem_read(source_segment * 16, 0x10000))
+        if source_after != source_seed:
+            raise AssertionError(f"0x3e70 {name}: source changed")
+        destination_after = bytes(
+            machine.mem_read(destination_segment * 16, 0x10000)
+        )
+        if destination_after != bytes(destination_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(destination_after, destination_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3e70 {name}: destination differs at {mismatch:#x}: "
+                f"{destination_after[mismatch]:#x} != "
+                f"{destination_model[mismatch]:#x}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3e70 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3e70 {name}: far return CS differs")
+
+        final_add_left = (destination_offset + 64000) & 0xFFFF
+        expected_flags = add16_flags(final_add_left, 3)
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3e70 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if flags_after & 0x0400:
+            raise AssertionError(f"0x3e70 {name}: direction flag was not cleared")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3e70 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "source": [source_segment, source_offset],
+                "destination": [destination_segment, destination_offset],
+                "direction_flag_before": direction_flag,
+                "direction_flag_after": False,
+                "port_writes": [list(item) for item in port_writes],
+                "defined_flags": expected_flags,
+                "source_sha256": hashlib.sha256(source_after).hexdigest(),
+                "destination_sha256": hashlib.sha256(
+                    destination_after
+                ).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def framebuffer_rect_palette_remap_vectors() -> list[dict[str, object]]:
     entry = 0x339E
     expected_hash = "3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac"
@@ -44805,6 +45005,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3c6c_natural.json",
         framebuffer_rect_fill_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3e70_natural.json",
+        vga_planar_to_chunky_vectors(),
         args.check,
     )
     update_vector(

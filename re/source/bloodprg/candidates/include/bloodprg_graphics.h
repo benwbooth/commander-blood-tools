@@ -125,6 +125,9 @@ void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0BB5 */
 void CB_FAR framebuffer_rect_fill(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0CDC */
+void CB_FAR vga_planar_to_chunky(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *destination); /* 0x0299:0x0EE0 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
@@ -196,6 +199,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 /* These three routines recover entry BP; other fifth arguments remain stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
+#pragma aux vga_planar_to_chunky parm [ds si] [es di] modify exact []
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
