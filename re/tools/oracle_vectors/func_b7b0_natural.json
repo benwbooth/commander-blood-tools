@@ -1,0 +1,188 @@
+[
+  {
+    "name": "ordinary",
+    "driver_segment": 57344,
+    "configuration": 4951,
+    "entry_offsets": [
+      256,
+      291,
+      326,
+      361,
+      396,
+      431,
+      466,
+      501,
+      536
+    ],
+    "all_entry_segments_after": 57344,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 9320,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zero_configuration",
+    "driver_segment": 57856,
+    "configuration": 0,
+    "entry_offsets": [
+      273,
+      308,
+      343,
+      378,
+      413,
+      448,
+      483,
+      518,
+      553
+    ],
+    "all_entry_segments_after": 57856,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 44257,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_configuration",
+    "driver_segment": 58368,
+    "configuration": 65535,
+    "entry_offsets": [
+      290,
+      325,
+      360,
+      395,
+      430,
+      465,
+      500,
+      535,
+      570
+    ],
+    "all_entry_segments_after": 58368,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 32769,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "callback_zero_result",
+    "driver_segment": 58880,
+    "configuration": 31776,
+    "entry_offsets": [
+      307,
+      342,
+      377,
+      412,
+      447,
+      482,
+      517,
+      552,
+      587
+    ],
+    "all_entry_segments_after": 58880,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 0,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "shared_ds_and_gs",
+    "driver_segment": 59392,
+    "configuration": 21930,
+    "entry_offsets": [
+      324,
+      359,
+      394,
+      429,
+      464,
+      499,
+      534,
+      569,
+      604
+    ],
+    "all_entry_segments_after": 59392,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 48879,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_offsets",
+    "driver_segment": 59904,
+    "configuration": 42330,
+    "entry_offsets": [
+      65520,
+      1,
+      32767,
+      32768,
+      4951,
+      9320,
+      13980,
+      18605,
+      23230
+    ],
+    "all_entry_segments_after": 59904,
+    "play_callback": {
+      "offset": 285,
+      "segment": 0
+    },
+    "callback_result_ax": 51966,
+    "callback_clobbers_restored_except_ax": true,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  }
+]

@@ -23303,6 +23303,783 @@ def ship_3d_depth_scroll_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def audio_param_init_cd5_vectors() -> list[dict[str, object]]:
+    entry = 0xB7B0
+    expected_hash = "a4c1c0b88b5a0946e63d332601244eae5acfc57d56ab020bb232920255f67b3c"
+    if hashlib.sha256(EXE[entry : entry + 51]).hexdigest() != expected_hash:
+        raise AssertionError("0xb7b0: recovered 51-byte body changed")
+
+    cases = [
+        ("ordinary", 0xE000, 0x1357, 0x2468, 0x0202),
+        ("zero_configuration", 0xE200, 0x0000, 0xACE1, 0x0247),
+        ("high_configuration", 0xE400, 0xFFFF, 0x8001, 0x0883),
+        ("callback_zero_result", 0xE600, 0x7C20, 0x0000, 0x0296),
+        ("shared_ds_and_gs", 0xE800, 0x55AA, 0xBEEF, 0x0612),
+        ("wrapped_offsets", 0xEA00, 0xA55A, 0xCAFE, 0x0AD7),
+    ]
+    game_segment = 0x2C00
+    data_segment = 0x4000
+    extra_segment = 0x4800
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name, driver_segment, configuration, callback_result, callback_flags = case
+        incoming_ds = game_segment if name == "shared_ds_and_gs" else data_segment
+        offsets = [
+            (0x0100 + case_index * 0x11 + index * 0x23) & 0xFFFF
+            for index in range(9)
+        ]
+        if name == "wrapped_offsets":
+            offsets = [0xFFF0, 0x0001, 0x7FFF, 0x8000, 0x1357,
+                       0x2468, 0x369C, 0x48AD, 0x5ABE]
+        callback_offset = offsets[0]
+        callback_address = driver_segment * 16 + callback_offset
+        initial_segments = [
+            (0x1000 + case_index * 0x101 + index * 0x77) & 0xFFFF
+            for index in range(9)
+        ]
+        table_before = b"".join(
+            struct.pack("<HH", offset, segment)
+            for offset, segment in zip(offsets, initial_segments, strict=True)
+        )
+        table_expected = b"".join(
+            struct.pack("<HH", offset, driver_segment)
+            for offset in offsets
+        )
+        callback_changes = {
+            "ax": callback_result,
+            "bx": 0x1357,
+            "cx": 0x2468,
+            "dx": 0x369C,
+            "si": 0x48AD,
+            "di": 0x5ABE,
+            "bp": 0x6BCF,
+            "ds": 0x7CE0,
+            "es": 0x8DF1,
+        }
+        initial = {
+            "eax": 0xA1A10000 | driver_segment,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": incoming_ds,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        callback_calls = []
+        pointer_before = bytes.fromhex("a55a6996")
+        data_table_decoy = bytes(value ^ 0xFF for value in table_before)
+        stack_sentinel = bytes.fromhex("69965aa5c33c")
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_address:
+                return
+            callback_calls.append(address)
+
+            actual_table = bytes(
+                machine.mem_read(game_segment * 16 + 0x0CD3, 36)
+            )
+            if actual_table != table_expected:
+                raise AssertionError(
+                    f"0xb7b0 {name}: table not relocated before callback"
+                )
+            expected_pointer = struct.pack("<HH", 0x011D, 0)
+            actual_pointer = bytes(
+                machine.mem_read(game_segment * 16 + 0x0AEC, 4)
+            )
+            if actual_pointer != expected_pointer:
+                raise AssertionError(
+                    f"0xb7b0 {name}: play pointer={actual_pointer.hex()}, "
+                    f"expected={expected_pointer.hex()}"
+                )
+
+            actual_entry = {
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+            }
+            expected_entry = {
+                "ax": configuration,
+                "bx": game_segment,
+                "cx": 0,
+                "dx": initial["edx"] & 0xFFFF,
+                "si": initial["esi"] & 0xFFFF,
+                "di": 0x0CF9,
+                "bp": initial["ebp"] & 0xFFFF,
+                "sp": 0xFEEC,
+                "ds": game_segment,
+                "es": extra_segment,
+                "cs": driver_segment,
+                "ip": callback_offset,
+            }
+            if actual_entry != expected_entry:
+                raise AssertionError(
+                    f"0xb7b0 {name}: callback state={actual_entry}, "
+                    f"expected={expected_entry}"
+                )
+
+            return_frame = struct.unpack(
+                "<HHHHHHHHHH",
+                machine.mem_read(stack_segment * 16 + 0xFEEC, 20),
+            )
+            expected_frame = (
+                0xB7DA,
+                0,
+                initial["ebp"] & 0xFFFF,
+                initial["esi"] & 0xFFFF,
+                incoming_ds,
+                initial["edi"] & 0xFFFF,
+                extra_segment,
+                initial["edx"] & 0xFFFF,
+                initial["ecx"] & 0xFFFF,
+                initial["ebx"] & 0xFFFF,
+            )
+            if return_frame != expected_frame:
+                raise AssertionError(
+                    f"0xb7b0 {name}: callback frame={return_frame}, "
+                    f"expected={expected_frame}"
+                )
+
+            for register, value in callback_changes.items():
+                machine.reg_write(REGISTERS[register], value)
+            machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+
+        memory = [
+            (0, return_address, b"\xcc"),
+            (driver_segment, callback_offset, b"\xcb"),
+            (game_segment, 0x0AEC, pointer_before),
+            (game_segment, 0x0C45, struct.pack("<H", configuration)),
+            (game_segment, 0x0CD3, table_before),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<HH", return_address, 0) + stack_sentinel,
+            ),
+        ]
+        if incoming_ds != game_segment:
+            memory.extend(
+                [
+                    (incoming_ds, 0x0AEC, pointer_before[::-1]),
+                    (incoming_ds, 0x0C45, struct.pack("<H", configuration ^ 0xFFFF)),
+                    (incoming_ds, 0x0CD3, data_table_decoy),
+                ]
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+        if callback_calls != [callback_address]:
+            raise AssertionError(
+                f"0xb7b0 {name}: callback calls={callback_calls}"
+            )
+        if bytes(machine.mem_read(game_segment * 16 + 0x0CD3, 36)) != table_expected:
+            raise AssertionError(f"0xb7b0 {name}: relocated table changed")
+        expected_pointer = struct.pack("<HH", 0x011D, 0)
+        if bytes(machine.mem_read(game_segment * 16 + 0x0AEC, 4)) != expected_pointer:
+            raise AssertionError(f"0xb7b0 {name}: play callback not published")
+        if incoming_ds != game_segment:
+            if bytes(machine.mem_read(incoming_ds * 16 + 0x0CD3, 36)) != data_table_decoy:
+                raise AssertionError(f"0xb7b0 {name}: DS table decoy changed")
+            if bytes(machine.mem_read(incoming_ds * 16 + 0x0AEC, 4)) != pointer_before[::-1]:
+                raise AssertionError(f"0xb7b0 {name}: DS pointer decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            (initial["eax"] & 0xFFFF0000) | callback_result
+        )
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb7b0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb7b0 {name}: far return did not restore CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40,
+                      "sf": 0x80, "of": 0x800}
+        expected_flags = {
+            flag: bool(callback_flags & mask)
+            for flag, mask in flag_masks.items()
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xb7b0 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0xb7b0 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "driver_segment": driver_segment,
+                "configuration": configuration,
+                "entry_offsets": offsets,
+                "all_entry_segments_after": driver_segment,
+                "play_callback": {"offset": 0x011D, "segment": 0},
+                "callback_result_ax": callback_result,
+                "callback_clobbers_restored_except_ax": True,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def audio_process_ade_vectors() -> list[dict[str, object]]:
+    entry = 0xB7E3
+    expected_hash = "64cde5b00846af7e05e9d3bc48fa6088a5d2381d09d16bb322768d0162eec490"
+    if hashlib.sha256(EXE[entry : entry + 234]).hexdigest() != expected_hash:
+        raise AssertionError("0xb7e3: recovered 234-byte body changed")
+
+    cases = [
+        {
+            "name": "sound_disabled",
+            "sound": 0,
+            "mode": 0,
+            "cf9": 1,
+            "cfa": 1,
+            "cfb": 1,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 7,
+            "last": 3,
+            "count": 12,
+            "base": 4,
+            "limit": 20,
+            "words": [0x20, 0xFFFF],
+            "prng": [],
+        },
+        {
+            "name": "mode_suppresses_dialogue",
+            "sound": 1,
+            "mode": 1,
+            "cf9": 1,
+            "cfa": 1,
+            "cfb": 0,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 19,
+            "last": 5,
+            "count": 9,
+            "base": 3,
+            "limit": 18,
+            "words": [0x20, 0xFFFF],
+            "prng": [],
+        },
+        {
+            "name": "mode_allows_chatter",
+            "sound": 1,
+            "mode": 1,
+            "cf9": 1,
+            "cfa": 1,
+            "cfb": 1,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 21,
+            "last": 5,
+            "count": 10,
+            "base": 4,
+            "limit": 20,
+            "words": [0x20, 0xFFFF],
+            "prng": [3],
+        },
+        {
+            "name": "hash_empty",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 1,
+            "cfa": 0,
+            "cfb": 0,
+            "cooldown": 0,
+            "delay": 0x1234,
+            "seed": 0x4567,
+            "last": 8,
+            "count": 16,
+            "base": 5,
+            "limit": 24,
+            "words": [0],
+            "prng": [],
+        },
+        {
+            "name": "hash_signed_words",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 1,
+            "cfa": 0,
+            "cfb": 0,
+            "cooldown": 2,
+            "delay": 0x4321,
+            "seed": 0x9999,
+            "last": 7,
+            "count": 17,
+            "base": 6,
+            "limit": 24,
+            "words": [0x20, 0x40, 0x60, 0xFFFF],
+            "prng": [],
+        },
+        {
+            "name": "split_ds_gs_hash",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 1,
+            "cfa": 0,
+            "cfb": 0,
+            "cooldown": 3,
+            "delay": 0x2222,
+            "seed": 0x3333,
+            "last": 4,
+            "count": 14,
+            "base": 7,
+            "limit": 25,
+            "words": [0x40, 0x20, 0],
+            "prng": [],
+            "split": True,
+        },
+        {
+            "name": "armed_delay_busy",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 0,
+            "cfa": 1,
+            "cfb": 1,
+            "cooldown": 2,
+            "delay": 3,
+            "seed": 7,
+            "last": 2,
+            "count": 20,
+            "base": 4,
+            "limit": 20,
+            "words": [0],
+            "prng": [],
+        },
+        {
+            "name": "armed_primary",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 0,
+            "cfa": 1,
+            "cfb": 0,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 7,
+            "last": 9,
+            "count": 32,
+            "base": 4,
+            "limit": 20,
+            "words": [0],
+            "prng": [],
+        },
+        {
+            "name": "primary_range_and_duplicate_retry",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 0,
+            "cfa": 1,
+            "cfb": 0,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 40,
+            "last": 2,
+            "count": 10,
+            "base": 18,
+            "limit": 20,
+            "words": [0],
+            "prng": [],
+        },
+        {
+            "name": "voice_prng_reroll",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 0,
+            "cfa": 0,
+            "cfb": 1,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 11,
+            "last": 3,
+            "count": 18,
+            "base": 3,
+            "limit": 17,
+            "words": [0],
+            "prng": [3, 3, 6],
+        },
+        {
+            "name": "primary_then_voice",
+            "sound": 1,
+            "mode": 0,
+            "cf9": 0,
+            "cfa": 1,
+            "cfb": 1,
+            "cooldown": 0,
+            "delay": 0,
+            "seed": 7,
+            "last": 9,
+            "count": 32,
+            "base": 4,
+            "limit": 20,
+            "words": [0],
+            "prng": [2, 4],
+        },
+    ]
+    game_segment = 0x2C00
+    split_game_segment = 0x3400
+    dictionary_segment = 0x5000
+    dictionary_offset = 0
+    word_list_offset = 0x6900
+    stack_segment = 0x9000
+    prng_segment = 0x01CE
+    prng_offset = 0x0B02
+    prng_address = prng_segment * 16 + prng_offset
+    return_address = 0x6F00
+    dictionary_words = {
+        0x20: b"A\x80\xff\0",
+        0x40: b"Commander\0",
+        0x60: b"\0",
+    }
+    vectors = []
+
+    def hash_words(offsets: list[int]) -> int:
+        total = 0
+        count = 0
+        for offset in offsets:
+            if offset in (0, 0xFFFF):
+                break
+            for value in dictionary_words[offset][:-1]:
+                total = (total + (value if value < 0x80 else value - 0x100)) & 0xFFFF
+            count += 1
+        return ((total + count) & 0xFFFF) >> 4
+
+    def select_primary(seed: int, count: int, last: int) -> tuple[int, int, int]:
+        selection_state = seed
+        clip = seed
+        next_seed = seed
+        iterations = 0
+        while iterations < 0x10000:
+            iterations += 1
+            selection_state = (selection_state - 2) & 0xFFFF
+            clip = (clip - (selection_state & 0x1F)) & 0xFFFF
+            if clip & 0x8000:
+                clip = (-clip) & 0xFFFF
+            if clip >= count:
+                continue
+            next_seed = (next_seed + 1) & 0xFFFF
+            if clip != last:
+                return clip, next_seed, iterations
+        raise AssertionError("0xb7e3: primary selection model did not converge")
+
+    def choose_delay(seed: int, base: int, limit: int) -> tuple[int, int]:
+        step = seed & 0x0F
+        attempts = 0
+        while attempts < 16:
+            attempts += 1
+            delay = (base + step) & 0xFF
+            step >>= 1
+            if delay <= limit:
+                return delay if delay < 0x80 else 0xFF00 | delay, attempts
+        raise AssertionError("0xb7e3: delay model did not converge")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        split = bool(case.get("split", False))
+        gs_segment = split_game_segment if split else game_segment
+        expected_ds = {
+            "cf9": int(case["cf9"]),
+            "cfa": int(case["cfa"]),
+            "cooldown": int(case["cooldown"]),
+            "delay": int(case["delay"]),
+            "last": int(case["last"]),
+            "seed": int(case["seed"]),
+        }
+        expected_gs = dict(expected_ds)
+        expected_play_calls: list[int] = []
+        expected_prng_calls: list[int] = []
+        primary_iterations = 0
+        delay_attempts = 0
+        active = bool(int(case["sound"]) & 1)
+
+        if active and not (int(case["mode"]) & 1):
+            if int(case["cf9"]) & 1:
+                hashed = hash_words(list(case["words"]))
+                expected_ds["cf9"] = 0
+                if split:
+                    expected_gs["seed"] = hashed
+                    expected_gs["cfa"] = 1
+                else:
+                    expected_ds["seed"] = hashed
+                    expected_ds["cfa"] = 1
+                    expected_gs = dict(expected_ds)
+            elif int(case["cfa"]) & 1 and int(case["delay"]) == 0:
+                delay, delay_attempts = choose_delay(
+                    int(case["seed"]), int(case["base"]), int(case["limit"])
+                )
+                clip, next_seed, primary_iterations = select_primary(
+                    int(case["seed"]), int(case["count"]), int(case["last"])
+                )
+                expected_ds["delay"] = delay
+                expected_ds["seed"] = next_seed
+                expected_ds["last"] = clip
+                expected_gs = dict(expected_ds)
+                expected_play_calls.append(clip | 0x8000)
+
+        if active and int(case["cfb"]) & 1 and int(case["cooldown"]) == 0:
+            expected_ds["cooldown"] = 4
+            expected_gs["cooldown"] = 4
+            comparison_last = expected_ds["last"]
+            for value in list(case["prng"]):
+                expected_prng_calls.append(10)
+                if value != comparison_last:
+                    expected_ds["last"] = value
+                    expected_gs["last"] = value
+                    expected_play_calls.append((value + 7) & 0xFFFF)
+                    break
+            else:
+                raise AssertionError(f"0xb7e3 {name}: PRNG sequence has no unique result")
+
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": game_segment,
+            "es": 0x4800,
+            "fs": 0x6000,
+            "gs": gs_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        ds_state = bytearray(0x260)
+        for index in range(len(ds_state)):
+            ds_state[index] = (index * 17 + case_index * 29 + 0x53) & 0xFF
+
+        def put_ds_byte(offset: int, value: int) -> None:
+            ds_state[offset - 0x0ADE] = value & 0xFF
+
+        def put_ds_word(offset: int, value: int) -> None:
+            struct.pack_into("<H", ds_state, offset - 0x0ADE, value & 0xFFFF)
+
+        put_ds_byte(0x0ADE, int(case["sound"]))
+        put_ds_byte(0x0ADF, int(case["mode"]))
+        put_ds_byte(0x0B2F, int(case["cooldown"]))
+        put_ds_word(0x0B33, int(case["delay"]))
+        put_ds_word(0x0BBB, int(case["count"]))
+        put_ds_byte(0x0BBD, int(case["base"]))
+        put_ds_byte(0x0BBE, int(case["limit"]))
+        put_ds_word(0x0C4D, int(case["last"]))
+        put_ds_word(0x0C53, int(case["count"]))
+        put_ds_word(0x0C55, int(case["seed"]))
+        put_ds_byte(0x0CF9, int(case["cf9"]))
+        put_ds_byte(0x0CFA, int(case["cfa"]))
+        put_ds_byte(0x0CFB, int(case["cfb"]))
+
+        gs_state = bytearray(ds_state)
+        if split:
+            for index in range(len(gs_state)):
+                gs_state[index] ^= 0xA5
+            struct.pack_into("<H", gs_state, 0x0C55 - 0x0ADE, int(case["seed"]))
+            gs_state[0x0CFA - 0x0ADE] = int(case["cfa"])
+
+        word_list = b"".join(struct.pack("<H", value) for value in case["words"])
+        play_calls = []
+        prng_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xB8CD:
+                play_calls.append(
+                    {
+                        "clip": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+            elif address == prng_address:
+                call_index = len(prng_calls)
+                sequence = list(case["prng"])
+                if call_index >= len(sequence):
+                    raise AssertionError(f"0xb7e3 {name}: unexpected PRNG call")
+                prng_calls.append(
+                    {
+                        "modulus": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, sequence[call_index])
+
+        memory = [
+            (0, return_address, b"\xcc"),
+            (0, 0xB8CD, b"\xcb"),
+            (prng_segment, prng_offset, b"\xcb"),
+            (game_segment, 0x0ADE, bytes(ds_state)),
+            (
+                game_segment,
+                0x6728,
+                struct.pack("<HH", dictionary_offset, dictionary_segment),
+            ),
+            (
+                game_segment,
+                0x674A,
+                struct.pack("<HH", word_list_offset, game_segment),
+            ),
+            (game_segment, word_list_offset, word_list),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<HH", return_address, 0) +
+                bytes.fromhex("69965aa5c33c"),
+            ),
+        ]
+        if split:
+            memory.append((gs_segment, 0x0ADE, bytes(gs_state)))
+        for offset, contents in dictionary_words.items():
+            memory.append(
+                (dictionary_segment, dictionary_offset + offset, contents)
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=50000,
+        )
+
+        actual_play_calls = [int(call["clip"]) for call in play_calls]
+        if actual_play_calls != expected_play_calls:
+            raise AssertionError(
+                f"0xb7e3 {name}: play calls={actual_play_calls}, "
+                f"expected={expected_play_calls}"
+            )
+        for call in play_calls:
+            if call["ds"] != game_segment or call["sp"] != 0xFEEA:
+                raise AssertionError(f"0xb7e3 {name}: play call state={call}")
+        actual_prng_calls = [int(call["modulus"]) for call in prng_calls]
+        if actual_prng_calls != expected_prng_calls:
+            raise AssertionError(
+                f"0xb7e3 {name}: PRNG calls={actual_prng_calls}, "
+                f"expected={expected_prng_calls}"
+            )
+        for call in prng_calls:
+            if call["ds"] != game_segment or call["sp"] != 0xFEEA:
+                raise AssertionError(f"0xb7e3 {name}: PRNG call state={call}")
+
+        def read_byte(segment: int, offset: int) -> int:
+            return machine.mem_read(segment * 16 + offset, 1)[0]
+
+        def read_word(segment: int, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(segment * 16 + offset, 2)
+            )[0]
+
+        actual_ds = {
+            "cf9": read_byte(game_segment, 0x0CF9),
+            "cfa": read_byte(game_segment, 0x0CFA),
+            "cooldown": read_byte(game_segment, 0x0B2F),
+            "delay": read_word(game_segment, 0x0B33),
+            "last": read_word(game_segment, 0x0C4D),
+            "seed": read_word(game_segment, 0x0C55),
+        }
+        if actual_ds != expected_ds:
+            raise AssertionError(
+                f"0xb7e3 {name}: DS state={actual_ds}, expected={expected_ds}"
+            )
+        if split:
+            actual_gs = {
+                "cf9": read_byte(gs_segment, 0x0CF9),
+                "cfa": read_byte(gs_segment, 0x0CFA),
+                "cooldown": read_byte(gs_segment, 0x0B2F),
+                "delay": read_word(gs_segment, 0x0B33),
+                "last": read_word(gs_segment, 0x0C4D),
+                "seed": read_word(gs_segment, 0x0C55),
+            }
+            expected_split_gs = {
+                "cf9": gs_state[0x0CF9 - 0x0ADE],
+                "cfa": expected_gs["cfa"],
+                "cooldown": gs_state[0x0B2F - 0x0ADE],
+                "delay": struct.unpack_from("<H", gs_state, 0x0B33 - 0x0ADE)[0],
+                "last": struct.unpack_from("<H", gs_state, 0x0C4D - 0x0ADE)[0],
+                "seed": expected_gs["seed"],
+            }
+            if actual_gs != expected_split_gs:
+                raise AssertionError(
+                    f"0xb7e3 {name}: GS state={actual_gs}, "
+                    f"expected={expected_split_gs}"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb7e3 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb7e3 {name}: far return did not restore CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != bytes.fromhex(
+            "69965aa5c33c"
+        ):
+            raise AssertionError(f"0xb7e3 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "hash_words": list(case["words"])
+                if (
+                    active
+                    and not (int(case["mode"]) & 1)
+                    and int(case["cf9"]) & 1
+                )
+                else [],
+                "dialogue_seed_after": expected_gs["seed"] if split else expected_ds["seed"],
+                "dialogue_delay_after": expected_ds["delay"],
+                "primary_selection_iterations": primary_iterations,
+                "delay_attempts": delay_attempts,
+                "prng_results": list(case["prng"]),
+                "play_calls": expected_play_calls,
+                "last_clip_after": expected_ds["last"],
+                "cooldown_after": expected_ds["cooldown"],
+                "split_ds_gs": split,
+            }
+        )
+
+    return vectors
+
+
 def snd_driver_call_vectors() -> list[dict[str, object]]:
     entry = 0xBB9D
     expected_hash = "e7fc7b7a0177bf7cbb2bd10dad92f9144b1bb5af1d5fb5d71b53b43f03ac725b"
@@ -31737,6 +32514,16 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b75c_natural.json",
         ship_3d_depth_scroll_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b7b0_natural.json",
+        audio_param_init_cd5_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b7e3_natural.json",
+        audio_process_ade_vectors(),
         args.check,
     )
     update_vector(

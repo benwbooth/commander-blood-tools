@@ -17,7 +17,8 @@ typedef unsigned long u32;
 
 typedef struct snd_bank_header {
     u16 clip_count;
-    u16 reserved_02;
+    u8 dialogue_delay_base;
+    u8 dialogue_delay_limit;
 } snd_bank_header;
 
 typedef struct snd_memory_clip {

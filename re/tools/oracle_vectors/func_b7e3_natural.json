@@ -1,0 +1,176 @@
+[
+  {
+    "name": "sound_disabled",
+    "hash_words": [],
+    "dialogue_seed_after": 7,
+    "dialogue_delay_after": 0,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 3,
+    "cooldown_after": 0,
+    "split_ds_gs": false
+  },
+  {
+    "name": "mode_suppresses_dialogue",
+    "hash_words": [],
+    "dialogue_seed_after": 19,
+    "dialogue_delay_after": 0,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 5,
+    "cooldown_after": 0,
+    "split_ds_gs": false
+  },
+  {
+    "name": "mode_allows_chatter",
+    "hash_words": [],
+    "dialogue_seed_after": 21,
+    "dialogue_delay_after": 0,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [
+      3
+    ],
+    "play_calls": [
+      10
+    ],
+    "last_clip_after": 3,
+    "cooldown_after": 4,
+    "split_ds_gs": false
+  },
+  {
+    "name": "hash_empty",
+    "hash_words": [
+      0
+    ],
+    "dialogue_seed_after": 0,
+    "dialogue_delay_after": 4660,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 8,
+    "cooldown_after": 0,
+    "split_ds_gs": false
+  },
+  {
+    "name": "hash_signed_words",
+    "hash_words": [
+      32,
+      64,
+      96,
+      65535
+    ],
+    "dialogue_seed_after": 53,
+    "dialogue_delay_after": 17185,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 7,
+    "cooldown_after": 2,
+    "split_ds_gs": false
+  },
+  {
+    "name": "split_ds_gs_hash",
+    "hash_words": [
+      64,
+      32,
+      0
+    ],
+    "dialogue_seed_after": 53,
+    "dialogue_delay_after": 8738,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 4,
+    "cooldown_after": 3,
+    "split_ds_gs": true
+  },
+  {
+    "name": "armed_delay_busy",
+    "hash_words": [],
+    "dialogue_seed_after": 7,
+    "dialogue_delay_after": 3,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [],
+    "play_calls": [],
+    "last_clip_after": 2,
+    "cooldown_after": 2,
+    "split_ds_gs": false
+  },
+  {
+    "name": "armed_primary",
+    "hash_words": [],
+    "dialogue_seed_after": 8,
+    "dialogue_delay_after": 11,
+    "primary_selection_iterations": 1,
+    "delay_attempts": 1,
+    "prng_results": [],
+    "play_calls": [
+      32770
+    ],
+    "last_clip_after": 2,
+    "cooldown_after": 0,
+    "split_ds_gs": false
+  },
+  {
+    "name": "primary_range_and_duplicate_retry",
+    "hash_words": [],
+    "dialogue_seed_after": 42,
+    "dialogue_delay_after": 20,
+    "primary_selection_iterations": 7,
+    "delay_attempts": 3,
+    "prng_results": [],
+    "play_calls": [
+      32768
+    ],
+    "last_clip_after": 0,
+    "cooldown_after": 0,
+    "split_ds_gs": false
+  },
+  {
+    "name": "voice_prng_reroll",
+    "hash_words": [],
+    "dialogue_seed_after": 11,
+    "dialogue_delay_after": 0,
+    "primary_selection_iterations": 0,
+    "delay_attempts": 0,
+    "prng_results": [
+      3,
+      3,
+      6
+    ],
+    "play_calls": [
+      13
+    ],
+    "last_clip_after": 6,
+    "cooldown_after": 4,
+    "split_ds_gs": false
+  },
+  {
+    "name": "primary_then_voice",
+    "hash_words": [],
+    "dialogue_seed_after": 8,
+    "dialogue_delay_after": 11,
+    "primary_selection_iterations": 1,
+    "delay_attempts": 1,
+    "prng_results": [
+      2,
+      4
+    ],
+    "play_calls": [
+      32770,
+      11
+    ],
+    "last_clip_after": 4,
+    "cooldown_after": 4,
+    "split_ds_gs": false
+  }
+]

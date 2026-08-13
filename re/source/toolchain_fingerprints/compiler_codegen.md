@@ -2927,6 +2927,52 @@ original, 23/59 for each directory transition versus 18/38, and 31/67 for the
 rectangle versus 19/32. Turbo C 2.01 medium emits 20, 26, 26, and 40
 instructions respectively.
 
+## BLOODPRG SND driver initialization candidate
+
+`0x00B7B0` receives the loaded sound driver's segment in AX and relocates the
+segment word of all nine four-byte far entries beginning at game-data offset
+`0x0CD3`. It then publishes the game's own `snd_play_clip` callback at
+`0x0AEC` and invokes the first relocated driver entry with the startup audio
+configuration from `0x0C45`. The recovered C represents the loaded entry table
+as a union of its far-address layout and typed initializer/command callbacks;
+this is a real 16-bit dynamic-link boundary, not a register or memory emulator.
+
+Six direct-binary vectors vary driver segments, configurations, entry offsets,
+callback results, and callback clobbers. They prove that all offsets survive,
+all nine segments are patched before dispatch, the game callback is published
+before dispatch, DS is switched to GS rather than the incoming decoy, the
+initializer's exact far frame is used, saved callback clobbers are restored
+except for AX, callback flags pass through, and the routine far-returns.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 16 instructions/48 bytes versus 29/51 original. The smaller C
+form relies on ordinary compiler segment and preservation conventions; linked
+placement of the driver table and callback slot remains an integration task.
+
+## BLOODPRG dialogue audio selector candidate
+
+`0x00B7E3` is the per-frame bridge between dialogue state and SND clip indices.
+When `0x0CF9` is armed, it walks the current word-offset list, sums every
+dictionary byte as signed 8-bit data, adds the word count, and shifts by four
+to seed `0x0C55`. On later frames, after timer countdown `0x0B33` reaches zero,
+the seed and the two final SND-header bytes derive both the next delay and a
+nonrepeating streamed-bank clip. The independent `0x0CFB` path waits for the
+faster `0x0B2F` countdown, rerolls `blood_prng_next(10)` until it differs from
+the prior clip, adds seven, and plays the resulting chatter clip.
+
+Eleven direct-binary vectors cover the sound and `0x0ADF` gates, empty and
+signed-byte hashes, both list terminators, the raw routine's temporary DS/GS
+split, delay reduction, streamed-count rejection, duplicate retries and exact
+seed increments, PRNG rerolls, and primary-then-chatter call ordering. They
+also verify the original saved-register and far-return envelope. The timer ISR
+independently confirms that `0x0B2F` and `0x0B33` are decremented at different
+tick divisions, so both are modeled as ordinary countdown state.
+
+Open Watcom compiles the actual natural candidate warning-free to 93
+instructions/258 bytes. The shipped routine is also 93 instructions, occupying
+234 bytes. The remaining differences are segment selection, register saves,
+and branch encoding under the C ABI, not missing selector logic.
+
 ## BLOODPRG SND-bank page backend candidates
 
 The three helpers selected by `0x00BD09` are one logical operation with three
