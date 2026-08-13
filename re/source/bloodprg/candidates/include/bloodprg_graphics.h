@@ -39,6 +39,14 @@ extern volatile cb_u16 CB_GAME_DATA graphics_band_top_row; /* GS:0x5239 */
 extern volatile cb_u16 CB_GAME_DATA graphics_band_bottom_row; /* GS:0x523B */
 extern const cb_u8 square_caps_character_map[]; /* GS:0x7362 */
 extern const cb_u8 square_caps_advance_table[]; /* GS:0x7412 */
+extern const cb_u8 CB_GAME_DATA
+        square_caps_draw_character_map[256]; /* GS:0x7362 */
+extern const cb_u8 CB_GAME_DATA
+        square_caps_draw_advance_table[]; /* GS:0x7412 */
+extern const cb_u8 CB_GAME_DATA
+        square_caps_draw_glyphs[]; /* GS:0x7442 */
+extern volatile cb_u16 CB_GAME_DATA
+        square_caps_draw_width; /* GS:0x27CD */
 extern const cb_u8 main_font_character_map[]; /* GS:0x7802 */
 extern const cb_u8 main_font_advance_table[]; /* GS:0x78B2 */
 extern const cb_u8 selected_mask_rows[][32]; /* DS:0x7BB8 */
@@ -108,6 +116,11 @@ const cb_u8 CB_FAR *CB_FAR font8x8_text_draw_display(
         cb_u16 x,
         cb_u16 y,
         cb_u16 color_and_limit); /* 0x003066: DH=limit, DL=color */
+void CB_FAR square_caps_text_draw_display(
+        const cb_u8 CB_FAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color); /* 0x003106 */
 void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
@@ -125,6 +138,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux bridge_panorama_frame_unpack parm [ds si]
 #pragma aux font8x8_text_draw_display \
         parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
+#pragma aux square_caps_text_draw_display \
+        parm [ds si] [bx] [dx] [ax] modify exact []
 #endif
 
 #endif

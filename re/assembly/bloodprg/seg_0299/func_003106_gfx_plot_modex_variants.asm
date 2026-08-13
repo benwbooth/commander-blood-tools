@@ -6,8 +6,8 @@
 ; seg_off: 0299:0176
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: gfx_plot_modex_variants
-; label_comment: family of clipped mode-X plot/span primitives (0x3106/0x3192/0x3225/0x356e): each clips dx(y) vs gs:[0x523b]/[0x5239] like graphics_plot_modex 0x3428, differing in the shape/vertical offset (sub cx,0xa or 8). The game's set of low-level draw primitives (point/short-span/etc.)
+; label: square_caps_text_draw_display
+; label_comment: Variable-width square-caps text renderer. DS:SI=text, BX=x, DX=y, AL=color. Clears GS:0x27CD, clips the 10-row glyphs against GS:0x5239/0x523B, maps characters through GS:0x7362, reads signed advances from GS:0x7412, expands ten big-endian 16-bit glyph rows from SS:0x7442+index*20 onto GS:[0x5221] with transparent backgrounds, and preserves all 16-bit inputs. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003106_square_caps_text_draw_display.c and re/tools/oracle_vectors/func_3106_natural.json
 ; incoming: call@0x001507->0299:0176
 ; incoming: call@0x001515->0299:0176
 ; incoming: call@0x001520->0299:0176
