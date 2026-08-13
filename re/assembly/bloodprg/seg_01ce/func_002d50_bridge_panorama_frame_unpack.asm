@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: bridge_panorama_frame_unpack
-; label_comment: (= far 0x1CE:0x0A70) TB.BIG panorama-frame RLE unpacker, NOT a clear (old label wrong): les di,gs:[0x5229]; ebp=0xfa00 = decodes EXACTLY 64000 px (full 320x200) from ds:si. Signed control byte: <0 -> run of (-ctrl+1) copies of next byte, >=0 -> (ctrl+1) literals. gs:[0x5b57]&1 selects TRANSPARENT variant (value 0 skips: window starfield/prev frame shows through) vs OPAQUE. Ported+verified: src/tbbig.rs
+; label_comment: (= far 0x1CE:0x0A70) TB.BIG panorama-frame RLE unpacker: decodes exactly 64000 pixels from DS:SI to GS:[0x5229]. A negative signed control repeats the next byte (-control+1) times, including 0x80 as 129; a nonnegative control copies control+1 literals. GS:[0x5B57] bit zero selects zero-transparent output. Natural C and direct raw-binary vectors: re/source/bloodprg/candidates/seg_01ce/func_002d50_bridge_panorama_frame_unpack.c and re/tools/oracle_vectors/func_2d50_natural.json
 ; incoming: call@0x00988e->01ce:0a70
 ; byte_count: 110
 ; boundary: cfg_blocks_14_terminals_6

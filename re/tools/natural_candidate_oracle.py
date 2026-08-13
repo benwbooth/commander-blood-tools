@@ -6877,6 +6877,220 @@ def pbm_byte_run_stream(transparent: bool) -> tuple[bytes, bytes, int]:
     return bytes(stream), bytes(output), stream[-1]
 
 
+def bridge_panorama_frame_unpack_vectors() -> list[dict[str, object]]:
+    entry = 0x2D50
+    expected_hash = "3fee20d60c4cfd5bebdf4d5bb6ab915b147a1483c2d353a4edbacff915a4f2b4"
+    if hashlib.sha256(EXE[entry : entry + 110]).hexdigest() != expected_hash:
+        raise AssertionError("0x2d50: recovered 110-byte body changed")
+
+    cases = [
+        {
+            "name": "opaque_wrapping_source_and_output",
+            "transparent": False,
+            "source_offset": 0xFF80,
+            "output_offset": 0x1000,
+            "direction_flag": False,
+        },
+        {
+            "name": "transparent_zero_preserves_seed",
+            "transparent": True,
+            "source_offset": 0x3000,
+            "output_offset": 0x0200,
+            "direction_flag": False,
+        },
+        {
+            "name": "opaque_inherited_backward_direction",
+            "transparent": False,
+            "source_offset": 0x3000,
+            "output_offset": 0xFFFF,
+            "direction_flag": True,
+        },
+        {
+            "name": "transparent_inherited_backward_direction",
+            "transparent": True,
+            "source_offset": 0x3000,
+            "output_offset": 0x8000,
+            "direction_flag": True,
+        },
+    ]
+
+    data_segment = 0x2000
+    game_segment = 0x4000
+    output_segment = 0x6000
+    stack_segment = 0x9000
+    return_address = 0x6F80
+    stack_sentinel = bytes.fromhex("4bb42dd21ee10ff0")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        transparent = bool(case["transparent"])
+        direction_flag = bool(case["direction_flag"])
+        source_offset = int(case["source_offset"])
+        output_offset = int(case["output_offset"])
+        direction = -1 if direction_flag else 1
+        stream, _decoded, _last_value = pbm_byte_run_stream(transparent)
+
+        source_memory = bytearray(
+            (index * 19 + case_index * 31 + 7) & 0xFF
+            for index in range(0x10000)
+        )
+        for index, value in enumerate(stream):
+            source_memory[(source_offset + direction * index) & 0xFFFF] = value
+
+        output_seed = bytes(
+            (index * 23 + case_index * 41 + 0x5D) & 0xFF
+            for index in range(0x10000)
+        )
+        output_model = bytearray(output_seed)
+        stream_cursor = 0
+        destination = output_offset
+        output_remaining = 64000
+        return_al = 0
+
+        while output_remaining != 0:
+            control_byte = stream[stream_cursor]
+            stream_cursor += 1
+            control = control_byte - 0x100 if control_byte >= 0x80 else control_byte
+            if control < 0:
+                count = -control + 1
+                output_remaining -= count
+                value = stream[stream_cursor]
+                stream_cursor += 1
+                return_al = value
+                if transparent and value == 0:
+                    destination = (destination + count) & 0xFFFF
+                else:
+                    for _ in range(count):
+                        output_model[destination] = value
+                        destination = (destination + direction) & 0xFFFF
+            else:
+                count = control + 1
+                output_remaining -= count
+                return_al = count
+                for _ in range(count):
+                    value = stream[stream_cursor]
+                    stream_cursor += 1
+                    if transparent:
+                        return_al = value
+                    if not transparent or value != 0:
+                        output_model[destination] = value
+                    destination = (
+                        destination + (1 if transparent else direction)
+                    ) & 0xFFFF
+
+        if stream_cursor != len(stream):
+            raise AssertionError(f"0x2d50 {name}: stream accounting differs")
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F67890 + case_index,
+            "ebp": 0x979789A0 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if direction_flag else 0),
+        }
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (data_segment, 0, bytes(source_memory)),
+                (output_segment, 0, output_seed),
+                (
+                    game_segment,
+                    0x5229,
+                    struct.pack("<HH", output_offset, output_segment),
+                ),
+                (
+                    game_segment,
+                    0x5B57,
+                    bytes((1 if transparent else 0,)),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            instruction_count=300000,
+        )
+
+        actual_output = bytes(
+            machine.mem_read(output_segment * 16, 0x10000)
+        )
+        if actual_output != bytes(output_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_output, output_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x2d50 {name}: output differs at {mismatch:#x}: "
+                f"{actual_output[mismatch]:#x} != {output_model[mismatch]:#x}"
+            )
+
+        expected_registers = {
+            "eax": return_al,
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"] & 0xFFFF0000,
+            "edx": initial["edx"],
+            "esi": (initial["esi"] & 0xFFFF0000)
+            | ((source_offset + direction * len(stream)) & 0xFFFF),
+            "edi": (initial["edi"] & 0xFFFF0000) | destination,
+            "ebp": 0,
+            "sp": 0xFF04,
+            "ds": data_segment,
+            "es": output_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2d50 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2d50 {name}: far return CS differs")
+        if bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x0400) != direction_flag:
+            raise AssertionError(f"0x2d50 {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x2d50 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "transparent_zero": transparent,
+                "direction_flag": direction_flag,
+                "source_offset": source_offset,
+                "source_bytes": len(stream),
+                "source_end_offset": expected_registers["esi"] & 0xFFFF,
+                "output_offset": output_offset,
+                "output_end_offset": destination,
+                "output_segment_sha256": hashlib.sha256(actual_output).hexdigest(),
+                "return_eax": machine.reg_read(UC_X86_REG_EAX),
+            }
+        )
+
+    return vectors
+
+
 def pbm_image_load_and_decode_vectors() -> list[dict[str, object]]:
     entry = 0x2BFD
     expected_hash = "3cc1de8ec905520a04c6ef34c7b6724a97a5143ada29276bf0219ec12bc4a055"
@@ -38402,6 +38616,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_2bfd_natural.json",
         pbm_image_load_and_decode_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2d50_natural.json",
+        bridge_panorama_frame_unpack_vectors(),
         args.check,
     )
     update_vector(

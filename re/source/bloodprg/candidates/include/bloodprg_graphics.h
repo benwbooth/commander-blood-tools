@@ -101,6 +101,8 @@ void CB_FAR full_screen_blit(
         const cb_u32 CB_NEAR *source); /* 0x003E46 */
 void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
+void CB_FAR bridge_panorama_frame_unpack(
+        const cb_u8 CB_FAR *source); /* 0x002D50 */
 void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
@@ -115,6 +117,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux back_buffer_fill parm [ax] modify exact []
 #pragma aux full_screen_blit parm [si] modify exact []
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
+#pragma aux bridge_panorama_frame_unpack parm [ds si]
 #endif
 
 #endif
