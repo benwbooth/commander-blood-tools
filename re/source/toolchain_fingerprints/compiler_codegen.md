@@ -2566,6 +2566,21 @@ LCS and then mnemonic similarity:
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
 
+## Alien transform and projection candidate
+
+The byte-identical AMER `0x2027`, CROOLIS `0x206c`, and SCRUT `0x212c`
+routines combine hierarchy transformation and vertex projection in one
+317-instruction, 1192-byte owner. The recovered natural C keeps the 94-byte
+state and 20-byte vertex layouts explicit and leaves the nonpositive-depth
+`0x24bd` block inside that function.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the representative
+candidate without warnings to 675 instructions/1976 bytes. It inserts 18
+`__U4M` calls and two `__I4D` calls where the shipped routine uses inline
+386 `IMUL` and `IDIV`. Turbo C 2.01 medium (`-mm -O -Z`) also compiles without
+warnings and emits 875 instructions. The semantic recovery is therefore
+accepted by the raw-overlay oracle, but neither compiler is a codegen match.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

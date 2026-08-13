@@ -51,6 +51,61 @@ typedef struct xdb_alien_trig_sample {
     xdb_i16 sine;
 } xdb_alien_trig_sample;
 
+typedef union xdb_alien_projection_field_004 {
+    xdb_i16 object_x;
+    xdb_u16 projection_source_offset;
+} xdb_alien_projection_field_004;
+
+typedef union xdb_alien_screen_position {
+    xdb_u32 packed;
+    struct {
+        xdb_i16 x;
+        xdb_i16 y;
+    } position;
+} xdb_alien_screen_position;
+
+typedef struct xdb_alien_projection_vertex {
+    xdb_u8 field_000[0x04];
+    xdb_alien_projection_field_004 field_004;
+    xdb_i16 object_y;
+    xdb_i16 object_z;
+    xdb_alien_screen_position screen;
+    xdb_i32 depth;
+    xdb_u16 clip_flags;
+} xdb_alien_projection_vertex;
+
+typedef struct xdb_alien_projection_state {
+    xdb_u16 parent_offset;
+    xdb_u16 vertex_count;
+    xdb_u16 field_004;
+    xdb_u16 vertex_offset;
+    xdb_u8 field_008[0x0a];
+    xdb_i32 matrix[3][3];
+    xdb_i32 translation[3];
+    xdb_i32 local_position[3];
+    xdb_u16 angle_0;
+    xdb_u16 angle_1;
+    xdb_u16 angle_2;
+    xdb_i16 radial_offset;
+    xdb_u8 field_056[0x08];
+} xdb_alien_projection_state;
+
+typedef struct xdb_alien_projection_context {
+    xdb_u8 field_000[0x16];
+    volatile xdb_alien_projection_state XDB_NEAR *projection_root;
+    xdb_u8 field_018[0x02];
+    xdb_u16 state_count;
+    xdb_u8 field_01c[0x06];
+    xdb_u16 copy_offset;
+    xdb_u8 field_024[0x02];
+    xdb_u16 copy_count;
+} xdb_alien_projection_context;
+
+typedef char xdb_alien_projection_vertex_size_must_be_0x14[
+        sizeof(xdb_alien_projection_vertex) == 0x14 ? 1 : -1];
+typedef char xdb_alien_projection_state_size_must_be_0x5e[
+        sizeof(xdb_alien_projection_state) == 0x5e ? 1 : -1];
+
 typedef struct xdb_alien_slot7_root_state {
     xdb_u8 field_000[0x12];
     xdb_i32 field_012;
@@ -160,6 +215,15 @@ extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
 extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
 extern volatile xdb_alien_trig_sample xdb_alien_angle_table[]; /* DS:0x0036 */
+extern volatile xdb_i32 xdb_alien_screen_center_x; /* DS:0x2270 */
+extern volatile xdb_i32 xdb_alien_screen_center_y; /* DS:0x2274 */
+extern volatile xdb_alien_projection_context XDB_NEAR
+        *xdb_alien_active_projection_context; /* FS:0x2278; FS=DS invariant */
+extern volatile xdb_u16 xdb_alien_current_projection_state_offset; /* DS:0x227A */
+extern volatile xdb_u16 xdb_alien_projection_remaining; /* DS:0x227C */
+extern volatile xdb_u16 xdb_alien_projection_common_clip; /* DS:0x227E */
+extern volatile xdb_u16 xdb_alien_projection_field_2280; /* DS:0x2280 */
+extern volatile xdb_i32 xdb_alien_rotation_matrix[3][3]; /* DS:0x2284 */
 extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
 extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
 extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
@@ -271,6 +335,9 @@ void XDB_NEAR xdb_scrut_mouse_camera_step(void);
 void XDB_NEAR xdb_amer_camera_matrix_update(void);
 void XDB_NEAR xdb_croolis_camera_matrix_update(void);
 void XDB_NEAR xdb_scrut_camera_matrix_update(void);
+void XDB_NEAR xdb_amer_transform_and_project(void);
+void XDB_NEAR xdb_croolis_transform_and_project(void);
+void XDB_NEAR xdb_scrut_transform_and_project(void);
 void XDB_NEAR xdb_amer_method_slot_7_palette_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_method_slot_7_palette_update(
@@ -382,6 +449,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
         modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_camera_matrix_update \
         modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_transform_and_project \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_transform_and_project \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_transform_and_project \
+        modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_amer_method_slot_7_palette_update \
         parm [di] modify exact [ax bx cx dx si es]
 #pragma aux xdb_croolis_method_slot_7_palette_update \

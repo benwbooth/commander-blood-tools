@@ -1,0 +1,361 @@
+[
+  {
+    "name": "interior_projection_and_copy",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      2
+    ],
+    "copy_count": 1,
+    "projected": [
+      [
+        {
+          "screen_x": 180,
+          "screen_y": 70,
+          "depth": 32768,
+          "flags": 0
+        },
+        {
+          "screen_x": 120,
+          "screen_y": 125,
+          "depth": 32768,
+          "flags": 0
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 0,
+    "data_sha256": "e4c005a2be1e5d2cf0c9fae2753297f9370b394ccd944c987ee92db55ff9b1d6",
+    "object_sha256": "40fcd3c7ca4f49b7c1b83e8bef266cbb7c45d85b9074235ff2b4de4daf026cd9"
+  },
+  {
+    "name": "nonpositive_depth_shift",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      2
+    ],
+    "copy_count": 0,
+    "projected": [
+      [
+        {
+          "screen_x": 256,
+          "screen_y": 156,
+          "depth": 0,
+          "flags": 255
+        },
+        {
+          "screen_x": 16,
+          "screen_y": 28,
+          "depth": -256,
+          "flags": 255
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 32768,
+    "data_sha256": "0f70215f77c529663bc49e42f81597a9cfc0791dc7f6c6e6ad6e72e9c7257587",
+    "object_sha256": "70eca73f6e7a580a026f5a843ba510370528e3a1707d6f12782af88a83a52b34"
+  },
+  {
+    "name": "all_clip_and_clamp_edges",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      6
+    ],
+    "copy_count": 0,
+    "projected": [
+      [
+        {
+          "screen_x": -89,
+          "screen_y": 100,
+          "depth": 32768,
+          "flags": 1
+        },
+        {
+          "screen_x": 409,
+          "screen_y": 100,
+          "depth": 32768,
+          "flags": 2
+        },
+        {
+          "screen_x": 160,
+          "screen_y": -149,
+          "depth": 32768,
+          "flags": 4
+        },
+        {
+          "screen_x": 160,
+          "screen_y": 349,
+          "depth": 32768,
+          "flags": 8
+        },
+        {
+          "screen_x": -40,
+          "screen_y": -50,
+          "depth": 32768,
+          "flags": 5
+        },
+        {
+          "screen_x": 360,
+          "screen_y": 250,
+          "depth": 32768,
+          "flags": 10
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 0,
+    "data_sha256": "18361f04d530060bb05b3c2ca3284db180a9eaf7461a0f3c83896000bf18521c",
+    "object_sha256": "40aaa65abb87f328d34ecada37f91a6f5e30f1d17181b522e639ff081008d1bf"
+  },
+  {
+    "name": "common_left_clip_rejection",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      2
+    ],
+    "copy_count": 0,
+    "projected": [
+      [
+        {
+          "screen_x": -10,
+          "screen_y": 100,
+          "depth": 32768,
+          "flags": 255
+        },
+        {
+          "screen_x": -89,
+          "screen_y": 80,
+          "depth": 32768,
+          "flags": 255
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 1,
+    "data_sha256": "85bcb9cc08d1eafec6ca0cbcfa29b64925728fe22ea32b1a49e0928be0dfe3ac",
+    "object_sha256": "4531e9e0778709605d692cbf28d58bd6b28ab81357b2daf063e6d178846a312d"
+  },
+  {
+    "name": "masked_angles_and_radial_rounding",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      2
+    ],
+    "copy_count": 2,
+    "projected": [
+      [
+        {
+          "screen_x": 409,
+          "screen_y": -149,
+          "depth": 163960,
+          "flags": 255
+        },
+        {
+          "screen_x": 409,
+          "screen_y": -149,
+          "depth": 163447,
+          "flags": 255
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      -2302,
+      16494,
+      2446,
+      8084,
+      23320,
+      -12976,
+      18100,
+      -22798,
+      -2302
+    ],
+    "last_common_clip": 6,
+    "data_sha256": "9bb143a2370c47beb7fcd4a05794d6787777fc9fe086fb57451338c181b31113",
+    "object_sha256": "b1b21fdbd5cec0df99627a8eb4e16ffe7394836bc30d619fccff8ae38df77a4e"
+  },
+  {
+    "name": "two_state_parent_chain",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 2,
+    "vertex_counts": [
+      1,
+      2
+    ],
+    "copy_count": 1,
+    "projected": [
+      [
+        {
+          "screen_x": 162,
+          "screen_y": 96,
+          "depth": 33456,
+          "flags": 0
+        }
+      ],
+      [
+        {
+          "screen_x": 151,
+          "screen_y": 84,
+          "depth": 39344,
+          "flags": 0
+        },
+        {
+          "screen_x": 167,
+          "screen_y": 108,
+          "depth": 52144,
+          "flags": 0
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 0,
+    "data_sha256": "7e811b5cc41b3c3ee1a61f95dd58f6a2187ef60aec0fabcb7b036d725f672d75",
+    "object_sha256": "5c7405a576a6a909a9b345fdcb943024765b49be6fb0572299929c1ce533f71a"
+  },
+  {
+    "name": "modular_transform_overflow",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      2
+    ],
+    "copy_count": 0,
+    "projected": [
+      [
+        {
+          "screen_x": -89,
+          "screen_y": -149,
+          "depth": 392,
+          "flags": 255
+        },
+        {
+          "screen_x": -89,
+          "screen_y": -149,
+          "depth": 392,
+          "flags": 255
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      -31242,
+      -68666,
+      3378,
+      -14056,
+      17732,
+      51036,
+      38696,
+      -15106,
+      -20490
+    ],
+    "last_common_clip": 5,
+    "data_sha256": "b65bcea6782fefae453f95b4fec668c30b0ebd9a9d4960325b5bbad1ae52c3e7",
+    "object_sha256": "15f6ab0e8da9095c4ec7939afb2068f0668ac2f8a79ce1dbeacaa7ebb69c5cd5"
+  },
+  {
+    "name": "copy_list_indirection",
+    "module": "scrut",
+    "entry": 8492,
+    "state_count": 1,
+    "vertex_counts": [
+      3
+    ],
+    "copy_count": 3,
+    "projected": [
+      [
+        {
+          "screen_x": 216,
+          "screen_y": 66,
+          "depth": 32768,
+          "flags": 0
+        },
+        {
+          "screen_x": 216,
+          "screen_y": 79,
+          "depth": 65536,
+          "flags": 0
+        },
+        {
+          "screen_x": 230,
+          "screen_y": 50,
+          "depth": 32768,
+          "flags": 0
+        }
+      ]
+    ],
+    "last_rotation_matrix": [
+      32768,
+      0,
+      0,
+      0,
+      32768,
+      0,
+      0,
+      0,
+      32768
+    ],
+    "last_common_clip": 0,
+    "data_sha256": "255d6b5e922e9d8f84644de3d5421d4fa082dafd6c78b5d21a8fc03d1df2ae32",
+    "object_sha256": "6ea9a273cffad56d7066a0f2c1978cc8c778c29719eb97ba05c740477e594f70"
+  }
+]

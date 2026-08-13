@@ -2644,6 +2644,629 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_transform_and_project_vectors(
+    module: str, entry: int
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 1192
+    body_hash = "684386c05fa5f8cf92643bbc57b996af068081eb76ff69ccf5278e67acb5691a"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    object_segment = 0x7000
+    extra_segment = 0x9000
+    game_segment = 0xB000
+    stack_segment = 0xD000
+    return_address = 0xF000
+    context_offset = 0x3000
+    root_offset = 0x4000
+    first_state_offset = root_offset + 0x005E
+    mask32 = 0xFFFFFFFF
+    stack_sentinel = bytes.fromhex("a55a69967887")
+
+    identity_matrix = (
+        0x00008000,
+        0,
+        0,
+        0,
+        0x00008000,
+        0,
+        0,
+        0,
+        0x00008000,
+    )
+    cases = (
+        {
+            "name": "interior_projection_and_copy",
+            "center": (160, 100),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0, 0, 0),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0, 0, 0),
+                    "radial": 0,
+                    "local": (0, 0, 0),
+                    "vertices": ((20, 30, 256), (-40, -25, 256)),
+                },
+            ),
+            "copies": ((0, 1),),
+        },
+        {
+            "name": "nonpositive_depth_shift",
+            "center": (160, 100),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0, 0, 0),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0x0FFC, 0x1001, 0x2002),
+                    "radial": 0,
+                    "local": (0, 0, 0),
+                    "vertices": ((12, -7, 0), (-18, 9, -2)),
+                },
+            ),
+            "copies": (),
+        },
+        {
+            "name": "all_clip_and_clamp_edges",
+            "center": (160, 100),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0, 0, 0),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0, 0, 0),
+                    "radial": 0,
+                    "local": (0, 0, 0),
+                    "vertices": (
+                        (-300, 0, 256),
+                        (300, 0, 256),
+                        (0, 250, 256),
+                        (0, -250, 256),
+                        (-200, 150, 256),
+                        (200, -150, 256),
+                    ),
+                },
+            ),
+            "copies": (),
+        },
+        {
+            "name": "common_left_clip_rejection",
+            "center": (160, 100),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0, 0, 0),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0, 0, 0),
+                    "radial": 0,
+                    "local": (0, 0, 0),
+                    "vertices": ((-170, 0, 256), (-300, 20, 256)),
+                },
+            ),
+            "copies": (),
+        },
+        {
+            "name": "masked_angles_and_radial_rounding",
+            "center": (-17, 243),
+            "trig": "pattern",
+            "root_matrix": identity_matrix,
+            "root_translation": (0x12345678, 0xFEDCBA98, 0x00400000),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0xF337, 0x166A, 0x299D),
+                    "radial": -32767,
+                    "local": (0x7FFFFFFF, 0x80000001, 0x1234FFFF),
+                    "vertices": ((3, -5, 17), (0, 0, 1)),
+                },
+            ),
+            "copies": ((0, 0), (0, 1)),
+        },
+        {
+            "name": "two_state_parent_chain",
+            "center": (160, 100),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0x1000, 0x2000, 0x3000),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0, 0, 0),
+                    "radial": 5,
+                    "local": (1, 2, 3),
+                    "vertices": ((1, 2, 256),),
+                },
+                {
+                    "parent": 0,
+                    "angles": (0x0FFC, 0x0FFC, 0x0FFC),
+                    "radial": -7,
+                    "local": (-4, 5, 6),
+                    "vertices": ((-8, 12, 300), (15, -20, 400)),
+                },
+            ),
+            "copies": ((0, 0),),
+        },
+        {
+            "name": "modular_transform_overflow",
+            "center": (0x7FFFFFF0, 0x80000020),
+            "trig": "pattern",
+            "root_matrix": (
+                0x70000004,
+                0x90000004,
+                0x1234567C,
+                0xFEDCBA9C,
+                0x60000004,
+                0xA0000004,
+                0x7FFFFFF8,
+                0x80000008,
+                0xFFFFFFFF,
+            ),
+            "root_translation": (0x7FFFFFFC, 0x80000004, 0x80000000),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0x0554, 0x0AA8, 0x0EEC),
+                    "radial": 0x4001,
+                    "local": (0x7FFF8000, 0x80007FFF, 0xFFFF0001),
+                    "vertices": ((0, 0, 1), (1, -1, 2)),
+                },
+            ),
+            "copies": (),
+        },
+        {
+            "name": "copy_list_indirection",
+            "center": (211, 73),
+            "trig": "identity",
+            "root_matrix": identity_matrix,
+            "root_translation": (0, 0, 0),
+            "states": (
+                {
+                    "parent": None,
+                    "angles": (0, 0, 0),
+                    "radial": 0,
+                    "local": (0, 0, 0),
+                    "vertices": ((5, 7, 256), (11, -13, 512), (19, 23, 256)),
+                },
+            ),
+            "copies": ((0, 2), (0, 0), (0, 1)),
+        },
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= mask32
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def add32(left: int, right: int) -> int:
+        return (left + right) & mask32
+
+    def mul32(left: int, right: int) -> int:
+        return ((left & mask32) * (right & mask32)) & mask32
+
+    def trunc_div(dividend: int, divisor: int) -> int:
+        quotient = abs(dividend) // abs(divisor)
+        return -quotient if (dividend < 0) != (divisor < 0) else quotient
+
+    def sample(memory: bytearray, angle: int) -> tuple[int, int]:
+        offset = 0x0036 + (angle & 0x0FFC)
+        return (
+            signed_word(get_u16(memory, offset)),
+            signed_word(get_u16(memory, offset + 2)),
+        )
+
+    def rotation_matrix(memory: bytearray, angles: tuple[int, int, int]) -> list[int]:
+        angle_0, angle_1, angle_2 = (value & 0x0FFC for value in angles)
+        result = [0] * 9
+        _cosine, sine = sample(memory, angle_0)
+        result[5] = (-2 * sine) & mask32
+
+        first_cos, first_sin = sample(memory, angle_0 - angle_1 - angle_2)
+        second_cos, second_sin = sample(memory, angle_0 + angle_1 + angle_2)
+        base_cos, base_sin = sample(memory, angle_1 + angle_2)
+        value_0 = signed_dword(first_cos - second_cos) >> 1
+        value_0 = add32(value_0, base_sin)
+        value_1 = signed_dword(first_sin + second_sin) >> 1
+        value_1 = add32(value_1, base_cos)
+        result[1] = value_0
+        result[6] = (-value_0) & mask32
+        result[0] = value_1
+        result[7] = value_1
+
+        first_cos, first_sin = sample(memory, angle_0 - angle_1 + angle_2)
+        second_cos, second_sin = sample(memory, angle_0 + angle_1 - angle_2)
+        base_cos, base_sin = sample(memory, angle_1 - angle_2)
+        value_0 = signed_dword(first_cos - second_cos) >> 1
+        value_1 = signed_dword(first_sin + second_sin) >> 1
+        source_0 = (base_sin - value_0) & mask32
+        source_1 = (base_cos - value_1) & mask32
+        result[1] = (result[1] - source_0) & mask32
+        result[6] = (result[6] - source_0) & mask32
+        result[0] = (result[0] + source_1) & mask32
+        result[7] = (result[7] - source_1) & mask32
+
+        first_cos, first_sin = sample(memory, angle_2 + angle_0)
+        second_cos, second_sin = sample(memory, angle_2 - angle_0)
+        result[4] = (first_cos + second_cos) & mask32
+        result[3] = (-(first_sin + second_sin)) & mask32
+
+        first_cos, first_sin = sample(memory, angle_1 + angle_0)
+        second_cos, second_sin = sample(memory, angle_1 - angle_0)
+        result[8] = (first_cos + second_cos) & mask32
+        result[2] = (first_sin + second_sin) & mask32
+        return result
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        object_before = bytearray(
+            (offset * 13 + case_index * 23 + 9) & 0xFF
+            for offset in range(0x10000)
+        )
+        for table_index in range(1024):
+            if case["trig"] == "identity":
+                cosine = 0x4000
+                sine = 0
+            else:
+                cosine = (table_index * 0x9E37 + case_index * 0x2105 + 0x1357) & 0xFFFF
+                sine = (table_index * 0x6D2B + case_index * 0x4211 + 0xA5A5) & 0xFFFF
+            put_u16(data_before, 0x0036 + table_index * 4, cosine)
+            put_u16(data_before, 0x0038 + table_index * 4, sine)
+
+        put_u16(data_before, 0x0002, object_segment)
+        put_u32(data_before, 0x2270, case["center"][0])
+        put_u32(data_before, 0x2274, case["center"][1])
+        put_u16(data_before, 0x2278, context_offset)
+        put_u16(data_before, context_offset + 0x16, root_offset)
+        put_u16(data_before, context_offset + 0x1A, len(case["states"]))
+
+        for index, value in enumerate(case["root_matrix"]):
+            put_u32(data_before, root_offset + 0x12 + index * 4, value)
+        for index, value in enumerate(case["root_translation"]):
+            put_u32(data_before, root_offset + 0x36 + index * 4, value)
+
+        state_offsets: list[int] = []
+        vertex_offsets: list[list[int]] = []
+        for state_index, state_case in enumerate(case["states"]):
+            state_offset = first_state_offset + state_index * 0x005E
+            first_vertex = 0x1000 + state_index * 0x0800
+            parent_index = state_case["parent"]
+            parent_offset = (
+                root_offset if parent_index is None else state_offsets[parent_index]
+            )
+            state_offsets.append(state_offset)
+            put_u16(data_before, state_offset, parent_offset)
+            put_u16(data_before, state_offset + 0x02, len(state_case["vertices"]))
+            put_u16(data_before, state_offset + 0x06, first_vertex)
+            for index in range(9):
+                put_u32(data_before, state_offset + 0x12 + index * 4, 0xDEAD0000 + index)
+            for index, value in enumerate(state_case["local"]):
+                put_u32(data_before, state_offset + 0x42 + index * 4, value)
+            for index, value in enumerate(state_case["angles"]):
+                put_u16(data_before, state_offset + 0x4E + index * 2, value)
+            put_u16(data_before, state_offset + 0x54, state_case["radial"])
+            current_vertices = []
+            for vertex_index, coordinates in enumerate(state_case["vertices"]):
+                vertex_offset = first_vertex + vertex_index * 0x14
+                current_vertices.append(vertex_offset)
+                for coordinate_index, value in enumerate(coordinates):
+                    put_u16(object_before, vertex_offset + 0x04 + coordinate_index * 2, value)
+            vertex_offsets.append(current_vertices)
+
+        copy_offset = 0x3000
+        put_u16(data_before, context_offset + 0x22, copy_offset)
+        put_u16(data_before, context_offset + 0x26, len(case["copies"]))
+        for copy_index, (source_state, source_vertex) in enumerate(case["copies"]):
+            destination = copy_offset + copy_index * 0x14
+            put_u16(
+                object_before,
+                destination + 0x04,
+                vertex_offsets[source_state][source_vertex],
+            )
+
+        data_expected = bytearray(data_before)
+        object_expected = bytearray(object_before)
+        put_u16(data_expected, 0x227C, len(case["states"]))
+        projected: list[list[dict[str, int]]] = []
+        for state_index, state_case in enumerate(case["states"]):
+            state_offset = state_offsets[state_index]
+            parent_offset = get_u16(data_expected, state_offset)
+            angles = tuple(
+                get_u16(data_expected, state_offset + 0x4E + index * 2)
+                for index in range(3)
+            )
+            masked_angles = tuple(value & 0x0FFC for value in angles)
+            put_u16(data_expected, 0x227A, state_offset)
+            put_u16(data_expected, 0x0030, masked_angles[1])
+            put_u16(data_expected, 0x0032, masked_angles[0])
+            put_u16(data_expected, 0x0034, masked_angles[2])
+            rotation = rotation_matrix(data_expected, angles)
+            for index, value in enumerate(rotation):
+                put_u32(data_expected, 0x2284 + index * 4, value)
+
+            radial = signed_word(get_u16(data_expected, state_offset + 0x54))
+            if radial != 0:
+                for index, matrix_index in enumerate((2, 5, 8)):
+                    product = mul32(rotation[matrix_index], radial)
+                    delta = signed_dword(product) >> 16
+                    if index == 1:
+                        delta += (product >> 15) & 1
+                    position_offset = state_offset + 0x42 + index * 4
+                    put_u32(
+                        data_expected,
+                        position_offset,
+                        add32(get_u32(data_expected, position_offset), delta),
+                    )
+
+            sources = [
+                signed_word(get_u16(data_expected, state_offset + 0x42 + index * 4))
+                for index in range(3)
+            ]
+            for row in (2, 1, 0):
+                accumulator = mul32(
+                    get_u32(data_expected, parent_offset + 0x12 + row * 12),
+                    sources[0],
+                )
+                accumulator = add32(
+                    accumulator,
+                    mul32(
+                        get_u32(data_expected, parent_offset + 0x16 + row * 12),
+                        sources[1],
+                    ),
+                )
+                accumulator = add32(
+                    accumulator,
+                    mul32(
+                        get_u32(data_expected, parent_offset + 0x1A + row * 12),
+                        sources[2],
+                    ),
+                )
+                accumulator = add32(
+                    accumulator,
+                    get_u32(data_expected, parent_offset + 0x36 + row * 4),
+                )
+                put_u32(data_expected, state_offset + 0x36 + row * 4, accumulator)
+
+            for row in range(3):
+                for column in range(3):
+                    accumulator = 0
+                    for term in range(3):
+                        accumulator = add32(
+                            accumulator,
+                            mul32(
+                                get_u32(
+                                    data_expected,
+                                    parent_offset + 0x12 + (row * 3 + term) * 4,
+                                ),
+                                rotation[term * 3 + column],
+                            ),
+                        )
+                    put_u32(
+                        data_expected,
+                        state_offset + 0x12 + (row * 3 + column) * 4,
+                        signed_dword(accumulator) >> 15,
+                    )
+
+            put_u16(data_expected, 0x227E, 0x800F)
+            put_u16(data_expected, 0x2280, 0)
+            state_projected = []
+            for vertex_offset in vertex_offsets[state_index]:
+                coordinates = [
+                    signed_word(get_u16(object_expected, vertex_offset + 4 + index * 2))
+                    for index in range(3)
+                ]
+                row_values = []
+                for row in range(3):
+                    accumulator = 0
+                    for column in range(3):
+                        accumulator = add32(
+                            accumulator,
+                            mul32(
+                                get_u32(
+                                    data_expected,
+                                    state_offset + 0x12 + (row * 3 + column) * 4,
+                                ),
+                                coordinates[column],
+                            ),
+                        )
+                    accumulator = add32(
+                        accumulator,
+                        get_u32(data_expected, state_offset + 0x36 + row * 4),
+                    )
+                    row_values.append(signed_dword(accumulator))
+
+                depth = row_values[2] >> 8
+                put_u32(object_expected, vertex_offset + 0x0E, depth)
+                if depth > 0:
+                    screen_x = trunc_div(row_values[0], depth)
+                    screen_y = trunc_div(row_values[1], depth)
+                    flags = 0
+                else:
+                    screen_x = row_values[0] >> 12
+                    screen_y = row_values[1] >> 12
+                    flags = 0x8000
+                screen_y = signed_dword(-screen_y)
+                screen_x = signed_dword(screen_x + case["center"][0])
+                if screen_x < 0:
+                    flags = (flags & 0xFF00) | 1
+                    if screen_x <= -90:
+                        screen_x = -89
+                if screen_x >= 320:
+                    flags = (flags & 0xFF00) | 2
+                    if screen_x >= 410:
+                        screen_x = 409
+                screen_y = signed_dword(screen_y + case["center"][1])
+                if screen_y < 0:
+                    flags |= 4
+                    if screen_y <= -150:
+                        screen_y = -149
+                if screen_y >= 200:
+                    flags |= 8
+                    if screen_y >= 350:
+                        screen_y = 349
+                common_clip = get_u16(data_expected, 0x227E) & flags
+                put_u16(data_expected, 0x227E, common_clip)
+                put_u16(object_expected, vertex_offset + 0x0A, screen_x)
+                put_u16(object_expected, vertex_offset + 0x0C, screen_y)
+                put_u16(object_expected, vertex_offset + 0x12, flags)
+                state_projected.append(
+                    {
+                        "screen_x": signed_word(screen_x),
+                        "screen_y": signed_word(screen_y),
+                        "depth": signed_dword(depth),
+                        "flags": flags,
+                    }
+                )
+            if get_u16(data_expected, 0x227E) != 0:
+                for vertex_index, vertex_offset in enumerate(vertex_offsets[state_index]):
+                    put_u16(object_expected, vertex_offset + 0x12, 0x00FF)
+                    state_projected[vertex_index]["flags"] = 0x00FF
+            projected.append(state_projected)
+            put_u16(
+                data_expected,
+                0x227C,
+                get_u16(data_expected, 0x227C) - 1,
+            )
+
+        for copy_index, (source_state, source_vertex) in enumerate(case["copies"]):
+            source = vertex_offsets[source_state][source_vertex]
+            destination = copy_offset + copy_index * 0x14
+            object_expected[destination + 0x0A : destination + 0x14] = (
+                object_expected[source + 0x0A : source + 0x14]
+            )
+
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F6789A + case_index,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 7 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 19 + case_index + 11) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (object_segment, 0, bytes(object_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=500000,
+        )
+
+        for segment, expected, owner in (
+            (data_segment, bytes(data_expected), "data"),
+            (object_segment, bytes(object_expected), "object"),
+            (extra_segment, extra_before, "initial-es"),
+            (game_segment, game_before, "game"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(0x10000)
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{owner} differs at {differences}"
+                )
+        actual_image = bytes(machine.mem_read(0, len(image)))
+        if actual_image != image:
+            differences = [
+                (offset, actual_image[offset], image[offset])
+                for offset in range(len(image))
+                if actual_image[offset] != image[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: code differs at {differences}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: stack changed")
+        expected_segments = {
+            "ds": data_segment,
+            "es": object_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": 0xFF02,
+        }
+        for register, expected in expected_segments.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "state_count": len(case["states"]),
+                "vertex_counts": [len(state["vertices"]) for state in case["states"]],
+                "copy_count": len(case["copies"]),
+                "projected": projected,
+                "last_rotation_matrix": [
+                    signed_dword(get_u32(data_expected, 0x2284 + index * 4))
+                    for index in range(9)
+                ],
+                "last_common_clip": get_u16(data_expected, 0x227E),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "object_sha256": hashlib.sha256(object_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_camera_matrix_update_vectors(
     module: str, entry: int
 ) -> list[dict[str, object]]:
@@ -10531,6 +11154,16 @@ def main() -> int:
         amer_slot2_steer_update_vectors(0x1A5C),
         args.check,
     )
+    for module, entry in (
+        ("amer", 0x2027),
+        ("croolis", 0x206C),
+        ("scrut", 0x212C),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
     for module, entry in (
         ("amer", 0x1DD8),
         ("croolis", 0x1E1D),
