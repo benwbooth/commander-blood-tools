@@ -2667,6 +2667,26 @@ natural typed source warning-free to 239 instructions/739 bytes. Turbo C 2.01
 medium (`-mm -O -Z`) emits 324 instructions. Neither compiler matches the
 original code generation.
 
+## Alien starfield candidate
+
+The AMER `0x0734` and CROOLIS/SCRUT `0x0775` routines are shared
+154-instruction/497-byte starfield owners. They copy the current camera into
+raster workspace, generate and project 1200 deterministic points, bucket the
+accepted four-byte records by Mode-X plane, then select each nonempty VGA plane
+and write shade-table pixels to the framebuffer.
+
+Eight raw-overlay vectors per module verify zero and negative depth, all four
+clip edges, logical camera-cell shifts, the exact `ROR`/`SBB` random stream,
+low-32-bit product overflow, every record and cursor, shade lookup, ordered VGA
+port writes, complete memory ownership, and final segment state. They also
+identify a real ABI precondition: the matrix-copying `REP MOVSD` assumes the
+C runtime's clear direction flag. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) compiles the natural typed source warning-free to 309
+instructions/931 bytes. Turbo C 2.01 medium (`-mm -O -Z`) emits 390
+instructions. A DOS-linked CROOLIS executable reproduces the raw overlay's
+combined 128 KiB raster-workspace and framebuffer hash. Neither compiler
+matches the original code generation.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

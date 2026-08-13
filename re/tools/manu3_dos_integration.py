@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and run the recovered MANU3 renderer as a real-mode DOS program."""
+"""Build and run recovered XDB routines as real-mode DOS programs."""
 
 from __future__ import annotations
 
@@ -47,6 +47,15 @@ ALIEN_FACE_ACTIVATE_SOURCE = (
     / "candidates"
     / "croolis"
     / "func_002bdd_face_activate.c"
+)
+ALIEN_STARFIELD_SOURCE = (
+    ROOT
+    / "re"
+    / "source"
+    / "xdb"
+    / "candidates"
+    / "croolis"
+    / "func_000775_render_starfield.c"
 )
 
 
@@ -107,6 +116,19 @@ CASES = (
         artifact_sha256=(
             "1955a6685562a0b8aaf5e65b4b1f551e"
             "cda83eab796dc87d1029b31e470a399f"
+        ),
+    ),
+    IntegrationCase(
+        name="alien_starfield",
+        source=INTEGRATION_DIR / "alien_starfield.c",
+        executable_name="ALIENS.EXE",
+        expected_result="PASS alien starfield",
+        recovered_sources=(ALIEN_STARFIELD_SOURCE,),
+        artifact_name="STATE.BIN",
+        artifact_size=0x20000,
+        artifact_sha256=(
+            "62aed86cf9626342b8a60bce2beee0fc"
+            "350167c81cd188109bc5a9c93a22649c"
         ),
     ),
 )

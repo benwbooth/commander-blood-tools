@@ -14,6 +14,34 @@
 #define XDB_ALIEN_SCREEN_WIDTH 0x0140u
 #define XDB_ALIEN_SCREEN_HEIGHT 0x00c8u
 #define XDB_ALIEN_RASTER_POOL_COUNT 0x0258u
+#define XDB_ALIEN_STAR_COUNT 0x04b0u
+#define XDB_ALIEN_STARS_PER_PLANE 0x0180u
+#define XDB_ALIEN_STAR_PLANE_STRIDE 0x0600u
+
+#define XDB_AMER_STAR_SHADE_TABLE_OFFSET 0x07d4u
+#define XDB_AMER_STAR_SEED_OFFSET 0x08d4u
+#define XDB_AMER_STAR_REMAINING_OFFSET 0x08d8u
+#define XDB_AMER_STAR_CURSORS_OFFSET 0x08dau
+#define XDB_AMER_STAR_MATRIX_OFFSET 0x0d4au
+#define XDB_AMER_STAR_CAMERA_CELLS_OFFSET 0x0d7au
+#define XDB_AMER_STAR_RECORDS_OFFSET 0x1f38u
+
+#define XDB_CROOLIS_STAR_SHADE_TABLE_OFFSET 0x07d6u
+#define XDB_CROOLIS_STAR_SEED_OFFSET 0x08d6u
+#define XDB_CROOLIS_STAR_REMAINING_OFFSET 0x08dau
+#define XDB_CROOLIS_STAR_CURSORS_OFFSET 0x08dcu
+#define XDB_CROOLIS_STAR_MATRIX_OFFSET 0x0d4cu
+#define XDB_CROOLIS_STAR_CAMERA_CELLS_OFFSET 0x0d7cu
+#define XDB_CROOLIS_STAR_RECORDS_OFFSET 0x1f3au
+
+#define XDB_SCRUT_STAR_SHADE_TABLE_OFFSET XDB_CROOLIS_STAR_SHADE_TABLE_OFFSET
+#define XDB_SCRUT_STAR_SEED_OFFSET XDB_CROOLIS_STAR_SEED_OFFSET
+#define XDB_SCRUT_STAR_REMAINING_OFFSET XDB_CROOLIS_STAR_REMAINING_OFFSET
+#define XDB_SCRUT_STAR_CURSORS_OFFSET XDB_CROOLIS_STAR_CURSORS_OFFSET
+#define XDB_SCRUT_STAR_MATRIX_OFFSET XDB_CROOLIS_STAR_MATRIX_OFFSET
+#define XDB_SCRUT_STAR_CAMERA_CELLS_OFFSET \
+    XDB_CROOLIS_STAR_CAMERA_CELLS_OFFSET
+#define XDB_SCRUT_STAR_RECORDS_OFFSET XDB_CROOLIS_STAR_RECORDS_OFFSET
 
 #define XDB_AMER_FREE_HEAD_OFFSET 0x0bceu
 #define XDB_AMER_COLUMN_OFFSET 0x0946u
@@ -153,6 +181,16 @@ typedef struct xdb_alien_face {
     xdb_u16 vertex_2;
 } xdb_alien_face;
 
+typedef struct xdb_alien_star_record {
+    xdb_u16 framebuffer_offset;
+    xdb_u16 shade;
+} xdb_alien_star_record;
+
+typedef struct xdb_alien_star_camera_cell {
+    xdb_u16 coordinate;
+    xdb_u16 field_002;
+} xdb_alien_star_camera_cell;
+
 typedef struct xdb_alien_raster_record {
     xdb_u16 next;
     xdb_u16 flags;
@@ -245,6 +283,10 @@ typedef struct xdb_alien_primary_render_context {
 
 typedef char xdb_alien_projection_vertex_size_must_be_0x14[
         sizeof(xdb_alien_projection_vertex) == 0x14 ? 1 : -1];
+typedef char xdb_alien_star_record_size_must_be_0x04[
+        sizeof(xdb_alien_star_record) == 0x04 ? 1 : -1];
+typedef char xdb_alien_star_camera_cell_size_must_be_0x04[
+        sizeof(xdb_alien_star_camera_cell) == 0x04 ? 1 : -1];
 typedef char xdb_alien_projection_state_size_must_be_0x5e[
         sizeof(xdb_alien_projection_state) == 0x5e ? 1 : -1];
 typedef char xdb_alien_primary_render_context_size_must_be_0x2e[
@@ -531,6 +573,9 @@ void XDB_NEAR xdb_scrut_transform_and_project(void);
 void XDB_NEAR xdb_amer_project_primary_mesh_then_render(void);
 void XDB_NEAR xdb_croolis_project_primary_mesh_then_render(void);
 void XDB_NEAR xdb_scrut_project_primary_mesh_then_render(void);
+void XDB_NEAR xdb_amer_render_starfield(void);
+void XDB_NEAR xdb_croolis_render_starfield(void);
+void XDB_NEAR xdb_scrut_render_starfield(void);
 void XDB_NEAR xdb_amer_bucket_faces_then_render(void);
 void XDB_NEAR xdb_croolis_bucket_faces_then_render(void);
 void XDB_NEAR xdb_scrut_bucket_faces_then_render(void);
@@ -674,6 +719,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #pragma aux xdb_croolis_project_primary_mesh_then_render \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_scrut_project_primary_mesh_then_render \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_amer_render_starfield \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_render_starfield \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_render_starfield \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_amer_bucket_faces_then_render \
         modify exact [ax bx cx dx si di bp es]

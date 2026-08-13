@@ -1,0 +1,372 @@
+[
+  {
+    "name": "zero_seed_zero_depth",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 0,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 0,
+      "zero_shifted_depth": 1200,
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "25b3cc412650bbd205b1f2ff74c17cfafc0e2ff5f6498ec59185247f3ea79c3b",
+    "framebuffer_sha256": "5e85ee2882a33d8bfe3df3da689538cf2fff0ac0afbf0ac1bf12df8b2a453894",
+    "state_sha256": "bcc1e6fda670253f173c1e4c9d1e2b0491a93a6e4b42ee1269a45b2536616eb9"
+  },
+  {
+    "name": "balanced_projection_all_planes",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 305419896,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      320,
+      96,
+      58,
+      109
+    ],
+    "rejections": {
+      "negative_depth": 609,
+      "zero_shifted_depth": 0,
+      "left": 3,
+      "right": 3,
+      "top": 1,
+      "bottom": 1
+    },
+    "plane_cursors": [
+      9272,
+      9912,
+      11296,
+      13036
+    ],
+    "plane_record_sha256": [
+      "60007b2ab39a4890a48ad2e45178a14ef1830dca585b7222fc6e703188f79892",
+      "19d767fcec2fb36705f8dbd02b79329ef8c99bbe04e060dd3d539561b8baa0a5",
+      "a9bb12ab46603f003a42a21953be5df7f622883e6547ac6021572c70e00d2437",
+      "c9aefb4fd315475050c7907cfd398fa097e0e541411794eb8f268981d1267383"
+    ],
+    "outputs": [
+      {
+        "port": 964,
+        "size": 2,
+        "value": 258
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 514
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 770
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 1026
+      }
+    ],
+    "raster_sha256": "2aa6f78c5e4b09b7c41a4fe2f10eafc43b4af49307b01334b26b2069974db45f",
+    "framebuffer_sha256": "ab07e8b050f08ec888776c07dce13888e0c5a1350bceb4d6a121556507126aa7",
+    "state_sha256": "ef3799cac90d57c984d0b3c1ead97aa7617165793bc20ff08d4a8e7cbad0d54c"
+  },
+  {
+    "name": "logical_camera_cells_and_seed_wrap",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 3735928559,
+    "camera_cells": [
+      63205,
+      37282,
+      1
+    ],
+    "accepted_per_plane": [
+      324,
+      95,
+      56,
+      106
+    ],
+    "rejections": {
+      "negative_depth": 618,
+      "zero_shifted_depth": 0,
+      "left": 0,
+      "right": 0,
+      "top": 1,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      9288,
+      9908,
+      11288,
+      13024
+    ],
+    "plane_record_sha256": [
+      "641a0ec3df600a766308adfc71dce6b1354f6c19e0010ce891f7ae760dfa5027",
+      "397b3e233338ac2266d78cc21031bdf68750808c056486317f5a906751ca78b6",
+      "1fc1e6317789f7f4d0b75e9a5e74e9f59748c36fd1bd607e83489c8136de6359",
+      "c7bbc2d0a49b5afa0ab15af60c082590140c7b4e8f23e737edb5d22565420b01"
+    ],
+    "outputs": [
+      {
+        "port": 964,
+        "size": 2,
+        "value": 258
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 514
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 770
+      },
+      {
+        "port": 964,
+        "size": 2,
+        "value": 1026
+      }
+    ],
+    "raster_sha256": "e7c89dc420c2da929fc70fb7ee40f97ff4bfad0533b7206b4bcb4f16f27f5138",
+    "framebuffer_sha256": "7967aa56a87c6c5f7bee19e1091ff664c8dfa7783e287dbeb0404ecf0325359b",
+    "state_sha256": "9d74993d2acacb8c03f2a25834ab7d7294686a5557850e7e5a406cfe0b06c8c8"
+  },
+  {
+    "name": "left_edge_rejection",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 1,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 616,
+      "zero_shifted_depth": 4,
+      "left": 580,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "52c1f4529e8db9014d8f48c5f46ae2d33023b07bc7ed7fa08c8c416de6a08492",
+    "framebuffer_sha256": "cc23d90ae6e712ae1e3e6f5be261c304d98a0c4d88680691820a94b503e6a04d",
+    "state_sha256": "9de34384060ebdfff2356c9d178822d4b112c191288bb109401f39ce786ade28"
+  },
+  {
+    "name": "right_edge_rejection",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 1,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 616,
+      "zero_shifted_depth": 4,
+      "left": 0,
+      "right": 580,
+      "top": 0,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "87cb32ab740519996810de0cf6b60bd62280e81e0ebc2d225ecf70b1664df204",
+    "framebuffer_sha256": "d4c3fe0d6247c6dad209a120a9e8136ff86e253c45a37f0edc6a3bd4b7c89ec5",
+    "state_sha256": "3c78c924ec941e00d4b97a00754ea8508c8db5e0ed8e9df27fb129f546d54c46"
+  },
+  {
+    "name": "top_edge_rejection",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 1,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 616,
+      "zero_shifted_depth": 4,
+      "left": 0,
+      "right": 0,
+      "top": 580,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "5949ec5816b108436cc8e8d8afecb7eda0791b73fff28e2b3bead28f53716c50",
+    "framebuffer_sha256": "cb99bd56449e8911013c47342a124a24a38d29f712fd06a129ae98905a26f975",
+    "state_sha256": "f8fd755fdadd20e900e2ab0e3665e9a4217c12ec5f6a294b77339cf4cc9c394f"
+  },
+  {
+    "name": "bottom_edge_rejection",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 1,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 616,
+      "zero_shifted_depth": 4,
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 580
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "b23d5bbab6caed65877a334c378e10bc4a90713e4cb53e154d1fd2c60ca4c52c",
+    "framebuffer_sha256": "ed0507229565940d2f042a7682a52344b059ea07ae6059539aaa96237ac5c077",
+    "state_sha256": "10d7347dd0a91f06fddd5378a08abca8a0722c7a043c9fe4a17fc77fa1c4f425"
+  },
+  {
+    "name": "modular_product_overflow",
+    "module": "amer",
+    "entry": 1844,
+    "seed": 324508639,
+    "camera_cells": [
+      0,
+      0,
+      0
+    ],
+    "accepted_per_plane": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rejections": {
+      "negative_depth": 596,
+      "zero_shifted_depth": 0,
+      "left": 0,
+      "right": 0,
+      "top": 604,
+      "bottom": 0
+    },
+    "plane_cursors": [
+      7992,
+      9528,
+      11064,
+      12600
+    ],
+    "plane_record_sha256": [
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    ],
+    "outputs": [],
+    "raster_sha256": "d10f203e419d22fc8e6445b9c50f5fd61070946d61f0ef8075829593159c8654",
+    "framebuffer_sha256": "c8cfa9b50880f1691523dd07501c87e0cd428de36b13467ac2f518c925d39cba",
+    "state_sha256": "a80d205eafe5d16283ea4ccead7bd77fcfee18c530ab7f285fa18d020cbf8c6d"
+  }
+]

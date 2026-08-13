@@ -34,6 +34,11 @@ that is otherwise easy to lose when expressing the routine in 16-bit C.
 the one-function natural-C activator. Its complete 90-byte record must match
 the hash produced by direct execution of the shipped CROOLIS overlay.
 
+`alien_starfield.c` links the recovered CROOLIS `0x0775` owner, generates its
+1200-point balanced projection case, and writes the complete 64 KiB raster
+workspace followed by the 64 KiB framebuffer. The combined file must match a
+hash produced by direct execution of the shipped CROOLIS overlay.
+
 The recovered C makes the original implicit raster DS ownership explicit as a
 segment argument from `0x0700` to `0x0D7D`. Raster records, reciprocal values,
 free-list state, and active-list links remain direct typed far-memory accesses;

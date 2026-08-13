@@ -3047,6 +3047,458 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_starfield_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    data_segment_slot: int,
+    shade_table_offset: int,
+    seed_offset: int,
+    remaining_offset: int,
+    cursors_offset: int,
+    matrix_offset: int,
+    camera_cells_offset: int,
+    records_offset: int,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_size = 497
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    raster_segment = 0x7000
+    framebuffer_segment = 0x9000
+    extra_segment = 0xB000
+    game_segment = 0xC000
+    stack_segment = 0xD000
+    return_address = 0xF000
+    mask32 = 0xFFFFFFFF
+    stack_sentinel = bytes.fromhex("a55a69967887")
+    balanced_matrix = (
+        0,
+        0x00000100,
+        0,
+        0,
+        0,
+        0x00000100,
+        0x00010000,
+        0,
+        0,
+    )
+    cases = (
+        {
+            "name": "zero_seed_zero_depth",
+            "seed": 0,
+            "camera": (0, 0, 0),
+            "matrix": balanced_matrix,
+        },
+        {
+            "name": "balanced_projection_all_planes",
+            "seed": 0x12345678,
+            "camera": (0, 0, 0),
+            "matrix": balanced_matrix,
+        },
+        {
+            "name": "logical_camera_cells_and_seed_wrap",
+            "seed": 0xDEADBEEF,
+            "camera": (0xFEDCBA98, 0x12345678, 0x80002000),
+            "matrix": balanced_matrix,
+        },
+        {
+            "name": "left_edge_rejection",
+            "seed": 1,
+            "camera": (0, 0, 0),
+            "matrix": (
+                (-161 * 256) & mask32,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0x00010000,
+                0,
+                0,
+            ),
+        },
+        {
+            "name": "right_edge_rejection",
+            "seed": 1,
+            "camera": (0, 0, 0),
+            "matrix": (
+                160 * 256,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0x00010000,
+                0,
+                0,
+            ),
+        },
+        {
+            "name": "top_edge_rejection",
+            "seed": 1,
+            "camera": (0, 0, 0),
+            "matrix": (
+                0,
+                0,
+                0,
+                101 * 256,
+                0,
+                0,
+                0x00010000,
+                0,
+                0,
+            ),
+        },
+        {
+            "name": "bottom_edge_rejection",
+            "seed": 1,
+            "camera": (0, 0, 0),
+            "matrix": (
+                0,
+                0,
+                0,
+                (-100 * 256) & mask32,
+                0,
+                0,
+                0x00010000,
+                0,
+                0,
+            ),
+        },
+        {
+            "name": "modular_product_overflow",
+            "seed": 0x13579BDF,
+            "camera": (0, 0, 0),
+            "matrix": (
+                0,
+                0,
+                0,
+                0x70000000,
+                0x90000000,
+                0x12345678,
+                0x70000000,
+                0x90000000,
+                0x12345678,
+            ),
+        },
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def signed_dword(value: int) -> int:
+        value &= mask32
+        return value if value < 0x80000000 else value - 0x100000000
+
+    def random_step(value: int) -> int:
+        rotated = ((value >> 7) | (value << 25)) & mask32
+        return (rotated - (rotated >> 31)) & mask32
+
+    def dot_product(
+        matrix: tuple[int, ...],
+        row: int,
+        coordinates: tuple[int, int, int],
+    ) -> int:
+        accumulator = 0
+        for column, coordinate in enumerate(coordinates):
+            accumulator += (
+                (matrix[row * 3 + column] & mask32)
+                * (coordinate & mask32)
+            )
+        return accumulator & mask32
+
+    def signed_divide(numerator: int, denominator: int) -> int:
+        quotient = abs(numerator) // abs(denominator)
+        if (numerator < 0) != (denominator < 0):
+            quotient = -quotient
+        return quotient
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        patched_image = bytearray(image)
+        put_u16(patched_image, data_segment_slot, data_segment)
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        raster_before = bytearray(
+            (offset * 7 + case_index * 31 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        framebuffer_before = bytearray(
+            (offset * 11 + case_index * 13 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 19 + case_index + 11) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + case_index + 17) & 0xFF
+            for offset in range(0x10000)
+        )
+        matrix = case["matrix"]
+        camera = case["camera"]
+
+        put_u16(data_before, 0x0006, raster_segment)
+        put_u16(data_before, 0x0028, framebuffer_segment)
+        for matrix_index, value in enumerate(matrix):
+            put_u32(data_before, 0x22BA + matrix_index * 4, value)
+        for coordinate_index, value in enumerate(camera):
+            put_u32(data_before, 0x22EA + coordinate_index * 4, value)
+        for shade in range(256):
+            raster_before[shade_table_offset + shade] = (
+                shade * 37 + case_index * 41 + 13
+            ) & 0xFF
+        put_u32(raster_before, seed_offset, case["seed"])
+
+        data_expected = bytearray(data_before)
+        raster_expected = bytearray(raster_before)
+        framebuffer_expected = bytearray(framebuffer_before)
+        for matrix_index, value in enumerate(matrix):
+            put_u32(raster_expected, matrix_offset + matrix_index * 4, value)
+        camera_cells = tuple(
+            ((value & mask32) >> 13) & 0xFFFF for value in camera
+        )
+        for coordinate_index, value in enumerate(camera_cells):
+            put_u16(
+                raster_expected,
+                camera_cells_offset + coordinate_index * 4,
+                value,
+            )
+
+        plane_records: list[list[tuple[int, int]]] = [[], [], [], []]
+        rejections = {
+            "negative_depth": 0,
+            "zero_shifted_depth": 0,
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+        }
+        random = case["seed"]
+        for _star_index in range(1200):
+            coordinates = []
+            for coordinate_index in range(3):
+                random = random_step(random)
+                coordinates.append(
+                    signed_word(
+                        camera_cells[coordinate_index] - (random & 0xFFFF)
+                    )
+                )
+            coordinate_tuple = tuple(coordinates)
+            depth_accumulator = dot_product(matrix, 2, coordinate_tuple)
+            if signed_dword(depth_accumulator) < 0:
+                rejections["negative_depth"] += 1
+                continue
+            depth = signed_dword(depth_accumulator) >> 8
+            if depth == 0:
+                rejections["zero_shifted_depth"] += 1
+                continue
+
+            screen_x = signed_word(
+                signed_divide(
+                    signed_dword(dot_product(matrix, 0, coordinate_tuple)),
+                    depth,
+                )
+                + 160
+            )
+            if screen_x < 0:
+                rejections["left"] += 1
+                continue
+            if screen_x >= 320:
+                rejections["right"] += 1
+                continue
+            screen_y = signed_word(
+                -signed_divide(
+                    signed_dword(dot_product(matrix, 1, coordinate_tuple)),
+                    depth,
+                )
+                + 100
+            )
+            if screen_y < 0:
+                rejections["top"] += 1
+                continue
+            if screen_y >= 200:
+                rejections["bottom"] += 1
+                continue
+
+            plane = screen_x & 3
+            plane_records[plane].append(
+                (
+                    (screen_y * 320 + screen_x) >> 2,
+                    (depth & mask32) >> 15,
+                )
+            )
+
+        cursors = []
+        for plane, records in enumerate(plane_records):
+            record_offset = (
+                records_offset + plane * 0x0600
+            ) & 0xFFFF
+            for framebuffer_offset, shade in records:
+                put_u16(raster_expected, record_offset, framebuffer_offset)
+                put_u16(raster_expected, record_offset + 2, shade)
+                record_offset = (record_offset + 4) & 0xFFFF
+            cursors.append(record_offset)
+            put_u16(raster_expected, cursors_offset + plane * 2, record_offset)
+        put_u16(raster_expected, remaining_offset, 0xFFFF)
+
+        expected_outputs = []
+        plane_hashes = []
+        for plane, records in enumerate(plane_records):
+            if records:
+                expected_outputs.append(
+                    {
+                        "port": 0x03C4,
+                        "size": 2,
+                        "value": ((plane + 1) << 8) | 0x0002,
+                    }
+                )
+            record_offset = records_offset + plane * 0x0600
+            for framebuffer_offset, shade in records:
+                framebuffer_expected[framebuffer_offset] = (
+                    raster_expected[shade_table_offset + shade]
+                )
+            plane_bytes = bytes(
+                raster_expected[
+                    record_offset : record_offset + len(records) * 4
+                ]
+            )
+            plane_hashes.append(hashlib.sha256(plane_bytes).hexdigest())
+
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F6789A + case_index,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": extra_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            # REP MOVSD inherits the process direction flag.  The routine is
+            # entered under the C runtime ABI, which requires DF to be clear.
+            "flags": 0x0293,
+        }
+        outputs: list[dict[str, int]] = []
+
+        def output_handler(
+            _machine: Uc,
+            port: int,
+            size: int,
+            value: int,
+        ) -> None:
+            outputs.append({"port": port, "size": size, "value": value})
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (framebuffer_segment, 0, bytes(framebuffer_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=300000,
+            output_handler=output_handler,
+        )
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"outputs {outputs}, expected {expected_outputs}"
+            )
+        for segment, expected, owner in (
+            (data_segment, bytes(data_expected), "data"),
+            (raster_segment, bytes(raster_expected), "raster"),
+            (
+                framebuffer_segment,
+                bytes(framebuffer_expected),
+                "framebuffer",
+            ),
+            (extra_segment, extra_before, "initial-extra"),
+            (game_segment, game_before, "game"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(0x10000)
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{owner} differs at {differences}"
+                )
+        if bytes(machine.mem_read(0, len(image))) != bytes(patched_image):
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: code changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: stack changed")
+        expected_registers = {
+            "sp": 0xFF02,
+            "ds": extra_segment,
+            "es": framebuffer_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "seed": case["seed"],
+                "camera_cells": list(camera_cells),
+                "accepted_per_plane": [
+                    len(records) for records in plane_records
+                ],
+                "rejections": rejections,
+                "plane_cursors": cursors,
+                "plane_record_sha256": plane_hashes,
+                "outputs": outputs,
+                "raster_sha256": hashlib.sha256(raster_expected).hexdigest(),
+                "framebuffer_sha256": hashlib.sha256(
+                    framebuffer_expected
+                ).hexdigest(),
+                "state_sha256": hashlib.sha256(
+                    bytes(raster_expected) + bytes(framebuffer_expected)
+                ).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_primary_mesh_vectors(
     module: str,
     entry: int,
@@ -13222,6 +13674,76 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        body_hash,
+        data_segment_slot,
+        shade_table_offset,
+        seed_offset,
+        remaining_offset,
+        cursors_offset,
+        matrix_offset,
+        camera_cells_offset,
+        records_offset,
+    ) in (
+        (
+            "amer",
+            0x0734,
+            "c20927be684fe47460ff868324a7f228fa927e1b00a4a61d8770bb700343e601",
+            0x3277,
+            0x07D4,
+            0x08D4,
+            0x08D8,
+            0x08DA,
+            0x0D4A,
+            0x0D7A,
+            0x1F38,
+        ),
+        (
+            "croolis",
+            0x0775,
+            "d4d6f353d6eeb8dbecafed87f13994b317139a2b7dcbec524640c0abb9817f4f",
+            0x32E7,
+            0x07D6,
+            0x08D6,
+            0x08DA,
+            0x08DC,
+            0x0D4C,
+            0x0D7C,
+            0x1F3A,
+        ),
+        (
+            "scrut",
+            0x0775,
+            "84a6560b66ea7cf94afd831458f7417f6b59a861de9b516f913628c65061d821",
+            0x33A7,
+            0x07D6,
+            0x08D6,
+            0x08DA,
+            0x08DC,
+            0x0D4C,
+            0x0D7C,
+            0x1F3A,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_starfield_vectors(
+                module,
+                entry,
+                body_hash,
+                data_segment_slot,
+                shade_table_offset,
+                seed_offset,
+                remaining_offset,
+                cursors_offset,
+                matrix_offset,
+                camera_cells_offset,
+                records_offset,
+            ),
             args.check,
         )
     for module, entry, body_hash, renderer_entry, bucket_base in (
