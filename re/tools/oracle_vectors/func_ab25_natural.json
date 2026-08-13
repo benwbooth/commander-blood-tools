@@ -1,0 +1,1102 @@
+[
+  {
+    "name": "low_literal_transparency",
+    "flags": 4,
+    "layout": "low",
+    "literal_bias": 0,
+    "coordinates": null,
+    "vertical_offset": 0,
+    "raw_width": 4,
+    "row_width": 4,
+    "raw_rows": 1,
+    "rows": 1,
+    "tokens": [
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      17,
+      0,
+      34,
+      51
+    ],
+    "staging_stream_hex": "11002233",
+    "main_stream_hex": "0000",
+    "control_words": [
+      0
+    ],
+    "source_offset": 256,
+    "main_source_result_offset": 268,
+    "staging_offset": 4096,
+    "staged_result_offset": 4100,
+    "first_row_offset": 0,
+    "final_row_offset": 0,
+    "destination_result_offset": 4,
+    "pending_length": 0,
+    "result_bit_buffer": 8,
+    "scanline_helper_calls": 0,
+    "changed_pixels": 3,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "low_fixed_cross_rows",
+    "flags": 0,
+    "layout": "low",
+    "literal_bias": 0,
+    "coordinates": [
+      5,
+      2
+    ],
+    "vertical_offset": 3,
+    "raw_width": 4,
+    "row_width": 4,
+    "raw_rows": 3,
+    "rows": 3,
+    "tokens": [
+      [
+        "repeat",
+        2
+      ],
+      [
+        "repeat",
+        3
+      ],
+      [
+        "repeat",
+        4
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      17,
+      0,
+      34,
+      49,
+      50,
+      51
+    ],
+    "staging_stream_hex": "110022313233",
+    "main_stream_hex": "00b7",
+    "control_words": [
+      46848
+    ],
+    "source_offset": 4369,
+    "main_source_result_offset": 4387,
+    "staging_offset": 4352,
+    "staged_result_offset": 4358,
+    "first_row_offset": 1605,
+    "final_row_offset": 2245,
+    "destination_result_offset": 2249,
+    "pending_length": 0,
+    "result_bit_buffer": 2048,
+    "scanline_helper_calls": 2,
+    "changed_pixels": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "low_variable_pending",
+    "flags": 4,
+    "layout": "low",
+    "literal_bias": 0,
+    "coordinates": null,
+    "vertical_offset": 4,
+    "raw_width": 5,
+    "row_width": 5,
+    "raw_rows": 4,
+    "rows": 4,
+    "tokens": [
+      [
+        "variable",
+        6
+      ],
+      [
+        "variable",
+        7
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      49,
+      0,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "staging_stream_hex": "310041424344454647",
+    "main_stream_hex": "00ff23",
+    "control_words": [
+      65280
+    ],
+    "source_offset": 8738,
+    "main_source_result_offset": 8756,
+    "staging_offset": 4608,
+    "staged_result_offset": 4617,
+    "first_row_offset": 1280,
+    "final_row_offset": 2240,
+    "destination_result_offset": 2245,
+    "pending_length": 0,
+    "result_bit_buffer": 16384,
+    "scanline_helper_calls": 2,
+    "changed_pixels": 13,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "low_extended_high_bias",
+    "flags": 68,
+    "layout": "low",
+    "literal_bias": 128,
+    "coordinates": null,
+    "vertical_offset": 1,
+    "raw_width": 8,
+    "row_width": 8,
+    "raw_rows": 6,
+    "rows": 6,
+    "tokens": [
+      [
+        "variable",
+        20
+      ],
+      [
+        "variable",
+        22
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      145,
+      0,
+      161,
+      162,
+      163,
+      164,
+      165,
+      166
+    ],
+    "staging_stream_hex": "1100212223242526",
+    "main_stream_hex": "00ff000002",
+    "control_words": [
+      65280
+    ],
+    "source_offset": 13107,
+    "main_source_result_offset": 13126,
+    "staging_offset": 4864,
+    "staged_result_offset": 4872,
+    "first_row_offset": 320,
+    "final_row_offset": 1920,
+    "destination_result_offset": 1928,
+    "pending_length": 0,
+    "result_bit_buffer": 8192,
+    "scanline_helper_calls": 5,
+    "changed_pixels": 26,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_fixed_cross_rows",
+    "flags": 132,
+    "layout": "high",
+    "literal_bias": 0,
+    "coordinates": null,
+    "vertical_offset": 2,
+    "raw_width": 4,
+    "row_width": 4,
+    "raw_rows": 3,
+    "rows": 3,
+    "tokens": [
+      [
+        "repeat",
+        2
+      ],
+      [
+        "repeat",
+        3
+      ],
+      [
+        "repeat",
+        4
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      17,
+      0,
+      34,
+      81,
+      82,
+      83
+    ],
+    "staging_stream_hex": "110022515253",
+    "main_stream_hex": "e0dd",
+    "control_words": [
+      56800
+    ],
+    "source_offset": 17476,
+    "main_source_result_offset": 17490,
+    "staging_offset": 5120,
+    "staged_result_offset": 5126,
+    "first_row_offset": 640,
+    "final_row_offset": 1280,
+    "destination_result_offset": 1284,
+    "pending_length": 0,
+    "result_bit_buffer": 8192,
+    "scanline_helper_calls": 2,
+    "changed_pixels": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_variable_high_bias",
+    "flags": 196,
+    "layout": "high",
+    "literal_bias": 128,
+    "coordinates": null,
+    "vertical_offset": 0,
+    "raw_width": 5,
+    "row_width": 5,
+    "raw_rows": 4,
+    "rows": 4,
+    "tokens": [
+      [
+        "variable",
+        6
+      ],
+      [
+        "variable",
+        7
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      129,
+      0,
+      177,
+      178,
+      179,
+      180,
+      181,
+      182,
+      183
+    ],
+    "staging_stream_hex": "010031323334353637",
+    "main_stream_hex": "00a023",
+    "control_words": [
+      40960
+    ],
+    "source_offset": 21845,
+    "main_source_result_offset": 21863,
+    "staging_offset": 5376,
+    "staged_result_offset": 5385,
+    "first_row_offset": 0,
+    "final_row_offset": 960,
+    "destination_result_offset": 965,
+    "pending_length": 0,
+    "result_bit_buffer": 1024,
+    "scanline_helper_calls": 2,
+    "changed_pixels": 13,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_control_refill_source_wrap",
+    "flags": 132,
+    "layout": "high",
+    "literal_bias": 0,
+    "coordinates": null,
+    "vertical_offset": 0,
+    "raw_width": 17,
+    "row_width": 17,
+    "raw_rows": 1,
+    "rows": 1,
+    "tokens": [
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "staging_stream_hex": "0102030405060708090a0b0c0d0e0f1011",
+    "main_stream_hex": "00000000",
+    "control_words": [
+      0,
+      0
+    ],
+    "source_offset": 65520,
+    "main_source_result_offset": 11,
+    "staging_offset": 5632,
+    "staged_result_offset": 5649,
+    "first_row_offset": 0,
+    "final_row_offset": 0,
+    "destination_result_offset": 17,
+    "pending_length": 0,
+    "result_bit_buffer": 1,
+    "scanline_helper_calls": 0,
+    "changed_pixels": 17,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "row_and_width_clamp",
+    "flags": 132,
+    "layout": "high",
+    "literal_bias": 0,
+    "coordinates": null,
+    "vertical_offset": 0,
+    "raw_width": 57857,
+    "row_width": 1,
+    "raw_rows": 21960,
+    "rows": 130,
+    "tokens": [
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ],
+      [
+        "literal"
+      ]
+    ],
+    "staged_values": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120,
+      121,
+      122,
+      123,
+      124,
+      125,
+      126,
+      127,
+      1,
+      2,
+      3
+    ],
+    "staging_stream_hex": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f010203",
+    "main_stream_hex": "000000000000000000000000000000000000",
+    "control_words": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "source_offset": 26214,
+    "main_source_result_offset": 26368,
+    "staging_offset": 5888,
+    "staged_result_offset": 6018,
+    "first_row_offset": 0,
+    "final_row_offset": 41280,
+    "destination_result_offset": 41281,
+    "pending_length": 0,
+    "result_bit_buffer": 2,
+    "scanline_helper_calls": 0,
+    "changed_pixels": 130,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

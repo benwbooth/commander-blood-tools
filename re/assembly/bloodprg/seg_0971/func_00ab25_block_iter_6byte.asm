@@ -6,8 +6,8 @@
 ; seg_off: 0971:0e15
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: block_iter_6byte
-; label_comment: 6-byte block/record iterator (also 0xa867): bx=si; al=[si+4] (flag byte); add si,6. Walks 6-byte records with a flag at +4 - the structure of HNM/animation block headers (matches the hnm.rs 6-byte block header, flags/checksum at +4)
+; label: resource_payload_decode_rect
+; label_comment: Rectangular transparent-pixel form of the AD decoder: expands staged values through AABC, then consumes MSB-first controls under two flag-selected run layouts while splitting literals and runs across masked-width scanlines. Zero advances without drawing; AD96 advances rows and exits after the final row.
 ; byte_count: 1136
 ; boundary: cfg_blocks_179_terminals_48
 ; terminal: jmp 0xabbf:11, jmp 0xabe8:3, jmp 0xabf5:3, jmp 0xac35:2, jmp 0xac86:1, jmp 0xad03:1, jmp 0xad4f:1, jmp 0xadb2:1, jmp 0xadb4:11, jmp 0xadc3:1, jmp 0xaddd:3, jmp 0xadec:1, jmp 0xadfd:1, jmp 0xae43:1, jmp 0xae9c:3, jmp 0xaee7:2, ret:2

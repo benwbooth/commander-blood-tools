@@ -438,6 +438,32 @@ returns BX, mutates two code bytes, and uses `REP MOVSB`; the natural function
 uses typed far pointers, an explicit bias, and an ordinary pointer return under
 the same clear-DF runtime invariant.
 
+For `0x00AB25`, eight direct vectors prove that the former generic
+`block_iter_6byte` label is a rectangular transparent-pixel AD decoder. It
+loads its staging and framebuffer segments from game state, publishes mode 3,
+reads optional x/y words after the six-byte header, and delegates staged-value
+expansion to AABC with the same `0x00`/`0x80` literal bias as `0x00A914`. The
+main pass uses the same MSB-first control and stateful variable-length grammar,
+but masks row width to nine bits, clamps the low row-count byte to 130, computes
+`(y + vertical_offset) * 320 + x`, treats value zero as transparent advance,
+and splits every token at scanline boundaries. The original invokes AD96 at 22
+unrolled boundary sites; its final path unwinds AB25 directly.
+
+Cases cover optional coordinates, both biases and token layouts, transparent
+and nonzero literals/runs, fixed lengths 2/3/4, pending-nibble and both
+extended-length states, a second control word with source wrap, cross-row runs,
+the nine-bit width mask, the 130-row clamp, exact AABC/main-pass segment and
+stack state, real AD96 entries, both code-byte stores, memory ownership,
+registers, flags, stack, and near return. The natural C replaces the unrolled
+cases with one `min(length, row_remaining)` loop and turns AD96's nonlocal exit
+into an ordinary Boolean return. Open Watcom `-3 -ox -mh` compiles the actual
+candidate and probe warning-free to 310 instructions and 884 bytes versus
+483/1136 original. The probe has a 28.78 percent mnemonic-sequence LCS, 38.51
+percent mnemonic-multiset overlap, and 1.45 percent byte-line LCS. Exact
+replacement still needs the original GS-owned configuration, DS/ES/FS handoff,
+sentinel-flag refill, string stores, and nonlocal final-row unwind; the shared
+natural row loop accounts for the decoded game-domain behavior.
+
 For `0x00AD96`, five direct cases execute both forms of this outlined local
 helper from `0x00AB25`. They verify the low-byte-only row decrement, preserved
 high byte, zero-to-255 underflow, 16-bit 320-byte offset wrap, CX/DI reloads,
@@ -2740,6 +2766,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
+| `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

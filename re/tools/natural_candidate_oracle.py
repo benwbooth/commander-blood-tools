@@ -51382,6 +51382,739 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
+    entry = 0xAB25
+    expected_hash = "ba6707b90afc944be901c66398b2f1272535c6c5502dd573b7d17160404379cf"
+    if hashlib.sha256(EXE[entry : entry + 1136]).hexdigest() != expected_hash:
+        raise AssertionError("0xab25: recovered 1136-byte body changed")
+
+    class StreamEncoder:
+        def __init__(self) -> None:
+            self.data = bytearray()
+            self.control_position = -1
+            self.control_bits = 16
+            self.control_words: list[int] = []
+
+        def bit(self, value: int) -> None:
+            if self.control_bits == 16:
+                self.control_position = len(self.data)
+                self.data.extend(b"\x00\x00")
+                self.control_words.append(0)
+                self.control_bits = 0
+            if value:
+                self.control_words[-1] |= 1 << (15 - self.control_bits)
+                struct.pack_into(
+                    "<H",
+                    self.data,
+                    self.control_position,
+                    self.control_words[-1],
+                )
+            self.control_bits += 1
+
+        def byte(self, value: int) -> None:
+            if not 0 <= value <= 0xFF:
+                raise AssertionError("invalid rectangular decoder descriptor")
+            self.data.append(value)
+
+    def next_variable_length(
+        tokens: list[tuple[object, ...]], start: int
+    ) -> int | None:
+        for token in tokens[start:]:
+            if token[0] == "variable":
+                return int(token[1])
+        return None
+
+    def encode_main(
+        tokens: list[tuple[object, ...]], high_layout: bool
+    ) -> tuple[bytes, list[int]]:
+        stream = StreamEncoder()
+        pending_length = 0
+        for token_index, token in enumerate(tokens):
+            kind = str(token[0])
+            if kind == "literal":
+                stream.bit(0)
+                continue
+
+            stream.bit(1)
+            if kind == "repeat":
+                length = int(token[1])
+                codes = (
+                    {2: (1, 0), 3: (1, 1, 0), 4: (1, 1, 1)}
+                    if high_layout
+                    else {2: (0,), 3: (1, 0), 4: (1, 1, 0)}
+                )
+                if length not in codes:
+                    raise AssertionError("invalid rectangular fixed run")
+                for bit in codes[length]:
+                    stream.bit(bit)
+                continue
+
+            if kind != "variable":
+                raise AssertionError(f"unknown rectangular token {kind}")
+            if high_layout:
+                stream.bit(0)
+            else:
+                stream.bit(1)
+                stream.bit(1)
+                stream.bit(1)
+
+            length = int(token[1])
+            if pending_length > 4:
+                if length != pending_length:
+                    raise AssertionError("rectangular pending length mismatch")
+                pending_length = 0
+                continue
+            if pending_length == 4:
+                if not 20 <= length <= 275:
+                    raise AssertionError("invalid pending extended length")
+                stream.byte(length - 20)
+                pending_length = 0
+                continue
+
+            following_length = next_variable_length(tokens, token_index + 1)
+            low_nibble = (
+                following_length - 4
+                if following_length is not None and 5 <= following_length <= 19
+                else 0
+            )
+            if 5 <= length <= 19:
+                stream.byte(((length - 4) << 4) | low_nibble)
+            elif 20 <= length <= 275:
+                stream.byte(low_nibble)
+                stream.byte(length - 20)
+            else:
+                raise AssertionError("invalid rectangular variable run")
+            pending_length = low_nibble + 4
+
+        return bytes(stream.data), stream.control_words
+
+    def encode_staging(values: list[int], literal_bias: int) -> bytes:
+        stream = bytearray()
+        for value in values:
+            if value == 0:
+                stream.append(0)
+                continue
+            control = (value - literal_bias) & 0xFF
+            if not 1 <= control <= 0x7F:
+                raise AssertionError("rectangular staged value cannot use bias")
+            stream.append(control)
+        return bytes(stream)
+
+    class StreamReader:
+        def __init__(self, stream: bytes) -> None:
+            self.stream = stream
+            self.cursor = 0
+            self.remaining_bits = 0
+            self.dx = 0
+
+        def bit(self) -> int:
+            if self.remaining_bits == 0:
+                if self.cursor + 2 > len(self.stream):
+                    raise AssertionError("rectangular model exhausted controls")
+                word = struct.unpack_from("<H", self.stream, self.cursor)[0]
+                self.cursor += 2
+                result = word >> 15
+                self.dx = ((word << 1) | 1) & 0xFFFF
+                self.remaining_bits = 15
+                return result
+            result = self.dx >> 15
+            self.dx = (self.dx << 1) & 0xFFFF
+            self.remaining_bits -= 1
+            return result
+
+        def byte(self) -> int:
+            if self.cursor >= len(self.stream):
+                raise AssertionError("rectangular model exhausted descriptors")
+            result = self.stream[self.cursor]
+            self.cursor += 1
+            return result
+
+    def decode(
+        stream: bytes,
+        staged_memory: bytearray,
+        staged_offset: int,
+        framebuffer: bytearray,
+        row_offset: int,
+        row_width: int,
+        rows_remaining: int,
+        high_layout: bool,
+        initial_ah: int,
+    ) -> tuple[int, int, int, int, int, int, int, int]:
+        reader = StreamReader(stream)
+        staged_cursor = staged_offset
+        destination = row_offset
+        pending_length = 0
+        al = 0
+        ah = initial_ah
+
+        def read_value() -> int:
+            nonlocal staged_cursor
+            result = staged_memory[staged_cursor]
+            staged_cursor = (staged_cursor + 1) & 0xFFFF
+            return result
+
+        row_remaining = row_width
+        for _ in range(100000):
+            if reader.bit() == 0:
+                al = read_value()
+                length = 1
+            else:
+                al = read_value()
+                ah = al
+                if high_layout:
+                    if reader.bit() == 0:
+                        length = 0
+                    elif reader.bit() == 0:
+                        length = 2
+                    elif reader.bit() == 0:
+                        length = 3
+                    else:
+                        length = 4
+                else:
+                    if reader.bit() == 0:
+                        length = 2
+                    elif reader.bit() == 0:
+                        length = 3
+                    elif reader.bit() == 0:
+                        length = 4
+                    else:
+                        length = 0
+
+                if length == 0:
+                    if pending_length > 4:
+                        length = pending_length
+                        pending_length = 0
+                    elif pending_length == 4:
+                        length = reader.byte() + 20
+                        pending_length = 0
+                    else:
+                        descriptor = reader.byte()
+                        high_nibble = descriptor >> 4
+                        length = (
+                            high_nibble + 4
+                            if high_nibble
+                            else reader.byte() + 20
+                        )
+                        pending_length = (descriptor & 0x0F) + 4
+
+            while length:
+                chunk = min(length, row_remaining)
+                if al != 0:
+                    for _ in range(chunk):
+                        framebuffer[destination] = al
+                        destination = (destination + 1) & 0xFFFF
+                else:
+                    destination = (destination + chunk) & 0xFFFF
+                row_remaining -= chunk
+                length -= chunk
+                if row_remaining != 0:
+                    continue
+                rows_remaining = (rows_remaining - 1) & 0xFF
+                if rows_remaining == 0:
+                    return (
+                        reader.cursor,
+                        staged_cursor,
+                        destination,
+                        pending_length,
+                        reader.dx,
+                        al,
+                        ah,
+                        row_offset,
+                    )
+                row_offset = (row_offset + 320) & 0xFFFF
+                destination = row_offset
+                row_remaining = row_width
+        raise AssertionError("rectangular model did not exhaust its rows")
+
+    cases: list[
+        tuple[
+            str,
+            int,
+            tuple[int, int] | None,
+            int,
+            int,
+            int,
+            list[tuple[object, ...]],
+            list[int],
+            int,
+            int,
+        ]
+    ] = [
+        (
+            "low_literal_transparency",
+            0x04,
+            None,
+            0,
+            4,
+            1,
+            [("literal",)] * 4,
+            [0x11, 0, 0x22, 0x33],
+            0x0100,
+            0x1000,
+        ),
+        (
+            "low_fixed_cross_rows",
+            0x00,
+            (5, 2),
+            3,
+            4,
+            3,
+            [
+                ("repeat", 2),
+                ("repeat", 3),
+                ("repeat", 4),
+                ("literal",),
+                ("literal",),
+                ("literal",),
+            ],
+            [0x11, 0, 0x22, 0x31, 0x32, 0x33],
+            0x1111,
+            0x1100,
+        ),
+        (
+            "low_variable_pending",
+            0x04,
+            None,
+            4,
+            5,
+            4,
+            [("variable", 6), ("variable", 7)] + [("literal",)] * 7,
+            [0x31, 0] + list(range(0x41, 0x48)),
+            0x2222,
+            0x1200,
+        ),
+        (
+            "low_extended_high_bias",
+            0x44,
+            None,
+            1,
+            8,
+            6,
+            [("variable", 20), ("variable", 22)] + [("literal",)] * 6,
+            [0x91, 0] + list(range(0xA1, 0xA7)),
+            0x3333,
+            0x1300,
+        ),
+        (
+            "high_fixed_cross_rows",
+            0x84,
+            None,
+            2,
+            4,
+            3,
+            [
+                ("repeat", 2),
+                ("repeat", 3),
+                ("repeat", 4),
+                ("literal",),
+                ("literal",),
+                ("literal",),
+            ],
+            [0x11, 0, 0x22, 0x51, 0x52, 0x53],
+            0x4444,
+            0x1400,
+        ),
+        (
+            "high_variable_high_bias",
+            0xC4,
+            None,
+            0,
+            5,
+            4,
+            [("variable", 6), ("variable", 7)] + [("literal",)] * 7,
+            [0x81, 0] + list(range(0xB1, 0xB8)),
+            0x5555,
+            0x1500,
+        ),
+        (
+            "high_control_refill_source_wrap",
+            0x84,
+            None,
+            0,
+            17,
+            1,
+            [("literal",)] * 17,
+            list(range(1, 18)),
+            0xFFF0,
+            0x1600,
+        ),
+        (
+            "row_and_width_clamp",
+            0x84,
+            None,
+            0,
+            0xE201,
+            0x55C8,
+            [("literal",)] * 130,
+            [1 + (index % 0x7F) for index in range(130)],
+            0x6666,
+            0x1700,
+        ),
+    ]
+    source_segment = 0x2000
+    staging_segment = 0x3800
+    framebuffer_segment = 0x5000
+    game_segment = 0x6800
+    stack_segment = 0x7800
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, (
+        name,
+        flags,
+        coordinates,
+        vertical_offset,
+        raw_width,
+        raw_rows,
+        tokens,
+        staged_values,
+        source_offset,
+        staging_offset,
+    ) in enumerate(cases):
+        high_layout = bool(flags & 0x80)
+        literal_bias = (flags & 0x40) << 1
+        if len(staged_values) != len(tokens):
+            raise AssertionError(f"0xab25 {name}: staged/token count mismatch")
+        if bool(flags & 0x04) != (coordinates is None):
+            raise AssertionError(f"0xab25 {name}: coordinate flag mismatch")
+
+        main_stream, control_words = encode_main(tokens, high_layout)
+        staging_stream = encode_staging(staged_values, literal_bias)
+        extent = len(staged_values)
+        checksum = (
+            0xAD - sum(struct.pack("<HHB", extent, extent, flags))
+        ) & 0xFF
+        header = struct.pack("<HHBB", extent, extent, flags, checksum)
+        coordinate_bytes = (
+            b"" if coordinates is None else struct.pack("<HH", *coordinates)
+        )
+        resource = header + coordinate_bytes + staging_stream + main_stream
+        helper_source_offset = (source_offset + 6 + len(coordinate_bytes)) & 0xFFFF
+        main_source_offset = (helper_source_offset + len(staging_stream)) & 0xFFFF
+        x, y = coordinates if coordinates is not None else (0, 0)
+        adjusted_y = (y + vertical_offset) & 0xFFFF
+        row_offset = (
+            ((adjusted_y & 0xFF) << 8)
+            | (adjusted_y >> 8)
+        )
+        row_offset = (row_offset + (adjusted_y << 6) + x) & 0xFFFF
+        row_width = raw_width & 0x01FF
+        rows = min(raw_rows & 0xFF, 0x82)
+
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+        for index, value in enumerate(resource):
+            source_before[(source_offset + index) & 0xFFFF] = value
+        staging_before = bytes(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        staging_expected = bytearray(staging_before)
+        for index, value in enumerate(staged_values):
+            staging_expected[(staging_offset + index) & 0xFFFF] = value
+        framebuffer_before = bytes(
+            (offset * 37 + (offset >> 8) * 13 + case_index * 19) & 0xFF
+            for offset in range(0x10000)
+        )
+        framebuffer_expected = bytearray(framebuffer_before)
+        initial_ah = (0x1234 + case_index) >> 8
+        (
+            main_consumed,
+            staged_result,
+            destination_result,
+            pending_length,
+            bit_buffer,
+            final_al,
+            final_ah,
+            final_row_offset,
+        ) = decode(
+            main_stream,
+            staging_expected,
+            staging_offset,
+            framebuffer_expected,
+            row_offset,
+            row_width,
+            rows,
+            high_layout,
+            initial_ah,
+        )
+
+        game_before = bytearray(
+            (offset * 41 + (offset >> 8) * 5 + case_index * 17) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x0AA0, 0x7100 + case_index)
+        struct.pack_into("<H", game_before, 0x0ABE, staging_segment)
+        struct.pack_into("<H", game_before, 0x0DA4, raw_width)
+        struct.pack_into("<H", game_before, 0x0DA6, raw_rows)
+        struct.pack_into("<H", game_before, 0x1FA7, vertical_offset)
+        struct.pack_into("<H", game_before, 0x5223, framebuffer_segment)
+        game_expected = bytearray(game_before)
+        struct.pack_into("<H", game_expected, 0x0AA0, 3)
+        stack_before = bytearray(
+            (offset * 43 + case_index * 13 + 0x51) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | staging_offset,
+            "ebp": 0x97972468 + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": 0x2C00,
+            "fs": 0x1800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        helper_calls = []
+        main_entries = []
+        scanline_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xAABC:
+                if helper_calls:
+                    raise AssertionError(f"0xab25 {name}: duplicate AABC call")
+                actual = {
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                }
+                expected = {
+                    "bx": source_offset,
+                    "si": helper_source_offset,
+                    "di": staging_offset,
+                    "bp": (staging_offset + extent) & 0xFFFF,
+                    "sp": 0xFEF2,
+                    "ds": source_segment,
+                    "es": staging_segment,
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xab25 {name}: helper state={actual}, expected={expected}"
+                    )
+                saved_ax = (initial["eax"] & 0xFF00) | flags
+                frame = struct.unpack(
+                    "<8H", machine.mem_read(stack_segment * 16 + 0xFEF2, 16)
+                )
+                expected_frame = (
+                    0xAB67,
+                    staging_offset,
+                    staging_offset,
+                    x,
+                    y,
+                    saved_ax,
+                    source_segment,
+                    return_address,
+                )
+                if frame != expected_frame:
+                    raise AssertionError(
+                        f"0xab25 {name}: helper frame={frame}, expected={expected_frame}"
+                    )
+                code_biases = bytes(machine.mem_read(0x0DDD, 1)) + bytes(
+                    machine.mem_read(0x0E0D, 1)
+                )
+                if code_biases != bytes((literal_bias, literal_bias)):
+                    raise AssertionError(f"0xab25 {name}: code bias stored late")
+                # Mirror the segment-relative writes in the flat CS=0 oracle.
+                machine.mem_write(0xAAED, bytes((literal_bias,)))
+                machine.mem_write(0xAB1D, bytes((literal_bias,)))
+                helper_calls.append(actual)
+            elif address in (0xABCE, 0xADC3):
+                if main_entries:
+                    return
+                actual = {
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "fs": machine.reg_read(UC_X86_REG_FS),
+                }
+                expected = {
+                    "ax": (initial["eax"] & 0xFF00) | flags,
+                    "bx": main_source_offset,
+                    "cx": row_width,
+                    "dx": 0x8000,
+                    "si": staging_offset,
+                    "di": row_offset,
+                    "bp": 0xFEFC,
+                    "sp": 0xFEEC,
+                    "ds": staging_segment,
+                    "es": framebuffer_segment,
+                    "fs": source_segment,
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xab25 {name}: main state={actual}, expected={expected}"
+                    )
+                locals_words = struct.unpack(
+                    "<5H", machine.mem_read(stack_segment * 16 + 0xFEF2, 10)
+                )
+                if locals_words[0] != row_width or locals_words[4] != 0:
+                    raise AssertionError(f"0xab25 {name}: local state differs")
+                if (locals_words[2] & 0xFF) != rows:
+                    raise AssertionError(f"0xab25 {name}: row count differs")
+                main_entries.append(actual)
+            elif address == 0xAD96:
+                scanline_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DI),
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x0DDD, b"\x5a"),
+                (0, 0x0E0D, b"\xa5"),
+                (source_segment, 0, bytes(source_before)),
+                (staging_segment, 0, staging_before),
+                (framebuffer_segment, 0, framebuffer_before),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=250000,
+        )
+        if len(helper_calls) != 1 or len(main_entries) != 1:
+            raise AssertionError(f"0xab25 {name}: setup calls differ")
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(
+            source_before
+        ):
+            raise AssertionError(f"0xab25 {name}: source changed")
+        if bytes(machine.mem_read(staging_segment * 16, 0x10000)) != bytes(
+            staging_expected
+        ):
+            raise AssertionError(f"0xab25 {name}: staged values differ")
+        if bytes(machine.mem_read(framebuffer_segment * 16, 0x10000)) != bytes(
+            framebuffer_expected
+        ):
+            raise AssertionError(f"0xab25 {name}: framebuffer differs")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_expected
+        ):
+            raise AssertionError(f"0xab25 {name}: game state differs")
+
+        main_source_result = (main_source_offset + main_consumed) & 0xFFFF
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | final_al | (final_ah << 8)
+        expected_registers["ebx"] = (
+            initial["ebx"] & 0xFFFF0000
+        ) | main_source_result
+        expected_registers["ecx"] &= 0xFFFF0000
+        expected_registers["edx"] = (
+            initial["edx"] & 0xFFFF0000
+        ) | bit_buffer
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | staged_result
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | destination_result
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | ((staging_offset + extent) & 0xFFFF)
+        expected_registers["sp"] = 0xFF02
+        expected_registers["ds"] = source_segment
+        expected_registers["es"] = framebuffer_segment
+        expected_registers["fs"] = source_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xab25 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xab25 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xab25 {name}: stack sentinel changed")
+
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xab25 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        changed_pixels = sum(
+            before != after
+            for before, after in zip(framebuffer_before, framebuffer_expected)
+        )
+        vectors.append(
+            {
+                "name": name,
+                "flags": flags,
+                "layout": "high" if high_layout else "low",
+                "literal_bias": literal_bias,
+                "coordinates": list(coordinates) if coordinates is not None else None,
+                "vertical_offset": vertical_offset,
+                "raw_width": raw_width,
+                "row_width": row_width,
+                "raw_rows": raw_rows,
+                "rows": rows,
+                "tokens": [list(token) for token in tokens],
+                "staged_values": staged_values,
+                "staging_stream_hex": staging_stream.hex(),
+                "main_stream_hex": main_stream.hex(),
+                "control_words": control_words,
+                "source_offset": source_offset,
+                "main_source_result_offset": main_source_result,
+                "staging_offset": staging_offset,
+                "staged_result_offset": staged_result,
+                "first_row_offset": row_offset,
+                "final_row_offset": final_row_offset,
+                "destination_result_offset": destination_result,
+                "pending_length": pending_length,
+                "result_bit_buffer": bit_buffer,
+                "scanline_helper_calls": len(scanline_calls),
+                "changed_pixels": changed_pixels,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def flag_gated_copy_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x4000
@@ -53862,6 +54595,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_aabc_natural.json",
         resource_pair_lz_decode_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_ab25_natural.json",
+        resource_payload_decode_rect_vectors(),
         args.check,
     )
     update_vector(
