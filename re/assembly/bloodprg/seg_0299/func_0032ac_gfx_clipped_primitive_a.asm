@@ -6,8 +6,8 @@
 ; seg_off: 0299:031c
 ; group: seg_0299
 ; provenance: recursive_graph
-; label: gfx_clipped_primitive_a
-; label_comment: clipped graphics draw primitive (3 calls): dx-param (or dx,dx; sign check), bp=ax coordinate; same clipped-draw family as gfx_clipped_draw 0x3321. A shape/span draw into the display page with clipping
+; label: gfx_horizontal_span
+; label_comment: Primary-framebuffer horizontal span. AL=color, BX=x, CX=y, DX=width. Rejects signed-nonpositive widths, clips y to signed GS:0x5239..0x523B and x/width to GS:0x5235..0x5237 with exact 16-bit overflow behavior, computes byte_swap(y)+(y<<6)+x into GS:[0x5221], then either fills with AL or remaps existing pixels through GS:0x5F11 when GS:0x5B56 bit 0 is set. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_0032ac_gfx_horizontal_span.c and re/tools/oracle_vectors/func_32ac_natural.json
 ; byte_count: 117
 ; boundary: cfg_blocks_13_terminals_2
 ; terminal: jmp 0x3318:1, retf:1

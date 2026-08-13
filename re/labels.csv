@@ -337,7 +337,7 @@
 "GS:0x0A66","ems_page_frame_segment","segment of the four-page EMS window; ems_paged_read 0xa664 maps physical pages 0..3 here and far-moves from source_offset&0x3fff"
 "GS:0x0A6C","xms_move_descriptor","16-byte XMS function 0x0b move descriptor: dword length, word source handle, dword source offset, word destination handle, dword destination offset or conventional far pointer"
 "GS:0x0D84","ems_paged_addr","32-bit linear address into EMS-banked memory, split by ems_paged_read 0x0a664 into page (>>14) + offset (&0x3fff = within a 16KB EMS page). The gs:0xd8c list lives in banked memory"
-"0x0032AC","gfx_clipped_primitive_a","clipped graphics draw primitive (3 calls): dx-param (or dx,dx; sign check), bp=ax coordinate; same clipped-draw family as gfx_clipped_draw 0x3321. A shape/span draw into the display page with clipping"
+"0x0032AC","gfx_horizontal_span","Primary-framebuffer horizontal span. AL=color, BX=x, CX=y, DX=width. Rejects signed-nonpositive widths, clips y to signed GS:0x5239..0x523B and x/width to GS:0x5235..0x5237 with exact 16-bit overflow behavior, computes byte_swap(y)+(y<<6)+x into GS:[0x5221], then either fills with AL or remaps existing pixels through GS:0x5F11 when GS:0x5B56 bit 0 is set."
 "0x003AB3","gfx_clipped_primitive_c","clipped graphics draw primitive (2 calls): same clipped-draw family (dx-param, bp=ax). Shape/span draw variant. The 0x3321/0x32ac/0x39bb/0x3ab3 cluster are the game's 2D drawing primitives"
 "0x0022D0","set_flag_b15","tiny setter (2 calls): [0xb15]=dl; ret. Sets the [0xb15] state byte"
 "0x0027C3","set_ds_gs_check_ae0","gs-setup helper (2 calls): ds=gs; test [0xae0]&1 -> branch. Establishes DS=the gs data segment then checks the [0xae0] mode flag"
