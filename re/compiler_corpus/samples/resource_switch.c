@@ -54,17 +54,16 @@ void NEAR close_file_probe(void);
 void FAR list_init_probe(void);
 void NEAR list_bounds_init_probe(void);
 resource_descriptor_probe *NEAR descriptor_lookup_probe(u16 resource_id);
-u16 FAR path_builder_probe(const volatile char *filename);
+u16 FAR path_builder_probe(volatile char FAR *filename);
 volatile dos_dta_probe FAR *NEAR dos_get_dta_probe(void);
-void NEAR dos_find_first_probe(const volatile char *path);
-int NEAR dos_open_read_only_probe(const volatile char *path, u16 *handle);
+void NEAR dos_find_first_probe(const volatile char FAR *path);
+int NEAR dos_open_read_only_probe(const volatile char FAR *path, u16 *handle);
 int NEAR list_read_probe(u16 *entry_extent, u16 *cursor_offset);
 int NEAR paged_read_probe(u16 byte_count);
 volatile u8 FAR *NEAR palette_blocks_probe(volatile u8 FAR *stream);
 
 #if defined(__WATCOMC__)
 #pragma aux descriptor_lookup_probe parm [ax] value [bx] modify [bx]
-#pragma aux path_builder_probe parm [dx] value [bx] modify [bx cx dx]
 #endif
 
 int NEAR resource_switch_probe(u16 resource_id)

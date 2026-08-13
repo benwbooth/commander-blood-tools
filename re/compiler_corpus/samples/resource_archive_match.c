@@ -54,15 +54,11 @@ void near xms_move_probe(volatile xms_move_request_probe *request);
 u16 near dos_read_probe(u16 handle, volatile u8 far *destination, u16 byte_count);
 void near dos_seek_absolute_probe(u16 handle, u32 offset);
 
-#if defined(__WATCOMC__)
-#pragma aux resource_archive_match_probe parm [si] value [bx] modify [ax bx]
-#endif
-
-u16 near resource_archive_match_probe(volatile char *filename)
+u16 near resource_archive_match_probe(volatile char far *filename)
 {
     volatile resource_archive_entry_probe far *entry;
     volatile u8 far *archive_index;
-    volatile u8 *character;
+    volatile u8 far *character;
     u32 payload_offset;
     u16 archive_handle;
     u16 character_index;
@@ -100,7 +96,7 @@ u16 near resource_archive_match_probe(volatile char *filename)
         }
     }
 
-    character = (volatile u8 *)filename;
+    character = (volatile u8 far *)filename;
     do {
         filename_character = *character;
         if (filename_character >= (u8)'a') {
@@ -116,7 +112,8 @@ u16 near resource_archive_match_probe(volatile char *filename)
         do {
             archive_character =
                     ((volatile u8 far *)entry->filename)[character_index];
-            filename_character = ((volatile u8 *)filename)[character_index];
+            filename_character =
+                    ((volatile u8 far *)filename)[character_index];
             if (archive_character != filename_character) {
                 break;
             }

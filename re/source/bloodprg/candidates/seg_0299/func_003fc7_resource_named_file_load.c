@@ -8,14 +8,16 @@ int CB_FAR resource_named_file_load(cb_u16 resource_id,
 {
     bloodprg_resource_allocation_result allocation;
     volatile bloodprg_dos_dta CB_FAR *dta;
-    volatile char *filename;
+    volatile char CB_FS_DATA *resource_name;
+    volatile char CB_FAR *filename;
     volatile cb_u8 CB_FAR *destination;
     cb_u32 remaining_bytes;
     cb_u16 file_handle;
     cb_u16 file_header;
     cb_u16 bytes_read;
 
-    filename = resource_name_table[resource_id].filename;
+    resource_name = resource_name_table[resource_id].filename;
+    filename = resource_name;
     (void)resource_source_select(filename);
 
     dta = cb_dos_get_dta();

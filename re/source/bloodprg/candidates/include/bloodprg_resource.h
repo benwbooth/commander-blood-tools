@@ -96,8 +96,6 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 #pragma aux resource_free_inner parm [ax] modify exact []
 #pragma aux resource_get_field4 parm [ax] value [dx ax] modify exact [ax dx]
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
-#pragma aux resource_source_select parm [dx] value [bx] modify [ax bx cx dx]
-#pragma aux resource_archive_match parm [si] value [bx] modify [ax bx]
 #pragma aux resource_load_by_id parm [ax] value [ax] modify exact [ax]
 #pragma aux resource_named_file_load parm [ax] [es di] value [ax] modify exact [ax]
 #endif
@@ -114,11 +112,11 @@ cb_u32 CB_FAR resource_get_field4(cb_u16 handle); /* 0x04B9:0x01AC */
 bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR resource_source_select(
-        volatile char CB_NEAR *filename); /* 0x01CE:0x03B3 */
+        volatile char CB_FAR *filename); /* 0x01CE:0x03B3 */
 cb_u16 CB_NEAR resource_archive_match(
-        volatile char CB_NEAR *filename); /* 0x01CE:0x03EF */
+        volatile char CB_FAR *filename); /* 0x01CE:0x03EF */
 cb_u32 CB_FAR resource_name_lookup(
-        const volatile char CB_FAR *filename); /* 0x01CE:0x05EA */
+        volatile char CB_FAR *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
 
 int CB_FAR resource_load_by_id(cb_u16 resource_id); /* 0x01CE:0x059B */
@@ -126,8 +124,8 @@ int CB_FAR resource_named_file_load(cb_u16 resource_id,
         volatile cb_u8 CB_FAR *direct_destination); /* 0x0299:0x1037 */
 
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
-int CB_NEAR cb_dos_find_first(const volatile char *path);
-int CB_NEAR cb_dos_open_read_only(const volatile char *path,
+int CB_NEAR cb_dos_find_first(const volatile char CB_FAR *path);
+int CB_NEAR cb_dos_open_read_only(const volatile char CB_FAR *path,
         cb_u16 *handle);
 void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
 cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,

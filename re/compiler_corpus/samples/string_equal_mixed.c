@@ -13,15 +13,11 @@ typedef unsigned char u8;
 #endif
 
 int FAR_FN string_equal_mixed_probe(
-        const volatile char *left,
+        const volatile char FAR *left,
         const volatile char FAR *right);
 
-#if defined(__WATCOMC__)
-#pragma aux string_equal_mixed_probe parm [si] [es di] value [ax] modify exact [ax]
-#endif
-
 int FAR_FN string_equal_mixed_probe(
-        const volatile char *left,
+        const volatile char FAR *left,
         const volatile char FAR *right)
 {
     u8 ch;

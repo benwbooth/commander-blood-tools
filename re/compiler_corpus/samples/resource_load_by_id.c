@@ -30,7 +30,7 @@ typedef struct allocation_result_probe {
 
 extern volatile resource_name_entry_probe FS_DATA resource_names_probe[];
 
-u32 FAR resource_name_lookup_probe(const volatile char FAR *filename);
+u32 FAR resource_name_lookup_probe(volatile char FAR *filename);
 allocation_result_probe FAR resource_allocate_probe(
         u16 resource_id, u32 byte_count);
 u32 FAR resource_file_load_probe(const volatile char FAR *filename,
@@ -43,8 +43,8 @@ u32 FAR resource_file_load_probe(const volatile char FAR *filename,
 int FAR resource_load_by_id_probe(u16 resource_id)
 {
     allocation_result_probe allocation;
-    const volatile char FS_DATA *resource_name;
-    const volatile char FAR *filename;
+    volatile char FS_DATA *resource_name;
+    volatile char FAR *filename;
     u32 byte_count;
 
     resource_name = resource_names_probe[resource_id].filename;

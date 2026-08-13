@@ -165,14 +165,13 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_c2_descript_lookup parm [es di] value [ax] modify exact [ax]
 #endif
 
-int CB_FAR string_compare(const volatile char CB_NEAR *left,
+int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right); /* 0x0025A4 */
 void CB_NEAR object_heap_access(void);       /* 0x00149B */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
 #if defined(__WATCOMC__)
-#pragma aux string_compare parm [si] [es di] value [ax] modify exact [ax]
 #pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */

@@ -65,9 +65,9 @@ extern volatile snd_storage_cursor shared_snd_storage_cursor;
 extern volatile xms_move_request shared_xms_move_request;
 extern const volatile char snd_voice_temp_filename[];
 
-u16 FAR path_builder_probe(const volatile char *filename);
-u32 FAR resource_name_lookup_probe(const volatile char *filename);
-int NEAR cb_dos_open_read_only_probe(const volatile char *path, u16 *handle);
+u16 FAR path_builder_probe(volatile char FAR *filename);
+u32 FAR resource_name_lookup_probe(volatile char FAR *filename);
+int NEAR cb_dos_open_read_only_probe(const volatile char FAR *path, u16 *handle);
 u16 NEAR cb_dos_read_probe(u16 handle,
         volatile u8 FAR *destination, u16 byte_count);
 void NEAR cb_dos_close_probe(u16 handle);
@@ -82,10 +82,9 @@ void FAR startup_write_directory_enter_probe(void);
 
 #if defined(__WATCOMC__)
 #pragma aux snd_bank_loader_probe parm [ax] [si] modify exact []
-#pragma aux path_builder_probe parm [dx] value [bx] modify [bx cx dx]
 #endif
 
-void FAR snd_bank_loader_probe(u16 mode, const volatile char NEAR *path)
+void FAR snd_bank_loader_probe(u16 mode, volatile char NEAR *path)
 {
     volatile u8 FAR *staging;
     u32 payload_remaining;

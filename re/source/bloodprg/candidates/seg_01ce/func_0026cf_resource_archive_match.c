@@ -8,11 +8,11 @@
 #define BLOODPRG_ARCHIVE_INDEX_STAGING_OFFSET 0x7d00u
 #define BLOODPRG_ARCHIVE_INDEX_XMS_BYTES 0x7d00UL
 
-cb_u16 CB_NEAR resource_archive_match(volatile char CB_NEAR *filename)
+cb_u16 CB_NEAR resource_archive_match(volatile char CB_FAR *filename)
 {
     volatile bloodprg_resource_archive_entry CB_FAR *entry;
     volatile cb_u8 CB_FAR *archive_index;
-    volatile cb_u8 CB_NEAR *character;
+    volatile cb_u8 CB_FAR *character;
     cb_u32 payload_offset;
     cb_u16 archive_handle;
     cb_u16 character_index;
@@ -51,7 +51,7 @@ cb_u16 CB_NEAR resource_archive_match(volatile char CB_NEAR *filename)
         }
     }
 
-    character = (volatile cb_u8 CB_NEAR *)filename;
+    character = (volatile cb_u8 CB_FAR *)filename;
     do {
         filename_character = *character;
         if (filename_character >= (cb_u8)'a') {
@@ -69,7 +69,7 @@ cb_u16 CB_NEAR resource_archive_match(volatile char CB_NEAR *filename)
             archive_character =
                     ((volatile cb_u8 CB_FAR *)entry->filename)[character_index];
             filename_character =
-                    ((volatile cb_u8 CB_NEAR *)filename)[character_index];
+                    ((volatile cb_u8 CB_FAR *)filename)[character_index];
             if (archive_character != filename_character) {
                 break;
             }

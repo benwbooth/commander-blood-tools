@@ -3,8 +3,8 @@
 int CB_FAR resource_load_by_id(cb_u16 resource_id)
 {
     bloodprg_resource_allocation_result allocation;
-    const volatile char CB_FS_DATA *resource_name;
-    const volatile char CB_FAR *filename;
+    volatile char CB_FS_DATA *resource_name;
+    volatile char CB_FAR *filename;
     cb_u32 byte_count;
 
     resource_name = resource_name_table[resource_id].filename;

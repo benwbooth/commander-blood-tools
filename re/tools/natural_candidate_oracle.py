@@ -5716,6 +5716,293 @@ def resource_archive_match_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_name_lookup_vectors() -> list[dict[str, object]]:
+    entry = 0x28CA
+    expected_hash = "18ac4b82ad55c5b35142cc8f7cf215d93681ee7e621839a39f3a85811369bc99"
+    if hashlib.sha256(EXE[entry : entry + 55]).hexdigest() != expected_hash:
+        raise AssertionError("0x28ca: recovered 55-byte body changed")
+
+    cases = [
+        {
+            "name": "embedded_uses_archive_size",
+            "embedded_flag": 1,
+            "archive_size": 0x12345678,
+        },
+        {
+            "name": "embedded_tests_only_bit_zero",
+            "embedded_flag": 3,
+            "archive_size": 0x80000000,
+        },
+        {
+            "name": "standalone_find_success",
+            "embedded_flag": 0,
+            "archive_size": 0xA1A2A3A4,
+            "dta_size_before": 0x11111111,
+            "file_size": 0x00018002,
+            "find_success": True,
+        },
+        {
+            "name": "find_failure_returns_stale_dta_size",
+            "embedded_flag": 0,
+            "archive_size": 0xB1B2B3B4,
+            "dta_size_before": 0xDEADBEEF,
+            "file_size": 0x01020304,
+            "find_success": False,
+        },
+        {
+            "name": "embedded_bit_one_alone_is_standalone",
+            "embedded_flag": 2,
+            "archive_size": 0xC1C2C3C4,
+            "dta_size_before": 0x22222222,
+            "file_size": 0x89ABCDEF,
+            "find_success": True,
+        },
+        {
+            "name": "dta_file_size_offset_wraps",
+            "embedded_flag": 0,
+            "archive_size": 0xD1D2D3D4,
+            "dta_offset": 0xFFF0,
+            "dta_size_before": 0x33333333,
+            "file_size": 0x76543210,
+            "find_success": True,
+        },
+        {
+            "name": "standalone_full_high_dword_size",
+            "embedded_flag": 0,
+            "archive_size": 0xE1E2E3E4,
+            "dta_size_before": 0x44444444,
+            "file_size": 0x80000000,
+            "find_success": True,
+        },
+        {
+            "name": "source_selector_uses_si_not_incoming_dx",
+            "embedded_flag": 0,
+            "archive_size": 0xF1F2F3F4,
+            "dta_size_before": 0x55555555,
+            "file_size": 0x00000001,
+            "find_success": True,
+            "dx_decoy": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    dta_segment = 0x4200
+    stack_segment = 0x9000
+    filename_offset = 0x4100
+    decoy_filename_offset = 0x4300
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        embedded_flag = int(case["embedded_flag"])
+        archive_size = int(case["archive_size"])
+        standalone = (embedded_flag & 1) == 0
+        dta_offset = int(case.get("dta_offset", 0x0200))
+        dta_size_offset = (dta_offset + 0x1A) & 0xFFFF
+        dta_size_before = int(case.get("dta_size_before", 0xA5A5A5A5))
+        file_size = int(case.get("file_size", dta_size_before))
+        find_success = bool(case.get("find_success", False))
+        active_dx_offset = (
+            decoy_filename_offset if bool(case.get("dx_decoy", False))
+            else filename_offset
+        )
+        filename = f"LOOKUP{case_index:02d}.DAT".encode("ascii") + b"\0"
+        decoy_filename = f"DECOY{case_index:02d}.DAT".encode("ascii") + b"\0"
+        dta_decoy = (dta_size_before ^ 0xFFFFFFFF) & 0xFFFFFFFF
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D40000 | active_dx_offset,
+            "esi": 0xE5E50000 | filename_offset,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3800,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293,
+        }
+        calls: list[dict[str, object]] = []
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x2693:
+                return
+            calls.append(
+                {
+                    "call": "resource_source_select",
+                    "filename": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "return_frame": return_frame(machine),
+                }
+            )
+            machine.mem_write(
+                game_segment * 16 + 0x0AE2, bytes((embedded_flag,))
+            )
+            machine.mem_write(
+                game_segment * 16 + 0x0A8E,
+                struct.pack("<I", archive_size),
+            )
+            machine.reg_write(UC_X86_REG_BX, 0x7000 + case_index)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21:
+                raise AssertionError(f"0x28ca {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x2F00:
+                calls.append({"call": "dos_get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+                return
+            if function == 0x4E00:
+                call = {
+                    "call": "dos_find_first",
+                    "filename": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                }
+                calls.append(call)
+                if find_success:
+                    machine.mem_write(
+                        dta_segment * 16 + dta_size_offset,
+                        struct.pack("<I", file_size),
+                    )
+                    machine.reg_write(UC_X86_REG_AX, 0)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    flags & ~1 if find_success else flags | 1,
+                )
+                return
+            raise AssertionError(
+                f"0x28ca {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x2693, b"\xcb"),
+                (data_segment, filename_offset, filename),
+                (data_segment, decoy_filename_offset, decoy_filename),
+                (
+                    game_segment,
+                    0x0A8E,
+                    struct.pack("<I", archive_size ^ 0xFFFFFFFF),
+                ),
+                (game_segment, 0x0AE2, bytes((embedded_flag ^ 0xFF,))),
+                (
+                    dta_segment,
+                    dta_size_offset,
+                    struct.pack("<I", dta_size_before),
+                ),
+                (
+                    data_segment,
+                    dta_size_offset,
+                    struct.pack("<I", dta_decoy),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+        )
+
+        expected_calls: list[dict[str, object]] = [
+            {
+                "call": "resource_source_select",
+                "filename": [data_segment, filename_offset],
+                "return_frame": [0x28D6, 0],
+            }
+        ]
+        if standalone:
+            expected_calls.extend(
+                (
+                    {"call": "dos_get_dta"},
+                    {
+                        "call": "dos_find_first",
+                        "filename": [data_segment, filename_offset],
+                        "attributes": 0x18,
+                    },
+                )
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x28ca {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_size = (
+            file_size if standalone and find_success
+            else dta_size_before if standalone
+            else archive_size
+        )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ebp"] = expected_size
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x28ca {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x28ca {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x28ca {name}: stack sentinel changed")
+        if bytes(
+            machine.mem_read(data_segment * 16 + filename_offset, len(filename))
+        ) != filename:
+            raise AssertionError(f"0x28ca {name}: filename changed")
+        if struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + dta_size_offset, 4)
+        )[0] != dta_decoy:
+            raise AssertionError(f"0x28ca {name}: DS DTA decoy changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "embedded_flag": embedded_flag,
+                "archive_size": archive_size,
+                "dta_offset": dta_offset if standalone else None,
+                "find_success": find_success if standalone else None,
+                "dta_size_before": dta_size_before if standalone else None,
+                "file_size": file_size if standalone and find_success else None,
+                "returned_size": expected_size,
+                "find_carry": (
+                    bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+                    if standalone else None
+                ),
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_load_by_id_vectors() -> list[dict[str, object]]:
     entry = 0x287B
     expected_hash = "2ef711193074fd2dbc1bb93c3f9cf3698fe854d1c77940b18eecb5dad2b5dd91"
@@ -35209,6 +35496,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_287b_natural.json",
         resource_load_by_id_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_28ca_natural.json",
+        resource_name_lookup_vectors(),
         args.check,
     )
     update_vector(

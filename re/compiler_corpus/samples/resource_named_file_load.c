@@ -15,6 +15,12 @@ typedef unsigned long u32;
 #define FAR
 #endif
 
+#if defined(__WATCOMC__)
+#define FS_DATA __based(__segname("FS_DATA"))
+#else
+#define FS_DATA FAR
+#endif
+
 typedef struct resource_name_entry_probe {
     char filename[16];
 } resource_name_entry_probe;
@@ -29,13 +35,13 @@ typedef struct allocation_result_probe {
     volatile u8 FAR *destination;
 } allocation_result_probe;
 
-extern volatile resource_name_entry_probe resource_names_probe[];
+extern volatile resource_name_entry_probe FS_DATA resource_names_probe[];
 extern volatile u16 resource_file_header_probe;
 
-u16 FAR path_builder_probe(volatile char *filename);
+u16 FAR path_builder_probe(volatile char FAR *filename);
 volatile dos_dta_probe FAR *dos_get_dta_probe(void);
-int dos_find_first_probe(const volatile char *filename);
-int dos_open_read_only_probe(const volatile char *filename, u16 *handle);
+int dos_find_first_probe(const volatile char FAR *filename);
+int dos_open_read_only_probe(const volatile char FAR *filename, u16 *handle);
 u16 dos_read_probe(u16 handle, volatile u8 FAR *destination, u16 count);
 void dos_close_probe(u16 handle);
 void palette_file_blocks_probe(u16 handle, volatile u16 *header, u32 *remaining);
@@ -46,14 +52,16 @@ int FAR resource_named_file_load_probe(u16 resource_id,
 {
     allocation_result_probe allocation;
     volatile dos_dta_probe FAR *dta;
-    volatile char *filename;
+    volatile char FS_DATA *resource_name;
+    volatile char FAR *filename;
     volatile u8 FAR *destination;
     u32 remaining;
     u16 handle;
     u16 header;
     u16 bytes_read;
 
-    filename = resource_names_probe[resource_id].filename;
+    resource_name = resource_names_probe[resource_id].filename;
+    filename = resource_name;
     (void)path_builder_probe(filename);
     dta = dos_get_dta_probe();
     if (!dos_find_first_probe(filename)) {

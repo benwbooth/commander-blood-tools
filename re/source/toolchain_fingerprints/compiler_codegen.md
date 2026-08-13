@@ -208,10 +208,10 @@ palette routines execute unchanged. They verify the extent word is used only
 for ring-wrap detection, palette data begins immediately after that word unless
 the record wraps to offset zero, `0xFF` metadata padding is skipped, and both
 32-bit absolute/remaining range pairs use the recovered relative offsets. Open
-Watcom 1.9 medium compiles the corrected natural body to 175 instructions and 515 bytes,
-and Turbo C 2.01 medium emits 206 instructions, versus 103 instructions and 309
-bytes in the original. The excess is primarily the conventional Boolean and
-pointer interfaces replacing the original AX,
+Watcom 1.9 medium compiles the corrected far-path natural body to 180
+instructions and 529 bytes, versus 103 instructions and 309 bytes in the
+original. The excess is primarily the conventional Boolean and pointer
+interfaces replacing the original AX,
 BX, ES:SI, and carry conventions, so this is a behaviorally verified natural C
 body with unresolved assembly boundaries rather than an exact codegen match.
 
@@ -1864,15 +1864,16 @@ far return. A DF-set vector also records the binary's asymmetric behavior:
 `LODSB` walks the left string backward while explicit `INC DI` still walks the
 right string forward.
 
-The corrected natural candidate caches each left byte once, models the DS side
-as a near pointer and the ES side as a far pointer, and returns an ordinary C
-Boolean. Open Watcom `-3 -ox -mm` binds SI and ES:DI directly and emits 18
-instructions/28 bytes versus 16/22 original. The compare loop and pointer
-preservation are close, but Watcom emits `TEST` instead of `OR`, materializes
-zero/one in AX, duplicates the far epilogue, and cannot express a carry return
-that preserves incoming AX. Turbo C 2.01 medium emits 22 instructions with
-stack arguments. Exact binary integration therefore needs a small
-Boolean-to-carry/AX-preservation adapter; the C logic itself is complete.
+The corrected natural candidate caches each left byte once, models both inputs
+as far pointers so callers do not discard segment identity, and returns an
+ordinary C Boolean. Open Watcom `-3 -ox -mm` emits 18 instructions/32 bytes
+versus 16/22 original. It rejects a far-pointer pragma bound to `DS:SI`, so the
+original DS:SI plus ES:DI entry cannot be expressed directly in Watcom C. The
+compare loop remains close, but Watcom emits `TEST` instead of `OR`, materializes
+zero/one in AX, and duplicates the far epilogue. Turbo C 2.01 medium emits 22
+instructions with stack arguments. Exact binary integration therefore needs a
+small entry and Boolean-to-carry/AX-preservation adapter; the C logic itself is
+complete.
 
 Far string-length helper `0x002665` is a bounded routine rather than an
 ordinary unbounded library `strlen`. It probes at most `0xFFFF` bytes through
@@ -2945,13 +2946,14 @@ Eight patched-callee direct vectors prove the force-bit mask, first and later
 case-sensitive matches, record-zero do-while behavior, terminator handling,
 directory/archive call order, `GS` ownership, embedded-result propagation,
 preservation, and far return. The actual natural candidate compiles
-warning-free under Open Watcom medium `-3 -ox -mm -zdp -we` to exactly 28
-instructions, matching the original count, at 75 bytes versus 60. Watcom uses
-the natural Boolean return from the recovered string comparator and returns
-zero on standalone paths; the binary uses comparator carry and leaves incoming
-`BX` unchanged where callers ignore it. A drop-in boundary must additionally
-preserve the original `AX` and `ES`; consistently compiled C callers use the
-natural Watcom convention instead.
+warning-free under Open Watcom medium `-3 -ox -mm -zdp -we` to 40
+instructions/98 bytes versus 28/60 original. The pathname is deliberately a
+far pointer because it can originate in `FS`; representing it as near C would
+silently lose that segment. Watcom uses the natural Boolean return from the
+recovered string comparator and returns zero on standalone paths; the binary
+uses DS:DX entry, comparator carry, and leaves incoming `BX` unchanged where
+callers ignore it. A drop-in boundary must additionally preserve the original
+`AX` and `ES`.
 
 Routine `0x0026CF` owns the embedded archive-index lookup behind that selector.
 When the archive handle at `GS:0A86` is zero it returns immediately. Otherwise
@@ -2972,15 +2974,16 @@ to both `GS:0A8E` and `GS:0A92`, copies its offset to `GS:0A8A`, and seeks the
 archive handle to that payload. The sole caller receives the filename in `DX`,
 copies that offset into `SI`, and enters the lookup with `ES=GS`; the lookup
 walks the name through `DS:SI` and uses `ES` while constructing the XMS request.
-The natural declaration binds the lookup argument to `SI`, preserving this
-caller/callee split.
+Natural C carries the mutable name as a far pointer. A narrow adapter must
+establish the original DS:SI entry because Watcom rejects that segment-register
+pair for a far-pointer pragma.
 
 Eight direct-binary vectors cover the disabled path, EMS preference and exact
 four-page mapping, distinct XMS and DOS offsets under a nonzero work-pointer
 fixture, first and later records, no-match state preservation, prefix rejection,
 punctuation masking, ignored seek errors, and the distinct SI/DX live-ins. Open
-Watcom 1.9 medium compiles the actual natural
-candidate warning-free to 124 instructions/373 bytes versus 92/244 original.
+Watcom 1.9 medium compiles the actual natural candidate warning-free to 133
+instructions/398 bytes versus 92/244 original.
 The natural function returns zero on a miss; the raw routine leaves incidental
 comparison values in `AL` and the filename offset in `BX`, which its caller
 already ignores when the embedded flag remains clear.
@@ -3008,6 +3011,24 @@ the named `FS_DATA` segment for the filename and uses a normal structured
 allocator result. Replacement linking still needs narrow ABI adapters for the
 lookup's EBP result, allocator's AX/EBP and DS:SI boundary, and loader's
 DS:SI/ES:DI boundary; the coordinator itself requires no assembly.
+
+Routine `0x0028CA` resolves the size of a named resource. It unconditionally
+calls the source selector with the caller's mutable DS:SI filename, snapshots
+the archive remaining-byte count, and returns that snapshot when bit zero of
+the embedded flag is set. Otherwise it obtains the DOS DTA with function 2Fh,
+issues FindFirst function 4Eh with attribute mask `0x18`, and reads the dword at
+wrapping DTA offset `+0x1A` into the result. The binary deliberately ignores the
+FindFirst carry flag, so a failed search returns the stale file-size field
+already present in the DTA.
+
+Eight patched-source and DOS-interrupt vectors prove embedded selection,
+bit-zero-only gating, standalone success, failed-search stale data, the exact
+attribute mask, DTA offset wrap, SI rather than incoming DX ownership, complete
+preservation, and the EBP return. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) compiles the natural far-pointer candidate warning-free
+to 28 instructions/66 bytes versus 27/55 original. Replacement linking needs a
+narrow DS:SI entry and EBP-result adapter plus the direct DOS interrupt boundary;
+the source-selection and DTA logic are natural C.
 
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
@@ -3183,7 +3204,7 @@ uses source and destination address unions, naturally representing transfers in
 both directions without a register or memory facade.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 267 instructions/884 bytes versus 198/590 original. Exact
+warning-free to 270 instructions/890 bytes versus 198/590 original. Exact
 drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
@@ -3260,7 +3281,7 @@ failure callback is expected not to return; the natural source closes and
 returns `-1` defensively.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 104 instructions/256 bytes versus 89/191 original. Its control
+warning-free to 107 instructions/265 bytes versus 89/191 original. Its control
 shape is close; the remaining expansion comes from typed DOS calls, the
 structured allocator result, and normal C stack locals. Replacement linking
 still needs narrow adapters for the dynamic `DS=FS` entry and the recovered
@@ -3288,7 +3309,7 @@ sources, both modes, exact SND table transformations, the `SS == GS` table
 placement, all backend chunk boundaries, EMS maps, every XMS request field,
 `son.snd` close/create/write ordering, source closes, and register/far-return
 preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
-actual candidate warning-free to 245 instructions/722 bytes versus 187/481
+actual candidate warning-free to 248 instructions/728 bytes versus 187/481
 original. Remaining integration work is segment placement and the narrow
 resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
 

@@ -1,0 +1,260 @@
+[
+  {
+    "name": "embedded_uses_archive_size",
+    "embedded_flag": 1,
+    "archive_size": 305419896,
+    "dta_offset": null,
+    "find_success": null,
+    "dta_size_before": null,
+    "file_size": null,
+    "returned_size": 305419896,
+    "find_carry": null,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "embedded_tests_only_bit_zero",
+    "embedded_flag": 3,
+    "archive_size": 2147483648,
+    "dta_offset": null,
+    "find_success": null,
+    "dta_size_before": null,
+    "file_size": null,
+    "returned_size": 2147483648,
+    "find_carry": null,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "standalone_find_success",
+    "embedded_flag": 0,
+    "archive_size": 2711790500,
+    "dta_offset": 512,
+    "find_success": true,
+    "dta_size_before": 286331153,
+    "file_size": 98306,
+    "returned_size": 98306,
+    "find_carry": false,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  },
+  {
+    "name": "find_failure_returns_stale_dta_size",
+    "embedded_flag": 0,
+    "archive_size": 2981278644,
+    "dta_offset": 512,
+    "find_success": false,
+    "dta_size_before": 3735928559,
+    "file_size": null,
+    "returned_size": 3735928559,
+    "find_carry": true,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  },
+  {
+    "name": "embedded_bit_one_alone_is_standalone",
+    "embedded_flag": 2,
+    "archive_size": 3250766788,
+    "dta_offset": 512,
+    "find_success": true,
+    "dta_size_before": 572662306,
+    "file_size": 2309737967,
+    "returned_size": 2309737967,
+    "find_carry": false,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  },
+  {
+    "name": "dta_file_size_offset_wraps",
+    "embedded_flag": 0,
+    "archive_size": 3520254932,
+    "dta_offset": 65520,
+    "find_success": true,
+    "dta_size_before": 858993459,
+    "file_size": 1985229328,
+    "returned_size": 1985229328,
+    "find_carry": false,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  },
+  {
+    "name": "standalone_full_high_dword_size",
+    "embedded_flag": 0,
+    "archive_size": 3789743076,
+    "dta_offset": 512,
+    "find_success": true,
+    "dta_size_before": 1145324612,
+    "file_size": 2147483648,
+    "returned_size": 2147483648,
+    "find_carry": false,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  },
+  {
+    "name": "source_selector_uses_si_not_incoming_dx",
+    "embedded_flag": 0,
+    "archive_size": 4059231220,
+    "dta_offset": 512,
+    "find_success": true,
+    "dta_size_before": 1431655765,
+    "file_size": 1,
+    "returned_size": 1,
+    "find_carry": false,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "filename": [
+          9216,
+          16640
+        ],
+        "return_frame": [
+          10454,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "filename": [
+          9216,
+          16640
+        ],
+        "attributes": 24
+      }
+    ]
+  }
+]

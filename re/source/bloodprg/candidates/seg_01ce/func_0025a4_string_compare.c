@@ -1,6 +1,6 @@
 #include "../include/bloodprg_vm.h"
 
-int CB_FAR string_compare(const volatile char CB_NEAR *left,
+int CB_FAR string_compare(const volatile char CB_FAR *left,
         const volatile char CB_FAR *right)
 {
     cb_u8 ch;

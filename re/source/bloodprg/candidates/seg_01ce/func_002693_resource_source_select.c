@@ -2,7 +2,7 @@
 #include "../include/bloodprg_startup.h"
 #include "../include/bloodprg_vm.h"
 
-cb_u16 CB_FAR resource_source_select(volatile char CB_NEAR *filename)
+cb_u16 CB_FAR resource_source_select(volatile char CB_FAR *filename)
 {
     const bloodprg_resource_name_entry CB_GAME_DATA *entry;
 
