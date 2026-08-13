@@ -5165,6 +5165,557 @@ def resource_source_select_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_archive_match_vectors() -> list[dict[str, object]]:
+    entry = 0x26CF
+    expected_hash = "e85483839d72827a794ff588012ff18a7a86800448d894873f7cfefcca60875b"
+    if hashlib.sha256(EXE[entry : entry + 244]).hexdigest() != expected_hash:
+        raise AssertionError("0x26cf: recovered 244-byte body changed")
+
+    cases = [
+        {
+            "name": "archive_handle_zero",
+            "backend": "none",
+            "archive_handle": 0,
+            "filename": b"untouched.ext",
+            "records": (),
+            "matched_index": None,
+        },
+        {
+            "name": "ems_first_record_match",
+            "backend": "ems",
+            "filename": b"venusia.ext",
+            "records": ((b"VENUSIA.EXT", 0x12345678, 0x00123456, 0x11),),
+            "matched_index": 0,
+        },
+        {
+            "name": "ems_preferred_later_record",
+            "backend": "ems",
+            "xms_also_present": True,
+            "filename": b"bridge.dat",
+            "records": (
+                (b"OTHER.DAT", 0x11111111, 0x01020304, 0x22),
+                (b"BRIDGE.DAT", 0x89ABCDEF, 0x10203040, 0x33),
+            ),
+            "matched_index": 1,
+        },
+        {
+            "name": "xms_masks_bytes_at_or_above_a",
+            "backend": "xms",
+            "work_base_offset": 0x0100,
+            "filename": b"a{|}~.ext",
+            "records": ((b"A[\\]^.EXT", 0x00007D00, 0x55667788, 0x44),),
+            "matched_index": 0,
+        },
+        {
+            "name": "dos_match_ignores_seek_error",
+            "backend": "dos",
+            "work_base_offset": 0x0200,
+            "filename": b"sound.snd",
+            "records": ((b"SOUND.SND", 0x00018002, 0xA1B2C3D4, 0x55),),
+            "matched_index": 0,
+            "seek_error": True,
+        },
+        {
+            "name": "dos_no_match_preserves_selection",
+            "backend": "dos",
+            "filename": b"missing.ext",
+            "records": (
+                (b"FIRST.EXT", 0x01010101, 0x02020202, 0x66),
+                (b"SECOND.EXT", 0x03030303, 0x04040404, 0x77),
+            ),
+            "matched_index": None,
+        },
+        {
+            "name": "xms_uses_si_not_dx_for_filename",
+            "backend": "xms",
+            "filename": b"actual.ext",
+            "dx_filename": b"decoy.ext",
+            "records": ((b"ACTUAL.EXT", 0x10293847, 0x56473829, 0x88),),
+            "matched_index": 0,
+        },
+        {
+            "name": "xms_prefix_is_not_a_match",
+            "backend": "xms",
+            "filename": b"name.extx",
+            "records": ((b"NAME.EXT", 0xA0A0A0A0, 0xB0B0B0B0, 0x99),),
+            "matched_index": None,
+        },
+    ]
+
+    data_segment = 0x2200
+    game_segment = 0x2C00
+    fs_segment = 0x3400
+    page_frame_segment = 0x3800
+    work_segment = 0x4800
+    callback_segment = 0x7000
+    callback_offset = 0x0100
+    callback_address = callback_segment * 16 + callback_offset
+    stack_segment = 0x9000
+    filename_offset = 0x4100
+    dx_filename_offset = 0x4300
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    archive_handle = 0x7654
+    cache_handle = 0x4567
+    ems_handle = 0x2345
+    xms_handle = 0x3456
+    vectors = []
+
+    def archive_record(
+        filename: bytes, byte_count: int, file_offset: int, trailing: int
+    ) -> bytes:
+        if len(filename) >= 16 or b"\0" in filename:
+            raise AssertionError(f"0x26cf: invalid archive filename {filename!r}")
+        return (
+            (filename + b"\0").ljust(16, b"\0")
+            + struct.pack("<IIB", byte_count, file_offset, trailing)
+        )
+
+    def uppercase_like_binary(filename: bytes) -> bytes:
+        return bytes(value & 0xDF if value >= 0x61 else value for value in filename)
+
+    def final_mismatch_al(
+        records: tuple[tuple[object, object, object, object], ...],
+        filename: bytes,
+    ) -> int:
+        terminated_filename = filename + b"\0"
+        result = 0
+        for record in records:
+            terminated_record = bytes(record[0]) + b"\0"
+            for record_value, filename_value in zip(
+                terminated_record, terminated_filename, strict=False
+            ):
+                result = record_value | filename_value
+                if result == 0 or record_value != filename_value:
+                    break
+        return result
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        backend = str(case["backend"])
+        records = tuple(case["records"])
+        matched_index_value = case["matched_index"]
+        matched_index = (
+            None if matched_index_value is None else int(matched_index_value)
+        )
+        active_archive_handle = int(case.get("archive_handle", archive_handle))
+        work_base_offset = int(case.get("work_base_offset", 0))
+        transfer_offset = (work_base_offset + 0x7D00) & 0xFFFF
+        scan_offset = transfer_offset if backend == "xms" else 0x7D00
+        filename = bytes(case["filename"])
+        transformed_filename = uppercase_like_binary(filename)
+        dx_filename = bytes(case.get("dx_filename", filename))
+        active_dx_offset = (
+            dx_filename_offset if "dx_filename" in case else filename_offset
+        )
+        index_image = b"\x34\x12" + b"".join(
+            archive_record(bytes(record_name), int(byte_count), int(file_offset), int(trailing))
+            for record_name, byte_count, file_offset, trailing in records
+        ) + bytes(25)
+        ems_image = index_image.ljust(0x10000, b"\xCC")
+        initial_embedded = 0x70 + case_index
+        initial_offset = 0x11223340 + case_index
+        initial_remaining = 0x55667780 + case_index
+        initial_snd_remaining = 0x99AABB00 + case_index
+        initial_request = bytes.fromhex("a55a69968778c33cf00f1ee1d22d4bb4")
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D40000 | active_dx_offset,
+            "esi": 0xE5E50000 | filename_offset,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": game_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        small_ems = ems_handle if backend == "ems" else 0xFFFF
+        small_xms = (
+            xms_handle
+            if backend == "xms" or bool(case.get("xms_also_present", False))
+            else 0xFFFF
+        )
+        calls: list[dict[str, object]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number == 0x67:
+                function = machine.reg_read(UC_X86_REG_AH)
+                physical_page = machine.reg_read(UC_X86_REG_AL)
+                logical_page = machine.reg_read(UC_X86_REG_BX)
+                handle = machine.reg_read(UC_X86_REG_DX)
+                call = {
+                    "call": "ems_map",
+                    "function": function,
+                    "handle": handle,
+                    "logical_page": logical_page,
+                    "physical_page": physical_page,
+                }
+                calls.append(call)
+                if call != {
+                    "call": "ems_map",
+                    "function": 0x44,
+                    "handle": ems_handle,
+                    "logical_page": physical_page,
+                    "physical_page": physical_page,
+                }:
+                    raise AssertionError(f"0x26cf {name}: bad EMS call {call}")
+                source = ems_image[
+                    logical_page * 0x4000 : (logical_page + 1) * 0x4000
+                ]
+                machine.mem_write(
+                    page_frame_segment * 16 + physical_page * 0x4000,
+                    source,
+                )
+                machine.reg_write(UC_X86_REG_AH, 0)
+                return
+
+            if number != 0x21:
+                raise AssertionError(f"0x26cf {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x3F:
+                destination_segment = machine.reg_read(UC_X86_REG_DS)
+                destination_offset = machine.reg_read(UC_X86_REG_DX)
+                call = {
+                    "call": "dos_read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "byte_count": machine.reg_read(UC_X86_REG_CX),
+                    "destination_segment": destination_segment,
+                    "destination_offset": destination_offset,
+                }
+                calls.append(call)
+                expected = {
+                    "call": "dos_read",
+                    "handle": cache_handle,
+                    "byte_count": 0xFFFF,
+                    "destination_segment": work_segment,
+                    "destination_offset": transfer_offset,
+                }
+                if call != expected:
+                    raise AssertionError(
+                        f"0x26cf {name}: DOS read={call}, expected={expected}"
+                    )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset, index_image
+                )
+                machine.reg_write(UC_X86_REG_AX, len(index_image))
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    machine.reg_read(UC_X86_REG_EFLAGS) & ~1,
+                )
+                return
+
+            if function == 0x42:
+                seek_offset = (
+                    machine.reg_read(UC_X86_REG_CX) << 16
+                ) | machine.reg_read(UC_X86_REG_DX)
+                call = {
+                    "call": "dos_seek",
+                    "origin": machine.reg_read(UC_X86_REG_AL),
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "offset": seek_offset,
+                }
+                calls.append(call)
+                record = records[matched_index] if matched_index is not None else None
+                expected_offset = int(record[2]) if record is not None else 0
+                expected = {
+                    "call": "dos_seek",
+                    "origin": 0,
+                    "handle": active_archive_handle,
+                    "offset": expected_offset,
+                }
+                if call != expected:
+                    raise AssertionError(
+                        f"0x26cf {name}: DOS seek={call}, expected={expected}"
+                    )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if bool(case.get("seek_error", False)):
+                    machine.reg_write(UC_X86_REG_AX, 5)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, seek_offset & 0xFFFF)
+                    machine.reg_write(UC_X86_REG_DX, seek_offset >> 16)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+                return
+
+            raise AssertionError(
+                f"0x26cf {name}: unexpected DOS function {function:#x}"
+            )
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_address:
+                return
+            request = bytes(machine.mem_read(game_segment * 16 + 0x0A6C, 16))
+            (
+                length,
+                source_handle,
+                source_offset,
+                destination_handle,
+                destination_offset,
+                destination_segment,
+            ) = struct.unpack("<IHIHHH", request)
+            call = {
+                "call": "xms_move",
+                "function": machine.reg_read(UC_X86_REG_AX),
+                "length": length,
+                "source_handle": source_handle,
+                "source_offset": source_offset,
+                "destination_handle": destination_handle,
+                "destination_segment": destination_segment,
+                "destination_offset": destination_offset,
+            }
+            calls.append(call)
+            expected = {
+                "call": "xms_move",
+                "function": 0x0B00,
+                "length": 0x7D00,
+                "source_handle": xms_handle,
+                "source_offset": 0,
+                "destination_handle": 0,
+                "destination_segment": work_segment,
+                "destination_offset": transfer_offset,
+            }
+            if call != expected:
+                raise AssertionError(
+                    f"0x26cf {name}: XMS move={call}, expected={expected}"
+                )
+            machine.mem_write(
+                destination_segment * 16 + destination_offset, index_image
+            )
+            machine.reg_write(UC_X86_REG_AX, 1)
+
+        memory = [
+            (0, return_address, b"\xCC"),
+            (callback_segment, callback_offset, b"\xCB"),
+            (data_segment, filename_offset, filename + b"\0"),
+            (data_segment, active_dx_offset, dx_filename + b"\0"),
+            (game_segment, 0x0A4A, struct.pack("<HH", callback_offset, callback_segment)),
+            (game_segment, 0x0A62, struct.pack("<H", small_xms)),
+            (game_segment, 0x0A64, struct.pack("<H", small_ems)),
+            (game_segment, 0x0A66, struct.pack("<H", page_frame_segment)),
+            (game_segment, 0x0A6C, initial_request),
+            (game_segment, 0x0A86, struct.pack("<H", active_archive_handle)),
+            (game_segment, 0x0A88, struct.pack("<H", cache_handle)),
+            (game_segment, 0x0A8A, struct.pack("<I", initial_offset)),
+            (game_segment, 0x0A8E, struct.pack("<I", initial_remaining)),
+            (game_segment, 0x0A92, struct.pack("<I", initial_snd_remaining)),
+            (
+                game_segment,
+                0x0ABC,
+                struct.pack("<HH", work_base_offset, work_segment),
+            ),
+            (game_segment, 0x0AE2, bytes((initial_embedded,))),
+            (data_segment, 0x0A62, bytes.fromhex("5aa596698778c33c")),
+            (work_segment, 0, bytes([0xCC]) * 0x10000),
+            (work_segment, scan_offset, index_image),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            interrupt_handler=interrupt,
+            code_handler=callback,
+            instruction_count=2000,
+        )
+
+        expected_calls: list[dict[str, object]] = []
+        if active_archive_handle != 0:
+            if backend == "ems":
+                expected_calls.extend(
+                    {
+                        "call": "ems_map",
+                        "function": 0x44,
+                        "handle": ems_handle,
+                        "logical_page": page,
+                        "physical_page": page,
+                    }
+                    for page in range(4)
+                )
+            elif backend == "xms":
+                expected_calls.append(
+                    {
+                        "call": "xms_move",
+                        "function": 0x0B00,
+                        "length": 0x7D00,
+                        "source_handle": xms_handle,
+                        "source_offset": 0,
+                        "destination_handle": 0,
+                        "destination_segment": work_segment,
+                        "destination_offset": transfer_offset,
+                    }
+                )
+            elif backend == "dos":
+                expected_calls.append(
+                    {
+                        "call": "dos_read",
+                        "handle": cache_handle,
+                        "byte_count": 0xFFFF,
+                        "destination_segment": work_segment,
+                        "destination_offset": transfer_offset,
+                    }
+                )
+            if matched_index is not None:
+                expected_calls.append(
+                    {
+                        "call": "dos_seek",
+                        "origin": 0,
+                        "handle": active_archive_handle,
+                        "offset": int(records[matched_index][2]),
+                    }
+                )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x26cf {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if active_archive_handle != 0:
+            record_base = (
+                2
+                if backend == "ems"
+                else (scan_offset + 2) & 0xFFFF
+            )
+            terminal_index = matched_index if matched_index is not None else len(records)
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | (record_base + terminal_index * 25)
+            expected_registers["edi"] = (
+                initial["edi"] & 0xFFFF0000
+            ) | (
+                filename_offset + len(transformed_filename)
+                if matched_index is not None
+                else filename_offset
+            )
+            expected_registers["es"] = data_segment
+            if matched_index is not None:
+                expected_registers["eax"] = 0
+                expected_registers["ebx"] = (
+                    initial["ebx"] & 0xFFFF0000
+                ) | active_archive_handle
+            else:
+                expected_registers["eax"] = (
+                    (0 if backend == "xms" else initial["eax"] & 0xFFFF0000)
+                ) | final_mismatch_al(records, transformed_filename)
+                expected_registers["ebx"] = (
+                    initial["ebx"] & 0xFFFF0000
+                ) | filename_offset
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x26cf {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"0x26cf {name}: stack sentinel changed")
+
+        expected_filename = (
+            filename if active_archive_handle == 0 else transformed_filename
+        ) + b"\0"
+        actual_filename = bytes(
+            machine.mem_read(data_segment * 16 + filename_offset, len(expected_filename))
+        )
+        if actual_filename != expected_filename:
+            raise AssertionError(
+                f"0x26cf {name}: filename={actual_filename!r}, expected={expected_filename!r}"
+            )
+        expected_embedded = 1 if matched_index is not None else initial_embedded
+        actual_embedded = machine.mem_read(game_segment * 16 + 0x0AE2, 1)[0]
+        if actual_embedded != expected_embedded:
+            raise AssertionError(
+                f"0x26cf {name}: embedded={actual_embedded:#x}, expected={expected_embedded:#x}"
+            )
+        expected_offset = (
+            int(records[matched_index][2])
+            if matched_index is not None
+            else initial_offset
+        )
+        expected_remaining = (
+            int(records[matched_index][1])
+            if matched_index is not None
+            else initial_remaining
+        )
+        expected_snd_remaining = (
+            int(records[matched_index][1])
+            if matched_index is not None
+            else initial_snd_remaining
+        )
+        actual_offset = struct.unpack(
+            "<I", machine.mem_read(game_segment * 16 + 0x0A8A, 4)
+        )[0]
+        actual_remaining = struct.unpack(
+            "<I", machine.mem_read(game_segment * 16 + 0x0A8E, 4)
+        )[0]
+        actual_snd_remaining = struct.unpack(
+            "<I", machine.mem_read(game_segment * 16 + 0x0A92, 4)
+        )[0]
+        if (
+            actual_offset != expected_offset
+            or actual_remaining != expected_remaining
+            or actual_snd_remaining != expected_snd_remaining
+        ):
+            raise AssertionError(
+                f"0x26cf {name}: selected state differs: "
+                f"offset={actual_offset:#x}, remaining={actual_remaining:#x}, "
+                f"snd_remaining={actual_snd_remaining:#x}"
+            )
+        expected_request = (
+            struct.pack(
+                "<IHIHHH",
+                0x7D00,
+                xms_handle,
+                0,
+                0,
+                transfer_offset,
+                work_segment,
+            )
+            if active_archive_handle != 0 and backend == "xms"
+            else initial_request
+        )
+        actual_request = bytes(
+            machine.mem_read(game_segment * 16 + 0x0A6C, 16)
+        )
+        if actual_request != expected_request:
+            raise AssertionError(
+                f"0x26cf {name}: XMS request={actual_request.hex()}, "
+                f"expected={expected_request.hex()}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A62, 8)) != bytes.fromhex(
+            "5aa596698778c33c"
+        ):
+            raise AssertionError(f"0x26cf {name}: DS backend decoy changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "backend": backend,
+                "work_base_offset": work_base_offset,
+                "input_filename_hex": filename.hex(),
+                "output_filename_hex": actual_filename[:-1].hex(),
+                "matched_record": matched_index,
+                "record_count": len(records),
+                "embedded_flag": actual_embedded,
+                "archive_offset": actual_offset,
+                "archive_remaining": actual_remaining,
+                "return_bx": machine.reg_read(UC_X86_REG_BX),
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def bloodprg_strlen_vectors() -> list[dict[str, object]]:
     entry = 0x2665
     expected_hash = "6e2373a08942d4b119e6d1336777d439d7ffb47d63f83afd33cf4113382e2718"
@@ -34368,6 +34919,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_2693_natural.json",
         resource_source_select_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_26cf_natural.json",
+        resource_archive_match_vectors(),
         args.check,
     )
     update_vector(

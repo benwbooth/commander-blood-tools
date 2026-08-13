@@ -102,11 +102,11 @@ void CB_FAR audio_process_ade(void);                      /* 0x00B7E3 */
 void CB_FAR snd_play_clip(cb_i16 clip_index);             /* 0x00B8CD */
 void CB_FAR snd_bank_loader(
     cb_u16 mode,
-    const volatile char CB_NEAR *path); /* 0x0B1B:0855 */
+    volatile char CB_NEAR *path);       /* 0x0B1B:0855 */
 void CB_FAR snd_driver_call(void);      /* 0x00BB9D */
 void CB_FAR snd_stream_start(void);     /* 0x00BBB3 */
 void CB_FAR snd_stream_refill(void);    /* 0x00BC50 */
 void CB_FAR snd_stream_source_load(
-        const volatile char CB_NEAR *path); /* 0x00BDB7 */
+        volatile char CB_NEAR *path); /* 0x00BDB7 */
 
 #endif

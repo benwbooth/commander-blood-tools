@@ -1,0 +1,251 @@
+[
+  {
+    "name": "archive_handle_zero",
+    "backend": "none",
+    "work_base_offset": 0,
+    "input_filename_hex": "756e746f75636865642e657874",
+    "output_filename_hex": "756e746f75636865642e657874",
+    "matched_record": null,
+    "record_count": 0,
+    "embedded_flag": 112,
+    "archive_offset": 287454016,
+    "archive_remaining": 1432778624,
+    "return_bx": 9024,
+    "calls": []
+  },
+  {
+    "name": "ems_first_record_match",
+    "backend": "ems",
+    "work_base_offset": 0,
+    "input_filename_hex": "76656e757369612e657874",
+    "output_filename_hex": "56454e555349412e455854",
+    "matched_record": 0,
+    "record_count": 1,
+    "embedded_flag": 1,
+    "archive_offset": 1193046,
+    "archive_remaining": 305419896,
+    "return_bx": 30292,
+    "calls": [
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 0,
+        "physical_page": 0
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 1,
+        "physical_page": 1
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 2,
+        "physical_page": 2
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 3,
+        "physical_page": 3
+      },
+      {
+        "call": "dos_seek",
+        "origin": 0,
+        "handle": 30292,
+        "offset": 1193046
+      }
+    ]
+  },
+  {
+    "name": "ems_preferred_later_record",
+    "backend": "ems",
+    "work_base_offset": 0,
+    "input_filename_hex": "6272696467652e646174",
+    "output_filename_hex": "4252494447452e444154",
+    "matched_record": 1,
+    "record_count": 2,
+    "embedded_flag": 1,
+    "archive_offset": 270544960,
+    "archive_remaining": 2309737967,
+    "return_bx": 30292,
+    "calls": [
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 0,
+        "physical_page": 0
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 1,
+        "physical_page": 1
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 2,
+        "physical_page": 2
+      },
+      {
+        "call": "ems_map",
+        "function": 68,
+        "handle": 9029,
+        "logical_page": 3,
+        "physical_page": 3
+      },
+      {
+        "call": "dos_seek",
+        "origin": 0,
+        "handle": 30292,
+        "offset": 270544960
+      }
+    ]
+  },
+  {
+    "name": "xms_masks_bytes_at_or_above_a",
+    "backend": "xms",
+    "work_base_offset": 256,
+    "input_filename_hex": "617b7c7d7e2e657874",
+    "output_filename_hex": "415b5c5d5e2e455854",
+    "matched_record": 0,
+    "record_count": 1,
+    "embedded_flag": 1,
+    "archive_offset": 1432778632,
+    "archive_remaining": 32000,
+    "return_bx": 30292,
+    "calls": [
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "length": 32000,
+        "source_handle": 13398,
+        "source_offset": 0,
+        "destination_handle": 0,
+        "destination_segment": 18432,
+        "destination_offset": 32256
+      },
+      {
+        "call": "dos_seek",
+        "origin": 0,
+        "handle": 30292,
+        "offset": 1432778632
+      }
+    ]
+  },
+  {
+    "name": "dos_match_ignores_seek_error",
+    "backend": "dos",
+    "work_base_offset": 512,
+    "input_filename_hex": "736f756e642e736e64",
+    "output_filename_hex": "534f554e442e534e44",
+    "matched_record": 0,
+    "record_count": 1,
+    "embedded_flag": 1,
+    "archive_offset": 2712847316,
+    "archive_remaining": 98306,
+    "return_bx": 30292,
+    "calls": [
+      {
+        "call": "dos_read",
+        "handle": 17767,
+        "byte_count": 65535,
+        "destination_segment": 18432,
+        "destination_offset": 32512
+      },
+      {
+        "call": "dos_seek",
+        "origin": 0,
+        "handle": 30292,
+        "offset": 2712847316
+      }
+    ]
+  },
+  {
+    "name": "dos_no_match_preserves_selection",
+    "backend": "dos",
+    "work_base_offset": 0,
+    "input_filename_hex": "6d697373696e672e657874",
+    "output_filename_hex": "4d495353494e472e455854",
+    "matched_record": null,
+    "record_count": 2,
+    "embedded_flag": 117,
+    "archive_offset": 287454021,
+    "archive_remaining": 1432778629,
+    "return_bx": 16640,
+    "calls": [
+      {
+        "call": "dos_read",
+        "handle": 17767,
+        "byte_count": 65535,
+        "destination_segment": 18432,
+        "destination_offset": 32000
+      }
+    ]
+  },
+  {
+    "name": "xms_uses_si_not_dx_for_filename",
+    "backend": "xms",
+    "work_base_offset": 0,
+    "input_filename_hex": "61637475616c2e657874",
+    "output_filename_hex": "41435455414c2e455854",
+    "matched_record": 0,
+    "record_count": 1,
+    "embedded_flag": 1,
+    "archive_offset": 1447508009,
+    "archive_remaining": 271136839,
+    "return_bx": 30292,
+    "calls": [
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "length": 32000,
+        "source_handle": 13398,
+        "source_offset": 0,
+        "destination_handle": 0,
+        "destination_segment": 18432,
+        "destination_offset": 32000
+      },
+      {
+        "call": "dos_seek",
+        "origin": 0,
+        "handle": 30292,
+        "offset": 1447508009
+      }
+    ]
+  },
+  {
+    "name": "xms_prefix_is_not_a_match",
+    "backend": "xms",
+    "work_base_offset": 0,
+    "input_filename_hex": "6e616d652e65787478",
+    "output_filename_hex": "4e414d452e45585458",
+    "matched_record": null,
+    "record_count": 1,
+    "embedded_flag": 119,
+    "archive_offset": 287454023,
+    "archive_remaining": 1432778631,
+    "return_bx": 16640,
+    "calls": [
+      {
+        "call": "xms_move",
+        "function": 2816,
+        "length": 32000,
+        "source_handle": 13398,
+        "source_offset": 0,
+        "destination_handle": 0,
+        "destination_segment": 18432,
+        "destination_offset": 32000
+      }
+    ]
+  }
+]

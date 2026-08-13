@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: recursive_graph
 ; label: resource_archive_match
-; label_comment: scan 25-byte embedded-archive records for DS:DX, set GS:0x0AE2 and source extents on a match, return the archive handle in BX, and seek it to the selected payload
+; label_comment: stage the embedded index through small EMS, small XMS, or its DOS cache; mask the mutable DS:SI name, scan packed 25-byte records, and publish/seek a matching payload
 ; byte_count: 244
 ; boundary: cfg_blocks_17_terminals_4
 ; terminal: jmp 0x275c:2, jmp 0x2775:1, ret:1

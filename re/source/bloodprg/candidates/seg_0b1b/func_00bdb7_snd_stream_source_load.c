@@ -6,7 +6,7 @@
 #include "../include/bloodprg_startup.h"
 #include "../include/bloodprg_vm.h"
 
-void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
+void CB_FAR snd_stream_source_load(volatile char CB_NEAR *path)
 {
     bloodprg_graphics_buffer_ptr saved_framebuffer;
     cb_u32 seek_offset;

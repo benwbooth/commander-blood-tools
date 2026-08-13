@@ -23,15 +23,15 @@ int far string_equal_probe(const volatile char *left,
         const volatile char far *right);
 void far write_directory_enter_probe(void);
 void far original_directory_restore_probe(void);
-u16 near archive_match_probe(const volatile char *filename);
+u16 near archive_match_probe(volatile char *filename);
 
 #if defined(__WATCOMC__)
 #pragma aux string_equal_probe parm [si] [es di] value [ax] modify exact [ax]
-#pragma aux archive_match_probe parm [dx] value [bx] modify [ax bx]
+#pragma aux archive_match_probe parm [si] value [bx] modify [ax bx]
 #pragma aux resource_source_select_probe parm [dx] value [bx] modify [ax bx cx dx]
 #endif
 
-u16 far resource_source_select_probe(const volatile char *filename)
+u16 far resource_source_select_probe(volatile char *filename)
 {
     const resource_name_entry_probe GAME_DATA *entry;
 

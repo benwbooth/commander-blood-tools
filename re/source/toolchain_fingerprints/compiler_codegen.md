@@ -2953,6 +2953,38 @@ zero on standalone paths; the binary uses comparator carry and leaves incoming
 preserve the original `AX` and `ES`; consistently compiled C callers use the
 natural Watcom convention instead.
 
+Routine `0x0026CF` owns the embedded archive-index lookup behind that selector.
+When the archive handle at `GS:0A86` is zero it returns immediately. Otherwise
+it obtains the preloaded index by mapping all four 16 KiB pages of the small EMS
+allocation, moving `0x7D00` bytes from the small XMS allocation into
+`graphics_work_surface + 0x7D00`, or reading `0xFFFF` bytes from the DOS cache
+handle at `GS:0A88` into that pointer-relative staging area. The DOS branch
+then scans from fixed offset `0x7D00` in the work-surface segment, whereas XMS
+retains the pointer-relative offset; the shipped work pointer is normalized to
+offset zero. The first record begins after a two-byte prefix. Each packed
+25-byte record is `{name[16], size:u32, offset:u32, unknown:u8}` and a zero
+first name byte terminates the table.
+
+Before searching, the binary mutates the caller's name by applying `value &=
+0xDF` to every byte at or above `0x61`; this deliberately affects `{|}~` as
+well as lowercase ASCII. A match sets the embedded flag, copies the record size
+to both `GS:0A8E` and `GS:0A92`, copies its offset to `GS:0A8A`, and seeks the
+archive handle to that payload. The sole caller receives the filename in `DX`,
+copies that offset into `SI`, and enters the lookup with `ES=GS`; the lookup
+walks the name through `DS:SI` and uses `ES` while constructing the XMS request.
+The natural declaration binds the lookup argument to `SI`, preserving this
+caller/callee split.
+
+Eight direct-binary vectors cover the disabled path, EMS preference and exact
+four-page mapping, distinct XMS and DOS offsets under a nonzero work-pointer
+fixture, first and later records, no-match state preservation, prefix rejection,
+punctuation masking, ignored seek errors, and the distinct SI/DX live-ins. Open
+Watcom 1.9 medium compiles the actual natural
+candidate warning-free to 124 instructions/373 bytes versus 92/244 original.
+The natural function returns zero on a miss; the raw routine leaves incidental
+comparison values in `AL` and the filename offset in `BX`, which its caller
+already ignores when the embedded flag remains clear.
+
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
 horizontal span at `y+height-1`. All endpoint arithmetic is wrapping 16-bit
@@ -3044,7 +3076,7 @@ packed and unpacked source cadence, and spillover into the second buffer. The
 vectors also distinguish XMS staging at `graphics_work_surface + 0x7D00` from
 the file path's hardcoded offset `0x7D00` in that pointer's segment.
 
-Open Watcom compiles the actual candidate warning-free to 332 instructions/984
+Open Watcom compiles the game-data-qualified candidate warning-free to 341 instructions/1021
 bytes versus 266/720 original. The remaining size is ordinary structure,
 far-pointer, and callback lowering around logic already proven against the raw
 routine; exact integration still requires fixed data placement and narrow
@@ -3072,7 +3104,7 @@ even after a failed seek and ignores both DOS status and returned byte count.
 The recovered functions are ordinary C around narrow EMS, XMS, and DOS
 adapters. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual
 candidates warning-free to 34 instructions/61 bytes for EMS versus 23/40
-original, 27/72 for XMS versus 23/63, and 30/57 for DOS-file access versus
+original, 29/84 for XMS versus 23/63, and 30/57 for DOS-file access versus
 24/42. Separate Turbo C 2.01 medium probes emit 26, 22, and 27 instructions.
 The remaining gaps are segment placement, direct interrupt/driver boundaries,
 Watcom's word-copy lowering, and compiler calling conventions rather than
@@ -3127,7 +3159,7 @@ uses source and destination address unions, naturally representing transfers in
 both directions without a register or memory facade.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 263 instructions/864 bytes versus 198/590 original. Exact
+warning-free to 266 instructions/882 bytes versus 198/590 original. Exact
 drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
@@ -3232,7 +3264,7 @@ sources, both modes, exact SND table transformations, the `SS == GS` table
 placement, all backend chunk boundaries, EMS maps, every XMS request field,
 `son.snd` close/create/write ordering, source closes, and register/far-return
 preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
-actual candidate warning-free to 242 instructions/703 bytes versus 187/481
+actual candidate warning-free to 243 instructions/713 bytes versus 187/481
 original. Remaining integration work is segment placement and the narrow
 resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
 

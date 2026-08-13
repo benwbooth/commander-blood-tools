@@ -24,6 +24,15 @@ typedef struct bloodprg_resource_name_entry {
     char filename[16];
 } bloodprg_resource_name_entry;
 
+#pragma pack(1)
+typedef struct bloodprg_resource_archive_entry {
+    char filename[16];
+    cb_u32 byte_count;
+    cb_u32 file_offset;
+    cb_u8 unknown_18;
+} bloodprg_resource_archive_entry;
+#pragma pack()
+
 typedef struct bloodprg_resource_descriptor {
     cb_u8 flags;
     cb_u8 variant;
@@ -65,8 +74,14 @@ extern volatile cb_u32 resource_index_remaining;    /* game data:0x0D7C */
 extern volatile cb_u32 resource_source_offset;      /* game data:0x0D84 */
 extern volatile cb_u32 resource_source_remaining;   /* game data:0x0D88 */
 extern volatile cb_u32 resource_archive_size;       /* game data:0x0A52 */
-extern volatile cb_u32 resource_archive_offset;     /* game data:0x0A8A */
-extern volatile cb_u32 resource_archive_remaining;  /* game data:0x0A8E */
+extern volatile cb_u16 CB_GAME_DATA
+        resource_archive_handle;                    /* GS:0x0A86 */
+extern volatile cb_u16 CB_GAME_DATA
+        resource_archive_cache_handle;              /* GS:0x0A88 */
+extern volatile cb_u32 CB_GAME_DATA
+        resource_archive_offset;                    /* GS:0x0A8A */
+extern volatile cb_u32 CB_GAME_DATA
+        resource_archive_remaining;                 /* GS:0x0A8E */
 extern volatile cb_u8 CB_GAME_DATA
         resource_force_write_directory;            /* GS:0x0AE1 */
 extern volatile cb_u8 CB_GAME_DATA
@@ -82,7 +97,7 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 #pragma aux resource_get_field4 parm [ax] value [dx ax] modify exact [ax dx]
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
 #pragma aux resource_source_select parm [dx] value [bx] modify [ax bx cx dx]
-#pragma aux resource_archive_match parm [dx] value [bx] modify [ax bx]
+#pragma aux resource_archive_match parm [si] value [bx] modify [ax bx]
 #pragma aux resource_load_by_id parm [ax] value [ax] modify exact [ax]
 #pragma aux resource_named_file_load parm [ax] [es di] value [ax] modify exact [ax]
 #endif
@@ -99,9 +114,9 @@ cb_u32 CB_FAR resource_get_field4(cb_u16 handle); /* 0x04B9:0x01AC */
 bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR resource_source_select(
-        const volatile char CB_NEAR *filename); /* 0x01CE:0x03B3 */
+        volatile char CB_NEAR *filename); /* 0x01CE:0x03B3 */
 cb_u16 CB_NEAR resource_archive_match(
-        const volatile char CB_NEAR *filename); /* 0x01CE:0x03EF */
+        volatile char CB_NEAR *filename); /* 0x01CE:0x03EF */
 cb_u32 CB_FAR resource_name_lookup(
         const volatile char *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */

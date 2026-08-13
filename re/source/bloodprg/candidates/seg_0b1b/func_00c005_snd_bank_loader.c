@@ -5,7 +5,7 @@
 #include "../include/bloodprg_startup.h"
 
 void CB_FAR snd_bank_loader(cb_u16 mode,
-        const volatile char CB_NEAR *path)
+        volatile char CB_NEAR *path)
 {
     volatile cb_u8 CB_FAR *staging;
     cb_u32 payload_remaining;

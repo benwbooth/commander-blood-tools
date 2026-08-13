@@ -26,7 +26,7 @@ typedef union bloodprg_snd_storage_cursor {
 
 typedef void (CB_FAR *bloodprg_xms_driver_entry)(void);
 
-/* Both recovered callers establish DS=GS before this dispatch. */
+/* Raw callers establish the game-data segment before the XMS dispatch. */
 extern volatile cb_u8 snd_bank_storage_mode; /* DS=GS:0x0B9F */
 extern bloodprg_xms_driver_entry CB_GAME_DATA xms_driver_entry; /* GS:0x0A4A */
 extern volatile cb_i16 CB_GAME_DATA resource_xms_handle; /* GS:0x0A56 */
@@ -40,8 +40,8 @@ extern volatile cb_i16 CB_GAME_DATA small_ems_handle; /* GS:0x0A64 */
 extern volatile cb_u16 CB_GAME_DATA ems_page_frame_segment; /* GS:0x0A66 */
 extern volatile bloodprg_snd_storage_cursor CB_GAME_DATA
         snd_storage_cursor; /* GS:0x0A4E */
-extern volatile bloodprg_xms_move_request
-        xms_move_request; /* game data:0x0A6C */
+extern volatile bloodprg_xms_move_request CB_GAME_DATA
+        xms_move_request; /* GS:0x0A6C */
 extern volatile cb_u8 CB_FAR ems_page_frame[]; /* segment at GS:0x0A66 */
 extern volatile cb_u16 CB_GAME_DATA snd_voice_file_handle; /* GS:0x0C47 */
 extern volatile cb_u16 CB_GAME_DATA snd_bank_file_handle; /* GS:0x0C49 */
