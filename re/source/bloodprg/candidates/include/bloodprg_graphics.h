@@ -99,6 +99,12 @@ void CB_FAR gfx_horizontal_span(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width); /* 0x0299:0x031C */
 void CB_FAR gfx_vertical_span(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 height); /* 0x0299:0x0391 */
+void CB_FAR framebuffer_rect_palette_remap(
+        const cb_u8 CB_FAR *remap_table,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u16 width,
+        cb_u16 height); /* 0x0299:0x040E */
 void CB_FAR composite_draw_a(cb_u8 color, cb_u16 x, cb_u16 y,
         cb_u16 width, cb_u16 height); /* 0x0299:0x0BB5 */
 void CB_FAR blit_coord_guard_c(cb_u8 color, cb_u16 x, cb_u16 y,
@@ -146,7 +152,9 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
 #pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
-/* Watcom reserves BP, so the fifth helper argument remains stack-passed. */
+#pragma aux framebuffer_rect_palette_remap \
+        parm caller [ds si] [bx] [cx] [dx] modify exact []
+/* The remapper recovers entry BP; the other fifth arguments remain stack-passed. */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux blit_coord_guard_c parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []

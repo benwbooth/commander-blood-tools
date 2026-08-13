@@ -1,0 +1,859 @@
+[
+  {
+    "name": "zero_width_rejected",
+    "input_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      0,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "negative_width_rejected",
+    "input_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "width",
+    "clipped_rect": [
+      10,
+      10,
+      32768,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "zero_height_rejected",
+    "input_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "negative_height_rejected",
+    "input_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "height",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      32768
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "6895bb6cf9200b8d222cba70a7a45fdfac5c39f8c0aeba83f5feca101c2eef52"
+  },
+  {
+    "name": "fully_left_clipped_rejected",
+    "input_rect": [
+      5,
+      10,
+      5,
+      3
+    ],
+    "clip": [
+      10,
+      30,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "left",
+    "clipped_rect": [
+      5,
+      10,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5789fc6de164d558e8d75c7e498b4d55000b46ba920f30a84ba1e25ec7532c83"
+  },
+  {
+    "name": "left_clipped_remap",
+    "input_rect": [
+      5,
+      10,
+      8,
+      3
+    ],
+    "clip": [
+      10,
+      30,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      5,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "892a760b0b5bc8a3c6064201f426477420c73ffaa641d9d71855ef6d234e35fe"
+  },
+  {
+    "name": "right_endpoint_exact_remap",
+    "input_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      14,
+      11,
+      6,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f1fa76544b1cf165f1554e8d60046d699d9bccd0e1c553f5e4881ae7185524b2"
+  },
+  {
+    "name": "right_clipped_remap",
+    "input_rect": [
+      17,
+      12,
+      8,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      17,
+      12,
+      3,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      5,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2104b20ed357f833da97230c08bc911889f25be3bcd18a3746e325158666392d"
+  },
+  {
+    "name": "fully_right_clipped_rejected",
+    "input_rect": [
+      20,
+      12,
+      3,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "right",
+    "clipped_rect": [
+      20,
+      12,
+      0,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      3,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "f7594ae85813fe11fb346518c3a188ebb85c350b112f66e192f94bafa220a44c"
+  },
+  {
+    "name": "fully_top_clipped_rejected",
+    "input_rect": [
+      10,
+      5,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      30,
+      10,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "top",
+    "clipped_rect": [
+      10,
+      5,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2a908039b8f9acf35f2e5a389d786fc4d7bad9a2abbf86ee61f0345b8f3f2320"
+  },
+  {
+    "name": "top_clipped_remap",
+    "input_rect": [
+      10,
+      5,
+      5,
+      8
+    ],
+    "clip": [
+      0,
+      30,
+      10,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      10,
+      5,
+      3
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      5,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "c946e82961a9d1093d33456d608b28cedd7adee9a673c5a50f867f5ecbbe3d3d"
+  },
+  {
+    "name": "lower_edge_ignores_y_bottom",
+    "input_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "eb496b39f2966ff83c44bd8d9c2a18dfffd48a310d4216a4ab8a7d8aabceb1c3"
+  },
+  {
+    "name": "lower_edge_clips_against_x_right",
+    "input_rect": [
+      10,
+      18,
+      5,
+      5
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      50
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      10,
+      18,
+      5,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      3
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "ff76f81b32320433dbf5d3c12cb0aee548dd6cc113bee35696b48c37c855afba"
+  },
+  {
+    "name": "fully_lower_clipped_against_x_right",
+    "input_rect": [
+      10,
+      20,
+      5,
+      3
+    ],
+    "clip": [
+      0,
+      20,
+      0,
+      50
+    ],
+    "rejected": true,
+    "rejected_at": "lower",
+    "clipped_rect": [
+      10,
+      20,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      3
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "a6a294e085ff6b4d4283abd4369e06b25eecea5eba4520dc56c4c2330599e186"
+  },
+  {
+    "name": "full_screen_remap",
+    "input_rect": [
+      0,
+      0,
+      320,
+      200
+    ],
+    "clip": [
+      0,
+      320,
+      0,
+      200
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      0,
+      0,
+      320,
+      200
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "7e6d1f803c3906c52dc6822f18968aa807d7e5cb693831a2f5c3bafdb93b392e"
+  },
+  {
+    "name": "backward_direction_changes_row_pitch",
+    "input_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip": [
+      0,
+      30,
+      0,
+      20
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      4,
+      2,
+      3,
+      2
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "2af0022d4163b221e99a193d5559de0f09dbfa524bf966e7ced21f13f9c9da42"
+  },
+  {
+    "name": "full_word_coordinates_table_and_output_wrap",
+    "input_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip": [
+      33024,
+      33280,
+      33024,
+      33280
+    ],
+    "rejected": false,
+    "rejected_at": "",
+    "clipped_rect": [
+      33056,
+      33059,
+      8,
+      8
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 65408,
+    "display_offset": 65520,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "506f33b4a8982a23d96a8c1d4b48873c612c0622bef8b2c9311b504545204d85"
+  },
+  {
+    "name": "left_add_sign_overflow_rejected",
+    "input_rect": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "clip": [
+      32768,
+      256,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "left",
+    "clipped_rect": [
+      0,
+      0,
+      32769,
+      1
+    ],
+    "clip_amounts": [
+      32768,
+      0,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "77181509f7c5bd963585e05a12d24628f6f2dfbace81e98de80e27c38d1a53ec"
+  },
+  {
+    "name": "right_delta_sign_controls_rejection",
+    "input_rect": [
+      32767,
+      0,
+      1,
+      1
+    ],
+    "clip": [
+      0,
+      32767,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "right",
+    "clipped_rect": [
+      32767,
+      0,
+      0,
+      1
+    ],
+    "clip_amounts": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "5b0a3e67f431215c3f96dc093386ac1391a158302275fa0d3d7bdf3dd1d46d4a"
+  },
+  {
+    "name": "top_add_sign_overflow_rejected",
+    "input_rect": [
+      10,
+      0,
+      5,
+      1
+    ],
+    "clip": [
+      0,
+      100,
+      32768,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "top",
+    "clipped_rect": [
+      10,
+      0,
+      5,
+      32769
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      32768,
+      0
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "output_segment_sha256": "b219818d703b1412f4dd280a61977c4c47917425d00be8c4ce82d160233f255b"
+  },
+  {
+    "name": "lower_delta_sign_controls_rejection",
+    "input_rect": [
+      10,
+      32767,
+      5,
+      1
+    ],
+    "clip": [
+      0,
+      32767,
+      0,
+      20
+    ],
+    "rejected": true,
+    "rejected_at": "lower",
+    "clipped_rect": [
+      10,
+      32767,
+      5,
+      0
+    ],
+    "clip_amounts": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "table_offset": 24337,
+    "display_offset": 768,
+    "direction_flag": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "1ad2faca9cc034ac29b0644afde9abe43416574ae6feb70f8a8a0afbb86f0d9e"
+  }
+]

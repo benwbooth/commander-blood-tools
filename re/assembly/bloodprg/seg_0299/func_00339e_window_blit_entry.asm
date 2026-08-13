@@ -6,8 +6,8 @@
 ; seg_off: 0299:040e
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: window_blit_entry
-; label_comment: ALSO RECORDED as `blit_coord_guard`: blit coordinate guard: or dx,dx; je/js skip (reject zero-or-negative coordinate); or bp,bp. Entry guard shared by the clipped-blit family (also at 0x3b85, 0x3c6c) that culls off-screen/degenerate spans before drawing || the clipped blit the panel's window chrome goes through (0x299:0x40E; bx=x cx=y dx=w bp=h si=[0xAC8]=0x5F11 the source handle). Shares the blit_coord_guard prologue. UNDECODED: what [0xAC8] resolves to -- the port draws the panel TEXT (vm.rs location_panel_rows) but not yet its chrome || MERGED 2026-07-25 (audit-fixes #184): one address under several names, folded by union.
+; label: framebuffer_rect_palette_remap
+; label_comment: Primary-framebuffer rectangle palette remapper. DS:SI=256-byte table, BX=x, CX=y, DX=width, BP=height. Rejects signed-nonpositive extents, performs sign-only wrapping clips against DS:0x5235/0x5237/0x5239, and deliberately uses X-right DS:0x5237 rather than Y-bottom DS:0x523B for the lower edge. It computes byte_swap(y)+(y<<6)+x through the full DS:[0x5221] far pointer and replaces each pixel with table[pixel]. STOSB inherits DF; every register and segment is preserved. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_00339e_framebuffer_rect_palette_remap.c and re/tools/oracle_vectors/func_339e_natural.json
 ; incoming: call@0x001eb1->0299:040e
 ; incoming: call@0x0078c4->0299:040e
 ; incoming: call@0x007a84->0299:040e

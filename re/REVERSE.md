@@ -2094,7 +2094,8 @@ Named targets that are already tied to code behavior:
 - `0x0299:0x040E` (`framebuffer_rect_palette_remap`): clips a primary-framebuffer
   rectangle and replaces each existing pixel with `table[pixel]` from the
   256-byte table at `DS:SI`; direct callers use the palette-remap tables at
-  `0x5F11` and `0x6011` for UI/HUD and transition effects.
+  `0x5F11` and `0x6011` for UI/HUD and transition effects. Its lower edge uses
+  X-right `DS:0x5237`, not Y-bottom `DS:0x523B`, matching sibling `0x003B85`.
 - `0x0299:0x0498` (`planar_ui_text_render_10row`): renders 10-row UI text
   through VGA plane masks into framebuffer pointer `GS:0x521D`.
 - `0x0299:0x05DE` (`planar_dialogue_text_render`): renders dialogue-font text
