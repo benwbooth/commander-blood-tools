@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: resource_pair_lz_decode
-; label_comment: Decodes biased literals and pairs of 1..256-byte-distance, 2..9-byte overlapping matches until DI reaches BP. Each negative-control pair shares one byte containing both three-bit lengths and both distance low bits; returns the compressed cursor in BX.
+; label_comment: Decodes biased literals and pairs of 1..256-byte-distance, 2..9-byte overlapping matches until DI reaches BP. Each negative-control pair shares one byte containing both lengths and distance low bits; callers self-modify the two literal-bias immediates at CS:0x0DDD/0x0E0D to 0 or 0x80, and BX returns the compressed cursor.
 ; byte_count: 105
 ; boundary: cfg_blocks_15_terminals_4
 ; terminal: ret:4

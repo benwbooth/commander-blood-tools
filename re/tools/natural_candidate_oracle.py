@@ -50428,6 +50428,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
         destination_offset: int,
         destination_end: int,
         source_offset: int,
+        literal_bias: int,
     ) -> tuple[bytearray, int, int, int, int, int | None]:
         memory = bytearray(destination_before)
         source_index = 0
@@ -50446,7 +50447,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
 
         def write_literal(control: int) -> None:
             nonlocal destination, final_al
-            final_al = 0 if control == 0 else control + 12
+            final_al = 0 if control == 0 else (control + literal_bias) & 0xFF
             memory[destination] = final_al
             destination = (destination + 1) & 0xFFFF
 
@@ -50505,15 +50506,32 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
         )
 
     cases: list[
-        tuple[str, list[tuple[object, ...]], int, int, int]
+        tuple[str, list[tuple[object, ...]], int, int, int, int]
     ] = [
-        ("literal_zero", [("literal", 0)], 0x0100, 0x0200, 1),
+        ("literal_zero", [("literal", 0)], 0x0100, 0x0200, 1, 12),
         (
             "literal_bias_limits",
             [("literal", 1), ("literal", 0x7F)],
             0x1111,
             0x2200,
             2,
+            12,
+        ),
+        (
+            "literal_bias_zero",
+            [("literal", 1), ("literal", 0x7F)],
+            0x1212,
+            0x2300,
+            2,
+            0,
+        ),
+        (
+            "literal_bias_high_bit",
+            [("literal", 1), ("literal", 0x7F)],
+            0x1313,
+            0x2400,
+            2,
+            0x80,
         ),
         (
             "first_match_exact",
@@ -50521,6 +50539,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x2222,
             0x3300,
             9,
+            0,
         ),
         (
             "between_literal_terminal",
@@ -50528,6 +50547,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x3333,
             0x4400,
             4,
+            0x80,
         ),
         (
             "second_match_exact",
@@ -50535,6 +50555,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x4444,
             0x5500,
             8,
+            0,
         ),
         (
             "multiple_groups",
@@ -50547,6 +50568,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x5555,
             0x6600,
             14,
+            0x80,
         ),
         (
             "max_distance_and_lengths",
@@ -50554,6 +50576,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x6666,
             0x0500,
             18,
+            0,
         ),
         (
             "minimum_match_fields",
@@ -50561,6 +50584,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x7777,
             0x0700,
             4,
+            0x80,
         ),
         (
             "first_match_overshoots_end",
@@ -50568,6 +50592,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x8888,
             0x1800,
             3,
+            0,
         ),
         (
             "source_wrap",
@@ -50575,6 +50600,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0xFFFE,
             0x2800,
             2,
+            0x80,
         ),
         (
             "copy_source_wrap",
@@ -50582,6 +50608,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             0x9999,
             0x0001,
             2,
+            0,
         ),
     ]
     source_segment = 0x2000
@@ -50597,6 +50624,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
         source_offset,
         destination_offset,
         end_length,
+        literal_bias,
     ) in enumerate(cases):
         stream = encode(tokens)
         destination_end = (destination_offset + end_length) & 0xFFFF
@@ -50623,6 +50651,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             destination_offset,
             destination_end,
             source_offset,
+            literal_bias,
         )
         stack_before = bytearray(
             (offset * 41 + case_index * 17 + 0x43) & 0xFF
@@ -50653,6 +50682,8 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
             initial,
             [
                 (0, return_address, b"\xcc"),
+                (0, 0xAAED, bytes((literal_bias,))),
+                (0, 0xAB1D, bytes((literal_bias,))),
                 (source_segment, 0, bytes(source_before)),
                 (destination_segment, 0, destination_before),
                 (stack_segment, 0, bytes(stack_before)),
@@ -50730,6 +50761,7 @@ def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
                 "source_offset": source_offset,
                 "source_result_offset": (source_offset + consumed) & 0xFFFF,
                 "copy_cursor_result": si_result,
+                "literal_bias": literal_bias,
                 "defined_flags": expected_flags,
             }
         )

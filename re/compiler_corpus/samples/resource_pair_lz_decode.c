@@ -8,7 +8,8 @@ typedef unsigned int u16;
 const volatile u8 FAR *NEAR resource_pair_lz_decode_probe(
         const volatile u8 FAR *source,
         volatile u8 FAR *destination,
-        volatile u8 FAR *destination_end)
+        volatile u8 FAR *destination_end,
+        u8 literal_bias)
 {
     const volatile u8 FAR *copy_source;
     u16 distance;
@@ -19,7 +20,9 @@ const volatile u8 FAR *NEAR resource_pair_lz_decode_probe(
     for (;;) {
         control = *source++;
         if ((control & 0x80u) == 0u) {
-            *destination++ = control == 0u ? 0u : (u8)(control + 12u);
+            *destination++ = control == 0u
+                    ? 0u
+                    : (u8)(control + literal_bias);
             if (destination >= destination_end) {
                 break;
             }
@@ -44,7 +47,9 @@ const volatile u8 FAR *NEAR resource_pair_lz_decode_probe(
             if ((control & 0x80u) != 0u) {
                 break;
             }
-            *destination++ = control == 0u ? 0u : (u8)(control + 12u);
+            *destination++ = control == 0u
+                    ? 0u
+                    : (u8)(control + literal_bias);
             if (destination >= destination_end) {
                 return source;
             }

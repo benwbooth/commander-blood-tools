@@ -390,23 +390,28 @@ original DS:SI/ES:DI string-instruction ABI. The sole caller at `0x00A82C`
 overwrites SI and restores CX after the call, so the binary's cursor/count
 outputs are deliberately absent from the source-level `void` API.
 
-For `0x00AABC`, eleven direct vectors prove the shared pair-packed LZ grammar.
-Control zero emits zero, controls 1 through 127 emit values 13 through 139, and
-two negative match controls share one byte containing both three-bit lengths
-and both distance low bits. The matches span lengths 2 through 9 and backward
-distances 1 through 256, copy forward with overlap, and may have ordinary
-literals between them. Cases reach all four return sites, both boundary
-lengths and distances, compressed-source wrap, ES copy-cursor wrap, and a
-complete match that deliberately overshoots the destination end.
+For `0x00AABC`, thirteen direct vectors prove the shared pair-packed LZ grammar.
+Control zero emits zero. Controls 1 through 127 add a literal bias selected by
+the caller: `0x00A914` and `0x00AB25` patch the two ADD immediates through
+CS:0x0DDD/0x0E0D to `0x00` or `0x80`; the executable's unpatched bytes contain
+`0x0C`. Two negative match controls share one byte containing both three-bit
+lengths and both distance low bits. The matches span lengths 2 through 9 and
+backward distances 1 through 256, copy forward with overlap, and may have
+ordinary literals between them. Cases exercise all three literal biases, all
+four return sites, both boundary lengths and distances, compressed-source
+wrap, ES copy-cursor wrap, and a complete match that deliberately overshoots
+the destination end.
 
 The one-function natural candidate returns only the compressed source cursor,
-which is the sole result consumed by both callers at `0x00A914` and `0x00AB25`.
-Open Watcom `-3 -ox -mh` compiles it warning-free to 112 instructions and 250
+which is the sole result consumed by both callers at `0x00A914` and `0x00AB25`,
+and takes the literal bias as an ordinary argument instead of modifying code.
+Open Watcom `-3 -ox -mh` compiles it warning-free to 113 instructions and 261
 bytes versus 53/105 original. Its probe has a 45.28 percent mnemonic-sequence
-LCS, 62.26 percent mnemonic-multiset overlap, and 7.55 percent byte-line LCS.
+LCS, 62.26 percent mnemonic-multiset overlap, and 5.66 percent byte-line LCS.
 The remaining boundary is mechanical: the original takes DS:SI, ES:DI, and BP,
-returns BX, and uses `REP MOVSB`; the natural function uses typed far pointers
-and an ordinary pointer return under the same clear-DF runtime invariant.
+returns BX, mutates two code bytes, and uses `REP MOVSB`; the natural function
+uses typed far pointers, an explicit bias, and an ordinary pointer return under
+the same clear-DF runtime invariant.
 
 For `0x00AD96`, five direct cases execute both forms of this outlined local
 helper from `0x00AB25`. They verify the low-byte-only row decrement, preserved
@@ -2708,7 +2713,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
 | `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/112 | 0.1000 | 0.6667 | 0.1333 |
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
-| `resource_pair_lz_decode` | huge, `-ox`, register | 53/112 | 0.0566 | 0.4528 | 0.0755 |
+| `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

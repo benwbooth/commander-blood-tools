@@ -2,13 +2,13 @@
 
 #define RESOURCE_PAIR_CONTROL_MATCH 0x80u
 #define RESOURCE_PAIR_CONTROL_DISTANCE 0x7Fu
-#define RESOURCE_PAIR_LITERAL_BIAS 12u
 #define RESOURCE_PAIR_LENGTH_BIAS 2u
 
 const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination,
-        volatile cb_u8 CB_FAR *destination_end)
+        volatile cb_u8 CB_FAR *destination_end,
+        cb_u8 literal_bias)
 {
     const volatile cb_u8 CB_FAR *copy_source;
     cb_u16 distance;
@@ -21,7 +21,7 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
         if ((control & RESOURCE_PAIR_CONTROL_MATCH) == 0u) {
             *destination++ = control == 0u
                     ? 0u
-                    : (cb_u8)(control + RESOURCE_PAIR_LITERAL_BIAS);
+                    : (cb_u8)(control + literal_bias);
             if (destination >= destination_end) {
                 break;
             }
@@ -49,7 +49,7 @@ const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
             }
             *destination++ = control == 0u
                     ? 0u
-                    : (cb_u8)(control + RESOURCE_PAIR_LITERAL_BIAS);
+                    : (cb_u8)(control + literal_bias);
             if (destination >= destination_end) {
                 return source;
             }
