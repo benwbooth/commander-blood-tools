@@ -1,0 +1,357 @@
+[
+  {
+    "name": "opcode_00_ignored",
+    "opcode": 0,
+    "code_pointer_offset_ignored": 8738,
+    "code_segment": 6144,
+    "program_counter": 4608,
+    "source_word_offsets": [
+      4609
+    ],
+    "source_words": [],
+    "deferred_before": 17185,
+    "deferred_after": 17185,
+    "written_words": [],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "opcode_a2_ignored",
+    "opcode": 162,
+    "code_pointer_offset_ignored": 4951,
+    "code_segment": 6144,
+    "program_counter": 9029,
+    "source_word_offsets": [
+      9030
+    ],
+    "source_words": [],
+    "deferred_before": 0,
+    "deferred_after": 0,
+    "written_words": [],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "opcode_a4_ignored",
+    "opcode": 164,
+    "code_pointer_offset_ignored": 9320,
+    "code_segment": 6144,
+    "program_counter": 13398,
+    "source_word_offsets": [
+      13399
+    ],
+    "source_words": [],
+    "deferred_before": 65535,
+    "deferred_after": 65535,
+    "written_words": [],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "empty_list",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 4369,
+    "code_segment": 6144,
+    "program_counter": 17767,
+    "source_word_offsets": [
+      17768
+    ],
+    "source_words": [],
+    "deferred_before": 0,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "empty_list_with_deferred",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 8738,
+    "code_segment": 6144,
+    "program_counter": 22136,
+    "source_word_offsets": [
+      22137
+    ],
+    "source_words": [],
+    "deferred_before": 48879,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        48879
+      ],
+      [
+        26618,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "one_word",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 13107,
+    "code_segment": 6144,
+    "program_counter": 26505,
+    "source_word_offsets": [
+      26506,
+      26508
+    ],
+    "source_words": [
+      4660
+    ],
+    "deferred_before": 0,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        4660
+      ],
+      [
+        26618,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "three_words_with_deferred",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 17476,
+    "code_segment": 6144,
+    "program_counter": 30874,
+    "source_word_offsets": [
+      30875,
+      30877,
+      30879,
+      30881
+    ],
+    "source_words": [
+      1,
+      9320,
+      32767
+    ],
+    "deferred_before": 44257,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        1
+      ],
+      [
+        26618,
+        9320
+      ],
+      [
+        26620,
+        32767
+      ],
+      [
+        26622,
+        44257
+      ],
+      [
+        26624,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "high_nonzero_words",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 21845,
+    "code_segment": 6144,
+    "program_counter": 35243,
+    "source_word_offsets": [
+      35244,
+      35246,
+      35248,
+      35250
+    ],
+    "source_words": [
+      32768,
+      65535,
+      65280
+    ],
+    "deferred_before": 0,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        32768
+      ],
+      [
+        26618,
+        65535
+      ],
+      [
+        26620,
+        65280
+      ],
+      [
+        26622,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "source_offset_wrap",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 26214,
+    "code_segment": 6144,
+    "program_counter": 65532,
+    "source_word_offsets": [
+      65533,
+      65535,
+      1
+    ],
+    "source_words": [
+      4660,
+      22136
+    ],
+    "deferred_before": 39612,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        4660
+      ],
+      [
+        26618,
+        22136
+      ],
+      [
+        26620,
+        39612
+      ],
+      [
+        26622,
+        0
+      ]
+    ],
+    "direction": "forward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  },
+  {
+    "name": "inherited_direction_flag",
+    "opcode": 163,
+    "code_pointer_offset_ignored": 30583,
+    "code_segment": 6144,
+    "program_counter": 12288,
+    "source_word_offsets": [
+      12289,
+      12287,
+      12285
+    ],
+    "source_words": [
+      4369,
+      41762
+    ],
+    "deferred_before": 51966,
+    "deferred_after": 0,
+    "written_words": [
+      [
+        26616,
+        4369
+      ],
+      [
+        26614,
+        41762
+      ],
+      [
+        26612,
+        51966
+      ],
+      [
+        26610,
+        0
+      ]
+    ],
+    "direction": "backward",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "storage_segment": "gs"
+  }
+]

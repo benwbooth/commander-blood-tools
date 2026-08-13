@@ -25191,6 +25191,264 @@ def resource_get_field4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_op_a3_collect_vectors() -> list[dict[str, object]]:
+    cases = [
+        ("opcode_00_ignored", 0x00, [], 0x4321, 0x1200, 0x2222, 1),
+        ("opcode_a2_ignored", 0xA2, [], 0x0000, 0x2345, 0x1357, 1),
+        ("opcode_a4_ignored", 0xA4, [], 0xFFFF, 0x3456, 0x2468, 1),
+        ("empty_list", 0xA3, [], 0x0000, 0x4567, 0x1111, 1),
+        ("empty_list_with_deferred", 0xA3, [], 0xBEEF, 0x5678, 0x2222, 1),
+        ("one_word", 0xA3, [0x1234], 0x0000, 0x6789, 0x3333, 1),
+        (
+            "three_words_with_deferred",
+            0xA3,
+            [0x0001, 0x2468, 0x7FFF],
+            0xACE1,
+            0x789A,
+            0x4444,
+            1,
+        ),
+        (
+            "high_nonzero_words",
+            0xA3,
+            [0x8000, 0xFFFF, 0xFF00],
+            0x0000,
+            0x89AB,
+            0x5555,
+            1,
+        ),
+        (
+            "source_offset_wrap",
+            0xA3,
+            [0x1234, 0x5678],
+            0x9ABC,
+            0xFFFC,
+            0x6666,
+            1,
+        ),
+        (
+            "inherited_direction_flag",
+            0xA3,
+            [0x1111, 0xA322],
+            0xCAFE,
+            0x3000,
+            0x7777,
+            -1,
+        ),
+    ]
+    vectors = []
+
+    for case_index, (
+        name,
+        opcode,
+        source_words,
+        deferred,
+        program_counter,
+        pointer_offset,
+        direction,
+    ) in enumerate(cases):
+        code_segment = 0x1800
+        game_segment = 0x5000
+        data_segment = 0x3400
+        extra_segment = 0x3C00
+        stack_segment = 0x9000
+        output_base = 0x67E8
+        output_offset = 0x67F8
+        output_size = 64
+        source = bytearray(
+            (index * 29 + case_index * 41 + 7) & 0xFF
+            for index in range(0x10001)
+        )
+        source[program_counter] = opcode
+        if pointer_offset != program_counter:
+            source[pointer_offset] = 0xA3
+
+        source_offset = (program_counter + 1) & 0xFFFF
+        source_word_offsets = []
+        for source_word in [*source_words, 0]:
+            source_word_offsets.append(source_offset)
+            source[source_offset] = source_word & 0xFF
+            source[source_offset + 1] = source_word >> 8
+            source_offset = (source_offset + direction * 2) & 0xFFFF
+
+        output_before = bytes(
+            (index * 17 + case_index * 23 + 3) & 0xFF
+            for index in range(output_size)
+        )
+        output_after = bytearray(output_before)
+        written_words = []
+        if opcode == 0xA3:
+            destination_offset = output_offset
+            for output_word in source_words:
+                relative = destination_offset - output_base
+                struct.pack_into("<H", output_after, relative, output_word)
+                written_words.append((destination_offset, output_word))
+                destination_offset = (
+                    destination_offset + direction * 2
+                ) & 0xFFFF
+            if deferred != 0:
+                relative = destination_offset - output_base
+                struct.pack_into("<H", output_after, relative, deferred)
+                written_words.append((destination_offset, deferred))
+                destination_offset = (
+                    destination_offset + direction * 2
+                ) & 0xFFFF
+            relative = destination_offset - output_base
+            struct.pack_into("<H", output_after, relative, 0)
+            written_words.append((destination_offset, 0))
+
+        data_decoy = bytes(
+            (index * 31 + case_index * 7 + 5) & 0xFF
+            for index in range(output_size)
+        )
+        extra_decoy = bytes(
+            (index * 13 + case_index * 19 + 11) & 0xFF
+            for index in range(output_size)
+        )
+        stack_decoy = bytes(
+            (index * 37 + case_index * 5 + 17) & 0xFF
+            for index in range(output_size)
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0212 | (0x0400 if direction < 0 else 0),
+        }
+        pointer_bytes = struct.pack("<HH", pointer_offset, code_segment)
+        state_bytes = struct.pack("<HH", deferred, program_counter)
+        source_before = bytes(source)
+        machine = execute(
+            0x5AFD,
+            0x5B37,
+            initial,
+            [
+                (code_segment, 0, source_before),
+                (game_segment, 0x6720, pointer_bytes),
+                (game_segment, 0x6770, state_bytes),
+                (game_segment, output_base, output_before),
+                (data_segment, output_base, data_decoy),
+                (extra_segment, output_base, extra_decoy),
+                (stack_segment, output_base, stack_decoy),
+            ],
+        )
+
+        for register, value in initial.items():
+            if register == "flags":
+                continue
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x5afd {name}: {register}={actual_register:#x}, "
+                    f"expected={value:#x}"
+                )
+        if bytes(
+            machine.mem_read(code_segment * 16, len(source_before))
+        ) != source_before:
+            raise AssertionError(f"0x5afd {name}: code image changed")
+        if bytes(
+            machine.mem_read(game_segment * 16 + 0x6720, 4)
+        ) != pointer_bytes:
+            raise AssertionError(f"0x5afd {name}: code pointer changed")
+        actual_state = bytes(
+            machine.mem_read(game_segment * 16 + 0x6770, 4)
+        )
+        expected_deferred = 0 if opcode == 0xA3 and deferred != 0 else deferred
+        expected_state = struct.pack("<HH", expected_deferred, program_counter)
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x5afd {name}: state={actual_state.hex()}, "
+                f"expected={expected_state.hex()}"
+            )
+        actual_output = bytes(
+            machine.mem_read(game_segment * 16 + output_base, output_size)
+        )
+        if actual_output != bytes(output_after):
+            raise AssertionError(f"0x5afd {name}: GS output mismatch")
+        for segment, expected, label in (
+            (data_segment, data_decoy, "DS"),
+            (extra_segment, extra_decoy, "ES"),
+            (stack_segment, stack_decoy, "SS"),
+        ):
+            actual = bytes(
+                machine.mem_read(segment * 16 + output_base, output_size)
+            )
+            if actual != expected:
+                raise AssertionError(f"0x5afd {name}: {label} decoy changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if opcode == 0xA3:
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            result = (opcode - 0xA3) & 0xFF
+            expected_flags = {
+                "cf": opcode < 0xA3,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "af": ((opcode ^ 0xA3 ^ result) & 0x10) != 0,
+                "zf": result == 0,
+                "sf": (result & 0x80) != 0,
+                "of": (((opcode ^ 0xA3) & (opcode ^ result)) & 0x80) != 0,
+            }
+        flag_bits = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_bits[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x5afd {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        if bool(flags & 0x0400) != (direction < 0):
+            raise AssertionError(f"0x5afd {name}: direction flag changed")
+        if not flags & 0x0200:
+            raise AssertionError(f"0x5afd {name}: interrupt flag changed")
+        if EXE[0x5B37] != 0xC3:
+            raise AssertionError("0x5afd: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "opcode": opcode,
+                "code_pointer_offset_ignored": pointer_offset,
+                "code_segment": code_segment,
+                "program_counter": program_counter,
+                "source_word_offsets": source_word_offsets,
+                "source_words": source_words,
+                "deferred_before": deferred,
+                "deferred_after": expected_deferred,
+                "written_words": [list(item) for item in written_words],
+                "direction": "backward" if direction < 0 else "forward",
+                "defined_flags": actual_flags,
+                "storage_segment": "gs",
+            }
+        )
+
+    return vectors
+
+
 def vm_special_slot_remove_vectors() -> list[dict[str, object]]:
     cases = [
         ("absent_owner", list(range(1, 17)), 0x7777, None),
@@ -49602,6 +49860,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_533c_natural.json",
         resource_get_field4_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5afd_natural.json",
+        vm_op_a3_collect_vectors(),
         args.check,
     )
     update_vector(

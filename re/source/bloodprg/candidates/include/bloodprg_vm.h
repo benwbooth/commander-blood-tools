@@ -46,6 +46,7 @@ extern volatile cb_u8 vm_text_display_active; /* GS:0x5E64 */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_script_image; /* GS:0x671C */
+extern bloodprg_vm_image_ptr CB_GAME_DATA vm_code_image; /* GS:0x6720 */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
@@ -55,6 +56,9 @@ extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
 extern volatile cb_u16 vm_blood_history_ring_index; /* GS:0x6744 */
 extern volatile cb_u16 CB_FAR *vm_blood_history_words; /* GS:0x6746 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_reg_6770_gs; /* explicit GS:0x6770 alias */
+extern volatile cb_u16 CB_GAME_DATA vm_program_counter; /* GS:0x6772 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
 extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
@@ -72,6 +76,8 @@ extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_presentation_hold_ready; /* GS:0x67BC */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_word_buffer_gs[]; /* explicit GS:0x67F8 alias */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
 extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
@@ -144,6 +150,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* GS:0x6A16 */
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
+#pragma aux vm_op_a3_collect modify exact []
 #pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
 #pragma aux vm_condition_5 parm [cx] [es di] [si] value [ax] modify exact [ax bx dx]
 #pragma aux vm_branch_fail value [si] modify exact [ax si]
@@ -191,6 +198,7 @@ cb_u16 CB_NEAR vm_patch_stream_build(void);  /* 0x001D94 */
 #if defined(__WATCOMC__)
 #pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif
+void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */

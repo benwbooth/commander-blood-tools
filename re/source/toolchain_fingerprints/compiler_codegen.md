@@ -3543,6 +3543,35 @@ C body is valid for the game's clear-DF, non-overflowing signed-byte quotient
 domain; inherited reverse DF and byte-quotient overflow remain explicit binary
 integration boundaries.
 
+## BLOODPRG VM opcode-A3 collector candidate
+
+`0x005AFD` is a bounded VM presentation-list collector. It obtains the code
+segment from the far pointer at `GS:0x6720`, deliberately discards that
+pointer's offset, and substitutes the program counter at `GS:0x6772`. A byte
+other than `0xA3` returns without changing VM state. On a match, a local cursor
+skips the opcode and copies nonzero words to `GS:0x67F8`; the source terminator
+is not copied. A nonzero deferred word at `GS:0x6770` is then appended and
+cleared, and every active path appends a final zero. The published program
+counter itself is never advanced.
+
+Ten direct-binary vectors cover three rejected opcodes, empty and populated
+lists, zero and nonzero deferred words, high-bit values, a word read across
+offset `0xFFFF`, and inherited backward `LODSW`/`STOSW` traversal. They also
+prove segment-only code addressing, the ignored pointer offset, GS output and
+state ownership against DS/ES/SS decoys, immutable code and program-counter
+state, all register/segment preservation, path-specific defined flags, and the
+near-return boundary.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 52 instructions/111 bytes versus the original 32/59. The
+ordinary-data codegen probe is 44 instructions/84 bytes and has a 71.88
+percent mnemonic-sequence LCS and 75 percent mnemonic-multiset overlap. The
+candidate uses four guarded inline save/restore instructions solely to retain
+incoming AX and ES around the natural C body. `MK_FP` preserves the recovered
+segment-plus-wrapping-offset model. The shipped clear-DF C invariant and the
+binary's final flags remain explicit integration boundaries; the backward-DF
+vector documents binary behavior outside the natural candidate's C domain.
+
 ## BLOODPRG palette transition step candidate
 
 `0x001F78` is a palette transition step, not only a progress counter. An
