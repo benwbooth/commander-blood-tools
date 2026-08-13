@@ -2595,6 +2595,23 @@ C 2.01 medium (`-mm -O -Z`) compiles the CROOLIS form warning-free to 173
 instructions. Both preserve the natural control structure but neither matches
 the compact register rotation and segment use of the shipped bodies.
 
+## Alien active-edge renderer candidate
+
+The complete AMER `0x2572`, CROOLIS `0x25d6`, and SCRUT `0x2696` renderer
+owners are contiguous through their following face-activation callees. The old
+recursive dumps stopped at stored continuation jumps and omitted internal
+render/advance blocks; reviewed linear decoding expands them to 489
+instructions/1531 bytes for AMER and 495/1543 for CROOLIS and SCRUT.
+
+After address normalization, CROOLIS and SCRUT are instruction-identical. AMER
+only omits six `XCHG BX,BX` alignment instructions, and the previously proven
+MANU3 renderer differs from CROOLIS/SCRUT by one `NOP`. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) compiles the natural 600-record renderer warning-free
+to 805 instructions/2653 bytes. Turbo C 2.01 medium (`-mm -O -Z`) compiles it
+warning-free to 949 instructions. The C preserves the complete owner logic but
+neither compiler reproduces the shipped register allocation or internal
+continuation layout.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

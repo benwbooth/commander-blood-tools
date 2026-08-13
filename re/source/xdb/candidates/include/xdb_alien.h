@@ -11,6 +11,63 @@
 #define XDB_CROOLIS_FACE_BUCKETS_OFFSET 0x094eu
 #define XDB_SCRUT_FACE_BUCKETS_OFFSET 0x094eu
 #define XDB_ALIEN_BEHIND_SCRATCH_OFFSET 0x07d4u
+#define XDB_ALIEN_SCREEN_WIDTH 0x0140u
+#define XDB_ALIEN_SCREEN_HEIGHT 0x00c8u
+#define XDB_ALIEN_RASTER_POOL_COUNT 0x0258u
+
+#define XDB_AMER_FREE_HEAD_OFFSET 0x0bceu
+#define XDB_AMER_COLUMN_OFFSET 0x0946u
+#define XDB_AMER_FRAMEBUFFER_COLUMN_OFFSET 0x0948u
+#define XDB_AMER_BUCKET_CURSOR_OFFSET 0x094au
+#define XDB_AMER_RENDER_CONTINUATION_OFFSET 0x0944u
+#define XDB_AMER_CLIPPED_SORT_HEAD_OFFSET 0x0c28u
+#define XDB_AMER_ACTIVE_LIST_HEAD_OFFSET 0x0c2au
+#define XDB_AMER_ACTIVE_LIST_MIDDLE_OFFSET 0x0c84u
+#define XDB_AMER_ACTIVE_LIST_TAIL_OFFSET 0x0cdeu
+#define XDB_AMER_ACTIVE_LIST_ROOT_OFFSET 0x0ceeu
+#define XDB_AMER_RASTER_POOL_OFFSET 0x0d38u
+#define XDB_AMER_RENDER_FOUR_PLANES_OFFSET 0x28a1u
+#define XDB_AMER_RENDER_LINEAR_OFFSET 0x29c6u
+#define XDB_AMER_ADVANCE_COLUMN_OFFSET 0x2670u
+#define XDB_AMER_ADVANCE_SECONDARY_OFFSET 0x2abau
+#define XDB_AMER_ADVANCE_SWITCH_OFFSET 0x2b09u
+#define XDB_AMER_ADVANCE_REMOVE_OFFSET 0x2b4eu
+
+#define XDB_CROOLIS_FREE_HEAD_OFFSET 0x0bd0u
+#define XDB_CROOLIS_COLUMN_OFFSET 0x0948u
+#define XDB_CROOLIS_FRAMEBUFFER_COLUMN_OFFSET 0x094au
+#define XDB_CROOLIS_BUCKET_CURSOR_OFFSET 0x094cu
+#define XDB_CROOLIS_RENDER_CONTINUATION_OFFSET 0x0946u
+#define XDB_CROOLIS_CLIPPED_SORT_HEAD_OFFSET 0x0c2au
+#define XDB_CROOLIS_ACTIVE_LIST_HEAD_OFFSET 0x0c2cu
+#define XDB_CROOLIS_ACTIVE_LIST_MIDDLE_OFFSET 0x0c86u
+#define XDB_CROOLIS_ACTIVE_LIST_TAIL_OFFSET 0x0ce0u
+#define XDB_CROOLIS_ACTIVE_LIST_ROOT_OFFSET 0x0cf0u
+#define XDB_CROOLIS_RASTER_POOL_OFFSET 0x0d3au
+#define XDB_CROOLIS_RENDER_FOUR_PLANES_OFFSET 0x2905u
+#define XDB_CROOLIS_RENDER_LINEAR_OFFSET 0x2a36u
+#define XDB_CROOLIS_ADVANCE_COLUMN_OFFSET 0x26d4u
+#define XDB_CROOLIS_ADVANCE_SECONDARY_OFFSET 0x2b2au
+#define XDB_CROOLIS_ADVANCE_SWITCH_OFFSET 0x2b79u
+#define XDB_CROOLIS_ADVANCE_REMOVE_OFFSET 0x2bbeu
+
+#define XDB_SCRUT_FREE_HEAD_OFFSET 0x0bd0u
+#define XDB_SCRUT_COLUMN_OFFSET 0x0948u
+#define XDB_SCRUT_FRAMEBUFFER_COLUMN_OFFSET 0x094au
+#define XDB_SCRUT_BUCKET_CURSOR_OFFSET 0x094cu
+#define XDB_SCRUT_RENDER_CONTINUATION_OFFSET 0x0946u
+#define XDB_SCRUT_CLIPPED_SORT_HEAD_OFFSET 0x0c2au
+#define XDB_SCRUT_ACTIVE_LIST_HEAD_OFFSET 0x0c2cu
+#define XDB_SCRUT_ACTIVE_LIST_MIDDLE_OFFSET 0x0c86u
+#define XDB_SCRUT_ACTIVE_LIST_TAIL_OFFSET 0x0ce0u
+#define XDB_SCRUT_ACTIVE_LIST_ROOT_OFFSET 0x0cf0u
+#define XDB_SCRUT_RASTER_POOL_OFFSET 0x0d3au
+#define XDB_SCRUT_RENDER_FOUR_PLANES_OFFSET 0x29c5u
+#define XDB_SCRUT_RENDER_LINEAR_OFFSET 0x2af6u
+#define XDB_SCRUT_ADVANCE_COLUMN_OFFSET 0x2794u
+#define XDB_SCRUT_ADVANCE_SECONDARY_OFFSET 0x2beau
+#define XDB_SCRUT_ADVANCE_SWITCH_OFFSET 0x2c39u
+#define XDB_SCRUT_ADVANCE_REMOVE_OFFSET 0x2c7eu
 
 typedef struct xdb_alien_biased_state xdb_alien_biased_state;
 typedef struct xdb_alien_method_context xdb_alien_method_context;
@@ -86,6 +143,55 @@ typedef struct xdb_alien_face {
     xdb_u16 vertex_1;
     xdb_u16 vertex_2;
 } xdb_alien_face;
+
+typedef struct xdb_alien_raster_record {
+    xdb_u16 next;
+    xdb_u16 flags;
+    xdb_u16 output_start;
+    xdb_u16 output_end;
+    xdb_i32 edge_0_position;
+    xdb_i32 edge_0_step;
+    xdb_u16 previous;
+    xdb_u8 field_012[6];
+    xdb_i32 edge_1_position;
+    xdb_i32 edge_1_step;
+    xdb_i32 depth_position;
+    xdb_i32 depth_step;
+    xdb_i32 depth_gradient;
+    xdb_u16 advance_offset;
+    xdb_i16 remaining;
+    xdb_i16 secondary_remaining;
+    xdb_i32 secondary_edge_position;
+    xdb_i32 secondary_edge_step;
+    xdb_i32 secondary_depth_position;
+    xdb_i32 secondary_depth_step;
+    xdb_i16 texture_u;
+    xdb_i16 texture_v;
+    xdb_i16 secondary_texture_u;
+    xdb_i16 secondary_texture_v;
+    xdb_i16 texture_u_step;
+    xdb_i16 texture_v_step;
+    xdb_i16 secondary_texture_u_step;
+    xdb_i16 secondary_texture_v_step;
+    xdb_i16 texture_du;
+    xdb_i16 texture_dv;
+    xdb_u16 texture_segment;
+    xdb_u16 sort_next;
+} xdb_alien_raster_record;
+
+typedef struct xdb_alien_span_boundary {
+    xdb_u16 field_000;
+    xdb_u16 flags;
+    xdb_u16 source_offset;
+    xdb_u16 next_boundary_offset;
+    xdb_u16 field_008;
+    xdb_i16 coordinate;
+} xdb_alien_span_boundary;
+
+typedef char xdb_alien_raster_record_size_must_be_0x5a[
+        sizeof(xdb_alien_raster_record) == 0x5a ? 1 : -1];
+typedef char xdb_alien_span_boundary_size_must_be_0x0c[
+        sizeof(xdb_alien_span_boundary) == 0x0c ? 1 : -1];
 
 typedef struct xdb_alien_projection_state {
     xdb_u16 parent_offset;
@@ -227,6 +333,10 @@ extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
 extern volatile xdb_u16 xdb_alien_palette_segment; /* DS:0x0004 */
 extern volatile xdb_u16 xdb_alien_raster_segment; /* FS:0x0006; FS=DS invariant */
+extern volatile xdb_u16
+        xdb_alien_linear_framebuffer_segment; /* FS:0x0024; FS=DS invariant */
+extern volatile xdb_u16
+        xdb_alien_framebuffer_segment; /* FS:0x0028; FS=DS invariant */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan; /* DS:0x0030 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
@@ -363,6 +473,15 @@ void XDB_NEAR xdb_scrut_bucket_faces_then_render(void);
 void XDB_NEAR xdb_amer_render_face_buckets(void);
 void XDB_NEAR xdb_croolis_render_face_buckets(void);
 void XDB_NEAR xdb_scrut_render_face_buckets(void);
+void XDB_NEAR xdb_amer_face_activate(
+        const volatile xdb_alien_face XDB_FAR *face,
+        xdb_u16 raster_segment);
+void XDB_NEAR xdb_croolis_face_activate(
+        const volatile xdb_alien_face XDB_FAR *face,
+        xdb_u16 raster_segment);
+void XDB_NEAR xdb_scrut_face_activate(
+        const volatile xdb_alien_face XDB_FAR *face,
+        xdb_u16 raster_segment);
 void XDB_NEAR xdb_amer_method_slot_7_palette_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_method_slot_7_palette_update(
@@ -486,6 +605,18 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_scrut_bucket_faces_then_render \
         modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_amer_render_face_buckets \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_render_face_buckets \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_render_face_buckets \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_amer_face_activate \
+        parm [es si] [dx] modify exact [ax bx cx dx si di]
+#pragma aux xdb_croolis_face_activate \
+        parm [es si] [dx] modify exact [ax bx cx dx si di]
+#pragma aux xdb_scrut_face_activate \
+        parm [es si] [dx] modify exact [ax bx cx dx si di]
 #pragma aux xdb_amer_method_slot_7_palette_update \
         parm [di] modify exact [ax bx cx dx si es]
 #pragma aux xdb_croolis_method_slot_7_palette_update \
