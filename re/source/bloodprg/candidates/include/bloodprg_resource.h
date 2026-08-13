@@ -20,6 +20,10 @@ typedef struct bloodprg_resource_allocation_result {
     volatile cb_u8 CB_FAR *destination;
 } bloodprg_resource_allocation_result;
 
+typedef struct bloodprg_resource_name_entry {
+    char filename[16];
+} bloodprg_resource_name_entry;
+
 typedef struct bloodprg_resource_descriptor {
     cb_u8 flags;
     cb_u8 variant;
@@ -37,14 +41,18 @@ typedef struct bloodprg_dos_dta {
 } bloodprg_dos_dta;
 
 #define BLOODPRG_RESOURCE_FLAG_LOADED 0x0003u
+#define BLOODPRG_RESOURCE_DIRECT_DESTINATION 0x8000u
 
 extern volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS:0x0000 */
 extern volatile cb_u16 resource_resident_handles[256]; /* FS:0x0800 */
 extern volatile cb_u16 resource_eviction_handles[256]; /* FS:0x0A00 */
 extern volatile cb_u16 resource_current_handle; /* FS:0x0C00 */
 extern volatile cb_u16 resource_current_entry_offset; /* FS:0x0C02 */
+extern volatile bloodprg_resource_name_entry CB_FS_DATA
+        resource_name_table[]; /* FS:0x0C04 */
 extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */
 extern volatile cb_u16 resource_pool_end_segment; /* GS:0x0A6A */
+extern volatile cb_u16 CB_GAME_DATA resource_file_header; /* GS:0x0AF2 */
 extern volatile bloodprg_resource_index_entry resource_index[]; /* DS:0x1FB5 */
 extern volatile cb_u8 resource_variant;             /* game data:0x1FB1 */
 extern volatile cb_u16 resource_requested_id;       /* game data:0x0D80 */
@@ -70,6 +78,7 @@ extern volatile char resource_path_buffer[];        /* game data:0x0259 */
 #pragma aux resource_get_field4 parm [ax] value [dx ax] modify exact [ax dx]
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
 #pragma aux path_builder_gs_relative parm [dx] value [bx] modify [bx cx dx]
+#pragma aux resource_load_by_id parm [ax] [es di] value [ax] modify exact [ax]
 #endif
 
 cb_u32 CB_FAR resource_file_load(const volatile char CB_FAR *path,
@@ -89,8 +98,11 @@ cb_u32 CB_FAR resource_name_lookup(
         const volatile char *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
 
+int CB_FAR resource_load_by_id(cb_u16 resource_id,
+        volatile cb_u8 CB_FAR *direct_destination); /* 0x0299:0x1037 */
+
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
-void CB_NEAR cb_dos_find_first(const volatile char *path);
+int CB_NEAR cb_dos_find_first(const volatile char *path);
 int CB_NEAR cb_dos_open_read_only(const volatile char *path,
         cb_u16 *handle);
 void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);

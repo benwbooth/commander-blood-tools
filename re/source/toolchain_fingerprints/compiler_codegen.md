@@ -3164,6 +3164,32 @@ warning-free to 37 instructions/82 bytes versus 38/74 original. A replacement
 link needs only a narrow DI/DS:DX/EBP adapter; the parser logic itself is fully
 represented in natural C.
 
+## BLOODPRG resource file loader candidate
+
+The old table-access label for `0x003FC7` hid the complete named-resource file
+loader. IDs with bit `0x8000` set bypass allocation and stream into the caller's
+`ES:DI` buffer; nonnegative IDs call the recovered allocator with the DTA file
+size after any palette preamble has been removed. Both paths retain the original
+two-byte file header and issue `0x7D00`-byte payload reads until the returned
+byte counts consume the remaining extent.
+
+Eight raw-binary vectors cover find and open failure, direct and allocated
+destinations, allocator status one, palette blocks, a header-only file, and a
+payload crossing the chunk boundary. They prove the wrapping FS filename
+offset, path and DOS call order, allocator arguments, palette/header ownership,
+the header-only path's deliberate zero-byte read, exact segmented destination
+progression, close behavior, preservation, and far return. The returning
+negative allocator branch has a malformed raw unwind because the allocator's
+failure callback is expected not to return; the natural source closes and
+returns `-1` defensively.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 104 instructions/256 bytes versus 89/191 original. Its control
+shape is close; the remaining expansion comes from typed DOS calls, the
+structured allocator result, and normal C stack locals. Replacement linking
+still needs narrow adapters for the dynamic `DS=FS` entry and the recovered
+palette/allocator register ABIs, not additional loader logic.
+
 ## BLOODPRG SND bank loader candidate
 
 `0x00C005` parses the SND bank structure used by the clip player: a four-byte

@@ -5740,6 +5740,418 @@ def resource_palette_file_blocks_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_load_by_id_vectors() -> list[dict[str, object]]:
+    entry = 0x3FC7
+    expected_hash = "2438dcc40d27a1d4699e0b945a5ee3f3e48e98f6965a36956a6efb76e4e0869c"
+    if hashlib.sha256(EXE[entry : entry + 191]).hexdigest() != expected_hash:
+        raise AssertionError("0x3FC7: recovered 191-byte body changed")
+
+    cases = [
+        {
+            "name": "find_failure",
+            "resource_id": 3,
+            "file_header": 0x1040,
+            "payload": b"not-read",
+            "find_success": False,
+        },
+        {
+            "name": "open_failure",
+            "resource_id": 4,
+            "file_header": 0x2040,
+            "payload": b"not-opened",
+            "open_success": False,
+        },
+        {
+            "name": "direct_destination",
+            "resource_id": 0x8007,
+            "file_header": 0x3150,
+            "payload": bytes(range(23)),
+        },
+        {
+            "name": "allocated_destination",
+            "resource_id": 0x002C,
+            "file_header": 0x4260,
+            "payload": bytes((index * 13 + 7) & 0xFF for index in range(91)),
+            "allocation_status": 0,
+        },
+        {
+            "name": "palette_then_allocate",
+            "resource_id": 0x0011,
+            "file_header": 0x5372,
+            "palette_blocks": [
+                (2, bytes([1, 2, 3, 4, 5, 6])),
+                (9, b""),
+                (0xFF, bytes([0x31, 0x21, 0x11])),
+            ],
+            "payload": bytes((index * 17 + 9) & 0xFF for index in range(37)),
+            "allocation_status": 0,
+        },
+        {
+            "name": "already_loaded_skips_payload",
+            "resource_id": 0x000A,
+            "file_header": 0x6440,
+            "payload": b"this payload must remain unread",
+            "allocation_status": 1,
+        },
+        {
+            "name": "empty_payload_still_reads_once",
+            "resource_id": 0x000B,
+            "file_header": 0x7540,
+            "payload": b"",
+            "allocation_status": 0,
+        },
+        {
+            "name": "direct_multichunk_segment_advance",
+            "resource_id": 0x800D,
+            "file_header": 0x8650,
+            "payload": bytes(
+                (index * 29 + 0x37) & 0xFF for index in range(0x7D00 + 0x123)
+            ),
+        },
+    ]
+    fs_segment = 0x3800
+    game_segment = 0x2C00
+    dta_segment = 0x3600
+    dta_offset = 0x0120
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    path_entry = 0x1CE0 + 0x03B3
+    allocator_entry = 0x4B90
+    vectors = []
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        resource_id = int(case["resource_id"])
+        file_header = int(case["file_header"])
+        payload = bytes(case["payload"])
+        find_success = bool(case.get("find_success", True))
+        open_success = bool(case.get("open_success", True))
+        allocation_status = case.get("allocation_status")
+        direct_mode = bool(resource_id & 0x8000)
+        file_handle = 0x3100 + case_index
+        direct_segment = 0x5000 + case_index * 0x100
+        direct_offset = 0x0023 + case_index
+        allocation_segment = 0x6000 + case_index * 0x100
+        allocation_offset = 0x0000
+        destination_segment = (
+            direct_segment if direct_mode else allocation_segment
+        )
+        destination_offset = (
+            direct_offset if direct_mode else allocation_offset
+        )
+        name_offset = (0x0C04 + ((resource_id << 4) & 0xFFFF)) & 0xFFFF
+        filename = (f"RES{case_index:02d}.DAT".encode("ascii") + b"\0").ljust(
+            16, b"\0"
+        )
+
+        source = bytearray(struct.pack("<H", file_header))
+        palette_extent = 0
+        palette_blocks = list(case.get("palette_blocks", []))
+        expected_palette = bytearray(
+            (index * 7 + case_index * 19 + 3) & 0xFF for index in range(0x900)
+        )
+        initial_palette = bytes(expected_palette)
+        for palette_start, palette_payload in palette_blocks:
+            palette_payload = bytes(palette_payload)
+            palette_count = len(palette_payload) // 3
+            source.extend(bytes((palette_start, palette_count)))
+            source.extend(palette_payload)
+            palette_extent += 2 + len(palette_payload)
+            palette_destination = palette_start * 3
+            expected_palette[
+                palette_destination : palette_destination + len(palette_payload)
+            ] = palette_payload
+        if palette_blocks:
+            source.extend(b"\xff\xff")
+            palette_extent += 2
+        source.extend(payload)
+
+        expected_loaded = find_success and open_success and (
+            direct_mode or allocation_status == 0
+        )
+        destination_size = max(len(payload) + 34, 96)
+        initial_destination = bytes(
+            (index * 11 + case_index * 23 + 0x55) & 0xFF
+            for index in range(destination_size)
+        )
+        expected_destination = bytearray(initial_destination)
+        if expected_loaded:
+            expected_destination[: 2 + len(payload)] = (
+                struct.pack("<H", file_header) + payload
+            )
+
+        initial = {
+            "eax": 0xA1A10000 | resource_id,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | direct_offset,
+            "ebp": 0x13572468,
+            "sp": 0xFF00,
+            "ds": 0x2400,
+            "es": direct_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if case_index & 1 else 0),
+        }
+        calls: list[dict[str, object]] = []
+        reads: list[dict[str, object]] = []
+        source_cursor = 0
+        allocation_calls: list[dict[str, int]] = []
+
+        def code_handler(machine: Uc, address: int, _size: int) -> None:
+            if address == path_entry:
+                path_segment = machine.reg_read(UC_X86_REG_DS)
+                path_offset = machine.reg_read(UC_X86_REG_DX)
+                calls.append(
+                    {
+                        "call": "path",
+                        "segment": path_segment,
+                        "offset": path_offset,
+                    }
+                )
+                if path_segment != fs_segment or path_offset != name_offset:
+                    raise AssertionError(
+                        f"0x3FC7 {name}: path={path_segment:#x}:{path_offset:#x}, "
+                        f"expected={fs_segment:#x}:{name_offset:#x}"
+                    )
+                actual_name = bytes(
+                    machine.mem_read(path_segment * 16 + path_offset, 16)
+                )
+                if actual_name != filename:
+                    raise AssertionError(f"0x3FC7 {name}: filename differs")
+            elif address == allocator_entry:
+                call = {
+                    "resource_id": machine.reg_read(UC_X86_REG_AX),
+                    "remaining": machine.reg_read(UC_X86_REG_EBP),
+                    "incoming_segment": machine.reg_read(UC_X86_REG_DS),
+                    "incoming_offset": machine.reg_read(UC_X86_REG_SI),
+                }
+                allocation_calls.append(call)
+                if allocation_status is None:
+                    raise AssertionError(f"0x3FC7 {name}: unexpected allocation")
+                machine.reg_write(UC_X86_REG_AX, int(allocation_status))
+                machine.reg_write(UC_X86_REG_DS, allocation_segment)
+                machine.reg_write(UC_X86_REG_SI, allocation_offset)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal source_cursor
+            if number != 0x21:
+                raise AssertionError(
+                    f"0x3FC7 {name}: unexpected interrupt {number:#x}"
+                )
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x2F:
+                calls.append({"call": "get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+            elif function == 0x4E:
+                calls.append({"call": "find_first"})
+                if machine.reg_read(UC_X86_REG_CX) != 0:
+                    raise AssertionError(f"0x3FC7 {name}: find attributes differ")
+                if (
+                    machine.reg_read(UC_X86_REG_DS) != fs_segment
+                    or machine.reg_read(UC_X86_REG_DX) != name_offset
+                ):
+                    raise AssertionError(f"0x3FC7 {name}: find path differs")
+                set_carry(machine, not find_success)
+            elif function == 0x3D:
+                calls.append({"call": "open"})
+                if (
+                    machine.reg_read(UC_X86_REG_AL) != 0
+                    or machine.reg_read(UC_X86_REG_DS) != fs_segment
+                    or machine.reg_read(UC_X86_REG_DX) != name_offset
+                ):
+                    raise AssertionError(f"0x3FC7 {name}: open request differs")
+                if open_success:
+                    machine.reg_write(UC_X86_REG_AX, file_handle)
+                    set_carry(machine, False)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                    set_carry(machine, True)
+            elif function == 0x3F:
+                requested = machine.reg_read(UC_X86_REG_CX)
+                read_segment = machine.reg_read(UC_X86_REG_DS)
+                read_offset = machine.reg_read(UC_X86_REG_DX)
+                if machine.reg_read(UC_X86_REG_BX) != file_handle:
+                    raise AssertionError(f"0x3FC7 {name}: read handle differs")
+                chunk = bytes(source[source_cursor : source_cursor + requested])
+                if chunk:
+                    machine.mem_write(read_segment * 16 + read_offset, chunk)
+                if source_cursor == 0:
+                    kind = "file_header"
+                elif read_segment == game_segment and read_offset == 0x0AF2:
+                    kind = "palette_header"
+                elif read_segment == game_segment and 0x5251 <= read_offset < 0x5B51:
+                    kind = "palette_payload"
+                else:
+                    kind = "payload"
+                reads.append(
+                    {
+                        "kind": kind,
+                        "requested": requested,
+                        "returned": len(chunk),
+                        "segment": read_segment,
+                        "offset": read_offset,
+                        "source_offset": source_cursor,
+                    }
+                )
+                source_cursor += len(chunk)
+                machine.reg_write(UC_X86_REG_AX, len(chunk))
+                set_carry(machine, False)
+            elif function == 0x3E:
+                calls.append(
+                    {
+                        "call": "close",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+                set_carry(machine, False)
+            else:
+                raise AssertionError(
+                    f"0x3FC7 {name}: unexpected DOS function {function:#x}"
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0x1CE, 0x03B3, b"\xcb"),
+                (0x4B9, 0, b"\xcb"),
+                (fs_segment, name_offset, filename),
+                (
+                    dta_segment,
+                    dta_offset + 0x1A,
+                    struct.pack("<I", len(source)),
+                ),
+                (game_segment, 0x0AF2, b"\x5a\xa5"),
+                (game_segment, 0x5251, initial_palette),
+                (game_segment, 0x5B55, b"\xa5"),
+                (
+                    destination_segment,
+                    destination_offset,
+                    initial_destination,
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0)
+                    + bytes.fromhex("5aa596698778"),
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=code_handler,
+            instruction_count=300000,
+        )
+
+        expected_result = 0 if find_success and open_success else 0xFFFF
+        if machine.reg_read(UC_X86_REG_AX) != expected_result:
+            raise AssertionError(f"0x3FC7 {name}: return value differs")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_eax_high = 0 if expected_loaded else initial["eax"] & 0xFFFF0000
+        expected_registers["eax"] = expected_eax_high | expected_result
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3FC7 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3FC7 {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, 6)
+        ) != bytes.fromhex("5aa596698778"):
+            raise AssertionError(f"0x3FC7 {name}: stack sentinel changed")
+
+        actual_destination = bytes(
+            machine.mem_read(
+                destination_segment * 16 + destination_offset,
+                destination_size,
+            )
+        )
+        if actual_destination != bytes(expected_destination):
+            raise AssertionError(f"0x3FC7 {name}: destination differs")
+        actual_palette = bytes(
+            machine.mem_read(game_segment * 16 + 0x5251, 0x900)
+        )
+        if actual_palette != bytes(expected_palette):
+            raise AssertionError(f"0x3FC7 {name}: palette differs")
+        expected_dirty = 1 if palette_blocks and find_success and open_success else 0xA5
+        actual_dirty = machine.mem_read(game_segment * 16 + 0x5B55, 1)[0]
+        if actual_dirty != expected_dirty:
+            raise AssertionError(f"0x3FC7 {name}: palette dirty byte differs")
+
+        expected_allocations = 0
+        if find_success and open_success and not direct_mode:
+            expected_allocations = 1
+        if len(allocation_calls) != expected_allocations:
+            raise AssertionError(f"0x3FC7 {name}: allocator calls differ")
+        if allocation_calls:
+            expected_remaining = len(source) - palette_extent
+            expected_call = {
+                "resource_id": resource_id,
+                "remaining": expected_remaining,
+                "incoming_segment": direct_segment,
+                "incoming_offset": direct_offset,
+            }
+            if allocation_calls != [expected_call]:
+                raise AssertionError(
+                    f"0x3FC7 {name}: allocation={allocation_calls}, "
+                    f"expected={[expected_call]}"
+                )
+
+        expected_close = find_success and open_success
+        actual_closes = [call for call in calls if call["call"] == "close"]
+        if len(actual_closes) != int(expected_close):
+            raise AssertionError(f"0x3FC7 {name}: close calls differ")
+        if expected_loaded:
+            expected_consumed = len(source)
+        elif find_success and open_success:
+            expected_consumed = 2 + palette_extent
+        else:
+            expected_consumed = 0
+        if source_cursor != expected_consumed:
+            raise AssertionError(
+                f"0x3FC7 {name}: consumed={source_cursor}, "
+                f"expected={expected_consumed}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "resource_id": resource_id,
+                "mode": "direct" if direct_mode else "allocated",
+                "success": expected_result == 0,
+                "path_offset": name_offset,
+                "file_size": len(source),
+                "palette_extent": palette_extent,
+                "allocation_status": allocation_status,
+                "allocation_calls": allocation_calls,
+                "reads": reads,
+                "source_consumed": source_cursor,
+                "close_count": len(actual_closes),
+                "destination_sha256": hashlib.sha256(actual_destination).hexdigest(),
+                "palette_sha256": hashlib.sha256(actual_palette).hexdigest(),
+                "palette_dirty": actual_dirty,
+                "return_ax": machine.reg_read(UC_X86_REG_AX),
+            }
+        )
+
+    return vectors
+
+
 def composite_draw_a_vectors() -> list[dict[str, object]]:
     entry = 0x3B45
     expected_hash = "244b88c80dc7d12184b6a54d14e89ec241265ffff99a902cdc64a4ba07c8c539"
@@ -33695,6 +34107,11 @@ def main() -> int:
         fullscreen_copy_vectors(
             0x3E5B, 0x5229, "fullscreen_copy_to_backbuffer"
         ),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3fc7_natural.json",
+        resource_load_by_id_vectors(),
         args.check,
     )
     update_vector(

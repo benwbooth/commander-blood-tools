@@ -1,0 +1,332 @@
+[
+  {
+    "name": "find_failure",
+    "resource_id": 3,
+    "mode": "allocated",
+    "success": false,
+    "path_offset": 3124,
+    "file_size": 10,
+    "palette_extent": 0,
+    "allocation_status": null,
+    "allocation_calls": [],
+    "reads": [],
+    "source_consumed": 0,
+    "close_count": 0,
+    "destination_sha256": "8f06aaccda8ebf6958de044f22b6028fbafe6a8cce0f8155a409db7bd3235199",
+    "palette_sha256": "d943529bf27ab7362492bf1570da5a301288b5f0d3c77b2c42106cfef68765af",
+    "palette_dirty": 165,
+    "return_ax": 65535
+  },
+  {
+    "name": "open_failure",
+    "resource_id": 4,
+    "mode": "allocated",
+    "success": false,
+    "path_offset": 3140,
+    "file_size": 12,
+    "palette_extent": 0,
+    "allocation_status": null,
+    "allocation_calls": [],
+    "reads": [],
+    "source_consumed": 0,
+    "close_count": 0,
+    "destination_sha256": "c833b6d98cb0696533a3fb34130bd2f83cf901e46a694baa4e47b0ed212d4196",
+    "palette_sha256": "c7cb1981a50b0d910ffec3edad9e698e4c0045dfc68b13ad14f8cede7d0f35e0",
+    "palette_dirty": 165,
+    "return_ax": 65535
+  },
+  {
+    "name": "direct_destination",
+    "resource_id": 32775,
+    "mode": "direct",
+    "success": true,
+    "path_offset": 3188,
+    "file_size": 25,
+    "palette_extent": 0,
+    "allocation_status": null,
+    "allocation_calls": [],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 23,
+        "segment": 20992,
+        "offset": 39,
+        "source_offset": 2
+      }
+    ],
+    "source_consumed": 25,
+    "close_count": 1,
+    "destination_sha256": "a6e1f6c4fde87880c9b892f54ebc45311b140b01eafbbacbf12d91a335700b9c",
+    "palette_sha256": "6a3717d5836f90d9f744491575559da93bcc7e040c4f6d5ee835b94fd31e87bd",
+    "palette_dirty": 165,
+    "return_ax": 0
+  },
+  {
+    "name": "allocated_destination",
+    "resource_id": 44,
+    "mode": "allocated",
+    "success": true,
+    "path_offset": 3780,
+    "file_size": 93,
+    "palette_extent": 0,
+    "allocation_status": 0,
+    "allocation_calls": [
+      {
+        "resource_id": 44,
+        "remaining": 93,
+        "incoming_segment": 21248,
+        "incoming_offset": 38
+      }
+    ],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 91,
+        "segment": 25344,
+        "offset": 2,
+        "source_offset": 2
+      }
+    ],
+    "source_consumed": 93,
+    "close_count": 1,
+    "destination_sha256": "6fb2bdc008f55075d8d21eba61c44457d08a32f3a09c066f206d909389571704",
+    "palette_sha256": "08728a0a5bba5564c7292ef01c3fb8c308735a5bf16988883947af2bc721ea7f",
+    "palette_dirty": 165,
+    "return_ax": 0
+  },
+  {
+    "name": "palette_then_allocate",
+    "resource_id": 17,
+    "mode": "allocated",
+    "success": true,
+    "path_offset": 3348,
+    "file_size": 56,
+    "palette_extent": 17,
+    "allocation_status": 0,
+    "allocation_calls": [
+      {
+        "resource_id": 17,
+        "remaining": 39,
+        "incoming_segment": 21504,
+        "incoming_offset": 39
+      }
+    ],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      },
+      {
+        "kind": "palette_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 2
+      },
+      {
+        "kind": "palette_payload",
+        "requested": 6,
+        "returned": 6,
+        "segment": 11264,
+        "offset": 21079,
+        "source_offset": 4
+      },
+      {
+        "kind": "palette_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 10
+      },
+      {
+        "kind": "palette_payload",
+        "requested": 0,
+        "returned": 0,
+        "segment": 11264,
+        "offset": 21100,
+        "source_offset": 12
+      },
+      {
+        "kind": "palette_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 12
+      },
+      {
+        "kind": "palette_payload",
+        "requested": 3,
+        "returned": 3,
+        "segment": 11264,
+        "offset": 21838,
+        "source_offset": 14
+      },
+      {
+        "kind": "palette_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 17
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 37,
+        "segment": 25600,
+        "offset": 2,
+        "source_offset": 19
+      }
+    ],
+    "source_consumed": 56,
+    "close_count": 1,
+    "destination_sha256": "b1d7ca8e16a659ff4d35a02b6d3ffa8ef4cea12568f3dd258f57d17056d3a519",
+    "palette_sha256": "59665e1e882c06322df34f809419fe9857ad818fa4d8c61affe7e974a55d4a5b",
+    "palette_dirty": 1,
+    "return_ax": 0
+  },
+  {
+    "name": "already_loaded_skips_payload",
+    "resource_id": 10,
+    "mode": "allocated",
+    "success": true,
+    "path_offset": 3236,
+    "file_size": 33,
+    "palette_extent": 0,
+    "allocation_status": 1,
+    "allocation_calls": [
+      {
+        "resource_id": 10,
+        "remaining": 33,
+        "incoming_segment": 21760,
+        "incoming_offset": 40
+      }
+    ],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      }
+    ],
+    "source_consumed": 2,
+    "close_count": 1,
+    "destination_sha256": "0d18140571a1aee2c423422f9c09f05cb0e7b87afe1bb40d5895e56d5280ade7",
+    "palette_sha256": "cda191492154396f4f4ac97f41810023f29c081ca6610f288b406f62ad6b1fa5",
+    "palette_dirty": 165,
+    "return_ax": 0
+  },
+  {
+    "name": "empty_payload_still_reads_once",
+    "resource_id": 11,
+    "mode": "allocated",
+    "success": true,
+    "path_offset": 3252,
+    "file_size": 2,
+    "palette_extent": 0,
+    "allocation_status": 0,
+    "allocation_calls": [
+      {
+        "resource_id": 11,
+        "remaining": 2,
+        "incoming_segment": 22016,
+        "incoming_offset": 41
+      }
+    ],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 0,
+        "segment": 26112,
+        "offset": 2,
+        "source_offset": 2
+      }
+    ],
+    "source_consumed": 2,
+    "close_count": 1,
+    "destination_sha256": "4d646b5c3edf2616408397940f01bbc7f5b31a1fd54fed84e65e539c0ccad1dd",
+    "palette_sha256": "6a9059390ac3c0b0880dede2718feb1f31bb8faafc2d0508f79f3cd9a576021b",
+    "palette_dirty": 165,
+    "return_ax": 0
+  },
+  {
+    "name": "direct_multichunk_segment_advance",
+    "resource_id": 32781,
+    "mode": "direct",
+    "success": true,
+    "path_offset": 3284,
+    "file_size": 32293,
+    "palette_extent": 0,
+    "allocation_status": null,
+    "allocation_calls": [],
+    "reads": [
+      {
+        "kind": "file_header",
+        "requested": 2,
+        "returned": 2,
+        "segment": 11264,
+        "offset": 2802,
+        "source_offset": 0
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 32000,
+        "segment": 22272,
+        "offset": 44,
+        "source_offset": 2
+      },
+      {
+        "kind": "payload",
+        "requested": 32000,
+        "returned": 291,
+        "segment": 24272,
+        "offset": 44,
+        "source_offset": 32002
+      }
+    ],
+    "source_consumed": 32293,
+    "close_count": 1,
+    "destination_sha256": "4bddf1fc8df073fac3fabbd86653e2a1e9b25d34174e543d5482cc3fbce68208",
+    "palette_sha256": "6beed96d423ddf588315105e8610e11fb5208b7aa39a18d3da318f35c50460b4",
+    "palette_dirty": 165,
+    "return_ax": 0
+  }
+]
