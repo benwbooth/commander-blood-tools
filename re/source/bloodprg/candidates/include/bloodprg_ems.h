@@ -43,6 +43,7 @@ extern volatile bloodprg_snd_storage_cursor CB_GAME_DATA
 extern volatile bloodprg_xms_move_request
         xms_move_request; /* game data:0x0A6C */
 extern volatile cb_u8 CB_FAR ems_page_frame[]; /* segment at GS:0x0A66 */
+extern volatile cb_u16 CB_GAME_DATA snd_voice_file_handle; /* GS:0x0C47 */
 extern volatile cb_u16 CB_GAME_DATA snd_bank_file_handle; /* GS:0x0C49 */
 
 void CB_NEAR cb_ems_map_page(cb_u16 handle, cb_u16 logical_page,

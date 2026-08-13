@@ -3009,6 +3009,32 @@ drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
 
+## BLOODPRG SND bank loader candidate
+
+`0x00C005` parses the SND bank structure used by the clip player: a four-byte
+header followed by `clip_count + 1` 32-bit payload-relative offsets. Mode zero
+reduces each adjacent offset pair to a compact `{u16 offset, u16 byte_count}`
+record, with the original inclusive-loop count adjustment, and reads the bank
+payload into the conventional-memory bank pointer. The assembly addresses that
+compact table through `SS:BP`; direct execution proves the shipped `SS == GS`
+invariant that makes it the game-data table at `0x0BBF`.
+
+Nonzero mode preserves the clip count and complete 32-bit offset table for the
+streaming clip player. It then loads the payload into secondary EMS with two
+16 KiB page mappings per read, secondary XMS through a conventional staging
+window at work-surface offset `0x7D00`, or a recreated `son.snd` file. The XMS
+and file paths use 32,000-byte chunks, and XMS lengths are rounded to an even
+byte count exactly as required by the XMS move API.
+
+Nine direct-binary vectors cover the sound gate, embedded and standalone
+sources, both modes, exact SND table transformations, the `SS == GS` table
+placement, all backend chunk boundaries, EMS maps, every XMS request field,
+`son.snd` close/create/write ordering, source closes, and register/far-return
+preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
+actual candidate warning-free to 240 instructions/695 bytes versus 187/481
+original. Remaining integration work is segment placement and the narrow
+resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

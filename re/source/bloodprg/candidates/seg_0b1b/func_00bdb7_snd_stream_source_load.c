@@ -25,7 +25,7 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
 
     source_handle = path_builder_gs_relative(path);
     if ((resource_path_is_embedded & 1u) == 0) {
-        snd_stream_source_remaining = resource_name_lookup(path);
+        snd_source_remaining = resource_name_lookup(path);
         resource_archive_offset = 0;
         (void)cb_dos_open_read_only(path, &source_handle);
     }
@@ -55,13 +55,13 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
     seek_offset = (seek_offset & 0xffff0000UL)
             | (cb_u16)((cb_u16)seek_offset + 0x001au);
     cb_dos_seek_absolute(source_handle, seek_offset);
-    snd_stream_source_remaining -= 0x1aUL;
+    snd_source_remaining -= 0x1aUL;
 
     bytes_read = 0;
     if (snd_bank_ems_handle != -1) {
         snd_bank_storage_mode = 0;
         snd_storage_cursor.ems.logical_page = 0;
-        while (snd_stream_source_remaining != 0) {
+        while (snd_source_remaining != 0) {
             logical_page = snd_storage_cursor.ems.logical_page;
             cb_ems_map_page((cb_u16)snd_bank_ems_handle,
                     logical_page, 0);
@@ -71,21 +71,21 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
             ++logical_page;
             snd_storage_cursor.ems.logical_page = logical_page;
 
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (cb_u16)snd_stream_source_remaining;
+                    : (cb_u16)snd_source_remaining;
             bytes_read = cb_dos_read(source_handle,
                     ems_page_frame, request_bytes);
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     } else if (snd_bank_xms_handle != -1) {
         snd_bank_storage_mode = 1u;
         snd_storage_cursor.xms_offset = 0;
-        while (snd_stream_source_remaining != 0) {
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+        while (snd_source_remaining != 0) {
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (cb_u16)snd_stream_source_remaining;
+                    : (cb_u16)snd_source_remaining;
             bytes_read = cb_dos_read(source_handle,
                     snd_stream_storage, request_bytes);
             if (bytes_read == 0) {
@@ -104,7 +104,7 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
             cb_xms_move(&xms_move_request);
 
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     } else {
         snd_bank_storage_mode = 2u;
@@ -115,16 +115,16 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
         (void)cb_dos_create_game_file(
                 snd_music_temp_filename, &snd_bank_file_handle);
 
-        while (snd_stream_source_remaining != 0) {
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+        while (snd_source_remaining != 0) {
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (cb_u16)snd_stream_source_remaining;
+                    : (cb_u16)snd_source_remaining;
             bytes_read = cb_dos_read(source_handle,
                     snd_stream_storage, request_bytes);
             (void)cb_dos_write(snd_bank_file_handle,
                     snd_stream_storage, bytes_read);
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     }
 

@@ -55,7 +55,7 @@ extern volatile u16 snd_stream_final_page_bytes;
 extern volatile u16 vm_text_reveal_cursor;
 extern volatile u16 vm_text_reveal_phase;
 extern volatile u32 resource_archive_offset;
-extern volatile u32 snd_stream_source_remaining;
+extern volatile u32 snd_source_remaining;
 extern volatile char vm_text_buffer[];
 extern const volatile char snd_wait_prompt_text[];
 extern const volatile char snd_music_temp_filename[];
@@ -107,7 +107,7 @@ void FAR snd_stream_source_load_probe(const volatile char NEAR *path)
 
     source_handle = path_builder_probe(path);
     if ((resource_path_is_embedded & 1u) == 0) {
-        snd_stream_source_remaining = resource_name_lookup_probe(path);
+        snd_source_remaining = resource_name_lookup_probe(path);
         resource_archive_offset = 0;
         (void)cb_dos_open_read_only_probe(path, &source_handle);
     }
@@ -137,13 +137,13 @@ void FAR snd_stream_source_load_probe(const volatile char NEAR *path)
     seek_offset = (seek_offset & 0xffff0000UL)
             | (u16)((u16)seek_offset + 0x001au);
     cb_dos_seek_absolute_probe(source_handle, seek_offset);
-    snd_stream_source_remaining -= 0x1aUL;
+    snd_source_remaining -= 0x1aUL;
 
     bytes_read = 0;
     if (snd_bank_ems_handle != -1) {
         snd_bank_storage_mode = 0;
         shared_snd_storage_cursor.ems.logical_page = 0;
-        while (snd_stream_source_remaining != 0) {
+        while (snd_source_remaining != 0) {
             logical_page = shared_snd_storage_cursor.ems.logical_page;
             cb_ems_map_page_probe((u16)snd_bank_ems_handle,
                     logical_page, 0);
@@ -153,21 +153,21 @@ void FAR snd_stream_source_load_probe(const volatile char NEAR *path)
             ++logical_page;
             shared_snd_storage_cursor.ems.logical_page = logical_page;
 
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (u16)snd_stream_source_remaining;
+                    : (u16)snd_source_remaining;
             bytes_read = cb_dos_read_probe(source_handle,
                     ems_page_frame, request_bytes);
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     } else if (snd_bank_xms_handle != -1) {
         snd_bank_storage_mode = 1u;
         shared_snd_storage_cursor.xms_offset = 0;
-        while (snd_stream_source_remaining != 0) {
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+        while (snd_source_remaining != 0) {
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (u16)snd_stream_source_remaining;
+                    : (u16)snd_source_remaining;
             bytes_read = cb_dos_read_probe(source_handle,
                     snd_stream_storage, request_bytes);
             if (bytes_read == 0) {
@@ -186,7 +186,7 @@ void FAR snd_stream_source_load_probe(const volatile char NEAR *path)
             cb_xms_move_probe(&shared_xms_move_request);
 
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     } else {
         snd_bank_storage_mode = 2u;
@@ -197,16 +197,16 @@ void FAR snd_stream_source_load_probe(const volatile char NEAR *path)
         (void)cb_dos_create_game_file_probe(
                 snd_music_temp_filename, &snd_bank_file_handle);
 
-        while (snd_stream_source_remaining != 0) {
-            request_bytes = snd_stream_source_remaining > 0x8000UL
+        while (snd_source_remaining != 0) {
+            request_bytes = snd_source_remaining > 0x8000UL
                     ? 0x8000u
-                    : (u16)snd_stream_source_remaining;
+                    : (u16)snd_source_remaining;
             bytes_read = cb_dos_read_probe(source_handle,
                     snd_stream_storage, request_bytes);
             (void)cb_dos_write_probe(snd_bank_file_handle,
                     snd_stream_storage, bytes_read);
             snd_stream_page_count += 2u;
-            snd_stream_source_remaining -= bytes_read;
+            snd_source_remaining -= bytes_read;
         }
     }
 

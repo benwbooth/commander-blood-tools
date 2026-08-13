@@ -1,0 +1,111 @@
+[
+  {
+    "name": "sound_disabled",
+    "sound_enabled": 0,
+    "mode": 0,
+    "source_kind": null,
+    "backend": null,
+    "clip_count": null,
+    "payload_bytes": null,
+    "payload_chunks": []
+  },
+  {
+    "name": "memory_external",
+    "sound_enabled": 1,
+    "mode": 0,
+    "source_kind": "standalone",
+    "backend": "memory",
+    "clip_count": 3,
+    "payload_bytes": 13398,
+    "payload_chunks": [
+      13398
+    ]
+  },
+  {
+    "name": "memory_embedded",
+    "sound_enabled": 1,
+    "mode": 0,
+    "source_kind": "embedded",
+    "backend": "memory",
+    "clip_count": 3,
+    "payload_bytes": 9029,
+    "payload_chunks": [
+      9029
+    ]
+  },
+  {
+    "name": "ems_external_two_reads",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "ems",
+    "clip_count": 3,
+    "payload_bytes": 32769,
+    "payload_chunks": [
+      32768,
+      1
+    ]
+  },
+  {
+    "name": "ems_embedded_partial",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "embedded",
+    "backend": "ems",
+    "clip_count": 3,
+    "payload_bytes": 20480,
+    "payload_chunks": [
+      20480
+    ]
+  },
+  {
+    "name": "xms_external_two_reads",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "xms",
+    "clip_count": 3,
+    "payload_bytes": 32001,
+    "payload_chunks": [
+      32000,
+      1
+    ]
+  },
+  {
+    "name": "xms_embedded_odd",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "embedded",
+    "backend": "xms",
+    "clip_count": 3,
+    "payload_bytes": 4661,
+    "payload_chunks": [
+      4661
+    ]
+  },
+  {
+    "name": "file_external_two_reads",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "standalone",
+    "backend": "file",
+    "clip_count": 3,
+    "payload_bytes": 32257,
+    "payload_chunks": [
+      32000,
+      257
+    ]
+  },
+  {
+    "name": "file_embedded_partial",
+    "sound_enabled": 1,
+    "mode": 1,
+    "source_kind": "embedded",
+    "backend": "file",
+    "clip_count": 3,
+    "payload_bytes": 17185,
+    "payload_chunks": [
+      17185
+    ]
+  }
+]

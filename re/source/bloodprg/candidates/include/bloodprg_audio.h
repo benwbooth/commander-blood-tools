@@ -13,6 +13,16 @@ typedef struct bloodprg_snd_stream_buffer {
     cb_u8 reserved_07;
 } bloodprg_snd_stream_buffer;
 
+typedef struct bloodprg_snd_bank_header {
+    cb_u16 clip_count;
+    cb_u16 reserved_02;
+} bloodprg_snd_bank_header;
+
+typedef struct bloodprg_snd_memory_clip {
+    cb_u16 offset;
+    cb_u16 byte_count;
+} bloodprg_snd_memory_clip;
+
 /* Original 0xBB9D switches DS to GS before using these ordinary globals. */
 extern bloodprg_snd_driver_callback snd_driver_callback; /* DS=GS:0x0CDF */
 extern bloodprg_audio_position_callback audio_position_callback; /* DS:0x0CF3 */
@@ -27,9 +37,17 @@ extern volatile cb_u16 CB_GAME_DATA snd_stream_next_page; /* GS:0x0BA5 */
 extern volatile cb_u16 CB_GAME_DATA snd_stream_page_count; /* GS:0x0BA7 */
 extern volatile cb_u16 CB_GAME_DATA snd_stream_final_page_bytes; /* GS:0x0BA9 */
 extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_stream_storage; /* GS:0x0BB7 */
-extern volatile cb_u32 CB_GAME_DATA snd_stream_source_remaining; /* GS:0x0A92 */
+extern volatile cb_u32 CB_GAME_DATA snd_source_remaining; /* GS:0x0A92 */
 extern const volatile char CB_GAME_DATA snd_wait_prompt_text[]; /* GS:0x0190 */
 extern const volatile char CB_GAME_DATA snd_music_temp_filename[]; /* GS:0x00AE */
+extern const volatile char CB_GAME_DATA snd_voice_temp_filename[]; /* GS:0x00A6 */
+extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_bank_memory; /* GS:0x0BB3 */
+extern volatile bloodprg_snd_bank_header CB_GAME_DATA snd_bank_header; /* GS:0x0BBB */
+extern volatile bloodprg_snd_memory_clip CB_GAME_DATA
+        snd_memory_clips[]; /* GS:0x0BBF */
+extern volatile cb_u32 CB_GAME_DATA snd_source_offsets[]; /* GS:0x0F1A */
+extern volatile cb_u16 CB_GAME_DATA snd_streamed_clip_count; /* GS:0x0C53 */
+extern volatile cb_u32 CB_GAME_DATA snd_streamed_offsets[]; /* GS:0x0C57 */
 
 void CB_NEAR cb_snd_stream_service(cb_u16 command,
         volatile bloodprg_snd_stream_buffer *buffer,
