@@ -1,0 +1,509 @@
+[
+  {
+    "name": "exit_before_timer",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 1,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [],
+    "keyboard": [],
+    "output_count": 771,
+    "output_sha256": "ef4b41be04ffe9a6c98deae6af3c5ddaf84f5ae3621a5097b64dc23eb16505cf",
+    "data_sha256": "a37d77b25530ba733cb7e673b7e2e56181553081155377103b752bd637b3b3a0",
+    "video_sha256": "2adddf5dadabdd8ec0e4a3e6e149f1fd7b7aec11e52d182bb292015e27b255fc",
+    "clock_after": 305419896,
+    "last_callback_after": 305419276,
+    "countdown_after": 17185,
+    "page_after": 32768,
+    "framebuffer_segment_after": 43008,
+    "control_after": 0,
+    "exit_after": 1,
+    "key_event_after": 48879,
+    "segments_after": {
+      "ds": 16896,
+      "es": 41984,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "positive_countdown_escape",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 1,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [
+      {
+        "event": 2,
+        "clock": 270544968
+      }
+    ],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 283
+      },
+      {
+        "operation": "read",
+        "key": 283
+      }
+    ],
+    "output_count": 771,
+    "output_sha256": "d3f3ba995729a630ed914b08f1e664a5becf981ad10b13e1ede3c8301e417c98",
+    "data_sha256": "b0c32fdb03c759bb6ec4d4f694c73b00e4bd682723269e14c7b5d31307bb3204",
+    "video_sha256": "8b1b971c4a2f0393dba7944ea6d15b4499724e8a400dd2e86ec74cc6f5d35de2",
+    "clock_after": 270544968,
+    "last_callback_after": 270544968,
+    "countdown_after": 0,
+    "page_after": 32768,
+    "framebuffer_segment_after": 43008,
+    "control_after": 0,
+    "exit_after": 0,
+    "key_event_after": 283,
+    "segments_after": {
+      "ds": 16896,
+      "es": 41984,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "negative_adjusted_no_callback",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 1,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 283
+      },
+      {
+        "operation": "read",
+        "key": 283
+      }
+    ],
+    "output_count": 771,
+    "output_sha256": "28cc28e5add380e984b3c97f9748c3a30f89cb2514404c89679c0c5b7e3a0db9",
+    "data_sha256": "d13a16b0332c20bd437a114db56c34b8ebb1e115f5760e68dd4b34036f81d258",
+    "video_sha256": "73201c3c428f7da92b357dc29eeace9a4fe02873f2f455902a4694e4ea8a0861",
+    "clock_after": 1432778640,
+    "last_callback_after": 1432777640,
+    "countdown_after": 0,
+    "page_after": 32768,
+    "framebuffer_segment_after": 43008,
+    "control_after": 0,
+    "exit_after": 0,
+    "key_event_after": 283,
+    "segments_after": {
+      "ds": 16896,
+      "es": 41984,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "negative_active_callback",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 1,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [
+      {
+        "event": 2,
+        "clock": 2309737975
+      }
+    ],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 283
+      },
+      {
+        "operation": "read",
+        "key": 283
+      }
+    ],
+    "output_count": 771,
+    "output_sha256": "d3b7bfcdb8a3c7bc6341c94558c03eabe43f1a535fc0742630fb983cfb964b46",
+    "data_sha256": "d9417e5657c8c18b5b8ff77e6d9bc21b76b80ae55df57333e6b9db8914974b77",
+    "video_sha256": "7ac922af166fccef08beb961dcd68c85c4928ab04ed1e9625d7e1794df463cd6",
+    "clock_after": 2309737975,
+    "last_callback_after": 2309737975,
+    "countdown_after": 0,
+    "page_after": 32768,
+    "framebuffer_segment_after": 43008,
+    "control_after": 32769,
+    "exit_after": 0,
+    "key_event_after": 283,
+    "segments_after": {
+      "ds": 16896,
+      "es": 41984,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "countdown_and_clock_wrap",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 1,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [
+      {
+        "event": 32767,
+        "clock": 4
+      }
+    ],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 283
+      },
+      {
+        "operation": "read",
+        "key": 283
+      }
+    ],
+    "output_count": 771,
+    "output_sha256": "b23750cbcd136a127389b606d43ed1247f06a454095f7d0ef730014cd3d8ab52",
+    "data_sha256": "f832c3c147745fcca64d725f54f22c8ed14fe203ef6aec7941182cb5994df3ad",
+    "video_sha256": "fea6fbd76040fd98c88ae204ef92bd4de0c850574c2cb27724129f274fb56436",
+    "clock_after": 4,
+    "last_callback_after": 4,
+    "countdown_after": 0,
+    "page_after": 32768,
+    "framebuffer_segment_after": 43008,
+    "control_after": 0,
+    "exit_after": 0,
+    "key_event_after": 283,
+    "segments_after": {
+      "ds": 16896,
+      "es": 41984,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "ordinary_key_drain",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 2,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 7777
+      },
+      {
+        "operation": "read",
+        "key": 7777
+      },
+      {
+        "operation": "ready",
+        "key": null
+      }
+    ],
+    "output_count": 773,
+    "output_sha256": "48f6d7dc99add5c1cc7f1f079d625547a5afead201f1d70ec12088710f2dda57",
+    "data_sha256": "bd7f24a2b23c5c3912bb3d9c8f6f06cc7b68003193802b62c5f1d780152f058e",
+    "video_sha256": "3001bcc656745e209615cca2e09f921e4ee77f05e2f7dc0acfb9a2909e768be5",
+    "clock_after": 826366254,
+    "last_callback_after": 826365254,
+    "countdown_after": 0,
+    "page_after": 49152,
+    "framebuffer_segment_after": 44032,
+    "control_after": 0,
+    "exit_after": 1,
+    "key_event_after": 7777,
+    "segments_after": {
+      "ds": 16896,
+      "es": 43008,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "pause_until_matching_key",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 2,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": 6512
+      },
+      {
+        "operation": "read",
+        "key": 6512
+      },
+      {
+        "operation": "read",
+        "key": 11640
+      },
+      {
+        "operation": "read",
+        "key": 6480
+      }
+    ],
+    "output_count": 773,
+    "output_sha256": "0e1f1369fd3443d116f44c8c9329f6d4b3c2f7ff7f7fdbf786f5864d42ce601b",
+    "data_sha256": "e589a6ad0ce69b46b1bec5181c9db6a50d00d2bc6ed1f555fcdc5cb7b3fc9a08",
+    "video_sha256": "0fca2158a459ba0f241119c2aaa25203e8c92756b85be990a88d397f278b4d20",
+    "clock_after": 655894560,
+    "last_callback_after": 655893560,
+    "countdown_after": 0,
+    "page_after": 49152,
+    "framebuffer_segment_after": 44032,
+    "control_after": 0,
+    "exit_after": 1,
+    "key_event_after": 6512,
+    "segments_after": {
+      "ds": 16896,
+      "es": 43008,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  },
+  {
+    "name": "callback_then_throttle",
+    "module": "croolis",
+    "entry": 163,
+    "body_size": 391,
+    "body_sha256": "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+    "frame_count": 3,
+    "clears_control_latch": true,
+    "calls": [
+      "vga_clear",
+      "mouse_bounds",
+      "mouse_position",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "mouse_camera",
+      "camera_matrix",
+      "primary_mesh",
+      "starfield",
+      "method:3000",
+      "transform",
+      "method:3100",
+      "transform",
+      "bucket_faces",
+      "vga_clear",
+      "mouse_bounds"
+    ],
+    "callbacks": [
+      {
+        "event": 2,
+        "clock": 16909068
+      }
+    ],
+    "keyboard": [
+      {
+        "operation": "ready",
+        "key": null
+      },
+      {
+        "operation": "ready",
+        "key": null
+      }
+    ],
+    "output_count": 775,
+    "output_sha256": "571aebd092dce3bcb9bfece456623f66c719c82011779b32ef2738597968c8fd",
+    "data_sha256": "3cef7b7e8f147f5eedd781692fb7b1efdda8a2ecf12ef5ee7a2e74707a00da5a",
+    "video_sha256": "bb7ac038d527e624210bcccd47dacff4c141e3ead0ff54c2adb99948498ab7d1",
+    "clock_after": 16909076,
+    "last_callback_after": 16909068,
+    "countdown_after": 0,
+    "page_after": 0,
+    "framebuffer_segment_after": 40960,
+    "control_after": 0,
+    "exit_after": 1,
+    "key_event_after": 48879,
+    "segments_after": {
+      "ds": 16896,
+      "es": 44032,
+      "fs": 24576,
+      "gs": 45056,
+      "ss": 53248,
+      "sp": 65284
+    }
+  }
+]

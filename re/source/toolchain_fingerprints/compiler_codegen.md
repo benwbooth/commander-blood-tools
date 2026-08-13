@@ -2687,6 +2687,31 @@ instructions. A DOS-linked CROOLIS executable reproduces the raw overlay's
 combined 128 KiB raster-workspace and framebuffer hash. Neither compiler
 matches the original code generation.
 
+## Alien main-loop candidate
+
+The AMER and CROOLIS/SCRUT `0x00a3` far routines are the complete alien
+overlay coordinators. They install the overlay data segments, initialize VGA,
+mouse, camera, and timer state, render and rotate one framebuffer per loop,
+dispatch each context through its byte-offset method-table slot, invoke a far
+host callback through the original AX/EDX ABI, drain BIOS keyboard input, and
+restore the caller's DS after cleanup. CROOLIS/SCRUT clear the control latch
+immediately before face rendering; AMER intentionally does not.
+
+Eight raw-overlay vectors per module prove initialization and cleanup, all
+direct and indirect call order, two-context traversal, framebuffer clears and
+page rotation, the module-specific latch rule, positive and wrapped countdowns,
+32-bit clock wrap, active/inactive/throttled callback paths, Escape, ordinary
+key draining, the blocking P/P pause loop, memory ownership, segment outputs,
+and far return. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
+natural typed sources warning-free to 167 instructions/469 bytes for AMER and
+169/473 for CROOLIS/SCRUT, versus 117/384 and 118/391 original. The
+representative CROOLIS mnemonic LCS is 90 of 118 despite the larger frame-based
+output. A linked DOS executable runs one complete recovered frame
+and verifies callback arguments, context dispatch, call order, state, page
+rotation, keyboard publication, cleanup, and DS restoration. Only the segment,
+hardware-port, BIOS, and AX/EDX callback boundaries use narrow compiler
+intrinsics; the owner logic is ordinary structured C.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

@@ -3,6 +3,14 @@
 
 #include "xdb_common.h"
 
+typedef union xdb_video_page {
+    xdb_u16 word;
+    struct {
+        xdb_u8 low;
+        xdb_u8 high;
+    } byte;
+} xdb_video_page;
+
 extern volatile xdb_u16 xdb_video_page_4000; /* DS:0x0026 */
 extern volatile xdb_u16 xdb_video_page_a400; /* DS:0x0028 */
 
@@ -23,14 +31,35 @@ extern xdb_u8 XDB_NEAR xdb_port_read_u8(xdb_u16 port);
         parm [dx] \
         value [al] \
         modify exact []
+extern void XDB_NEAR xdb_port_write_buffer_u8(
+        xdb_u16 port,
+        const volatile xdb_u8 XDB_NEAR *source,
+        xdb_u16 count);
+#pragma aux xdb_port_write_buffer_u8 = \
+        "rep outsb" \
+        parm [dx] [si] [cx] \
+        modify exact [cx si]
 #elif defined(__TURBOC__) || defined(__BORLANDC__)
 #define xdb_port_write_u8(port, value) outportb((port), (value))
 #define xdb_port_write_u16(port, value) outport((port), (value))
 #define xdb_port_read_u8(port) inportb(port)
+#define xdb_port_write_buffer_u8(port, source, count) \
+    do { \
+        xdb_u16 xdb_port_buffer_index; \
+        for (xdb_port_buffer_index = 0u; \
+             xdb_port_buffer_index != (count); \
+             ++xdb_port_buffer_index) { \
+            outportb((port), (source)[xdb_port_buffer_index]); \
+        } \
+    } while (0)
 #else
 void xdb_port_write_u8(xdb_u16 port, xdb_u8 value);
 void xdb_port_write_u16(xdb_u16 port, xdb_u16 value);
 xdb_u8 xdb_port_read_u8(xdb_u16 port);
+void xdb_port_write_buffer_u8(
+        xdb_u16 port,
+        const volatile xdb_u8 *source,
+        xdb_u16 count);
 #endif
 
 void XDB_NEAR xdb_amer_vga_clear_and_sync(void);

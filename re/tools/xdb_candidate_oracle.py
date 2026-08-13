@@ -42,6 +42,7 @@ from unicorn.x86_const import (
     UC_X86_REG_ESI,
     UC_X86_REG_FS,
     UC_X86_REG_GS,
+    UC_X86_REG_IP,
     UC_X86_REG_SP,
     UC_X86_REG_SS,
 )
@@ -158,7 +159,8 @@ def execute(
         raise RuntimeError(
             f"{entry:#x}: execution failed at "
             f"{machine.reg_read(UC_X86_REG_CS):#x}:"
-            f"{machine.reg_read(UC_X86_REG_SP):#x}"
+            f"{machine.reg_read(UC_X86_REG_IP):#x}; "
+            f"sp={machine.reg_read(UC_X86_REG_SP):#x}"
         ) from error
     if not returned:
         raise RuntimeError(f"{entry:#x}: did not reach return at {return_address:#x}")
@@ -3041,6 +3043,585 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
                 "callback_after": get_u16(data_expected, state + 0x0E),
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
                 "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
+def alien_main_vectors(
+    module: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    data_segment_slot: int,
+    direct_calls: dict[str, int],
+    clears_control_latch: bool,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x6000
+    host_data_segment = 0x4200
+    extra_segment = 0x7000
+    initial_fs_segment = 0x8000
+    game_segment = 0xB000
+    stack_segment = 0xD000
+    return_address = 0xF400
+    method_stub = 0xF100
+    callback_stub = 0xF200
+    context_offsets = (0x3000, 0x3100)
+    mask32 = 0xFFFFFFFF
+    cases = (
+        {
+            "name": "exit_before_timer",
+            "clock": 0x12345678,
+            "countdown": 0x4321,
+            "control": 0x6A6A,
+            "keys": (),
+            "exit_after_frame": 1,
+            "controls": {},
+            "frames": 1,
+        },
+        {
+            "name": "positive_countdown_escape",
+            "clock": 0x10203040,
+            "countdown": 3,
+            "control": 0x1111,
+            "keys": (0x011B,),
+            "exit_after_frame": None,
+            "controls": {1: 0},
+            "frames": 1,
+        },
+        {
+            "name": "negative_adjusted_no_callback",
+            "clock": 0x55667788,
+            "countdown": 0,
+            "control": 0x2222,
+            "keys": (0x011B,),
+            "exit_after_frame": None,
+            "controls": {1: 0},
+            "frames": 1,
+        },
+        {
+            "name": "negative_active_callback",
+            "clock": 0x89ABCDEF,
+            "countdown": 0,
+            "control": 0,
+            "keys": (0x011B,),
+            "exit_after_frame": None,
+            "controls": {1: 0x8001},
+            "frames": 1,
+        },
+        {
+            "name": "countdown_and_clock_wrap",
+            "clock": 0xFFFFFFFC,
+            "countdown": 0x8000,
+            "control": 0,
+            "keys": (0x011B,),
+            "exit_after_frame": None,
+            "controls": {1: 0},
+            "frames": 1,
+        },
+        {
+            "name": "ordinary_key_drain",
+            "clock": 0x31415926,
+            "countdown": 0,
+            "control": 0,
+            "keys": (0x1E61,),
+            "exit_after_frame": 2,
+            "controls": {1: 0},
+            "frames": 2,
+        },
+        {
+            "name": "pause_until_matching_key",
+            "clock": 0x27182818,
+            "countdown": 0,
+            "control": 0,
+            "keys": (0x1970, 0x2D78, 0x1950),
+            "exit_after_frame": 2,
+            "controls": {1: 0},
+            "frames": 2,
+        },
+        {
+            "name": "callback_then_throttle",
+            "clock": 0x01020304,
+            "countdown": 0,
+            "control": 0,
+            "keys": (),
+            "exit_after_frame": 3,
+            "controls": {1: 1, 2: 0},
+            "frames": 3,
+        },
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def get_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & mask32)
+
+    def get_u32(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def output_hash(outputs: list[tuple[int, int, int]]) -> str:
+        packed = b"".join(
+            struct.pack("<HBH", port, size, value)
+            for port, size, value in outputs
+        )
+        return hashlib.sha256(packed).hexdigest()
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        patched_image = bytearray(image)
+        put_u16(patched_image, data_segment_slot, data_segment)
+        put_u16(patched_image, 0x0095, 0xBEEF)
+        for callee in direct_calls.values():
+            patched_image[callee] = 0xC3
+        patched_image.extend(bytes(max(0, method_stub + 1 - len(patched_image))))
+        patched_image[method_stub] = 0xC3
+        patched_image.extend(bytes(max(0, callback_stub + 1 - len(patched_image))))
+        patched_image[callback_stub] = 0xCB
+
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        host_before = bytes(
+            (offset * 31 + case_index * 7 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 19 + case_index * 11 + 7) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial_fs_before = bytes(
+            (offset * 13 + case_index * 23 + 9) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 37 + case_index * 5 + 11) & 0xFF
+            for offset in range(0x10000)
+        )
+        video_before = bytearray(
+            (offset * 7 + case_index * 31 + 13) & 0xFF
+            for offset in range(0x10000)
+        )
+        palette = bytes(
+            (index * 43 + case_index * 47 + 17) & 0xFF
+            for index in range(0x300)
+        )
+
+        put_u32(data_before, 0x0016, case["clock"])
+        put_u32(data_before, 0x001A, 0xDEADBEEF)
+        put_u16(data_before, 0x001E, case["countdown"])
+        struct.pack_into("<HH", data_before, 0x0020, callback_stub, 0)
+        put_u16(data_before, 0x0026, 0x4000)
+        put_u16(data_before, 0x0028, 0xA400)
+        put_u16(data_before, 0x103A, method_stub)
+        put_u16(data_before, 0x103C, method_stub)
+        data_before[0x1F6A : 0x226A] = palette
+        put_u16(data_before, 0x226E, 0xA55A)
+        put_u16(data_before, 0x2278, 0x2468)
+        put_u16(data_before, 0x2282, case["control"])
+        put_u16(data_before, 0x22A8, 0x1357)
+        put_u16(data_before, 0x2308, context_offsets[0])
+        put_u16(data_before, 0x230A, context_offsets[1])
+        put_u16(data_before, 0x230C, 0)
+        put_u16(data_before, context_offsets[0] + 0x34, 0)
+        put_u16(data_before, context_offsets[1] + 0x34, 2)
+
+        data_expected = bytearray(data_before)
+        code_expected = bytearray(patched_image)
+        video_expected = bytearray(video_before)
+        expected_keyboard_queue = list(case["keys"])
+        expected_keyboard: list[dict[str, int | str | None]] = []
+        expected_callbacks: list[dict[str, int]] = []
+        expected_calls = ["vga_clear", "mouse_bounds", "mouse_position"]
+        page = 0x4000
+        framebuffer_segment = 0xA400
+        last_cleared_segment = framebuffer_segment
+        clock = case["clock"]
+        countdown = case["countdown"]
+        last_callback = (clock - 620) & mask32
+        control = case["control"]
+        key_event = 0xBEEF
+
+        put_u16(data_expected, 0x226E, 0)
+        put_u16(data_expected, 0x22A8, 0)
+        put_u16(data_expected, 0x22EC, 0x075D)
+        put_u16(data_expected, 0x22F0, 0xFF11)
+        put_u16(data_expected, 0x22F4, 0xD9C2)
+        put_u16(data_expected, 0x22F6, 0)
+        put_u16(data_expected, 0x22F8, 0x0678)
+        put_u16(data_expected, 0x22FA, 0)
+        put_u16(data_expected, 0x22FC, 0)
+        put_u32(data_expected, 0x001A, last_callback)
+
+        for frame in range(1, case["frames"] + 1):
+            expected_calls.extend(
+                (
+                    "mouse_camera",
+                    "camera_matrix",
+                    "primary_mesh",
+                    "starfield",
+                    f"method:{context_offsets[0]:04x}",
+                    "transform",
+                    f"method:{context_offsets[1]:04x}",
+                    "transform",
+                    "bucket_faces",
+                )
+            )
+            last_cleared_segment = framebuffer_segment
+            video_start = last_cleared_segment * 16 - 0xA0000
+            if video_start < 0 or video_start + 0x3E80 > len(video_expected):
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"framebuffer {frame} escaped VGA aperture"
+                )
+            video_expected[video_start : video_start + 0x3E80] = bytes(0x3E80)
+            put_u16(data_expected, 0x2278, context_offsets[-1])
+
+            if clears_control_latch:
+                control = 0
+            if frame in case["controls"]:
+                control = case["controls"][frame]
+            put_u16(data_expected, 0x2282, control)
+            if case["exit_after_frame"] == frame:
+                put_u16(data_expected, 0x226E, 1)
+
+            new_page = (page + 0x4000) & 0xFFFF
+            framebuffer_segment = (
+                (new_page & 0x00FF)
+                | ((((new_page >> 8) >> 4) | 0xA0) << 8)
+            )
+            page = new_page
+            put_u16(data_expected, 0x0026, page)
+            put_u16(data_expected, 0x0028, framebuffer_segment)
+
+            if case["exit_after_frame"] == frame:
+                continue
+
+            clock = (clock + 8) & mask32
+            event = (countdown - 1) & 0xFFFF
+            countdown = 0
+            put_u32(data_expected, 0x0016, clock)
+            put_u16(data_expected, 0x001E, 0)
+            if signed_word(event) >= 0:
+                expected_callbacks.append({"event": event, "clock": clock})
+                last_callback = clock
+                put_u32(data_expected, 0x001A, last_callback)
+            else:
+                elapsed = (clock - last_callback) & mask32
+                if elapsed >= 600:
+                    last_callback = (clock - 1000) & mask32
+                    if control != 0:
+                        expected_callbacks.append({"event": 2, "clock": clock})
+                        last_callback = clock
+                    put_u32(data_expected, 0x001A, last_callback)
+
+            while True:
+                ready_key = (
+                    expected_keyboard_queue[0]
+                    if expected_keyboard_queue
+                    else None
+                )
+                expected_keyboard.append(
+                    {"operation": "ready", "key": ready_key}
+                )
+                if ready_key is None:
+                    break
+                key = expected_keyboard_queue.pop(0)
+                expected_keyboard.append({"operation": "read", "key": key})
+                key_event = key
+                character = key & 0xFF
+                if character in (ord("p"), ord("P")):
+                    while True:
+                        if not expected_keyboard_queue:
+                            raise AssertionError(
+                                f"{module}:{entry:#x} {case['name']}: "
+                                "pause fixture has no matching key"
+                            )
+                        key = expected_keyboard_queue.pop(0)
+                        expected_keyboard.append(
+                            {"operation": "read", "key": key}
+                        )
+                        if key & 0xFF in (ord("p"), ord("P")):
+                            break
+                    break
+                if character == 0x1B:
+                    break
+
+        put_u16(code_expected, 0x0095, key_event)
+        expected_calls.extend(("vga_clear", "mouse_bounds"))
+        expected_outputs: list[tuple[int, int, int]] = [(0x03C8, 1, 0)]
+        expected_outputs.extend((0x03C9, 1, value) for value in palette)
+        expected_page = 0x4000
+        for _frame in range(case["frames"]):
+            expected_outputs.append((0x03C4, 2, 0x0F02))
+            expected_outputs.append(
+                (0x03D4, 2, (expected_page & 0xFF00) | 0x000C)
+            )
+            expected_page = (expected_page + 0x4000) & 0xFFFF
+
+        calls: list[str] = []
+        callbacks: list[dict[str, int]] = []
+        keyboard: list[dict[str, int | str | None]] = []
+        keyboard_queue = list(case["keys"])
+        outputs: list[tuple[int, int, int]] = []
+        recent_addresses: list[int] = []
+        frame_counter = 0
+        controls = case["controls"]
+        exit_after_frame = case["exit_after_frame"]
+        direct_names = {address: name for name, address in direct_calls.items()}
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            nonlocal frame_counter
+            recent_addresses.append(address)
+            del recent_addresses[:-12]
+            if address in direct_names:
+                name = direct_names[address]
+                calls.append(name)
+                if name == "bucket_faces":
+                    frame_counter += 1
+                    if frame_counter in controls:
+                        machine.mem_write(
+                            data_segment * 16 + 0x2282,
+                            struct.pack("<H", controls[frame_counter]),
+                        )
+                    if exit_after_frame == frame_counter:
+                        machine.mem_write(
+                            data_segment * 16 + 0x226E,
+                            struct.pack("<H", 1),
+                        )
+            elif address == method_stub:
+                context = machine.reg_read(UC_X86_REG_EDI) & 0xFFFF
+                calls.append(f"method:{context:04x}")
+            elif address == callback_stub:
+                callbacks.append(
+                    {
+                        "event": machine.reg_read(UC_X86_REG_EAX) & 0xFFFF,
+                        "clock": machine.reg_read(UC_X86_REG_EDX) & mask32,
+                    }
+                )
+
+        def interrupt_handler(
+            machine: Uc, interrupt_number: int, _data: object
+        ) -> None:
+            if interrupt_number != 0x16:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"unexpected interrupt {interrupt_number:#x}"
+                )
+            eax = machine.reg_read(UC_X86_REG_EAX)
+            operation = (eax >> 8) & 0xFF
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            if operation == 1:
+                key = keyboard_queue[0] if keyboard_queue else None
+                keyboard.append({"operation": "ready", "key": key})
+                if key is None:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 0x0040)
+                else:
+                    machine.reg_write(
+                        UC_X86_REG_EAX, (eax & 0xFFFF0000) | key
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~0x0040)
+            elif operation == 0:
+                if not keyboard_queue:
+                    raise AssertionError(
+                        f"{module}:{entry:#x} {case['name']}: "
+                        "blocking keyboard read exhausted fixture"
+                    )
+                key = keyboard_queue.pop(0)
+                keyboard.append({"operation": "read", "key": key})
+                machine.reg_write(UC_X86_REG_EAX, (eax & 0xFFFF0000) | key)
+            else:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"unexpected INT 16h operation {operation:#x}"
+                )
+
+        def output_handler(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": host_data_segment,
+            "es": extra_segment,
+            "fs": initial_fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        stack_sentinel = bytes.fromhex("5aa569968778")
+        stack_before = struct.pack("<HH", return_address, 0) + stack_sentinel
+        try:
+            machine = execute(
+                bytes(patched_image),
+                entry,
+                return_address,
+                initial,
+                [
+                    (data_segment, 0, bytes(data_before)),
+                    (host_data_segment, 0, host_before),
+                    (extra_segment, 0, extra_before),
+                    (initial_fs_segment, 0, initial_fs_before),
+                    (game_segment, 0, game_before),
+                    (0xA000, 0, bytes(video_before)),
+                    (stack_segment, 0xFF00, stack_before),
+                    (0, method_stub, b"\xc3"),
+                    (0, callback_stub, b"\xcb"),
+                ],
+                interrupt_handler=interrupt_handler,
+                output_handler=output_handler,
+                code_handler=code_handler,
+                max_instructions=30000,
+                return_segment=0,
+            )
+        except RuntimeError as error:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: {error}; "
+                f"recent={[hex(address) for address in recent_addresses]}"
+            ) from error
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"calls={calls}, expected={expected_calls}"
+            )
+        if callbacks != expected_callbacks:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"callbacks={callbacks}, expected={expected_callbacks}"
+            )
+        if keyboard != expected_keyboard:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"keyboard={keyboard}, expected={expected_keyboard}"
+            )
+        if keyboard_queue:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"unconsumed keys={keyboard_queue}"
+            )
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"VGA output mismatch at first differing record"
+            )
+
+        actual_code = bytes(machine.mem_read(0, len(code_expected)))
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_video = bytes(machine.mem_read(0xA0000, 0x10000))
+        if actual_code != bytes(code_expected):
+            differing = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_code, code_expected, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"code mismatch at {differing:#x}: "
+                f"{actual_code[differing]:#x} != {code_expected[differing]:#x}"
+            )
+        if actual_data != bytes(data_expected):
+            differing = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_data, data_expected, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"data mismatch at {differing:#x}: "
+                f"{actual_data[differing]:#x} != {data_expected[differing]:#x}"
+            )
+        if actual_video != bytes(video_expected):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: VGA memory mismatch"
+            )
+        for segment, expected in (
+            (host_data_segment, host_before),
+            (extra_segment, extra_before),
+            (initial_fs_segment, initial_fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"segment {segment:#x} changed"
+                )
+
+        expected_registers = {
+            "ds": host_data_segment,
+            "es": last_cleared_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": 0xFF04,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: stack sentinel changed"
+            )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "body_size": body_size,
+                "body_sha256": body_hash,
+                "frame_count": case["frames"],
+                "clears_control_latch": clears_control_latch,
+                "calls": calls,
+                "callbacks": callbacks,
+                "keyboard": keyboard,
+                "output_count": len(outputs),
+                "output_sha256": output_hash(outputs),
+                "data_sha256": hashlib.sha256(actual_data).hexdigest(),
+                "video_sha256": hashlib.sha256(actual_video).hexdigest(),
+                "clock_after": get_u32(actual_data, 0x0016),
+                "last_callback_after": get_u32(actual_data, 0x001A),
+                "countdown_after": get_u16(actual_data, 0x001E),
+                "page_after": get_u16(actual_data, 0x0026),
+                "framebuffer_segment_after": get_u16(actual_data, 0x0028),
+                "control_after": get_u16(actual_data, 0x2282),
+                "exit_after": get_u16(actual_data, 0x226E),
+                "key_event_after": get_u16(actual_code, 0x0095),
+                "segments_after": {
+                    name: machine.reg_read(REGISTERS[name])
+                    for name in ("ds", "es", "fs", "gs", "ss", "sp")
+                },
             }
         )
 
@@ -13674,6 +14255,82 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
+    for (
+        module,
+        body_size,
+        body_hash,
+        data_segment_slot,
+        direct_calls,
+        clears_control_latch,
+    ) in (
+        (
+            "amer",
+            384,
+            "d9ac4420d0879158c8023912cc10a07f16931b23f561ad3b8534011d54b8c47e",
+            0x3277,
+            {
+                "mouse_camera": 0x0223,
+                "vga_clear": 0x02F0,
+                "mouse_bounds": 0x0336,
+                "mouse_position": 0x0347,
+                "primary_mesh": 0x059B,
+                "starfield": 0x0734,
+                "camera_matrix": 0x1DD8,
+                "transform": 0x2027,
+                "bucket_faces": 0x24CF,
+            },
+            False,
+        ),
+        (
+            "croolis",
+            391,
+            "861c7aaf490071e6521ee1fba7a894577745e3a360ec466fdacf424789141289",
+            0x32E7,
+            {
+                "mouse_camera": 0x022A,
+                "vga_clear": 0x0305,
+                "mouse_bounds": 0x034B,
+                "mouse_position": 0x035C,
+                "primary_mesh": 0x05DC,
+                "starfield": 0x0775,
+                "camera_matrix": 0x1E1D,
+                "transform": 0x206C,
+                "bucket_faces": 0x2514,
+            },
+            True,
+        ),
+        (
+            "scrut",
+            391,
+            "2578e41247079f68c34bd74d9552e5eaffe72eb964092451be422b7d21960c07",
+            0x33A7,
+            {
+                "mouse_camera": 0x022A,
+                "vga_clear": 0x0305,
+                "mouse_bounds": 0x034B,
+                "mouse_position": 0x035C,
+                "primary_mesh": 0x05DC,
+                "starfield": 0x0775,
+                "camera_matrix": 0x1EDD,
+                "transform": 0x212C,
+                "bucket_faces": 0x25D4,
+            },
+            True,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_00a3_natural.json",
+            alien_main_vectors(
+                module,
+                0x00A3,
+                body_size,
+                body_hash,
+                data_segment_slot,
+                direct_calls,
+                clears_control_latch,
+            ),
             args.check,
         )
     for (

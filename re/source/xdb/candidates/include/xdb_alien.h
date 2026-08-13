@@ -1,6 +1,8 @@
 #ifndef XDB_ALIEN_H
 #define XDB_ALIEN_H
 
+#include <stddef.h>
+
 #include "xdb_common.h"
 
 #define XDB_ALIEN_CURSOR_BIAS 0x005eu
@@ -99,6 +101,13 @@
 
 typedef struct xdb_alien_biased_state xdb_alien_biased_state;
 typedef struct xdb_alien_method_context xdb_alien_method_context;
+typedef void XDB_NEAR xdb_alien_method_function(
+        xdb_alien_method_context XDB_NEAR *context);
+typedef xdb_alien_method_function XDB_NEAR *xdb_alien_method_callback;
+typedef void XDB_FAR xdb_alien_frame_function(
+        xdb_u16 event,
+        xdb_u32 clock);
+typedef xdb_alien_frame_function XDB_FAR *xdb_alien_frame_callback;
 typedef void XDB_NEAR xdb_alien_state_function(
         xdb_alien_biased_state XDB_NEAR *state,
         xdb_alien_method_context XDB_NEAR *context);
@@ -363,7 +372,8 @@ struct xdb_alien_method_context {
     xdb_u16 object_offset;
     xdb_u16 field_01e;
     xdb_u16 object_count;
-    xdb_u8 field_022[0x14];
+    xdb_u8 field_022[0x12];
+    xdb_u16 method_table_offset;
     xdb_alien_method_control control;
     union {
         struct {
@@ -408,10 +418,25 @@ struct xdb_alien_method_context {
     } continuation;
 };
 
+typedef char xdb_alien_method_table_offset_must_be_0x34[
+        offsetof(xdb_alien_method_context, method_table_offset) == 0x34
+                ? 1
+                : -1];
+typedef char xdb_alien_method_control_offset_must_be_0x36[
+        offsetof(xdb_alien_method_context, control) == 0x36 ? 1 : -1];
+typedef char xdb_alien_method_context_size_must_be_0x44[
+        sizeof(xdb_alien_method_context) == 0x44 ? 1 : -1];
+
 typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 typedef volatile xdb_alien_biased_state XDB_NEAR *xdb_alien_state_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_amer_data_segment; /* AMER CS:0x3277 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_croolis_data_segment; /* CROOLIS CS:0x32E7 */
+extern volatile xdb_u16 XDB_CODE_DATA
+        xdb_scrut_data_segment; /* SCRUT CS:0x33A7 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
 extern volatile xdb_u16 xdb_alien_palette_segment; /* DS:0x0004 */
 #define xdb_alien_texture_segment_base xdb_alien_palette_segment
@@ -420,6 +445,10 @@ extern volatile xdb_u16
         xdb_alien_linear_framebuffer_segment; /* FS:0x0024; FS=DS invariant */
 extern volatile xdb_u16
         xdb_alien_framebuffer_segment; /* FS:0x0028; FS=DS invariant */
+extern volatile xdb_u32 xdb_alien_frame_clock; /* DS:0x0016 */
+extern volatile xdb_u32 xdb_alien_last_callback_clock; /* DS:0x001A */
+extern volatile xdb_u16 xdb_alien_callback_countdown; /* DS:0x001E */
+extern xdb_alien_frame_callback xdb_alien_frame_callback_ptr; /* DS:0x0020 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan; /* DS:0x0030 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
@@ -438,6 +467,9 @@ extern volatile xdb_u16 xdb_alien_projection_field_2280; /* DS:0x2280 */
 extern volatile xdb_i32 xdb_alien_rotation_matrix[3][3]; /* DS:0x2284 */
 extern volatile xdb_u16
         xdb_alien_render_context_offsets[]; /* FS:0x2308; FS=DS invariant */
+extern volatile xdb_u8 xdb_alien_method_table[]; /* FS:0x103A; FS=DS invariant */
+extern const volatile xdb_u8 xdb_alien_display_palette[768]; /* DS:0x1F6A */
+extern volatile xdb_u16 xdb_alien_frame_state; /* FS:0x22A8; FS=DS invariant */
 extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
 extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
 extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
@@ -598,6 +630,10 @@ void XDB_NEAR xdb_croolis_method_slot_7_palette_update(
 void XDB_NEAR xdb_scrut_method_slot_7_palette_update(
         xdb_alien_method_context XDB_NEAR *context);
 
+void XDB_FAR xdb_amer_main(void);
+void XDB_FAR xdb_croolis_main(void);
+void XDB_FAR xdb_scrut_main(void);
+
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_resume_1b85(
@@ -642,6 +678,34 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
         xdb_alien_method_context XDB_NEAR *context);
 
 #if defined(__WATCOMC__)
+#pragma aux xdb_alien_method_function \
+        parm [di] modify exact [ax bx cx dx si di bp es]
+extern void XDB_NEAR xdb_alien_frame_callback_invoke(
+        xdb_u16 event,
+        xdb_u32 clock);
+#pragma aux xdb_alien_frame_callback_invoke = \
+        "shl edx,16" \
+        "mov dx,ax" \
+        "mov ax,bx" \
+        "call dword ptr xdb_alien_frame_callback_ptr" \
+        parm [bx] [dx ax] \
+        modify exact [ax bx cx dx si di bp es]
+extern xdb_u16 XDB_NEAR xdb_alien_data_segments_install(
+        xdb_u16 data_segment);
+#pragma aux xdb_alien_data_segments_install = \
+        "mov dx,ds" \
+        "mov ds,ax" \
+        "mov es,ax" \
+        "mov fs,ax" \
+        parm [ax] \
+        value [dx] \
+        modify exact [ax]
+extern void XDB_NEAR xdb_alien_data_segment_restore(
+        xdb_u16 data_segment);
+#pragma aux xdb_alien_data_segment_restore = \
+        "mov ds,ax" \
+        parm [ax] \
+        modify exact []
 #pragma aux xdb_alien_resume_function parm [di]
 #pragma aux xdb_alien_state_function parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_amer_slot2_return_update \
@@ -750,6 +814,13 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
         parm [di] modify exact [ax bx cx dx si es]
 #pragma aux xdb_scrut_method_slot_7_palette_update \
         parm [di] modify exact [ax bx cx dx si es]
+#pragma aux xdb_amer_main modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_main modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_main modify exact [ax bx cx dx si di bp es]
+#else
+void xdb_alien_frame_callback_invoke(xdb_u16 event, xdb_u32 clock);
+xdb_u16 xdb_alien_data_segments_install(xdb_u16 data_segment);
+void xdb_alien_data_segment_restore(xdb_u16 data_segment);
 #endif
 
 #endif

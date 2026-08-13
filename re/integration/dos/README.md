@@ -39,6 +39,13 @@ the hash produced by direct execution of the shipped CROOLIS overlay.
 workspace followed by the 64 KiB framebuffer. The combined file must match a
 hash produced by direct execution of the shipped CROOLIS overlay.
 
+`alien_main.c` links the recovered CROOLIS `0x00A3` far main-loop owner with
+typed test callbacks at each external call boundary. A real BIOS-buffered
+Escape key drives one complete frame. The DOS program verifies segment
+restoration, initialization, two-context method dispatch, call order, timer
+callback arguments and state, page rotation, keyboard publication, cleanup,
+and the module-specific control-latch clear.
+
 The recovered C makes the original implicit raster DS ownership explicit as a
 segment argument from `0x0700` to `0x0D7D`. Raster records, reciprocal values,
 free-list state, and active-list links remain direct typed far-memory accesses;

@@ -57,6 +57,15 @@ ALIEN_STARFIELD_SOURCE = (
     / "croolis"
     / "func_000775_render_starfield.c"
 )
+ALIEN_MAIN_SOURCE = (
+    ROOT
+    / "re"
+    / "source"
+    / "xdb"
+    / "candidates"
+    / "croolis"
+    / "func_0000a3_main.c"
+)
 
 
 @dataclass(frozen=True)
@@ -130,6 +139,13 @@ CASES = (
             "62aed86cf9626342b8a60bce2beee0fc"
             "350167c81cd188109bc5a9c93a22649c"
         ),
+    ),
+    IntegrationCase(
+        name="alien_main",
+        source=INTEGRATION_DIR / "alien_main.c",
+        executable_name="ALIENM.EXE",
+        expected_result="PASS alien main",
+        recovered_sources=(ALIEN_MAIN_SOURCE,),
     ),
 )
 
@@ -205,10 +221,11 @@ def run_dosbox(dosbox: str, out_dir: Path, executable: Path) -> None:
         "--noprimaryconf",
         "--nolocalconf",
         "--exit",
+        "-silent",
         "-set",
         "sdl fullscreen=false",
         "-set",
-        "sdl output=texture",
+        "sdl output=surface",
         "-c",
         f'mount c "{out_dir}"',
         "-c",

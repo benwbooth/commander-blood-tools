@@ -25,4 +25,13 @@ typedef signed long xdb_i32;
 #define XDB_CODE_DATA XDB_FAR
 #endif
 
+#if defined(__WATCOMC__)
+extern void XDB_NEAR xdb_direction_forward(void);
+#pragma aux xdb_direction_forward = "cld" modify exact []
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define xdb_direction_forward() asm cld
+#else
+void xdb_direction_forward(void);
+#endif
+
 #endif
