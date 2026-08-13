@@ -7,8 +7,10 @@
 #define XDB_ALIEN_FIELD_DELTA 0x000fu
 
 typedef struct xdb_alien_biased_state xdb_alien_biased_state;
+typedef struct xdb_alien_method_context xdb_alien_method_context;
 typedef void XDB_NEAR xdb_alien_state_function(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 typedef xdb_alien_state_function XDB_NEAR *xdb_alien_state_callback;
 
 struct xdb_alien_biased_state {
@@ -50,7 +52,6 @@ typedef struct xdb_alien_object_record {
     xdb_u8 field_002[0x12];
 } xdb_alien_object_record;
 
-typedef struct xdb_alien_method_context xdb_alien_method_context;
 typedef void XDB_NEAR xdb_alien_resume_function(
         xdb_alien_method_context XDB_NEAR *context);
 typedef xdb_alien_resume_function XDB_NEAR *xdb_alien_resume_callback;
@@ -84,6 +85,13 @@ struct xdb_alien_method_context {
             xdb_u8 field_03a[0x06];
             xdb_u16 random_value;
         } amer_slot2;
+        struct {
+            xdb_i16 countdown;
+            xdb_i16 velocity_x;
+            xdb_i16 velocity_y;
+            xdb_i16 velocity_z;
+            xdb_u16 random_value;
+        } amer_slot2_motion;
         struct {
             xdb_u16 duration;
             xdb_u16 field_03a;
@@ -135,6 +143,7 @@ extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot3_ring_cursor; /* CS:0x0DB
 extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_ring_cursor; /* CS:0x0DA3 */
 extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot2_seed; /* CS:0x16A2 */
 extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot2_active; /* CS:0x1648 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_amer_slot3_ring[]; /* CS:0x0D63 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_croolis_slot3_ring[]; /* CS:0x0DBB */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_scrut_slot3_ring[]; /* CS:0x0DA9 */
@@ -204,27 +213,41 @@ void XDB_NEAR xdb_croolis_resume_1b85(
 void XDB_NEAR xdb_scrut_resume_1c45(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot3_initial_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot3_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot3_initial_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot3_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot3_initial_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot3_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_slot2_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_slot2_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_slot2_update(
-        xdb_alien_biased_state XDB_NEAR *state);
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_slot2_return_update(
+        xdb_alien_biased_state XDB_NEAR *state,
+        xdb_alien_method_context XDB_NEAR *context);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_alien_resume_function parm [di]
-#pragma aux xdb_alien_state_function parm [si] modify exact [ax bx cx dx]
+#pragma aux xdb_alien_state_function parm [si] [di] modify exact [ax bx cx dx]
+#pragma aux xdb_amer_slot2_return_update \
+        parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_amer_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_croolis_method_slot_11_anchor_state parm [di] value [si] modify exact [si]
 #pragma aux xdb_scrut_method_slot_11_anchor_state parm [di] value [si] modify exact [si]

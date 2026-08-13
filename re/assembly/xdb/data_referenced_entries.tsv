@@ -1,7 +1,21 @@
 module	entry	evidence	status
-xdb_amer	0x001688	adjacent reset entry sets callback 0x1692 and field +0x58 before falling through	pending_boundary_recovery
-xdb_amer	0x001692	callback pointer stored by method-table slot 2 at 0x001677	pending_boundary_recovery
-xdb_croolis	0x00171d	adjacent reset entry sets callback 0x1727 and field +0x58 before falling through	pending_boundary_recovery
-xdb_croolis	0x001727	callback pointer stored by method-table slots 2/4 at 0x0016fe	pending_boundary_recovery
-xdb_scrut	0x001711	adjacent reset entry sets callback 0x171b and field +0x58 before falling through	pending_boundary_recovery
-xdb_scrut	0x00171b	callback pointer stored by method-table slots 2/4 at 0x0016e7	pending_boundary_recovery
+xdb_amer	0x001688	only direct reference is callback 0x1948 JE at 0x194f; sets callback 0x1692 then falls through	internal_transition_not_routine
+xdb_amer	0x001692	callback pointer stored by slot 2 at 0x1677 and transitions at 0x1688/0x1931	pending_boundary_recovery
+xdb_amer	0x0018d3	callback pointer stored at 0x18c0; independent 107-byte body ends before callback 0x193e	indexed_recovered
+xdb_amer	0x00193e	callback pointer stored at 0x1aec; sets callback 0x1948 then falls through	pending_boundary_recovery
+xdb_amer	0x001948	callback pointer stored at 0x1943	pending_boundary_recovery
+xdb_amer	0x0019cb	callback pointer stored at 0x19c5	pending_boundary_recovery
+xdb_amer	0x001a5c	callback pointer stored at 0x1a3f	pending_boundary_recovery
+xdb_amer	0x001aa0	callback pointer stored at 0x1a95	pending_boundary_recovery
+xdb_croolis	0x00171d	only direct reference is callback 0x17f2 JMP at 0x1812; sets callback 0x1727 then falls through	internal_transition_not_routine
+xdb_croolis	0x001727	callback pointer stored by slots 2/4 at 0x16fe and transitions at 0x171d/0x191f	pending_boundary_recovery
+xdb_croolis	0x0017f2	callback pointer stored at 0x17ed	pending_boundary_recovery
+xdb_croolis	0x001828	callback pointer stored at 0x1815	pending_boundary_recovery
+xdb_scrut	0x001711	direct jumps at 0x17ff and 0x1a00 set callback 0x171b then fall through	shared_internal_transition_not_routine
+xdb_scrut	0x00171b	callback pointer stored by slots 2/4 at 0x16e7 and transition at 0x1711	pending_boundary_recovery
+xdb_scrut	0x0017e6	callback pointer stored at 0x17e1	pending_boundary_recovery
+xdb_scrut	0x001810	callback pointer stored at 0x18d3; sets callback 0x181b then falls through	pending_boundary_recovery
+xdb_scrut	0x00181b	callback pointer stored at 0x1810	pending_boundary_recovery
+xdb_scrut	0x001858	callback pointer stored at 0x1843	pending_boundary_recovery
+xdb_scrut	0x001868	callback pointer stored at 0x1863	pending_boundary_recovery
+xdb_scrut	0x001957	callback pointer stored at 0x1952	pending_boundary_recovery

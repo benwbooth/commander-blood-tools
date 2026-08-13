@@ -2082,7 +2082,7 @@ library intrinsic, followed by a signed high-bit adjustment equivalent to the
 original `SBB AX,0`. It contains no inline assembly or register-state model.
 The plain random-state global relies on the same overlay-entry `FS=DS`
 invariant already required by slot 10. Open Watcom `-3 -ox -mm -zdp -we`
-compiles all 54 current XDB candidates without warnings. The actual AMER,
+compiles all 55 current XDB candidates without warnings. The actual AMER,
 CROOLIS, and SCRUT slot-2 candidates are respectively 22 instructions/66
 bytes, 42/131, and 44/137 versus originals of 17/60, 33/121, and 35/127.
 Watcom retains `ROR`, code-segment seed access, signed publication, state
@@ -2095,11 +2095,32 @@ callbacks preserve the natural control flow.
 
 The initializer stores callback offsets AMER `0x1692`, CROOLIS `0x1727`, and
 SCRUT `0x171B`. These are separate state-machine routines beginning after the
-slot-2 returns, not blocks owned by the recovered slot-2 functions. Inspection
-also exposed adjacent reset entries at `0x1688`, `0x171D`, and `0x1711`.
-`re/assembly/xdb/data_referenced_entries.tsv` keeps all six entries pending
-until their complete boundaries and incoming function-pointer references are
-recovered.
+slot-2 returns, not blocks owned by the recovered slot-2 functions. A complete
+scan of immediate words written to callback field `+0x0E` expands that first
+set to 17 genuine callback targets: seven in AMER, three in CROOLIS, and seven
+in SCRUT. The adjacent AMER `0x1688`, CROOLIS `0x171D`, and SCRUT `0x1711`
+labels are internal transitions that install the base callback and fall through
+into it; their direct branch references prove they are not separate functions.
+`re/assembly/xdb/data_referenced_entries.tsv` records all 20 classifications.
+
+AMER callback `0x0018D3` is the first recovered target from that expanded
+ledger. It is an independent 29-instruction, 107-byte routine ending before
+callback `0x193E`, with no calls. Its ABI carries the biased state pointer in
+`SI` and the still-live method context in `DI`; the typed callback signature now
+models both parameters. Seven raw-overlay vectors prove both countdown paths,
+the signed `0x8000` decrement transition, modular angle and 32-bit position
+updates, signed 12-bit normalization, velocity derivation, callback transition
+to `0x1692`, and the AMER CS active-word clear. One vector also proves that a
+dword whose 16-bit effective offset wraps to `0xFFFE` consumes four contiguous
+physical bytes rather than wrapping each later byte to offset zero.
+
+The natural function contains no inline assembly or memory/register facade.
+Open Watcom `-3 -ox -mm -zdp -we` compiles the actual candidate warning-free to
+37 instructions/111 bytes. It retains the SI/DI entry ABI, offsets, branches,
+normalization, and ownership, but splits each signed dword update into
+`CWD; ADD; ADC`, versus the original 29 instructions/107 bytes. Turbo C 2.01
+medium accepts the same probe but uses stack parameters and emits 85
+instructions.
 
 The AMER `0x001286`, CROOLIS `0x0012DE`, and SCRUT `0x0012CC` slot-3 entries
 were initially inventoried as only their common 45-byte callback tails. Each
@@ -2123,10 +2144,12 @@ it as signed control state while slot 13 uses the same word as a near callback.
 The routine itself is natural C: typed 94-byte state and 8-byte ring structs,
 near function pointers, array accesses, and counted loops, with no inline
 assembly or register-state facade. Open Watcom `-3 -ox -mm -zdp -we` compiles
-all three actual candidates without warnings to 103 instructions/403 bytes
-versus 76/336 original. Turbo C 2.01 medium also accepts the standalone probe
-and emits 177 instructions. Watcom is materially closer because named `_CODE`
-data preserves the ring globals' original CS ownership.
+all three actual candidates without warnings to 109 instructions/420 bytes
+versus 76/336 original. The six-instruction increase from the earlier measure
+is the cost of preserving the now-proven `DI` context across each callback in
+addition to passing state in `SI`. Turbo C 2.01 medium also accepts the
+standalone probe and emits 177 instructions. Watcom is materially closer
+because named `_CODE` data preserves the ring globals' original CS ownership.
 
 The byte-identical AMER `0x0002F0`, CROOLIS `0x000305`, and SCRUT `0x000305`
 VGA helpers are recovered as natural counted palette and framebuffer clears,
@@ -2407,6 +2430,8 @@ LCS and then mnemonic similarity:
 | `xdb_mouse_bounds_set` | medium, `-ox`, register | 9/11 | 0.3333 | 0.8889 | 0.5556 |
 | `xdb_wrap_positions` | medium, `-ox -zdp`, register | 31/34 | 0.0323 | 0.5484 | 0.0645 |
 | `xdb_slot2_dispatch_or_init` | medium, `-ox -zdp`, register | 33/42 | 0.0303 | 0.6970 | 0.1212 |
+| `xdb_amer_slot2_return_update` | medium, `-ox -zdp`, register | 29/37 | 0.0690 | 0.7241 | 0.1724 |
+| `xdb_slot3_update_or_init` | medium, `-ox -zdp`, register | 76/109 | 0.0263 | 0.6842 | 0.0658 |
 | `xdb_sample_delta` | medium, `-ox`, register | 17/21 | 0.0588 | 0.8824 | 0.0588 |
 | `xdb_scaled_sample_delta` | medium, `-ox`, register | 18/22 | 0.0556 | 0.7778 | 0.0556 |
 | `xdb_vga_clear_and_sync` | medium, `-ox`, register | 30/37 | 0.0333 | 0.7667 | 0.5333 |

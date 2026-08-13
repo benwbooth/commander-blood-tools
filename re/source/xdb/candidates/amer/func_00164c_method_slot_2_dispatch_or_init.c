@@ -11,7 +11,7 @@ void XDB_NEAR xdb_amer_method_slot_2_dispatch_or_init(
     xdb_u16 value;
 
     if (context->control.state != 0) {
-        state->callback(state);
+        state->callback(state, context);
         return;
     }
 

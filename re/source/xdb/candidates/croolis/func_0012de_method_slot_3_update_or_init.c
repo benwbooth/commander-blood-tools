@@ -84,7 +84,7 @@ void XDB_NEAR xdb_croolis_method_slot_3_update_or_init(
     }
 
     do {
-        state->callback(state);
+        state->callback(state, context);
         ++state;
     } while (--count != 0);
 }

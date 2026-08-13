@@ -19,7 +19,10 @@ typedef signed long i32;
 #endif
 
 typedef struct alien_biased_state alien_biased_state;
-typedef void NEAR alien_state_function(alien_biased_state NEAR *state);
+typedef struct alien_method_context alien_method_context;
+typedef void NEAR alien_state_function(
+        alien_biased_state NEAR *state,
+        alien_method_context NEAR *context);
 typedef alien_state_function NEAR *alien_state_callback;
 
 struct alien_biased_state {
@@ -39,7 +42,7 @@ struct alien_biased_state {
     u16 field_05c;
 };
 
-typedef struct alien_method_context {
+struct alien_method_context {
     u8 field_000[0x16];
     u8 NEAR *state;
     u8 field_018[0x02];
@@ -51,7 +54,7 @@ typedef struct alien_method_context {
     i32 signed_seed;
     u8 field_040[0x02];
     u16 random_value;
-} alien_method_context;
+};
 
 extern volatile u16 random_state;
 extern volatile i16 CODE_DATA slot2_seed;
@@ -61,7 +64,7 @@ void NEAR xdb_slot2_dispatch_or_init_probe(
         alien_method_context NEAR *context);
 
 #if defined(__WATCOMC__)
-#pragma aux alien_state_function parm [si] modify exact [ax bx cx dx]
+#pragma aux alien_state_function parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_slot2_dispatch_or_init_probe \
         parm [di] modify exact [ax bx cx dx si di bp]
 #endif
@@ -75,7 +78,7 @@ void NEAR xdb_slot2_dispatch_or_init_probe(
     u16 remaining;
 
     if (context->control_state != 0) {
-        state->callback(state);
+        state->callback(state, context);
         return;
     }
 

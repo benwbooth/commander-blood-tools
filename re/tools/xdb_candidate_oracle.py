@@ -2065,6 +2065,326 @@ def alien_slot2_dispatch_or_init_vectors(
     return vectors
 
 
+def amer_slot2_return_update_vectors(entry: int) -> list[dict[str, object]]:
+    module = "amer"
+    image = load_image(module)
+    body_size = 107
+    body_hash = "80758c3f56df8bc6ca5779d4813b1a9ee671aa7875e0cae20ffb03436de81de9"
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    extra_segment = 0x7000
+    fs_segment = 0x9000
+    game_segment = 0xA000
+    stack_segment = 0xB000
+    context = 0x3000
+    return_address = 0xF000
+    active_offset = 0x1648
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    cases = (
+        ("continue_zero", 0x4000, 1, (0, 0, 0), (0, 0, 0), 0x1111, 0x2222),
+        (
+            "continue_signed_wrap",
+            0x4400,
+            2,
+            (-1, 0x7FFF, -0x8000),
+            (0xFFFFFFFF, 0x7FFFFFFF, 0x80000000),
+            0xFFF0,
+            0x0040,
+        ),
+        (
+            "continue_countdown_sign_wrap",
+            0xFFB8,
+            0x8000,
+            (0x7FFF, -0x8000, 1),
+            (0x7FFFFFFF, 0x80000000, 0xFFFFFFFF),
+            0xFF90,
+            0x0074,
+        ),
+        ("transition_zero", 0x4800, 0, (1, 2, 3), (4, 5, 6), 0, 0),
+        (
+            "transition_positive_12bit",
+            0x4C00,
+            0x8001,
+            (-9, 0x1234, -0x1234),
+            (7, 8, 9),
+            0x07FF,
+            0x07FF,
+        ),
+        (
+            "transition_negative_12bit",
+            0x5000,
+            0x0000,
+            (0x1111, -1, 1),
+            (0x12345678, 0x89ABCDEF, 0x80000000),
+            0x0800,
+            0x0800,
+        ),
+        (
+            "transition_minus_one",
+            0x5400,
+            0xFFFF,
+            (0x2222, -0x3333, 0x4444),
+            (0xFFFFFFFF, 0, 0x7FFFFFFF),
+            0xFFFF,
+            0x0FFF,
+        ),
+    )
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        offset &= 0xFFFF
+        for index, byte in enumerate(value):
+            memory[offset + index] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return memory[offset] | (memory[offset + 1] << 8)
+
+    def get_u32(memory: bytearray, offset: int) -> int:
+        offset &= 0xFFFF
+        return sum(
+            memory[offset + index] << (index * 8)
+            for index in range(4)
+        )
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    def sign_extend_32(value: int) -> int:
+        return value & 0xFFFFFFFF
+
+    def add_flags_32(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+        right &= 0xFFFFFFFF
+        total = left + right
+        result = total & 0xFFFFFFFF
+        return {
+            "cf": total > 0xFFFFFFFF,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": ((left & 0xF) + (right & 0xF)) > 0xF,
+            "zf": result == 0,
+            "sf": bool(result & 0x80000000),
+            "if": bool(initial_flags & 0x0200),
+            "df": bool(initial_flags & 0x0400),
+            "of": bool((~(left ^ right) & (left ^ result) & 0x80000000)),
+        }
+
+    for case_index, case in enumerate(cases):
+        (
+            name,
+            state,
+            countdown,
+            velocities,
+            positions,
+            field_050,
+            field_052,
+        ) = case
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10004)
+        )
+        put_u16(data_before, context + 0x36, 0xA55A)
+        put_u16(data_before, context + 0x38, countdown)
+        for offset, value in zip((0x3A, 0x3C, 0x3E), velocities):
+            put_u16(data_before, context + offset, value)
+        put_u16(data_before, state + 0x0E, 0xBEEF)
+        for offset, value in zip((0x42, 0x46, 0x4A), positions):
+            put_u32(data_before, state + offset, value)
+        put_u16(data_before, state + 0x50, field_050)
+        put_u16(data_before, state + 0x52, field_052)
+        put_u16(data_before, state + 0x54, 0x1357)
+        data_expected = bytearray(data_before)
+        code_before = bytearray(image)
+        code_before[return_address] = 0xCC
+        active_before = (0x7000 + case_index) & 0xFFFF
+        put_u16(code_before, active_offset, active_before)
+        code_expected = bytearray(code_before)
+
+        countdown_after = (countdown - 1) & 0xFFFF
+        put_u16(data_expected, context + 0x38, countdown_after)
+        transition = bool(countdown_after & 0x8000)
+        put_u16(data_expected, state + 0x54, 0)
+        if not transition:
+            put_u16(data_expected, state + 0x50, field_050 + 0x80)
+            put_u16(data_expected, state + 0x52, field_052 - 0x75)
+            for offset, velocity in zip((0x42, 0x46, 0x4A), velocities):
+                put_u32(
+                    data_expected,
+                    state + offset,
+                    get_u32(data_expected, state + offset) + velocity,
+                )
+        else:
+            normalized_050 = signed_word((field_050 << 4) & 0xFFFF) >> 4
+            normalized_052 = signed_word((field_052 << 4) & 0xFFFF) >> 4
+            velocity_x = signed_word(-normalized_052) >> 5
+            put_u16(data_expected, context + 0x36, 1)
+            put_u16(data_expected, context + 0x38, 0x20)
+            put_u16(data_expected, context + 0x3A, velocity_x)
+            put_u16(data_expected, state + 0x0E, 0x1692)
+            put_u16(data_expected, state + 0x50, normalized_050)
+            put_u16(data_expected, state + 0x52, normalized_052)
+            put_u16(code_expected, active_offset, 0)
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A10000 | ((0xBEEF + case_index) & 0xFFFF),
+            "ebx": 0xB2B20000 | ((0x2345 + case_index) & 0xFFFF),
+            "ecx": 0xC3C30000 | ((0x3456 + case_index) & 0xFFFF),
+            "edx": 0xD4D40000 | ((0x4567 + case_index) & 0xFFFF),
+            "esi": 0xE5E50000 | state,
+            "edi": 0xF6F60000 | context,
+            "ebp": 0x97970000 | ((0x789A + case_index) & 0xFFFF),
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        extra_before = bytes(
+            (offset * 13 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 19 + case_index + 5) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index + 9) & 0xFF for offset in range(0x10000)
+        )
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, extra_before),
+                (fs_segment, 0, fs_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10004))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(0x10004)
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: data differs at {differences}"
+            )
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_code != bytes(code_expected):
+            raise AssertionError(f"{module}:{entry:#x} {name}: code data changed")
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (fs_segment, fs_before),
+            (game_segment, game_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if not transition:
+            expected_registers["eax"] = sign_extend_32(velocities[0])
+            expected_registers["ebx"] = sign_extend_32(velocities[1])
+            expected_registers["ecx"] = sign_extend_32(velocities[2])
+            left = positions[2] & 0xFFFFFFFF
+            expected_flags = add_flags_32(left, velocities[2], initial_flags)
+        else:
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | get_u16(data_expected, state + 0x50)
+            expected_registers["ecx"] = (
+                initial["ecx"] & 0xFFFF0000
+            ) | get_u16(data_expected, context + 0x3A)
+            shift_source = (-normalized_052) & 0xFFFF
+            shift_result = get_u16(data_expected, context + 0x3A)
+            expected_flags = {
+                "cf": bool(shift_source & 0x10),
+                "pf": (shift_result & 0xFF).bit_count() % 2 == 0,
+                "zf": shift_result == 0,
+                "sf": bool(shift_result & 0x8000),
+                "if": bool(initial_flags & 0x0200),
+                "df": bool(initial_flags & 0x0400),
+            }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask)
+            for flag, mask in flag_masks.items()
+            if flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "path": "transition" if transition else "continue",
+                "countdown_before": countdown,
+                "countdown_after": get_u16(data_expected, context + 0x38),
+                "state": state,
+                "velocity_x_after": signed_word(
+                    get_u16(data_expected, context + 0x3A)
+                ),
+                "field_050_after": signed_word(
+                    get_u16(data_expected, state + 0x50)
+                ),
+                "field_052_after": signed_word(
+                    get_u16(data_expected, state + 0x52)
+                ),
+                "callback_after": get_u16(data_expected, state + 0x0E),
+                "active_before": active_before,
+                "active_after": get_u16(code_expected, active_offset),
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
     relative = (value + origin) & 0xFFFF
     windowed = (((relative + 0x4000) & 0xFFFF) & 0x7FFF)
@@ -9092,6 +9412,11 @@ def main() -> int:
             ),
             args.check,
         )
+    update_vector(
+        VECTOR_ROOT / "xdb_amer_func_18d3_natural.json",
+        amer_slot2_return_update_vectors(0x18D3),
+        args.check,
+    )
     for module, entry, cursor_offset in (
         ("amer", 0x0B0F, 0x1BC2),
         ("croolis", 0x0B50, 0x1B2E),

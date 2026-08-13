@@ -17,7 +17,10 @@ typedef signed long i32;
 #endif
 
 typedef struct alien_biased_state alien_biased_state;
-typedef void NEAR alien_state_function(alien_biased_state NEAR *state);
+typedef struct alien_method_context alien_method_context;
+typedef void NEAR alien_state_function(
+        alien_biased_state NEAR *state,
+        alien_method_context NEAR *context);
 typedef alien_state_function NEAR *alien_state_callback;
 
 struct alien_biased_state {
@@ -48,14 +51,14 @@ typedef struct alien_ring_entry {
     i16 field_006;
 } alien_ring_entry;
 
-typedef struct alien_method_context {
+struct alien_method_context {
     u8 field_000[0x16];
     alien_state NEAR *state;
     u8 field_018[2];
     u16 state_count;
     u8 field_01c[0x1a];
     i16 control_state;
-} alien_method_context;
+};
 
 extern volatile u16 CODE_DATA slot3_timer;
 extern volatile u16 CODE_DATA slot3_generation;
@@ -68,7 +71,7 @@ void NEAR xdb_slot3_update_or_init_probe(
         alien_method_context NEAR *context);
 
 #if defined(__WATCOMC__)
-#pragma aux alien_state_function parm [si] modify exact [ax bx cx dx]
+#pragma aux alien_state_function parm [si] [di] modify exact [ax bx cx dx]
 #pragma aux xdb_slot3_update_or_init_probe \
         parm [di] modify exact [ax bx cx dx si di bp]
 #endif
@@ -150,7 +153,7 @@ void NEAR xdb_slot3_update_or_init_probe(
         }
     }
     do {
-        state->callback(state);
+        state->callback(state, context);
         ++state;
     } while (--count != 0);
 }
