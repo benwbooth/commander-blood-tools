@@ -2114,7 +2114,10 @@ Named targets that are already tied to code behavior:
   `SS:0x71AA`; four VGA plane passes advance each processed character by eight
   pixels even when a high-bit map entry suppresses its glyph.
 - `0x0299:0x075A` (`small_text_render`): NUL-terminated string renderer using the
-  5-row small-font tables at `0x6FA8/0x7028`.
+  5-row small-font tables at `GS:0x6FA8` and `SS:0x7028`. Its ABI is `AX=x`,
+  `BX=y`, `DS:SI=text`, and `DL=color`; four VGA plane passes consume glyph bits
+  7 through 4, and every processed byte advances the pen by four pixels even
+  when a high-bit map entry suppresses drawing.
 - `0x0299:0x0A2B` / `0x0B23` (`planar_horizontal_line_draw` /
   `planar_vertical_line_draw`): clipped line primitives into `GS:0x5219`, used by
   the dialogue updater's line-command table just before the subtitle reveal draw.

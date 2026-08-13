@@ -6,8 +6,8 @@
 ; seg_off: 0299:075a
 ; group: seg_0299
 ; provenance: relocation_proven_far_transfer_target
-; label: gfx_draw_to_page
-; label_comment: draw to the VGA display page: les di,gs:[0x5219] (display page ptr); ch=dl; x offset = bx<<4. Renders directly into the visible VGA page (vs the linear back-buffer)
+; label: small_text_render
+; label_comment: Mode-X 4x5 small-text renderer. DS:SI=NUL text, AX=x, BX=y, and DL=color. It addresses full GS:[0x5219] as y*80+x/4, maps bytes through GS:0x6FA8, skips high-bit map results while retaining fixed four-pixel advance, and reads five SS:0x7028 glyph rows. Four plane passes test bits 7..4 under rotating masks; every character attempt, including the terminating NUL, writes the starting map mask. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_0036ea_small_text_render.c and re/tools/oracle_vectors/func_36ea_natural.json
 ; incoming: call@0x000da8->0299:075a
 ; incoming: call@0x000dd1->0299:075a
 ; incoming: call@0x000ddb->0299:075a
