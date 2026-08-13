@@ -105,6 +105,8 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
 #pragma aux resource_load_by_id parm [ax] value [ax] modify exact [ax]
 #pragma aux resource_named_file_load parm [ax] [es di] value [ax] modify exact [ax]
+#pragma aux pbm_image_load_and_decode \
+        parm [ds si] [es di] value [ax] modify exact [ax]
 #endif
 
 cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,

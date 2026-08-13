@@ -1,0 +1,326 @@
+[
+  {
+    "name": "ordinary_success",
+    "image_path_offset": 227,
+    "path_prefix": "5865727f8c99a6b3",
+    "back_buffer": {
+      "offset": 4660,
+      "segment": 20480
+    },
+    "pbm_result": 0,
+    "saved_draw_framebuffer": {
+      "offset": 4369,
+      "segment": 24576
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 20480,
+        "di": 4660,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 2,
+        "path_prefix": "5865727f8c99a6b3"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 0,
+        "dx": 21930,
+        "ds": 20480,
+        "si": 4660,
+        "es": 20480,
+        "di": 4660,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 70,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779054080,
+    "final_edx": 3638035396,
+    "final_flags": 151
+  },
+  {
+    "name": "pbm_failure_is_ignored",
+    "image_path_offset": 227,
+    "path_prefix": "5f6c798693a0adba",
+    "back_buffer": {
+      "offset": 9029,
+      "segment": 20480
+    },
+    "pbm_result": 65535,
+    "saved_draw_framebuffer": {
+      "offset": 8738,
+      "segment": 24832
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 20480,
+        "di": 9029,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 147,
+        "path_prefix": "5f6c798693a0adba"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 65535,
+        "dx": 21931,
+        "ds": 20480,
+        "si": 9029,
+        "es": 20480,
+        "di": 9029,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 3,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779119615,
+    "final_edx": 3638035396,
+    "final_flags": 66
+  },
+  {
+    "name": "nonzero_result_reaches_return",
+    "image_path_offset": 227,
+    "path_prefix": "6673808d9aa7b4c1",
+    "back_buffer": {
+      "offset": 13398,
+      "segment": 20736
+    },
+    "pbm_result": 4660,
+    "saved_draw_framebuffer": {
+      "offset": 13107,
+      "segment": 25088
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 20736,
+        "di": 13398,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 71,
+        "path_prefix": "6673808d9aa7b4c1"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 4660,
+        "dx": 21932,
+        "ds": 20736,
+        "si": 13398,
+        "es": 20736,
+        "di": 13398,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 134,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779058740,
+    "final_edx": 3638035396,
+    "final_flags": 3
+  },
+  {
+    "name": "zero_back_offset",
+    "image_path_offset": 227,
+    "path_prefix": "6d7a8794a1aebbc8",
+    "back_buffer": {
+      "offset": 0,
+      "segment": 20992
+    },
+    "pbm_result": 32768,
+    "saved_draw_framebuffer": {
+      "offset": 17476,
+      "segment": 25344
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 20992,
+        "di": 0,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 6,
+        "path_prefix": "6d7a8794a1aebbc8"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 32768,
+        "dx": 21933,
+        "ds": 20992,
+        "si": 0,
+        "es": 20992,
+        "di": 0,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 146,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779086848,
+    "final_edx": 3638035396,
+    "final_flags": 134
+  },
+  {
+    "name": "high_back_offset",
+    "image_path_offset": 227,
+    "path_prefix": "74818e9ba8b5c2cf",
+    "back_buffer": {
+      "offset": 65520,
+      "segment": 21248
+    },
+    "pbm_result": 32767,
+    "saved_draw_framebuffer": {
+      "offset": 21845,
+      "segment": 25600
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 21248,
+        "di": 65520,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 130,
+        "path_prefix": "74818e9ba8b5c2cf"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 32767,
+        "dx": 21934,
+        "ds": 21248,
+        "si": 65520,
+        "es": 21248,
+        "di": 65520,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 71,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779086847,
+    "final_edx": 3638035396,
+    "final_flags": 18
+  },
+  {
+    "name": "inherited_backward_direction",
+    "image_path_offset": 227,
+    "path_prefix": "7b8895a2afbcc9d6",
+    "back_buffer": {
+      "offset": 43981,
+      "segment": 21504
+    },
+    "pbm_result": 21930,
+    "saved_draw_framebuffer": {
+      "offset": 65535,
+      "segment": 65535
+    },
+    "temporary_draw_framebuffer": {
+      "offset": 49152,
+      "segment": 40960
+    },
+    "calls": [
+      {
+        "callee": "pbm_image_load_and_decode",
+        "ds": 12288,
+        "si": 227,
+        "es": 21504,
+        "di": 43981,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65268,
+        "cs": 462,
+        "ip": 2333,
+        "flags": 1027,
+        "path_prefix": "7b8895a2afbcc9d6"
+      },
+      {
+        "callee": "chunky_to_planar_framebuffer",
+        "ax": 21930,
+        "dx": 21935,
+        "ds": 21504,
+        "si": 43981,
+        "es": 21504,
+        "di": 43981,
+        "gs": 28672,
+        "ss": 36864,
+        "sp": 65264,
+        "cs": 665,
+        "ip": 3902,
+        "flags": 1159,
+        "draw_offset": 49152,
+        "draw_segment": 40960
+      }
+    ],
+    "final_eax": 2779076010,
+    "final_edx": 3638035396,
+    "final_flags": 2
+  }
+]

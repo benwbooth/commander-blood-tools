@@ -2497,6 +2497,414 @@ def startup_transient_files_delete_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def back_buffer_wrapper_vectors(
+    entry: int,
+    image_path_offset: int,
+    expected_hash: str,
+) -> list[dict[str, object]]:
+    body_size = 62
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered {body_size}-byte body changed")
+
+    pbm_entry = 0x25FD
+    chunky_entry = 0x38CE
+    return_address = 0x6FC0 + (entry & 0x1F)
+    pbm_return_address = entry + 26
+    chunky_return_address = entry + 51
+    data_segment = 0x3000
+    game_segment = 0x7000
+    extra_segment = 0x8000
+    stack_segment = 0x9000
+    flag_mask = 0x0CD7
+    cases = (
+        {
+            "name": "ordinary_success",
+            "back_segment": 0x5000,
+            "back_offset": 0x1234,
+            "pbm_result": 0,
+            "saved_draw": (0x1111, 0x6000),
+            "entry_flags": 0x0202,
+            "pbm_flags": 0x0246,
+            "chunky_flags": 0x0297,
+        },
+        {
+            "name": "pbm_failure_is_ignored",
+            "back_segment": 0x5000,
+            "back_offset": 0x2345,
+            "pbm_result": 0xFFFF,
+            "saved_draw": (0x2222, 0x6100),
+            "entry_flags": 0x0293,
+            "pbm_flags": 0x0203,
+            "chunky_flags": 0x0242,
+        },
+        {
+            "name": "nonzero_result_reaches_return",
+            "back_segment": 0x5100,
+            "back_offset": 0x3456,
+            "pbm_result": 0x1234,
+            "saved_draw": (0x3333, 0x6200),
+            "entry_flags": 0x0247,
+            "pbm_flags": 0x0286,
+            "chunky_flags": 0x0203,
+        },
+        {
+            "name": "zero_back_offset",
+            "back_segment": 0x5200,
+            "back_offset": 0,
+            "pbm_result": 0x8000,
+            "saved_draw": (0x4444, 0x6300),
+            "entry_flags": 0x0206,
+            "pbm_flags": 0x0292,
+            "chunky_flags": 0x0286,
+        },
+        {
+            "name": "high_back_offset",
+            "back_segment": 0x5300,
+            "back_offset": 0xFFF0,
+            "pbm_result": 0x7FFF,
+            "saved_draw": (0x5555, 0x6400),
+            "entry_flags": 0x0282,
+            "pbm_flags": 0x0247,
+            "chunky_flags": 0x0212,
+        },
+        {
+            "name": "inherited_backward_direction",
+            "back_segment": 0x5400,
+            "back_offset": 0xABCD,
+            "pbm_result": 0x55AA,
+            "saved_draw": (0xFFFF, 0xFFFF),
+            "entry_flags": 0x0603,
+            "pbm_flags": 0x0687,
+            "chunky_flags": 0x0202,
+        },
+    )
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        back_segment = int(case["back_segment"])
+        back_offset = int(case["back_offset"])
+        pbm_result = int(case["pbm_result"])
+        saved_draw_offset, saved_draw_segment = case["saved_draw"]
+        entry_flags = int(case["entry_flags"])
+        pbm_flags = int(case["pbm_flags"])
+        chunky_flags = int(case["chunky_flags"])
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x0B0B1357 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4000 + case_index,
+            "fs": 0x6000 + case_index,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": entry_flags,
+        }
+        path_region = bytes(
+            (0x31 + index * 13 + case_index * 7) & 0xFF for index in range(32)
+        )
+        game_path_decoy = bytes(value ^ 0xFF for value in path_region)
+        data_pointer_region = bytearray(
+            (0x41 + index * 9 + case_index) & 0xFF for index in range(32)
+        )
+        struct.pack_into("<HH", data_pointer_region, 0x19, back_offset, back_segment)
+        game_pointer_region = bytearray(
+            (0x82 + index * 5 + case_index) & 0xFF for index in range(32)
+        )
+        struct.pack_into(
+            "<HH",
+            game_pointer_region,
+            9,
+            int(saved_draw_offset),
+            int(saved_draw_segment),
+        )
+        data_flag_region = bytearray(
+            (0x23 + index * 17 + case_index) & 0xFF for index in range(16)
+        )
+        game_flag_decoy = bytes(
+            (0xD1 - index * 11 - case_index) & 0xFF for index in range(16)
+        )
+        expected_data_flags = bytearray(data_flag_region)
+        expected_data_flags[3] = 0
+        expected_data_flags[7] = 0
+        back_marker = bytes(
+            (0x5A + index * 3 + case_index) & 0xFF for index in range(16)
+        )
+        extra_marker = bytes(
+            (0xC3 - index * 7 - case_index) & 0xFF for index in range(32)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == pbm_entry:
+                call = {
+                    "callee": "pbm_image_load_and_decode",
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "gs": machine.reg_read(UC_X86_REG_GS),
+                    "ss": machine.reg_read(UC_X86_REG_SS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "ip": machine.reg_read(UC_X86_REG_IP),
+                    "flags": machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask,
+                    "path_prefix": bytes(
+                        machine.mem_read(data_segment * 16 + image_path_offset, 8)
+                    ).hex(),
+                }
+                expected_call = {
+                    "callee": "pbm_image_load_and_decode",
+                    "ds": data_segment,
+                    "si": image_path_offset,
+                    "es": back_segment,
+                    "di": back_offset,
+                    "gs": game_segment,
+                    "ss": stack_segment,
+                    "sp": 0xFEF4,
+                    "cs": 0x01CE,
+                    "ip": 0x091D,
+                    "flags": entry_flags & flag_mask,
+                    "path_prefix": path_region[
+                        image_path_offset - 0x00E0 : image_path_offset - 0x00E0 + 8
+                    ].hex(),
+                }
+                if call != expected_call:
+                    raise AssertionError(
+                        f"{entry:#x} {name}: PBM call={call}, expected={expected_call}"
+                    )
+                stack_words = struct.unpack(
+                    "<8H",
+                    machine.mem_read(stack_segment * 16 + 0xFEF4, 16),
+                )
+                expected_stack = (
+                    pbm_return_address,
+                    0,
+                    initial["edi"] & 0xFFFF,
+                    initial["es"],
+                    initial["esi"] & 0xFFFF,
+                    initial["ds"],
+                    return_address,
+                    0,
+                )
+                if stack_words != expected_stack:
+                    raise AssertionError(
+                        f"{entry:#x} {name}: PBM stack={stack_words}, "
+                        f"expected={expected_stack}"
+                    )
+                if bytes(machine.mem_read(data_segment * 16 + 0x5B50, 16)) != bytes(
+                    expected_data_flags
+                ):
+                    raise AssertionError(
+                        f"{entry:#x} {name}: flags were not cleared before PBM"
+                    )
+                if bytes(
+                    machine.mem_read(game_segment * 16 + 0x5219, 4)
+                ) != struct.pack(
+                    "<HH", int(saved_draw_offset), int(saved_draw_segment)
+                ):
+                    raise AssertionError(
+                        f"{entry:#x} {name}: draw pointer changed before PBM"
+                    )
+                calls.append(call)
+                return
+
+            if address == chunky_entry:
+                call = {
+                    "callee": "chunky_to_planar_framebuffer",
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "gs": machine.reg_read(UC_X86_REG_GS),
+                    "ss": machine.reg_read(UC_X86_REG_SS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "ip": machine.reg_read(UC_X86_REG_IP),
+                    "flags": machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask,
+                    "draw_offset": struct.unpack(
+                        "<H", machine.mem_read(game_segment * 16 + 0x5219, 2)
+                    )[0],
+                    "draw_segment": struct.unpack(
+                        "<H", machine.mem_read(game_segment * 16 + 0x521B, 2)
+                    )[0],
+                }
+                expected_call = {
+                    "callee": "chunky_to_planar_framebuffer",
+                    "ax": pbm_result,
+                    "dx": initial["edx"] & 0xFFFF,
+                    "ds": back_segment,
+                    "si": back_offset,
+                    "es": back_segment,
+                    "di": back_offset,
+                    "gs": game_segment,
+                    "ss": stack_segment,
+                    "sp": 0xFEF0,
+                    "cs": 0x0299,
+                    "ip": 0x0F3E,
+                    "flags": pbm_flags & flag_mask,
+                    "draw_offset": 0xC000,
+                    "draw_segment": 0xA000,
+                }
+                if call != expected_call:
+                    raise AssertionError(
+                        f"{entry:#x} {name}: chunky call={call}, "
+                        f"expected={expected_call}"
+                    )
+                stack_words = struct.unpack(
+                    "<10H",
+                    machine.mem_read(stack_segment * 16 + 0xFEF0, 20),
+                )
+                expected_stack = (
+                    chunky_return_address,
+                    0,
+                    int(saved_draw_offset),
+                    int(saved_draw_segment),
+                    initial["edi"] & 0xFFFF,
+                    initial["es"],
+                    initial["esi"] & 0xFFFF,
+                    initial["ds"],
+                    return_address,
+                    0,
+                )
+                if stack_words != expected_stack:
+                    raise AssertionError(
+                        f"{entry:#x} {name}: stack={stack_words}, "
+                        f"expected={expected_stack}"
+                    )
+                calls.append(call)
+
+        pbm_stub = (
+            b"\xb8"
+            + struct.pack("<H", pbm_result)
+            + b"\x68"
+            + struct.pack("<H", pbm_flags)
+            + b"\x9d\xcb"
+        )
+        chunky_stub = (
+            b"\xba\xc4\x03\x68" + struct.pack("<H", chunky_flags) + b"\x9d\xcb"
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, pbm_entry, pbm_stub),
+                (0, chunky_entry, chunky_stub),
+                (data_segment, 0x00E0, path_region),
+                (game_segment, 0x00E0, game_path_decoy),
+                (data_segment, 0x5210, bytes(data_pointer_region)),
+                (game_segment, 0x5210, bytes(game_pointer_region)),
+                (data_segment, 0x5B50, bytes(data_flag_region)),
+                (game_segment, 0x5B50, game_flag_decoy),
+                (back_segment, back_offset, back_marker),
+                (extra_segment, 0x0100, extra_marker),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        if [call["callee"] for call in calls] != [
+            "pbm_image_load_and_decode",
+            "chunky_to_planar_framebuffer",
+        ]:
+            raise AssertionError(f"{entry:#x} {name}: calls={calls}")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | pbm_result
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | 0x03C4
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{entry:#x} {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{entry:#x} {name}: far return did not restore CS")
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS) & flag_mask
+        if final_flags != chunky_flags & flag_mask:
+            raise AssertionError(
+                f"{entry:#x} {name}: flags={final_flags:#x}, "
+                f"expected={chunky_flags & flag_mask:#x}"
+            )
+        if (
+            bytes(machine.mem_read(data_segment * 16 + 0x00E0, len(path_region)))
+            != path_region
+        ):
+            raise AssertionError(f"{entry:#x} {name}: changed path data")
+        if (
+            bytes(machine.mem_read(game_segment * 16 + 0x00E0, len(game_path_decoy)))
+            != game_path_decoy
+        ):
+            raise AssertionError(f"{entry:#x} {name}: changed path decoy")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5210, 32)) != bytes(
+            data_pointer_region
+        ):
+            raise AssertionError(f"{entry:#x} {name}: changed DS pointers")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5210, 32)) != bytes(
+            game_pointer_region
+        ):
+            raise AssertionError(f"{entry:#x} {name}: did not restore GS draw pointer")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5B50, 16)) != bytes(
+            expected_data_flags
+        ):
+            raise AssertionError(f"{entry:#x} {name}: wrong final DS flags")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5B50, 16)) != game_flag_decoy:
+            raise AssertionError(f"{entry:#x} {name}: changed GS flag decoy")
+        if (
+            bytes(machine.mem_read(back_segment * 16 + back_offset, len(back_marker)))
+            != back_marker
+        ):
+            raise AssertionError(f"{entry:#x} {name}: wrapper changed back buffer")
+        if (
+            bytes(machine.mem_read(extra_segment * 16 + 0x0100, len(extra_marker)))
+            != extra_marker
+        ):
+            raise AssertionError(f"{entry:#x} {name}: changed unrelated memory")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 8)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "image_path_offset": image_path_offset,
+                "path_prefix": calls[0]["path_prefix"],
+                "back_buffer": {
+                    "offset": back_offset,
+                    "segment": back_segment,
+                },
+                "pbm_result": pbm_result,
+                "saved_draw_framebuffer": {
+                    "offset": int(saved_draw_offset),
+                    "segment": int(saved_draw_segment),
+                },
+                "temporary_draw_framebuffer": {
+                    "offset": 0xC000,
+                    "segment": 0xA000,
+                },
+                "calls": calls,
+                "final_eax": machine.reg_read(UC_X86_REG_EAX),
+                "final_edx": machine.reg_read(UC_X86_REG_EDX),
+                "final_flags": final_flags,
+            }
+        )
+    return vectors
+
+
 def startup_directory_transition_vectors(
     entry: int,
     return_address: int,
@@ -46016,6 +46424,24 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_147f_natural.json",
         startup_transient_files_delete_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_17d9_natural.json",
+        back_buffer_wrapper_vectors(
+            0x17D9,
+            0x00EA,
+            "187df516a277a3c3d50715b93758e2c0c8eec83294473e1f1577596190c4b428",
+        ),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1817_natural.json",
+        back_buffer_wrapper_vectors(
+            0x1817,
+            0x00E3,
+            "2b151a4f13e91f729130c124f06634dc898d53789c5477c0e8a8f019793160fe",
+        ),
         args.check,
     )
     update_vector(

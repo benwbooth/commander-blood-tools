@@ -27,6 +27,10 @@ extern volatile cb_u8 CB_GAME_DATA
         pbm_palette_dirty; /* GS:0x5B55 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_transparent_zero; /* GS:0x5B57 */
+extern volatile char CB_GAME_DATA
+        back_buffer_init_image_path[]; /* DS:0x00EA */
+extern volatile char CB_GAME_DATA
+        backbuffer_clear_image_path[]; /* DS:0x00E3 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_live_palette[768]; /* GS:0x5251 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
@@ -130,6 +134,8 @@ void CB_FAR vga_planar_to_chunky(
         volatile cb_u8 CB_FAR *destination); /* 0x0299:0x0EE0 */
 void CB_FAR chunky_to_planar_framebuffer(
         const volatile cb_u8 CB_FAR *source); /* 0x0299:0x0F3E */
+cb_i16 CB_FAR back_buffer_init(void); /* 0x008B:0x0929 */
+cb_i16 CB_FAR backbuffer_clear_flags(void); /* 0x008B:0x0967 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
@@ -203,6 +209,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux vga_planar_to_chunky parm [ds si] [es di] modify exact []
 #pragma aux chunky_to_planar_framebuffer parm [ds si] modify exact [dx]
+#pragma aux back_buffer_init value [ax] modify exact [ax dx]
+#pragma aux backbuffer_clear_flags value [ax] modify exact [ax dx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []
