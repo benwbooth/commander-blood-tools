@@ -2644,6 +2644,348 @@ def amer_slot2_steer_update_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def alien_face_bucket_vectors(
+    module: str,
+    entry: int,
+    body_size: int,
+    body_hash: str,
+    continuation: int,
+    bucket_base: int,
+    per_context_signal: bool,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered body changed")
+
+    data_segment = 0x5000
+    geometry_segment = 0x7000
+    raster_segment = 0x9000
+    extra_segment = 0xB000
+    game_segment = 0xC000
+    stack_segment = 0xD000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("a55a69967887")
+    context_list_offset = 0x2308
+    context_offsets = (0x3000, 0x3100, 0x3200)
+    cases = (
+        {
+            "name": "accepted_without_rotation",
+            "contexts": ((((10, 20, 30), (0, 0, 0)),),),
+            "latch": 0xA55A,
+        },
+        {
+            "name": "rotate_vertex_2_leftmost",
+            "contexts": ((((30, 20, 10), (0, 0, 0)),),),
+            "latch": 0x5AA5,
+        },
+        {
+            "name": "rotate_vertex_1_leftmost",
+            "contexts": ((((30, 10, 20), (0, 0, 0)),),),
+            "latch": 0x1357,
+        },
+        {
+            "name": "ties_preserve_or_rotate_by_branch",
+            "contexts": (
+                (
+                    ((10, 20, 20), (0, 0, 0)),
+                    ((20, 10, 10), (0, 0, 0)),
+                ),
+            ),
+            "latch": 0x2468,
+        },
+        {
+            "name": "common_clip_and_width_boundaries",
+            "contexts": (
+                (
+                    ((1, 2, 3), (1, 1, 1)),
+                    ((0, 500, 200), (0, 0, 0)),
+                    ((0, 499, 200), (0, 0, 0)),
+                ),
+            ),
+            "latch": 0x369C,
+        },
+        {
+            "name": "negative_bucket_and_lifo_links",
+            "contexts": (
+                (
+                    ((-20, 0, 15), (0, 0, 0)),
+                    ((-20, 8, 4), (0, 0, 0)),
+                    ((-32768, -32760, -32750), (0, 0, 0)),
+                ),
+            ),
+            "latch": 0x48AD,
+        },
+        {
+            "name": "first_context_behind_signal",
+            "contexts": (
+                (((0, 600, 200), (0x8000, 0, 0)),),
+                (((5, 15, 25), (0, 0, 0)),),
+            ),
+            "latch": 0x59BE,
+        },
+        {
+            "name": "last_context_behind_signal",
+            "contexts": (
+                (((5, 15, 25), (0, 0, 0)),),
+                (((0, 100, 200), (0, 0x8000, 0)),),
+            ),
+            "latch": 0x6ACF,
+        },
+        {
+            "name": "common_behind_clip_does_not_signal",
+            "contexts": ((((0, 10, 20), (0x8000, 0x8000, 0x8000)),),),
+            "latch": 0x7BD0,
+        },
+        {
+            "name": "wrapped_unsigned_width_rejection",
+            "contexts": (
+                (
+                    ((-32760, 32760, -32750), (0, 0, 0)),
+                    ((32760, -32760, 32767), (0, 0, 0)),
+                ),
+            ),
+            "latch": 0x8CE1,
+        },
+    )
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value if value < 0x8000 else value - 0x10000
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        data_before = bytearray(
+            (offset * 29 + case_index * 17 + 3) & 0xFF
+            for offset in range(0x10000)
+        )
+        geometry_before = bytearray(
+            (offset * 13 + case_index * 23 + 9) & 0xFF
+            for offset in range(0x10000)
+        )
+        raster_before = bytearray(
+            (offset * 7 + case_index * 31 + 5) & 0xFF
+            for offset in range(0x10000)
+        )
+        put_u16(data_before, 0x0002, geometry_segment)
+        put_u16(data_before, 0x0006, raster_segment)
+        put_u16(data_before, 0x2282, case["latch"])
+
+        face_offsets: list[list[int]] = []
+        vertex_offsets: list[list[tuple[int, int, int]]] = []
+        next_vertex = 0x1000
+        for context_index, faces in enumerate(case["contexts"]):
+            context_offset = context_offsets[context_index]
+            first_face = 0x4000 + context_index * 0x0800
+            put_u16(data_before, context_list_offset + context_index * 2, context_offset)
+            put_u16(data_before, context_offset + 0x28, first_face)
+            put_u16(data_before, context_offset + 0x2C, len(faces))
+            current_faces = []
+            current_vertices = []
+            for face_index, (screen_x, clip_flags) in enumerate(faces):
+                face_offset = first_face + face_index * 8
+                vertices = (next_vertex, next_vertex + 0x20, next_vertex + 0x40)
+                next_vertex += 0x60
+                current_faces.append(face_offset)
+                current_vertices.append(vertices)
+                put_u16(geometry_before, face_offset, 0x7000 + face_index)
+                for vertex_index, vertex_offset in enumerate(vertices):
+                    put_u16(geometry_before, face_offset + 2 + vertex_index * 2, vertex_offset)
+                    put_u16(geometry_before, vertex_offset + 0x0A, screen_x[vertex_index])
+                    put_u16(geometry_before, vertex_offset + 0x12, clip_flags[vertex_index])
+            face_offsets.append(current_faces)
+            vertex_offsets.append(current_vertices)
+        put_u16(
+            data_before,
+            context_list_offset + len(case["contexts"]) * 2,
+            0,
+        )
+
+        data_expected = bytearray(data_before)
+        geometry_expected = bytearray(geometry_before)
+        raster_expected = bytearray(raster_before)
+        if per_context_signal:
+            put_u16(raster_expected, 0x07D4, 0)
+        accepted: list[list[dict[str, object]]] = []
+        for context_index, faces in enumerate(case["contexts"]):
+            context_offset = context_offsets[context_index]
+            context_accepted = []
+            signaled = False
+            for face_index, (screen_x_values, clip_values) in enumerate(faces):
+                face_offset = face_offsets[context_index][face_index]
+                vertices = list(vertex_offsets[context_index][face_index])
+                x_values = [signed_word(value) for value in screen_x_values]
+                common_clip = clip_values[0] & clip_values[1] & clip_values[2]
+                bucket_offset = None
+                if common_clip == 0:
+                    combined_clip = clip_values[0] | clip_values[1] | clip_values[2]
+                    if combined_clip & 0x8000:
+                        signaled = True
+                        if per_context_signal:
+                            put_u16(raster_expected, 0x07D4, 1)
+                        else:
+                            put_u16(data_expected, 0x2282, 1)
+
+                    if x_values[1] > x_values[2]:
+                        if x_values[0] >= x_values[2]:
+                            vertices = [vertices[2], vertices[0], vertices[1]]
+                            x_values = [x_values[2], x_values[0], x_values[1]]
+                            for index, value in enumerate(vertices):
+                                put_u16(geometry_expected, face_offset + 2 + index * 2, value)
+                    elif x_values[0] > x_values[1]:
+                        vertices = [vertices[1], vertices[2], vertices[0]]
+                        x_values = [x_values[1], x_values[2], x_values[0]]
+                        for index, value in enumerate(vertices):
+                            put_u16(geometry_expected, face_offset + 2 + index * 2, value)
+
+                    span_1 = (x_values[1] - x_values[0]) & 0xFFFF
+                    span_2 = (x_values[2] - x_values[0]) & 0xFFFF
+                    if span_1 < 500 and span_2 < 500:
+                        doubled_x = (x_values[0] << 1) & 0xFFFF
+                        bucket_offset = bucket_base
+                        if signed_word(doubled_x) >= 0:
+                            bucket_offset = (bucket_offset + doubled_x) & 0xFFFF
+                        old_head = get_u16(raster_expected, bucket_offset)
+                        put_u16(raster_expected, bucket_offset, face_offset)
+                        put_u16(geometry_expected, face_offset, old_head)
+                context_accepted.append(
+                    {
+                        "face_offset": face_offset,
+                        "vertices": vertices,
+                        "left_x": x_values[0],
+                        "bucket_offset": bucket_offset,
+                    }
+                )
+            if per_context_signal and signaled:
+                put_u16(raster_expected, 0x07D4, 0)
+                put_u16(data_expected, 0x2282, context_offset)
+            accepted.append(context_accepted)
+
+        patched_image = bytearray(image)
+        patched_image[continuation] = 0xC3
+        initial = {
+            "eax": 0xA1A12345 + case_index,
+            "ebx": 0xB2B23456 + case_index,
+            "ecx": 0xC3C34567 + case_index,
+            "edx": 0xD4D45678 + case_index,
+            "esi": 0xE5E56789 + case_index,
+            "edi": 0xF6F6789A + case_index,
+            "ebp": 0x979789AB + case_index,
+            "sp": 0xFF00,
+            "ds": extra_segment,
+            "es": extra_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        extra_before = bytes(
+            (offset * 11 + case_index + 7) & 0xFF for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 19 + case_index + 13) & 0xFF for offset in range(0x10000)
+        )
+        continuation_entries: list[int] = []
+
+        def code_handler(
+            _machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address == continuation:
+                continuation_entries.append(address)
+
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0, bytes(data_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (extra_segment, 0, extra_before),
+                (game_segment, 0, game_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=100000,
+            code_handler=code_handler,
+        )
+        if continuation_entries != [continuation]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"continuation entries {continuation_entries}"
+            )
+        for segment, expected, owner in (
+            (data_segment, bytes(data_expected), "data"),
+            (geometry_segment, bytes(geometry_expected), "geometry"),
+            (raster_segment, bytes(raster_expected), "raster"),
+            (extra_segment, extra_before, "initial-segments"),
+            (game_segment, game_before, "game"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                differences = [
+                    (offset, actual[offset], expected[offset])
+                    for offset in range(0x10000)
+                    if actual[offset] != expected[offset]
+                ][:8]
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{owner} differs at {differences}"
+                )
+        if bytes(machine.mem_read(0, len(image))) != bytes(patched_image):
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: code changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {case['name']}: stack changed")
+        expected_registers = {
+            "esi": (initial["esi"] & 0xFFFF0000)
+            | (context_list_offset + len(case["contexts"]) * 2),
+            "sp": 0xFF02,
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": data_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "context_count": len(case["contexts"]),
+                "face_counts": [len(faces) for faces in case["contexts"]],
+                "faces": accepted,
+                "control_latch_before": case["latch"],
+                "control_latch_after": get_u16(data_expected, 0x2282),
+                "behind_scratch_after": (
+                    get_u16(raster_expected, 0x07D4)
+                    if per_context_signal
+                    else None
+                ),
+                "geometry_sha256": hashlib.sha256(geometry_expected).hexdigest(),
+                "raster_sha256": hashlib.sha256(raster_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def alien_transform_and_project_vectors(
     module: str, entry: int
 ) -> list[dict[str, object]]:
@@ -11162,6 +11504,56 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_transform_and_project_vectors(module, entry),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        body_size,
+        body_hash,
+        continuation,
+        bucket_base,
+        per_context_signal,
+    ) in (
+        (
+            "amer",
+            0x24CF,
+            163,
+            "e784f6305eb359e3b85baaf4a5c87d0600db42cea9525f094cde2ee2ccc0bcc2",
+            0x2572,
+            0x094C,
+            False,
+        ),
+        (
+            "croolis",
+            0x2514,
+            194,
+            "ef8eb9a19208f2e1446c47d2783b68c4e903587f2b3c8cc553c4ad4acc28c628",
+            0x25D6,
+            0x094E,
+            True,
+        ),
+        (
+            "scrut",
+            0x25D4,
+            194,
+            "ef8eb9a19208f2e1446c47d2783b68c4e903587f2b3c8cc553c4ad4acc28c628",
+            0x2696,
+            0x094E,
+            True,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_face_bucket_vectors(
+                module,
+                entry,
+                body_size,
+                body_hash,
+                continuation,
+                bucket_base,
+                per_context_signal,
+            ),
             args.check,
         )
     for module, entry in (

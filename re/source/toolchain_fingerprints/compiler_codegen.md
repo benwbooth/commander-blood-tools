@@ -2581,6 +2581,20 @@ candidate without warnings to 675 instructions/1976 bytes. It inserts 18
 warnings and emits 875 instructions. The semantic recovery is therefore
 accepted by the raw-overlay oracle, but neither compiler is a codegen match.
 
+## Alien face-bucket prelude candidate
+
+The AMER `0x24cf`, CROOLIS `0x2514`, and SCRUT `0x25d4` routines sort projected
+faces into raster X buckets and then fall directly into their following
+renderer owners. Natural C represents that boundary as a typed tail call.
+CROOLIS and SCRUT share a 67-instruction, 194-byte body; AMER uses a shorter
+61-instruction, 163-byte behind-camera signal path.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the CROOLIS form
+warning-free to 123 instructions/379 bytes and the AMER form to 118/334. Turbo
+C 2.01 medium (`-mm -O -Z`) compiles the CROOLIS form warning-free to 173
+instructions. Both preserve the natural control structure but neither matches
+the compact register rotation and segment use of the shipped bodies.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

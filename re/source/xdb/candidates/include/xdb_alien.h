@@ -5,6 +5,12 @@
 
 #define XDB_ALIEN_CURSOR_BIAS 0x005eu
 #define XDB_ALIEN_FIELD_DELTA 0x000fu
+#define XDB_ALIEN_RENDER_CONTEXTS_OFFSET 0x2308u
+#define XDB_ALIEN_MAX_FACE_WIDTH 0x01f4u
+#define XDB_AMER_FACE_BUCKETS_OFFSET 0x094cu
+#define XDB_CROOLIS_FACE_BUCKETS_OFFSET 0x094eu
+#define XDB_SCRUT_FACE_BUCKETS_OFFSET 0x094eu
+#define XDB_ALIEN_BEHIND_SCRATCH_OFFSET 0x07d4u
 
 typedef struct xdb_alien_biased_state xdb_alien_biased_state;
 typedef struct xdb_alien_method_context xdb_alien_method_context;
@@ -74,6 +80,13 @@ typedef struct xdb_alien_projection_vertex {
     xdb_u16 clip_flags;
 } xdb_alien_projection_vertex;
 
+typedef struct xdb_alien_face {
+    xdb_u16 link;
+    xdb_u16 vertex_0;
+    xdb_u16 vertex_1;
+    xdb_u16 vertex_2;
+} xdb_alien_face;
+
 typedef struct xdb_alien_projection_state {
     xdb_u16 parent_offset;
     xdb_u16 vertex_count;
@@ -99,6 +112,9 @@ typedef struct xdb_alien_projection_context {
     xdb_u16 copy_offset;
     xdb_u8 field_024[0x02];
     xdb_u16 copy_count;
+    xdb_u16 face_offset;
+    xdb_u8 field_02a[0x02];
+    xdb_u16 face_count;
 } xdb_alien_projection_context;
 
 typedef char xdb_alien_projection_vertex_size_must_be_0x14[
@@ -210,6 +226,7 @@ typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
 extern volatile xdb_u16 xdb_alien_palette_segment; /* DS:0x0004 */
+extern volatile xdb_u16 xdb_alien_raster_segment; /* FS:0x0006; FS=DS invariant */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan; /* DS:0x0030 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pitch; /* DS:0x0032 */
 extern volatile xdb_i16 xdb_alien_matrix_angle_pan_secondary; /* DS:0x0034 */
@@ -224,6 +241,8 @@ extern volatile xdb_u16 xdb_alien_projection_remaining; /* DS:0x227C */
 extern volatile xdb_u16 xdb_alien_projection_common_clip; /* DS:0x227E */
 extern volatile xdb_u16 xdb_alien_projection_field_2280; /* DS:0x2280 */
 extern volatile xdb_i32 xdb_alien_rotation_matrix[3][3]; /* DS:0x2284 */
+extern volatile xdb_u16
+        xdb_alien_render_context_offsets[]; /* FS:0x2308; FS=DS invariant */
 extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
 extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
 extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
@@ -338,6 +357,12 @@ void XDB_NEAR xdb_scrut_camera_matrix_update(void);
 void XDB_NEAR xdb_amer_transform_and_project(void);
 void XDB_NEAR xdb_croolis_transform_and_project(void);
 void XDB_NEAR xdb_scrut_transform_and_project(void);
+void XDB_NEAR xdb_amer_bucket_faces_then_render(void);
+void XDB_NEAR xdb_croolis_bucket_faces_then_render(void);
+void XDB_NEAR xdb_scrut_bucket_faces_then_render(void);
+void XDB_NEAR xdb_amer_render_face_buckets(void);
+void XDB_NEAR xdb_croolis_render_face_buckets(void);
+void XDB_NEAR xdb_scrut_render_face_buckets(void);
 void XDB_NEAR xdb_amer_method_slot_7_palette_update(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_croolis_method_slot_7_palette_update(
@@ -454,6 +479,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #pragma aux xdb_croolis_transform_and_project \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_scrut_transform_and_project \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_amer_bucket_faces_then_render \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_croolis_bucket_faces_then_render \
+        modify exact [ax bx cx dx si di bp es]
+#pragma aux xdb_scrut_bucket_faces_then_render \
         modify exact [ax bx cx dx si di bp es]
 #pragma aux xdb_amer_method_slot_7_palette_update \
         parm [di] modify exact [ax bx cx dx si es]

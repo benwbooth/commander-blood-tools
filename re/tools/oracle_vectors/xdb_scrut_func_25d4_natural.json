@@ -1,0 +1,368 @@
+[
+  {
+    "name": "accepted_without_rotation",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 10,
+          "bucket_offset": 2402
+        }
+      ]
+    ],
+    "control_latch_before": 42330,
+    "control_latch_after": 42330,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "44c70e01b83633ad42f4e45433ffe295668d0fceb7f1bbb18581beb5f1b7895e",
+    "raster_sha256": "fdbb4386aff8335036d394b11ab7d5dea12f55c3a8e9064f550b2e65246bddce"
+  },
+  {
+    "name": "rotate_vertex_2_leftmost",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4160,
+            4096,
+            4128
+          ],
+          "left_x": 10,
+          "bucket_offset": 2402
+        }
+      ]
+    ],
+    "control_latch_before": 23205,
+    "control_latch_after": 23205,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "2268b5a8d7db3fc501f18266e52ae763781e30f54893ed2b85ad95c06c857a8d",
+    "raster_sha256": "5a4025c30d8435aa3e3258adc8f4b54cd4c0e5b917c09823a390212a8a2356ed"
+  },
+  {
+    "name": "rotate_vertex_1_leftmost",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4128,
+            4160,
+            4096
+          ],
+          "left_x": 10,
+          "bucket_offset": 2402
+        }
+      ]
+    ],
+    "control_latch_before": 4951,
+    "control_latch_after": 4951,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "ec3dbb112522423d0665c8d19caedd451f8d877e6dd713a3da9866b3b93d4afe",
+    "raster_sha256": "d8a42feae211bad2de79a53a874e2cc841be2c0766b8f31d79d7dea5310d6166"
+  },
+  {
+    "name": "ties_preserve_or_rotate_by_branch",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      2
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 10,
+          "bucket_offset": 2402
+        },
+        {
+          "face_offset": 16392,
+          "vertices": [
+            4224,
+            4256,
+            4192
+          ],
+          "left_x": 10,
+          "bucket_offset": 2402
+        }
+      ]
+    ],
+    "control_latch_before": 9320,
+    "control_latch_after": 9320,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "c5ddb1b4e72680abff6db34462e7d94fad8a9ec9ffdebe446c7b08096718b07c",
+    "raster_sha256": "a58c450980b7e5c308c9b8eddb6eb9f46bad8cd790a72f4acc0bf1f72660d4ab"
+  },
+  {
+    "name": "common_clip_and_width_boundaries",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      3
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 1,
+          "bucket_offset": null
+        },
+        {
+          "face_offset": 16392,
+          "vertices": [
+            4192,
+            4224,
+            4256
+          ],
+          "left_x": 0,
+          "bucket_offset": null
+        },
+        {
+          "face_offset": 16400,
+          "vertices": [
+            4288,
+            4320,
+            4352
+          ],
+          "left_x": 0,
+          "bucket_offset": 2382
+        }
+      ]
+    ],
+    "control_latch_before": 13980,
+    "control_latch_after": 13980,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "9cba9b4153ab3ad86ea0ac6e065c14fa3d2ed03963fe6b11d515bd10759ea9c3",
+    "raster_sha256": "a3321c6539a66bb10da25cd0a4fe3bc1511da63dc1c2fce31700dfa306889071"
+  },
+  {
+    "name": "negative_bucket_and_lifo_links",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      3
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": -20,
+          "bucket_offset": 2382
+        },
+        {
+          "face_offset": 16392,
+          "vertices": [
+            4192,
+            4224,
+            4256
+          ],
+          "left_x": -20,
+          "bucket_offset": 2382
+        },
+        {
+          "face_offset": 16400,
+          "vertices": [
+            4288,
+            4320,
+            4352
+          ],
+          "left_x": -32768,
+          "bucket_offset": 2382
+        }
+      ]
+    ],
+    "control_latch_before": 18605,
+    "control_latch_after": 18605,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "5003253fd1ea51a257d0e14f79cd1c108cd1c5fc0b690d493c93da85d7a85c9a",
+    "raster_sha256": "d36e86430eebc069f02461e0788c07fefe10876683948d3e409e24bd5d62dce5"
+  },
+  {
+    "name": "first_context_behind_signal",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 2,
+    "face_counts": [
+      1,
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 0,
+          "bucket_offset": null
+        }
+      ],
+      [
+        {
+          "face_offset": 18432,
+          "vertices": [
+            4192,
+            4224,
+            4256
+          ],
+          "left_x": 5,
+          "bucket_offset": 2392
+        }
+      ]
+    ],
+    "control_latch_before": 22974,
+    "control_latch_after": 12288,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "75dc2a1ca6847ef40613eed0841962b900eaf52026e85577340750c927151692",
+    "raster_sha256": "85e34bc84fbd81dcf36ea45e6b5831ea0a1a4785ef59125874f86432844e47ac"
+  },
+  {
+    "name": "last_context_behind_signal",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 2,
+    "face_counts": [
+      1,
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 5,
+          "bucket_offset": 2392
+        }
+      ],
+      [
+        {
+          "face_offset": 18432,
+          "vertices": [
+            4192,
+            4224,
+            4256
+          ],
+          "left_x": 0,
+          "bucket_offset": 2382
+        }
+      ]
+    ],
+    "control_latch_before": 27343,
+    "control_latch_after": 12544,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "d66e738c43ac40502e994076183092ab85f81d23187f298523fa3bc6b80fb3e7",
+    "raster_sha256": "c84871274f04cc7b507b2556b8ce5ed3a3b57abfc648f7c779a0a557378430ae"
+  },
+  {
+    "name": "common_behind_clip_does_not_signal",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      1
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": 0,
+          "bucket_offset": null
+        }
+      ]
+    ],
+    "control_latch_before": 31696,
+    "control_latch_after": 31696,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "21e0441ca4c34bf1e157e37b73fec764e42b807c05043f70f6d64ca0d965a8f4",
+    "raster_sha256": "166a6b7963af6418801710dd6c182fb2a09a69bc7b6204629e17cae285e30379"
+  },
+  {
+    "name": "wrapped_unsigned_width_rejection",
+    "module": "scrut",
+    "entry": 9684,
+    "context_count": 1,
+    "face_counts": [
+      2
+    ],
+    "faces": [
+      [
+        {
+          "face_offset": 16384,
+          "vertices": [
+            4096,
+            4128,
+            4160
+          ],
+          "left_x": -32760,
+          "bucket_offset": null
+        },
+        {
+          "face_offset": 16392,
+          "vertices": [
+            4224,
+            4256,
+            4192
+          ],
+          "left_x": -32760,
+          "bucket_offset": null
+        }
+      ]
+    ],
+    "control_latch_before": 36065,
+    "control_latch_after": 36065,
+    "behind_scratch_after": 0,
+    "geometry_sha256": "9218738c1d2a324ea1c78cdf099371940d2c8be7fba9bc25de79dcf7292e61c0",
+    "raster_sha256": "a7c89662528cf5e98bdf9c8cc4d2c48de088de333c7b82a51347db376d6c2881"
+  }
+]
