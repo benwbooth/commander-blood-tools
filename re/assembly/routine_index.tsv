@@ -327,7 +327,7 @@ xdb_amer	0x001dd8	direct_calls	direct_call_from_0xa3		re/assembly/xdb/amer/direc
 xdb_amer	0x002027	direct_calls	direct_call_from_0xa3		re/assembly/xdb/amer/direct_calls/func_002027_routine.asm	cfg_blocks_28_terminals_2
 xdb_amer	0x0024cf	direct_calls	direct_call_from_0xa3		re/assembly/xdb/amer/direct_calls/func_0024cf_routine.asm	cfg_blocks_17_terminals_1
 xdb_amer	0x002572	direct_calls	direct_call_from_0x59b | reviewed contiguous renderer owner		re/assembly/xdb/amer/direct_calls/func_002572_routine.asm	reviewed_contiguous_owner_internal_dispatch
-xdb_amer	0x002b6d	direct_calls	direct_call_from_0x24cf | direct_call_from_0x2572		re/assembly/xdb/amer/direct_calls/func_002b6d_routine.asm	cfg_blocks_30_terminals_7
+xdb_amer	0x002b6d	direct_calls	direct_call_from_0x24cf | direct_call_from_0x2572 | reviewed contiguous face activator		re/assembly/xdb/amer/direct_calls/func_002b6d_routine.asm	reviewed_contiguous_owner_shared_renderer_return
 xdb_amer	0x000000	entry	overlay_entry_0		re/assembly/xdb/amer/entry/func_000000_routine.asm	cfg_blocks_5_terminals_1
 xdb_amer	0x0000a3	entry	alien_body_entry_00a3 | direct_call_from_0x0		re/assembly/xdb/amer/entry/func_0000a3_routine.asm	cfg_blocks_18_terminals_2
 xdb_amer	0x000355	method_table_103a	alien_method_table_103a_slot_7@0x42c8		re/assembly/xdb/amer/method_table_103a/func_000355_routine.asm	cfg_blocks_22_terminals_1
@@ -354,7 +354,7 @@ xdb_croolis	0x001e1d	direct_calls	direct_call_from_0xa3		re/assembly/xdb/croolis
 xdb_croolis	0x00206c	direct_calls	direct_call_from_0xa3		re/assembly/xdb/croolis/direct_calls/func_00206c_routine.asm	cfg_blocks_28_terminals_2
 xdb_croolis	0x002514	direct_calls	direct_call_from_0xa3		re/assembly/xdb/croolis/direct_calls/func_002514_routine.asm	cfg_blocks_19_terminals_1
 xdb_croolis	0x0025d6	direct_calls	direct_call_from_0x5dc | reviewed contiguous renderer owner		re/assembly/xdb/croolis/direct_calls/func_0025d6_routine.asm	reviewed_contiguous_owner_internal_dispatch
-xdb_croolis	0x002bdd	direct_calls	direct_call_from_0x2514 | direct_call_from_0x25d6		re/assembly/xdb/croolis/direct_calls/func_002bdd_routine.asm	cfg_blocks_30_terminals_7
+xdb_croolis	0x002bdd	direct_calls	direct_call_from_0x2514 | direct_call_from_0x25d6 | reviewed contiguous face activator		re/assembly/xdb/croolis/direct_calls/func_002bdd_routine.asm	reviewed_contiguous_owner_shared_renderer_return
 xdb_croolis	0x000000	entry	overlay_entry_0		re/assembly/xdb/croolis/entry/func_000000_routine.asm	cfg_blocks_5_terminals_1
 xdb_croolis	0x0000a3	entry	alien_body_entry_00a3 | direct_call_from_0x0		re/assembly/xdb/croolis/entry/func_0000a3_routine.asm	cfg_blocks_18_terminals_2
 xdb_croolis	0x00036a	method_table_103a	alien_method_table_103a_slot_7@0x4338		re/assembly/xdb/croolis/method_table_103a/func_00036a_routine.asm	cfg_blocks_24_terminals_1
@@ -391,7 +391,7 @@ xdb_scrut	0x001edd	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/dir
 xdb_scrut	0x00212c	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/direct_calls/func_00212c_routine.asm	cfg_blocks_28_terminals_2
 xdb_scrut	0x0025d4	direct_calls	direct_call_from_0xa3		re/assembly/xdb/scrut/direct_calls/func_0025d4_routine.asm	cfg_blocks_19_terminals_1
 xdb_scrut	0x002696	direct_calls	direct_call_from_0x5dc | reviewed contiguous renderer owner		re/assembly/xdb/scrut/direct_calls/func_002696_routine.asm	reviewed_contiguous_owner_internal_dispatch
-xdb_scrut	0x002c9d	direct_calls	direct_call_from_0x25d4 | direct_call_from_0x2696		re/assembly/xdb/scrut/direct_calls/func_002c9d_routine.asm	cfg_blocks_30_terminals_7
+xdb_scrut	0x002c9d	direct_calls	direct_call_from_0x25d4 | direct_call_from_0x2696 | reviewed contiguous face activator		re/assembly/xdb/scrut/direct_calls/func_002c9d_routine.asm	reviewed_contiguous_owner_shared_renderer_return
 xdb_scrut	0x000000	entry	overlay_entry_0		re/assembly/xdb/scrut/entry/func_000000_routine.asm	cfg_blocks_5_terminals_1
 xdb_scrut	0x0000a3	entry	alien_body_entry_00a3 | direct_call_from_0x0		re/assembly/xdb/scrut/entry/func_0000a3_routine.asm	cfg_blocks_18_terminals_2
 xdb_scrut	0x00036a	method_table_103a	alien_method_table_103a_slot_7@0x43f8		re/assembly/xdb/scrut/method_table_103a/func_00036a_routine.asm	cfg_blocks_24_terminals_1

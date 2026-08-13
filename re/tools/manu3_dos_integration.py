@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 INTEGRATION_DIR = ROOT / "re" / "integration" / "dos"
 OUT_ROOT = INTEGRATION_DIR / "out"
 INCLUDE_DIR = ROOT / "re" / "source" / "xdb" / "candidates" / "include"
-RECOVERED_SOURCES = (
+MANU3_RECOVERED_SOURCES = (
     ROOT
     / "re"
     / "source"
@@ -39,6 +39,15 @@ RECOVERED_SOURCES = (
     / "manu3"
     / "func_000d7d_face_activate.c",
 )
+ALIEN_FACE_ACTIVATE_SOURCE = (
+    ROOT
+    / "re"
+    / "source"
+    / "xdb"
+    / "candidates"
+    / "croolis"
+    / "func_002bdd_face_activate.c"
+)
 
 
 @dataclass(frozen=True)
@@ -47,10 +56,10 @@ class IntegrationCase:
     source: Path
     executable_name: str
     expected_result: str
+    recovered_sources: tuple[Path, ...]
     artifact_name: str | None = None
     artifact_size: int | None = None
     artifact_sha256: str | None = None
-    link_renderer: bool = True
 
 
 CASES = (
@@ -59,12 +68,14 @@ CASES = (
         source=INTEGRATION_DIR / "manu3_renderer_empty.c",
         executable_name="MANU3E.EXE",
         expected_result="PASS manu3 renderer empty",
+        recovered_sources=MANU3_RECOVERED_SOURCES,
     ),
     IntegrationCase(
         name="manu3_renderer_active",
         source=INTEGRATION_DIR / "manu3_renderer_active.c",
         executable_name="MANU3A.EXE",
         expected_result="PASS manu3 renderer active",
+        recovered_sources=MANU3_RECOVERED_SOURCES,
         artifact_name="FRAME.BIN",
         artifact_size=320 * 200,
         artifact_sha256=(
@@ -77,13 +88,26 @@ CASES = (
         source=INTEGRATION_DIR / "manu3_face_activate.c",
         executable_name="MANU3F.EXE",
         expected_result="PASS manu3 face activate",
+        recovered_sources=(MANU3_RECOVERED_SOURCES[1],),
         artifact_name="RECORD.BIN",
         artifact_size=0x5A,
         artifact_sha256=(
             "b52d511a27343c7992d24cdf5029dde8"
             "7c7324e7a5d219d2a3f143db400af6b1"
         ),
-        link_renderer=False,
+    ),
+    IntegrationCase(
+        name="alien_face_activate",
+        source=INTEGRATION_DIR / "alien_face_activate.c",
+        executable_name="ALIENF.EXE",
+        expected_result="PASS alien face activate",
+        recovered_sources=(ALIEN_FACE_ACTIVATE_SOURCE,),
+        artifact_name="RECORD.BIN",
+        artifact_size=0x5A,
+        artifact_sha256=(
+            "1955a6685562a0b8aaf5e65b4b1f551e"
+            "cda83eab796dc87d1029b31e470a399f"
+        ),
     ),
 )
 
@@ -142,14 +166,7 @@ def build(wcl: str, case: IntegrationCase) -> tuple[Path, Path]:
         f"-fe={executable}",
         f"-fm={out_dir / 'MANU3.MAP'}",
         str(case.source),
-        *(
-            str(source)
-            for source in (
-                RECOVERED_SOURCES
-                if case.link_renderer
-                else (RECOVERED_SOURCES[1],)
-            )
-        ),
+        *(str(source) for source in case.recovered_sources),
     ]
     run_checked(command, cwd=out_dir)
     if not executable.is_file():

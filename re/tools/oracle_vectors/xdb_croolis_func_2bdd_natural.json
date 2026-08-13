@@ -1,0 +1,301 @@
+[
+  {
+    "name": "inactive",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "45a6083c04d70894f911c840c778c2749c229c1cf8e88bd12a46d8165c8343b0"
+  },
+  {
+    "name": "backface_rejected",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        25
+      ],
+      [
+        50,
+        100
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": 39,
+    "record_sha256": "f5f00280d729a71cfaa3f06d3c81db016ef884497668e89539f31ce904d3df26"
+  },
+  {
+    "name": "right_edge_switch",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11050,
+    "remaining": 39,
+    "record_sha256": "3cc2412cffd02f4bc6ccc77f34982e1009ae49857110416daf8bc3a76390fe4b"
+  },
+  {
+    "name": "right_edge_clipped",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        80,
+        120
+      ],
+      [
+        -20,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11198,
+    "remaining": 79,
+    "record_sha256": "94389b4b1344300c431fbd15b8d4aee24ed6ad6527b50c9a877bb272d155c988"
+  },
+  {
+    "name": "left_edge_switch",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        50,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11129,
+    "remaining": 39,
+    "record_sha256": "e1fdb2ba9f66196aca9cac5d2ae148bc9004fae95682bf599872d267ccac3adb"
+  },
+  {
+    "name": "left_edge_clipped",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        -20,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11198,
+    "remaining": 79,
+    "record_sha256": "2f272c49b12afb5f98f1f7024735c44390ac8e44d4c797a96b3c44e26513d049"
+  },
+  {
+    "name": "equal_secondary_x",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11198,
+    "remaining": 69,
+    "record_sha256": "869f40523bc2d71da0f7879fd82418ebcde5d79e2426ce3d4524bd1252d1456c"
+  },
+  {
+    "name": "vertical_first_edge",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11198,
+    "remaining": 89,
+    "record_sha256": "1955a6685562a0b8aaf5e65b4b1f551ecda83eab796dc87d1029b31e470a399f"
+  },
+  {
+    "name": "zero_second_width_rejected",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        10,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "1f9fbe9fa3e5b5919657647174a3ed4d24361050d15f6e295220542bc032cf9d"
+  },
+  {
+    "name": "vertical_direction_rejected",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        100
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "c33a80c308a6732c281031fc9ef491b9b53a269b8da46cbeeedac058e45afc2d"
+  },
+  {
+    "name": "maximum_vertical_width_accepted",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        519
+      ],
+      [
+        509,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11198,
+    "remaining": 498,
+    "record_sha256": "959540765041aea2dd7a8f241dbd923231f82a035cd80f2549d6966b581ee6ec"
+  },
+  {
+    "name": "horizontal_width_limit_rejected",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        100
+      ],
+      [
+        510,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "5ca1cecbdfcc593c66a84406ded979b319a1bbb25f867ae220d6b81a9b35eeb5"
+  },
+  {
+    "name": "vertical_span_limit_rejected",
+    "module": "croolis",
+    "entry": 11229,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        520
+      ],
+      [
+        509,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "c8459d740545ab7e505150e483edc440d462d0693d3663e3829fcb7ff642c77d"
+  }
+]

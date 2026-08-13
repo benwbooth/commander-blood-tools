@@ -128,7 +128,8 @@ typedef union xdb_alien_screen_position {
 } xdb_alien_screen_position;
 
 typedef struct xdb_alien_projection_vertex {
-    xdb_u8 field_000[0x04];
+    xdb_u16 texture_u;
+    xdb_u16 texture_v;
     xdb_alien_projection_field_004 field_004;
     xdb_i16 object_y;
     xdb_i16 object_z;
@@ -136,6 +137,14 @@ typedef struct xdb_alien_projection_vertex {
     xdb_i32 depth;
     xdb_u16 clip_flags;
 } xdb_alien_projection_vertex;
+
+typedef union xdb_alien_texture_coordinate {
+    xdb_u32 packed;
+    struct {
+        xdb_i16 u;
+        xdb_i16 v;
+    } component;
+} xdb_alien_texture_coordinate;
 
 typedef struct xdb_alien_face {
     xdb_u16 link;
@@ -332,6 +341,7 @@ typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
 extern volatile xdb_u16 xdb_alien_palette_segment; /* DS:0x0004 */
+#define xdb_alien_texture_segment_base xdb_alien_palette_segment
 extern volatile xdb_u16 xdb_alien_raster_segment; /* FS:0x0006; FS=DS invariant */
 extern volatile xdb_u16
         xdb_alien_linear_framebuffer_segment; /* FS:0x0024; FS=DS invariant */

@@ -4,10 +4,10 @@
 ; artifact_sha256: 6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31
 ; overlay_offset: 0x002b6d
 ; group: direct_calls
-; provenance: direct_call_from_0x24cf, direct_call_from_0x2572
+; provenance: direct_call_from_0x24cf, direct_call_from_0x2572, reviewed_contiguous_face_activator
 ; byte_count: 1514
-; boundary: cfg_blocks_30_terminals_7
-; terminal: jmp 0x2f71:1, jmp 0x30d8:1, jmp 0x3119:2, ret:3
+; boundary: reviewed_contiguous_owner_shared_renderer_return
+; terminal: shared_renderer_ret:1, local_ret_instructions:3
 ; direct_callees: none
 ; indirect_calls: 0
 ; routine_bytes_sha256: 92d3573f9bd1b2b3d79e3a1179f00c075fe633903d28ec02be7b5e8ba3dac38d

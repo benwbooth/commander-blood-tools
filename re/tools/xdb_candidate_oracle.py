@@ -9562,6 +9562,10 @@ def _manu3_gradient_reference(
     depth: tuple[int, int, int],
     work_segment: int,
     reciprocal_table: tuple[int, ...],
+    max_face_width: int = 0x0190,
+    advance_secondary: int = 0x0CCA,
+    advance_switch: int = 0x0D19,
+    advance_remove: int = 0x0D5E,
 ) -> tuple[bool, dict[int, int]]:
     def u16(value: int) -> int:
         return value & 0xFFFF
@@ -9623,10 +9627,10 @@ def _manu3_gradient_reference(
     clipping_mode = 0
 
     if width_1 == 0:
-        if width_2 == 0 or width_2 >= 0x0190:
+        if width_2 == 0 or width_2 >= max_face_width:
             return False, values
         vertical_span = u16(screen[1][1] - screen[0][1])
-        if i16(vertical_span) <= 0 or vertical_span >= 0x0190:
+        if i16(vertical_span) <= 0 or vertical_span >= max_face_width:
             return False, values
 
         reciprocal_1 = reciprocal(vertical_span)
@@ -9652,7 +9656,7 @@ def _manu3_gradient_reference(
         depth_step = mul_q16(sub32(depth[2], depth[0]), reciprocal_2)
         depth_position = add32(depth[0], depth_step >> 1)
         depth_gradient = mul_q16(sub32(depth[1], depth[0]), reciprocal_1)
-        advance_offset = 0x0D5E
+        advance_offset = advance_remove
     else:
         if width_2 == 0:
             return False, values
@@ -9731,7 +9735,7 @@ def _manu3_gradient_reference(
                 edge_1_position = add32(
                     edge_1_position, mul_low(edge_1_step, clipped_columns)
                 )
-                advance_offset = 0x0D5E
+                advance_offset = advance_remove
                 clipping_mode = 1
             else:
                 put16(0x30, secondary_width - 1)
@@ -9782,7 +9786,7 @@ def _manu3_gradient_reference(
                 )
                 put32(0x3E, secondary_depth_step)
                 put32(0x3A, add32(depth[2], secondary_depth_step >> 1))
-                advance_offset = 0x0CCA
+                advance_offset = advance_secondary
         elif x_difference < 0:
             secondary_width = u16(x_2 - x_1)
             secondary_reciprocal = reciprocal(secondary_width)
@@ -9796,7 +9800,7 @@ def _manu3_gradient_reference(
                     i32(screen_value[1] & 0xFFFF0000),
                     mul_low(edge_1_step, clipped_columns),
                 )
-                advance_offset = 0x0D5E
+                advance_offset = advance_remove
                 clipping_mode = 2
             else:
                 remaining = i16(u16(remaining) - secondary_width)
@@ -9813,9 +9817,9 @@ def _manu3_gradient_reference(
                         secondary_edge_step >> 1,
                     ),
                 )
-                advance_offset = 0x0D19
+                advance_offset = advance_switch
         else:
-            advance_offset = 0x0D5E
+            advance_offset = advance_remove
 
     texture_segment = u16(work_segment + ((texture_value[0] >> 24) << 12))
     if i16(x_0) < 0 and clipping_mode != 1:
@@ -9849,12 +9853,15 @@ def _manu3_gradient_reference(
     return True, values
 
 
-def manu3_face_gradient_vectors() -> list[dict[str, object]]:
-    module = "manu3"
-    entry = 0x0D7D
+def face_gradient_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    layout: dict[str, int],
+    extra_cases: tuple[dict[str, object], ...] = (),
+) -> list[dict[str, object]]:
     image = load_image(module)
-    expected_hash = "823c014f74d7371b875944a9ae293253654327074a745ec5605fdea15c3aa1a5"
-    if hashlib.sha256(image[entry:0x1367]).hexdigest() != expected_hash:
+    if hashlib.sha256(image[entry : entry + 1514]).hexdigest() != body_hash:
         raise AssertionError(f"{module}:{entry:#x}: recovered gradient body changed")
 
     cases = (
@@ -9900,7 +9907,7 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
             "name": "vertical_direction_rejected",
             "screen": ((10, 100), (10, 20), (100, 30)),
         },
-    )
+    ) + extra_cases
     texture = ((0x0123, 0x1234), (0x2345, 0x3456), (0x4567, 0x5678))
     depth = (0x10203040, -0x1234567, 0x30405060)
     data_segment = 0x4000
@@ -9912,14 +9919,14 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
     vertex_offsets = (0x1100, 0x1200, 0x1300)
     raster_offset = 0x2000
     free_offset = 0x205A
-    head_offset = 0x0964
-    tail_offset = 0x0A18
+    head_offset = layout["active_head"]
+    tail_offset = layout["active_tail"]
     existing_offset = 0x2100
     work_segment = 0x3210
-    raster_data_offset = 0xA280
+    raster_data_offset = layout["reciprocal_data"]
     reciprocal_table = tuple(
         struct.unpack_from("<I", image, raster_data_offset + width * 4)[0]
-        for width in range(0x0190)
+        for width in range(layout["max_face_width"])
     )
     vectors = []
 
@@ -9932,6 +9939,10 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
             depth,
             work_segment,
             reciprocal_table,
+            layout["max_face_width"],
+            layout["advance_secondary"],
+            layout["advance_switch"],
+            layout["advance_remove"],
         )
         if not active:
             accepted = False
@@ -9963,10 +9974,13 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
                 "<I", geometry_before, vertex_offset + 0x0E, depth_value & 0xFFFFFFFF
             )
 
-        data_before[:0x0640] = image[
-            raster_data_offset : raster_data_offset + 0x0640
+        reciprocal_size = layout["max_face_width"] * 4
+        data_before[:reciprocal_size] = image[
+            raster_data_offset : raster_data_offset + reciprocal_size
         ]
-        struct.pack_into("<H", data_before, 0x0908, raster_offset if active else 0)
+        struct.pack_into(
+            "<H", data_before, layout["free_head"], raster_offset if active else 0
+        )
         struct.pack_into("<H", data_before, raster_offset, free_offset)
         struct.pack_into("<H", data_before, head_offset, tail_offset)
         struct.pack_into("<I", data_before, tail_offset + 0x08, 0x7FFFFFFF)
@@ -10018,20 +10032,32 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
                 expected_existing_next = raster_offset
                 struct.pack_into("<H", record_expected, 0x10, existing_offset)
 
+        data_expected = bytearray(data_before)
+        data_expected[raster_offset : raster_offset + 0x5A] = record_expected
+        if accepted:
+            struct.pack_into("<H", data_expected, layout["free_head"], free_offset)
+            struct.pack_into("<H", data_expected, tail_offset + 0x10, raster_offset)
+            if case.get("list_mode") == "after_existing":
+                struct.pack_into("<H", data_expected, existing_offset, raster_offset)
+            else:
+                struct.pack_into("<H", data_expected, head_offset, raster_offset)
+
+        initial = {
+            "esi": 0xA5A50000 | face_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": geometry_segment,
+            "fs": globals_segment,
+            "gs": 0x7800,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        stack_sentinel = bytes.fromhex("5aa59669")
         machine = execute(
             image,
             entry,
             return_address,
-            {
-                "esi": 0xA5A50000 | face_offset,
-                "sp": 0xFF00,
-                "ds": data_segment,
-                "es": geometry_segment,
-                "fs": globals_segment,
-                "gs": 0x7800,
-                "ss": stack_segment,
-                "flags": 0x0202,
-            },
+            initial,
             [
                 (0, return_address, b"\xcc"),
                 (data_segment, 0, bytes(data_before)),
@@ -10040,7 +10066,7 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
                 (
                     stack_segment,
                     0xFF00,
-                    struct.pack("<H", return_address) + bytes.fromhex("5aa59669"),
+                    struct.pack("<H", return_address) + stack_sentinel,
                 ),
             ],
             max_instructions=5000,
@@ -10062,7 +10088,7 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
                 f"expected={[record_expected[offset] for offset in differing[:16]]}"
             )
         actual_active = struct.unpack(
-            "<H", machine.mem_read(data_segment * 16 + 0x0908, 2)
+            "<H", machine.mem_read(data_segment * 16 + layout["free_head"], 2)
         )[0]
         actual_head = struct.unpack(
             "<H", machine.mem_read(data_segment * 16 + head_offset, 2)
@@ -10101,6 +10127,48 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
             raise AssertionError(
                 f"{module}:{entry:#x} {case['name']}: FS globals changed"
             )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            differing = [
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, data_expected)
+                )
+                if actual != expected
+            ]
+            scratch_ranges = (
+                (layout["scratch_low_start"], layout["scratch_low_end"]),
+                (layout["scratch_high_start"], layout["scratch_high_end"]),
+            )
+            unexpected = [
+                offset
+                for offset in differing
+                if not any(start <= offset < end for start, end in scratch_ranges)
+            ]
+            if unexpected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: raster memory differs "
+                    f"outside volatile scratch at {unexpected[:16]}"
+                )
+        for register, expected in (
+            (UC_X86_REG_DS, data_segment),
+            (UC_X86_REG_ES, geometry_segment),
+            (UC_X86_REG_FS, globals_segment),
+            (UC_X86_REG_GS, initial["gs"]),
+            (UC_X86_REG_SS, stack_segment),
+            (UC_X86_REG_SP, 0xFF02),
+        ):
+            actual = machine.reg_read(register)
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"segment/stack register {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 4)) != stack_sentinel:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: stack sentinel changed"
+            )
 
         vectors.append(
             {
@@ -10116,6 +10184,56 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
         )
 
     return vectors
+
+
+def manu3_face_gradient_vectors() -> list[dict[str, object]]:
+    return face_gradient_vectors(
+        "manu3",
+        0x0D7D,
+        "823c014f74d7371b875944a9ae293253654327074a745ec5605fdea15c3aa1a5",
+        {
+            "free_head": 0x0908,
+            "active_head": 0x0964,
+            "active_tail": 0x0A18,
+            "max_face_width": 0x0190,
+            "advance_secondary": 0x0CCA,
+            "advance_switch": 0x0D19,
+            "advance_remove": 0x0D5E,
+            "reciprocal_data": 0x0A280,
+            "scratch_low_start": 0x061C,
+            "scratch_low_end": 0x0634,
+            "scratch_high_start": 0x0670,
+            "scratch_high_end": 0x067E,
+        },
+    )
+
+
+def alien_face_activate_vectors(
+    module: str,
+    entry: int,
+    body_hash: str,
+    layout: dict[str, int],
+) -> list[dict[str, object]]:
+    return face_gradient_vectors(
+        module,
+        entry,
+        body_hash,
+        layout,
+        (
+            {
+                "name": "maximum_vertical_width_accepted",
+                "screen": ((10, 20), (10, 519), (509, 30)),
+            },
+            {
+                "name": "horizontal_width_limit_rejected",
+                "screen": ((10, 20), (10, 100), (510, 30)),
+            },
+            {
+                "name": "vertical_span_limit_rejected",
+                "screen": ((10, 20), (10, 520), (509, 30)),
+            },
+        ),
+    )
 
 
 def _signed_divide(dividend: int, divisor: int) -> tuple[int, int]:
@@ -12266,6 +12384,70 @@ def main() -> int:
                 body_hash,
                 layout,
             ),
+            args.check,
+        )
+    for module, entry, body_hash, layout in (
+        (
+            "amer",
+            0x2B6D,
+            "92d3573f9bd1b2b3d79e3a1179f00c075fe633903d28ec02be7b5e8ba3dac38d",
+            {
+                "free_head": 0x0BCE,
+                "active_head": 0x0C2A,
+                "active_tail": 0x0CDE,
+                "max_face_width": 0x01F4,
+                "advance_secondary": 0x2ABA,
+                "advance_switch": 0x2B09,
+                "advance_remove": 0x2B4E,
+                "reciprocal_data": 0x33100,
+                "scratch_low_start": 0x08E2,
+                "scratch_low_end": 0x08FA,
+                "scratch_high_start": 0x0936,
+                "scratch_high_end": 0x0944,
+            },
+        ),
+        (
+            "croolis",
+            0x2BDD,
+            "84ca972abc64d3f32329ea41ce675c13e657b44ceabc9dbc5ae8c9f61b498bc8",
+            {
+                "free_head": 0x0BD0,
+                "active_head": 0x0C2C,
+                "active_tail": 0x0CE0,
+                "max_face_width": 0x01F4,
+                "advance_secondary": 0x2B2A,
+                "advance_switch": 0x2B79,
+                "advance_remove": 0x2BBE,
+                "reciprocal_data": 0x311E0,
+                "scratch_low_start": 0x08E4,
+                "scratch_low_end": 0x08FC,
+                "scratch_high_start": 0x0938,
+                "scratch_high_end": 0x0946,
+            },
+        ),
+        (
+            "scrut",
+            0x2C9D,
+            "bd9371a018942ec432ea695d4046a06902cac4f1e4e21a8231667d4fb5722ff0",
+            {
+                "free_head": 0x0BD0,
+                "active_head": 0x0C2C,
+                "active_tail": 0x0CE0,
+                "max_face_width": 0x01F4,
+                "advance_secondary": 0x2BEA,
+                "advance_switch": 0x2C39,
+                "advance_remove": 0x2C7E,
+                "reciprocal_data": 0x30EF0,
+                "scratch_low_start": 0x08E4,
+                "scratch_low_end": 0x08FC,
+                "scratch_high_start": 0x0938,
+                "scratch_high_end": 0x0946,
+            },
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_face_activate_vectors(module, entry, body_hash, layout),
             args.check,
         )
     for module, entry in (

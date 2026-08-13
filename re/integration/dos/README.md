@@ -5,7 +5,7 @@ executables and run them under DOSBox-X. They are the bridge between the
 per-routine Unicorn oracles and replacing routines in the original XDB
 execution environment.
 
-Run the current MANU3 gate from the repository root:
+Run the current MANU3 and alien gates from the repository root:
 
 ```sh
 NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
@@ -29,6 +29,10 @@ bytes; the host runner requires their SHA-256 to match the unmodified overlay.
 through `0x0D7D` and compares the complete 90-byte raster record against the
 raw overlay. This specifically covers the 32-bit texture-delta operation order
 that is otherwise easy to lose when expressing the routine in 16-bit C.
+
+`alien_face_activate.c` drives the equivalent CROOLIS `0x2BDD` path through
+the one-function natural-C activator. Its complete 90-byte record must match
+the hash produced by direct execution of the shipped CROOLIS overlay.
 
 The recovered C makes the original implicit raster DS ownership explicit as a
 segment argument from `0x0700` to `0x0D7D`. Raster records, reciprocal values,

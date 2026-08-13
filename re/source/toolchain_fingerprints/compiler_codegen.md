@@ -2612,6 +2612,29 @@ warning-free to 949 instructions. The C preserves the complete owner logic but
 neither compiler reproduces the shipped register allocation or internal
 continuation layout.
 
+## Alien face-activation candidate
+
+AMER `0x2b6d`, CROOLIS `0x2bdd`, and SCRUT `0x2c9d` are complete contiguous
+424-instruction, 1514-byte face activators. Their normalized instruction and
+operand structures have zero mismatches against the already proven MANU3
+activator. The only non-relocation immediate changes are module-local renderer
+continuations and active-list roots plus a 500-entry/2000-byte reciprocal
+limit in place of MANU3's 400/1600.
+
+Thirteen direct raw-overlay vectors per alien module cover inactive return,
+backface and degenerate rejection, every secondary-edge topology, both
+negative-X clipping paths, width 499/500 boundaries, the shipped reciprocal
+tables, all persistent record/list memory outside the exact volatile scratch
+windows, segment ownership, and stack preservation. A real-mode DOS executable
+linked with the recovered CROOLIS C reproduces the oracle's complete 90-byte
+record hash.
+
+The source contains exactly one C function per assembly owner; modular
+fixed-point expressions are macros rather than emitted helper functions. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 1139
+instructions/3471 bytes. Turbo C 2.01 medium (`-mm -O -Z`) emits 1349
+instructions. Neither matches the original code generation.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

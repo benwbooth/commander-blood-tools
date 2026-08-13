@@ -1,0 +1,301 @@
+[
+  {
+    "name": "inactive",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "45a6083c04d70894f911c840c778c2749c229c1cf8e88bd12a46d8165c8343b0"
+  },
+  {
+    "name": "backface_rejected",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        25
+      ],
+      [
+        50,
+        100
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": 39,
+    "record_sha256": "f5f00280d729a71cfaa3f06d3c81db016ef884497668e89539f31ce904d3df26"
+  },
+  {
+    "name": "right_edge_switch",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        50,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11242,
+    "remaining": 39,
+    "record_sha256": "75663c8dd6e5a7d27ddec9426de18edb715befe81f52b1647fae54c94545deee"
+  },
+  {
+    "name": "right_edge_clipped",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        80,
+        120
+      ],
+      [
+        -20,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11390,
+    "remaining": 79,
+    "record_sha256": "ce86ef3fa21d3cceaefb4118f918638efda073dd5d9993572b849749c415bc74"
+  },
+  {
+    "name": "left_edge_switch",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        50,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11321,
+    "remaining": 39,
+    "record_sha256": "fdd65b1db982d985183f26964b3eae6c20a2ef6f59f6cbbd189e4abdbd353848"
+  },
+  {
+    "name": "left_edge_clipped",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        -100,
+        20
+      ],
+      [
+        -20,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11390,
+    "remaining": 79,
+    "record_sha256": "359a9682d2cd0fefeee8cb7e3cb6d15d09ea222b73b70776d14ddd046bdad80e"
+  },
+  {
+    "name": "equal_secondary_x",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        80,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11390,
+    "remaining": 69,
+    "record_sha256": "ac37067668fce03dc7b03bb310aca8051d5b3bd7a981275d161bca4b9e7deba2"
+  },
+  {
+    "name": "vertical_first_edge",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        100
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11390,
+    "remaining": 89,
+    "record_sha256": "d26883b5c945fa19b462370a82784f8b2f2b066f82811168a00b5c6e30c96faf"
+  },
+  {
+    "name": "zero_second_width_rejected",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        80,
+        100
+      ],
+      [
+        10,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "1f9fbe9fa3e5b5919657647174a3ed4d24361050d15f6e295220542bc032cf9d"
+  },
+  {
+    "name": "vertical_direction_rejected",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        100
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        100,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "c33a80c308a6732c281031fc9ef491b9b53a269b8da46cbeeedac058e45afc2d"
+  },
+  {
+    "name": "maximum_vertical_width_accepted",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        519
+      ],
+      [
+        509,
+        30
+      ]
+    ],
+    "accepted": true,
+    "advance_offset": 11390,
+    "remaining": 498,
+    "record_sha256": "602b1fedd56edcf9eee1f4354cbd21db246243cf1d702252ad12cde3cbaefc5e"
+  },
+  {
+    "name": "horizontal_width_limit_rejected",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        100
+      ],
+      [
+        510,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "5ca1cecbdfcc593c66a84406ded979b319a1bbb25f867ae220d6b81a9b35eeb5"
+  },
+  {
+    "name": "vertical_span_limit_rejected",
+    "module": "scrut",
+    "entry": 11421,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        520
+      ],
+      [
+        509,
+        30
+      ]
+    ],
+    "accepted": false,
+    "advance_offset": null,
+    "remaining": null,
+    "record_sha256": "c8459d740545ab7e505150e483edc440d462d0693d3663e3829fcb7ff642c77d"
+  }
+]
