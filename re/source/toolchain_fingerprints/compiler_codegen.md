@@ -3456,6 +3456,35 @@ actual candidate warning-free to 248 instructions/728 bytes versus 187/481
 original. Remaining integration work is segment placement and the narrow
 resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
 
+## BLOODPRG MSCDEX audio request candidates
+
+The adjacent `0x001344`, `0x001397`, and `0x0013C4` routines are the CD-audio
+preparation, stop, and play path. Their contiguous static game-data region
+confirms the request interpretation independently of labels: `DS:0x0B41`
+starts with length `0x1A`; `0x0B5B` starts with IOCTL function `0x0A`;
+`0x0B62` contains `03 00 50 01 50 02 50 03 50`; `0x0B6B` starts with function
+`0x0B`; and `0x0B72` starts with length `0x16`. Packed C structures reproduce
+the exact 26/7/9/7/22-byte layout and retain all untouched request fields.
+
+Five, four, and six direct-binary vectors verify the bit-zero gates, all five
+MSCDEX request forms, request state at every `INT 2Fh`, original-drive `CX`,
+track 2 selection, channel control, and complete saved-register boundaries.
+The play vectors also prove the packed byte order is frame/second/minute, byte
+three is ignored by conversion, 150-frame pregap subtraction wraps unsigned,
+and the end-minus-start duration wraps modulo 32 bits. The preparation routine
+has a measured `DS == GS` entry precondition because it writes through `DS`
+while passing the same buffer through `ES=GS`; this is the live game invariant,
+not a hidden emulation mechanism in the C source.
+
+Open Watcom 1.9 medium (`-3 -ox -mm`) compiles the actual candidates without
+warnings to 52/30/106 instructions and 181/88/295 bytes, versus original
+30/20/71 instructions and 83/45/187 bytes. The first two expansions are normal
+`REGS`/`SREGS` setup around `int86x`. The play candidate additionally emits
+four `__U4M` calls for the natural 32-bit products where the original constructs
+32-bit results from 16-bit `MUL` operations. These are explicit DOS API and
+compiler-lowering boundaries; the recovered request and timing logic itself is
+now represented directly in C with no inline assembly.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

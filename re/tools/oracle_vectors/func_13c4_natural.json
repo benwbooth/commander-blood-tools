@@ -1,0 +1,135 @@
+[
+  {
+    "name": "disabled",
+    "cdrom_present": 0,
+    "drive": 3,
+    "start_position": "0x00000200",
+    "end_position": "0x00010000",
+    "start_frame": 0,
+    "end_frame": 4350,
+    "duration": 4350,
+    "interrupts": [],
+    "final_request": "233445566778899aabbccddeef001122334455667788",
+    "defined_flags": 68
+  },
+  {
+    "name": "ordinary_track",
+    "cdrom_present": 1,
+    "drive": 3,
+    "start_position": "0x00120320",
+    "end_position": "0x003a1025",
+    "start_frame": 81107,
+    "end_frame": 262087,
+    "duration": 180980,
+    "interrupts": [
+      {
+        "number": 47,
+        "eax": 5392,
+        "ebx": 3065383794,
+        "ecx": 3351707651,
+        "edx": 0,
+        "ds": 12288,
+        "es": 12288,
+        "request": "165384758697a8b9cadbecfd0e1f20031200f4c20200"
+      }
+    ],
+    "final_request": "165384758697a8b9cadbecfd0e1f20031200f4c20200",
+    "defined_flags": 2117
+  },
+  {
+    "name": "high_byte_ignored",
+    "cdrom_present": 129,
+    "drive": 23,
+    "start_position": "0xa5120320",
+    "end_position": "0x5a3a1025",
+    "start_frame": 81107,
+    "end_frame": 262087,
+    "duration": 180980,
+    "interrupts": [
+      {
+        "number": 47,
+        "eax": 5392,
+        "ebx": 3065383794,
+        "ecx": 3351707671,
+        "edx": 0,
+        "ds": 12288,
+        "es": 12288,
+        "request": "16728494a5b6c7d8e9fa0b1c2d3e200312a5f4c20200"
+      }
+    ],
+    "final_request": "16728494a5b6c7d8e9fa0b1c2d3e200312a5f4c20200",
+    "defined_flags": 2117
+  },
+  {
+    "name": "pregap_underflow",
+    "cdrom_present": 255,
+    "drive": 0,
+    "start_position": "0x00000000",
+    "end_position": "0x00000200",
+    "start_frame": 4294967146,
+    "end_frame": 0,
+    "duration": 150,
+    "interrupts": [
+      {
+        "number": 47,
+        "eax": 5392,
+        "ebx": 3065383794,
+        "ecx": 3351707648,
+        "edx": 0,
+        "ds": 12288,
+        "es": 12288,
+        "request": "169184b3c4d5e6f708192a3b4c5d0000000096000000"
+      }
+    ],
+    "final_request": "169184b3c4d5e6f708192a3b4c5d0000000096000000",
+    "defined_flags": 2117
+  },
+  {
+    "name": "end_before_start",
+    "cdrom_present": 1,
+    "drive": 254,
+    "start_position": "0x00300020",
+    "end_position": "0x00100010",
+    "start_frame": 215882,
+    "end_frame": 71866,
+    "duration": 4294823280,
+    "interrupts": [
+      {
+        "number": 47,
+        "eax": 5392,
+        "ebx": 3065383794,
+        "ecx": 3351707902,
+        "edx": 0,
+        "ds": 12288,
+        "es": 12288,
+        "request": "16b084d2e3f405162738495a6b7c2000300070cdfdff"
+      }
+    ],
+    "final_request": "16b084d2e3f405162738495a6b7c2000300070cdfdff",
+    "defined_flags": 2117
+  },
+  {
+    "name": "maximum_components",
+    "cdrom_present": 1,
+    "drive": 255,
+    "start_position": "0xffffffff",
+    "end_position": "0x00ffffff",
+    "start_frame": 1166730,
+    "end_frame": 1166730,
+    "duration": 0,
+    "interrupts": [
+      {
+        "number": 47,
+        "eax": 5392,
+        "ebx": 3065383794,
+        "ecx": 3351707903,
+        "edx": 0,
+        "ds": 12288,
+        "es": 12288,
+        "request": "16cf84f102132435465768798a9bffffffff00000000"
+      }
+    ],
+    "final_request": "16cf84f102132435465768798a9bffffffff00000000",
+    "defined_flags": 2117
+  }
+]

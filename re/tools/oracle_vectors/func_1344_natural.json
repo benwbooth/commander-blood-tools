@@ -1,0 +1,141 @@
+[
+  {
+    "name": "disabled_zero",
+    "cdrom_present": 0,
+    "drive": 0,
+    "ds_equals_gs": true,
+    "interrupts": [],
+    "final_game_request": "313c47525d68737e89949faab5c0cbd6e1ecf7020d18232e3944",
+    "final_ds_request": "313c47525d68737e89949faab5c0cbd6e1ecf7020d18232e3944",
+    "final_controls": "9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c",
+    "defined_flags": 68
+  },
+  {
+    "name": "disabled_other_bits",
+    "cdrom_present": 128,
+    "drive": 26,
+    "ds_equals_gs": true,
+    "interrupts": [],
+    "final_game_request": "48535e69747f8a95a0abb6c1ccd7e2edf8030e19242f3a45505b",
+    "final_ds_request": "48535e69747f8a95a0abb6c1ccd7e2edf8030e19242f3a45505b",
+    "final_controls": "a5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f",
+    "defined_flags": 68
+  },
+  {
+    "name": "enabled_drive_d",
+    "cdrom_present": 1,
+    "drive": 3,
+    "ds_equals_gs": true,
+    "interrupts": [
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "5f6a03808b96a1acb7c2cdd8e3ee5b0b003025303b46515c6772",
+        "controls": "b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b52"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "5f6a03808b96a1acb7c2cdd8e3ee6b0b003025303b46515c6772",
+        "controls": "b8bfc6cdd4dbe2e9f0f7fe050c131a212802363d444b52"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "5f6a0c808b96a1acb7c2cdd8e3ee620b003009003b46515c6772",
+        "controls": "b8bfc6cdd4dbe2e9f0f7fe050c131a212802363d444b52"
+      }
+    ],
+    "final_game_request": "5f6a0c808b96a1acb7c2cdd8e3ee620b003009003b46515c6772",
+    "final_ds_request": "5f6a0c808b96a1acb7c2cdd8e3ee620b003009003b46515c6772",
+    "final_controls": "b8bfc6cdd4dbe2e9f0f7fe050c131a212802363d444b52",
+    "defined_flags": 2053
+  },
+  {
+    "name": "enabled_all_bits",
+    "cdrom_present": 255,
+    "drive": 255,
+    "ds_equals_gs": true,
+    "interrupts": [
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 255,
+        "es": 12288,
+        "request": "76810397a2adb8c3ced9e4effa055b0b00303c47525d68737e89",
+        "controls": "cbd2d9e0e7eef5fc030a11181f262d343b424950575e65"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 255,
+        "es": 12288,
+        "request": "76810397a2adb8c3ced9e4effa056b0b00303c47525d68737e89",
+        "controls": "cbd2d9e0e7eef5fc030a11181f262d343b024950575e65"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 255,
+        "es": 12288,
+        "request": "76810c97a2adb8c3ced9e4effa05620b00300900525d68737e89",
+        "controls": "cbd2d9e0e7eef5fc030a11181f262d343b024950575e65"
+      }
+    ],
+    "final_game_request": "76810c97a2adb8c3ced9e4effa05620b00300900525d68737e89",
+    "final_ds_request": "76810c97a2adb8c3ced9e4effa05620b00300900525d68737e89",
+    "final_controls": "cbd2d9e0e7eef5fc030a11181f262d343b024950575e65",
+    "defined_flags": 2053
+  },
+  {
+    "name": "split_segments_expose_precondition",
+    "cdrom_present": 1,
+    "drive": 3,
+    "ds_equals_gs": false,
+    "interrupts": [
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "8d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95a0",
+        "controls": "dee5ecf3fa01080f161d242b323940474e555c636a7178"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "8d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95a0",
+        "controls": "dee5ecf3fa01080f161d242b323940474e025c636a7178"
+      },
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2881,
+        "cx": 3,
+        "es": 12288,
+        "request": "8d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95a0",
+        "controls": "dee5ecf3fa01080f161d242b323940474e025c636a7178"
+      }
+    ],
+    "final_game_request": "8d98a3aeb9c4cfdae5f0fb06111c27323d48535e69747f8a95a0",
+    "final_ds_request": "e7ea0cf0f3f6f9fcff0205080b0e620b003009002326292c2f32",
+    "final_controls": "dee5ecf3fa01080f161d242b323940474e025c636a7178",
+    "defined_flags": 2053
+  }
+]

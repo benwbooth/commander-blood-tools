@@ -1281,6 +1281,480 @@ def detect_cdrom_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def cdrom_audio_prepare_vectors() -> list[dict[str, object]]:
+    entry = 0x1344
+    expected_hash = "82a19bceb5835190242fddfcd708a524b73132661667cfe6b3478a3a113906d1"
+    if hashlib.sha256(EXE[entry : entry + 83]).hexdigest() != expected_hash:
+        raise AssertionError("0x1344: recovered 83-byte body changed")
+
+    game_segment = 0x3000
+    data_segment = 0x1800
+    cases = (
+        ("disabled_zero", 0x00, 0x00, True),
+        ("disabled_other_bits", 0x80, 0x1A, True),
+        ("enabled_drive_d", 0x01, 0x03, True),
+        ("enabled_all_bits", 0xFF, 0xFF, True),
+        ("split_segments_expose_precondition", 0x01, 0x03, False),
+    )
+    vectors = []
+
+    for case_index, (name, present, drive, ds_equals_gs) in enumerate(cases):
+        request_before = bytes(
+            (0x31 + case_index * 0x17 + index * 0x0B) & 0xFF
+            for index in range(26)
+        )
+        control_before = bytes(
+            (0x92 + case_index * 0x13 + index * 7) & 0xFF
+            for index in range(23)
+        )
+        audio_before = bytes(
+            (0x55 + case_index * 0x1D + index * 5) & 0xFF
+            for index in range(22)
+        )
+        decoy_before = bytes(
+            (0xC3 + case_index * 9 + index * 3) & 0xFF
+            for index in range(0x47)
+        )
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x1B1B1357 + case_index,
+            "ds": game_segment if ds_equals_gs else data_segment,
+            "es": 0x2400,
+            "fs": 0x2800,
+            "gs": game_segment,
+            "flags": 0x0293,
+        }
+        interrupt_flags = (0x0841, 0x0084, 0x0805)
+        interrupts: list[dict[str, object]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            call_index = len(interrupts)
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "request": bytes(
+                        machine.mem_read(game_segment * 16 + 0x0B41, 26)
+                    ).hex(),
+                    "controls": bytes(
+                        machine.mem_read(game_segment * 16 + 0x0B5B, 23)
+                    ).hex(),
+                }
+            )
+            machine.reg_write(UC_X86_REG_EFLAGS, interrupt_flags[call_index])
+
+        machine = execute(
+            entry,
+            0x1396,
+            initial,
+            [
+                (game_segment, 0x01B9, bytes([drive])),
+                (game_segment, 0x0AE6, bytes([present])),
+                (game_segment, 0x0B41, request_before),
+                (game_segment, 0x0B5B, control_before),
+                (game_segment, 0x0B72, audio_before),
+                (data_segment, 0x01B9, bytes([drive ^ 0xA5])),
+                (data_segment, 0x0AE6, bytes([present ^ 0x5A])),
+                (data_segment, 0x0B41, decoy_before),
+            ],
+            interrupt_handler=interrupt,
+        )
+
+        enabled = (present & 1) != 0
+        expected_game_request = bytearray(request_before)
+        expected_decoy = bytearray(decoy_before)
+        expected_written_request = (
+            expected_game_request
+            if ds_equals_gs
+            else bytearray(expected_decoy[:26])
+        )
+        expected_controls = bytearray(control_before)
+        expected_interrupts: list[dict[str, object]] = []
+        if enabled:
+            expected_written_request[2] = 0x03
+            expected_written_request[0x0E:0x10] = struct.pack("<H", 0x0B5B)
+            expected_written_request[0x10:0x12] = struct.pack("<H", game_segment)
+            expected_interrupts.append(
+                {
+                    "number": 0x2F,
+                    "ax": 0x1510,
+                    "bx": 0x0B41,
+                    "cx": drive,
+                    "es": game_segment,
+                    "request": bytes(expected_game_request).hex(),
+                    "controls": bytes(expected_controls).hex(),
+                }
+            )
+            expected_written_request[0x0E:0x10] = struct.pack("<H", 0x0B6B)
+            expected_controls[0x11] = 2
+            expected_interrupts.append(
+                {
+                    "number": 0x2F,
+                    "ax": 0x1510,
+                    "bx": 0x0B41,
+                    "cx": drive,
+                    "es": game_segment,
+                    "request": bytes(expected_game_request).hex(),
+                    "controls": bytes(expected_controls).hex(),
+                }
+            )
+            expected_written_request[2] = 0x0C
+            expected_written_request[0x0E:0x10] = struct.pack("<H", 0x0B62)
+            expected_written_request[0x12:0x14] = struct.pack("<H", 9)
+            expected_interrupts.append(
+                {
+                    "number": 0x2F,
+                    "ax": 0x1510,
+                    "bx": 0x0B41,
+                    "cx": drive,
+                    "es": game_segment,
+                    "request": bytes(expected_game_request).hex(),
+                    "controls": bytes(expected_controls).hex(),
+                }
+            )
+        if not ds_equals_gs:
+            expected_decoy[:26] = expected_written_request
+
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x1344 {name}: interrupts={interrupts!r}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B41, 26)) != bytes(
+            expected_game_request
+        ):
+            raise AssertionError(f"0x1344 {name}: final IOCTL request mismatch")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B5B, 23)) != bytes(
+            expected_controls
+        ):
+            raise AssertionError(f"0x1344 {name}: final control blocks mismatch")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B72, 22)) != audio_before:
+            raise AssertionError(f"0x1344 {name}: changed audio request")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B41, 0x47)) != bytes(
+            expected_decoy
+        ):
+            raise AssertionError(f"0x1344 {name}: DS request mismatch")
+        for register in (
+            "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp",
+            "ds", "es", "fs", "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x1344 {name}: changed {register}")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_mask = 0x08D5 if enabled else 0x08C5
+        expected_flags = interrupt_flags[-1] if enabled else 0x0044
+        if final_flags & flag_mask != expected_flags & flag_mask:
+            raise AssertionError(
+                f"0x1344 {name}: flags={final_flags:#x}, expected={expected_flags:#x}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "cdrom_present": present,
+                "drive": drive,
+                "ds_equals_gs": ds_equals_gs,
+                "interrupts": interrupts,
+                "final_game_request": bytes(expected_game_request).hex(),
+                "final_ds_request": bytes(expected_written_request).hex(),
+                "final_controls": bytes(expected_controls).hex(),
+                "defined_flags": final_flags & flag_mask,
+            }
+        )
+    return vectors
+
+
+def cdrom_audio_stop_vectors() -> list[dict[str, object]]:
+    entry = 0x1397
+    expected_hash = "aac9686cb22869e079aa6dbbc93dd6ec7cb86a9e13d1417c851bab1c6e099bf4"
+    if hashlib.sha256(EXE[entry : entry + 45]).hexdigest() != expected_hash:
+        raise AssertionError("0x1397: recovered 45-byte body changed")
+
+    game_segment = 0x3000
+    data_segment = 0x1800
+    cases = (
+        ("disabled_zero", 0x00, 0x00),
+        ("disabled_other_bits", 0xFE, 0x17),
+        ("enabled_drive_d", 0x01, 0x03),
+        ("enabled_all_bits", 0xFF, 0xFF),
+    )
+    vectors = []
+
+    for case_index, (name, present, drive) in enumerate(cases):
+        request_before = bytes(
+            (0x41 + case_index * 0x1B + index * 0x0D) & 0xFF
+            for index in range(22)
+        )
+        decoy_before = bytes(
+            (0xA7 + case_index * 7 + index * 5) & 0xFF
+            for index in range(22)
+        )
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x1B1B1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2800,
+            "gs": game_segment,
+            "flags": 0x0293,
+        }
+        interrupts: list[dict[str, object]] = []
+        interrupt_flags = 0x0881
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "request": bytes(
+                        machine.mem_read(game_segment * 16 + 0x0B72, 22)
+                    ).hex(),
+                }
+            )
+            machine.reg_write(UC_X86_REG_EFLAGS, interrupt_flags)
+
+        machine = execute(
+            entry,
+            0x13C3,
+            initial,
+            [
+                (game_segment, 0x01B9, bytes([drive])),
+                (game_segment, 0x0AE6, bytes([present])),
+                (game_segment, 0x0B72, request_before),
+                (data_segment, 0x01B9, bytes([drive ^ 0xA5])),
+                (data_segment, 0x0AE6, bytes([present ^ 0x5A])),
+                (data_segment, 0x0B72, decoy_before),
+            ],
+            interrupt_handler=interrupt,
+        )
+
+        enabled = (present & 1) != 0
+        expected_request = bytearray(request_before)
+        expected_interrupts: list[dict[str, object]] = []
+        if enabled:
+            expected_request[0] = 0x0D
+            expected_request[2] = 0x85
+            expected_interrupts.append(
+                {
+                    "number": 0x2F,
+                    "ax": 0x1510,
+                    "bx": 0x0B72,
+                    "cx": drive,
+                    "es": game_segment,
+                    "request": bytes(expected_request).hex(),
+                }
+            )
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x1397 {name}: interrupts={interrupts!r}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B72, 22)) != bytes(
+            expected_request
+        ):
+            raise AssertionError(f"0x1397 {name}: final request mismatch")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B72, 22)) != decoy_before:
+            raise AssertionError(f"0x1397 {name}: changed DS decoy")
+        for register in (
+            "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp",
+            "ds", "es", "fs", "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x1397 {name}: changed {register}")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_mask = 0x08D5 if enabled else 0x08C5
+        expected_flags = interrupt_flags if enabled else 0x0044
+        if final_flags & flag_mask != expected_flags & flag_mask:
+            raise AssertionError(
+                f"0x1397 {name}: flags={final_flags:#x}, expected={expected_flags:#x}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "cdrom_present": present,
+                "drive": drive,
+                "interrupts": interrupts,
+                "final_request": bytes(expected_request).hex(),
+                "defined_flags": final_flags & flag_mask,
+            }
+        )
+    return vectors
+
+
+def cdrom_audio_play_track_2_vectors() -> list[dict[str, object]]:
+    entry = 0x13C4
+    expected_hash = "b5dc8b1767297a8a0800d4247522ddafeb89e72e56f9186c7c81d473e3f121fb"
+    if hashlib.sha256(EXE[entry : entry + 187]).hexdigest() != expected_hash:
+        raise AssertionError("0x13c4: recovered 187-byte body changed")
+
+    def frame_from_msf(position: int) -> int:
+        return (
+            ((position >> 16) & 0xFF) * 4500
+            + ((position >> 8) & 0xFF) * 75
+            + (position & 0xFF)
+            - 150
+        ) & 0xFFFFFFFF
+
+    game_segment = 0x3000
+    data_segment = 0x1800
+    cases = (
+        ("disabled", 0x00, 0x03, 0x00000200, 0x00010000),
+        ("ordinary_track", 0x01, 0x03, 0x00120320, 0x003A1025),
+        ("high_byte_ignored", 0x81, 0x17, 0xA5120320, 0x5A3A1025),
+        ("pregap_underflow", 0xFF, 0x00, 0x00000000, 0x00000200),
+        ("end_before_start", 0x01, 0xFE, 0x00300020, 0x00100010),
+        ("maximum_components", 0x01, 0xFF, 0xFFFFFFFF, 0x00FFFFFF),
+    )
+    vectors = []
+
+    for case_index, (name, present, drive, start_position, end_position) in enumerate(cases):
+        request_before = bytes(
+            (0x23 + case_index * 0x1F + index * 0x11) & 0xFF
+            for index in range(22)
+        )
+        decoy_before = bytes(
+            (0xB1 + case_index * 0x0B + index * 3) & 0xFF
+            for index in range(22)
+        )
+        track_before = bytearray(
+            (0x69 + case_index * 7 + index * 5) & 0xFF for index in range(7)
+        )
+        disc_before = bytearray(
+            (0x91 + case_index * 9 + index * 3) & 0xFF for index in range(7)
+        )
+        track_before[2:6] = struct.pack("<I", start_position)
+        disc_before[3:7] = struct.pack("<I", end_position)
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62468 + case_index,
+            "ecx": 0xC7C7369C + case_index,
+            "edx": 0xD8D855AA + case_index,
+            "esi": 0xE9E96789 + case_index,
+            "edi": 0xFAFA789A + case_index,
+            "ebp": 0x1B1B1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2800,
+            "gs": game_segment,
+            "flags": 0x0293,
+        }
+        interrupts: list[dict[str, object]] = []
+        interrupt_flags = 0x0845
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "eax": machine.reg_read(UC_X86_REG_EAX),
+                    "ebx": machine.reg_read(UC_X86_REG_EBX),
+                    "ecx": machine.reg_read(UC_X86_REG_ECX),
+                    "edx": machine.reg_read(UC_X86_REG_EDX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "request": bytes(
+                        machine.mem_read(game_segment * 16 + 0x0B72, 22)
+                    ).hex(),
+                }
+            )
+            machine.reg_write(UC_X86_REG_EAX, 0xDEADBEEF)
+            machine.reg_write(UC_X86_REG_EDX, 0xC001D00D)
+            machine.reg_write(UC_X86_REG_EFLAGS, interrupt_flags)
+
+        machine = execute(
+            entry,
+            0x147E,
+            initial,
+            [
+                (game_segment, 0x01B9, bytes([drive])),
+                (game_segment, 0x0AE6, bytes([present])),
+                (game_segment, 0x0B5B, bytes(disc_before)),
+                (game_segment, 0x0B6B, bytes(track_before)),
+                (game_segment, 0x0B72, request_before),
+                (data_segment, 0x01B9, bytes([drive ^ 0xA5])),
+                (data_segment, 0x0AE6, bytes([present ^ 0x5A])),
+                (data_segment, 0x0B72, decoy_before),
+            ],
+            interrupt_handler=interrupt,
+        )
+
+        enabled = (present & 1) != 0
+        start_frame = frame_from_msf(start_position)
+        end_frame = frame_from_msf(end_position)
+        duration = (end_frame - start_frame) & 0xFFFFFFFF
+        expected_request = bytearray(request_before)
+        expected_interrupts: list[dict[str, object]] = []
+        if enabled:
+            expected_request[0] = 0x16
+            expected_request[2] = 0x84
+            expected_request[0x0E:0x12] = struct.pack("<I", start_position)
+            expected_request[0x12:0x16] = struct.pack("<I", duration)
+            expected_interrupts.append(
+                {
+                    "number": 0x2F,
+                    "eax": 0x00001510,
+                    "ebx": (initial["ebx"] & 0xFFFF0000) | 0x0B72,
+                    "ecx": (initial["ecx"] & 0xFFFF0000) | drive,
+                    "edx": 0,
+                    "ds": game_segment,
+                    "es": game_segment,
+                    "request": bytes(expected_request).hex(),
+                }
+            )
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x13c4 {name}: interrupts={interrupts!r}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B72, 22)) != bytes(
+            expected_request
+        ):
+            raise AssertionError(f"0x13c4 {name}: final request mismatch")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B5B, 7)) != bytes(disc_before):
+            raise AssertionError(f"0x13c4 {name}: changed disc info")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B6B, 7)) != bytes(track_before):
+            raise AssertionError(f"0x13c4 {name}: changed track info")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B72, 22)) != decoy_before:
+            raise AssertionError(f"0x13c4 {name}: changed DS decoy")
+        for register in (
+            "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp",
+            "ds", "es", "fs", "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x13c4 {name}: changed {register}")
+
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_mask = 0x08D5 if enabled else 0x08C5
+        expected_flags = interrupt_flags if enabled else 0x0044
+        if final_flags & flag_mask != expected_flags & flag_mask:
+            raise AssertionError(
+                f"0x13c4 {name}: flags={final_flags:#x}, expected={expected_flags:#x}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "cdrom_present": present,
+                "drive": drive,
+                "start_position": f"0x{start_position:08x}",
+                "end_position": f"0x{end_position:08x}",
+                "start_frame": start_frame,
+                "end_frame": end_frame,
+                "duration": duration,
+                "interrupts": interrupts,
+                "final_request": bytes(expected_request).hex(),
+                "defined_flags": final_flags & flag_mask,
+            }
+        )
+    return vectors
+
+
 def keyboard_read_vectors() -> list[dict[str, object]]:
     cases = [
         ("empty", False, 0x0000),
@@ -47657,6 +48131,21 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_0b32_natural.json", detect_cdrom_vectors(), args.check
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1344_natural.json",
+        cdrom_audio_prepare_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1397_natural.json",
+        cdrom_audio_stop_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_13c4_natural.json",
+        cdrom_audio_play_track_2_vectors(),
+        args.check,
     )
     update_vector(
         VECTOR_ROOT / "func_0d4a_natural.json", mouse_set_range_vectors(), args.check

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "disabled_zero",
+    "cdrom_present": 0,
+    "drive": 0,
+    "interrupts": [],
+    "final_request": "414e5b6875828f9ca9b6c3d0ddeaf704111e2b384552",
+    "defined_flags": 68
+  },
+  {
+    "name": "disabled_other_bits",
+    "cdrom_present": 254,
+    "drive": 23,
+    "interrupts": [],
+    "final_request": "5c697683909daab7c4d1deebf805121f2c394653606d",
+    "defined_flags": 68
+  },
+  {
+    "name": "enabled_drive_d",
+    "cdrom_present": 1,
+    "drive": 3,
+    "interrupts": [
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2930,
+        "cx": 3,
+        "es": 12288,
+        "request": "0d84859eabb8c5d2dfecf90613202d3a4754616e7b88"
+      }
+    ],
+    "final_request": "0d84859eabb8c5d2dfecf90613202d3a4754616e7b88",
+    "defined_flags": 2177
+  },
+  {
+    "name": "enabled_all_bits",
+    "cdrom_present": 255,
+    "drive": 255,
+    "interrupts": [
+      {
+        "number": 47,
+        "ax": 5392,
+        "bx": 2930,
+        "cx": 255,
+        "es": 12288,
+        "request": "0d9f85b9c6d3e0edfa0714212e3b4855626f7c8996a3"
+      }
+    ],
+    "final_request": "0d9f85b9c6d3e0edfa0714212e3b4855626f7c8996a3",
+    "defined_flags": 2177
+  }
+]
