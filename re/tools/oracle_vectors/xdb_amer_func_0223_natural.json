@@ -1,0 +1,282 @@
+[
+  {
+    "name": "centered_idle",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 320,
+      "y": 512,
+      "buttons": 0
+    },
+    "centered": {
+      "x": 0,
+      "y": 0
+    },
+    "filter_x_after": 0,
+    "camera_after": {
+      "pitch": 0,
+      "pan": 0,
+      "pan_target": 0,
+      "depth_step": 0
+    },
+    "control_after": 0,
+    "key_after": 0,
+    "code_flags_after": 4611,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "positive_pan_left_and_up",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 420,
+      "y": 464,
+      "buttons": 1
+    },
+    "centered": {
+      "x": 100,
+      "y": -48
+    },
+    "filter_x_after": 19,
+    "camera_after": {
+      "pitch": 13,
+      "pan": 275,
+      "pan_target": 60,
+      "depth_step": 22
+    },
+    "control_after": 0,
+    "key_after": 0,
+    "code_flags_after": 8709,
+    "final_path": "cursor_up",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_pan_right_and_down",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 220,
+      "y": 576,
+      "buttons": 2
+    },
+    "centered": {
+      "x": -100,
+      "y": 64
+    },
+    "filter_x_after": -18,
+    "camera_after": {
+      "pitch": -19,
+      "pan": -318,
+      "pan_target": 72,
+      "depth_step": -18
+    },
+    "control_after": 0,
+    "key_after": 0,
+    "code_flags_after": 13319,
+    "final_path": "cursor_down",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "dead_zone_both_buttons_space",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 330,
+      "y": 507,
+      "buttons": 3
+    },
+    "centered": {
+      "x": 10,
+      "y": -5
+    },
+    "filter_x_after": -2,
+    "camera_after": {
+      "pitch": 1,
+      "pan": -3,
+      "pan_target": -4,
+      "depth_step": -100
+    },
+    "control_after": 0,
+    "key_after": 14624,
+    "code_flags_after": 1,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "positive_depth_control_latch",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 320,
+      "y": 512,
+      "buttons": 0
+    },
+    "centered": {
+      "x": 0,
+      "y": 0
+    },
+    "filter_x_after": -16384,
+    "camera_after": {
+      "pitch": 30720,
+      "pan": 16383,
+      "pan_target": 16384,
+      "depth_step": 7
+    },
+    "control_after": 0,
+    "key_after": 4660,
+    "code_flags_after": 32784,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_depth_control_latch",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 65535,
+      "y": 0,
+      "buttons": 0
+    },
+    "centered": {
+      "x": -321,
+      "y": -512
+    },
+    "filter_x_after": 16306,
+    "camera_after": {
+      "pitch": 30782,
+      "pan": -16462,
+      "pan_target": -16697,
+      "depth_step": -65
+    },
+    "control_after": 0,
+    "key_after": 32,
+    "code_flags_after": 42240,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_driver_coordinates",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 32768,
+      "y": 32768,
+      "buttons": 3
+    },
+    "centered": {
+      "x": 32448,
+      "y": 32256
+    },
+    "filter_x_after": -83,
+    "camera_after": {
+      "pitch": 15424,
+      "pan": -87,
+      "pan_target": -331,
+      "depth_step": -28657
+    },
+    "control_after": 0,
+    "key_after": 20512,
+    "code_flags_after": 23104,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "vertical_negate_minimum_wrap",
+    "module": "amer",
+    "entry": 547,
+    "mouse": {
+      "x": 320,
+      "y": 33280,
+      "buttons": 0
+    },
+    "centered": {
+      "x": 0,
+      "y": -32768
+    },
+    "filter_x_after": 0,
+    "camera_after": {
+      "pitch": -1,
+      "pan": 0,
+      "pan_target": 0,
+      "depth_step": 0
+    },
+    "control_after": 0,
+    "key_after": 0,
+    "code_flags_after": 240,
+    "final_path": "unhandled_retained",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

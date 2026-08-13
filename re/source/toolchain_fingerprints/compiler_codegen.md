@@ -2005,6 +2005,26 @@ original `PUSH CX`/`POP DX`; the natural semantics are otherwise complete.
 Turbo C 2.01 emits a 12-instruction stack-argument implementation with the
 same two interrupt operations.
 
+The AMER `0x000223`, CROOLIS `0x00022A`, and SCRUT `0x00022A` per-frame
+mouse-camera routines are recovered as natural 16-bit arithmetic around one
+six-instruction `INT 33h` state-read intrinsic. Eight raw-overlay vectors per
+routine prove mouse centering and publication, both wrapping dead-zone signs,
+horizontal and vertical smoothing, left/right/both-button depth motion,
+positive and negative control-latch paths, high-bit coordinates, and the
+`NEG 0x8000` wrap case. They also prove the overlay difference: AMER tests only
+latch bit zero, clears that latch, and retains unhandled keys; byte-identical
+CROOLIS/SCRUT test the full word without clearing it, consume every key, and
+map space to code-state bit `0x10`. Arrow keys move the depth field by eight in
+all three.
+
+Open Watcom `-3 -ox -mm -zdp -we` compiles all three actual candidates without
+warnings to 81 instructions/231 bytes. The originals are 65/205 for AMER and
+69/219 for CROOLIS/SCRUT. Watcom retains the 16-bit shifts, modular updates,
+tests, and stores, but preserves `DI` around the typed mouse-state pointer and
+chooses different scratch registers and branch layout. The natural routines
+therefore reproduce the complete memory/control behavior while their scratch
+registers and some final flags remain code-generation mismatches.
+
 The byte-identical AMER `0x000958`, CROOLIS `0x000999`, and SCRUT `0x000999`
 slot-6 methods wrap all three position coordinates for each 94-byte alien
 state. Eight raw-overlay vectors per sibling cover the positive and negative

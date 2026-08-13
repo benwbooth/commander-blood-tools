@@ -61,6 +61,14 @@ extern volatile xdb_u8 xdb_alien_motion_samples[]; /* DS:0x0036 */
 extern volatile xdb_i16 xdb_alien_view_x; /* DS:0x22EC */
 extern volatile xdb_i16 xdb_alien_view_y; /* DS:0x22F0 */
 extern volatile xdb_i16 xdb_alien_view_z; /* DS:0x22F4 */
+extern volatile xdb_i16 xdb_alien_mouse_filter_x; /* DS:0x1058 */
+extern volatile xdb_u16 xdb_alien_control_latch; /* DS:0x2282 */
+extern volatile xdb_i16 xdb_alien_camera_pitch; /* DS:0x22F6 */
+extern volatile xdb_i16 xdb_alien_camera_pan; /* DS:0x22F8 */
+extern volatile xdb_i16 xdb_alien_camera_pan_secondary; /* DS:0x22FA */
+extern volatile xdb_i16 xdb_alien_camera_depth_step; /* DS:0x22FC */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_key_event; /* CS:0x0095 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_alien_code_flags; /* CS:0x02FC */
 extern xdb_alien_cursor XDB_CODE_DATA
         xdb_amer_slot11_cursor; /* AMER CS:0x1BC2 */
 extern xdb_alien_cursor XDB_CODE_DATA
@@ -104,6 +112,9 @@ void XDB_NEAR xdb_croolis_method_slot_6_wrap_positions(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_method_slot_6_wrap_positions(
         xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_mouse_camera_step(void);
+void XDB_NEAR xdb_croolis_mouse_camera_step(void);
+void XDB_NEAR xdb_scrut_mouse_camera_step(void);
 
 void XDB_NEAR xdb_amer_resume_1c34(
         xdb_alien_method_context XDB_NEAR *context);
@@ -141,6 +152,9 @@ void XDB_NEAR xdb_scrut_resume_1c45(
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_method_slot_6_wrap_positions \
         parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_mouse_camera_step modify exact [ax bx cx dx]
+#pragma aux xdb_croolis_mouse_camera_step modify exact [ax bx cx dx]
+#pragma aux xdb_scrut_mouse_camera_step modify exact [ax bx cx dx]
 #endif
 
 #endif

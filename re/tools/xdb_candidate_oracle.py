@@ -550,6 +550,20 @@ def add_flags_8(left: int, right: int, initial_flags: int) -> dict[str, bool]:
     }
 
 
+def sub_flags_8(left: int, right: int, initial_flags: int) -> dict[str, bool]:
+    result = (left - right) & 0xFF
+    return {
+        "cf": left < right,
+        "pf": result.bit_count() % 2 == 0,
+        "af": bool((left ^ right ^ result) & 0x10),
+        "zf": result == 0,
+        "sf": bool(result & 0x80),
+        "if": bool(initial_flags & 0x0200),
+        "df": bool(initial_flags & 0x0400),
+        "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+    }
+
+
 def sub_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
     result = (left - right) & 0xFFFF
     return {
@@ -562,6 +576,386 @@ def sub_flags_16(left: int, right: int, initial_flags: int) -> dict[str, bool]:
         "df": bool(initial_flags & 0x0400),
         "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
     }
+
+
+def mouse_camera_step_vectors(
+    module: str, entry: int, body_size: int, body_hash: str
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    if hashlib.sha256(image[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered {body_size}-byte body changed"
+        )
+
+    cases = (
+        {
+            "name": "centered_idle",
+            "mouse": (0x0140, 0x0200, 0x0000),
+            "filter_x": 0,
+            "camera": (0, 0, 0, 0),
+            "control": 0,
+            "key": 0,
+            "code_flags": 0x1203,
+        },
+        {
+            "name": "positive_pan_left_and_up",
+            "mouse": (0x01A4, 0x01D0, 0x0001),
+            "filter_x": 7,
+            "camera": (9, 0x0100, 0xFFE0, 4),
+            "control": 0,
+            "key": 0x4800,
+            "code_flags": 0x2205,
+        },
+        {
+            "name": "negative_pan_right_and_down",
+            "mouse": (0x00DC, 0x0240, 0x0002),
+            "filter_x": -9,
+            "camera": (-12, -300, 0x0120, -20),
+            "control": 0,
+            "key": 0x5000,
+            "code_flags": 0x3407,
+        },
+        {
+            "name": "dead_zone_both_buttons_space",
+            "mouse": (0x014A, 0x01FB, 0x0003),
+            "filter_x": 3,
+            "camera": (2, -1, 8, -8),
+            "control": 1,
+            "key": 0x3920,
+            "code_flags": 0x0001,
+        },
+        {
+            "name": "positive_depth_control_latch",
+            "mouse": (0x0140, 0x0200, 0x0000),
+            "filter_x": -32768,
+            "camera": (-32768, 0x7FFF, 0x8000, 7),
+            "control": 2,
+            "key": 0x1234,
+            "code_flags": 0x8010,
+        },
+        {
+            "name": "negative_depth_control_latch",
+            "mouse": (0xFFFF, 0x0000, 0x0000),
+            "filter_x": 0x7FFF,
+            "camera": (0x7FFF, 0x8000, 0x7FFF, -9),
+            "control": 1,
+            "key": 0x0020,
+            "code_flags": 0xA500,
+        },
+        {
+            "name": "wrapped_driver_coordinates",
+            "mouse": (0x8000, 0x8000, 0x0003),
+            "filter_x": 0x4000,
+            "camera": (0x4000, 0xFFFC, 0x0003, 0x7FFF),
+            "control": 0x8000,
+            "key": 0x5020,
+            "code_flags": 0x5A40,
+        },
+        {
+            "name": "vertical_negate_minimum_wrap",
+            "mouse": (0x0140, 0x8200, 0x0000),
+            "filter_x": 0,
+            "camera": (0, 0, 0, 0),
+            "control": 0,
+            "key": 0,
+            "code_flags": 0x00F0,
+        },
+    )
+    data_segment = 0x4400
+    extra_segment = 0x6000
+    fs_segment = 0x6800
+    game_segment = 0x7000
+    stack_segment = 0x9000
+    return_address = 0xF000
+    vectors = []
+
+    def word(value: int) -> int:
+        return value & 0xFFFF
+
+    def signed_word(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def sar_word(value: int, count: int) -> int:
+        return word(signed_word(value) >> count)
+
+    def dead_zone(value: int) -> int:
+        value = word(value - 5)
+        if value & 0x8000:
+            value = word(value + 10)
+            if not value & 0x8000:
+                value = 0
+        return value
+
+    for case_index, case in enumerate(cases):
+        mouse_x, mouse_y, buttons = case["mouse"]
+        pitch, pan, pan_target, depth = case["camera"]
+        data_before = bytearray(
+            ((offset * 37 + case_index * 19 + 11) & 0xFF)
+            for offset in range(0x2300)
+        )
+        data_expected = bytearray(data_before)
+        struct.pack_into("<h", data_before, 0x1058, case["filter_x"])
+        struct.pack_into("<H", data_before, 0x2282, word(case["control"]))
+        for offset, value in zip(
+            (0x22F6, 0x22F8, 0x22FA, 0x22FC),
+            (pitch, pan, pan_target, depth),
+        ):
+            struct.pack_into("<H", data_before, offset, word(value))
+        data_expected[:] = data_before
+
+        centered_x = word(mouse_x - 0x0140)
+        centered_y = word(mouse_y - 0x0200)
+        struct.pack_into("<HHH", data_expected, 0x002A, centered_x, centered_y, buttons)
+
+        x_delta = dead_zone(sar_word(centered_x, 1))
+        x_delta = sar_word(word(x_delta - word(case["filter_x"])), 1)
+        struct.pack_into("<H", data_expected, 0x1058, x_delta)
+        pan = word(pan + x_delta)
+        struct.pack_into("<H", data_expected, 0x22F8, pan)
+        x_delta = sar_word(word(word(x_delta << 3) - word(pan_target)), 1)
+        pan_target = word(pan_target + x_delta)
+        struct.pack_into("<H", data_expected, 0x22FA, pan_target)
+
+        y_delta = dead_zone(word(-centered_y))
+        y_delta = sar_word(word(word(y_delta << 1) - word(pitch)), 4)
+        pitch = word(pitch + y_delta)
+        struct.pack_into("<H", data_expected, 0x22F6, pitch)
+
+        depth = word(depth)
+        if buttons & 1:
+            depth = word(depth + 10)
+        final_bx = buttons
+        if buttons & 2:
+            final_bx = sar_word(depth, 3)
+            depth = word(depth - final_bx - 1)
+
+        control_active = bool(
+            word(case["control"]) & (1 if module == "amer" else 0xFFFF)
+        )
+        if signed_word(depth) <= -8:
+            depth = word(depth + 8)
+            if control_active:
+                depth = word(depth - 0x40)
+        elif control_active:
+            depth = word(-100)
+        struct.pack_into("<H", data_expected, 0x22FC, depth)
+        if module == "amer":
+            struct.pack_into("<H", data_expected, 0x2282, 0)
+
+        key_before = word(case["key"])
+        code_flags_before = word(case["code_flags"])
+        key_after = key_before
+        code_flags_after = code_flags_before
+        if module != "amer":
+            key_after = 0
+
+        if key_before == 0x4800:
+            key_after = 0
+            before_key_step = depth
+            depth = word(depth + 8)
+            struct.pack_into("<H", data_expected, 0x22FC, depth)
+            expected_flags = add_flags_16(before_key_step, 8, 0x0202)
+            final_path = "cursor_up"
+        elif key_before == 0x5000:
+            key_after = 0
+            before_key_step = depth
+            depth = word(depth - 8)
+            struct.pack_into("<H", data_expected, 0x22FC, depth)
+            expected_flags = sub_flags_16(before_key_step, 8, 0x0202)
+            final_path = "cursor_down"
+        elif module != "amer" and (key_before & 0xFF) == 0x20:
+            code_flags_after = code_flags_before | 0x10
+            expected_flags = _logical_flags_16(code_flags_after, 0x0202)
+            final_path = "space_action"
+        elif module == "amer":
+            expected_flags = sub_flags_16(key_before, 0x5000, 0x0202)
+            final_path = "unhandled_retained"
+        else:
+            expected_flags = sub_flags_8(key_before & 0xFF, 0x20, 0x0202)
+            final_path = "unhandled_cleared"
+
+        handler_flags = 0x0202 | (0x0400 if case_index & 1 else 0)
+        expected_flags["if"] = bool(handler_flags & 0x0200)
+        expected_flags["df"] = bool(handler_flags & 0x0400)
+
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt_handler(
+            machine: Uc, interrupt_number: int, _data: object
+        ) -> None:
+            interrupts.append(
+                {
+                    "number": interrupt_number,
+                    "ax": machine.reg_read(UC_X86_REG_EAX) & 0xFFFF,
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "mouse_x_before": struct.unpack(
+                        "<H", machine.mem_read(data_segment * 16 + 0x002A, 2)
+                    )[0],
+                }
+            )
+            for register, value in (
+                (UC_X86_REG_EBX, buttons),
+                (UC_X86_REG_ECX, mouse_x),
+                (UC_X86_REG_EDX, mouse_y),
+            ):
+                machine.reg_write(
+                    register,
+                    (machine.reg_read(register) & 0xFFFF0000) | value,
+                )
+            machine.reg_write(UC_X86_REG_EFLAGS, handler_flags)
+
+        key_bytes = struct.pack("<H", key_before)
+        code_flags_bytes = struct.pack("<H", code_flags_before)
+        decoy = bytes.fromhex("102132435465768798a9bacbdcedfe0f")
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        mouse_x_before = struct.unpack_from("<H", data_before, 0x002A)[0]
+        machine = execute(
+            image,
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x0095, key_bytes),
+                (0, 0x02FC, code_flags_bytes),
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0x0100, decoy),
+                (fs_segment, 0x0100, decoy),
+                (game_segment, 0x0100, decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt_handler,
+        )
+
+        expected_interrupts = [
+            {
+                "number": 0x33,
+                "ax": 3,
+                "ds": data_segment,
+                "sp": 0xFF00,
+                "mouse_x_before": mouse_x_before,
+            }
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"interrupts={interrupts}, expected={expected_interrupts}"
+            )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, len(data_expected)))
+        if actual_data != bytes(data_expected):
+            differences = [
+                (offset, actual_data[offset], data_expected[offset])
+                for offset in range(len(data_expected))
+                if actual_data[offset] != data_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: data differs at {differences}"
+            )
+        actual_key = struct.unpack("<H", machine.mem_read(0x0095, 2))[0]
+        actual_code_flags = struct.unpack("<H", machine.mem_read(0x02FC, 2))[0]
+        if (actual_key, actual_code_flags) != (key_after, code_flags_after):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: code data "
+                f"{(actual_key, actual_code_flags)} != {(key_after, code_flags_after)}"
+            )
+        for segment in (extra_segment, fs_segment, game_segment):
+            if bytes(machine.mem_read(segment * 16 + 0x0100, len(decoy))) != decoy:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: decoy {segment:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | key_before
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | final_bx
+        expected_registers["ecx"] = (initial["ecx"] & 0xFFFF0000) | x_delta
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | y_delta
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {case['name']}: "
+                    f"{register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"{module}:{entry:#x}: near return CS changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x}: stack sentinel changed")
+
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: "
+                f"flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "mouse": {"x": mouse_x, "y": mouse_y, "buttons": buttons},
+                "centered": {
+                    "x": signed_word(centered_x),
+                    "y": signed_word(centered_y),
+                },
+                "filter_x_after": signed_word(
+                    struct.unpack_from("<H", data_expected, 0x1058)[0]
+                ),
+                "camera_after": {
+                    "pitch": signed_word(pitch),
+                    "pan": signed_word(pan),
+                    "pan_target": signed_word(pan_target),
+                    "depth_step": signed_word(depth),
+                },
+                "control_after": struct.unpack_from(
+                    "<H", data_expected, 0x2282
+                )[0],
+                "key_after": key_after,
+                "code_flags_after": code_flags_after,
+                "final_path": final_path,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
 
 
 def wrap_position(value: int, origin: int) -> tuple[int, int]:
@@ -7419,6 +7813,31 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             mouse_bounds_vectors(module, entry),
+            args.check,
+        )
+    for module, entry, body_size, body_hash in (
+        (
+            "amer",
+            0x0223,
+            205,
+            "66cc8762f57e7fe55e6dd95eb82acb977851b95c46ed0b75a9665a39a8ef9a59",
+        ),
+        (
+            "croolis",
+            0x022A,
+            219,
+            "33edea2995d9e02b635337e879349eb351b468967e0d54a930b662861ddeb375",
+        ),
+        (
+            "scrut",
+            0x022A,
+            219,
+            "33edea2995d9e02b635337e879349eb351b468967e0d54a930b662861ddeb375",
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            mouse_camera_step_vectors(module, entry, body_size, body_hash),
             args.check,
         )
     for module, entry in (
