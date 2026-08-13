@@ -1,0 +1,110 @@
+[
+  {
+    "name": "empty_table",
+    "token_before": "S162227",
+    "token_after": "S162227",
+    "helper_calls": [],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "no_match",
+    "token_before": "ABC",
+    "token_after": "ABC",
+    "helper_calls": [],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "matched_no_action",
+    "token_before": "MID1234",
+    "token_after": "MID1234",
+    "helper_calls": [],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "write_directory",
+    "token_before": "WRIC:\\cblood\\",
+    "token_after": "WRIC:\\cblood\\",
+    "helper_calls": [],
+    "directory_prefix": "433a5c63626c6f6f6400",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "empty_write_directory",
+    "token_before": "WRI",
+    "token_after": "WRI",
+    "helper_calls": [],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "copy_precedes_audio",
+    "token_before": "WRIX",
+    "token_after": "WRIX",
+    "helper_calls": [],
+    "directory_prefix": "00cccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  },
+  {
+    "name": "sb16_audio",
+    "token_before": "S162227",
+    "token_after": "S16222",
+    "helper_calls": [
+      {
+        "segment": 9216,
+        "offset": 1027,
+        "text": "222"
+      }
+    ],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 42,
+    "configuration": 3559
+  },
+  {
+    "name": "gravis_audio",
+    "token_before": "GRV1234",
+    "token_after": "GRV123",
+    "helper_calls": [
+      {
+        "segment": 9216,
+        "offset": 1027,
+        "text": "123"
+      }
+    ],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 1,
+    "configuration": 1972
+  },
+  {
+    "name": "signed_wrapping_audio",
+    "token_before": "S16-12x",
+    "token_after": "S16-12",
+    "helper_calls": [
+      {
+        "segment": 9216,
+        "offset": 1027,
+        "text": "-12"
+      }
+    ],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 42,
+    "configuration": 65352
+  },
+  {
+    "name": "first_match_wins",
+    "token_before": "S162227",
+    "token_after": "S162227",
+    "helper_calls": [],
+    "directory_prefix": "cccccccccccccccccccc",
+    "driver_id": 105,
+    "configuration": 4660
+  }
+]

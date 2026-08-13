@@ -1,0 +1,76 @@
+[
+  {
+    "name": "empty",
+    "command": "",
+    "calls": [],
+    "final_token": null
+  },
+  {
+    "name": "single",
+    "command": "AMR",
+    "calls": [
+      {
+        "remaining": 0,
+        "token": "AMR"
+      }
+    ],
+    "final_token": "AMR"
+  },
+  {
+    "name": "shipped_arguments",
+    "command": " AMR S162227 EMS WRIC:\\cblood\\",
+    "calls": [
+      {
+        "remaining": 30,
+        "token": ""
+      },
+      {
+        "remaining": 26,
+        "token": "AMR"
+      },
+      {
+        "remaining": 18,
+        "token": "S162227"
+      },
+      {
+        "remaining": 14,
+        "token": "EMS"
+      },
+      {
+        "remaining": 0,
+        "token": "WRIC:\\cblood\\"
+      }
+    ],
+    "final_token": "WRIC:\\cblood\\"
+  },
+  {
+    "name": "repeated_spaces",
+    "command": "A  B",
+    "calls": [
+      {
+        "remaining": 3,
+        "token": "A"
+      },
+      {
+        "remaining": 2,
+        "token": ""
+      },
+      {
+        "remaining": 0,
+        "token": "B"
+      }
+    ],
+    "final_token": "B"
+  },
+  {
+    "name": "trailing_space",
+    "command": "A ",
+    "calls": [
+      {
+        "remaining": 1,
+        "token": "A"
+      }
+    ],
+    "final_token": "A"
+  }
+]

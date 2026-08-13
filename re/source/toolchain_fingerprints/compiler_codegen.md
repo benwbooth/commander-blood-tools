@@ -2826,6 +2826,36 @@ bytes for initialization versus 93/250 original, and 79/243 for release versus
 based globals, and the typed XMS adapter calls; it is a code-generation gap,
 not an emulation layer.
 
+## BLOODPRG command-line candidates
+
+The `0x0006F1` routine is not an MCB or allocation helper. At DOS EXE entry,
+`ES` is the PSP; `ES+8:0000` aliases `PSP:0080`, the counted command tail. The
+routine copies one space-delimited token at a time into `GS:0AF2` and calls
+`0x000726`. A consumed delimiter is accounted for after the call, so leading
+and repeated spaces dispatch empty tokens while a trailing space does not add
+another token.
+
+The `0x000726` table and output references use `BP`, whose default segment is
+`SS`, not the command-tail `DS`. Raw data at `SS:023A` is six five-byte records:
+`S16`, `MID`, `SDB`, `SBP`, `GRV`, and `WRI`. `WRI` copies the suffix and erases
+its final byte, producing `C:\cblood` from the shipped `WRIC:\cblood\` token.
+Audio records temporarily terminate the four-character suffix before its final
+character, parse the first three decimal characters with the recovered far
+helper, shift that result by four, and OR the removed character minus `0`.
+They publish the packed word at `GS:0C45` and the record's driver ID at
+`GS:0C3B`.
+
+Fifteen direct-binary vectors prove the real command string, exact delimiter
+accounting, empty-token behavior, SS table ownership against a DS decoy,
+ordered matching and action precedence, path trimming including the empty
+suffix edge, audio packing and wrap, permanent token truncation, and execution
+of the original `0x002612` decimal parser. Open Watcom 1.9 medium
+(`-3 -ox -mm -zdp -we`) emits 31 instructions/57 bytes for the tokenizer versus
+29/53 original, and 61/139 for the option handler versus 58/118. Turbo C 2.01
+medium (`-mm -O -Z`) emits 41 and 75 instructions. Both functions are ordinary
+table and string C; the remaining differences are command-tail ABI, segment
+selection, and structured control flow.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

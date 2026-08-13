@@ -1634,6 +1634,330 @@ def poll_mouse_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def startup_command_line_parse_vectors() -> list[dict[str, object]]:
+    entry = 0x06F1
+    expected_hash = "677c17d8e691e0bfa9885696da31a9777e35d867afe9b26cd7a366b02c866a44"
+    if hashlib.sha256(EXE[entry : entry + 53]).hexdigest() != expected_hash:
+        raise AssertionError("0x06f1: recovered 53-byte body changed")
+
+    cases = (
+        ("empty", b"", []),
+        ("single", b"AMR", [(0, "AMR")]),
+        (
+            "shipped_arguments",
+            b" AMR S162227 EMS WRIC:\\cblood\\",
+            [
+                (30, ""),
+                (26, "AMR"),
+                (18, "S162227"),
+                (14, "EMS"),
+                (0, "WRIC:\\cblood\\"),
+            ],
+        ),
+        ("repeated_spaces", b"A  B", [(3, "A"), (2, ""), (0, "B")]),
+        ("trailing_space", b"A ", [(1, "A")]),
+    )
+    command_segment = 0x3008
+    psp_segment = command_segment - 8
+    data_segment = 0x2000
+    game_segment = 0x4000
+    vectors = []
+
+    for case_index, (name, command, expected_calls) in enumerate(cases):
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": psp_segment,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0A93,
+        }
+        command_tail = bytes((len(command),)) + command + b"\xa5" * 8
+        token_before = bytes((0xCC,)) * 128
+        calls: list[tuple[int, str]] = []
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x0726:
+                return
+            token_segment = machine.reg_read(UC_X86_REG_ES)
+            token_offset = machine.reg_read(UC_X86_REG_DI)
+            token_bytes = bytearray()
+            for index in range(128):
+                value = machine.mem_read(
+                    token_segment * 16 + token_offset + index, 1
+                )[0]
+                if value == 0:
+                    break
+                token_bytes.append(value)
+            else:
+                raise AssertionError(f"0x06f1 {name}: unterminated token")
+            calls.append(
+                (
+                    machine.reg_read(UC_X86_REG_CX),
+                    token_bytes.decode("ascii"),
+                )
+            )
+
+        machine = execute(
+            entry,
+            0x0725,
+            initial,
+            [
+                (0, 0x0726, b"\xc3"),
+                (command_segment, 0, command_tail),
+                (game_segment, 0x0AF2, token_before),
+            ],
+            code_handler=callback,
+        )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x06f1 {name}: calls={calls}, expected={expected_calls}"
+            )
+        if bytes(
+            machine.mem_read(command_segment * 16, len(command_tail))
+        ) != command_tail:
+            raise AssertionError(f"0x06f1 {name}: changed command tail")
+        for register in ("bx", "cx", "dx", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x06f1 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "command": command.decode("ascii"),
+                "calls": [
+                    {"remaining": remaining, "token": token}
+                    for remaining, token in calls
+                ],
+                "final_token": calls[-1][1] if calls else None,
+            }
+        )
+    return vectors
+
+
+def startup_option_apply_vectors() -> list[dict[str, object]]:
+    entry = 0x0726
+    expected_hash = "752826499995c9e2e5a43b58f7f47ef37bc9d52183464b45f197335382afa18f"
+    if hashlib.sha256(EXE[entry : entry + 118]).hexdigest() != expected_hash:
+        raise AssertionError("0x0726: recovered 118-byte body changed")
+
+    shipped_table = bytes.fromhex(
+        "53 31 36 02 2a "
+        "4d 49 44 00 01 "
+        "53 44 42 02 2a "
+        "53 42 50 02 2a "
+        "47 52 56 02 01 "
+        "57 52 49 01 00 "
+        "00"
+    )
+    if EXE[0xD65A : 0xD65A + len(shipped_table)] != shipped_table:
+        raise AssertionError("0x0726: startup option table changed")
+
+    cases = (
+        {
+            "name": "empty_table",
+            "table": b"\x00",
+            "token": b"S162227\x00",
+        },
+        {"name": "no_match", "table": shipped_table, "token": b"ABC\x00"},
+        {"name": "matched_no_action", "table": shipped_table, "token": b"MID1234\x00"},
+        {
+            "name": "write_directory",
+            "table": shipped_table,
+            "token": b"WRIC:\\cblood\\\x00",
+            "directory": b"C:\\cblood\x00",
+        },
+        {
+            "name": "empty_write_directory",
+            "table": shipped_table,
+            "token": b"WRI\x00",
+            "clear_preceding": True,
+        },
+        {
+            "name": "copy_precedes_audio",
+            "table": b"WRI\x03\x7f\x00",
+            "token": b"WRIX\x00",
+            "directory": b"\x00",
+        },
+        {
+            "name": "sb16_audio",
+            "table": shipped_table,
+            "token": b"S162227\x00",
+            "parse": "222",
+            "configuration": 0x0DE7,
+            "driver_id": 0x2A,
+        },
+        {
+            "name": "gravis_audio",
+            "table": shipped_table,
+            "token": b"GRV1234\x00",
+            "parse": "123",
+            "configuration": 0x07B4,
+            "driver_id": 0x01,
+        },
+        {
+            "name": "signed_wrapping_audio",
+            "table": shipped_table,
+            "token": b"S16-12x\x00",
+            "parse": "-12",
+            "configuration": 0xFF48,
+            "driver_id": 0x2A,
+        },
+        {
+            "name": "first_match_wins",
+            "table": b"S16\x00\x11S16\x02\x22\x00",
+            "token": b"S162227\x00",
+        },
+    )
+    stack_segment = 0x9000
+    data_segment = 0x2000
+    token_segment = 0x2400
+    game_segment = 0x2800
+    token_offset = 0x0400
+    helper_segment = 0x01CE
+    helper_offset = 0x0332
+    helper_linear = helper_segment * 16 + helper_offset
+    helper_image = EXE[0x22E0:0x2700]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        table = bytes(case["table"])
+        token = bytes(case["token"])
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6C02468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": token_offset,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": token_segment,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": 0xFF00,
+            "flags": 0x0A93,
+        }
+        path_before = bytearray(b"\xa5\x5a" + b"\xcc" * 32)
+        path_expected = bytearray(path_before)
+        if "directory" in case:
+            directory = bytes(case["directory"])
+            path_expected[2 : 2 + len(directory)] = directory
+        if case.get("clear_preceding"):
+            path_expected[1] = 0
+        token_region = token + b"\xdd" * (32 - len(token))
+        token_expected = bytearray(token_region)
+        if "parse" in case:
+            token_expected[6] = 0
+        game_state = bytes.fromhex(
+            "69 96 a1 b2 c3 d4 e5 f6 17 28 34 12 c3 3c"
+        )
+        game_expected = bytearray(game_state)
+        if "configuration" in case:
+            struct.pack_into("<H", game_expected, 10, int(case["configuration"]))
+            game_expected[0] = int(case["driver_id"])
+        helper_calls: list[dict[str, int | str]] = []
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != helper_linear:
+                return
+            parse_segment = machine.reg_read(UC_X86_REG_DS)
+            parse_offset = machine.reg_read(UC_X86_REG_SI)
+            parse_bytes = bytearray()
+            for index in range(16):
+                value = machine.mem_read(
+                    parse_segment * 16 + parse_offset + index, 1
+                )[0]
+                if value == 0:
+                    break
+                parse_bytes.append(value)
+            helper_calls.append(
+                {
+                    "segment": parse_segment,
+                    "offset": parse_offset,
+                    "text": parse_bytes.decode("ascii"),
+                }
+            )
+
+        machine = execute(
+            entry,
+            0x079B,
+            initial,
+            [
+                (helper_segment, 0, helper_image),
+                (stack_segment, 0x023A, table),
+                (stack_segment, 0x01B8, bytes(path_before)),
+                (data_segment, 0x023A, b"\x00" + b"\xee" * 31),
+                (token_segment, token_offset, token_region),
+                (game_segment, 0x0C3B, game_state),
+            ],
+            code_handler=callback,
+        )
+        expected_calls = []
+        if "parse" in case:
+            expected_calls.append(
+                {
+                    "segment": token_segment,
+                    "offset": token_offset + 3,
+                    "text": str(case["parse"]),
+                }
+            )
+        if helper_calls != expected_calls:
+            raise AssertionError(
+                f"0x0726 {name}: calls={helper_calls}, expected={expected_calls}"
+            )
+        actual_path = bytes(
+            machine.mem_read(stack_segment * 16 + 0x01B8, len(path_before))
+        )
+        if actual_path != bytes(path_expected):
+            raise AssertionError(
+                f"0x0726 {name}: path={actual_path.hex()}, "
+                f"expected={path_expected.hex()}"
+            )
+        actual_token = bytes(
+            machine.mem_read(token_segment * 16 + token_offset, len(token_region))
+        )
+        if actual_token != bytes(token_expected):
+            raise AssertionError(
+                f"0x0726 {name}: token={actual_token.hex()}, "
+                f"expected={token_expected.hex()}"
+            )
+        actual_game = bytes(
+            machine.mem_read(game_segment * 16 + 0x0C3B, len(game_state))
+        )
+        if actual_game != bytes(game_expected):
+            raise AssertionError(
+                f"0x0726 {name}: game={actual_game.hex()}, "
+                f"expected={game_expected.hex()}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + 0x023A, 32)) != (
+            b"\x00" + b"\xee" * 31
+        ):
+            raise AssertionError(f"0x0726 {name}: changed DS table decoy")
+        for register in ("cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0726 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "token_before": token.rstrip(b"\x00").decode("ascii"),
+                "token_after": actual_token.split(b"\x00", 1)[0].decode("ascii"),
+                "helper_calls": helper_calls,
+                "directory_prefix": actual_path[2:12].hex(),
+                "driver_id": actual_game[0],
+                "configuration": struct.unpack_from("<H", actual_game, 10)[0],
+            }
+        )
+    return vectors
+
+
 def extended_memory_backends_init_vectors() -> list[dict[str, object]]:
     entry = 0x099F
     expected_hash = "b54827c41368004235c8a04276c50ac29230fed5e95bd77460c7310bee245314"
@@ -27902,6 +28226,16 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    update_vector(
+        VECTOR_ROOT / "func_06f1_natural.json",
+        startup_command_line_parse_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0726_natural.json",
+        startup_option_apply_vectors(),
+        args.check,
+    )
     update_vector(
         VECTOR_ROOT / "func_093b_natural.json", rtc_time_read_vectors(), args.check
     )
