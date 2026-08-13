@@ -71,6 +71,10 @@ void CB_NEAR resource_payload_decode_ab(
 void CB_NEAR resource_payload_decode_ad(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination);       /* 0x00A914 */
+const volatile cb_u8 CB_FAR *CB_NEAR resource_pair_lz_decode(
+        const volatile cb_u8 CB_FAR *source,
+        volatile cb_u8 CB_FAR *destination,
+        volatile cb_u8 CB_FAR *destination_end);   /* 0x00AABC */
 bloodprg_resource_decode_result CB_NEAR resource_payload_decode_dispatch(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination,

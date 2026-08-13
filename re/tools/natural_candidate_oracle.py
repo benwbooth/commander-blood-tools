@@ -50375,6 +50375,368 @@ def resource_payload_decode_ab_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_pair_lz_decode_vectors() -> list[dict[str, object]]:
+    entry = 0xAABC
+    expected_hash = "6f9aba91cf84930a552caddcbe3511006f7b3c6cca5ee86f53b57935f6816775"
+    if hashlib.sha256(EXE[entry : entry + 105]).hexdigest() != expected_hash:
+        raise AssertionError("0xaabc: recovered 105-byte body changed")
+
+    def encode(tokens: list[tuple[object, ...]]) -> bytes:
+        stream = bytearray()
+        for token in tokens:
+            kind = str(token[0])
+            if kind == "literal":
+                control = int(token[1])
+                if not 0 <= control <= 0x7F:
+                    raise AssertionError("invalid pair-LZ literal")
+                stream.append(control)
+                continue
+            if kind != "pair":
+                raise AssertionError(f"unknown pair-LZ token {kind}")
+            first_distance = int(token[1])
+            first_length = int(token[2])
+            between = [int(value) for value in token[3]]
+            second_distance = int(token[4])
+            second_length = int(token[5])
+            if not (
+                1 <= first_distance <= 256
+                and 2 <= first_length <= 9
+                and 1 <= second_distance <= 256
+                and 2 <= second_length <= 9
+                and all(0 <= value <= 0x7F for value in between)
+            ):
+                raise AssertionError("invalid pair-LZ match pair")
+            packed = (
+                ((first_length - 2) << 5)
+                | (((first_distance - 1) & 1) << 4)
+                | ((second_length - 2) << 1)
+                | ((second_distance - 1) & 1)
+            )
+            stream.extend(
+                (
+                    0x80 | ((first_distance - 1) >> 1),
+                    packed,
+                    *between,
+                    0x80 | ((second_distance - 1) >> 1),
+                )
+            )
+        return bytes(stream)
+
+    def model(
+        stream: bytes,
+        destination_before: bytes,
+        destination_offset: int,
+        destination_end: int,
+        source_offset: int,
+    ) -> tuple[bytearray, int, int, int, int, int | None]:
+        memory = bytearray(destination_before)
+        source_index = 0
+        destination = destination_offset
+        source_result = source_offset
+        final_al = 0
+        final_packed = None
+
+        def read_control() -> int:
+            nonlocal source_index
+            if source_index >= len(stream):
+                raise AssertionError("pair-LZ model exhausted its stream")
+            value = stream[source_index]
+            source_index += 1
+            return value
+
+        def write_literal(control: int) -> None:
+            nonlocal destination, final_al
+            final_al = 0 if control == 0 else control + 12
+            memory[destination] = final_al
+            destination = (destination + 1) & 0xFFFF
+
+        def copy_match(distance: int, length: int) -> None:
+            nonlocal destination, source_result, final_al
+            copy_offset = (destination - distance) & 0xFFFF
+            for _ in range(length):
+                memory[destination] = memory[copy_offset]
+                destination = (destination + 1) & 0xFFFF
+                copy_offset = (copy_offset + 1) & 0xFFFF
+            source_result = copy_offset
+            final_al = (-distance) & 0xFF
+
+        while True:
+            control = read_control()
+            if control < 0x80:
+                write_literal(control)
+                if destination >= destination_end:
+                    break
+                continue
+
+            packed = read_control()
+            final_packed = packed
+            first_distance = ((control & 0x7F) << 1) | ((packed >> 4) & 1)
+            copy_match(first_distance + 1, (packed >> 5) + 2)
+            if destination >= destination_end:
+                break
+
+            while True:
+                control = read_control()
+                if control >= 0x80:
+                    break
+                write_literal(control)
+                if destination >= destination_end:
+                    return (
+                        memory,
+                        source_index,
+                        destination,
+                        source_result,
+                        final_al,
+                        final_packed,
+                    )
+
+            second_distance = ((control & 0x7F) << 1) | (packed & 1)
+            copy_match(second_distance + 1, ((packed >> 1) & 7) + 2)
+            if destination >= destination_end:
+                break
+
+        return (
+            memory,
+            source_index,
+            destination,
+            source_result,
+            final_al,
+            final_packed,
+        )
+
+    cases: list[
+        tuple[str, list[tuple[object, ...]], int, int, int]
+    ] = [
+        ("literal_zero", [("literal", 0)], 0x0100, 0x0200, 1),
+        (
+            "literal_bias_limits",
+            [("literal", 1), ("literal", 0x7F)],
+            0x1111,
+            0x2200,
+            2,
+        ),
+        (
+            "first_match_exact",
+            [("pair", 1, 9, [], 1, 2)],
+            0x2222,
+            0x3300,
+            9,
+        ),
+        (
+            "between_literal_terminal",
+            [("pair", 2, 2, [0, 1], 1, 2)],
+            0x3333,
+            0x4400,
+            4,
+        ),
+        (
+            "second_match_exact",
+            [("pair", 3, 3, [2], 1, 4)],
+            0x4444,
+            0x5500,
+            8,
+        ),
+        (
+            "multiple_groups",
+            [
+                ("literal", 5),
+                ("pair", 1, 2, [], 3, 3),
+                ("literal", 0x7F),
+                ("pair", 4, 4, [0], 2, 2),
+            ],
+            0x5555,
+            0x6600,
+            14,
+        ),
+        (
+            "max_distance_and_lengths",
+            [("pair", 256, 9, [], 255, 9)],
+            0x6666,
+            0x0500,
+            18,
+        ),
+        (
+            "minimum_match_fields",
+            [("pair", 1, 2, [], 2, 2)],
+            0x7777,
+            0x0700,
+            4,
+        ),
+        (
+            "first_match_overshoots_end",
+            [("pair", 1, 9, [], 1, 2)],
+            0x8888,
+            0x1800,
+            3,
+        ),
+        (
+            "source_wrap",
+            [("pair", 1, 2, [], 1, 2)],
+            0xFFFE,
+            0x2800,
+            2,
+        ),
+        (
+            "copy_source_wrap",
+            [("pair", 2, 2, [], 1, 2)],
+            0x9999,
+            0x0001,
+            2,
+        ),
+    ]
+    source_segment = 0x2000
+    destination_segment = 0x3800
+    stack_segment = 0x6000
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, (
+        name,
+        tokens,
+        source_offset,
+        destination_offset,
+        end_length,
+    ) in enumerate(cases):
+        stream = encode(tokens)
+        destination_end = (destination_offset + end_length) & 0xFFFF
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+        for index, value in enumerate(stream):
+            source_before[(source_offset + index) & 0xFFFF] = value
+        destination_before = bytes(
+            (offset * 23 + (offset >> 8) * 11 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        (
+            destination_expected,
+            consumed,
+            destination_result,
+            si_result,
+            final_al,
+            final_packed,
+        ) = model(
+            stream,
+            destination_before,
+            destination_offset,
+            destination_end,
+            source_offset,
+        )
+        stack_before = bytearray(
+            (offset * 41 + case_index * 17 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x97970000 | destination_end,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": destination_segment,
+            "fs": 0x1800,
+            "gs": 0x5000,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, bytes(source_before)),
+                (destination_segment, 0, destination_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+        )
+
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != bytes(
+            source_before
+        ):
+            raise AssertionError(f"0xaabc {name}: source changed")
+        if bytes(machine.mem_read(destination_segment * 16, 0x10000)) != bytes(
+            destination_expected
+        ):
+            raise AssertionError(f"0xaabc {name}: decoded output differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | final_al
+        expected_registers["ebx"] = (
+            initial["ebx"] & 0xFFFF0000
+        ) | ((source_offset + consumed) & 0xFFFF)
+        expected_registers["ecx"] &= 0xFFFF0000
+        if final_packed is not None:
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFFFF00
+            ) | final_packed
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | si_result
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | destination_result
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xaabc {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xaabc {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xaabc {name}: stack sentinel changed")
+
+        expected_flags = sub16_flags(destination_result, destination_end)
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xaabc {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        produced = (destination_result - destination_offset) & 0xFFFF
+        decoded = bytes(
+            destination_expected[(destination_offset + index) & 0xFFFF]
+            for index in range(produced)
+        )
+        vectors.append(
+            {
+                "name": name,
+                "tokens": [list(token) for token in tokens],
+                "compressed_stream_hex": stream.hex(),
+                "consumed_bytes": consumed,
+                "decoded_hex": decoded.hex(),
+                "destination_offset": destination_offset,
+                "destination_end": destination_end,
+                "destination_result": destination_result,
+                "source_offset": source_offset,
+                "source_result_offset": (source_offset + consumed) & 0xFFFF,
+                "copy_cursor_result": si_result,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def flag_gated_copy_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x4000
@@ -52845,6 +53207,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a867_natural.json",
         resource_payload_decode_ab_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_aabc_natural.json",
+        resource_pair_lz_decode_vectors(),
         args.check,
     )
     update_vector(

@@ -6,8 +6,8 @@
 ; seg_off: 0971:0dac
 ; group: seg_0971
 ; provenance: recursive_graph
-; label: rle_decode_step
-; label_comment: RLE decode step (2 calls): ah=0; al=[bx] control byte; if negative (js) it's a run (al+=al, cl=[bx+1] run length). A run-length decompression primitive (same negative-control convention as the sprite blit)
+; label: resource_pair_lz_decode
+; label_comment: Decodes biased literals and pairs of 1..256-byte-distance, 2..9-byte overlapping matches until DI reaches BP. Each negative-control pair shares one byte containing both three-bit lengths and both distance low bits; returns the compressed cursor in BX.
 ; byte_count: 105
 ; boundary: cfg_blocks_15_terminals_4
 ; terminal: ret:4
