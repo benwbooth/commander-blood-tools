@@ -1,0 +1,267 @@
+[
+  {
+    "name": "all_visible_positive",
+    "anchors": 11,
+    "entity_ids_in_order": [
+      31,
+      30,
+      29,
+      28,
+      27,
+      26,
+      25,
+      24,
+      23,
+      22,
+      21
+    ],
+    "helper_events": 22,
+    "extent_comparison_loads": 11,
+    "helper_sequence_sha256": "a8df7ff63e88d6f6c29a639d09a8375ba21613a7c5b04185a8cd07f029c0a96f",
+    "first_event": [
+      "extent",
+      31,
+      89,
+      120,
+      239,
+      4634,
+      1165
+    ],
+    "last_event": [
+      "position",
+      21,
+      131,
+      62,
+      160,
+      100,
+      1024
+    ],
+    "final_work": [
+      0,
+      0,
+      1024,
+      42257
+    ],
+    "final_counter": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "mixed_hidden_and_zero_depth",
+    "anchors": 11,
+    "entity_ids_in_order": [
+      31,
+      30,
+      29,
+      28,
+      27,
+      26,
+      25,
+      24,
+      23,
+      22,
+      21
+    ],
+    "helper_events": 12,
+    "extent_comparison_loads": 6,
+    "helper_sequence_sha256": "60a951954884b32f4f03d037ca895ed2952a07bb4ed727090052a32699e16250",
+    "first_event": [
+      "extent",
+      31,
+      89,
+      120,
+      7349,
+      4552,
+      1165
+    ],
+    "last_event": [
+      "position",
+      22,
+      53203,
+      2172,
+      53228,
+      2204,
+      850
+    ],
+    "final_work": [
+      299,
+      33280,
+      768,
+      42283
+    ],
+    "final_counter": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_depth_wrap",
+    "anchors": 11,
+    "entity_ids_in_order": [
+      31,
+      30,
+      29,
+      28,
+      27,
+      26,
+      25,
+      24,
+      23,
+      22,
+      21
+    ],
+    "helper_events": 22,
+    "extent_comparison_loads": 11,
+    "helper_sequence_sha256": "f213207e35d0035e353028862a06ee7af8a46f4cbc5401af32212cd21302f72b",
+    "first_event": [
+      "extent",
+      31,
+      1,
+      1,
+      359,
+      160,
+      16
+    ],
+    "last_event": [
+      "position",
+      21,
+      131,
+      62,
+      160,
+      100,
+      1024
+    ],
+    "final_work": [
+      0,
+      0,
+      1024,
+      42309
+    ],
+    "final_counter": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "source_equal_extent_flag_clear",
+    "anchors": 11,
+    "entity_ids_in_order": [
+      31,
+      30,
+      29,
+      28,
+      27,
+      26,
+      25,
+      24,
+      23,
+      22,
+      21
+    ],
+    "helper_events": 22,
+    "extent_comparison_loads": 11,
+    "helper_sequence_sha256": "ba7b0a399150d34c501736c4c233f2dd7d7d2185eb2453e0a998e9cdc82e52bb",
+    "first_event": [
+      "extent",
+      31,
+      46,
+      44,
+      49823,
+      4390,
+      1165
+    ],
+    "last_event": [
+      "position",
+      21,
+      145,
+      84,
+      160,
+      100,
+      1024
+    ],
+    "final_work": [
+      0,
+      0,
+      1024,
+      42335
+    ],
+    "final_counter": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "modular_overflow_and_screen_wrap",
+    "anchors": 11,
+    "entity_ids_in_order": [
+      31,
+      30,
+      29,
+      28,
+      27,
+      26,
+      25,
+      24,
+      23,
+      22,
+      21
+    ],
+    "helper_events": 14,
+    "extent_comparison_loads": 7,
+    "helper_sequence_sha256": "7a21c946c3035ec60ee9a7ec859b8b9f259782dfca7cfbd0b7093e9e14d93bd6",
+    "first_event": [
+      "extent",
+      31,
+      89,
+      120,
+      8249,
+      47409,
+      1165
+    ],
+    "last_event": [
+      "position",
+      22,
+      5071,
+      5064,
+      5096,
+      5096,
+      850
+    ],
+    "final_work": [
+      377,
+      33280,
+      768,
+      42361
+    ],
+    "final_counter": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

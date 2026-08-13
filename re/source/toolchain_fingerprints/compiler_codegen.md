@@ -1707,6 +1707,40 @@ and ES clobbered rather than using DI/CX/LOOP and restoring AX/DI/ES. Turbo C
 and carries a four-byte far pointer. This is close natural codegen, but not yet
 a drop-in ABI match.
 
+Object-sprite projector `0x009B98` walks the 11 six-byte anchors at GS:0x4F09
+while copying eight bytes from each anchor to the work record at GS:0x4F01.
+The loop maps anchors in order to entity ids 31 down through 21 and skips an
+entity unless flag 0x80 is set. Camera subtraction wraps at 16 bits. Its depth,
+screen projection, and reciprocal scale use the same modular signed dot-product
+rules as the point-cloud projector, except a negative nonzero depth is increased
+by 0x10000 rather than rejected. Width and height come from the entity frame,
+are multiplied by the scale, and are shifted right by ten before the extent and
+centered-position helpers run.
+
+The extent-helper input is a game-visible ABI accident that the C must retain.
+The projector fixes BP at 0x2F95, and the original helper loads a far pointer
+from SS:[BP+4]. Those four bytes overlap projection matrix coefficient 1 at
+SS:0x2F99; they are not the entity frame pointer used for width and height.
+The natural candidate exposes this overlap with a typed coefficient/far-pointer
+union and passes that pointer to the separately recovered natural helper.
+
+Five direct-binary vectors execute 55 anchors and 92 helper calls. They run the
+original relocated extent and position helper machine code rather than stubs,
+and prove 46 loads of the matrix-overlap comparison pointer, mixed visibility,
+zero and negative depths, modular product/add overflow, screen wrap, source
+dimension scaling, extent flag behavior, post-helper centering, helper frames,
+all touched state, preservation, final DEC flags, and RETF.
+
+Open Watcom `-3 -ox -mm` compiles the actual one-function candidate without
+warnings to 314 instructions/869 bytes versus 122/369 original. The corpus
+probe emits 303 instructions, with a 60.66 percent mnemonic-sequence LCS and
+62.30 percent mnemonic-multiset overlap. Watcom calls its 32-bit multiply and
+divide helpers, loops for long shifts, and materializes multiple based far
+pointers; the binary uses inline 386 arithmetic and ambient DS/GS/SS state.
+There is no inline assembly in the candidate. DS==GS, SS==GS, the inherited
+comparison pointer, and the original preservation/flag envelope remain explicit
+integration boundaries.
+
 Depth-scroll step `0x00B75C` gives opening bit zero precedence over closing bit
 zero. It changes only the low byte of the depth word: opening then compares the
 whole signed word with 0x41, while closing branches directly on the sign flag
@@ -2614,6 +2648,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_point_cloud_project` | medium, `-ox`, register | 80/164 | 0.0500 | 0.4875 | 0.0625 |
 | `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
+| `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

@@ -40760,6 +40760,433 @@ def ship_3d_point_cloud_project_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_object_sprite_project_vectors() -> list[dict[str, object]]:
+    entry = 0x9B98
+    expected_hash = "4c1e816863fe14d2f7835c89e6d0692195f55abacb012b3c7db8e1338a165051"
+    if hashlib.sha256(EXE[entry : entry + 369]).hexdigest() != expected_hash:
+        raise AssertionError("0x9b98: recovered 369-byte body changed")
+
+    cases = [
+        ("all_visible_positive", 0x11, False, False, False),
+        ("mixed_hidden_and_zero_depth", 0x2B, True, True, False),
+        ("negative_depth_wrap", 0x45, False, False, True),
+        ("source_equal_extent_flag_clear", 0x5F, False, False, False),
+        ("modular_overflow_and_screen_wrap", 0x79, True, False, False),
+    ]
+    extent_runtime = 0x0299 * 16 + 0x133D
+    position_runtime = 0x0299 * 16 + 0x127D
+    game_segment = 0x4000
+    data_segment = 0x2800
+    extra_segment = 0x5000
+    compare_segment = 0x6800
+    frame_segment = 0x7800
+    stack_segment = 0x9000
+    compare_offset = 0x0200
+    return_address = 0x7600
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def signed32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    def multiply32(left: int, right: int) -> int:
+        return signed32(left * right)
+
+    def add32(left: int, right: int) -> int:
+        return signed32(left + right)
+
+    def dot32(components: list[int], terms: list[int]) -> int:
+        return add32(
+            add32(
+                multiply32(components[0], terms[0]),
+                multiply32(components[1], terms[1]),
+            ),
+            multiply32(components[2], terms[2]),
+        )
+
+    def divide_toward_zero(dividend: int, divisor: int) -> int:
+        magnitude = abs(dividend) // abs(divisor)
+        return -magnitude if dividend < 0 else magnitude
+
+    for case_index, (
+        name,
+        seed,
+        mixed_visibility,
+        zero_depths,
+        negative_depths,
+    ) in enumerate(cases):
+        compare_dimensions = (32 + case_index * 3, 24 + case_index * 5)
+        matrix = [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000]
+        matrix[1] = signed32(compare_offset | (compare_segment << 16))
+        if name == "modular_overflow_and_screen_wrap":
+            matrix[0] = 0x70000001
+            matrix[2] = -0x3456789
+            matrix[3] = 0x6ABCDEFF
+            matrix[4] = -0x1234567
+        camera = [0x0100 + seed, 0x8200, 0xFF00]
+
+        anchors = []
+        for anchor_index in range(11):
+            x = (0x1200 + seed * 17 + anchor_index * 977) & 0xFFFF
+            y = (0x4300 + seed * 11 + anchor_index * 613) & 0xFFFF
+            if negative_depths:
+                z = (camera[2] - 1000 - anchor_index * 17) & 0xFFFF
+            elif zero_depths and anchor_index in (2, 7):
+                z = camera[2]
+            else:
+                z = (camera[2] + 900 + anchor_index * 37) & 0xFFFF
+            anchors.append([x, y, z])
+        anchors[-1] = [camera[0], camera[1], (camera[2] + 1024) & 0xFFFF]
+        anchor_bytes = b"".join(struct.pack("<3H", *anchor) for anchor in anchors)
+        trailing_anchor_word = (0xA500 + seed) & 0xFFFF
+        anchor_window = anchor_bytes + struct.pack("<H", trailing_anchor_word)
+
+        game_before = bytearray(
+            (offset * 29 + (offset >> 8) * 13 + seed) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before[0x4F09 : 0x4F09 + len(anchor_window)] = anchor_window
+        struct.pack_into("<3H", game_before, 0x2F65, *camera)
+
+        frame_before = bytearray(
+            (offset * 19 + (offset >> 8) * 7 + seed + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        entity_initial = {}
+        for entity_id in range(21, 32):
+            record_offset = 0x6212 + entity_id * 32
+            anchor_index = 31 - entity_id
+            visible = not mixed_visibility or (anchor_index % 3 != 1)
+            flags = (0xAB00 | 0x0001 | (0x0080 if visible else 0)) & 0xFFFF
+            if name == "source_equal_extent_flag_clear":
+                flags |= 0x0010
+            source_offset = 0x1000 + entity_id * 8
+            source_dimensions = (
+                compare_dimensions
+                if name == "source_equal_extent_flag_clear"
+                else (17 + entity_id * 2, 13 + entity_id * 3)
+            )
+            struct.pack_into("<2H", frame_before, source_offset, *source_dimensions)
+            draw_x = (0x7000 + entity_id * 13) & 0xFFFF
+            draw_y = (0x8000 + entity_id * 17) & 0xFFFF
+            extent_width = (9 + entity_id) & 0xFFFF
+            extent_height = (11 + entity_id) & 0xFFFF
+            struct.pack_into("<H", game_before, record_offset, flags)
+            struct.pack_into(
+                "<HH", game_before, record_offset + 4, source_offset, frame_segment
+            )
+            struct.pack_into(
+                "<4H", game_before, record_offset + 8,
+                draw_x, draw_y, extent_width, extent_height,
+            )
+            entity_initial[entity_id] = {
+                "source": [frame_segment, source_offset],
+                "source_dimensions": source_dimensions,
+            }
+
+        data_before = bytes(
+            (offset * 17 + (offset >> 8) * 5 + seed + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + (offset >> 8) * 3 + seed + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        compare_before = bytearray(
+            (offset * 7 + seed + 0x97) & 0xFF for offset in range(0x10000)
+        )
+        struct.pack_into("<2H", compare_before, compare_offset, *compare_dimensions)
+        stack_before = bytearray(
+            (offset * 5 + (offset >> 8) * 23 + seed + 0xB9) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<9i", stack_before, 0x2F95, *matrix)
+        stack_before[0xFF00 : 0xFF0C] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        game_expected = bytearray(game_before)
+        stack_expected = bytearray(stack_before)
+        expected_events = []
+        final_work = None
+        for anchor_index in range(11):
+            counter = 10 - anchor_index
+            entity_id = counter + 0x15
+            source_offset = anchor_index * 6
+            raw_work = list(struct.unpack_from("<4H", anchor_window, source_offset))
+            final_work = raw_work
+            struct.pack_into("<4H", game_expected, 0x4F01, *raw_work)
+            record_offset = 0x6212 + entity_id * 32
+            flags = struct.unpack_from("<H", game_expected, record_offset)[0]
+            if (flags & 0x80) == 0:
+                continue
+            translated_words = [
+                (raw_work[axis] - camera[axis]) & 0xFFFF for axis in range(3)
+            ]
+            translated = [signed16(value) for value in translated_words]
+            final_work = translated_words + [raw_work[3]]
+            struct.pack_into("<4H", game_expected, 0x4F01, *final_work)
+            raw_depth = dot32(translated, matrix[6:9]) >> 15
+            if raw_depth == 0:
+                continue
+            depth = raw_depth + 0x10000 if raw_depth < 0 else raw_depth
+            scale = (0x100000 // depth) & 0xFFFF
+            projected_x = (
+                divide_toward_zero(dot32(translated, matrix[0:3]) >> 7, depth)
+                + 160
+            ) & 0xFFFF
+            projected_y = (
+                divide_toward_zero(dot32(translated, matrix[3:6]) >> 7, depth)
+                + 100
+            ) & 0xFFFF
+            struct.pack_into(
+                "<4H", stack_expected, 0x2FB9,
+                projected_x, projected_y, depth & 0xFFFF, scale,
+            )
+            source_dimensions = entity_initial[entity_id]["source_dimensions"]
+            scaled_width = ((source_dimensions[0] * scale) >> 10) & 0xFFFF
+            scaled_height = ((source_dimensions[1] * scale) >> 10) & 0xFFFF
+            expected_events.append(
+                ("extent", entity_id, scaled_width, scaled_height,
+                 projected_x, projected_y, scale)
+            )
+
+            flags = struct.unpack_from("<H", game_expected, record_offset)[0]
+            extent_width, extent_height = struct.unpack_from(
+                "<2H", game_expected, record_offset + 12
+            )
+            if flags & 0x81:
+                if (scaled_width, scaled_height) == compare_dimensions:
+                    if flags & 0x10:
+                        flags = (flags & ~0x10) | 0x02
+                elif (scaled_width, scaled_height) != (extent_width, extent_height):
+                    flags |= 0x12
+                    extent_width, extent_height = scaled_width, scaled_height
+                struct.pack_into("<H", game_expected, record_offset, flags)
+                struct.pack_into(
+                    "<2H", game_expected, record_offset + 12,
+                    extent_width, extent_height,
+                )
+
+            draw_x = (projected_x - (extent_width >> 1)) & 0xFFFF
+            draw_y = (projected_y - (extent_height >> 1)) & 0xFFFF
+            expected_events.append(
+                ("position", entity_id, draw_x, draw_y,
+                 projected_x, projected_y, scale)
+            )
+            flags = struct.unpack_from("<H", game_expected, record_offset)[0]
+            old_x, old_y = struct.unpack_from("<2H", game_expected, record_offset + 8)
+            if flags & 0x81:
+                if old_x != draw_x:
+                    flags |= 0x02
+                    old_x = draw_x
+                if old_y != draw_y:
+                    flags |= 0x02
+                    old_y = draw_y
+                struct.pack_into("<H", game_expected, record_offset, flags)
+                struct.pack_into("<2H", game_expected, record_offset + 8, old_x, old_y)
+
+        if final_work is None:
+            raise AssertionError(f"0x9b98 {name}: no work record")
+        struct.pack_into("<H", game_expected, 0x2F77, 0xFFFF)
+
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        observed_events = []
+        extent_comparison_loads = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal extent_comparison_loads
+            if address == extent_runtime + 0x17:
+                if (
+                    machine.reg_read(UC_X86_REG_DS) != compare_segment
+                    or machine.reg_read(UC_X86_REG_SI) != compare_offset
+                ):
+                    raise AssertionError(
+                        f"0x9b98 {name}: extent comparison pointer differs"
+                    )
+                extent_comparison_loads += 1
+                return
+            if address not in (extent_runtime, position_runtime):
+                return
+            event_index = len(observed_events)
+            if event_index >= len(expected_events):
+                raise AssertionError(f"0x9b98 {name}: unexpected helper call")
+            expected_event = expected_events[event_index]
+            kind = "extent" if address == extent_runtime else "position"
+            entity_id = machine.reg_read(UC_X86_REG_AX)
+            actual = (
+                kind,
+                entity_id,
+                machine.reg_read(UC_X86_REG_CX) if kind == "extent"
+                else machine.reg_read(UC_X86_REG_BX),
+                machine.reg_read(UC_X86_REG_DX) if kind == "extent"
+                else machine.reg_read(UC_X86_REG_CX),
+                *struct.unpack(
+                    "<2H", machine.mem_read(stack_segment * 16 + 0x2FB9, 4)
+                ),
+                struct.unpack(
+                    "<H", machine.mem_read(stack_segment * 16 + 0x2FBF, 2)
+                )[0],
+            )
+            if actual != expected_event:
+                raise AssertionError(
+                    f"0x9b98 {name}: event={actual}, expected={expected_event}"
+                )
+            expected_return = 0x9CDB if kind == "extent" else 0x9CF4
+            if (
+                machine.reg_read(UC_X86_REG_BP) != 0x2F95
+                or machine.reg_read(UC_X86_REG_DS) != game_segment
+                or machine.reg_read(UC_X86_REG_ES) != game_segment
+                or machine.reg_read(UC_X86_REG_DI) != 0x4F01
+                or machine.reg_read(UC_X86_REG_SP) != 0xFEE0
+                or list(struct.unpack(
+                    "<HH", machine.mem_read(stack_segment * 16 + 0xFEE0, 4)
+                )) != [expected_return, 0]
+            ):
+                raise AssertionError(f"0x9b98 {name}: helper ABI state differs")
+            observed_events.append(actual)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, extent_runtime, EXE[0x42CD : 0x42CD + 73]),
+                (0, position_runtime, EXE[0x420D : 0x420D + 51]),
+                (game_segment, 0, bytes(game_before)),
+                (data_segment, 0, data_before),
+                (extra_segment, 0, extra_before),
+                (compare_segment, 0, bytes(compare_before)),
+                (frame_segment, 0, bytes(frame_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=20000,
+        )
+
+        if observed_events != expected_events:
+            raise AssertionError(f"0x9b98 {name}: helper sequence differs")
+        expected_extent_calls = sum(
+            event[0] == "extent" for event in expected_events
+        )
+        if extent_comparison_loads != expected_extent_calls:
+            raise AssertionError(
+                f"0x9b98 {name}: extent comparison loads="
+                f"{extent_comparison_loads}, expected={expected_extent_calls}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(game_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_game, game_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x9b98 {name}: game state differs at {mismatch:#x}"
+            )
+        actual_projection = bytes(machine.mem_read(stack_segment * 16 + 0x2F95, 44))
+        if actual_projection != bytes(stack_expected[0x2F95 : 0x2FC1]):
+            raise AssertionError(f"0x9b98 {name}: SS projection state differs")
+        for segment, expected in (
+            (data_segment, data_before),
+            (extra_segment, extra_before),
+            (compare_segment, bytes(compare_before)),
+            (frame_segment, bytes(frame_before)),
+        ):
+            actual_segment = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual_segment != expected:
+                mismatch = next(
+                    index
+                    for index, pair in enumerate(
+                        zip(actual_segment, expected, strict=True)
+                    )
+                    if pair[0] != pair[1]
+                )
+                raise AssertionError(
+                    f"0x9b98 {name}: segment {segment:#x} changed at "
+                    f"{mismatch:#x}"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9b98 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9b98 {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9b98 {name}: stack sentinel changed")
+
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": True,
+            "zf": False,
+            "sf": True,
+            "of": False,
+        }
+        masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9b98 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        event_bytes = b"".join(
+            struct.pack("<B6H", int(event[0] == "position"), *event[1:])
+            for event in observed_events
+        )
+        vectors.append(
+            {
+                "name": name,
+                "anchors": 11,
+                "entity_ids_in_order": list(range(31, 20, -1)),
+                "helper_events": len(observed_events),
+                "extent_comparison_loads": extent_comparison_loads,
+                "helper_sequence_sha256": hashlib.sha256(event_bytes).hexdigest(),
+                "first_event": list(observed_events[0]) if observed_events else None,
+                "last_event": list(observed_events[-1]) if observed_events else None,
+                "final_work": final_work,
+                "final_counter": 0xFFFF,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_plot_point_vectors() -> list[dict[str, object]]:
     entry = 0x9B04
     expected_hash = "ac19f28f8de11959599f3709ac9a949cf4c83428d206d71a312b3cba58fd68a2"
@@ -51707,6 +52134,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b67_natural.json",
         ship_3d_point_cloud_randomize_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9b98_natural.json",
+        ship_3d_object_sprite_project_vectors(),
         args.check,
     )
     update_vector(

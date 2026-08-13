@@ -21,6 +21,7 @@ typedef struct projection_context {
     u16 projected_x;
     u16 projected_y;
     u16 projected_depth;
+    u16 depth_scale;
 } projection_context;
 
 typedef struct point_record {

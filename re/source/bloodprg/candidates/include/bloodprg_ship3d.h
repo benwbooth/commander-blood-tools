@@ -22,6 +22,8 @@
 #define SHIP_3D_HUD_PALETTE_COLORS 64u
 #define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
 #define SHIP_3D_POINT_CLOUD_COUNT 1000u
+#define SHIP_3D_OBJECT_ANCHOR_COUNT 11u
+#define SHIP_3D_NAV_ENTITY_BASE 0x0015u
 #define BRIDGE_PANORAMA_STATION_COUNT 4u
 
 typedef struct bridge_panorama_directory_entry {
@@ -45,6 +47,7 @@ typedef struct ship_3d_projection_context {
     cb_u16 projected_x;
     cb_u16 projected_y;
     cb_u16 projected_depth;
+    cb_u16 depth_scale;
 } ship_3d_projection_context;
 
 typedef struct ship_3d_projection_terms {
@@ -68,10 +71,18 @@ typedef struct ship_3d_point_record {
     cb_u16 scratch;
 } ship_3d_point_record;
 
-typedef char ship_3d_projection_context_size_must_be_42[
-        sizeof(ship_3d_projection_context) == 42 ? 1 : -1];
+typedef struct ship_3d_object_anchor {
+    cb_u16 x;
+    cb_u16 y;
+    cb_u16 z;
+} ship_3d_object_anchor;
+
+typedef char ship_3d_projection_context_size_must_be_44[
+        sizeof(ship_3d_projection_context) == 44 ? 1 : -1];
 typedef char ship_3d_point_record_size_must_be_8[
         sizeof(ship_3d_point_record) == 8 ? 1 : -1];
+typedef char ship_3d_object_anchor_size_must_be_6[
+        sizeof(ship_3d_object_anchor) == 6 ? 1 : -1];
 
 typedef struct ship_3d_matrix_slot {
     cb_u16 first_word;
@@ -100,6 +111,8 @@ extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_remaining; /* GS:0x2F77 *
 extern volatile ship_3d_point_record CB_GAME_DATA ship_3d_point_cloud[]; /* GS:0x2FC1 */
 extern volatile ship_3d_point_record CB_GAME_DATA
         ship_3d_projection_work; /* GS:0x4F01 */
+extern volatile ship_3d_object_anchor CB_GAME_DATA
+        ship_3d_object_anchors[]; /* GS:0x4F09 */
 /* Original BP indexing selects SS:0x4F45; GAME_DATA must bind to SS == GS. */
 extern const ship_3d_angle_table_entry CB_GAME_DATA ship_3d_angle_table[];
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_left;    /* GS:0x5235 */
