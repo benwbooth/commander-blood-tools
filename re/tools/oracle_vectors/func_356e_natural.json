@@ -1,0 +1,745 @@
+[
+  {
+    "name": "above_bottom_clipped_before_port_or_text",
+    "x": 17,
+    "y": 101,
+    "color": 239,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": true,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 0,
+    "port_writes_head": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "7ac5b431e80adf56190e8a6e0790a4d091a7d726d92a950c0013dd08fa68eb15"
+  },
+  {
+    "name": "top_minus_ten_edge_clipped",
+    "x": 23,
+    "y": 10,
+    "color": 232,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": true,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 0,
+    "port_writes_head": [],
+    "port_writes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "4402342668762028c26438bc3d54b8e5acc11c4cfbd0425f4f5f9df8ecd652ba"
+  },
+  {
+    "name": "empty_string_selects_map_mask_register_only",
+    "x": 31,
+    "y": 11,
+    "color": 122,
+    "clip_top": 20,
+    "clip_bottom": 100,
+    "clipped": false,
+    "characters_drawn": 0,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 0,
+    "port_write_count": 1,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ]
+    ],
+    "port_writes_sha256": "096eb04ec98c30a587795042fa87c90314ba036aa7126ce6c31ecdcceb7950b0",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "e9c2f0a99ed0f5bc62c86385fe458ec4c619d4bfe4a2dd0ecf5dd0e66fec748e"
+  },
+  {
+    "name": "single_glyph_starting_plane_zero",
+    "x": 20,
+    "y": 37,
+    "color": 209,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 7,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ]
+    ],
+    "port_writes_sha256": "f1288aba064225df7e10dead3541a702e021dedd9bb17e442d4bcdddb7ef9692",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "caa2ac73016e7444dd9478114857749ca9046fe411439edb293bd6b1e1e901fe"
+  },
+  {
+    "name": "single_glyph_starting_plane_one",
+    "x": 21,
+    "y": 41,
+    "color": 0,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 10,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ]
+    ],
+    "port_writes_sha256": "03695aa4087a84f17e79b564ed65de8e4470d3233e449fc713304eea88c86296",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "b9c766eea16c856d4116b659fe07cc1601878e4823b675a57ec7447c552fe8da"
+  },
+  {
+    "name": "single_glyph_starting_plane_two",
+    "x": 22,
+    "y": 45,
+    "color": 85,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 9,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "e35e65a2fa014ea5930bfa9ce5fbb0b209b114e0fa8d5ac560bacbb9c5ea52f7",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "28fe4f41c62e2f2afa208a1df2782a259ed8593e60d5ca81a4e200b3dbf66e05"
+  },
+  {
+    "name": "single_glyph_starting_plane_three",
+    "x": 23,
+    "y": 49,
+    "color": 145,
+    "clip_top": 30,
+    "clip_bottom": 120,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 8,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "bf6af34bba93c06070420e468af5f0a9158797372610e1835f16144c6620bd2c",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "1468feb4de337268377d33282ae9a891315b342b66e21511f0579b83c6b22491"
+  },
+  {
+    "name": "two_glyphs_signed_final_advance_cross_plane_boundary",
+    "x": 19,
+    "y": 53,
+    "color": 199,
+    "clip_top": 50,
+    "clip_bottom": 140,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 2,
+    "port_write_count": 11,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "0d0931163fd59d7d2ce50730743ab7acbe620e90f2872280f48ef05f2dd11b54",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "9dc0f04a37cfc69a5b73a1927327b81b3c59816687ea2c96dcccae8b3b070b94"
+  },
+  {
+    "name": "high_bit_map_result_is_drawn_not_skipped",
+    "x": 28,
+    "y": 57,
+    "color": 167,
+    "clip_top": 50,
+    "clip_bottom": 140,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 6,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ]
+    ],
+    "port_writes_sha256": "f1288aba064225df7e10dead3541a702e021dedd9bb17e442d4bcdddb7ef9692",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "dd0020b0a73254c91c38595162442aabef7ac1e400ea3dab38216651f00fdb82"
+  },
+  {
+    "name": "source_offset_wrap",
+    "x": 46,
+    "y": 61,
+    "color": 109,
+    "clip_top": 60,
+    "clip_bottom": 150,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 65535,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 14,
+    "port_write_count": 11,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "21e2ed4b7b18a0c298247cd0020456a57f9df256a33c4e5317c0a03c8e8779ae",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "fb5f175ff8655293e2f9eda2ec3abf5dd090c002e33cf646bdeae367c85fa66f"
+  },
+  {
+    "name": "inherited_backward_source_direction",
+    "x": 67,
+    "y": 73,
+    "color": 60,
+    "clip_top": 70,
+    "clip_bottom": 160,
+    "clipped": false,
+    "characters_drawn": 2,
+    "text_offset": 12288,
+    "framebuffer_offset": 768,
+    "direction_flag": true,
+    "draw_width": 16,
+    "port_write_count": 11,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ]
+    ],
+    "port_writes_sha256": "45cae68751d6345b296ded1641801748acb3f615eced8351d586470073e53e3d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "fbe14c654dce323d2681ebb80fb8319c1a02baaf64ae95c641e0e7f2d1cc117a"
+  },
+  {
+    "name": "full_word_row_formula_and_output_wrap",
+    "x": 4663,
+    "y": 33059,
+    "color": 232,
+    "clip_top": 33024,
+    "clip_bottom": 65535,
+    "clipped": false,
+    "characters_drawn": 1,
+    "text_offset": 12800,
+    "framebuffer_offset": 65520,
+    "direction_flag": false,
+    "draw_width": 9,
+    "port_write_count": 6,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ]
+    ],
+    "port_writes_sha256": "bf6af34bba93c06070420e468af5f0a9158797372610e1835f16144c6620bd2c",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "350ed48929eebf44c15826afc825eea48a8390f8b7181446b8e95cd5c51a3fc9"
+  },
+  {
+    "name": "width_accumulator_wrap_with_shipped_advance",
+    "x": 0,
+    "y": 0,
+    "color": 78,
+    "clip_top": 5,
+    "clip_bottom": 199,
+    "clipped": false,
+    "characters_drawn": 6554,
+    "text_offset": 12800,
+    "framebuffer_offset": 768,
+    "direction_flag": false,
+    "draw_width": 4,
+    "port_write_count": 32771,
+    "port_writes_head": [
+      [
+        964,
+        1,
+        2
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        68
+      ],
+      [
+        965,
+        1,
+        136
+      ],
+      [
+        965,
+        1,
+        17
+      ],
+      [
+        965,
+        1,
+        34
+      ],
+      [
+        965,
+        1,
+        68
+      ]
+    ],
+    "port_writes_sha256": "b5da91ca7bf0725c7774ee26ec2f0a5f72985fad1380f23671849eae5b4c1f1d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "output_segment_sha256": "0569cf7ae659d7f9020c7056d6fd2dffbea261b5c2da74886eda5895c2231478"
+  }
+]

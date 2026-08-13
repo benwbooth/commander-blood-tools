@@ -6,8 +6,8 @@
 ; seg_off: 0299:05de
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: clipped_blit_w10
-; label_comment: clipped blit (10-px span variant): cmp dx,gs:[0x523b] height clip; cx=gs:[0x5239]-0xa width clip. Wider-span bounds-checked copy
+; label: planar_dialogue_text_render
+; label_comment: Mode-X dialogue-font text renderer. DS:SI=NUL text, BX=x, DX=y, AL=color. Clears GS:0x27CD, clips against GS:0x5239-10/0x523B, maps characters through GS:0x7802 without skipping high-bit results, reads advances at GS:0x78B2 and eight glyph rows at SS:0x7908+index*8, and addresses the full GS:[0x5219] framebuffer as y*80+x/4. Four plane passes draw paired glyph bits under rotating masks, with a fifth data-port write restoring the starting mask. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_00356e_planar_dialogue_text_render.c and re/tools/oracle_vectors/func_356e_natural.json
 ; incoming: call@0x0072f6->0299:05de
 ; byte_count: 194
 ; boundary: cfg_blocks_14_terminals_2

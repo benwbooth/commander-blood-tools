@@ -2102,7 +2102,9 @@ Named targets that are already tied to code behavior:
   `y*80+x/4`, and rotates masks `0x11/0x22/0x44/0x88` across four plane passes.
 - `0x0299:0x05DE` (`planar_dialogue_text_render`): renders dialogue-font text
   through VGA plane masks into framebuffer pointer `GS:0x5219`; reached by the
-  line-layout dialogue path at file `0x72F6`.
+  line-layout dialogue path at file `0x72F6`. It uses the main-font tables at
+  `GS:0x7802/0x78B2` and `SS:0x7908`, draws paired bits in four plane passes,
+  and writes a fifth mask value after each glyph to restore its starting plane.
 - `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
   reached from file `0x94EE` after loading the `DS:0x5E5C/0x5E5E` text origin.
 - `0x0299:0x075A` (`small_text_render`): NUL-terminated string renderer using the
