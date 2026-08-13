@@ -106,7 +106,7 @@ extern const bloodprg_resource_name_entry CB_GAME_DATA
 #pragma aux resource_named_file_load parm [ax] [es di] value [ax] modify exact [ax]
 #endif
 
-cb_u32 CB_FAR resource_file_load(const volatile char CB_FAR *path,
+cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 void CB_FAR resource_free_inner(cb_u16 handle); /* 0x04B9:0x010C */
 void CB_FAR resource_release(cb_u16 handle); /* 0x04B9:0x00F8 */

@@ -1,0 +1,520 @@
+[
+  {
+    "name": "embedded_single_chunk",
+    "embedded_flag": 1,
+    "byte_count": 7,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      7
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 7,
+    "final_shared_handle": 12288,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12288,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 7,
+        "returned": 7,
+        "remaining_before": 7,
+        "carry": false,
+        "shared_handle": 12288
+      }
+    ]
+  },
+  {
+    "name": "embedded_bit_zero_and_full_u32",
+    "embedded_flag": 3,
+    "byte_count": 65541,
+    "find_success": null,
+    "open_success": null,
+    "read_counts": [
+      32000,
+      32000,
+      1541
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 65541,
+    "final_shared_handle": 12289,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_read",
+        "handle": 12289,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 65541,
+        "carry": false,
+        "shared_handle": 12289
+      },
+      {
+        "call": "dos_read",
+        "handle": 12289,
+        "destination": [
+          22480,
+          291
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 33541,
+        "carry": false,
+        "shared_handle": 12289
+      },
+      {
+        "call": "dos_read",
+        "handle": 12289,
+        "destination": [
+          24480,
+          291
+        ],
+        "requested": 1541,
+        "returned": 1541,
+        "remaining_before": 1541,
+        "carry": false,
+        "shared_handle": 12289
+      }
+    ]
+  },
+  {
+    "name": "standalone_find_success",
+    "embedded_flag": 0,
+    "byte_count": 11,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      11
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 11,
+    "final_shared_handle": 16386,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 11,
+        "remaining": 11,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16386,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 11,
+        "returned": 11,
+        "remaining_before": 11,
+        "carry": false,
+        "shared_handle": 16386
+      },
+      {
+        "call": "dos_close",
+        "handle": 16386,
+        "shared_handle": 16386
+      }
+    ]
+  },
+  {
+    "name": "find_failure_uses_stale_dta",
+    "embedded_flag": 0,
+    "byte_count": 13,
+    "find_success": false,
+    "open_success": true,
+    "read_counts": [
+      13
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 13,
+    "final_shared_handle": 16387,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": false
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 13,
+        "remaining": 13,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16387,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 13,
+        "returned": 13,
+        "remaining_before": 13,
+        "carry": false,
+        "shared_handle": 16387
+      },
+      {
+        "call": "dos_close",
+        "handle": 16387,
+        "shared_handle": 16387
+      }
+    ]
+  },
+  {
+    "name": "standalone_open_failure",
+    "embedded_flag": 0,
+    "byte_count": 17,
+    "find_success": true,
+    "open_success": false,
+    "read_counts": [],
+    "read_carry_ignored": false,
+    "returned_size": 0,
+    "final_shared_handle": 42244,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 17,
+        "remaining": 17,
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "empty_file_reads_zero_once",
+    "embedded_flag": 0,
+    "byte_count": 0,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      0
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 0,
+    "final_shared_handle": 16389,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 0,
+        "remaining": 0,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16389,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 0,
+        "returned": 0,
+        "remaining_before": 0,
+        "carry": false,
+        "shared_handle": 16389
+      },
+      {
+        "call": "dos_close",
+        "handle": 16389,
+        "shared_handle": 16389
+      }
+    ]
+  },
+  {
+    "name": "partial_reads_and_offset_wrap",
+    "embedded_flag": 0,
+    "byte_count": 32007,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      32000,
+      5,
+      2
+    ],
+    "read_carry_ignored": false,
+    "returned_size": 32007,
+    "final_shared_handle": 16390,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 32007,
+        "remaining": 32007,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16390,
+        "destination": [
+          20480,
+          65532
+        ],
+        "requested": 32000,
+        "returned": 32000,
+        "remaining_before": 32007,
+        "carry": false,
+        "shared_handle": 16390
+      },
+      {
+        "call": "dos_read",
+        "handle": 16390,
+        "destination": [
+          22480,
+          65532
+        ],
+        "requested": 7,
+        "returned": 5,
+        "remaining_before": 7,
+        "carry": false,
+        "shared_handle": 16390
+      },
+      {
+        "call": "dos_read",
+        "handle": 16390,
+        "destination": [
+          22480,
+          1
+        ],
+        "requested": 2,
+        "returned": 2,
+        "remaining_before": 2,
+        "carry": false,
+        "shared_handle": 16390
+      },
+      {
+        "call": "dos_close",
+        "handle": 16390,
+        "shared_handle": 16390
+      }
+    ]
+  },
+  {
+    "name": "read_carry_is_ignored",
+    "embedded_flag": 0,
+    "byte_count": 4,
+    "find_success": true,
+    "open_success": true,
+    "read_counts": [
+      4
+    ],
+    "read_carry_ignored": true,
+    "returned_size": 4,
+    "final_shared_handle": 16391,
+    "calls": [
+      {
+        "call": "resource_source_select",
+        "path": [
+          9216,
+          16640
+        ],
+        "si": 16640,
+        "return_frame": [
+          10953,
+          0
+        ]
+      },
+      {
+        "call": "dos_get_dta"
+      },
+      {
+        "call": "dos_find_first",
+        "path": [
+          9216,
+          16640
+        ],
+        "attributes": 0,
+        "success": true
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "archive_size": 4,
+        "remaining": 4,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 16391,
+        "destination": [
+          20480,
+          291
+        ],
+        "requested": 4,
+        "returned": 4,
+        "remaining_before": 4,
+        "carry": true,
+        "shared_handle": 16391
+      },
+      {
+        "call": "dos_close",
+        "handle": 16391,
+        "shared_handle": 16391
+      }
+    ]
+  }
+]

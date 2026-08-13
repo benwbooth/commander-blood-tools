@@ -6400,6 +6400,443 @@ def resource_name_lookup_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_file_load_vectors() -> list[dict[str, object]]:
+    entry = 0x2ABB
+    expected_hash = "b5b1a9c724a4f88b38f924bb265aa4f04b4a443234d9ac22c3b983f5f0e6ce30"
+    if hashlib.sha256(EXE[entry : entry + 176]).hexdigest() != expected_hash:
+        raise AssertionError("0x2abb: recovered 176-byte body changed")
+
+    cases = [
+        {
+            "name": "embedded_single_chunk",
+            "embedded_flag": 1,
+            "byte_count": 7,
+            "read_counts": [7],
+        },
+        {
+            "name": "embedded_bit_zero_and_full_u32",
+            "embedded_flag": 3,
+            "byte_count": 0x10005,
+            "read_counts": [0x7D00, 0x7D00, 0x0605],
+        },
+        {
+            "name": "standalone_find_success",
+            "embedded_flag": 0,
+            "byte_count": 11,
+            "read_counts": [11],
+        },
+        {
+            "name": "find_failure_uses_stale_dta",
+            "embedded_flag": 0,
+            "byte_count": 13,
+            "read_counts": [13],
+            "find_success": False,
+            "dta_offset": 0xFFF0,
+        },
+        {
+            "name": "standalone_open_failure",
+            "embedded_flag": 0,
+            "byte_count": 17,
+            "open_success": False,
+        },
+        {
+            "name": "empty_file_reads_zero_once",
+            "embedded_flag": 0,
+            "byte_count": 0,
+            "read_counts": [0],
+        },
+        {
+            "name": "partial_reads_and_offset_wrap",
+            "embedded_flag": 0,
+            "byte_count": 0x7D07,
+            "read_counts": [0x7D00, 5, 2],
+            "destination_offset": 0xFFFC,
+        },
+        {
+            "name": "read_carry_is_ignored",
+            "embedded_flag": 0,
+            "byte_count": 4,
+            "read_counts": [4],
+            "read_error": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    dta_segment = 0x4200
+    destination_segment = 0x5000
+    stack_segment = 0x9000
+    path_offset = 0x4100
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        embedded_flag = int(case["embedded_flag"])
+        embedded = (embedded_flag & 1) != 0
+        byte_count = int(case["byte_count"])
+        read_counts = [int(value) for value in case.get("read_counts", [])]
+        find_success = bool(case.get("find_success", True))
+        open_success = bool(case.get("open_success", True))
+        read_error = bool(case.get("read_error", False))
+        dta_offset = int(case.get("dta_offset", 0x0200))
+        dta_size_offset = (dta_offset + 0x1A) & 0xFFFF
+        destination_offset = int(case.get("destination_offset", 0x0123))
+        embedded_handle = 0x3000 + case_index
+        standalone_handle = 0x4000 + case_index
+        selected_handle = embedded_handle if embedded else standalone_handle
+        initial_shared_handle = 0xA500 + case_index
+        initial_archive_size = 0xB1B20000 + case_index
+        initial_source_remaining = 0xC3C40000 + case_index
+        path = f"LOAD{case_index:02d}.DAT".encode("ascii") + b"\0"
+        calls: list[dict[str, object]] = []
+        read_index = 0
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | path_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def game_u32(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<I", machine.mem_read(game_segment * 16 + offset, 4)
+            )[0]
+
+        def game_u16(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x2693:
+                return
+            calls.append(
+                {
+                    "call": "resource_source_select",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "return_frame": return_frame(machine),
+                }
+            )
+            machine.mem_write(
+                game_segment * 16 + 0x0AE2, bytes((embedded_flag,))
+            )
+            if embedded:
+                machine.mem_write(
+                    game_segment * 16 + 0x0A8E,
+                    struct.pack("<I", byte_count),
+                )
+                machine.mem_write(
+                    game_segment * 16 + 0x0A92,
+                    struct.pack("<I", byte_count),
+                )
+                machine.reg_write(UC_X86_REG_BX, embedded_handle)
+            else:
+                machine.reg_write(UC_X86_REG_BX, 0x7000 + case_index)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_index
+            if number != 0x21:
+                raise AssertionError(f"0x2abb {name}: unexpected INT {number:#x}")
+
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x2F00:
+                calls.append({"call": "dos_get_dta"})
+                machine.reg_write(UC_X86_REG_ES, dta_segment)
+                machine.reg_write(UC_X86_REG_BX, dta_offset)
+                return
+
+            if function == 0x4E00:
+                call = {
+                    "call": "dos_find_first",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                    "success": find_success,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, path_offset]:
+                    raise AssertionError(f"0x2abb {name}: find path={call['path']}")
+                if call["attributes"] != 0:
+                    raise AssertionError(f"0x2abb {name}: find attributes differ")
+                if find_success:
+                    machine.mem_write(
+                        dta_segment * 16 + dta_size_offset,
+                        struct.pack("<I", byte_count),
+                    )
+                    machine.reg_write(UC_X86_REG_AX, 0)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                set_carry(machine, not find_success)
+                return
+
+            if function == 0x3D00:
+                call = {
+                    "call": "dos_open_read_only",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "archive_size": game_u32(machine, 0x0A8E),
+                    "remaining": game_u32(machine, 0x0A92),
+                    "success": open_success,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, path_offset]:
+                    raise AssertionError(f"0x2abb {name}: open path={call['path']}")
+                if (
+                    call["archive_size"] != byte_count
+                    or call["remaining"] != byte_count
+                ):
+                    raise AssertionError(f"0x2abb {name}: open size state={call}")
+                machine.reg_write(
+                    UC_X86_REG_AX,
+                    standalone_handle if open_success else 2,
+                )
+                set_carry(machine, not open_success)
+                return
+
+            if function == 0x3F00:
+                if read_index >= len(read_counts):
+                    raise AssertionError(f"0x2abb {name}: unexpected extra read")
+                remaining = game_u32(machine, 0x0A92)
+                difference = (remaining - 0x7D00) & 0xFFFFFFFF
+                expected_request = 0x7D00
+                if difference & 0x80000000:
+                    expected_request = remaining & 0xFFFF
+                returned = read_counts[read_index]
+                read_failed = read_error and read_index == 0
+                call = {
+                    "call": "dos_read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "destination": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "returned": returned,
+                    "remaining_before": remaining,
+                    "carry": read_failed,
+                    "shared_handle": game_u16(machine, 0x0A84),
+                }
+                calls.append(call)
+                if call["handle"] != selected_handle:
+                    raise AssertionError(f"0x2abb {name}: read handle={call['handle']}")
+                if call["requested"] != expected_request:
+                    raise AssertionError(
+                        f"0x2abb {name}: request={call['requested']:#x}, "
+                        f"expected={expected_request:#x}"
+                    )
+                if call["shared_handle"] != selected_handle:
+                    raise AssertionError(f"0x2abb {name}: published handle differs")
+                payload = bytes(
+                    ((index * 31 + read_index * 43 + case_index * 59) & 0xFF)
+                    for index in range(returned)
+                )
+                if payload:
+                    target = call["destination"]
+                    assert isinstance(target, list)
+                    machine.mem_write(target[0] * 16 + target[1], payload)
+                machine.reg_write(UC_X86_REG_AX, returned)
+                set_carry(machine, read_failed)
+                read_index += 1
+                return
+
+            if function == 0x3E00:
+                call = {
+                    "call": "dos_close",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "shared_handle": game_u16(machine, 0x0A84),
+                }
+                calls.append(call)
+                if (
+                    call["handle"] != standalone_handle
+                    or call["shared_handle"] != standalone_handle
+                ):
+                    raise AssertionError(f"0x2abb {name}: close state={call}")
+                machine.reg_write(UC_X86_REG_AX, 0)
+                set_carry(machine, False)
+                return
+
+            raise AssertionError(
+                f"0x2abb {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x2693, b"\xcb"),
+                (data_segment, path_offset, path),
+                (
+                    game_segment,
+                    0x0A84,
+                    struct.pack("<H", initial_shared_handle),
+                ),
+                (
+                    game_segment,
+                    0x0A8E,
+                    struct.pack("<I", initial_archive_size),
+                ),
+                (
+                    game_segment,
+                    0x0A92,
+                    struct.pack("<I", initial_source_remaining),
+                ),
+                (
+                    game_segment,
+                    0x0AE2,
+                    bytes((embedded_flag ^ 0xFF,)),
+                ),
+                (
+                    dta_segment,
+                    dta_size_offset,
+                    struct.pack("<I", byte_count),
+                ),
+                (
+                    data_segment,
+                    dta_size_offset,
+                    struct.pack("<I", byte_count ^ 0xFFFFFFFF),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+        )
+
+        expected_names = ["resource_source_select"]
+        if not embedded:
+            expected_names.extend(("dos_get_dta", "dos_find_first", "dos_open_read_only"))
+        if embedded or open_success:
+            expected_names.extend("dos_read" for _ in read_counts)
+            if not embedded:
+                expected_names.append("dos_close")
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x2abb {name}: calls={actual_names}, expected={expected_names}"
+            )
+        if calls[0] != {
+            "call": "resource_source_select",
+            "path": [data_segment, path_offset],
+            "si": path_offset,
+            "return_frame": [0x2AC9, 0],
+        }:
+            raise AssertionError(f"0x2abb {name}: selector call={calls[0]}")
+
+        read_calls = [call for call in calls if call["call"] == "dos_read"]
+        if embedded or open_success:
+            if sum(read_counts) != byte_count or read_index != len(read_counts):
+                raise AssertionError(f"0x2abb {name}: read-count accounting differs")
+            expected_segment = destination_segment
+            expected_offset = destination_offset
+            remaining = byte_count
+            for read_call, returned in zip(read_calls, read_counts, strict=True):
+                if read_call["destination"] != [expected_segment, expected_offset]:
+                    raise AssertionError(
+                        f"0x2abb {name}: destination={read_call['destination']}, "
+                        f"expected={[expected_segment, expected_offset]}"
+                    )
+                if read_call["remaining_before"] != remaining:
+                    raise AssertionError(f"0x2abb {name}: remaining sequence differs")
+                remaining = (remaining - returned) & 0xFFFFFFFF
+                expected_segment = (expected_segment + (returned >> 4)) & 0xFFFF
+                expected_offset = (expected_offset + (returned & 0x0F)) & 0xFFFF
+
+        expected_return = 0 if not embedded and not open_success else byte_count
+        if machine.reg_read(UC_X86_REG_EAX) != expected_return:
+            raise AssertionError(
+                f"0x2abb {name}: eax={machine.reg_read(UC_X86_REG_EAX):#x}, "
+                f"expected={expected_return:#x}"
+            )
+        expected_shared_handle = (
+            selected_handle if embedded or open_success else initial_shared_handle
+        )
+        if game_u16(machine, 0x0A84) != expected_shared_handle:
+            raise AssertionError(f"0x2abb {name}: final shared handle differs")
+        if game_u32(machine, 0x0A8E) != byte_count:
+            raise AssertionError(f"0x2abb {name}: final archive size differs")
+        expected_remaining = byte_count if not embedded and not open_success else 0
+        if game_u32(machine, 0x0A92) != expected_remaining:
+            raise AssertionError(f"0x2abb {name}: final remaining differs")
+        if bytes(machine.mem_read(data_segment * 16 + path_offset, len(path))) != path:
+            raise AssertionError(f"0x2abb {name}: path changed")
+        if struct.unpack(
+            "<I", machine.mem_read(data_segment * 16 + dta_size_offset, 4)
+        )[0] != (byte_count ^ 0xFFFFFFFF):
+            raise AssertionError(f"0x2abb {name}: DS DTA decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        del expected_registers["eax"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2abb {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2abb {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x2abb {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "embedded_flag": embedded_flag,
+                "byte_count": byte_count,
+                "find_success": find_success if not embedded else None,
+                "open_success": open_success if not embedded else None,
+                "read_counts": read_counts,
+                "read_carry_ignored": read_error,
+                "returned_size": expected_return,
+                "final_shared_handle": expected_shared_handle,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_load_by_id_vectors() -> list[dict[str, object]]:
     entry = 0x287B
     expected_hash = "2ef711193074fd2dbc1bb93c3f9cf3698fe854d1c77940b18eecb5dad2b5dd91"
@@ -35903,6 +36340,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_28ca_natural.json",
         resource_name_lookup_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_2abb_natural.json",
+        resource_file_load_vectors(),
         args.check,
     )
     update_vector(

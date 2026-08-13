@@ -37,7 +37,7 @@ extern volatile cb_u8 nav_presentation_reverse; /* DS:0x27E4 */
 extern volatile cb_u8 presentation_mode_flag_27e0; /* DS:0x27E0 */
 extern volatile cb_u8 presentation_mode_flag_27e1; /* DS:0x27E1 */
 extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
-extern const volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
+extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
 #if defined(__WATCOMC__)
 #pragma aux nav_choice_handler_0 modify exact [ax]

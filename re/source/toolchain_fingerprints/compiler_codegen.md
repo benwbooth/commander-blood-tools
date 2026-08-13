@@ -3054,6 +3054,34 @@ to 28 instructions/66 bytes versus 27/55 original. Replacement linking needs a
 narrow DS:SI entry and EBP-result adapter plus the direct DOS interrupt boundary;
 the source-selection and DTA logic are natural C.
 
+Routine `0x002ABB` loads a named resource into a caller-provided far buffer. It
+first calls the source selector with the mutable DS:SI path. Embedded mode uses
+the selected handle in BX and the size already published at `GS:0x0A8E` and
+`GS:0x0A92`. Standalone mode obtains the current DTA, issues FindFirst with
+attribute mask zero, copies the wrapping DTA dword at `+0x1A` to both size
+globals even when FindFirst fails, and opens the path read-only. Only open
+failure returns zero without publishing a new shared handle.
+
+The common path publishes its handle at `GS:0x0A84` and executes at least one
+read. It requests `0x7D00` bytes unless the signed 32-bit expression
+`remaining - 0x7D00` is negative, in which case the request is the low word of
+the remaining count. Returned AX is subtracted even when DOS reports carry.
+The destination advances with 16-bit wrapping arithmetic by adding `AX >> 4`
+to its segment and `AX & 15` to its offset. Standalone files are closed after
+the remaining count reaches zero; the shared embedded archive handle is not.
+Consequently, an empty file still causes one zero-byte read, while a zero-byte
+partial read against a nonempty extent would leave the original loop running.
+
+Eight patched-selector and DOS-interrupt vectors cover both embedded flag
+values, standalone success, stale DTA data, wrapped DTA and destination offsets,
+open failure, the empty-file read, fixed and final chunk requests, partial
+reads, ignored read carry, state publication, close policy, preservation, and
+the EAX result. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
+actual natural candidate warning-free to 92 instructions/269 bytes versus
+66/176 original. Replacement linking needs narrow adapters for DS:SI plus
+ES:DI entry, the selector's BX result, direct DOS conventions, and complete
+preservation; the loading algorithm itself is natural C.
+
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
 horizontal span at `y+height-1`. All endpoint arithmetic is wrapping 16-bit
