@@ -2064,6 +2064,33 @@ and addresses the exit global through DS; this is logically equivalent in the
 recompiled overlay under the entry routine's established DS=FS invariant but
 is not segment-prefix-identical code generation.
 
+The AMER `0x001286`, CROOLIS `0x0012DE`, and SCRUT `0x0012CC` slot-3 entries
+were initially inventoried as only their common 45-byte callback tails. Each
+zero-state branch actually jumps backward into a 291-byte initializer directly
+preceding the entry. Decoding one instruction at every image byte finds no
+other direct branch or call to AMER `0x001163`, CROOLIS `0x0011BB`, or SCRUT
+`0x0011A9`; those labels consume the method's live `DI`, `SI`, and `CX` and
+return as its alternate path. The inventory now records each complete
+336-byte, 76-instruction owner and reviews the initializer label as merged.
+
+Nine raw-overlay vectors per sibling cover one- and multi-state initialization,
+the generation counter's `0xFFFF` wrap branch, state and code-ring cursor wrap,
+the distinct first and generic callback offsets, AMER/CROOLIS Y seeding versus
+SCRUT X seeding, negative-state timer bypass, ordinary decrement, reset from
+zero, the `0x8000` sign transition, and count zero's 65,536 callback calls.
+They compare complete DS state, all mutable CS ring/timer/cursor bytes, callback
+`SI/CX/SP`, registers, flags, decoy segments, and near-return behavior.
+
+The recovered source represents context `+0x36` as a union because slot 3 uses
+it as signed control state while slot 13 uses the same word as a near callback.
+The routine itself is natural C: typed 94-byte state and 8-byte ring structs,
+near function pointers, array accesses, and counted loops, with no inline
+assembly or register-state facade. Open Watcom `-3 -ox -mm -zdp -we` compiles
+all three actual candidates without warnings to 103 instructions/403 bytes
+versus 76/336 original. Turbo C 2.01 medium also accepts the standalone probe
+and emits 177 instructions. Watcom is materially closer because named `_CODE`
+data preserves the ring globals' original CS ownership.
+
 The byte-identical AMER `0x0002F0`, CROOLIS `0x000305`, and SCRUT `0x000305`
 VGA helpers are recovered as natural counted palette and framebuffer clears,
 two page-global assignments, two word-sized VGA control writes, and two
