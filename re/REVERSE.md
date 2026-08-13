@@ -2089,8 +2089,8 @@ Named targets that are already tied to code behavior:
   (`0x7802/0x78B2`).
 - `0x0299:0x0176` (`ui_text_render_10row`): renders 10-row UI/menu text using
   tables `GS:0x7362/0x7412/0x7442`.
-- `0x0299:0x0202` (`render_string_entry`): dialogue/UI string renderer using the
-  embedded font tables.
+- `0x0299:0x0202` (`main_font_text_draw_display`): dialogue/UI string renderer
+  using the embedded font tables.
 - `0x0299:0x040E` (`framebuffer_rect_palette_remap`): clips a primary-framebuffer
   rectangle and replaces each existing pixel with `table[pixel]` from the
   256-byte table at `DS:SI`; direct callers use the palette-remap tables at

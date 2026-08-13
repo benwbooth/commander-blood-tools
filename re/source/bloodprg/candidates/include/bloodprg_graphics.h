@@ -49,6 +49,14 @@ extern volatile cb_u16 CB_GAME_DATA
         square_caps_draw_width; /* GS:0x27CD */
 extern const cb_u8 main_font_character_map[]; /* GS:0x7802 */
 extern const cb_u8 main_font_advance_table[]; /* GS:0x78B2 */
+extern const cb_u8 CB_GAME_DATA
+        main_font_draw_character_map[256]; /* GS:0x7802 */
+extern const cb_u8 CB_GAME_DATA
+        main_font_draw_advance_table[]; /* GS:0x78B2 */
+extern const cb_u8 CB_GAME_DATA
+        main_font_draw_glyphs[]; /* SS:0x7908 */
+extern volatile cb_u16 CB_GAME_DATA
+        main_font_draw_width; /* GS:0x27CD */
 extern const cb_u8 selected_mask_rows[][32]; /* DS:0x7BB8 */
 extern volatile cb_i8 selected_mask_index; /* DS:0x27E3 */
 
@@ -121,6 +129,11 @@ void CB_FAR square_caps_text_draw_display(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x003106 */
+void CB_FAR main_font_text_draw_display(
+        const cb_u8 CB_FAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color); /* 0x003192 */
 void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
@@ -139,6 +152,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux font8x8_text_draw_display \
         parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
 #pragma aux square_caps_text_draw_display \
+        parm [ds si] [bx] [dx] [ax] modify exact []
+#pragma aux main_font_text_draw_display \
         parm [ds si] [bx] [dx] [ax] modify exact []
 #endif
 

@@ -6,8 +6,8 @@
 ; seg_off: 0299:0202
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: render_string_entry
-; label_comment: STRING DRAW entry (0x299:0x202): zeroes gs:0x27CD, clips, then runs render_string 0x31C8. gs:0x27CD accumulates the drawn width -- but ONLY over glyphs (`add word gs:[0x27cd],ax` @0x3215). The SPACE path (`add di,6 / jmp` @0x31D7) moves the pen WITHOUT touching it, and unmapped bytes are skipped entirely, so the reported width is not the pen distance. Ported: font.rs game_font_drawn_width || NARROWER EARLIER READING `clipped_blit_w8_a`: clipped blit: cmp dx,gs:[0x523b] (clip Y to screen height); reject if below; cx=gs:[0x5239]-8 (clip X to width, 8-px span). Bounds-checked span copy into the display page || MERGED 2026-07-25 (audit-fixes #133): one address, two names, the shorter describing a prologue or a single facet. Kept because a narrow reading records a true observation; renamed away because it is not what the routine IS.
+; label: main_font_text_draw_display
+; label_comment: Variable-width main-font text renderer. DS:SI=text, BX=x, DX=y, AL=color. Clears GS:0x27CD, clips eight-row glyphs against GS:0x5239/0x523B, advances spaces by six without adding to the reported width, skips character-map results with bit 7 set, reads signed glyph advances from GS:0x78B2, and expands eight bitmap rows from SS:0x7908+index*8 onto GS:[0x5221] with transparent backgrounds. Natural C and raw vectors: re/source/bloodprg/candidates/seg_0299/func_003192_main_font_text_draw_display.c and re/tools/oracle_vectors/func_3192_natural.json
 ; incoming: call@0x008feb->0299:0202
 ; incoming: call@0x009183->0299:0202
 ; incoming: call@0x009199->0299:0202
