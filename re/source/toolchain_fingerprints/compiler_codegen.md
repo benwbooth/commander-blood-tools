@@ -2856,6 +2856,44 @@ medium (`-mm -O -Z`) emits 41 and 75 instructions. Both functions are ordinary
 table and string C; the remaining differences are command-tail ABI, segment
 selection, and structured control flow.
 
+## BLOODPRG VGA calibration and initialization candidates
+
+The old `poll_status_port` label covers the complete `0x000B42` VGA timing
+calibration. It waits for a change in Input Status Register 1 at
+`CRTC-base+6`, with `GS:0B35` serving as an asynchronously decremented timeout.
+After the edge it starts PIT channel 2 at `0xFFFF`, latches the counter at two
+successive phase boundaries, derives wrapping elapsed widths, and increments
+`GS:0B12` a second time exactly when the signed width comparison agrees with
+the first phase's status bit. It always resets `GS:0B25` to three.
+
+The old `get_video_mode` label similarly understates `0x000C26`. The routine
+saves the BIOS mode, enters mode 13h, captures the ROM 8x8 font and BDA CRTC
+base, calls the recovered DAC clear, configures graphics-controller, sequencer,
+and CRTC bits for unchained Mode X, selects all four planes, and clears exactly
+65,535 bytes at `A000:0000`. The startup call path supplies the C compiler's
+clear-direction-flag precondition; the original `REP STOSB` itself does not
+issue `CLD`.
+
+The `0x000CCB` owner is a standard FLAGS-mutability CPU probe, not generic
+early initialization. It distinguishes pre-286 behavior through bits 12..15,
+then distinguishes a 386-or-newer CPU by trying to set bits 12..14, restoring
+the caller's exact FLAGS before returning zero or one. Its natural source uses
+two narrow `PUSHF`/`POPF` compiler intrinsics because ISO C cannot access FLAGS.
+
+Twelve direct-binary vectors prove asynchronous timeout, all four retrace phase
+selection outcomes, PIT arithmetic, wrapped status ports, all BIOS and VGA port
+traffic, font and BDA state, GS ownership, the exact 65,535-byte clear, register
+preservation, and the 386 CPU path with FLAGS restoration. The CPU oracle does
+not emulate 8086 or 286 FLAGS hardware, so those two rejection paths remain
+instruction-proven rather than directly executed.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) emits 115 instructions/255
+bytes for calibration versus 69/149 original, 114/252 for Mode-X initialization
+versus 84/154, and 31/50 for the CPU probe versus 21/36. Turbo C 2.01 medium
+emits 168, 138, and 36 instructions. Watcom's Mode-X mnemonic LCS is 68 of 84;
+most size growth comes from `int86` setup, segment-qualified globals, and
+structured port expressions rather than different game logic.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

@@ -432,6 +432,270 @@ def set_video_mode_saved_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def cpu_386_or_newer_vectors() -> list[dict[str, object]]:
+    entry = 0x0CCB
+    expected_hash = "e520dea595ea78c64e73982aa4dfd9a0f7e71510613ddda409d9cddb4682d321"
+    if hashlib.sha256(EXE[entry : entry + 36]).hexdigest() != expected_hash:
+        raise AssertionError("0x0ccb: recovered 36-byte body changed")
+
+    vectors = []
+    for flags in (0x0002, 0x0202, 0x0A93, 0xFAD7):
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6C62468,
+            "ecx": 0xC7D7369C,
+            "edx": 0xD8E855AA,
+            "esi": 0xE9F96789,
+            "edi": 0xFA0A789A,
+            "ebp": 0x0B1B1357,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": 0x2800,
+            "flags": flags,
+        }
+        machine = execute(entry, 0x0CEE, initial, [])
+        if machine.reg_read(UC_X86_REG_AX) != 1:
+            raise AssertionError(f"0x0ccb flags={flags:#x}: did not detect 386")
+        for register in ("ebx", "ecx", "edx", "esi", "edi", "ebp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(
+                    f"0x0ccb flags={flags:#x}: changed {register}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS) & 0xFFFF
+        if flags_after != flags:
+            raise AssertionError(
+                f"0x0ccb flags={flags:#x}: restored {flags_after:#x}"
+            )
+        vectors.append(
+            {
+                "initial_flags": flags,
+                "result": machine.reg_read(UC_X86_REG_AX),
+                "restored_flags": flags_after,
+            }
+        )
+    return vectors
+
+
+def vga_mode_x_initialize_vectors() -> list[dict[str, object]]:
+    entry = 0x0C26
+    expected_hash = "7f021e7db6e3efd3a5b2789397c1eb34d0d3c17681a33c612b40cf89585cefed"
+    if hashlib.sha256(EXE[entry : entry + 154]).hexdigest() != expected_hash:
+        raise AssertionError("0x0c26: recovered 154-byte body changed")
+
+    cases = (
+        {
+            "name": "color_crtc",
+            "saved_mode": 3,
+            "crtc": 0x03D4,
+            "reads": (0xFF, 0xA5, 0x5A, 0xC3, 0x3C, 0x96),
+            "font": (0x1234, 0xF000),
+        },
+        {
+            "name": "mono_crtc",
+            "saved_mode": 7,
+            "crtc": 0x03B4,
+            "reads": (0x10, 0x02, 0x08, 0x40, 0x00, 0x20),
+            "font": (0x5678, 0xE000),
+        },
+        {
+            "name": "wrapping_crtc_port",
+            "saved_mode": 0xFF,
+            "crtc": 0xFFFF,
+            "reads": (0x00, 0xFF, 0x04, 0xFF, 0x80, 0xDF),
+            "font": (0xFFFF, 0x0000),
+        },
+    )
+    game_segment = 0x2800
+    data_segment = 0x2000
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        saved_mode = int(case["saved_mode"])
+        crtc = int(case["crtc"])
+        font_offset, font_segment = tuple(case["font"])
+        read_values = list(case["reads"])
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0293,
+        }
+        interrupts: list[dict[str, int]] = []
+        outputs: list[tuple[int, int, int]] = []
+        inputs: list[tuple[int, int, int]] = []
+        helper_calls: list[dict[str, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x10:
+                raise AssertionError(f"0x0c26 {name}: unexpected INT {number:#x}")
+            call_index = len(interrupts)
+            interrupts.append(
+                {
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                }
+            )
+            if call_index == 0:
+                machine.reg_write(UC_X86_REG_AX, 0x0F00 | saved_mode)
+                machine.reg_write(UC_X86_REG_BX, 0x55A5)
+            elif call_index == 1:
+                machine.reg_write(UC_X86_REG_BX, 0x66B6)
+            elif call_index == 2:
+                machine.reg_write(UC_X86_REG_BP, font_offset)
+                machine.reg_write(UC_X86_REG_ES, font_segment)
+            else:
+                raise AssertionError(f"0x0c26 {name}: too many BIOS calls")
+
+        def callback(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x29A6:
+                return
+            sp = machine.reg_read(UC_X86_REG_SP)
+            ss = machine.reg_read(UC_X86_REG_SS)
+            return_offset, return_segment = struct.unpack(
+                "<HH", machine.mem_read(ss * 16 + sp, 4)
+            )
+            helper_calls.append(
+                {
+                    "offset": return_offset,
+                    "segment": return_segment,
+                }
+            )
+
+        expected_input_ports = [
+            0x03CF,
+            0x03CF,
+            0x03C5,
+            (crtc + 1) & 0xFFFF,
+            (crtc + 1) & 0xFFFF,
+            (crtc + 1) & 0xFFFF,
+        ]
+
+        def input_port(_machine: Uc, port: int, size: int) -> int:
+            if not read_values:
+                raise AssertionError(f"0x0c26 {name}: extra port read")
+            expected_port = expected_input_ports[len(inputs)]
+            if (port, size) != (expected_port, 1):
+                raise AssertionError(
+                    f"0x0c26 {name}: read {(port, size)}, "
+                    f"expected {(expected_port, 1)}"
+                )
+            value = read_values.pop(0)
+            inputs.append((port, size, value))
+            return value
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        video_before = bytes((0xA5 ^ case_index,)) * 0x10000
+        state_before = bytes.fromhex("69 96 c3 3c f0 0f")
+        data_decoy = bytes(value ^ 0xFF for value in state_before)
+        machine = execute(
+            entry,
+            0x0CBF,
+            initial,
+            [
+                (0x0040, 0x0063, struct.pack("<H", crtc)),
+                (0x0299, 0x0016, b"\xcb"),
+                (0xA000, 0, video_before),
+                (game_segment, 0x0A9E, state_before[:2]),
+                (game_segment, 0x5225, state_before[2:6]),
+                (game_segment, 0x5232, b"\x7f"),
+                (data_segment, 0x0A9E, data_decoy[:2]),
+                (data_segment, 0x5225, data_decoy[2:6]),
+                (data_segment, 0x5232, b"\x80"),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=callback,
+            input_handler=input_port,
+            output_handler=output_port,
+            instruction_count=100000,
+        )
+        expected_interrupts = [
+            {"ax": 0x0F00 | (initial["eax"] & 0xFF), "bx": initial["bx"]},
+            {"ax": 0x0013, "bx": 0x55A5},
+            {"ax": 0x1130, "bx": 0x03B6},
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(
+                f"0x0c26 {name}: interrupts={interrupts}, "
+                f"expected={expected_interrupts}"
+            )
+        if helper_calls != [{"offset": 0x0C5F, "segment": 0}]:
+            raise AssertionError(f"0x0c26 {name}: helper calls={helper_calls}")
+        if read_values:
+            raise AssertionError(f"0x0c26 {name}: unused input values")
+        first, second, third, fourth, fifth, sixth = tuple(case["reads"])
+        expected_outputs = [
+            (0x03CE, 1, 5),
+            (0x03CF, 1, first & 0xEF),
+            (0x03CE, 1, 6),
+            (0x03CF, 1, second & 0xFD),
+            (0x03C4, 1, 4),
+            (0x03C5, 1, (third & 0xF7) | 4),
+            (crtc, 1, 0x14),
+            ((crtc + 1) & 0xFFFF, 1, fourth & 0xBF),
+            (crtc, 1, 0x17),
+            ((crtc + 1) & 0xFFFF, 1, fifth | 0x40),
+            (crtc, 1, 0x11),
+            ((crtc + 1) & 0xFFFF, 1, sixth | 0x20),
+            (0x03C4, 2, 0x0F02),
+        ]
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"0x0c26 {name}: outputs={outputs}, expected={expected_outputs}"
+            )
+        if bytes(machine.mem_read(0xA0000, 0xFFFF)) != bytes(0xFFFF):
+            raise AssertionError(f"0x0c26 {name}: did not clear first 65535 bytes")
+        if bytes(machine.mem_read(0xAFFFF, 1)) != video_before[-1:]:
+            raise AssertionError(f"0x0c26 {name}: cleared byte 65535")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0A9E, 2)) != struct.pack(
+            "<H", crtc
+        ):
+            raise AssertionError(f"0x0c26 {name}: wrong CRTC publication")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5225, 4)) != struct.pack(
+            "<HH", font_offset, font_segment
+        ):
+            raise AssertionError(f"0x0c26 {name}: wrong font publication")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5232, 1)) != bytes(
+            (saved_mode,)
+        ):
+            raise AssertionError(f"0x0c26 {name}: wrong saved video mode")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A9E, 2)) != data_decoy[:2]:
+            raise AssertionError(f"0x0c26 {name}: changed DS CRTC decoy")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5225, 4)) != data_decoy[2:6]:
+            raise AssertionError(f"0x0c26 {name}: changed DS font decoy")
+        if bytes(machine.mem_read(data_segment * 16 + 0x5232, 1)) != b"\x80":
+            raise AssertionError(f"0x0c26 {name}: changed DS mode decoy")
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0c26 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "saved_mode": saved_mode,
+                "crtc_base": crtc,
+                "font": {"offset": font_offset, "segment": font_segment},
+                "interrupts": interrupts,
+                "port_inputs": inputs,
+                "port_outputs": outputs,
+                "cleared_bytes": 0xFFFF,
+            }
+        )
+    return vectors
+
+
 def install_timer_isr_hook_vectors() -> list[dict[str, object]]:
     entry = 0x079C
     expected_hash = "f7eee5da7fe0d1a069465c1e93514586ad07e3e5bfe69a4786afae3d595347ba"
@@ -1470,6 +1734,189 @@ def video_retrace_phase_wait_vectors() -> list[dict[str, object]]:
                 "input_values": list(input_values),
                 "reads": [list(item) for item in reads],
                 "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def vga_retrace_phase_calibrate_vectors() -> list[dict[str, object]]:
+    entry = 0x0B42
+    expected_hash = "014e4328d0f2ac17161080435af22e14ad3000551ea78d401f72831a08af52fa"
+    if hashlib.sha256(EXE[entry : entry + 149]).hexdigest() != expected_hash:
+        raise AssertionError("0x0b42: recovered 149-byte body changed")
+
+    cases = (
+        {
+            "name": "timeout_before_edge",
+            "crtc": 0x03D4,
+            "status": (0, 0),
+            "timeout": True,
+            "timer": (),
+            "phase_delta": 0,
+        },
+        {
+            "name": "short_second_clear_phase",
+            "crtc": 0x03D4,
+            "status": (0, 8, 0, 0, 8, 8, 8, 0),
+            "timeout": False,
+            "timer": (0x9C, 0xFF, 0x6A, 0xFF),
+            "phase_delta": 2,
+        },
+        {
+            "name": "short_second_set_phase",
+            "crtc": 0x03B4,
+            "status": (8, 0, 8, 8, 0, 0, 0, 8),
+            "timeout": False,
+            "timer": (0x9C, 0xFF, 0x6A, 0xFF),
+            "phase_delta": 1,
+        },
+        {
+            "name": "long_second_clear_phase",
+            "crtc": 0xFFFC,
+            "status": (0, 8, 0, 0, 8, 8, 8, 0),
+            "timeout": False,
+            "timer": (0x9C, 0xFF, 0xD4, 0xFE),
+            "phase_delta": 1,
+        },
+        {
+            "name": "long_second_set_phase",
+            "crtc": 0xFFFE,
+            "status": (8, 0, 8, 8, 0, 0, 0, 8),
+            "timeout": False,
+            "timer": (0x9C, 0xFF, 0xD4, 0xFE),
+            "phase_delta": 2,
+        },
+    )
+    game_segment = 0x2800
+    data_segment = 0x2000
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        crtc = int(case["crtc"])
+        status_values = list(case["status"])
+        timer_values = list(case["timer"])
+        timeout = bool(case["timeout"])
+        phase_before = 0x20 + case_index * 3
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "bx": 0x2468 + case_index,
+            "cx": 0x369C + case_index,
+            "dx": 0x55AA + case_index,
+            "si": 0x6789 + case_index,
+            "di": 0x789A + case_index,
+            "bp": 0x1357 + case_index,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0A93,
+        }
+        inputs: list[tuple[int, int, int]] = []
+        outputs: list[tuple[int, int, int]] = []
+        status_reads = 0
+
+        def input_port(machine: Uc, port: int, size: int) -> int:
+            nonlocal status_reads
+            status_port = (crtc + 6) & 0xFFFF
+            if size != 1:
+                raise AssertionError(f"0x0b42 {name}: read width {size}")
+            if port == status_port:
+                if not status_values:
+                    raise AssertionError(f"0x0b42 {name}: extra status read")
+                value = status_values.pop(0)
+                status_reads += 1
+                if timeout and status_reads == 2:
+                    machine.mem_write(
+                        game_segment * 16 + 0x0B35, struct.pack("<H", 0)
+                    )
+            elif port == 0x61:
+                value = 0xA4
+            elif port == 0x42:
+                if not timer_values:
+                    raise AssertionError(f"0x0b42 {name}: extra timer read")
+                value = timer_values.pop(0)
+            else:
+                raise AssertionError(f"0x0b42 {name}: unexpected read {port:#x}")
+            inputs.append((port, size, value))
+            return value
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            entry,
+            0x0BD6,
+            initial,
+            [
+                (game_segment, 0x0A9E, struct.pack("<H", crtc)),
+                (game_segment, 0x0B12, bytes((phase_before,))),
+                (game_segment, 0x0B25, b"\x69\x96"),
+                (game_segment, 0x0B35, b"\xa5\x5a"),
+                (data_segment, 0x0A9E, struct.pack("<H", crtc ^ 0xFFFF)),
+                (data_segment, 0x0B12, bytes((phase_before ^ 0xFF,))),
+                (data_segment, 0x0B25, b"\x96\x69"),
+                (data_segment, 0x0B35, b"\x5a\xa5"),
+            ],
+            input_handler=input_port,
+            output_handler=output_port,
+        )
+        if status_values or timer_values:
+            raise AssertionError(f"0x0b42 {name}: unused scripted inputs")
+        expected_outputs = []
+        if not timeout:
+            expected_outputs = [
+                (0x61, 1, 0xA5),
+                (0x43, 1, 0xB0),
+                (0x42, 1, 0xFF),
+                (0x42, 1, 0xFF),
+                (0x43, 1, 0x80),
+                (0x43, 1, 0x80),
+            ]
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"0x0b42 {name}: outputs={outputs}, expected={expected_outputs}"
+            )
+        phase_after = machine.mem_read(game_segment * 16 + 0x0B12, 1)[0]
+        expected_phase = (phase_before + int(case["phase_delta"])) & 0xFF
+        if phase_after != expected_phase:
+            raise AssertionError(
+                f"0x0b42 {name}: phase={phase_after:#x}, expected={expected_phase:#x}"
+            )
+        calibration = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x0B35, 2)
+        )[0]
+        expected_calibration = 0 if timeout else 2
+        if calibration != expected_calibration:
+            raise AssertionError(
+                f"0x0b42 {name}: calibration={calibration}, "
+                f"expected={expected_calibration}"
+            )
+        if machine.mem_read(game_segment * 16 + 0x0B25, 2) != b"\x03\x00":
+            raise AssertionError(f"0x0b42 {name}: wrong timer reload")
+        if machine.mem_read(data_segment * 16 + 0x0B12, 1) != bytes(
+            (phase_before ^ 0xFF,)
+        ):
+            raise AssertionError(f"0x0b42 {name}: changed DS phase decoy")
+        if machine.mem_read(data_segment * 16 + 0x0B25, 2) != b"\x96\x69":
+            raise AssertionError(f"0x0b42 {name}: changed DS reload decoy")
+        if machine.mem_read(data_segment * 16 + 0x0B35, 2) != b"\x5a\xa5":
+            raise AssertionError(f"0x0b42 {name}: changed DS calibration decoy")
+        for register in ("eax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0b42 {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "status_port": (crtc + 6) & 0xFFFF,
+                "port_inputs": inputs,
+                "port_outputs": outputs,
+                "phase_before": phase_before,
+                "phase_after": phase_after,
+                "calibration_ticks": calibration,
+                "timer_reload_ticks": 3,
             }
         )
     return vectors
@@ -28250,6 +28697,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0a99_natural.json",
         extended_memory_backends_release_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0b42_natural.json",
+        vga_retrace_phase_calibrate_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0c26_natural.json",
+        vga_mode_x_initialize_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0ccb_natural.json",
+        cpu_386_or_newer_vectors(),
         args.check,
     )
     update_vector(

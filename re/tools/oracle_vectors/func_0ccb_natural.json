@@ -1,0 +1,22 @@
+[
+  {
+    "initial_flags": 2,
+    "result": 1,
+    "restored_flags": 2
+  },
+  {
+    "initial_flags": 514,
+    "result": 1,
+    "restored_flags": 514
+  },
+  {
+    "initial_flags": 2707,
+    "result": 1,
+    "restored_flags": 2707
+  },
+  {
+    "initial_flags": 64215,
+    "result": 1,
+    "restored_flags": 64215
+  }
+]
