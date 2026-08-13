@@ -13256,6 +13256,475 @@ def chunky_to_planar_framebuffer_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def entity_object_populate_vectors() -> list[dict[str, object]]:
+    entry = 0x40D0
+    resolver_runtime_entry = 0x4D20  # Runtime 04B9:0190.
+    expected_hash = "21ebe98dec4b2b51201ea38666d0d4f1a2f4d198036bc892bad67e4a31ec2909"
+    if hashlib.sha256(EXE[entry : entry + 126]).hexdigest() != expected_hash:
+        raise AssertionError("0x40d0: recovered 126-byte body changed")
+
+    cases = [
+        {
+            "name": "unloaded_clear_flags",
+            "handle_flags": 0x0000,
+        },
+        {
+            "name": "unloaded_unrelated_flags",
+            "handle_flags": 0x8004,
+        },
+        {
+            "name": "frame_equal_count_rejected",
+            "frame_index": 3,
+            "frame_count": 3,
+        },
+        {
+            "name": "signed_negative_count_rejects_zero",
+            "frame_index": 0,
+            "frame_count": 0xFFFF,
+        },
+        {
+            "name": "initialize_both_committed_extents",
+            "resource_flags": 0xA5A5,
+            "committed_width": 0,
+            "committed_height": 0,
+            "width": 0x1234,
+            "height": 0x5678,
+        },
+        {
+            "name": "preserve_both_committed_extents",
+            "frame_index": 1,
+            "frame_count": 3,
+            "resource_flags": 0xFFFB,
+            "packed_frame": 0x00000235,
+            "committed_width": 0xAAAA,
+            "committed_height": 0xBBBB,
+        },
+        {
+            "name": "initialize_width_only",
+            "committed_width": 0,
+            "committed_height": 0x7777,
+        },
+        {
+            "name": "initialize_height_only",
+            "committed_width": 0x6666,
+            "committed_height": 0,
+        },
+        {
+            "name": "negative_frame_index_reads_wrapped_header",
+            "frame_index": 0xFFFF,
+            "frame_count": 1,
+            "resource_flags": 4,
+            "packed_frame": 0x00010004,
+        },
+        {
+            "name": "frame_index_multiply_wrap",
+            "frame_index": 0x4000,
+            "frame_count": 0x7FFF,
+            "packed_frame": 0x00000347,
+        },
+        {
+            "name": "handle_and_entity_index_wrap",
+            "entity_id": 0x0802,
+            "resource_handle": 0x2003,
+            "resource_flags": 0,
+        },
+        {
+            "name": "packed_high_bits_select_low_segment_delta",
+            "packed_frame": 0xABCD020E,
+        },
+        {
+            "name": "packed_segment_selector_wrap",
+            "resource_segment": 0xFFF0,
+            "packed_frame": 0x0000020E,
+        },
+        {
+            "name": "backward_direction_reads_previous_word",
+            "direction_flag": True,
+            "packed_frame": 0x00000140,
+            "width": 0x1111,
+            "height": 0x2222,
+            "backward_height": 0x3333,
+        },
+    ]
+
+    data_segment = 0x3000
+    table_segment = 0x4000
+    game_segment = 0x7000
+    extra_segment = 0x8000
+    stack_segment = 0x9000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("e14bf25c036d147e")
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic16_flags(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x8000) != 0,
+            "of": False,
+        }
+
+    def wrapped_write(memory: bytearray, offset: int, data: bytes) -> None:
+        for index, value in enumerate(data):
+            memory[(offset + index) & 0xFFFF] = value
+
+    def wrapped_read(memory: bytes | bytearray, offset: int, size: int) -> bytes:
+        return bytes(memory[(offset + index) & 0xFFFF] for index in range(size))
+
+    def write_u16(memory: bytearray, offset: int, value: int) -> None:
+        wrapped_write(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def read_u16(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack("<H", wrapped_read(memory, offset, 2))[0]
+
+    def write_u32(memory: bytearray, offset: int, value: int) -> None:
+        wrapped_write(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        entity_id = int(case.get("entity_id", case_index + 1)) & 0xFFFF
+        resource_handle = int(case.get("resource_handle", case_index + 2)) & 0xFFFF
+        draw_x = int(case.get("draw_x", 0x1100 + case_index * 0x101)) & 0xFFFF
+        draw_y = int(case.get("draw_y", 0x2200 + case_index * 0x111)) & 0xFFFF
+        frame_index = int(case.get("frame_index", 0)) & 0xFFFF
+        handle_flags = int(case.get("handle_flags", 1)) & 0xFFFF
+        resource_segment = int(case.get("resource_segment", 0x5000)) & 0xFFFF
+        resource_flags = int(case.get("resource_flags", 4)) & 0xFFFF
+        frame_count = int(case.get("frame_count", 2)) & 0xFFFF
+        packed_frame = int(case.get("packed_frame", 0x00000100)) & 0xFFFFFFFF
+        width = int(case.get("width", 0x3100 + case_index)) & 0xFFFF
+        height = int(case.get("height", 0x4200 + case_index)) & 0xFFFF
+        backward_height = int(case.get("backward_height", 0x5300 + case_index)) & 0xFFFF
+        committed_width = int(case.get("committed_width", 0)) & 0xFFFF
+        committed_height = int(case.get("committed_height", 0)) & 0xFFFF
+        direction_flag = bool(case.get("direction_flag", False))
+
+        data_memory = bytearray(
+            (index * 11 + case_index * 13 + 0x29) & 0xFF
+            for index in range(0x10000)
+        )
+        table_memory = bytearray(
+            (index * 17 + case_index * 19 + 0x3B) & 0xFF
+            for index in range(0x10000)
+        )
+        resource_memory = bytearray(
+            (index * 23 + case_index * 29 + 0x4D) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory = bytearray(
+            (index * 31 + case_index * 37 + 0x5F) & 0xFF
+            for index in range(0x10000)
+        )
+        extra_memory = bytearray(
+            (index * 41 + case_index * 43 + 0x71) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory = bytearray(
+            (index * 47 + case_index * 53 + 0x83) & 0xFF
+            for index in range(0x10000)
+        )
+
+        handle_offset = (resource_handle << 3) & 0xFFFF
+        wrapped_write(
+            table_memory,
+            handle_offset,
+            struct.pack(
+                "<HHI",
+                resource_segment,
+                handle_flags,
+                0xA5A50000 | case_index,
+            ),
+        )
+        write_u16(resource_memory, 0, resource_flags)
+        write_u16(resource_memory, 2, frame_count)
+        packed_offset = (4 + ((frame_index << 2) & 0xFFFF)) & 0xFFFF
+        write_u32(resource_memory, packed_offset, packed_frame)
+
+        actual_resource_flags = read_u16(resource_memory, 0)
+        actual_frame_count = read_u16(resource_memory, 2)
+        actual_packed_frame = struct.unpack(
+            "<I", wrapped_read(resource_memory, packed_offset, 4)
+        )[0]
+        frame_segment = (
+            resource_segment + ((actual_packed_frame >> 4) & 0xFFFF)
+        ) & 0xFFFF
+        frame_offset = (4 + (actual_packed_frame & 0x0F)) & 0xFFFF
+
+        full_memories = {
+            data_segment: data_memory,
+            table_segment: table_memory,
+            resource_segment: resource_memory,
+            game_segment: game_memory,
+            extra_segment: extra_memory,
+            stack_segment: stack_memory,
+        }
+        separate_frame_patches = []
+
+        def apply_frame_patch(offset: int, encoded: bytes) -> None:
+            linear = frame_segment * 16 + offset
+            for segment, memory in full_memories.items():
+                relative = linear - segment * 16
+                if 0 <= relative and relative + len(encoded) <= 0x10000:
+                    memory[relative : relative + len(encoded)] = encoded
+                    return
+            separate_frame_patches.append((frame_segment, offset, encoded))
+
+        apply_frame_patch((frame_offset - 2) & 0xFFFF, struct.pack("<H", backward_height))
+        apply_frame_patch(frame_offset, struct.pack("<HH", width, height))
+
+        record_offset = (
+            0x6212 + ((entity_id << 5) & 0xFFFF)
+        ) & 0xFFFF
+        record_seed = bytes(
+            (0x91 + case_index * 7 + index * 9) & 0xFF
+            for index in range(32)
+        )
+        wrapped_write(game_memory, record_offset, record_seed)
+        write_u16(game_memory, record_offset + 0x14, committed_width)
+        write_u16(game_memory, record_offset + 0x16, committed_height)
+        wrapped_write(
+            data_memory,
+            record_offset,
+            bytes(value ^ 0xFF for value in record_seed),
+        )
+        wrapped_write(
+            resource_memory,
+            record_offset,
+            bytes(value ^ 0xA5 for value in record_seed),
+        )
+
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial_data = bytes(data_memory)
+        initial_table = bytes(table_memory)
+        initial_resource = bytes(resource_memory)
+        initial_game = bytes(game_memory)
+        initial_extra = bytes(extra_memory)
+
+        loaded = (handle_flags & 3) != 0
+        accepted = loaded and (
+            signed16(frame_index) < signed16(actual_frame_count)
+        )
+        game_model = bytearray(initial_game)
+        expected_height = backward_height if direction_flag else height
+        if accepted:
+            write_u16(
+                game_model,
+                record_offset,
+                (actual_resource_flags & 4) | 0x0083,
+            )
+            write_u16(game_model, record_offset + 6, frame_segment)
+            write_u16(game_model, record_offset + 4, frame_offset)
+            write_u16(game_model, record_offset + 0x0C, width)
+            if committed_width == 0:
+                write_u16(game_model, record_offset + 0x14, width)
+            write_u16(game_model, record_offset + 0x0E, expected_height)
+            if committed_height == 0:
+                write_u16(
+                    game_model,
+                    record_offset + 0x16,
+                    expected_height,
+                )
+            write_u16(game_model, record_offset + 8, draw_x)
+            write_u16(game_model, record_offset + 0x0A, draw_y)
+
+        initial = {
+            "eax": 0xA1A10000 | entity_id,
+            "ebx": 0xB2B20000 | draw_x,
+            "ecx": 0xC3C30000 | draw_y,
+            "edx": 0xD4D40000 | resource_handle,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x97970000 | frame_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": table_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        resolver_calls = []
+
+        def capture_resolver(machine: Uc, address: int, _size: int) -> None:
+            if address == resolver_runtime_entry:
+                resolver_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "dx": machine.reg_read(UC_X86_REG_DX),
+                        "bx": machine.reg_read(UC_X86_REG_BX),
+                        "cx": machine.reg_read(UC_X86_REG_CX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                    }
+                )
+
+        memory = [
+            (0, resolver_runtime_entry, EXE[0x5320:0x533C]),
+            (0, return_address, b"\xcc"),
+            (data_segment, 0, initial_data),
+            (table_segment, 0, initial_table),
+            (resource_segment, 0, initial_resource),
+            (game_segment, 0, initial_game),
+            (extra_segment, 0, initial_extra),
+            (stack_segment, 0, bytes(stack_memory)),
+            *separate_frame_patches,
+        ]
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture_resolver,
+            instruction_count=2000,
+        )
+
+        expected_calls = [
+            {
+                "ax": resource_handle,
+                "dx": resource_handle,
+                "bx": draw_x,
+                "cx": draw_y,
+                "bp": frame_index,
+                "ds": data_segment,
+                "si": initial["esi"] & 0xFFFF,
+                "sp": 0xFEEE,
+                "cs": 0x04B9,
+            }
+        ]
+        if resolver_calls != expected_calls:
+            raise AssertionError(
+                f"0x40d0 {name}: resolver calls={resolver_calls}, "
+                f"expected={expected_calls}"
+            )
+
+        game_after = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if game_after != bytes(game_model):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(game_after, game_model, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x40d0 {name}: game data differs at {mismatch:#x}: "
+                f"{game_after[mismatch]:#x} != {game_model[mismatch]:#x}"
+            )
+        for segment, expected, label in (
+            (data_segment, initial_data, "DS decoy"),
+            (table_segment, initial_table, "FS handle table"),
+            (resource_segment, initial_resource, "resource"),
+            (extra_segment, initial_extra, "ES decoy"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                raise AssertionError(f"0x40d0 {name}: {label} changed")
+        for segment, offset, expected in separate_frame_patches:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x40d0 {name}: frame source changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x40d0 {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x40d0 {name}: far return CS differs")
+
+        if not loaded:
+            expected_flags = logic16_flags(0)
+            flag_source = "resolver_result"
+        elif not accepted:
+            expected_flags = sub16_flags(frame_index, actual_frame_count)
+            flag_source = "signed_frame_compare"
+        else:
+            expected_flags = logic16_flags(committed_height)
+            flag_source = "committed_height_test"
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag])
+            for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x40d0 {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != direction_flag:
+            raise AssertionError(f"0x40d0 {name}: direction flag changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x40d0 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "entity_id": entity_id,
+                "entity_record_offset": record_offset,
+                "resource_handle": resource_handle,
+                "handle_entry_offset": handle_offset,
+                "handle_flags": handle_flags,
+                "resource_segment": resource_segment,
+                "resource_flags": actual_resource_flags,
+                "frame_count": actual_frame_count,
+                "frame_index": frame_index,
+                "signed_frame_index": signed16(frame_index),
+                "packed_table_offset": packed_offset,
+                "packed_frame": actual_packed_frame,
+                "decoded_frame": [frame_segment, frame_offset],
+                "loaded": loaded,
+                "accepted": accepted,
+                "direction_flag": direction_flag,
+                "extent_source": [width, expected_height],
+                "committed_extents_before": [
+                    committed_width,
+                    committed_height,
+                ],
+                "draw_position": [draw_x, draw_y],
+                "flag_source": flag_source,
+                "defined_flags": expected_flags,
+                "record_before": wrapped_read(
+                    initial_game, record_offset, 32
+                ).hex(),
+                "record_after": wrapped_read(
+                    game_after, record_offset, 32
+                ).hex(),
+                "resource_sha256": hashlib.sha256(
+                    initial_resource
+                ).hexdigest(),
+                "game_data_sha256": hashlib.sha256(game_after).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def framebuffer_rect_palette_remap_vectors() -> list[dict[str, object]]:
     entry = 0x339E
     expected_hash = "3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac"
@@ -45379,6 +45848,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3ece_natural.json",
         chunky_to_planar_framebuffer_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_40d0_natural.json",
+        entity_object_populate_vectors(),
         args.check,
     )
     update_vector(

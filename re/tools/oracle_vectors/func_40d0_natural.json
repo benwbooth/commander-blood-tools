@@ -1,0 +1,648 @@
+[
+  {
+    "name": "unloaded_clear_flags",
+    "entity_id": 1,
+    "entity_record_offset": 25138,
+    "resource_handle": 2,
+    "handle_entry_offset": 16,
+    "handle_flags": 0,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": false,
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12544,
+      16896
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4352,
+      8704
+    ],
+    "flag_source": "resolver_result",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "919aa3acb5bec7d0d9e2ebf4fd060f18212a333c0000000069727b848d969fa8",
+    "record_after": "919aa3acb5bec7d0d9e2ebf4fd060f18212a333c0000000069727b848d969fa8",
+    "resource_sha256": "4b64c8e807122ebcc24b89ee99aeb240ef0c3490855b9480835c9bf2bcde269b",
+    "game_data_sha256": "4a21fad7273ee581d2a21a71db4834975ab13ece97a39cb9fbd7c61492a6be70"
+  },
+  {
+    "name": "unloaded_unrelated_flags",
+    "entity_id": 2,
+    "entity_record_offset": 25170,
+    "resource_handle": 3,
+    "handle_entry_offset": 24,
+    "handle_flags": 32772,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": false,
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12545,
+      16897
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4609,
+      8977
+    ],
+    "flag_source": "resolver_result",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "98a1aab3bcc5ced7e0e9f2fb040d161f28313a43000000007079828b949da6af",
+    "record_after": "98a1aab3bcc5ced7e0e9f2fb040d161f28313a43000000007079828b949da6af",
+    "resource_sha256": "8b82eab9cc96a7826fbdb50d63e8ebb3c574ecc6da983217767b186d9fb1aeb9",
+    "game_data_sha256": "334494ef8b2fd43c34bf1f85c9508613bb45a4571d51d56ac71570a418a665ec"
+  },
+  {
+    "name": "frame_equal_count_rejected",
+    "entity_id": 3,
+    "entity_record_offset": 25202,
+    "resource_handle": 4,
+    "handle_entry_offset": 32,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 3,
+    "frame_index": 3,
+    "signed_frame_index": 3,
+    "packed_table_offset": 16,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12546,
+      16898
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      4866,
+      9250
+    ],
+    "flag_source": "signed_frame_compare",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "9fa8b1bac3ccd5dee7f0f9020b141d262f38414a00000000778089929ba4adb6",
+    "record_after": "9fa8b1bac3ccd5dee7f0f9020b141d262f38414a00000000778089929ba4adb6",
+    "resource_sha256": "1779e97dc03945848f1b37bd25b3c657043134ac52b60ed15924768a48d1f4c9",
+    "game_data_sha256": "6a2c1981e3e14bdc4fe6c5e79f24dc74167372aecc7c4c6332295ad1a55e112a"
+  },
+  {
+    "name": "signed_negative_count_rejects_zero",
+    "entity_id": 4,
+    "entity_record_offset": 25234,
+    "resource_handle": 5,
+    "handle_entry_offset": 40,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 65535,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": false,
+    "direction_flag": false,
+    "extent_source": [
+      12547,
+      16899
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      5123,
+      9523
+    ],
+    "flag_source": "signed_frame_compare",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "a6afb8c1cad3dce5eef70009121b242d363f4851000000007e879099a2abb4bd",
+    "record_after": "a6afb8c1cad3dce5eef70009121b242d363f4851000000007e879099a2abb4bd",
+    "resource_sha256": "94832bd7d03e1c37441377787683de8d317e1957c88f74605ab5de6d2e11b8e3",
+    "game_data_sha256": "9d7781a3be10d5a91d79b51d195fc9e945ad77d93d9f409364e9a3899bd4b97c"
+  },
+  {
+    "name": "initialize_both_committed_extents",
+    "entity_id": 5,
+    "entity_record_offset": 25266,
+    "resource_handle": 6,
+    "handle_entry_offset": 48,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 42405,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      4660,
+      22136
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      5380,
+      9796
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "adb6bfc8d1dae3ecf5fe071019222b343d464f5800000000858e97a0a9b2bbc4",
+    "record_after": "8700bfc80400105004154426341278563d464f5834127856858e97a0a9b2bbc4",
+    "resource_sha256": "b9c59d5a2f75a62f3e9856f0a45df01df5af1fea1adba9339cc3b626fd64f669",
+    "game_data_sha256": "65fc9c2b563f0babdd32c88bda0879b126ae24646e829ba3e19ba655e2b23b0f"
+  },
+  {
+    "name": "preserve_both_committed_extents",
+    "entity_id": 6,
+    "entity_record_offset": 25298,
+    "resource_handle": 7,
+    "handle_entry_offset": 56,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 65531,
+    "frame_count": 3,
+    "frame_index": 1,
+    "signed_frame_index": 1,
+    "packed_table_offset": 8,
+    "packed_frame": 565,
+    "decoded_frame": [
+      20515,
+      9
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12549,
+      16901
+    ],
+    "committed_extents_before": [
+      43690,
+      48059
+    ],
+    "draw_position": [
+      5637,
+      10069
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "record_before": "b4bdc6cfd8e1eaf3fc050e172029323b444d565faaaabbbb8c959ea7b0b9c2cb",
+    "record_after": "8300c6cf090023500516552705310542444d565faaaabbbb8c959ea7b0b9c2cb",
+    "resource_sha256": "8772905648c86553a9e469f8b141f32e29640e57b4b20aa462b7486f758ad48d",
+    "game_data_sha256": "c7911e8ffa969454d1488a7a5546581d677ecf559979477e51748c0a34e71ba8"
+  },
+  {
+    "name": "initialize_width_only",
+    "entity_id": 7,
+    "entity_record_offset": 25330,
+    "resource_handle": 8,
+    "handle_entry_offset": 64,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12550,
+      16902
+    ],
+    "committed_extents_before": [
+      0,
+      30583
+    ],
+    "draw_position": [
+      5894,
+      10342
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "bbc4cdd6dfe8f1fa030c151e273039424b545d6600007777939ca5aeb7c0c9d2",
+    "record_after": "8700cdd60400105006176628063106424b545d6606317777939ca5aeb7c0c9d2",
+    "resource_sha256": "e69064dc1c40648b35107c278b47a8c6880794ddccef3212d6ae5f7eb41e8201",
+    "game_data_sha256": "fcb2efe9abb9a8d399a9738e38e33c18ae6d578cf8ff31c8b49ff93e5368b7e1"
+  },
+  {
+    "name": "initialize_height_only",
+    "entity_id": 8,
+    "entity_record_offset": 25362,
+    "resource_handle": 9,
+    "handle_entry_offset": 72,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12551,
+      16903
+    ],
+    "committed_extents_before": [
+      26214,
+      0
+    ],
+    "draw_position": [
+      6151,
+      10615
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "c2cbd4dde6eff8010a131c252e374049525b646d666600009aa3acb5bec7d0d9",
+    "record_after": "8700d4dd040010500718772907310742525b646d666607429aa3acb5bec7d0d9",
+    "resource_sha256": "8f0f2b90d04dda76a868d332ce6f64232d603f9d77c13ebc710396aa8a7a0393",
+    "game_data_sha256": "d7c446409900fc7dc55549877ee161fd30e55765f2a12c3053cb5ff2c32b5332"
+  },
+  {
+    "name": "negative_frame_index_reads_wrapped_header",
+    "entity_id": 9,
+    "entity_record_offset": 25394,
+    "resource_handle": 10,
+    "handle_entry_offset": 80,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 1,
+    "frame_index": 65535,
+    "signed_frame_index": -1,
+    "packed_table_offset": 0,
+    "packed_frame": 65540,
+    "decoded_frame": [
+      24576,
+      8
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12552,
+      16904
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6408,
+      10888
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "c9d2dbe4edf6ff08111a232c353e475059626b7400000000a1aab3bcc5ced7e0",
+    "record_after": "8700dbe4080000600819882a0831084259626b7408310842a1aab3bcc5ced7e0",
+    "resource_sha256": "287ecfc9a62cf65c5f6ac3bfe9e804c5357b811fc58d512233226a5b33e76cc6",
+    "game_data_sha256": "44a4b651cdeb37622d8dc1ed9e486f0cb8fefbf6fa9bb8e41e9d44664695298e"
+  },
+  {
+    "name": "frame_index_multiply_wrap",
+    "entity_id": 10,
+    "entity_record_offset": 25426,
+    "resource_handle": 11,
+    "handle_entry_offset": 88,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 32767,
+    "frame_index": 16384,
+    "signed_frame_index": 16384,
+    "packed_table_offset": 4,
+    "packed_frame": 839,
+    "decoded_frame": [
+      20532,
+      11
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12553,
+      16905
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6665,
+      11161
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "d0d9e2ebf4fd060f18212a333c454e576069727b00000000a8b1bac3ccd5dee7",
+    "record_after": "8700e2eb0b003450091a992b093109426069727b09310942a8b1bac3ccd5dee7",
+    "resource_sha256": "734e0c33b4c3958912d67eacd6f12a83f8ed80c6777fd33f1c3e0e5a74ce935d",
+    "game_data_sha256": "24155979d0a030297608d939d5a18a07948d0fcd44483dc7ee6e54ea54b3ca97"
+  },
+  {
+    "name": "handle_and_entity_index_wrap",
+    "entity_id": 2050,
+    "entity_record_offset": 25170,
+    "resource_handle": 8195,
+    "handle_entry_offset": 24,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 0,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 256,
+    "decoded_frame": [
+      20496,
+      4
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12554,
+      16906
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      6922,
+      11434
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "d7e0e9f2fb040d161f28313a434c555e6770798200000000afb8c1cad3dce5ee",
+    "record_after": "8300e9f2040010500a1baa2c0a310a42677079820a310a42afb8c1cad3dce5ee",
+    "resource_sha256": "7a39bd790af82b89eb523ea7b692c0f9cb251c20e578898f1c67fbbaa11261cd",
+    "game_data_sha256": "c58abb0d01bbc2123f378081d36f39e3b431ca9634eeb3fcab41bde68573c0d9"
+  },
+  {
+    "name": "packed_high_bits_select_low_segment_delta",
+    "entity_id": 12,
+    "entity_record_offset": 25490,
+    "resource_handle": 13,
+    "handle_entry_offset": 104,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 2882339342,
+    "decoded_frame": [
+      8224,
+      18
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12555,
+      16907
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7179,
+      11707
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "dee7f0f9020b141d262f38414a535c656e77808900000000b6bfc8d1dae3ecf5",
+    "record_after": "8700f0f9120020200b1cbb2d0b310b426e7780890b310b42b6bfc8d1dae3ecf5",
+    "resource_sha256": "0658e791704e56af62396aa8d829b3e848763510416e79fd70da4b80953046b2",
+    "game_data_sha256": "872fba8a867f13da0ceceadaf3bf42603d5bf797e20555511d0d3d6602988ddd"
+  },
+  {
+    "name": "packed_segment_selector_wrap",
+    "entity_id": 13,
+    "entity_record_offset": 25522,
+    "resource_handle": 14,
+    "handle_entry_offset": 112,
+    "handle_flags": 1,
+    "resource_segment": 65520,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 526,
+    "decoded_frame": [
+      16,
+      18
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": false,
+    "extent_source": [
+      12556,
+      16908
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7436,
+      11980
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "e5eef70009121b242d363f48515a636c757e879000000000bdc6cfd8e1eaf3fc",
+    "record_after": "8700f700120010000c1dcc2e0c310c42757e87900c310c42bdc6cfd8e1eaf3fc",
+    "resource_sha256": "afb342a471e3acb4e905cecc9f03106fccc4ad4197639f14e40771163e59cf6d",
+    "game_data_sha256": "682dc27200a4172f29f3036d296d5f7816275b18574cecd2a35848c80e7e5442"
+  },
+  {
+    "name": "backward_direction_reads_previous_word",
+    "entity_id": 14,
+    "entity_record_offset": 25554,
+    "resource_handle": 15,
+    "handle_entry_offset": 120,
+    "handle_flags": 1,
+    "resource_segment": 20480,
+    "resource_flags": 4,
+    "frame_count": 2,
+    "frame_index": 0,
+    "signed_frame_index": 0,
+    "packed_table_offset": 4,
+    "packed_frame": 320,
+    "decoded_frame": [
+      20500,
+      4
+    ],
+    "loaded": true,
+    "accepted": true,
+    "direction_flag": true,
+    "extent_source": [
+      4369,
+      13107
+    ],
+    "committed_extents_before": [
+      0,
+      0
+    ],
+    "draw_position": [
+      7693,
+      12253
+    ],
+    "flag_source": "committed_height_test",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "record_before": "ecf5fe071019222b343d464f58616a737c858e9700000000c4cdd6dfe8f1fa03",
+    "record_after": "8700fe07040014500d1edd2f111133337c858e9711113333c4cdd6dfe8f1fa03",
+    "resource_sha256": "b3a9dac1233286f3e224b57ada5777f4bdfeea1d8c96a2bf175d7e08381dbe89",
+    "game_data_sha256": "89e839c8c523312cd916a68bf9cc5b8ef5907cccfc6d9160e57dcc5b4f9d6509"
+  }
+]

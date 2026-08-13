@@ -8,6 +8,8 @@
 #define BLOODPRG_ENTITY_EXTENT_CHANGED_FLAG 0x0010u
 #define BLOODPRG_ENTITY_ACTIVE_FLAG 0x0080u
 #define BLOODPRG_ENTITY_ACTIVE_OR_STATE0_MASK 0x0081u
+#define BLOODPRG_ENTITY_RESOURCE_FLAG 0x0004u
+#define BLOODPRG_ENTITY_ACTIVATE_FLAGS 0x0083u
 
 typedef union bloodprg_entity_flags {
     cb_u16 word;
@@ -31,6 +33,12 @@ typedef struct bloodprg_sprite_frame {
     cb_i16 y_offset;
     cb_u8 pixels[1];
 } bloodprg_sprite_frame;
+
+typedef struct bloodprg_entity_resource {
+    cb_u16 flags;
+    cb_i16 frame_count;
+    cb_u32 packed_frame_offsets[1];
+} bloodprg_entity_resource;
 
 typedef struct bloodprg_entity_record {
     cb_u16 flags;
@@ -113,9 +121,16 @@ void CB_FAR entity_record_setter(cb_u16 entity_id,
         cb_u16 draw_x,
         cb_u16 draw_y,
         cb_u16 frame_index); /* 0x0299:0x11BE */
+void CB_FAR entity_object_populate(cb_u16 entity_id,
+        cb_u16 resource_handle,
+        cb_u16 draw_x,
+        cb_u16 draw_y,
+        cb_u16 frame_index); /* 0x0299:0x1140 */
 
 #if defined(__WATCOMC__)
 #pragma aux bloodprg_sprite_blitter parm [di] modify exact []
+#pragma aux entity_object_populate \
+        parm caller [ax] [dx] [bx] [cx] modify exact []
 #pragma aux entity_flag_state_transition parm [ax]
 #pragma aux sprite_slot_position_update parm [ax] [bx] [cx]
 #pragma aux sprite_slot_extent_update parm [ax] [cx] [dx] [es si]
