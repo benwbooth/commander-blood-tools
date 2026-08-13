@@ -76,6 +76,9 @@ cb_u16 CB_FAR text_width_dual_font(const cb_u8 CB_NEAR *text,
         int use_main_font); /* 0x0030CD */
 void CB_NEAR selected_mask_overlay(void); /* 0x007CB4 */
 void CB_NEAR flag_gated_2751(void);       /* 0x00A117 */
+void CB_NEAR resource_palette_file_blocks_apply(cb_u16 file_handle,
+        volatile cb_u16 *header_buffer,
+        cb_u32 *remaining_bytes); /* 0x004086 */
 int CB_NEAR gfx_scanline_advance(
         bloodprg_gfx_scanline_state *state); /* 0x00AD96 */
 void CB_NEAR back_buffer_copy_from(

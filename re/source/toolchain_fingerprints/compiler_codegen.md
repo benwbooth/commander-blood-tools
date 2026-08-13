@@ -3116,6 +3116,31 @@ and the count on the stack. A binary-mixing build needs a narrow ABI adapter;
 the move logic itself is recovered and contains no register-state or memory
 emulation layer.
 
+## BLOODPRG file-backed palette-block candidate
+
+The old `file_read` label for `0x004086` described only its DOS calls. The
+routine is the file-backed twin of the recovered in-memory palette parser at
+`0x00A0C3`: it marks the palette dirty, reads two-byte `{start,count}` records,
+stops on `0xFFFF`, and reads `count * 3` raw DAC bytes into
+`live_palette + start * 3`. A zero count performs a zero-byte DOS read, entry
+255 addresses the final RGB triple, and no bounds check is applied.
+
+The helper also mutates its caller's 32-bit remaining-file count in `EBP`,
+subtracting every two-byte header and payload extent modulo 32 bits. It ignores
+both DOS carry and returned `AX`, so even an error indication cannot alter the
+control flow if the requested bytes are present in the destination buffer.
+Natural C expresses this as a `cb_u32 *remaining_bytes` parameter rather than
+register-state emulation.
+
+Six raw-binary vectors cover terminator-only, ordinary, zero-count, final-entry,
+255-entry, and underflow/error cases. They verify every DOS read, DS ownership
+against GS decoys, palette bytes, dirty-before-read ordering, EBP at each call,
+preservation, inherited DF, final comparison flags, and near return. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
+warning-free to 37 instructions/82 bytes versus 38/74 original. A replacement
+link needs only a narrow DI/DS:DX/EBP adapter; the parser logic itself is fully
+represented in natural C.
+
 ## BLOODPRG SND bank loader candidate
 
 `0x00C005` parses the SND bank structure used by the clip player: a four-byte

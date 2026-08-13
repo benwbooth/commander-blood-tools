@@ -5500,6 +5500,246 @@ def far_memmove_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_palette_file_blocks_vectors() -> list[dict[str, object]]:
+    entry = 0x4086
+    expected_hash = "cb4950819183084423bcb5c17e9ef1881b4096f05f6a81b2764726ff8221b9b7"
+    if hashlib.sha256(EXE[entry : entry + 74]).hexdigest() != expected_hash:
+        raise AssertionError("0x4086: recovered 74-byte body changed")
+
+    cases = [
+        ("terminator_only", [], 2, False),
+        ("single_block", [(2, 3)], 13, False),
+        ("zero_then_block", [(4, 0), (1, 2)], 12, False),
+        ("last_palette_entry", [(0xFF, 1)], 7, False),
+        ("full_palette", [(0, 0xFF)], 0x301, False),
+        ("remaining_underflow_dos_error", [(7, 1)], 1, True),
+    ]
+    game_segment = 0x2C00
+    decoy_segment = 0x4800
+    stack_segment = 0x9000
+    header_offset = 0x0AF2
+    return_address = 0x6F00
+    vectors = []
+
+    for case_index, (name, blocks, initial_remaining, dos_error) in enumerate(cases):
+        handle = 0x3100 + case_index
+        source = bytearray()
+        expected_reads = []
+        expected_palette = bytearray(
+            ((index * 17 + case_index * 29 + 0x43) & 0xFF)
+            for index in range(0x900)
+        )
+        source_cursor = 0
+        remaining = initial_remaining
+        for block_index, (start, count) in enumerate(blocks):
+            header = start | (count << 8)
+            source.extend(struct.pack("<H", header))
+            payload = bytes(
+                ((index * 31 + block_index * 47 + case_index * 53 + 5) & 0xFF)
+                for index in range(count * 3)
+            )
+            source.extend(payload)
+            expected_reads.append(
+                {
+                    "kind": "header",
+                    "count": 2,
+                    "destination": header_offset,
+                    "source_offset": source_cursor,
+                    "remaining_before": remaining & 0xFFFFFFFF,
+                }
+            )
+            source_cursor += 2
+            remaining = (remaining - 2) & 0xFFFFFFFF
+            destination = start * 3
+            expected_palette[destination : destination + len(payload)] = payload
+            expected_reads.append(
+                {
+                    "kind": "payload",
+                    "count": len(payload),
+                    "destination": 0x5251 + destination,
+                    "source_offset": source_cursor,
+                    "remaining_before": (remaining - len(payload)) & 0xFFFFFFFF,
+                }
+            )
+            source_cursor += len(payload)
+            remaining = (remaining - len(payload)) & 0xFFFFFFFF
+        source.extend(b"\xff\xff")
+        expected_reads.append(
+            {
+                "kind": "header",
+                "count": 2,
+                "destination": header_offset,
+                "source_offset": source_cursor,
+                "remaining_before": remaining,
+            }
+        )
+        remaining = (remaining - 2) & 0xFFFFFFFF
+
+        initial = {
+            "eax": 0xA1A12345,
+            "ebx": 0xB2B23456,
+            "ecx": 0xC3C34567,
+            "edx": 0xD4D40000 | header_offset,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F60000 | handle,
+            "ebp": initial_remaining,
+            "sp": 0xFF00,
+            "ds": game_segment,
+            "es": 0x4400,
+            "fs": 0x4C00,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0293 | (0x0400 if case_index & 1 else 0),
+        }
+        initial_palette = bytes(
+            ((index * 17 + case_index * 29 + 0x43) & 0xFF)
+            for index in range(0x900)
+        )
+        decoy_palette = bytes(value ^ 0xFF for value in initial_palette)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        reads = []
+        read_cursor = 0
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_cursor
+            if number != 0x21 or machine.reg_read(UC_X86_REG_AX) != 0x3F00:
+                raise AssertionError(
+                    f"0x4086 {name}: unexpected interrupt {number:#x}/"
+                    f"AX={machine.reg_read(UC_X86_REG_AX):#x}"
+                )
+            bx = machine.reg_read(UC_X86_REG_BX)
+            cx = machine.reg_read(UC_X86_REG_CX)
+            dx = machine.reg_read(UC_X86_REG_DX)
+            ds = machine.reg_read(UC_X86_REG_DS)
+            if bx != handle or ds != game_segment:
+                raise AssertionError(
+                    f"0x4086 {name}: DOS read BX={bx:#x} DS={ds:#x}"
+                )
+            chunk = bytes(source[read_cursor : read_cursor + cx])
+            machine.mem_write(ds * 16 + dx, chunk)
+            kind = "header" if dx == header_offset else "payload"
+            reads.append(
+                {
+                    "kind": kind,
+                    "count": cx,
+                    "destination": dx,
+                    "source_offset": read_cursor,
+                    "remaining_before": machine.reg_read(UC_X86_REG_EBP),
+                    "dirty": machine.mem_read(game_segment * 16 + 0x5B55, 1)[0],
+                }
+            )
+            read_cursor += cx
+            machine.reg_write(UC_X86_REG_AX, 0x0001 if dos_error else cx)
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if dos_error else (flags & ~1),
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0x5251, initial_palette),
+                (decoy_segment, 0x5251, decoy_palette),
+                (game_segment, 0x5B55, b"\xa5"),
+                (decoy_segment, 0x5B55, b"\x5a"),
+                (game_segment, header_offset, b"\x12\x34"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+        )
+
+        comparable_reads = [
+            {key: value for key, value in read.items() if key != "dirty"}
+            for read in reads
+        ]
+        if comparable_reads != expected_reads:
+            raise AssertionError(
+                f"0x4086 {name}: reads={comparable_reads}, expected={expected_reads}"
+            )
+        if any(read["dirty"] != 1 for read in reads):
+            raise AssertionError(f"0x4086 {name}: read occurred before dirty mark")
+        if read_cursor != len(source):
+            raise AssertionError(
+                f"0x4086 {name}: consumed {read_cursor}, expected {len(source)}"
+            )
+        actual_palette = bytes(machine.mem_read(game_segment * 16 + 0x5251, 0x900))
+        if actual_palette != bytes(expected_palette):
+            raise AssertionError(f"0x4086 {name}: palette bytes differ")
+        if bytes(machine.mem_read(decoy_segment * 16 + 0x5251, 0x900)) != decoy_palette:
+            raise AssertionError(f"0x4086 {name}: GS palette decoy changed")
+        if machine.mem_read(game_segment * 16 + 0x5B55, 1)[0] != 1:
+            raise AssertionError(f"0x4086 {name}: dirty byte not set")
+        if machine.mem_read(decoy_segment * 16 + 0x5B55, 1)[0] != 0x5A:
+            raise AssertionError(f"0x4086 {name}: GS dirty decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + header_offset, 2)) != b"\xff\xff":
+            raise AssertionError(f"0x4086 {name}: final header differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ebp"] = remaining
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x4086 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "af": False,
+            "zf": True,
+            "sf": False,
+            "df": bool(case_index & 1),
+            "of": False,
+        }
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x4086 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x4086 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "blocks": [
+                    {"start": start, "count": count} for start, count in blocks
+                ],
+                "dos_read_count": len(reads),
+                "payload_bytes": sum(count * 3 for _, count in blocks),
+                "remaining_before": initial_remaining,
+                "remaining_after": remaining,
+                "dos_error_ignored": dos_error,
+                "palette_sha256": hashlib.sha256(actual_palette).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def composite_draw_a_vectors() -> list[dict[str, object]]:
     entry = 0x3B45
     expected_hash = "244b88c80dc7d12184b6a54d14e89ec241265ffff99a902cdc64a4ba07c8c539"
@@ -33063,6 +33303,11 @@ def main() -> int:
         fullscreen_copy_vectors(
             0x3E5B, 0x5229, "fullscreen_copy_to_backbuffer"
         ),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_4086_natural.json",
+        resource_palette_file_blocks_vectors(),
         args.check,
     )
     update_vector(
