@@ -237,7 +237,7 @@ next_column:
                 face_offset);
 
         next_offset = face->link;
-        xdb_manu3_face_activate(face);
+        xdb_manu3_face_activate(face, raster_segment);
         face_offset = next_offset;
     }
 

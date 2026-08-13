@@ -66,7 +66,7 @@
     "accepted": true,
     "advance_offset": 3274,
     "remaining": 39,
-    "record_sha256": "0c5633b5076088ba74509d2551eb4fd97051c8c792875053b7d6d0ea9a54fa22"
+    "record_sha256": "42c7bc898db44c4660343e059f03c915b58d4ba0cad77624b03392cda1552a42"
   },
   {
     "name": "right_edge_clipped",
@@ -89,7 +89,7 @@
     "accepted": true,
     "advance_offset": 3422,
     "remaining": 79,
-    "record_sha256": "8c26734662fffbadfe2fe058167f8edce6c2d59df56227bc1a3c40f4f6adf184"
+    "record_sha256": "fffe787cc61d6f51452fd50188a384be072e0eff085a8a1fd5070fd773b03b3b"
   },
   {
     "name": "left_edge_switch",
@@ -112,7 +112,7 @@
     "accepted": true,
     "advance_offset": 3353,
     "remaining": 39,
-    "record_sha256": "69749f8ce58351f79eb77f1ae56b01ad1044b1a76b4e086674db379f34acdd85"
+    "record_sha256": "b59a323df80e9413bfe980245111ad479ffd9ef51cbc8b0fe7e9e34f895cbde6"
   },
   {
     "name": "left_edge_clipped",
@@ -135,7 +135,7 @@
     "accepted": true,
     "advance_offset": 3422,
     "remaining": 79,
-    "record_sha256": "5f50805a2e1c4e8f4412953a6f885e585f1602e456b44a969c4fdfa6f20cdade"
+    "record_sha256": "581f60219e3d16d80c9769b17272b9067d49182c22087d833d9686a4654e6611"
   },
   {
     "name": "equal_secondary_x",
@@ -158,7 +158,7 @@
     "accepted": true,
     "advance_offset": 3422,
     "remaining": 69,
-    "record_sha256": "37e9150fd43fce374eb20c9a2ebabf44902d99bdcd96b87a1ce7671583389bfd"
+    "record_sha256": "125b4cc228189268a07ea11a82c6d907f044e4a994d3b9711faca958eb663709"
   },
   {
     "name": "vertical_first_edge",
@@ -181,7 +181,7 @@
     "accepted": true,
     "advance_offset": 3422,
     "remaining": 89,
-    "record_sha256": "59793ff62adabc2c4d3e99f357813e6a2800dd51ffe5e85d43bf3fdc5d299a62"
+    "record_sha256": "b52d511a27343c7992d24cdf5029dde87c7324e7a5d219d2a3f143db400af6b1"
   },
   {
     "name": "zero_second_width_rejected",

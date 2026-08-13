@@ -212,9 +212,6 @@ extern volatile xdb_u16 xdb_manu3_tween_phase; /* DS:0x102C */
 extern volatile xdb_u16 xdb_manu3_tween_script_offset; /* DS:0x102E */
 extern volatile xdb_u16 xdb_manu3_active_end_offset; /* DS:0x1030 */
 extern volatile xdb_u16 xdb_manu3_active_slot_offsets[]; /* DS:0x1032 */
-extern volatile xdb_u16 xdb_manu3_active_raster_offset; /* DS:0x0908 */
-extern const volatile xdb_i32
-        xdb_manu3_reciprocal_table[]; /* raster DS:0x0000 */
 extern volatile xdb_u16 xdb_manu3_finished_pitch; /* DS:0x223A */
 extern volatile xdb_u16 xdb_manu3_finished_yaw; /* DS:0x223C */
 extern volatile xdb_i32 xdb_manu3_screen_center_x; /* DS:0x223E */
@@ -251,7 +248,8 @@ void XDB_NEAR xdb_manu3_face_bucket_sort(
 void XDB_NEAR xdb_manu3_tween_constructor(
         volatile xdb_u16 XDB_NEAR *active_slot_cursor);
 void XDB_NEAR xdb_manu3_face_activate(
-        const volatile xdb_manu3_face XDB_FAR *face);
+        const volatile xdb_manu3_face XDB_FAR *face,
+        xdb_u16 raster_segment);
 
 #if defined(__WATCOMC__)
 #pragma aux xdb_manu3_anim_select_entry \
@@ -273,7 +271,7 @@ void XDB_NEAR xdb_manu3_face_activate(
 #pragma aux xdb_manu3_tween_constructor \
         parm [bx] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_manu3_face_activate \
-        parm [es si] modify exact [ax bx cx dx si di bp]
+        parm [es si] [dx] modify exact [ax bx cx dx si di]
 #endif
 
 #endif

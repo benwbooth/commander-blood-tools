@@ -1,0 +1,44 @@
+[
+  {
+    "name": "active_vertical_edge_linear",
+    "module": "manu3",
+    "entry": 1792,
+    "screen": [
+      [
+        10,
+        20
+      ],
+      [
+        10,
+        24
+      ],
+      [
+        12,
+        20
+      ]
+    ],
+    "texture_coordinates": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "framebuffer_sha256": "4b19be7490c8f380df23c9b9f34af5cf96f7894ee22e4352ea547ea4f5dc2a98",
+    "nonzero_pixels": 4,
+    "free_head": 2674,
+    "vga_outputs": []
+  }
+]

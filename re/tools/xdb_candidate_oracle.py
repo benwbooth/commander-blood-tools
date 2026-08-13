@@ -5666,6 +5666,7 @@ def _manu3_gradient_reference(
     texture: tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
     depth: tuple[int, int, int],
     work_segment: int,
+    reciprocal_table: tuple[int, ...],
 ) -> tuple[bool, dict[int, int]]:
     def u16(value: int) -> int:
         return value & 0xFFFF
@@ -5700,7 +5701,7 @@ def _manu3_gradient_reference(
         return i32(quotient)
 
     def reciprocal(width: int) -> int:
-        return (1 << 24) // width
+        return reciprocal_table[width]
 
     def packed(pair: tuple[int, int]) -> int:
         return u16(pair[0]) | (u16(pair[1]) << 16)
@@ -5745,13 +5746,13 @@ def _manu3_gradient_reference(
         delta_2 = mul_low(i16(texture[2][0] - texture[0][0]), reciprocal_2)
         texture_du = i16(delta_1 >> 8)
         texture_u_step = i16(delta_2 >> 8)
-        texture_u = word_add(word_base(texture[0][0]), texture_u_step >> 1)
+        texture_u = word_add(word_base(texture[0][0]), i32(delta_2) >> 9)
 
         delta_1 = mul_low(u16(texture[1][1]) - u16(texture[0][1]), reciprocal_1)
         delta_2 = mul_low(u16(texture[2][1]) - u16(texture[0][1]), reciprocal_2)
         texture_dv = i16(delta_1 >> 8)
         texture_v_step = i16(delta_2 >> 8)
-        texture_v = word_add(word_base(texture[0][1]), texture_v_step >> 1)
+        texture_v = word_add(word_base(texture[0][1]), i32(delta_2) >> 9)
 
         depth_step = mul_q16(sub32(depth[2], depth[0]), reciprocal_2)
         depth_position = add32(depth[0], depth_step >> 1)
@@ -6020,13 +6021,22 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
     tail_offset = 0x0A18
     existing_offset = 0x2100
     work_segment = 0x3210
+    raster_data_offset = 0xA280
+    reciprocal_table = tuple(
+        struct.unpack_from("<I", image, raster_data_offset + width * 4)[0]
+        for width in range(0x0190)
+    )
     vectors = []
 
     for case_index, case in enumerate(cases):
         screen = case["screen"]
         active = bool(case.get("active", True))
         accepted, writes = _manu3_gradient_reference(
-            screen, texture, depth, work_segment
+            screen,
+            texture,
+            depth,
+            work_segment,
+            reciprocal_table,
         )
         if not active:
             accepted = False
@@ -6058,8 +6068,9 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
                 "<I", geometry_before, vertex_offset + 0x0E, depth_value & 0xFFFFFFFF
             )
 
-        for width in range(1, 0x0190):
-            struct.pack_into("<I", data_before, width * 4, (1 << 24) // width)
+        data_before[:0x0640] = image[
+            raster_data_offset : raster_data_offset + 0x0640
+        ]
         struct.pack_into("<H", data_before, 0x0908, raster_offset if active else 0)
         struct.pack_into("<H", data_before, raster_offset, free_offset)
         struct.pack_into("<H", data_before, head_offset, tail_offset)
@@ -6151,7 +6162,9 @@ def manu3_face_gradient_vectors() -> list[dict[str, object]]:
             ]
             raise AssertionError(
                 f"{module}:{entry:#x} {case['name']}: raster differs at "
-                f"{differing[:16]}"
+                f"{differing[:16]} with "
+                f"actual={[actual_record[offset] for offset in differing[:16]]} "
+                f"expected={[record_expected[offset] for offset in differing[:16]]}"
             )
         actual_active = struct.unpack(
             "<H", machine.mem_read(data_segment * 16 + 0x0908, 2)
@@ -6830,6 +6843,155 @@ def manu3_full_renderer_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_active_renderer_vectors() -> list[dict[str, object]]:
+    module = "manu3"
+    entry = 0x0700
+    image = load_image(module)
+    globals_segment = 0x3000
+    geometry_segment = 0x5000
+    raster_segment = 0x7000
+    texture_segment = 0x9000
+    linear_segment = 0xB000
+    stack_segment = 0xC000
+    return_address = 0xF000
+    face_offset = 0x1000
+    vertex_offsets = (0x1100, 0x1200, 0x1300)
+    screen = ((10, 20), (10, 24), (12, 20))
+    texture_coordinates = (
+        (0x0123, 0x1234),
+        (0x2345, 0x3456),
+        (0x4567, 0x5678),
+    )
+    depth = (0x10203040, -0x01234567, 0x30405060)
+
+    globals_before = bytearray(0x10000)
+    geometry_before = bytearray(0x10000)
+    raster_before = bytearray(0x10000)
+    texture_before = bytes(
+        (offset * 37 + 11) & 0xFF for offset in range(0x10000)
+    )
+    linear_before = bytes(0x10000)
+
+    struct.pack_into("<H", globals_before, 0x0002, geometry_segment)
+    struct.pack_into(
+        "<H",
+        globals_before,
+        0x0004,
+        (texture_segment - 0x2000) & 0xFFFF,
+    )
+    struct.pack_into("<H", globals_before, 0x0006, raster_segment)
+    struct.pack_into("<H", globals_before, 0x0014, linear_segment)
+    struct.pack_into("<H", globals_before, 0x2300, face_offset)
+    struct.pack_into("<H", globals_before, 0x2304, 1)
+
+    struct.pack_into("<HHHH", geometry_before, face_offset, 0, *vertex_offsets)
+    for vertex_offset, position, coordinate, depth_value in zip(
+        vertex_offsets,
+        screen,
+        texture_coordinates,
+        depth,
+    ):
+        struct.pack_into("<HH", geometry_before, vertex_offset, *coordinate)
+        struct.pack_into(
+            "<I",
+            geometry_before,
+            vertex_offset + 0x0A,
+            (position[0] & 0xFFFF) | ((position[1] & 0xFFFF) << 16),
+        )
+        struct.pack_into(
+            "<I", geometry_before, vertex_offset + 0x0E, depth_value & 0xFFFFFFFF
+        )
+        struct.pack_into("<H", geometry_before, vertex_offset + 0x12, 0)
+
+    raster_data_offset = 0xA280
+    raster_payload = image[raster_data_offset:]
+    raster_before[: len(raster_payload)] = raster_payload
+    struct.pack_into("<H", raster_before, 0x067E, 0x0BD6)
+
+    outputs: list[tuple[int, int, int]] = []
+
+    def output_handler(
+        _machine: Uc, port: int, size: int, value: int
+    ) -> None:
+        outputs.append((port, size, value))
+
+    machine = execute(
+        image,
+        entry,
+        return_address,
+        {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": globals_segment,
+            "gs": 0x2800,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        },
+        [
+            (0, return_address, b"\xcc"),
+            (globals_segment, 0, bytes(globals_before)),
+            (geometry_segment, 0, bytes(geometry_before)),
+            (raster_segment, 0, bytes(raster_before)),
+            (texture_segment, 0, texture_before),
+            (linear_segment, 0, linear_before),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + bytes.fromhex("5aa59669"),
+            ),
+        ],
+        max_instructions=250000,
+        output_handler=output_handler,
+    )
+    if outputs:
+        raise AssertionError(f"{module}:{entry:#x}: linear renderer wrote VGA")
+    geometry_after = bytes(machine.mem_read(geometry_segment * 16, 0x10000))
+    if geometry_after != bytes(geometry_before):
+        raise AssertionError(f"{module}:{entry:#x}: active geometry changed")
+    raster_after = bytes(machine.mem_read(raster_segment * 16, 0x10000))
+    free_head = struct.unpack_from("<H", raster_after, 0x0908)[0]
+    if free_head != 0x0A72:
+        raise AssertionError(
+            f"{module}:{entry:#x}: active record was not returned: {free_head:#x}"
+        )
+    framebuffer = bytes(machine.mem_read(linear_segment * 16, 320 * 200))
+    nonzero_pixels = sum(value != 0 for value in framebuffer)
+    if nonzero_pixels == 0:
+        column = struct.unpack_from("<H", raster_after, 0x0680)[0]
+        active_head = struct.unpack_from("<H", raster_after, 0x0964)[0]
+        record_words = struct.unpack_from("<8H", raster_after, 0x0A72)
+        raise AssertionError(
+            f"{module}:{entry:#x}: active triangle drew no pixels; "
+            f"column={column:#x}, active_head={active_head:#x}, "
+            f"record={record_words}"
+        )
+
+    return [
+        {
+            "name": "active_vertical_edge_linear",
+            "module": module,
+            "entry": entry,
+            "screen": [list(pair) for pair in screen],
+            "texture_coordinates": [
+                list(pair) for pair in texture_coordinates
+            ],
+            "depth": list(depth),
+            "framebuffer_sha256": hashlib.sha256(framebuffer).hexdigest(),
+            "nonzero_pixels": nonzero_pixels,
+            "free_head": free_head,
+            "vga_outputs": [],
+        }
+    ]
+
+
 def manu3_tween_constructor_vectors() -> list[dict[str, object]]:
     module = "manu3"
     entry = 0x01DF
@@ -7222,6 +7384,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "xdb_manu3_func_0700_renderer_natural.json",
         manu3_full_renderer_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "xdb_manu3_func_0700_active_natural.json",
+        manu3_active_renderer_vectors(),
         args.check,
     )
     update_vector(

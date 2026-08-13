@@ -2177,15 +2177,26 @@ negative-X clipping paths, texture/depth fixed-point equations, texture-bank
 segment selection, the 90-byte record layout, free-list pop, and active-list
 insertion. The oracle compares every externally retained record byte and link
 against an independent arithmetic model; it caught and corrected a first-pass
-double-clipping error in the natural C.
+double-clipping error in the natural C. Reciprocal inputs now come from the
+shipped work-segment table at XDB file offset `0xA280`, not a synthesized
+formula. That location follows from the data start at `0x1370` plus the
+directory's cumulative `0x03D3 + 0x011E + 0x0400` paragraph deltas. The table
+is Q16 and shares its tail with scratch state beginning at raster offset
+`0x061C`; the previous Q24 fixture was eight bits too large. Correcting it also
+exposed and fixed the vertical-edge texture accumulator, where the assembly
+halves a 32-bit shifted delta before truncating it to 16 bits.
 
 The complete candidate compiles warning-free with Open Watcom medium model
-`-3 -ox -mm -zdp`. The main function is 803 instructions/2349 bytes, plus a
+`-3 -ox -mm -zdp`. The main function is 932 instructions/2782 bytes, plus a
 50-instruction/115-byte natural fixed-point multiply helper, versus the
 original 424 instructions/1514 bytes. The generated size reflects stack-frame
 temporaries and compiler multiply helpers; the recovered control flow and
-record effects are verified. Exact integration still needs the original
-`ES` geometry, raster `DS`, and directory `FS` contract installed at entry.
+record effects are verified. Natural C receives raster ownership as an explicit
+segment argument and preserves `BP`, which Watcom requires for its generated
+stack frame even though the original routine clobbers it. A real-mode DOS
+executable using the compiled routine matches the raw overlay's complete
+90-byte wide vertical-edge record. A drop-in overlay still needs the original
+`ES` geometry, raster `DS`, and directory `FS` register adapter.
 
 Seven patched-callee vectors prove the `0x000150` no-cursor frame coordinator.
 It gates on the relocated data segment at CS:`0x136A`, installs that segment in
@@ -2242,16 +2253,21 @@ exact VGA plane words, both `0x000CCA` and `0x000D19` secondary-edge paths, the
 analysis proves that `0x000775`, `0x000848`, `0x000849`, and `0x000C2A` have no
 call entries: they are respectively the physical renderer fallthrough, shared
 return, active-list insertion back edge, and affine inner-loop head. They are
-now merged into the single true owner.
+now merged into the single true owner. A separate unmodified-overlay vector
+executes a real face through both `0x000700` and `0x000D7D` with the shipped
+raster payload. The equivalent Open Watcom real-mode DOS executable produces
+the same SHA-256 over all 64,000 linear-framebuffer bytes; a second DOS gate
+checks the empty path's complete 24 KiB raster arena.
 
 The actual candidate compiles warning-free with Open Watcom medium model
-`-3 -ox -mm -zdp` to 959 instructions/2876 bytes versus the original 543
+`-3 -ox -mm -zdp` to 960 instructions/2879 bytes versus the original 543
 instructions/1661 bytes. The generated code retains typed far geometry,
 raster, texture, and framebuffer pointers plus the narrow VGA word-output
 intrinsic; it contains no register machine or generic memory-access layer.
-Exact integration still needs the original live geometry `DS`, raster `ES` and
-later `DS`, and active-directory `FS` contract installed around the natural
-function.
+The natural call into `0x000D7D` passes raster ownership explicitly. Exact
+drop-in integration still needs the original live geometry `DS`, raster `ES`
+and later `DS`, and active-directory `FS` contract installed around the
+natural function.
 
 An exact raw-byte search of 307 recovered BLOODPRG routines of at least eight
 bytes over all 20 files in each Turbo C `TC/LIB` tree found zero matches for

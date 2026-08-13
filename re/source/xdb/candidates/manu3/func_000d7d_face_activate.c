@@ -31,13 +31,22 @@ static xdb_i32 xdb_manu3_sub_i32(xdb_i32 left, xdb_i32 right)
 }
 
 void XDB_NEAR xdb_manu3_face_activate(
-        const volatile xdb_manu3_face XDB_FAR *face)
+        const volatile xdb_manu3_face XDB_FAR *face,
+        xdb_u16 raster_segment)
 {
     xdb_u16 geometry_segment = FP_SEG(face);
+    const volatile xdb_i32 XDB_FAR *reciprocal_table = XDB_FAR_AT(
+            const volatile xdb_i32,
+            raster_segment,
+            0u);
+    volatile xdb_u16 XDB_FAR *free_head = XDB_FAR_AT(
+            volatile xdb_u16,
+            raster_segment,
+            0x0908u);
     const volatile xdb_manu3_vertex XDB_FAR *vertex_0;
     const volatile xdb_manu3_vertex XDB_FAR *vertex_1;
     const volatile xdb_manu3_vertex XDB_FAR *vertex_2;
-    volatile xdb_manu3_raster_record XDB_NEAR *raster;
+    volatile xdb_manu3_raster_record XDB_FAR *raster;
     xdb_manu3_texture_coordinate texture_0;
     xdb_manu3_texture_coordinate texture_1;
     xdb_manu3_texture_coordinate texture_2;
@@ -75,11 +84,13 @@ void XDB_NEAR xdb_manu3_face_activate(
             const volatile xdb_manu3_vertex,
             geometry_segment,
             face->vertex_2);
-    raster = (volatile xdb_manu3_raster_record XDB_NEAR *)
-            xdb_manu3_active_raster_offset;
-    if (raster == 0) {
+    if (*free_head == 0u) {
         return;
     }
+    raster = XDB_FAR_AT(
+            volatile xdb_manu3_raster_record,
+            raster_segment,
+            *free_head);
 
     screen_0 = vertex_0->screen.packed;
     screen_1 = vertex_1->screen.packed;
@@ -109,8 +120,8 @@ void XDB_NEAR xdb_manu3_face_activate(
             return;
         }
 
-        reciprocal_1 = xdb_manu3_reciprocal_table[vertical_span];
-        reciprocal_2 = xdb_manu3_reciprocal_table[width_2];
+        reciprocal_1 = reciprocal_table[vertical_span];
+        reciprocal_2 = reciprocal_table[width_2];
         raster->remaining = (xdb_i16)(width_2 - 1u);
 
         edge_2_step = xdb_manu3_multiply_low(
@@ -145,7 +156,7 @@ void XDB_NEAR xdb_manu3_face_activate(
         raster->texture_u_step = (xdb_i16)(delta_2 >> 8);
         raster->texture_u = (xdb_i16)(
                 ((xdb_u16)texture_0.packed << 8)
-                + (raster->texture_u_step >> 1));
+                + (xdb_i16)(delta_2 >> 9));
 
         delta_1 = xdb_manu3_multiply_low(
                 (xdb_i32)(xdb_u16)(texture_1.packed >> 16)
@@ -159,7 +170,7 @@ void XDB_NEAR xdb_manu3_face_activate(
         raster->texture_v_step = (xdb_i16)(delta_2 >> 8);
         raster->texture_v = (xdb_i16)(
                 ((xdb_u16)(texture_0.packed >> 16) << 8)
-                + (raster->texture_v_step >> 1));
+                + (xdb_i16)(delta_2 >> 9));
 
         value_0 = xdb_manu3_multiply_q16(
                 xdb_manu3_sub_i32(vertex_2->depth, vertex_0->depth),
@@ -176,8 +187,8 @@ void XDB_NEAR xdb_manu3_face_activate(
             return;
         }
 
-        reciprocal_1 = xdb_manu3_reciprocal_table[width_1];
-        reciprocal_2 = xdb_manu3_reciprocal_table[width_2];
+        reciprocal_1 = reciprocal_table[width_1];
+        reciprocal_2 = reciprocal_table[width_2];
         raster->remaining = (xdb_i16)(width_2 - 1u);
         edge_1_step = xdb_manu3_multiply_low(
                 (xdb_i32)(xdb_i16)(
@@ -251,8 +262,7 @@ void XDB_NEAR xdb_manu3_face_activate(
 
         if ((xdb_i16)(x_1 - x_2) > 0) {
             xdb_u16 secondary_width = (xdb_u16)(x_1 - x_2);
-            xdb_i32 reciprocal =
-                    xdb_manu3_reciprocal_table[secondary_width];
+            xdb_i32 reciprocal = reciprocal_table[secondary_width];
 
             if ((xdb_i16)x_2 < 0) {
                 clipped_columns = (xdb_u16)(0u - x_2);
@@ -346,8 +356,7 @@ void XDB_NEAR xdb_manu3_face_activate(
             }
         } else if ((xdb_i16)(x_1 - x_2) < 0) {
             xdb_u16 secondary_width = (xdb_u16)(x_2 - x_1);
-            xdb_i32 reciprocal =
-                    xdb_manu3_reciprocal_table[secondary_width];
+            xdb_i32 reciprocal = reciprocal_table[secondary_width];
 
             if ((xdb_i16)x_1 < 0) {
                 clipped_columns = (xdb_u16)(0u - x_1);
@@ -409,27 +418,33 @@ void XDB_NEAR xdb_manu3_face_activate(
                 + (xdb_u16)raster->texture_v_step * clipped_columns);
     }
 
-    xdb_manu3_active_raster_offset = raster->next;
+    *free_head = raster->next;
     {
-        volatile xdb_manu3_raster_record XDB_NEAR *previous =
-                (volatile xdb_manu3_raster_record XDB_NEAR *)
-                XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET;
-        volatile xdb_manu3_raster_record XDB_NEAR *next =
-                (volatile xdb_manu3_raster_record XDB_NEAR *)previous->next;
+        volatile xdb_manu3_raster_record XDB_FAR *previous = XDB_FAR_AT(
+                volatile xdb_manu3_raster_record,
+                raster_segment,
+                XDB_MANU3_ACTIVE_LIST_HEAD_OFFSET);
+        volatile xdb_manu3_raster_record XDB_FAR *next = XDB_FAR_AT(
+                volatile xdb_manu3_raster_record,
+                raster_segment,
+                previous->next);
 
         if (raster->edge_0_position > next->edge_0_position
                 || (raster->edge_0_position == next->edge_0_position
                 && raster->edge_0_step > next->edge_0_step)) {
             do {
                 previous = next;
-                next = (volatile xdb_manu3_raster_record XDB_NEAR *)next->next;
+                next = XDB_FAR_AT(
+                        volatile xdb_manu3_raster_record,
+                        raster_segment,
+                        next->next);
             } while (raster->edge_0_position > next->edge_0_position
                     || (raster->edge_0_position == next->edge_0_position
                     && raster->edge_0_step > next->edge_0_position));
         }
-        previous->next = (xdb_u16)raster;
-        raster->previous = (xdb_u16)previous;
-        raster->next = (xdb_u16)next;
-        next->previous = (xdb_u16)raster;
+        previous->next = (xdb_u16)FP_OFF(raster);
+        raster->previous = (xdb_u16)FP_OFF(previous);
+        raster->next = (xdb_u16)FP_OFF(next);
+        next->previous = (xdb_u16)FP_OFF(raster);
     }
 }

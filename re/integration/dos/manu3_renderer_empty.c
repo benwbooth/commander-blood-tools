@@ -15,10 +15,8 @@
 volatile xdb_manu3_segment_directory xdb_manu3_segments;
 volatile xdb_u16 xdb_manu3_linear_framebuffer_segment;
 volatile xdb_u16 xdb_manu3_framebuffer_segment;
-volatile xdb_u16 xdb_manu3_active_raster_offset;
 volatile xdb_u16 xdb_manu3_face_list_offset;
 volatile xdb_u16 xdb_manu3_face_count;
-const volatile xdb_i32 xdb_manu3_reciprocal_table[401];
 
 static void fill_segment(xdb_u16 segment, xdb_u16 size, xdb_u8 value)
 {
