@@ -2988,6 +2988,30 @@ The natural function returns zero on a miss; the raw routine leaves incidental
 comparison values in `AL` and the filename offset in `BX`, which its caller
 already ignores when the embedded flag remains clear.
 
+Routine `0x00280F` is not a resource lookup helper. Its sole startup caller
+constructs source and write-directory destination paths in one segment and
+passes them in DS:SI and DS:DI. The routine obtains the source byte count from
+`resource_name_lookup`, opens the source, creates or truncates the destination,
+and copies through the far transfer-buffer pointer at `GS:0x0A7C`. Every read
+requests `0xFA00` bytes; the returned AX count is subtracted from the 32-bit
+remaining extent and becomes the following write count.
+
+The raw cleanup behavior is part of the recovered semantics. A source-open
+failure changes no shared handle. A destination-create failure returns without
+closing the source and leaves that source handle at `GS:0x0A84`. During a copy,
+the same global holds the destination handle at each read and the source handle
+at each write; completion closes destination then source and leaves the source
+handle published. Read and write carry are ignored.
+
+Eight direct-binary vectors cover all three early exits, the deliberate
+create-failure leak, one and multiple chunks, a count with a nonzero high word,
+fixed-size requests, ignored read/write errors, every buffer and handle state,
+close ordering, path segments, full preservation, and far return. Open Watcom
+1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual natural candidate
+warning-free to 67 instructions/174 bytes versus 46/108 original. Exact linking
+needs narrow adapters for shared-segment DS:SI plus DS:DI entry, the lookup's
+EBP result, and direct DOS carry conventions; the copy itself is ordinary C.
+
 Routine `0x00287B` is the resource-ID load coordinator. It computes the name as
 `resource_name_table[resource_id]`, asks `0x0028CA` for the source byte count,
 and returns failure immediately when that count is zero. It then calls the

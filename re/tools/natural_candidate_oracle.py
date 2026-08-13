@@ -5716,6 +5716,403 @@ def resource_archive_match_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def startup_resource_file_copy_vectors() -> list[dict[str, object]]:
+    entry = 0x280F
+    expected_hash = "00a0b6c3da48f564e7d4ae546eca794abaddd154d69232c60a802a94bc440ca6"
+    if hashlib.sha256(EXE[entry : entry + 108]).hexdigest() != expected_hash:
+        raise AssertionError("0x280f: recovered 108-byte body changed")
+
+    cases = [
+        {
+            "name": "zero_size_skips_dos",
+            "byte_count": 0,
+        },
+        {
+            "name": "source_open_failure",
+            "byte_count": 7,
+            "source_open": False,
+        },
+        {
+            "name": "destination_create_failure_leaks_source",
+            "byte_count": 9,
+            "destination_create": False,
+        },
+        {
+            "name": "single_chunk_copy",
+            "byte_count": 5,
+            "read_counts": [5],
+        },
+        {
+            "name": "fixed_request_multi_chunk",
+            "byte_count": 0xFA03,
+            "read_counts": [0xFA00, 3],
+        },
+        {
+            "name": "full_32bit_remaining",
+            "byte_count": 0x10005,
+            "read_counts": [0xFA00, 0x0605],
+        },
+        {
+            "name": "read_carry_ignored",
+            "byte_count": 4,
+            "read_counts": [4],
+            "read_error": True,
+        },
+        {
+            "name": "write_carry_ignored",
+            "byte_count": 6,
+            "read_counts": [6],
+            "write_error": True,
+            "source_close_error": True,
+        },
+    ]
+
+    data_segment = 0x2400
+    game_segment = 0x2C00
+    buffer_segment = 0x5000
+    stack_segment = 0x9000
+    source_offset = 0x4100
+    destination_offset = 0x4300
+    buffer_offset = 0x0100
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        byte_count = int(case["byte_count"])
+        source_open = bool(case.get("source_open", True))
+        destination_create = bool(case.get("destination_create", True))
+        read_counts = [int(value) for value in case.get("read_counts", [])]
+        read_error = bool(case.get("read_error", False))
+        write_error = bool(case.get("write_error", False))
+        source_close_error = bool(case.get("source_close_error", False))
+        source_handle = 0x3100 + case_index
+        destination_handle = 0x4100 + case_index
+        initial_shared_handle = 0xA500 + case_index
+        source_path = f"SOURCE{case_index:02d}.DAT".encode("ascii") + b"\0"
+        destination_path = f"DEST{case_index:02d}.DAT".encode("ascii") + b"\0"
+        calls: list[dict[str, object]] = []
+        read_index = 0
+        close_index = 0
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F60000 | destination_offset,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3800,
+            "fs": 0x3C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0292 | (0x0400 if case_index & 1 else 0),
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = machine.mem_read(stack_segment * 16 + stack_pointer, 4)
+            return list(struct.unpack("<HH", frame))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x28CA:
+                return
+            calls.append(
+                {
+                    "call": "resource_name_lookup",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "eax": machine.reg_read(UC_X86_REG_EAX),
+                    "return_frame": return_frame(machine),
+                }
+            )
+            machine.reg_write(UC_X86_REG_EBP, byte_count)
+
+        def shared_handle(machine: Uc) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x0A84, 2)
+            )[0]
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_index, close_index
+            if number != 0x21:
+                raise AssertionError(f"0x280f {name}: unexpected INT {number:#x}")
+
+            function = machine.reg_read(UC_X86_REG_AX)
+            if function == 0x3D00:
+                call = {
+                    "call": "dos_open_read_only",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "shared_handle": shared_handle(machine),
+                    "success": source_open,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, source_offset]:
+                    raise AssertionError(f"0x280f {name}: source path={call['path']}")
+                if call["shared_handle"] != initial_shared_handle:
+                    raise AssertionError(f"0x280f {name}: source-open shared handle")
+                machine.reg_write(UC_X86_REG_AX, source_handle if source_open else 2)
+                set_carry(machine, not source_open)
+                return
+
+            if function == 0x3C00:
+                call = {
+                    "call": "dos_create_truncate",
+                    "path": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "attributes": machine.reg_read(UC_X86_REG_CX),
+                    "shared_handle": shared_handle(machine),
+                    "success": destination_create,
+                }
+                calls.append(call)
+                if call["path"] != [data_segment, destination_offset]:
+                    raise AssertionError(
+                        f"0x280f {name}: destination path={call['path']}"
+                    )
+                if call["attributes"] != 0 or call["shared_handle"] != source_handle:
+                    raise AssertionError(f"0x280f {name}: create call state={call}")
+                machine.reg_write(
+                    UC_X86_REG_AX,
+                    destination_handle if destination_create else 5,
+                )
+                set_carry(machine, not destination_create)
+                return
+
+            if function == 0x3F00:
+                if read_index >= len(read_counts):
+                    raise AssertionError(f"0x280f {name}: unexpected extra read")
+                returned = read_counts[read_index]
+                read_failed = read_error and read_index == 0
+                call = {
+                    "call": "dos_read",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "buffer": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                    "requested": machine.reg_read(UC_X86_REG_CX),
+                    "returned": returned,
+                    "carry": read_failed,
+                    "shared_handle": shared_handle(machine),
+                }
+                calls.append(call)
+                expected_state = {
+                    "handle": source_handle,
+                    "buffer": [buffer_segment, buffer_offset],
+                    "requested": 0xFA00,
+                    "shared_handle": destination_handle,
+                }
+                for key, expected in expected_state.items():
+                    if call[key] != expected:
+                        raise AssertionError(
+                            f"0x280f {name}: read {key}={call[key]}, "
+                            f"expected={expected}"
+                        )
+                payload = bytes(
+                    ((index * 29 + read_index * 47 + case_index * 61) & 0xFF)
+                    for index in range(returned)
+                )
+                machine.mem_write(buffer_segment * 16 + buffer_offset, payload)
+                machine.reg_write(UC_X86_REG_AX, returned)
+                set_carry(machine, read_failed)
+                read_index += 1
+                return
+
+            if function == 0x4000:
+                write_failed = write_error and read_index == 1
+                write_count = machine.reg_read(UC_X86_REG_CX)
+                buffer = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_DX),
+                ]
+                call = {
+                    "call": "dos_write",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                    "buffer": buffer,
+                    "count": write_count,
+                    "carry": write_failed,
+                    "shared_handle": shared_handle(machine),
+                    "data_sha256": hashlib.sha256(
+                        bytes(
+                            machine.mem_read(
+                                buffer[0] * 16 + buffer[1], write_count
+                            )
+                        )
+                    ).hexdigest(),
+                }
+                calls.append(call)
+                if (
+                    call["handle"] != destination_handle
+                    or buffer != [buffer_segment, buffer_offset]
+                    or call["shared_handle"] != source_handle
+                    or write_count != read_counts[read_index - 1]
+                ):
+                    raise AssertionError(f"0x280f {name}: write call state={call}")
+                machine.reg_write(UC_X86_REG_AX, 5 if write_failed else write_count)
+                set_carry(machine, write_failed)
+                return
+
+            if function == 0x3E00:
+                handle = machine.reg_read(UC_X86_REG_BX)
+                expected_handle = (
+                    destination_handle if close_index == 0 else source_handle
+                )
+                close_failed = source_close_error and close_index == 1
+                call = {
+                    "call": "dos_close",
+                    "handle": handle,
+                    "carry": close_failed,
+                    "shared_handle": shared_handle(machine),
+                }
+                calls.append(call)
+                if handle != expected_handle or call["shared_handle"] != source_handle:
+                    raise AssertionError(f"0x280f {name}: close call state={call}")
+                machine.reg_write(UC_X86_REG_AX, 6 if close_failed else 0)
+                set_carry(machine, close_failed)
+                close_index += 1
+                return
+
+            raise AssertionError(
+                f"0x280f {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x28CA, b"\xcb"),
+                (data_segment, source_offset, source_path),
+                (data_segment, destination_offset, destination_path),
+                (
+                    game_segment,
+                    0x0A7C,
+                    struct.pack("<HH", buffer_offset, buffer_segment),
+                ),
+                (
+                    game_segment,
+                    0x0A84,
+                    struct.pack("<H", initial_shared_handle),
+                ),
+                (
+                    data_segment,
+                    0x0A7C,
+                    struct.pack("<HH", 0xDEAD, 0xBEEF),
+                ),
+                (data_segment, 0x0A84, b"\x5a\xa5"),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+        )
+
+        expected_names = ["resource_name_lookup"]
+        if byte_count != 0:
+            expected_names.append("dos_open_read_only")
+            if source_open:
+                expected_names.append("dos_create_truncate")
+                if destination_create:
+                    for _ in read_counts:
+                        expected_names.extend(("dos_read", "dos_write"))
+                    expected_names.extend(("dos_close", "dos_close"))
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x280f {name}: calls={actual_names}, expected={expected_names}"
+            )
+        if calls[0] != {
+            "call": "resource_name_lookup",
+            "path": [data_segment, source_offset],
+            "eax": 0,
+            "return_frame": [0x281E, 0],
+        }:
+            raise AssertionError(f"0x280f {name}: lookup call={calls[0]}")
+        if destination_create and source_open and byte_count != 0:
+            if sum(read_counts) != byte_count or read_index != len(read_counts):
+                raise AssertionError(f"0x280f {name}: read-count accounting differs")
+            if close_index != 2:
+                raise AssertionError(f"0x280f {name}: close count={close_index}")
+
+        expected_shared_handle = (
+            source_handle if byte_count != 0 and source_open else initial_shared_handle
+        )
+        actual_shared_handle = shared_handle(machine)
+        if actual_shared_handle != expected_shared_handle:
+            raise AssertionError(
+                f"0x280f {name}: final shared handle={actual_shared_handle:#x}, "
+                f"expected={expected_shared_handle:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16 + source_offset, len(source_path))) != source_path:
+            raise AssertionError(f"0x280f {name}: source path changed")
+        if bytes(
+            machine.mem_read(
+                data_segment * 16 + destination_offset, len(destination_path)
+            )
+        ) != destination_path:
+            raise AssertionError(f"0x280f {name}: destination path changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A7C, 4)) != bytes.fromhex(
+            "addeefbe"
+        ):
+            raise AssertionError(f"0x280f {name}: DS buffer decoy changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0A84, 2)) != b"\x5a\xa5":
+            raise AssertionError(f"0x280f {name}: DS handle decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x280f {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x280f {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x280f {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "byte_count": byte_count,
+                "read_counts": read_counts,
+                "fixed_read_request": 0xFA00 if read_counts else None,
+                "read_carry_ignored": read_error,
+                "write_carry_ignored": write_error,
+                "source_close_carry": source_close_error,
+                "final_shared_handle": actual_shared_handle,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def resource_name_lookup_vectors() -> list[dict[str, object]]:
     entry = 0x28CA
     expected_hash = "18ac4b82ad55c5b35142cc8f7cf215d93681ee7e621839a39f3a85811369bc99"
@@ -35491,6 +35888,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_26cf_natural.json",
         resource_archive_match_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_280f_natural.json",
+        startup_resource_file_copy_vectors(),
         args.check,
     )
     update_vector(

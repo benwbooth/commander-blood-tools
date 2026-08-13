@@ -49,6 +49,8 @@ typedef struct bloodprg_dos_dta {
     cb_u32 file_size;
 } bloodprg_dos_dta;
 
+typedef volatile cb_u8 CB_FAR *bloodprg_resource_buffer_ptr;
+
 #define BLOODPRG_RESOURCE_FLAG_LOADED 0x0003u
 #define BLOODPRG_RESOURCE_DIRECT_DESTINATION 0x8000u
 
@@ -86,6 +88,10 @@ extern volatile cb_u8 CB_GAME_DATA
         resource_force_write_directory;            /* GS:0x0AE1 */
 extern volatile cb_u8 CB_GAME_DATA
         resource_path_is_embedded;                  /* GS:0x0AE2 */
+extern bloodprg_resource_buffer_ptr CB_GAME_DATA
+        resource_copy_buffer;                       /* GS:0x0A7C */
+extern volatile cb_u16 CB_GAME_DATA
+        resource_copy_file_handle;                  /* GS:0x0A84 */
 extern volatile cb_u8 resource_source_is_banked;    /* game data:0x0DBC */
 extern volatile cb_u8 resource_ready_marker;        /* game data:0x0DB7 */
 extern const bloodprg_resource_name_entry CB_GAME_DATA
@@ -118,6 +124,9 @@ cb_u16 CB_NEAR resource_archive_match(
 cb_u32 CB_FAR resource_name_lookup(
         volatile char CB_FAR *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
+void CB_FAR startup_resource_file_copy(
+        volatile char CB_FAR *source_path,
+        const volatile char CB_FAR *destination_path); /* 0x01CE:0x052F */
 
 int CB_FAR resource_load_by_id(cb_u16 resource_id); /* 0x01CE:0x059B */
 int CB_FAR resource_named_file_load(cb_u16 resource_id,
@@ -126,6 +135,8 @@ int CB_FAR resource_named_file_load(cb_u16 resource_id,
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
 int CB_NEAR cb_dos_find_first(const volatile char CB_FAR *path);
 int CB_NEAR cb_dos_open_read_only(const volatile char CB_FAR *path,
+        cb_u16 *handle);
+int CB_NEAR cb_dos_create_truncate(const volatile char CB_FAR *path,
         cb_u16 *handle);
 void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
 cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,

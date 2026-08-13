@@ -1,0 +1,557 @@
+[
+  {
+    "name": "zero_size_skips_dos",
+    "byte_count": 0,
+    "read_counts": [],
+    "fixed_read_request": null,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 42240,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "source_open_failure",
+    "byte_count": 7,
+    "read_counts": [],
+    "fixed_read_request": null,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 42241,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42241,
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "destination_create_failure_leaks_source",
+    "byte_count": 9,
+    "read_counts": [],
+    "fixed_read_request": null,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 12546,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42242,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12546,
+        "success": false
+      }
+    ]
+  },
+  {
+    "name": "single_chunk_copy",
+    "byte_count": 5,
+    "read_counts": [
+      5
+    ],
+    "fixed_read_request": 64000,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 12547,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42243,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12547,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 12547,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 5,
+        "carry": false,
+        "shared_handle": 16643
+      },
+      {
+        "call": "dos_write",
+        "handle": 16643,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 5,
+        "carry": false,
+        "shared_handle": 12547,
+        "data_sha256": "0ce2c2c508f06374bf615d4c2d3d62a3124ed6c629c36869bf48988576176fd4"
+      },
+      {
+        "call": "dos_close",
+        "handle": 16643,
+        "carry": false,
+        "shared_handle": 12547
+      },
+      {
+        "call": "dos_close",
+        "handle": 12547,
+        "carry": false,
+        "shared_handle": 12547
+      }
+    ]
+  },
+  {
+    "name": "fixed_request_multi_chunk",
+    "byte_count": 64003,
+    "read_counts": [
+      64000,
+      3
+    ],
+    "fixed_read_request": 64000,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 12548,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42244,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12548,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 12548,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 64000,
+        "carry": false,
+        "shared_handle": 16644
+      },
+      {
+        "call": "dos_write",
+        "handle": 16644,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 64000,
+        "carry": false,
+        "shared_handle": 12548,
+        "data_sha256": "f58a49d5578be668407460cfb2cc91754d57609f50ef6a8a3a6231ab16fae0f6"
+      },
+      {
+        "call": "dos_read",
+        "handle": 12548,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 3,
+        "carry": false,
+        "shared_handle": 16644
+      },
+      {
+        "call": "dos_write",
+        "handle": 16644,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 3,
+        "carry": false,
+        "shared_handle": 12548,
+        "data_sha256": "053318d36330c6795fa41c1242cf6ca675a6d8108df6ff12a218e7db6133713b"
+      },
+      {
+        "call": "dos_close",
+        "handle": 16644,
+        "carry": false,
+        "shared_handle": 12548
+      },
+      {
+        "call": "dos_close",
+        "handle": 12548,
+        "carry": false,
+        "shared_handle": 12548
+      }
+    ]
+  },
+  {
+    "name": "full_32bit_remaining",
+    "byte_count": 65541,
+    "read_counts": [
+      64000,
+      1541
+    ],
+    "fixed_read_request": 64000,
+    "read_carry_ignored": false,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 12549,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42245,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12549,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 12549,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 64000,
+        "carry": false,
+        "shared_handle": 16645
+      },
+      {
+        "call": "dos_write",
+        "handle": 16645,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 64000,
+        "carry": false,
+        "shared_handle": 12549,
+        "data_sha256": "f5dde7e6c9274a55fd34dd6bd325a1f1adc0a84d9dbf2f7194fbf3f3edc3c56e"
+      },
+      {
+        "call": "dos_read",
+        "handle": 12549,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 1541,
+        "carry": false,
+        "shared_handle": 16645
+      },
+      {
+        "call": "dos_write",
+        "handle": 16645,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 1541,
+        "carry": false,
+        "shared_handle": 12549,
+        "data_sha256": "d97bef8ff80b0c1830554322fa05ff9a4027cff8921cd1c78e3c58d8579170a9"
+      },
+      {
+        "call": "dos_close",
+        "handle": 16645,
+        "carry": false,
+        "shared_handle": 12549
+      },
+      {
+        "call": "dos_close",
+        "handle": 12549,
+        "carry": false,
+        "shared_handle": 12549
+      }
+    ]
+  },
+  {
+    "name": "read_carry_ignored",
+    "byte_count": 4,
+    "read_counts": [
+      4
+    ],
+    "fixed_read_request": 64000,
+    "read_carry_ignored": true,
+    "write_carry_ignored": false,
+    "source_close_carry": false,
+    "final_shared_handle": 12550,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42246,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12550,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 12550,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 4,
+        "carry": true,
+        "shared_handle": 16646
+      },
+      {
+        "call": "dos_write",
+        "handle": 16646,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 4,
+        "carry": false,
+        "shared_handle": 12550,
+        "data_sha256": "cfb93f06aa832498a322034cbedcd70947324490a2ca866d635eb4081023b1f2"
+      },
+      {
+        "call": "dos_close",
+        "handle": 16646,
+        "carry": false,
+        "shared_handle": 12550
+      },
+      {
+        "call": "dos_close",
+        "handle": 12550,
+        "carry": false,
+        "shared_handle": 12550
+      }
+    ]
+  },
+  {
+    "name": "write_carry_ignored",
+    "byte_count": 6,
+    "read_counts": [
+      6
+    ],
+    "fixed_read_request": 64000,
+    "read_carry_ignored": false,
+    "write_carry_ignored": true,
+    "source_close_carry": true,
+    "final_shared_handle": 12551,
+    "calls": [
+      {
+        "call": "resource_name_lookup",
+        "path": [
+          9216,
+          16640
+        ],
+        "eax": 0,
+        "return_frame": [
+          10270,
+          0
+        ]
+      },
+      {
+        "call": "dos_open_read_only",
+        "path": [
+          9216,
+          16640
+        ],
+        "shared_handle": 42247,
+        "success": true
+      },
+      {
+        "call": "dos_create_truncate",
+        "path": [
+          9216,
+          17152
+        ],
+        "attributes": 0,
+        "shared_handle": 12551,
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 12551,
+        "buffer": [
+          20480,
+          256
+        ],
+        "requested": 64000,
+        "returned": 6,
+        "carry": false,
+        "shared_handle": 16647
+      },
+      {
+        "call": "dos_write",
+        "handle": 16647,
+        "buffer": [
+          20480,
+          256
+        ],
+        "count": 6,
+        "carry": true,
+        "shared_handle": 12551,
+        "data_sha256": "477de444a8f41ffa52d27fbf05e39ffad2b25b89831a436e120fef787bfe8a6f"
+      },
+      {
+        "call": "dos_close",
+        "handle": 16647,
+        "carry": false,
+        "shared_handle": 12551
+      },
+      {
+        "call": "dos_close",
+        "handle": 12551,
+        "carry": true,
+        "shared_handle": 12551
+      }
+    ]
+  }
+]
