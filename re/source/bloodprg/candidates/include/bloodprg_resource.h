@@ -67,18 +67,24 @@ extern volatile cb_u32 resource_source_remaining;   /* game data:0x0D88 */
 extern volatile cb_u32 resource_archive_size;       /* game data:0x0A52 */
 extern volatile cb_u32 resource_archive_offset;     /* game data:0x0A8A */
 extern volatile cb_u32 resource_archive_remaining;  /* game data:0x0A8E */
-extern volatile cb_u8 resource_path_is_embedded;    /* game data:0x0AE2 */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_force_write_directory;            /* GS:0x0AE1 */
+extern volatile cb_u8 CB_GAME_DATA
+        resource_path_is_embedded;                  /* GS:0x0AE2 */
 extern volatile cb_u8 resource_source_is_banked;    /* game data:0x0DBC */
 extern volatile cb_u8 resource_ready_marker;        /* game data:0x0DB7 */
-extern volatile char resource_path_buffer[];        /* game data:0x0259 */
+extern const bloodprg_resource_name_entry CB_GAME_DATA
+        resource_write_directory_names[];           /* GS:0x0259 */
 
 #if defined(__WATCOMC__)
 #pragma aux resource_release parm [ax] modify exact []
 #pragma aux resource_free_inner parm [ax] modify exact []
 #pragma aux resource_get_field4 parm [ax] value [dx ax] modify exact [ax dx]
 #pragma aux lookup_table_1fb5 parm [ax] value [bx] modify [bx]
-#pragma aux path_builder_gs_relative parm [dx] value [bx] modify [bx cx dx]
-#pragma aux resource_load_by_id parm [ax] [es di] value [ax] modify exact [ax]
+#pragma aux resource_source_select parm [dx] value [bx] modify [ax bx cx dx]
+#pragma aux resource_archive_match parm [dx] value [bx] modify [ax bx]
+#pragma aux resource_load_by_id parm [ax] value [ax] modify exact [ax]
+#pragma aux resource_named_file_load parm [ax] [es di] value [ax] modify exact [ax]
 #endif
 
 cb_u32 CB_FAR resource_file_load(const volatile char CB_FAR *path,
@@ -92,13 +98,16 @@ bloodprg_resource_resolve_result CB_FAR resource_handle_resolve(
 cb_u32 CB_FAR resource_get_field4(cb_u16 handle); /* 0x04B9:0x01AC */
 bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
-cb_u16 CB_FAR path_builder_gs_relative(
-        const volatile char *filename); /* 0x01CE:0x03B3 */
+cb_u16 CB_FAR resource_source_select(
+        const volatile char CB_NEAR *filename); /* 0x01CE:0x03B3 */
+cb_u16 CB_NEAR resource_archive_match(
+        const volatile char CB_NEAR *filename); /* 0x01CE:0x03EF */
 cb_u32 CB_FAR resource_name_lookup(
         const volatile char *filename); /* 0x01CE:0x05EA */
 /* The binary returns this value in EBP; replacement linking needs an ABI thunk. */
 
-int CB_FAR resource_load_by_id(cb_u16 resource_id,
+int CB_FAR resource_load_by_id(cb_u16 resource_id); /* 0x01CE:0x059B */
+int CB_FAR resource_named_file_load(cb_u16 resource_id,
         volatile cb_u8 CB_FAR *direct_destination); /* 0x0299:0x1037 */
 
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);

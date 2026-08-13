@@ -6,8 +6,8 @@
 ; seg_off: 01ce:03b3
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: path_builder_gs_relative
-; label_comment: gs-relative filename->path builder (5 calls): given DX=filename offset in the gs string segment, assemble the full path into DS:0x259 (prepend dir, append .ext). Used by resource_file_load 0x2abb - the reason filename-offset searches fail (names are gs-relative + path-assembled)
+; label: resource_source_select
+; label_comment: select a named resource source: clear GS:0x0AE2, route forced or GS:0x0259-allowlisted names to the write directory, otherwise restore the launch directory and scan the embedded archive index at 0x0026CF
 ; incoming: call@0x000f6b->01ce:03b3
 ; incoming: call@0x003fdf->01ce:03b3
 ; incoming: call@0x007459->01ce:03b3

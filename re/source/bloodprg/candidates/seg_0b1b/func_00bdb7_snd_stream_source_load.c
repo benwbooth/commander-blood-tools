@@ -23,7 +23,7 @@ void CB_FAR snd_stream_source_load(const volatile char CB_NEAR *path)
         return;
     }
 
-    source_handle = path_builder_gs_relative(path);
+    source_handle = resource_source_select(path);
     if ((resource_path_is_embedded & 1u) == 0) {
         snd_source_remaining = resource_name_lookup(path);
         resource_archive_offset = 0;

@@ -23,7 +23,7 @@ void CB_FAR snd_bank_loader(cb_u16 mode,
         return;
     }
 
-    source_handle = path_builder_gs_relative(path);
+    source_handle = resource_source_select(path);
     if ((resource_path_is_embedded & 1u) == 0) {
         snd_source_remaining = resource_name_lookup(path);
         (void)cb_dos_open_read_only(path, &source_handle);

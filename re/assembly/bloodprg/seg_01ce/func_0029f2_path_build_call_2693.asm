@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: relocation_proven_far_transfer_target
 ; label: path_build_call_2693
-; label_comment: resource path build: dx=si; push cs; call 0x2693 (the path-string builder). Assembles the on-disk file path for a resource before FindFirst/open
+; label_comment: resource-loader owner that passes DS:SI to source selector 0x2693, then uses either the embedded handle or FindFirst/open on the unchanged standalone filename before loading through EMS
 ; incoming: call@0x007728->01ce:0712
 ; byte_count: 201
 ; boundary: cfg_blocks_12_terminals_3

@@ -3,7 +3,7 @@
 #include "../include/bloodprg_graphics.h"
 #include "../include/bloodprg_resource.h"
 
-int CB_FAR resource_load_by_id(cb_u16 resource_id,
+int CB_FAR resource_named_file_load(cb_u16 resource_id,
         volatile cb_u8 CB_FAR *direct_destination)
 {
     bloodprg_resource_allocation_result allocation;
@@ -16,7 +16,7 @@ int CB_FAR resource_load_by_id(cb_u16 resource_id,
     cb_u16 bytes_read;
 
     filename = resource_name_table[resource_id].filename;
-    (void)path_builder_gs_relative(filename);
+    (void)resource_source_select(filename);
 
     dta = cb_dos_get_dta();
     if (!cb_dos_find_first(filename)) {

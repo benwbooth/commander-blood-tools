@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: resource_file_load
-; label_comment: resource file load: dx=si; call 0x2693 (path build); bp=gs:[0xa8e] (FindFirst file size); cx=bp. Loads a resource file by name - path build then sized read (called 7x, a core loader)
+; label_comment: resource file load: pass DS:SI to source selector 0x2693, take the selected extent from GS:0x0A8E, and read the standalone file or embedded payload
 ; incoming: call@0x0017ee->01ce:091d
 ; incoming: call@0x00182c->01ce:091d
 ; incoming: call@0x0018da->01ce:091d

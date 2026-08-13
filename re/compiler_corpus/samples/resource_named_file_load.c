@@ -41,7 +41,7 @@ void dos_close_probe(u16 handle);
 void palette_file_blocks_probe(u16 handle, volatile u16 *header, u32 *remaining);
 allocation_result_probe FAR allocate_probe(u16 handle, u32 byte_count);
 
-int FAR resource_load_by_id_probe(u16 resource_id,
+int FAR resource_named_file_load_probe(u16 resource_id,
         volatile u8 FAR *direct_destination)
 {
     allocation_result_probe allocation;

@@ -202,13 +202,13 @@ shape or an isolated Borland replacement.
 
 For `0x009F8E`, seven direct-execution cases cover banked, embedded, and
 external-file resources, along with open, initial-read, and body-read failures.
-The cases patch only the path-builder, DOS, and staged-read call boundaries;
+The cases patch only the source-selector, DOS, and staged-read call boundaries;
 the original close, list initialization, bounds reset, descriptor lookup, and
 palette routines execute unchanged. They verify the extent word is used only
 for ring-wrap detection, palette data begins immediately after that word unless
 the record wraps to offset zero, `0xFF` metadata padding is skipped, and both
 32-bit absolute/remaining range pairs use the recovered relative offsets. Open
-Watcom 1.9 medium compiles the natural body to 182 instructions and 514 bytes,
+Watcom 1.9 medium compiles the corrected natural body to 175 instructions and 515 bytes,
 and Turbo C 2.01 medium emits 206 instructions, versus 103 instructions and 309
 bytes in the original. The excess is primarily the conventional Boolean and
 pointer interfaces replacing the original AX,
@@ -2917,7 +2917,7 @@ emits 168, 138, and 36 instructions. Watcom's Mode-X mnemonic LCS is 68 of 84;
 most size growth comes from `int86` setup, segment-qualified globals, and
 structured port expressions rather than different game logic.
 
-## BLOODPRG output-directory and rectangle candidates
+## BLOODPRG output-directory, resource-source, and rectangle candidates
 
 Shutdown context resolves three misleading or incomplete startup labels. The
 `0x00147F` routine does not open `DD7`; it iterates four 16-byte transient path
@@ -2932,6 +2932,26 @@ target drive, byte `01B9` is the saved original drive, `01BA` is the WRI path,
 and `01DA` is the original launch path. The natural C maps zero-based DOS drive
 numbers to the one-based `_dos_setdrive` library API, then uses `chdir`; Turbo C
 uses `<dir.h>` for that declaration while Watcom uses `<direct.h>`.
+
+Routine `0x002693` does not build a pathname. Static mapping of the initialized
+game-data segment places `GS:0x0259` at executable file offset `0x0D679`, where
+it begins a terminated array of 125 16-byte filenames. The routine clears the
+embedded-source flag, tests only bit zero of `GS:0x0AE1`, and compares the input
+`DS:DX` name against that table. Forced or matching names enter the WRI output
+directory. A miss restores the launch directory and calls `0x0026CF`, which
+scans the embedded archive index and returns its handle in `BX` on a match.
+
+Eight patched-callee direct vectors prove the force-bit mask, first and later
+case-sensitive matches, record-zero do-while behavior, terminator handling,
+directory/archive call order, `GS` ownership, embedded-result propagation,
+preservation, and far return. The actual natural candidate compiles
+warning-free under Open Watcom medium `-3 -ox -mm -zdp -we` to exactly 28
+instructions, matching the original count, at 75 bytes versus 60. Watcom uses
+the natural Boolean return from the recovered string comparator and returns
+zero on standalone paths; the binary uses comparator carry and leaves incoming
+`BX` unchanged where callers ignore it. A drop-in boundary must additionally
+preserve the original `AX` and `ES`; consistently compiled C callers use the
+natural Watcom convention instead.
 
 The graphics `0x003B45` owner is a compound rectangle-edge draw. It invokes a
 horizontal span at the top, vertical spans at the left and `x+width-1`, then a
@@ -3107,7 +3127,7 @@ uses source and destination address unions, naturally representing transfers in
 both directions without a register or memory facade.
 
 Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 262 instructions/860 bytes versus 198/590 original. Exact
+warning-free to 263 instructions/864 bytes versus 198/590 original. Exact
 drop-in integration still requires segment placement and small ABI boundaries,
 most notably the original `resource_name_lookup` result in EBP, but no source
 logic remains represented as register-state emulation.
@@ -3212,7 +3232,7 @@ sources, both modes, exact SND table transformations, the `SS == GS` table
 placement, all backend chunk boundaries, EMS maps, every XMS request field,
 `son.snd` close/create/write ordering, source closes, and register/far-return
 preservation. Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the
-actual candidate warning-free to 240 instructions/695 bytes versus 187/481
+actual candidate warning-free to 242 instructions/703 bytes versus 187/481
 original. Remaining integration work is segment placement and the narrow
 resource, DOS, EMS, and XMS ABI boundaries, not unresolved bank logic.
 

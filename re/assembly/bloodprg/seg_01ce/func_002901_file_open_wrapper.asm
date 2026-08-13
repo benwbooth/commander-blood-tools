@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: relocation_proven_far_transfer_target
 ; label: file_open_wrapper
-; label_comment: file-open wrapper: dx=si (filename); push cs; call path_builder_gs_relative 0x2693; then DOS-open the assembled path. A resource open via the path builder
+; label_comment: file-open wrapper: pass DS:SI filename to resource_source_select 0x2693, then DOS-open that same filename when the source is standalone
 ; incoming: call@0x007747->01ce:0621
 ; byte_count: 241
 ; boundary: cfg_blocks_14_terminals_3

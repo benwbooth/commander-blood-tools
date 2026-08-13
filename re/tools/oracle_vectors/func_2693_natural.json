@@ -1,0 +1,236 @@
+[
+  {
+    "name": "forced_write_directory",
+    "force_flag": 129,
+    "allowlist_entries": [
+      "FORCED.DAT"
+    ],
+    "comparison_count": 0,
+    "route": "write",
+    "archive_hit": false,
+    "return_bx": 9024,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "write_directory_enter"
+      }
+    ]
+  },
+  {
+    "name": "first_allowlisted_name",
+    "force_flag": 0,
+    "allowlist_entries": [
+      "DESCRIPT.DES",
+      "TB.BIG"
+    ],
+    "comparison_count": 1,
+    "route": "write",
+    "archive_hit": false,
+    "return_bx": 9025,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "write_directory_enter"
+      }
+    ]
+  },
+  {
+    "name": "later_allowlisted_name",
+    "force_flag": 0,
+    "allowlist_entries": [
+      "DESCRIPT.DES",
+      "TB.BIG",
+      "BLOOD.SAV",
+      "ORX.FD"
+    ],
+    "comparison_count": 3,
+    "route": "write",
+    "archive_hit": false,
+    "return_bx": 9026,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 617
+      },
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 633
+      },
+      {
+        "call": "write_directory_enter"
+      }
+    ]
+  },
+  {
+    "name": "empty_allowlist_archive_miss",
+    "force_flag": 0,
+    "allowlist_entries": [],
+    "comparison_count": 1,
+    "route": "archive",
+    "archive_hit": false,
+    "return_bx": 9027,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "original_directory_restore"
+      },
+      {
+        "call": "archive_match",
+        "filename_segment": 8704,
+        "filename_offset": 16640
+      }
+    ]
+  },
+  {
+    "name": "archive_match",
+    "force_flag": 0,
+    "allowlist_entries": [
+      "DESCRIPT.DES",
+      "TB.BIG"
+    ],
+    "comparison_count": 2,
+    "route": "archive",
+    "archive_hit": true,
+    "return_bx": 30292,
+    "embedded_flag": 1,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 617
+      },
+      {
+        "call": "original_directory_restore"
+      },
+      {
+        "call": "archive_match",
+        "filename_segment": 8704,
+        "filename_offset": 16640
+      }
+    ]
+  },
+  {
+    "name": "comparison_is_case_sensitive",
+    "force_flag": 0,
+    "allowlist_entries": [
+      "BLOOD.SAV"
+    ],
+    "comparison_count": 1,
+    "route": "archive",
+    "archive_hit": true,
+    "return_bx": 17767,
+    "embedded_flag": 1,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "original_directory_restore"
+      },
+      {
+        "call": "archive_match",
+        "filename_segment": 8704,
+        "filename_offset": 16640
+      }
+    ]
+  },
+  {
+    "name": "force_high_bits_ignored",
+    "force_flag": 254,
+    "allowlist_entries": [
+      "OTHER.DAT"
+    ],
+    "comparison_count": 1,
+    "route": "archive",
+    "archive_hit": false,
+    "return_bx": 9030,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "original_directory_restore"
+      },
+      {
+        "call": "archive_match",
+        "filename_segment": 8704,
+        "filename_offset": 16640
+      }
+    ]
+  },
+  {
+    "name": "terminator_stops_scan",
+    "force_flag": 0,
+    "allowlist_entries": [
+      "BEFORE.DAT"
+    ],
+    "comparison_count": 1,
+    "route": "archive",
+    "archive_hit": false,
+    "return_bx": 9031,
+    "embedded_flag": 0,
+    "calls": [
+      {
+        "call": "compare",
+        "filename_segment": 8704,
+        "filename_offset": 16640,
+        "table_segment": 11264,
+        "table_offset": 601
+      },
+      {
+        "call": "original_directory_restore"
+      },
+      {
+        "call": "archive_match",
+        "filename_segment": 8704,
+        "filename_offset": 16640
+      }
+    ]
+  }
+]

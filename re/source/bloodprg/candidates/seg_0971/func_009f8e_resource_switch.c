@@ -34,15 +34,15 @@ int CB_NEAR resource_switch(cb_u16 resource_id)
     resource_source_offset = 0;
 
     if ((resource_source_is_banked & 1u) == 0) {
-        handle = path_builder_gs_relative(descriptor->filename);
+        handle = resource_source_select(descriptor->filename);
         resource_source_remaining = resource_archive_remaining;
         resource_source_offset = resource_archive_offset;
 
         if ((resource_path_is_embedded & 1u) == 0) {
             dta = cb_dos_get_dta();
-            cb_dos_find_first(resource_path_buffer);
+            cb_dos_find_first(descriptor->filename);
             resource_source_remaining = dta->file_size;
-            if (!cb_dos_open_read_only(resource_path_buffer, &handle)) {
+            if (!cb_dos_open_read_only(descriptor->filename, &handle)) {
                 list_d8c_file_handle = handle;
                 return 0;
             }

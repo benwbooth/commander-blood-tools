@@ -6,8 +6,8 @@
 ; seg_off: 0299:1037
 ; group: seg_0299
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: resource_name_table_access
-; label_comment: resource name-table access: ds=fs; dx=0xc04 -> FS:0x0c04, the 16-byte-record resource NAME TABLE (worlds are IDs 22-36). Looks up a resource descriptor by id
+; label: resource_named_file_load
+; label_comment: load the FS:0x0C04 16-byte name selected by AX into an allocated destination, or directly into caller ES:DI when AX is negative; handles palette preambles and segmented payload reads
 ; incoming: call@0x000fb9->0299:1037
 ; incoming: call@0x00597f->0299:1037
 ; incoming: call@0x0070cd->0299:1037

@@ -82,7 +82,7 @@ base code segment (the raw E8-scan's ~360 includes mid-instruction false positiv
 Every MAJOR SUBSYSTEM is now decoded end-to-end:
 - **Boot/init/hardware**: cmdline args, timer hook + PIT, EMS (int67h) detect, CD-ROM,
   Ctrl-Break, video-mode save/restore, mouse init/poll, RTC read, sound-card port I/O.
-- **Resource system**: name table (FS:0x0c04) → load-by-id → path build/findfirst/open/read
+- **Resource system**: name table (FS:0x0c04) → load-by-id → standalone/archive source selection → FindFirst/open/read
   → handle→segment 8-byte table (resolve/release/flags/size/loaded) → EMS-banked
   ring-buffer queue (gs:0xd8c) + DAT chunk seek.
 - **Render**: linear back-buffer → RLE sprite composite + 2D clipped-plot primitives +

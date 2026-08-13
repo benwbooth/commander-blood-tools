@@ -6,8 +6,8 @@
 ; seg_off: 01ce:03ef
 ; group: seg_01ce
 ; provenance: recursive_graph
-; label: resource_close_check
-; label_comment: resource-handle close check: cmp gs:[0xa86],0; if a handle is open, close/release it before reuse. Guards resource-handle reuse
+; label: resource_archive_match
+; label_comment: scan 25-byte embedded-archive records for DS:DX, set GS:0x0AE2 and source extents on a match, return the archive handle in BX, and seek it to the selected payload
 ; byte_count: 244
 ; boundary: cfg_blocks_17_terminals_4
 ; terminal: jmp 0x275c:2, jmp 0x2775:1, ret:1

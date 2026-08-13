@@ -4862,6 +4862,309 @@ def string_compare_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_source_select_vectors() -> list[dict[str, object]]:
+    entry = 0x2693
+    expected_hash = "f13641713a2580b5495d510e887af229eda951055dcb968d1e6cf7c34b27485c"
+    if hashlib.sha256(EXE[entry : entry + 60]).hexdigest() != expected_hash:
+        raise AssertionError("0x2693: recovered 60-byte body changed")
+
+    cases = [
+        {
+            "name": "forced_write_directory",
+            "filename": b"FORCED.DAT",
+            "force": 0x81,
+            "entries": (b"FORCED.DAT",),
+            "route": "write",
+            "compare_count": 0,
+        },
+        {
+            "name": "first_allowlisted_name",
+            "filename": b"DESCRIPT.DES",
+            "force": 0,
+            "entries": (b"DESCRIPT.DES", b"TB.BIG"),
+            "route": "write",
+            "compare_count": 1,
+        },
+        {
+            "name": "later_allowlisted_name",
+            "filename": b"BLOOD.SAV",
+            "force": 0,
+            "entries": (b"DESCRIPT.DES", b"TB.BIG", b"BLOOD.SAV", b"ORX.FD"),
+            "route": "write",
+            "compare_count": 3,
+        },
+        {
+            "name": "empty_allowlist_archive_miss",
+            "filename": b"MISSING.EXT",
+            "force": 0,
+            "entries": (),
+            "route": "archive",
+            "compare_count": 1,
+            "archive_hit": False,
+        },
+        {
+            "name": "archive_match",
+            "filename": b"VENUSIA.EXT",
+            "force": 0,
+            "entries": (b"DESCRIPT.DES", b"TB.BIG"),
+            "route": "archive",
+            "compare_count": 2,
+            "archive_hit": True,
+            "archive_handle": 0x7654,
+            "archive_eax": 0,
+        },
+        {
+            "name": "comparison_is_case_sensitive",
+            "filename": b"blood.sav",
+            "force": 0,
+            "entries": (b"BLOOD.SAV",),
+            "route": "archive",
+            "compare_count": 1,
+            "archive_hit": True,
+            "archive_handle": 0x4567,
+            "archive_eax": 0,
+        },
+        {
+            "name": "force_high_bits_ignored",
+            "filename": b"UNLISTED.DAT",
+            "force": 0xFE,
+            "entries": (b"OTHER.DAT",),
+            "route": "archive",
+            "compare_count": 1,
+            "archive_hit": False,
+        },
+        {
+            "name": "terminator_stops_scan",
+            "filename": b"AFTER.DAT",
+            "force": 0,
+            "entries": (b"BEFORE.DAT",),
+            "trailing_entry": b"AFTER.DAT",
+            "route": "archive",
+            "compare_count": 1,
+            "archive_hit": False,
+        },
+    ]
+    data_segment = 0x2200
+    game_segment = 0x2C00
+    fs_segment = 0x3400
+    stack_segment = 0x9000
+    filename_offset = 0x4100
+    table_offset = 0x0259
+    return_address = 0x6F00
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    vectors = []
+
+    def name_record(name: bytes) -> bytes:
+        if len(name) >= 16:
+            raise AssertionError(f"0x2693: overlong test filename {name!r}")
+        return (name + b"\0").ljust(16, b"\0")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        filename = bytes(case["filename"]) + b"\0"
+        entries = tuple(bytes(value) for value in case["entries"])
+        compare_count = int(case["compare_count"])
+        force = int(case["force"])
+        route = str(case["route"])
+        archive_hit = bool(case.get("archive_hit", False))
+        initial_embedded = 0x80 | case_index
+
+        table = bytearray().join(name_record(value) for value in entries)
+        table.extend(bytes(32))
+        if "trailing_entry" in case:
+            table.extend(name_record(bytes(case["trailing_entry"])))
+        table_before = bytes(table)
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D40000 | filename_offset,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x2600 + case_index,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        archive_handle = int(
+            case.get("archive_handle", initial["ebx"] & 0xFFFF)
+        )
+        archive_eax = int(case.get("archive_eax", initial["eax"]))
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x25A4:
+                comparison_index = len(
+                    [call for call in calls if call["call"] == "compare"]
+                )
+                actual = {
+                    "call": "compare",
+                    "filename_segment": machine.reg_read(UC_X86_REG_DS),
+                    "filename_offset": machine.reg_read(UC_X86_REG_SI),
+                    "table_segment": machine.reg_read(UC_X86_REG_ES),
+                    "table_offset": machine.reg_read(UC_X86_REG_DI),
+                }
+                expected = {
+                    "call": "compare",
+                    "filename_segment": data_segment,
+                    "filename_offset": filename_offset,
+                    "table_segment": game_segment,
+                    "table_offset": table_offset + comparison_index * 16,
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x2693 {name}: compare call={actual}, expected={expected}"
+                    )
+                calls.append(actual)
+                return
+
+            if address == 0x27C3:
+                if machine.mem_read(game_segment * 16 + 0x0AE2, 1) != b"\0":
+                    raise AssertionError(f"0x2693 {name}: embedded flag not cleared")
+                calls.append({"call": "write_directory_enter"})
+                return
+
+            if address == 0x27E9:
+                if machine.mem_read(game_segment * 16 + 0x0AE2, 1) != b"\0":
+                    raise AssertionError(f"0x2693 {name}: embedded flag not cleared")
+                calls.append({"call": "original_directory_restore"})
+                return
+
+            if address == 0x26CF:
+                if (
+                    machine.reg_read(UC_X86_REG_DS) != data_segment
+                    or machine.reg_read(UC_X86_REG_DX) != filename_offset
+                ):
+                    raise AssertionError(f"0x2693 {name}: archive filename differs")
+                calls.append(
+                    {
+                        "call": "archive_match",
+                        "filename_segment": data_segment,
+                        "filename_offset": filename_offset,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_BX, archive_handle)
+                machine.reg_write(UC_X86_REG_EAX, archive_eax)
+                if archive_hit:
+                    machine.mem_write(game_segment * 16 + 0x0AE2, b"\1")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0x27C3, b"\xcb"),
+                (0, 0x27E9, b"\xcb"),
+                (0, 0x26CF, b"\xc3"),
+                (data_segment, filename_offset, filename),
+                (game_segment, table_offset, table_before),
+                (game_segment, 0x0AE1, bytes((force, initial_embedded))),
+                (
+                    data_segment,
+                    0x0AE1,
+                    bytes((force ^ 0xFF, initial_embedded ^ 0xFF)),
+                ),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        expected_calls: list[dict[str, object]] = [
+            {
+                "call": "compare",
+                "filename_segment": data_segment,
+                "filename_offset": filename_offset,
+                "table_segment": game_segment,
+                "table_offset": table_offset + index * 16,
+            }
+            for index in range(compare_count)
+        ]
+        if route == "write":
+            expected_calls.append({"call": "write_directory_enter"})
+        else:
+            expected_calls.extend(
+                (
+                    {"call": "original_directory_restore"},
+                    {
+                        "call": "archive_match",
+                        "filename_segment": data_segment,
+                        "filename_offset": filename_offset,
+                    },
+                )
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x2693 {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        if route == "archive":
+            expected_registers["eax"] = (
+                (archive_eax & 0xFFFF0000) | (initial["eax"] & 0xFFFF)
+            )
+            expected_registers["ebx"] = (
+                (initial["ebx"] & 0xFFFF0000) | archive_handle
+            )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x2693 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x2693 {name}: far return CS differs")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF04, 6)) != stack_sentinel:
+            raise AssertionError(f"0x2693 {name}: stack sentinel changed")
+
+        expected_embedded = 1 if archive_hit else 0
+        actual_embedded = machine.mem_read(game_segment * 16 + 0x0AE2, 1)[0]
+        if actual_embedded != expected_embedded:
+            raise AssertionError(
+                f"0x2693 {name}: embedded={actual_embedded}, "
+                f"expected={expected_embedded}"
+            )
+        if machine.mem_read(game_segment * 16 + 0x0AE1, 1)[0] != force:
+            raise AssertionError(f"0x2693 {name}: force flag changed")
+        if machine.mem_read(game_segment * 16 + table_offset, len(table_before)) != table_before:
+            raise AssertionError(f"0x2693 {name}: allowlist changed")
+        if machine.mem_read(data_segment * 16 + filename_offset, len(filename)) != filename:
+            raise AssertionError(f"0x2693 {name}: filename changed")
+        if machine.mem_read(data_segment * 16 + 0x0AE1, 2) != bytes(
+            (force ^ 0xFF, initial_embedded ^ 0xFF)
+        ):
+            raise AssertionError(f"0x2693 {name}: DS decoy changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "force_flag": force,
+                "allowlist_entries": [
+                    value.decode("ascii") for value in entries
+                ],
+                "comparison_count": compare_count,
+                "route": route,
+                "archive_hit": archive_hit,
+                "return_bx": machine.reg_read(UC_X86_REG_BX),
+                "embedded_flag": actual_embedded,
+                "calls": calls,
+            }
+        )
+
+    return vectors
+
+
 def bloodprg_strlen_vectors() -> list[dict[str, object]]:
     entry = 0x2665
     expected_hash = "6e2373a08942d4b119e6d1336777d439d7ffb47d63f83afd33cf4113382e2718"
@@ -5740,7 +6043,7 @@ def resource_palette_file_blocks_vectors() -> list[dict[str, object]]:
     return vectors
 
 
-def resource_load_by_id_vectors() -> list[dict[str, object]]:
+def resource_named_file_load_vectors() -> list[dict[str, object]]:
     entry = 0x3FC7
     expected_hash = "2438dcc40d27a1d4699e0b945a5ee3f3e48e98f6965a36956a6efb76e4e0869c"
     if hashlib.sha256(EXE[entry : entry + 191]).hexdigest() != expected_hash:
@@ -34063,6 +34366,11 @@ def main() -> int:
         VECTOR_ROOT / "func_267d_natural.json", keyboard_read_vectors(), args.check
     )
     update_vector(
+        VECTOR_ROOT / "func_2693_natural.json",
+        resource_source_select_vectors(),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "func_2dd3_natural.json", cmos_rtc_read_vectors(), args.check
     )
     update_vector(
@@ -34111,7 +34419,7 @@ def main() -> int:
     )
     update_vector(
         VECTOR_ROOT / "func_3fc7_natural.json",
-        resource_load_by_id_vectors(),
+        resource_named_file_load_vectors(),
         args.check,
     )
     update_vector(

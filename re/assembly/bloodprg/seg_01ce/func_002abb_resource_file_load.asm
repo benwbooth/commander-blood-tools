@@ -7,7 +7,7 @@
 ; group: seg_01ce
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: resource_file_load
-; label_comment: SEG 0x1ce:0x7db: open the resource filename (via gs-relative path builder 0x2693) + read the file into the allocated resource segment; the loaded world/.ext data then lives at the resource segment (see resource_handle_resolve 0x5320)
+; label_comment: SEG 0x1ce:0x7db: select the source through 0x2693, open standalone files by their original DS:SI filename, and read into the allocated resource segment
 ; incoming: call@0x000f48->01ce:07db
 ; incoming: call@0x000f86->01ce:07db
 ; incoming: call@0x007e49->01ce:07db
