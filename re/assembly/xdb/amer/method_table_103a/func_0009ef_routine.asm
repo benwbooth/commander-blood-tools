@@ -2,16 +2,32 @@
 ; module: xdb_amer
 ; artifact: output/_tmp_dat/amer.xdb
 ; artifact_sha256: 6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31
-; overlay_offset: 0x0009ef
+; overlay_offset: 0x0009b4
+; routine_entry: 0x0009ef
 ; group: method_table_103a
 ; provenance: alien_method_table_103a_slot_1@0x42bc
-; byte_count: 288
-; boundary: cfg_blocks_15_terminals_1
-; terminal: ret:1
+; byte_count: 347
+; boundary: cfg_blocks_16_terminals_2
+; terminal: ret:2
 ; direct_callees: none
 ; indirect_calls: 0
-; routine_bytes_sha256: c0951844b3334d3b24815a6347e8051452aa4472ed0fe310563d0cb649ac5f3c
+; routine_bytes_sha256: c9402aa2a09e57ad0510f1c63fb3ab4e600639e2f58e722aa9e8a5537588b8ab
 
+; -- internal initializer reached only from the method entry at 0x0009ef --
+0009B4:  C7 45 36 01 00               mov      word ptr [di + 0x36], 1
+0009B9:  2E C7 06 2F 0B 00 00         mov      word ptr cs:[0xb2f], 0
+0009C0:  8B 75 16                     mov      si, word ptr [di + 0x16]
+0009C3:  83 C6 5E                     add      si, 0x5e
+0009C6:  C7 45 38 04 00               mov      word ptr [di + 0x38], 4
+0009CB:  C7 45 3A 30 00               mov      word ptr [di + 0x3a], 0x30
+0009D0:  C7 45 3C 04 00               mov      word ptr [di + 0x3c], 4
+0009D5:  C7 45 3E 10 00               mov      word ptr [di + 0x3e], 0x10
+0009DA:  C7 44 54 0C 00               mov      word ptr [si + 0x54], 0xc
+0009DF:  C7 44 4E 00 00               mov      word ptr [si + 0x4e], 0
+0009E4:  C7 44 50 00 00               mov      word ptr [si + 0x50], 0
+0009E9:  C7 44 52 00 00               mov      word ptr [si + 0x52], 0
+0009EE:  C3                           ret
+; -- method-table entry --
 0009EF:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff
 0009F4:  74 BE                        je       0x9b4
 0009F6:  8B 75 16                     mov      si, word ptr [di + 0x16]

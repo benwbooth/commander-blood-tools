@@ -2,16 +2,33 @@
 ; module: xdb_scrut
 ; artifact: output/_tmp_dat/scrut.xdb
 ; artifact_sha256: 8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77
-; overlay_offset: 0x000a35
+; overlay_offset: 0x0009f5
+; routine_entry: 0x000a35
 ; group: method_table_103a
 ; provenance: alien_method_table_103a_slot_1@0x43ec
-; byte_count: 288
-; boundary: cfg_blocks_15_terminals_1
-; terminal: ret:1
+; byte_count: 352
+; boundary: cfg_blocks_16_terminals_2
+; terminal: ret:2
 ; direct_callees: none
 ; indirect_calls: 0
-; routine_bytes_sha256: 70beadba1cb0ec4ea057445fd9d1b849457f1c285836cb05770be63d19a69806
+; routine_bytes_sha256: 7bc6cebc553f911f03f8aecabe977e7abee802da76edf969433c7c3995a01946
 
+; -- internal initializer reached only from the method entry at 0x000a35 --
+0009F5:  C7 45 36 01 00               mov      word ptr [di + 0x36], 1
+0009FA:  2E C7 06 70 0B 00 00         mov      word ptr cs:[0xb70], 0
+000A01:  8B 75 16                     mov      si, word ptr [di + 0x16]
+000A04:  83 C6 5E                     add      si, 0x5e
+000A07:  C7 45 38 04 00               mov      word ptr [di + 0x38], 4
+000A0C:  C7 45 3A 30 00               mov      word ptr [di + 0x3a], 0x30
+000A11:  C7 45 3C 04 00               mov      word ptr [di + 0x3c], 4
+000A16:  C7 45 3E 10 00               mov      word ptr [di + 0x3e], 0x10
+000A1B:  C7 44 54 0C 00               mov      word ptr [si + 0x54], 0xc
+000A20:  C7 44 4E 00 00               mov      word ptr [si + 0x4e], 0
+000A25:  C7 44 50 00 00               mov      word ptr [si + 0x50], 0
+000A2A:  C7 44 52 00 00               mov      word ptr [si + 0x52], 0
+000A2F:  2E 89 36 74 0B               mov      word ptr cs:[0xb74], si
+000A34:  C3                           ret
+; -- method-table entry --
 000A35:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff
 000A3A:  74 B9                        je       0x9f5
 000A3C:  8B 75 16                     mov      si, word ptr [di + 0x16]

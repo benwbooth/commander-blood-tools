@@ -2,16 +2,32 @@
 ; module: xdb_croolis
 ; artifact: output/_tmp_dat/croolis.xdb
 ; artifact_sha256: 13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31
-; overlay_offset: 0x000a30
+; overlay_offset: 0x0009f5
+; routine_entry: 0x000a30
 ; group: method_table_103a
 ; provenance: alien_method_table_103a_slot_1@0x432c
-; byte_count: 288
-; boundary: cfg_blocks_15_terminals_1
-; terminal: ret:1
+; byte_count: 347
+; boundary: cfg_blocks_16_terminals_2
+; terminal: ret:2
 ; direct_callees: none
 ; indirect_calls: 0
-; routine_bytes_sha256: 0eb73213de1c93215d04029e4e35a966aebab191513a24408512a6145e17e822
+; routine_bytes_sha256: 2441bda45c8759bdefa8c9ab22f585ab3a21da48ee45209bf65953b3c28aee86
 
+; -- internal initializer reached only from the method entry at 0x000a30 --
+0009F5:  C7 45 36 01 00               mov      word ptr [di + 0x36], 1
+0009FA:  2E C7 06 70 0B 00 00         mov      word ptr cs:[0xb70], 0
+000A01:  8B 75 16                     mov      si, word ptr [di + 0x16]
+000A04:  83 C6 5E                     add      si, 0x5e
+000A07:  C7 45 38 04 00               mov      word ptr [di + 0x38], 4
+000A0C:  C7 45 3A 30 00               mov      word ptr [di + 0x3a], 0x30
+000A11:  C7 45 3C 04 00               mov      word ptr [di + 0x3c], 4
+000A16:  C7 45 3E 10 00               mov      word ptr [di + 0x3e], 0x10
+000A1B:  C7 44 54 0C 00               mov      word ptr [si + 0x54], 0xc
+000A20:  C7 44 4E 00 00               mov      word ptr [si + 0x4e], 0
+000A25:  C7 44 50 00 00               mov      word ptr [si + 0x50], 0
+000A2A:  C7 44 52 00 00               mov      word ptr [si + 0x52], 0
+000A2F:  C3                           ret
+; -- method-table entry --
 000A30:  F7 45 36 FF FF               test     word ptr [di + 0x36], 0xffff
 000A35:  74 BE                        je       0x9f5
 000A37:  8B 75 16                     mov      si, word ptr [di + 0x16]

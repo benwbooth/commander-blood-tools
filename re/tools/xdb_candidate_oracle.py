@@ -1208,6 +1208,409 @@ def alien_slot10_bounds_then_wrap_vectors(
     return vectors
 
 
+def alien_slot1_wave_update_or_init_vectors(
+    module: str,
+    entry: int,
+    block_start: int,
+    body_hash: str,
+    selection_state_offset: int,
+    selected_state_offset: int,
+    current_sample_offset: int,
+    publish_initial_state: bool,
+) -> list[dict[str, object]]:
+    image = load_image(module)
+    body_end = entry + 288
+    if hashlib.sha256(image[block_start:body_end]).hexdigest() != body_hash:
+        raise AssertionError(
+            f"{module}:{entry:#x}: recovered slot-1 owner changed"
+        )
+
+    game_segment = 0x5000
+    object_segment = 0x7000
+    extra_segment = 0x9000
+    decoy_segment = 0xB000
+    stack_segment = 0xD000
+    context_offset = 0x3000
+    state_base = 0x3800
+    state = state_base + 0x5E
+    object_offset = 0x4000
+    return_address = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778")
+    vectors: list[dict[str, object]] = []
+
+    def put_bytes(memory: bytearray, offset: int, value: bytes) -> None:
+        for index, byte in enumerate(value):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def put_u16(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<H", value & 0xFFFF))
+
+    def put_u32(memory: bytearray, offset: int, value: int) -> None:
+        put_bytes(memory, offset, struct.pack("<I", value & 0xFFFFFFFF))
+
+    def get_u16(memory: bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def sample_at(memory: bytearray, offset: int) -> int:
+        return signed16(get_u16(memory, 0x0036 + (offset & 0x0FFC)))
+
+    def patterned(seed: int, stride: int) -> bytearray:
+        return bytearray(
+            ((offset * stride + seed) & 0xFF) for offset in range(0x10000)
+        )
+
+    init_game = patterned(3, 29)
+    put_u16(init_game, context_offset + 0x16, state_base)
+    put_u16(init_game, context_offset + 0x36, 0)
+    init_expected = bytearray(init_game)
+    put_u16(init_expected, context_offset + 0x36, 1)
+    put_u16(init_expected, context_offset + 0x38, 4)
+    put_u16(init_expected, context_offset + 0x3A, 0x30)
+    put_u16(init_expected, context_offset + 0x3C, 4)
+    put_u16(init_expected, context_offset + 0x3E, 0x10)
+    put_u16(init_expected, state + 0x54, 0x0C)
+    put_u16(init_expected, state + 0x4E, 0)
+    put_u16(init_expected, state + 0x50, 0)
+    put_u16(init_expected, state + 0x52, 0)
+    init_code = bytearray(image)
+    put_u16(init_code, selection_state_offset, 0xA55B)
+    put_u16(init_code, selected_state_offset, 0x1357)
+    put_u16(init_code, current_sample_offset, 0x2468)
+    init_code_expected = bytearray(init_code)
+    put_u16(init_code_expected, selection_state_offset, 0)
+    if publish_initial_state:
+        put_u16(init_code_expected, selected_state_offset, state)
+    init_code_expected[return_address] = 0xCC
+    init_object = bytes(patterned(7, 17))
+    init_extra = bytes(patterned(9, 13))
+    init_decoy = bytes(patterned(11, 19))
+    initial = {
+        "eax": 0xA1A1BEEF,
+        "ebx": 0xB2B22345,
+        "ecx": 0xC3C33456,
+        "edx": 0xD4D44567,
+        "esi": 0xE5E55678,
+        "edi": 0xF6F60000 | context_offset,
+        "ebp": 0x9797789A,
+        "sp": 0xFF00,
+        "ds": game_segment,
+        "es": extra_segment,
+        "fs": game_segment,
+        "gs": decoy_segment,
+        "ss": stack_segment,
+        "flags": 0x0693,
+    }
+    machine = execute(
+        bytes(init_code),
+        entry,
+        return_address,
+        initial,
+        [
+            (0, return_address, b"\xcc"),
+            (game_segment, 0, bytes(init_game)),
+            (object_segment, 0, init_object),
+            (extra_segment, 0, init_extra),
+            (decoy_segment, 0, init_decoy),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ],
+        max_instructions=1000,
+    )
+    if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(init_expected):
+        raise AssertionError(f"{module}:{entry:#x} initialize: game data differs")
+    if bytes(machine.mem_read(0, len(image))) != bytes(init_code_expected):
+        raise AssertionError(f"{module}:{entry:#x} initialize: code data differs")
+    for segment, expected in (
+        (object_segment, init_object),
+        (extra_segment, init_extra),
+        (decoy_segment, init_decoy),
+    ):
+        if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+            raise AssertionError(
+                f"{module}:{entry:#x} initialize: segment {segment:#x} changed"
+            )
+    if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+        raise AssertionError(f"{module}:{entry:#x} initialize: stack mismatch")
+    if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+        raise AssertionError(f"{module}:{entry:#x} initialize: stack changed")
+    vectors.append(
+        {
+            "name": "initialize",
+            "module": module,
+            "entry": entry,
+            "path": "initialize",
+            "state": state,
+            "publishes_initial_state": publish_initial_state,
+            "game_data_sha256": hashlib.sha256(init_expected).hexdigest(),
+            "code_image_sha256": hashlib.sha256(init_code_expected).hexdigest(),
+        }
+    )
+
+    cases = (
+        ("selection_disabled", 0, 0, 0, 0, 0x0030, False),
+        ("step_decay", 0, 0, 0, 0, 0x0034, False),
+        ("selection_y_below", 1, 0, -5, 0, 0x0030, False),
+        ("selection_y_above", 1, 0, 125, 0, 0x0030, False),
+        ("selection_x_below", 1, -257, 0, 0, 0x0030, False),
+        ("selection_x_above", 1, 257, 0, 0, 0x0030, False),
+        ("selection_z_below", 1, 0, 0, -257, 0x0030, False),
+        ("selection_z_above", 1, 0, 0, 257, 0x0030, False),
+        ("selection_lower_edges", 1, -256, -4, -256, 0x0030, True),
+        ("selection_upper_edges", 1, 256, 124, 256, 0x0030, True),
+    )
+    for case_index, (
+        name,
+        selection_state,
+        position_x,
+        position_y,
+        position_z,
+        primary_step,
+        selected,
+    ) in enumerate(cases):
+        game_before = patterned(case_index * 17 + 5, 31)
+        object_before = patterned(case_index * 23 + 7, 37)
+        extra_before = bytes(patterned(case_index + 9, 13))
+        decoy_before = bytes(patterned(case_index + 11, 19))
+        primary_phase = (0x0FF0 + case_index * 4) & 0xFFFF
+        secondary_phase = (0x0FF4 + case_index * 8) & 0xFFFF
+        secondary_step = (0x0010 + case_index * 4) & 0xFFFF
+        state_count = 3
+        put_u16(game_before, 0x0002, object_segment)
+        put_u16(game_before, context_offset + 0x16, state_base)
+        put_u16(game_before, context_offset + 0x1C, object_offset)
+        put_u16(game_before, context_offset + 0x20, state_count)
+        put_u16(game_before, context_offset + 0x36, 1)
+        put_u16(game_before, context_offset + 0x38, primary_phase)
+        put_u16(game_before, context_offset + 0x3A, primary_step)
+        put_u16(game_before, context_offset + 0x3C, secondary_phase)
+        put_u16(game_before, context_offset + 0x3E, secondary_step)
+        put_u32(game_before, state + 0x42, position_x)
+        put_u32(game_before, state + 0x46, position_y)
+        put_u32(game_before, state + 0x4A, position_z)
+        put_u16(game_before, state + 0x50, 0xFFFF if case_index == 0 else case_index)
+        put_u16(game_before, 0x22EC, 0)
+        put_u16(game_before, 0x22F0, 0)
+        put_u16(game_before, 0x22F4, 0)
+        for offset in range(0, 0x1000, 2):
+            value = (offset * 73 + case_index * 0x1111 + 0x8123) & 0xFFFF
+            put_u16(game_before, 0x0036 + offset, value)
+        put_u16(game_before, 0x0036 + (primary_phase & 0x0FFC), 0x4000)
+
+        for index, (distance, motion, phase_value) in enumerate(
+            ((40, 0x7FF8, 3), (-40, 0x8008, 0x07FF), (0, 0xFFF8, 0xFFFF))
+        ):
+            base = object_offset + index * 0x14
+            put_u16(object_before, base + 0x04, distance)
+            put_u16(object_before, base + 0x06, motion)
+            put_u16(object_before, base + 0x08, phase_value)
+
+        game_expected = bytearray(game_before)
+        object_expected = bytearray(object_before)
+        code_before = bytearray(image)
+        put_u16(code_before, selection_state_offset, selection_state)
+        put_u16(code_before, selected_state_offset, 0x1357)
+        put_u16(code_before, current_sample_offset, 0x2468)
+        code_expected = bytearray(code_before)
+        code_expected[return_address] = 0xCC
+
+        put_u16(
+            game_expected,
+            state + 0x50,
+            get_u16(game_expected, state + 0x50) + 1,
+        )
+        current_sample = sample_at(game_expected, primary_phase) >> 8
+        put_u16(code_expected, current_sample_offset, current_sample)
+        effective_step = primary_step
+        if selected:
+            put_u16(code_expected, selection_state_offset, 2)
+            put_u16(code_expected, selected_state_offset, state)
+            effective_step = 0x0170
+        if signed16(effective_step) > 0x30:
+            effective_step = (effective_step - 4) & 0xFFFF
+            put_u16(game_expected, context_offset + 0x3A, effective_step)
+
+        put_u16(
+            game_expected,
+            context_offset + 0x38,
+            primary_phase + effective_step,
+        )
+        for index in range(state_count):
+            base = object_offset + index * 0x14
+            sample_offset = (
+                get_u16(object_expected, base + 0x08) * 2 + primary_phase
+            ) & 0x0FFC
+            motion = get_u16(object_expected, base + 0x06)
+            motion = (motion - (sample_at(game_expected, sample_offset) >> 8)) & 0xFFFF
+            sample_offset = (sample_offset + effective_step) & 0x0FFC
+            motion = (motion + (sample_at(game_expected, sample_offset) >> 8)) & 0xFFFF
+            put_u16(object_expected, base + 0x06, motion)
+
+        secondary_phase = (secondary_phase + secondary_step) & 0xFFFF
+        put_u16(game_expected, context_offset + 0x3C, secondary_phase)
+        branch_classes: list[str] = []
+        for index in range(state_count):
+            base = object_offset + index * 0x14
+            distance = signed16(get_u16(object_expected, base + 0x04) - 25)
+            if distance < 0:
+                distance = signed16(-distance)
+                distance = signed16(distance - 50)
+            if distance < 0:
+                branch_classes.append("center_skip")
+                continue
+            branch_classes.append("negative" if index == 1 else "positive")
+            scale = (distance * 2) & 0xFFFF
+            sample_offset = (scale + secondary_phase) & 0x0FFC
+            old_delta = (sample_at(game_expected, sample_offset) * scale) >> 17
+            sample_offset = (sample_offset + secondary_step) & 0x0FFC
+            new_delta = (sample_at(game_expected, sample_offset) * scale) >> 17
+            motion = get_u16(object_expected, base + 0x06)
+            motion = (motion - old_delta + new_delta) & 0xFFFF
+            put_u16(object_expected, base + 0x06, motion)
+
+        initial_flags = 0x0293 | (0x0400 if case_index & 1 else 0)
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F60000 | context_offset,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": game_segment,
+            "es": extra_segment,
+            "fs": game_segment,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        machine = execute(
+            bytes(code_before),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0, bytes(game_before)),
+                (object_segment, 0, bytes(object_before)),
+                (extra_segment, 0, extra_before),
+                (decoy_segment, 0, decoy_before),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            max_instructions=10000,
+        )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        actual_object = bytes(machine.mem_read(object_segment * 16, 0x10000))
+        actual_code = bytes(machine.mem_read(0, len(image)))
+        if actual_game != bytes(game_expected):
+            differences = [
+                (offset, actual_game[offset], game_expected[offset])
+                for offset in range(0x10000)
+                if actual_game[offset] != game_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: game data differs at {differences}"
+            )
+        if actual_object != bytes(object_expected):
+            differences = [
+                (offset, actual_object[offset], object_expected[offset])
+                for offset in range(0x10000)
+                if actual_object[offset] != object_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: object data differs at {differences}"
+            )
+        if actual_code != bytes(code_expected):
+            differences = [
+                (offset, actual_code[offset], code_expected[offset])
+                for offset in range(len(image))
+                if actual_code[offset] != code_expected[offset]
+            ][:8]
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: code data differs at {differences}"
+            )
+        for segment, expected in (
+            (extra_segment, extra_before),
+            (decoy_segment, decoy_before),
+        ):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: segment {segment:#x} changed"
+                )
+        for register, expected in (
+            (UC_X86_REG_DS, game_segment),
+            (UC_X86_REG_ES, extra_segment),
+            (UC_X86_REG_FS, game_segment),
+            (UC_X86_REG_GS, decoy_segment),
+            (UC_X86_REG_SS, stack_segment),
+            (UC_X86_REG_SP, 0xFF02),
+        ):
+            actual = machine.reg_read(register)
+            if actual != expected:
+                raise AssertionError(
+                    f"{module}:{entry:#x} {name}: register {register}="
+                    f"{actual:#x}, expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"{module}:{entry:#x} {name}: stack changed")
+
+        expected_flags = add_flags_16(
+            object_offset + (state_count - 1) * 0x14,
+            0x14,
+            initial_flags,
+        )
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "if": 0x0200,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"{module}:{entry:#x} {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "module": module,
+                "entry": entry,
+                "path": "update",
+                "selection_before": selection_state,
+                "selection_after": 2 if selected else selection_state,
+                "primary_step_after": effective_step,
+                "primary_phase_after": (primary_phase + effective_step) & 0xFFFF,
+                "secondary_phase_after": secondary_phase,
+                "branch_classes": branch_classes,
+                "game_data_sha256": hashlib.sha256(game_expected).hexdigest(),
+                "object_data_sha256": hashlib.sha256(object_expected).hexdigest(),
+                "code_image_sha256": hashlib.sha256(code_expected).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def alien_slot3_update_or_init_vectors(
     module: str,
     entry: int,
@@ -12104,6 +12507,61 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             wrap_positions_vectors(module, entry),
+            args.check,
+        )
+    for (
+        module,
+        entry,
+        block_start,
+        body_hash,
+        selection_state_offset,
+        selected_state_offset,
+        current_sample_offset,
+        publish_initial_state,
+    ) in (
+        (
+            "amer",
+            0x09EF,
+            0x09B4,
+            "c9402aa2a09e57ad0510f1c63fb3ab4e600639e2f58e722aa9e8a5537588b8ab",
+            0x0B2F,
+            0x0B33,
+            0x0B35,
+            False,
+        ),
+        (
+            "croolis",
+            0x0A30,
+            0x09F5,
+            "2441bda45c8759bdefa8c9ab22f585ab3a21da48ee45209bf65953b3c28aee86",
+            0x0B70,
+            0x0B74,
+            0x0B76,
+            False,
+        ),
+        (
+            "scrut",
+            0x0A35,
+            0x09F5,
+            "7bc6cebc553f911f03f8aecabe977e7abee802da76edf969433c7c3995a01946",
+            0x0B70,
+            0x0B74,
+            0x0B76,
+            True,
+        ),
+    ):
+        update_vector(
+            VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
+            alien_slot1_wave_update_or_init_vectors(
+                module,
+                entry,
+                block_start,
+                body_hash,
+                selection_state_offset,
+                selected_state_offset,
+                current_sample_offset,
+                publish_initial_state,
+            ),
             args.check,
         )
     for (

@@ -280,6 +280,17 @@ typedef struct xdb_alien_object_record {
     xdb_u8 field_002[0x12];
 } xdb_alien_object_record;
 
+typedef struct xdb_alien_wave_object {
+    xdb_u8 field_000[0x04];
+    xdb_i16 distance;
+    xdb_i16 motion;
+    xdb_u16 phase;
+    xdb_u8 field_00a[0x0a];
+} xdb_alien_wave_object;
+
+typedef char xdb_alien_wave_object_size_must_be_0x14[
+        sizeof(xdb_alien_wave_object) == 0x14 ? 1 : -1];
+
 typedef void XDB_NEAR xdb_alien_resume_function(
         xdb_alien_method_context XDB_NEAR *context);
 typedef xdb_alien_resume_function XDB_NEAR *xdb_alien_resume_callback;
@@ -309,6 +320,12 @@ struct xdb_alien_method_context {
             xdb_i16 previous;
         } sample_state;
         struct {
+            xdb_u16 primary_phase;
+            xdb_i16 primary_step;
+            xdb_u16 secondary_phase;
+            xdb_u16 secondary_step;
+        } slot1_wave;
+        struct {
             xdb_u16 field_038;
             xdb_u8 field_03a[0x06];
             xdb_u16 random_value;
@@ -337,6 +354,7 @@ struct xdb_alien_method_context {
 };
 
 typedef volatile xdb_u8 XDB_NEAR *xdb_alien_cursor;
+typedef volatile xdb_alien_biased_state XDB_NEAR *xdb_alien_state_cursor;
 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_alien_method_delta; /* CS:0x0099 */
 extern volatile xdb_u16 xdb_alien_object_segment; /* DS:0x0002 */
@@ -410,6 +428,18 @@ extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot3_ring_cursor; /* CS:0x0DA3 
 extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot2_seed; /* CS:0x16A2 */
 extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot2_seed; /* CS:0x1690 */
 extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot2_active; /* CS:0x1648 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_amer_slot1_selection_state; /* CS:0x0B2F */
+extern xdb_alien_state_cursor XDB_CODE_DATA
+        xdb_amer_slot1_selected_state; /* CS:0x0B33 */
+extern volatile xdb_i16 XDB_CODE_DATA xdb_amer_slot1_current_sample; /* CS:0x0B35 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_croolis_slot1_selection_state; /* CS:0x0B70 */
+extern xdb_alien_state_cursor XDB_CODE_DATA
+        xdb_croolis_slot1_selected_state; /* CS:0x0B74 */
+extern volatile xdb_i16 XDB_CODE_DATA xdb_croolis_slot1_current_sample; /* CS:0x0B76 */
+extern volatile xdb_u16 XDB_CODE_DATA xdb_scrut_slot1_selection_state; /* CS:0x0B70 */
+extern xdb_alien_state_cursor XDB_CODE_DATA
+        xdb_scrut_slot1_selected_state; /* CS:0x0B74 */
+extern volatile xdb_i16 XDB_CODE_DATA xdb_scrut_slot1_current_sample; /* CS:0x0B76 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_amer_slot3_ring[]; /* CS:0x0D63 */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_croolis_slot3_ring[]; /* CS:0x0DBB */
 extern volatile xdb_alien_ring_entry XDB_CODE_DATA xdb_scrut_slot3_ring[]; /* CS:0x0DA9 */
@@ -467,6 +497,12 @@ void XDB_NEAR xdb_amer_method_slot_3_update_or_init(
 void XDB_NEAR xdb_croolis_method_slot_3_update_or_init(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_scrut_method_slot_3_update_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_amer_method_slot_1_wave_update_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_croolis_method_slot_1_wave_update_or_init(
+        xdb_alien_method_context XDB_NEAR *context);
+void XDB_NEAR xdb_scrut_method_slot_1_wave_update_or_init(
         xdb_alien_method_context XDB_NEAR *context);
 void XDB_NEAR xdb_amer_mouse_camera_step(void);
 void XDB_NEAR xdb_croolis_mouse_camera_step(void);
@@ -593,6 +629,12 @@ void XDB_NEAR xdb_amer_slot2_finish_update(
 #pragma aux xdb_croolis_method_slot_3_update_or_init \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_scrut_method_slot_3_update_or_init \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_amer_method_slot_1_wave_update_or_init \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_croolis_method_slot_1_wave_update_or_init \
+        parm [di] modify exact [ax bx cx dx si di bp]
+#pragma aux xdb_scrut_method_slot_1_wave_update_or_init \
         parm [di] modify exact [ax bx cx dx si di bp]
 #pragma aux xdb_amer_mouse_camera_step modify exact [ax bx cx dx]
 #pragma aux xdb_croolis_mouse_camera_step modify exact [ax bx cx dx]

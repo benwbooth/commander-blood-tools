@@ -1,0 +1,302 @@
+[
+  {
+    "name": "initialize",
+    "module": "amer",
+    "entry": 2543,
+    "path": "initialize",
+    "state": 14430,
+    "publishes_initial_state": false,
+    "game_data_sha256": "0a33afc975487e271d2ca6d7d8bea027a27844cb01aae554b29f594abbeda2e2",
+    "code_image_sha256": "64a7499e6dae2821cac6c564c05070a6c4c51bdaab3b27da1811d9e70f60b424"
+  },
+  {
+    "name": "selection_disabled",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 0,
+    "selection_after": 0,
+    "primary_step_after": 48,
+    "primary_phase_after": 4128,
+    "secondary_phase_after": 4100,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "92870694961d8e411abab57b642f732b45c7f1ee7ae9dd1df89372361ffbb6cc",
+    "object_data_sha256": "2dd28c4334960146fff1fd0e5ed9f35636279ee5f047c58ede2616982ffb6a9a",
+    "code_image_sha256": "f0db159d5d5d506daf57db1a50f9dc52a0ea5bc8cd89276ecfbc9e9eb29e9bad",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "step_decay",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 0,
+    "selection_after": 0,
+    "primary_step_after": 48,
+    "primary_phase_after": 4132,
+    "secondary_phase_after": 4112,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "027f920358a472717de93cb162e95719e899293e6716bbd9bbca5193692c73f5",
+    "object_data_sha256": "41fee0e68b688b13c19e45f78bfcdad8e30eb544e28727699cfc34e08ba6e703",
+    "code_image_sha256": "f0db159d5d5d506daf57db1a50f9dc52a0ea5bc8cd89276ecfbc9e9eb29e9bad",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_y_below",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4136,
+    "secondary_phase_after": 4124,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "deaa60fcf858acd323d4a5c423370232bec0eec8ba3b511f3922ae5145fabebf",
+    "object_data_sha256": "4789a3b611decbe0b25538b9279930fd900879022f62e60788f7384627862cf6",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_y_above",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4140,
+    "secondary_phase_after": 4136,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "c252772c4e5b7afe48265461a1538ba568172859d69ad9849683849e075c2b73",
+    "object_data_sha256": "686fdd40d5f8d7a7c050c3023ad098717cf296893db100a263118dc675d8d5ea",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_x_below",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4144,
+    "secondary_phase_after": 4148,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "1a1a5312db8c306f1e563fa43d8521096a1994e2da39011b48925b97fd596040",
+    "object_data_sha256": "0d6c93722667485f296543ea3e4857419277dcfd0d2c3fc00cfbea27ac546adf",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_x_above",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4148,
+    "secondary_phase_after": 4160,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "8b141b4d530004875e675ac5de563ed372d8cc9e3531be6c6d7da7be906c2e43",
+    "object_data_sha256": "ed552e5dd57827d28aa009c1fe5de1b71540ed0cc068c7f6c591401520b0a46a",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_z_below",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4152,
+    "secondary_phase_after": 4172,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "ea4e38f1ea22f6978d8f76f3bd881a1aaece47b150f8625f1bbcb30c221df378",
+    "object_data_sha256": "9fcb764ff668f1a62f64f9f6d9b60a95aa6a66f7955d0cac02f2c96248ffe98c",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_z_above",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 1,
+    "primary_step_after": 48,
+    "primary_phase_after": 4156,
+    "secondary_phase_after": 4184,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "a62c0f24cb7c949bb90ed81ac17ee9c333f20633169e0edfab865d3bb6d42b7d",
+    "object_data_sha256": "1d6b10e04956367a870db9efe69c50a1dcd0df44658fa5c775542f626b129e03",
+    "code_image_sha256": "94d7fb955b19ab8035e7d72c4228683b05b02ee5e884b21985a80e0d9b7db721",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_lower_edges",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 2,
+    "primary_step_after": 364,
+    "primary_phase_after": 4476,
+    "secondary_phase_after": 4196,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "142f86cfc32b2ec631f4c2e8e999ed80b6b45b048490884f8871933826eba455",
+    "object_data_sha256": "d8655c006c605c71ad0db837e9cb96b16d3266d7f3e2ac4c8a4bd419aa19c446",
+    "code_image_sha256": "3792b70bb5ff188b81c9cf2ace778b8115fcc0926bd29c7c4f65fcd36f03dc1a",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selection_upper_edges",
+    "module": "amer",
+    "entry": 2543,
+    "path": "update",
+    "selection_before": 1,
+    "selection_after": 2,
+    "primary_step_after": 364,
+    "primary_phase_after": 4480,
+    "secondary_phase_after": 4208,
+    "branch_classes": [
+      "positive",
+      "negative",
+      "center_skip"
+    ],
+    "game_data_sha256": "0f3fdc22700436712519c62599d8bd8717174a1f8eba469d0e604eefa9b77b92",
+    "object_data_sha256": "8260a2ba2ee733559eca5ef064288a7d7a353fbe880b72357130d23c83ea099a",
+    "code_image_sha256": "3792b70bb5ff188b81c9cf2ace778b8115fcc0926bd29c7c4f65fcd36f03dc1a",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]

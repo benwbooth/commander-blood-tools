@@ -2635,6 +2635,22 @@ Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 1139
 instructions/3471 bytes. Turbo C 2.01 medium (`-mm -O -Z`) emits 1349
 instructions. Neither matches the original code generation.
 
+## Alien slot-1 wave candidate
+
+The AMER `0x09ef`, CROOLIS `0x0a30`, and SCRUT `0x0a35` method entries branch
+backward to private initializer blocks, just as the previously recovered slot-3
+methods do. Including those blocks yields 100-instruction/347-byte owners for
+AMER and CROOLIS. SCRUT is 101 instructions/352 bytes because its initializer
+also publishes the initial biased state pointer.
+
+The recovered C uses an ordinary near state pointer and a typed far array of
+20-byte objects. Eleven raw-overlay vectors per module verify initialization,
+all selection bounds, both wave passes, modular phase and motion arithmetic,
+and complete segment-owned memory. Open Watcom 1.9 medium (`-3 -ox -mm -zdp
+-we`) compiles AMER/CROOLIS warning-free to 127 instructions/386 bytes and
+SCRUT to 128/391. Turbo C 2.01 medium (`-mm -O -Z`) emits 193 instructions for
+the representative CROOLIS form. Neither compiler is an exact codegen match.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
