@@ -1,0 +1,491 @@
+[
+  {
+    "name": "gate_clear_full_page",
+    "source": [
+      16384,
+      0
+    ],
+    "destination": [
+      32768,
+      0
+    ],
+    "gate": 0,
+    "depth": 65,
+    "cropped": false,
+    "early_return": false,
+    "adjusted_source_offset": 0,
+    "adjusted_destination_offset": 0,
+    "bytes_per_plane": 16000,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "8e2c3a9a3859d0adc2b1189860f610c8514110cbd5666e27cd5d72b82da34d8c",
+      "a46ebd7e20bcbb7071a509660a3c576dc59aed1635daefcc59ecb2ea0bb650f0",
+      "9c7187f112187c54a82ec118547901bcfe6ac5df9210d00a145bcd04c103f7f6",
+      "96614d7b84adf68846f21ca1874be0fef7226932aab37f20afa1ab430f0b25a5"
+    ],
+    "output_phase_sha256": [
+      "53ae59916f4f24a9d01b1e28b79f7bd92b2819328bdc1e9114d0d6fc0c546b3e",
+      "cfb57160e5e3fc032ac3bba6c9ba784bd195cd8ceeaea7a9bc1c9efb47dfa698",
+      "4638c6fd158b7d08e705073bf4c5ea17d39b25e907301cefe0fba8562dd83f8c",
+      "84089e726b2921087df2470049f04d16a915b99ca6fceeed03e4ee05502008b1",
+      "21595a3c8d6da8bdb2de1b88fff28003e92f68a85f02e667c8f8cf8456767256"
+    ],
+    "source_sha256": "a04ce71afa38f9e694f316eee4fbac6670e4502cc02368f762d9fb111001c78a",
+    "output_sha256": "21595a3c8d6da8bdb2de1b88fff28003e92f68a85f02e667c8f8cf8456767256"
+  },
+  {
+    "name": "even_gate_bits_ignored",
+    "source": [
+      16384,
+      4660
+    ],
+    "destination": [
+      32768,
+      9320
+    ],
+    "gate": 254,
+    "depth": 65,
+    "cropped": false,
+    "early_return": false,
+    "adjusted_source_offset": 4660,
+    "adjusted_destination_offset": 9320,
+    "bytes_per_plane": 16000,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "30b76f994683452adcc047b9c9f00452a521ba56d1fd47c97cba5be9ce659225",
+      "9ceeea1596ab8d0d12cca4233161b3c5e5016460176c56a7aa4f981e0f00ac00",
+      "3efecbfd2a6c71f4c4154d07177552ca97d82d74dcbf01ac1194e20a510d4c83",
+      "8afd1869f7fb45fd44e205853ee9ad5aec620fbaa382247b7dc6369b5f8bf7df"
+    ],
+    "output_phase_sha256": [
+      "574698f7c1b57187e7862d7fc4521efe0db8c4b58c37a27586e385135b761fb9",
+      "3bdd897d391abc41a842333e12525a623a1f224efe0d1dc1b041c11d55f05afd",
+      "26a656c7a9c003bded3c10cb9234864c79f5a8273f0f4c8bb3bf5014561073d0",
+      "0c57aceba4fcd3f074b5dbcfa2094b95b301503b92f59d26ca76da9ceb3484a6",
+      "37cbe74ad0bf8a53b31858ddbfd10563accca12b66969f49740f7aeb0db5ac01"
+    ],
+    "source_sha256": "5610323b9ed86dd5bb52c562e9e92d6c17516849d1e680d895adde2b90db715b",
+    "output_sha256": "37cbe74ad0bf8a53b31858ddbfd10563accca12b66969f49740f7aeb0db5ac01"
+  },
+  {
+    "name": "crop_depth_zero",
+    "source": [
+      16384,
+      6144
+    ],
+    "destination": [
+      32768,
+      13312
+    ],
+    "gate": 1,
+    "depth": 0,
+    "cropped": true,
+    "early_return": false,
+    "adjusted_source_offset": 17344,
+    "adjusted_destination_offset": 16112,
+    "bytes_per_plane": 10400,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "8dec06ba3add248b5b72036798ea6ce66ac095e55639b3b9f5f3f3aafacb8fba",
+      "12731b32eb78689bd50152cdc524f7c310b785fd119ae2ff7fac7bab2397d4aa",
+      "ecb113ecd8ff85ea29e500e4b13fe1432eb28a279705d4c76327646c866f5b03",
+      "9e89c4d63c80beb332921c483e26a7d6229f252a6e1c6663fb02c66ce633cd57"
+    ],
+    "output_phase_sha256": [
+      "d5d4b89e303a1a59a91edb56ea3ec64365cf6b1f1e3088c7f9aa2e7d3303822a",
+      "957f386984419a9624bd2628ab17f4d62c9bdb6d8bdd304a82142b2b0ecccdfa",
+      "7d7c91e0cc63244f722fa1409b1cae2dfa36c46176fbd9d307e86e2e00a91688",
+      "7b1e8c264a890ab43105656bffd51561ca9f64f7105283510a04f225855305a8",
+      "96b6af91e88da31f18ef5bd4ae67db3a811bb3961ee1809c9b97329555cf6935"
+    ],
+    "source_sha256": "deb0ce14b28c797384453be0847ec8d8a06174c89631973300df2cd49678e1ea",
+    "output_sha256": "96b6af91e88da31f18ef5bd4ae67db3a811bb3961ee1809c9b97329555cf6935"
+  },
+  {
+    "name": "crop_depth_one_and_wrap",
+    "source": [
+      16384,
+      53248
+    ],
+    "destination": [
+      32768,
+      61696
+    ],
+    "gate": 3,
+    "depth": 1,
+    "cropped": true,
+    "early_return": false,
+    "adjusted_source_offset": 64768,
+    "adjusted_destination_offset": 64576,
+    "bytes_per_plane": 10240,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "74d4f6b333fa185347b09e9f1bf0d708b6c64de942b07a9dee75337513f0638f",
+      "b298bc3a8ae8f0d455b9468ac9488dfec343967ed17352882ecc865a3e659049",
+      "e0a4dfd0924f3ef623de0d5cd1758f08b5b25e5d20d649a4068f07f54f526aa8",
+      "f68d779f5dcdb021e982509e0d360123d6fc6c0c1c6ada7cafc0d6c853f5281b"
+    ],
+    "output_phase_sha256": [
+      "b105c3b153117d38424373bf89398fc0b3f702ae49714bb5179649eec220b9ae",
+      "47eed9cb59c6c288052b9874ffdfbb15b007a2da435c18f51a4a5abf16766cfa",
+      "fa33fb01210f6dd027dab62104e109462b34e476c516916f44c57ec5687bff24",
+      "18aaa1f77acee9d41dedc3868a44aa5a827700412e01915b85fb7347cf54b60f",
+      "185d541d4845187be0776aa7bf236ee21148b1b263b326d4c1326b3543bb6008"
+    ],
+    "source_sha256": "3590ff062528140790f7a90387fb11602589170dcbebbf8bfbe4de8c91dfd730",
+    "output_sha256": "185d541d4845187be0776aa7bf236ee21148b1b263b326d4c1326b3543bb6008"
+  },
+  {
+    "name": "crop_depth_sixty_four",
+    "source": [
+      16384,
+      29184
+    ],
+    "destination": [
+      32768,
+      33792
+    ],
+    "gate": 255,
+    "depth": 64,
+    "cropped": true,
+    "early_return": false,
+    "adjusted_source_offset": 60864,
+    "adjusted_destination_offset": 41712,
+    "bytes_per_plane": 160,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "5320771bc9e09da554da6491f64fb0517c05ab09c5364e10c4a43890e09bf159",
+      "05ba1ed28e502cba70e970ced0536883493ee99dced3e562398fb4df22ab5457",
+      "178a92a91e74680f8872ef5cccff00e1fe1a44d4362c0f325de977ede67c9577",
+      "b4272469e778cbbb34b3473dc5cde85b6e24bae353a9867bb64befa6b28dbaac"
+    ],
+    "output_phase_sha256": [
+      "95da50d302c832dcaf492e1b981ea123a845930f5510e76c82494f9a30256b2f",
+      "c11c24469d73055a19358fbaa0cc1438a0d8cb202ce2a0b62b1520c3422283fc",
+      "94ff7173d94b7bae1d4dd1298d54ae312238e6d1111732cc925b9c94aa72ab1a",
+      "c5658fd056a3a9da0903027c349ca1cf3b8a5c0e7df594686112709f5b444060",
+      "fb68ac500c819cc679a44a669071fda4a9d598ce9555339116cf1957cc311262"
+    ],
+    "source_sha256": "a14fdec0efd27d668a3d4e3489d50447101d50fc758915fbaee8233bcb6a8380",
+    "output_sha256": "fb68ac500c819cc679a44a669071fda4a9d598ce9555339116cf1957cc311262"
+  },
+  {
+    "name": "crop_depth_sixty_five_zero_count",
+    "source": [
+      16384,
+      65504
+    ],
+    "destination": [
+      32768,
+      65520
+    ],
+    "gate": 1,
+    "depth": 65,
+    "cropped": true,
+    "early_return": true,
+    "adjusted_source_offset": 31968,
+    "adjusted_destination_offset": 7984,
+    "bytes_per_plane": 0,
+    "direction_flag_before": true,
+    "direction_flag_after": false,
+    "port_writes": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "plane_payload_sha256": [],
+    "output_phase_sha256": [
+      "40360d68bf30a3658cb321bdb3811c0c26b8586c5f24b2cb5a0a257d0643ed6c"
+    ],
+    "source_sha256": "54b9f1a346a86411f8401216c46f7fe296fe255b92a8491b23a12544622bc907",
+    "output_sha256": "40360d68bf30a3658cb321bdb3811c0c26b8586c5f24b2cb5a0a257d0643ed6c"
+  },
+  {
+    "name": "crop_full_word_depth_wrap",
+    "source": [
+      16384,
+      57600
+    ],
+    "destination": [
+      32768,
+      45056
+    ],
+    "gate": 1,
+    "depth": 256,
+    "cropped": true,
+    "early_return": false,
+    "adjusted_source_offset": 19648,
+    "adjusted_destination_offset": 2800,
+    "bytes_per_plane": 34976,
+    "direction_flag_before": false,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "52fc265f925dc068d96fa430a2cba2016b014c39b107ba158585447d555a96af",
+      "b8d94ff555ff1e036823a1f34315028d848e0a229dbfc90b88951a5d89a416af",
+      "81c4d7aa6d16dab4b46338d61618ee947cb6d416e5ad7d5594c2ecc46f85339f",
+      "5655ecbed08ba452879ffd3b20acfb1db318b301e0f112681362addd64b3cdd8"
+    ],
+    "output_phase_sha256": [
+      "973eae73ecdf085cc0f289d749b4d83c7a90f7026e36385d599bbff9c2bc9807",
+      "d323948585c133d0ddd4cfeb3792c93b1aed2ffcfb6ba3d03038f7761e84fa06",
+      "9dbbdc436a0093d49adc741af3f20ade8a85e8b35253ed8e7180663928dcadc6",
+      "55960cb5162329ce017c34a5dbaee941229e9e95939ba771110b693de425759e",
+      "594dc2a4f806a99fc5c7bff24b4241a037c96114c219b104e41cb3004a096251"
+    ],
+    "source_sha256": "58127b1706addf745f459579a94d68e3e9c69f8c623c1b6a076e11b9d396c5a3",
+    "output_sha256": "594dc2a4f806a99fc5c7bff24b4241a037c96114c219b104e41cb3004a096251"
+  },
+  {
+    "name": "source_destination_wrap_and_backward_df",
+    "source": [
+      16384,
+      61440
+    ],
+    "destination": [
+      32768,
+      63488
+    ],
+    "gate": 0,
+    "depth": 0,
+    "cropped": false,
+    "early_return": false,
+    "adjusted_source_offset": 61440,
+    "adjusted_destination_offset": 63488,
+    "bytes_per_plane": 16000,
+    "direction_flag_before": true,
+    "direction_flag_after": false,
+    "port_writes": [
+      [
+        964,
+        2,
+        258
+      ],
+      [
+        964,
+        2,
+        514
+      ],
+      [
+        964,
+        2,
+        1026
+      ],
+      [
+        964,
+        2,
+        2050
+      ]
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "plane_payload_sha256": [
+      "19905485672cecc925cffff2c85bf6c9867d54664e37c66a89e8271920b23af7",
+      "ee798666b49d095b52a3f6493ae040f692d7bb219f9c871a6016fafa7dac9dfb",
+      "d441d4ac595f842d8abefc859ff0823c853534de19d1f3900b27afa8d7a9b40f",
+      "ae3b9916300ac29faf08ad23d9e245680d454b012d4b48350d7429debb0e58c4"
+    ],
+    "output_phase_sha256": [
+      "415efde6b5842f379c17c67472a242e3d4a9802fd73cd82ada98d2d8cbb31d07",
+      "d05f83e66ce923a71a930c05e695da15c27a5d48fa9da7f52a20a2c6ac25fad4",
+      "01ccc8f557ccb947d5396beadc6fda068a82b4dd3d012d85972580556ca6fbe0",
+      "7637bb143899602d7b7d4b5ca40914d460bb84eb9045ae65def864f012098fea",
+      "639581c4795af033c3da04c307e70c0b04d2b71783850e15e17c23bd83617d81"
+    ],
+    "source_sha256": "4b49d64cdff4c3e1a4549bb7c75d65a1d0f9acacf1aaca63680385390737daee",
+    "output_sha256": "639581c4795af033c3da04c307e70c0b04d2b71783850e15e17c23bd83617d81"
+  }
+]

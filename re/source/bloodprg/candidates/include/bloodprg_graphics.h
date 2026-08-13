@@ -128,6 +128,8 @@ void CB_FAR framebuffer_rect_fill(cb_u8 color, cb_u16 x, cb_u16 y,
 void CB_FAR vga_planar_to_chunky(
         const volatile cb_u8 CB_FAR *source,
         volatile cb_u8 CB_FAR *destination); /* 0x0299:0x0EE0 */
+void CB_FAR chunky_to_planar_framebuffer(
+        const volatile cb_u8 CB_FAR *source); /* 0x0299:0x0F3E */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 void CB_FAR palette_scene_entries_clear(void); /* 0x00248B */
@@ -200,6 +202,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 #pragma aux composite_draw_a parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux framebuffer_rect_fill parm caller [ax] [bx] [cx] [dx] modify exact []
 #pragma aux vga_planar_to_chunky parm [ds si] [es di] modify exact []
+#pragma aux chunky_to_planar_framebuffer parm [ds si] modify exact [dx]
 #pragma aux back_buffer_copy_from parm [bx] [cx] [dx] modify exact []
 #pragma aux blit_fill_row_5221 parm [ax] modify exact []
 #pragma aux back_buffer_fill parm [ax] modify exact []

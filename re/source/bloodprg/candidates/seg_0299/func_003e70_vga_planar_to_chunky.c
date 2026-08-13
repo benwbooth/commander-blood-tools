@@ -17,6 +17,7 @@ void CB_FAR vga_planar_to_chunky(
     cb_u16 plane;
 
 #if defined(__WATCOMC__)
+    _asm push ax;
     _asm cld;
 #endif
 
@@ -32,4 +33,8 @@ void CB_FAR vga_planar_to_chunky(
             pixel += BLOODPRG_VGA_PLANE_COUNT - 1u;
         } while (--count != 0u);
     }
+
+#if defined(__WATCOMC__)
+    _asm pop ax;
+#endif
 }

@@ -22,6 +22,7 @@ void far vga_planar_to_chunky(
     u16 count;
     u16 plane;
 
+    _asm push ax;
     _asm cld;
 
     for (plane = 0u; plane < VGA_PLANE_COUNT; ++plane) {
@@ -36,4 +37,6 @@ void far vga_planar_to_chunky(
             pixel += VGA_PLANE_COUNT - 1u;
         } while (--count != 0u);
     }
+
+    _asm pop ax;
 }

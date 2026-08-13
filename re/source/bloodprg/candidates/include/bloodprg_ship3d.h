@@ -57,7 +57,9 @@ typedef struct ship_3d_position_field {
     cb_u16 y;
 } ship_3d_position_field;
 
-extern volatile cb_u16 ship_3d_depth_offset; /* DS:0x2527 */
+extern volatile cb_u16 CB_GAME_DATA ship_3d_depth_offset; /* DS/GS:0x2527 */
+extern volatile cb_u8 CB_GAME_DATA
+        ship_3d_plane_blit_crop_enabled; /* DS/GS:0x252E */
 extern volatile cb_u8 ship_3d_depth_opening; /* DS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */

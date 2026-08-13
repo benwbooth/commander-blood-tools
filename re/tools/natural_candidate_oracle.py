@@ -12892,6 +12892,370 @@ def vga_planar_to_chunky_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def chunky_to_planar_framebuffer_vectors() -> list[dict[str, object]]:
+    entry = 0x3ECE
+    expected_hash = "3dea266474dc41ea3dd4f31b6d85b4a6196de6bb49c6989f64142e4bced98652"
+    if hashlib.sha256(EXE[entry : entry + 153]).hexdigest() != expected_hash:
+        raise AssertionError("0x3ece: recovered 153-byte body changed")
+
+    cases = [
+        {
+            "name": "gate_clear_full_page",
+            "source_offset": 0x0000,
+            "display_offset": 0x0000,
+            "gate": 0x00,
+            "depth": 0x0041,
+            "direction_flag": False,
+        },
+        {
+            "name": "even_gate_bits_ignored",
+            "source_offset": 0x1234,
+            "display_offset": 0x2468,
+            "gate": 0xFE,
+            "depth": 0x0041,
+            "direction_flag": False,
+        },
+        {
+            "name": "crop_depth_zero",
+            "source_offset": 0x1800,
+            "display_offset": 0x3400,
+            "gate": 0x01,
+            "depth": 0x0000,
+            "direction_flag": False,
+        },
+        {
+            "name": "crop_depth_one_and_wrap",
+            "source_offset": 0xD000,
+            "display_offset": 0xF100,
+            "gate": 0x03,
+            "depth": 0x0001,
+            "direction_flag": False,
+        },
+        {
+            "name": "crop_depth_sixty_four",
+            "source_offset": 0x7200,
+            "display_offset": 0x8400,
+            "gate": 0xFF,
+            "depth": 0x0040,
+            "direction_flag": False,
+        },
+        {
+            "name": "crop_depth_sixty_five_zero_count",
+            "source_offset": 0xFFE0,
+            "display_offset": 0xFFF0,
+            "gate": 0x01,
+            "depth": 0x0041,
+            "direction_flag": True,
+        },
+        {
+            "name": "crop_full_word_depth_wrap",
+            "source_offset": 0xE100,
+            "display_offset": 0xB000,
+            "gate": 0x01,
+            "depth": 0x0100,
+            "direction_flag": False,
+        },
+        {
+            "name": "source_destination_wrap_and_backward_df",
+            "source_offset": 0xF000,
+            "display_offset": 0xF800,
+            "gate": 0x00,
+            "depth": 0x0000,
+            "direction_flag": True,
+        },
+    ]
+
+    source_segment = 0x4000
+    game_segment = 0x6000
+    output_segment = 0x8000
+    trap_output_segment = 0xA000
+    stack_segment = 0xC000
+    return_address = 0x6FC0
+    stack_sentinel = bytes.fromhex("e13af24b035c146d")
+    expected_ports = [
+        (0x03C4, 2, 0x0102),
+        (0x03C4, 2, 0x0202),
+        (0x03C4, 2, 0x0402),
+        (0x03C4, 2, 0x0802),
+    ]
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+    vectors = []
+
+    def logic16_flags(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": (value & 0x8000) != 0,
+            "of": False,
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        source_offset = int(case["source_offset"])
+        display_offset = int(case["display_offset"])
+        gate = int(case["gate"])
+        depth = int(case["depth"])
+        direction_flag = bool(case["direction_flag"])
+
+        source_memory = bytearray(
+            ((index * 37 + (index >> 8) * 11 + case_index * 43) ^ 0xA5)
+            & 0xFF
+            for index in range(0x10000)
+        )
+        source_memory[0x2527:0x2529] = struct.pack("<H", depth ^ 0xFFFF)
+        source_memory[0x252E] = gate ^ 0x01
+        source_memory[0x5219:0x521D] = struct.pack(
+            "<HH", 0x2222, trap_output_segment
+        )
+        source_seed = bytes(source_memory)
+
+        game_memory = bytearray(
+            (index * 17 + case_index * 23 + 0x39) & 0xFF
+            for index in range(0x10000)
+        )
+        game_memory[0x2527:0x2529] = struct.pack("<H", depth)
+        game_memory[0x252E] = gate
+        game_memory[0x5219:0x521D] = struct.pack(
+            "<HH", display_offset, output_segment
+        )
+        initial_game = bytes(game_memory)
+
+        output_seed = bytes(
+            (index * 29 + case_index * 31 + 0x5B) & 0xFF
+            for index in range(0x10000)
+        )
+        trap_output_seed = bytes(
+            (index * 43 + case_index * 47 + 0x19) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory = bytearray(
+            (index * 13 + case_index * 19 + 0x6D) & 0xFF
+            for index in range(0x10000)
+        )
+        stack_memory[0xFF00 : 0xFF04 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        adjusted_source = source_offset
+        adjusted_destination = display_offset
+        byte_count = 16000
+        cropped = (gate & 1) != 0
+        if cropped:
+            adjusted_source = (adjusted_source + 0x2BC0) & 0xFFFF
+            adjusted_destination = (
+                adjusted_destination + 0x0AF0
+            ) & 0xFFFF
+            byte_count = 0x28A0
+            if depth != 0:
+                plane_depth_offset = (depth * 80) & 0xFFFF
+                adjusted_destination = (
+                    adjusted_destination + plane_depth_offset
+                ) & 0xFFFF
+                cropped_bytes = (plane_depth_offset * 2) & 0xFFFF
+                byte_count = (byte_count - cropped_bytes) & 0xFFFF
+                adjusted_source = (
+                    adjusted_source + ((cropped_bytes * 2) & 0xFFFF)
+                ) & 0xFFFF
+        early_return = cropped and depth != 0 and byte_count == 0
+
+        output_phases = [output_seed]
+        plane_payload_hashes = []
+        if not early_return:
+            output_model = bytearray(output_seed)
+            for plane in range(4):
+                payload = bytes(
+                    source_seed[
+                        (adjusted_source + plane + index * 4) & 0xFFFF
+                    ]
+                    for index in range(byte_count)
+                )
+                plane_payload_hashes.append(hashlib.sha256(payload).hexdigest())
+                for index, value in enumerate(payload):
+                    output_model[
+                        (adjusted_destination + index) & 0xFFFF
+                    ] = value
+                output_phases.append(bytes(output_model))
+
+        expected_phase_hashes = [
+            hashlib.sha256(phase).hexdigest() for phase in output_phases
+        ]
+        port_writes = []
+        observed_phase_hashes = []
+
+        def capture_output(
+            machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            plane = len(port_writes)
+            if plane >= len(expected_ports):
+                raise AssertionError(f"0x3ece {name}: unexpected extra OUT")
+            actual_phase = bytes(
+                machine.mem_read(output_segment * 16, 0x10000)
+            )
+            if actual_phase != output_phases[plane]:
+                mismatch = next(
+                    index
+                    for index, pair in enumerate(
+                        zip(actual_phase, output_phases[plane], strict=True)
+                    )
+                    if pair[0] != pair[1]
+                )
+                raise AssertionError(
+                    f"0x3ece {name}: phase {plane} differs at "
+                    f"{mismatch:#x}: {actual_phase[mismatch]:#x} != "
+                    f"{output_phases[plane][mismatch]:#x}"
+                )
+            observed_phase_hashes.append(
+                hashlib.sha256(actual_phase).hexdigest()
+            )
+            port_writes.append((port, size, value))
+
+        initial = {
+            "eax": 0xA1A11234 + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E50000 | source_offset,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": source_segment,
+            "es": 0x3000,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (source_segment, 0, source_seed),
+                (game_segment, 0, initial_game),
+                (output_segment, 0, output_seed),
+                (trap_output_segment, 0, trap_output_seed),
+                (stack_segment, 0, bytes(stack_memory)),
+            ],
+            output_handler=capture_output,
+            instruction_count=2000000,
+        )
+
+        expected_port_writes = [] if early_return else expected_ports
+        if port_writes != expected_port_writes:
+            raise AssertionError(
+                f"0x3ece {name}: ports={port_writes}, "
+                f"expected={expected_port_writes}"
+            )
+        expected_observed_hashes = (
+            [] if early_return else expected_phase_hashes[:-1]
+        )
+        if observed_phase_hashes != expected_observed_hashes:
+            raise AssertionError(
+                f"0x3ece {name}: observed plane phases differ"
+            )
+
+        output_after = bytes(
+            machine.mem_read(output_segment * 16, 0x10000)
+        )
+        if output_after != output_phases[-1]:
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(output_after, output_phases[-1], strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x3ece {name}: final output differs at {mismatch:#x}: "
+                f"{output_after[mismatch]:#x} != "
+                f"{output_phases[-1][mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(source_segment * 16, 0x10000)) != source_seed:
+            raise AssertionError(f"0x3ece {name}: source changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != initial_game:
+            raise AssertionError(f"0x3ece {name}: GS game data changed")
+        if bytes(
+            machine.mem_read(trap_output_segment * 16, 0x10000)
+        ) != trap_output_seed:
+            raise AssertionError(f"0x3ece {name}: DS pointer decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF04
+        if not early_return:
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFF0000
+            ) | 0x03C4
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x3ece {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x3ece {name}: far return CS differs")
+
+        if early_return:
+            expected_flags = logic16_flags(0)
+        else:
+            final_add_left = (
+                adjusted_source + byte_count * 4
+            ) & 0xFFFF
+            expected_flags = add16_flags(final_add_left, 3)
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag])
+            for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x3ece {name}: flags={actual_flags}, "
+                f"expected={expected_flags}"
+            )
+        if flags_after & 0x0400:
+            raise AssertionError(f"0x3ece {name}: direction flag was not cleared")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF04, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x3ece {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "source": [source_segment, source_offset],
+                "destination": [output_segment, display_offset],
+                "gate": gate,
+                "depth": depth,
+                "cropped": cropped,
+                "early_return": early_return,
+                "adjusted_source_offset": adjusted_source,
+                "adjusted_destination_offset": adjusted_destination,
+                "bytes_per_plane": byte_count,
+                "direction_flag_before": direction_flag,
+                "direction_flag_after": False,
+                "port_writes": [list(item) for item in port_writes],
+                "defined_flags": expected_flags,
+                "plane_payload_sha256": plane_payload_hashes,
+                "output_phase_sha256": expected_phase_hashes,
+                "source_sha256": hashlib.sha256(source_seed).hexdigest(),
+                "output_sha256": hashlib.sha256(output_after).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def framebuffer_rect_palette_remap_vectors() -> list[dict[str, object]]:
     entry = 0x339E
     expected_hash = "3edf4d119c626bdaff043093ff0bb74d417875603674e4fc430e5e584d0658ac"
@@ -45010,6 +45374,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_3e70_natural.json",
         vga_planar_to_chunky_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_3ece_natural.json",
+        chunky_to_planar_framebuffer_vectors(),
         args.check,
     )
     update_vector(
