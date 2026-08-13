@@ -17,6 +17,14 @@ typedef signed long cb_i32;
 #endif
 
 #if defined(__WATCOMC__)
+#define CB_INTERRUPT __interrupt
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define CB_INTERRUPT interrupt
+#else
+#define CB_INTERRUPT
+#endif
+
+#if defined(__WATCOMC__)
 #define CB_GAME_DATA __based(__segname("GAME_DATA"))
 #define CB_FS_DATA __based(__segname("FS_DATA"))
 #else

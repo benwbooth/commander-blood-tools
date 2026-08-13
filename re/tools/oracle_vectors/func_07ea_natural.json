@@ -1,0 +1,142 @@
+[
+  {
+    "name": "ordinary_vector",
+    "restored_vector": [
+      4660,
+      22136
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 9480,
+        "dx": 4660,
+        "ds": 22136,
+        "if": true
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        255
+      ],
+      [
+        64,
+        1,
+        255
+      ]
+    ],
+    "timer_active": 0,
+    "final_flags": 2775
+  },
+  {
+    "name": "zero_vector",
+    "restored_vector": [
+      0,
+      0
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 9480,
+        "dx": 0,
+        "ds": 0,
+        "if": true
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        255
+      ],
+      [
+        64,
+        1,
+        255
+      ]
+    ],
+    "timer_active": 0,
+    "final_flags": 582
+  },
+  {
+    "name": "maximum_vector",
+    "restored_vector": [
+      65535,
+      65535
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 9480,
+        "dx": 65535,
+        "ds": 65535,
+        "if": true
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        255
+      ],
+      [
+        64,
+        1,
+        255
+      ]
+    ],
+    "timer_active": 0,
+    "final_flags": 2578
+  },
+  {
+    "name": "mixed_vector",
+    "restored_vector": [
+      32768,
+      32767
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 9480,
+        "dx": 32768,
+        "ds": 32767,
+        "if": true
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        255
+      ],
+      [
+        64,
+        1,
+        255
+      ]
+    ],
+    "timer_active": 0,
+    "final_flags": 1603
+  }
+]

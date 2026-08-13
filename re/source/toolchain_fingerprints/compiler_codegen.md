@@ -2565,6 +2565,10 @@ LCS and then mnemonic similarity:
 | `byte_parser_store_word_1fa5` | medium, `-ox`, register | 3/10 | 0.3333 | 0.6667 | 0.3333 |
 | `vm_dic_lookup_result` | medium, `-ox`, register | 21/38 | 0.1429 | 0.6190 | 0.1429 |
 | `vm_special_slot_insert` | huge, `-ox`, register | 21/52 | 0.1905 | 0.7619 | 0.1905 |
+| `install_timer_isr_hook` | medium, `-ox -zdp`, register | 32/30 | 0.2188 | 0.7812 | 0.2188 |
+| `restore_timer_isr_hook` | medium, `-ox -zdp`, register | 20/22 | 0.2500 | 0.8500 | 0.3000 |
+| `install_ctrl_break_handler` | medium, `-ox -zdp`, register | 15/13 | 0.0667 | 0.7333 | 0.0667 |
+| `mouse_reset_hide` | medium, `-ox -zdp`, register | 19/27 | 0.2632 | 0.5263 | 0.2632 |
 
 ## Alien transform and projection candidate
 
@@ -2733,6 +2737,32 @@ mnemonic LCS is 36 of 56 and mnemonic multiset overlap is 38 of 56. A linked
 DOS executable verifies the recovered C with a real far request and an
 allocated paragraph-aligned data directory. Current-CS and caller `SS:BP`
 acquisition remain loader ABI adapters rather than game logic.
+
+## BLOODPRG timer, vector, and mouse candidates
+
+Four startup and teardown routines at `0x00079C`, `0x0007EA`, `0x000BFF`, and
+`0x000CEF` now have natural DOS C candidates. They use `_dos_getvect`,
+`_dos_setvect`, `_disable`, `_enable`, `outp`, and `int86`; there is no
+register-state object, generic memory accessor, or instruction interpreter.
+Typed based globals represent only the timer fields that the binary addresses
+through `GS`, and typed interrupt-function pointers represent the DOS vector
+boundary.
+
+Sixteen raw-binary vectors prove the saved and installed INT 08h handlers,
+INT 23h and INT 24h handler order, exact PIT control and divisor bytes,
+interrupt-enable timing, GS timer-state ownership against DS decoys, all three
+mouse-driver calls and their propagated register state, caller-register
+preservation, final flags, and far returns. The restore routine is named for
+its observed role even though the assembly inventory retains the older
+`program_pit` filename.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles all four candidates
+warning-free. Generated versus original instruction/byte counts are 34/92
+versus 32/78 for timer installation, 24/52 versus 20/41 for timer restoration,
+13/33 versus 15/26 for Ctrl-Break and critical-error vector installation, and
+27/78 versus 19/31 for mouse initialization. The source preserves the natural
+DOS API boundary; exact code shape would require narrow segment and direct-INT
+adapters rather than replacing the game logic with an emulation layer.
 
 ## Interpretation
 

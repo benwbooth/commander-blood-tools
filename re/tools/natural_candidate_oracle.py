@@ -408,6 +408,464 @@ def set_video_mode_saved_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def install_timer_isr_hook_vectors() -> list[dict[str, object]]:
+    entry = 0x079C
+    expected_hash = "f7eee5da7fe0d1a069465c1e93514586ad07e3e5bfe69a4786afae3d595347ba"
+    if hashlib.sha256(EXE[entry : entry + 78]).hexdigest() != expected_hash:
+        raise AssertionError("0x079c: recovered 78-byte body changed")
+
+    data_segment = 0x2000
+    game_segment = 0x2800
+    cases = (
+        ("ordinary_vector", 0x1234, 0x5678, 0x0202, 0x0AD7),
+        ("zero_vector", 0x0000, 0x0000, 0x0602, 0x0246),
+        ("maximum_vector", 0xFFFF, 0xFFFF, 0x0A93, 0x0A12),
+        ("mixed_vector", 0x8000, 0x7FFF, 0x0203, 0x0643),
+    )
+    vectors = []
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "if": 0x0200,
+        "df": 0x0400,
+        "of": 0x0800,
+    }
+
+    for case_index, (
+        name,
+        previous_offset,
+        previous_segment,
+        initial_flags,
+        dos_flags,
+    ) in enumerate(cases):
+        game_before = bytearray(
+            (index * 29 + case_index * 17 + 3) & 0xFF for index in range(14)
+        )
+        game_expected = bytearray(game_before)
+        struct.pack_into(
+            "<HHBBHH",
+            game_expected,
+            0,
+            previous_offset,
+            previous_segment,
+            1,
+            0x0B,
+            struct.unpack_from("<H", game_before, 6)[0],
+            3,
+        )
+        struct.pack_into("<H", game_expected, 10, 0x0019)
+        data_decoy = bytes(
+            (index * 31 + case_index * 11 + 5) & 0xFF for index in range(14)
+        )
+        initial = {
+            "ax": (0xA100 + case_index) & 0xFFFF,
+            "bx": (0xB200 + case_index) & 0xFFFF,
+            "cx": (0xC300 + case_index) & 0xFFFF,
+            "dx": (0xD400 + case_index) & 0xFFFF,
+            "si": (0xE500 + case_index) & 0xFFFF,
+            "di": (0xF600 + case_index) & 0xFFFF,
+            "bp": (0x9700 + case_index) & 0xFFFF,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": initial_flags,
+        }
+        interrupts: list[dict[str, int]] = []
+        outputs: list[tuple[int, int, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            call = {
+                "number": number,
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+            }
+            interrupts.append(call)
+            if len(interrupts) == 1:
+                machine.reg_write(UC_X86_REG_AX, 0xA508)
+                machine.reg_write(UC_X86_REG_BX, previous_offset)
+                machine.reg_write(UC_X86_REG_ES, previous_segment)
+                machine.reg_write(UC_X86_REG_EFLAGS, initial_flags ^ 0x0855)
+            else:
+                machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+                machine.reg_write(UC_X86_REG_EFLAGS, dos_flags)
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            entry,
+            0x07E9,
+            initial,
+            [
+                (data_segment, 0x0B1D, data_decoy),
+                (game_segment, 0x0B1D, bytes(game_before)),
+            ],
+            interrupt_handler=interrupt,
+            output_handler=output_port,
+        )
+        expected_interrupts = [
+            {
+                "number": 0x21,
+                "ax": 0x3508,
+                "bx": initial["bx"],
+                "dx": initial["dx"],
+                "ds": data_segment,
+                "es": initial["es"],
+            },
+            {
+                "number": 0x21,
+                "ax": 0x2508,
+                "bx": 0,
+                "dx": 0x0213,
+                "ds": 0,
+                "es": previous_segment,
+            },
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(
+                f"0x079c {name}: interrupts={interrupts}, "
+                f"expected={expected_interrupts}"
+            )
+        expected_outputs = [(0x43, 1, 0x36), (0x40, 1, 0x46), (0x40, 1, 0x17)]
+        if outputs != expected_outputs:
+            raise AssertionError(f"0x079c {name}: outputs={outputs}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B1D, 14)) != bytes(
+            game_expected
+        ):
+            raise AssertionError(f"0x079c {name}: timer state differs")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B1D, 14)) != data_decoy:
+            raise AssertionError(f"0x079c {name}: wrote the DS decoy")
+        for register in ("ax", "bx", "dx", "ds", "es"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x079c {name}: did not preserve {register}")
+        for register in ("cx", "si", "di", "bp", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x079c {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF00:
+            raise AssertionError(f"0x079c {name}: stack changed")
+        final_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        expected_flags = {
+            flag: bool((dos_flags | 0x0200) & mask)
+            for flag, mask in flag_masks.items()
+        }
+        actual_flags = {
+            flag: bool(final_flags & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x079c {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        vectors.append(
+            {
+                "name": name,
+                "previous_vector": [previous_offset, previous_segment],
+                "installed_vector": [0x0213, 0x0000],
+                "interrupts": interrupts,
+                "pit_outputs": [list(item) for item in outputs],
+                "timer_state": {
+                    "active": 1,
+                    "divider": 0x0B,
+                    "reload_ticks": 3,
+                    "subtick_limit": 0x19,
+                },
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
+def restore_timer_isr_hook_vectors() -> list[dict[str, object]]:
+    entry = 0x07EA
+    expected_hash = "6b36e730d0da3c9952d868446201d9934b9cfdde8c22f91040d445df1ec00867"
+    if hashlib.sha256(EXE[entry : entry + 41]).hexdigest() != expected_hash:
+        raise AssertionError("0x07ea: recovered 41-byte body changed")
+
+    data_segment = 0x2000
+    game_segment = 0x2800
+    cases = (
+        ("ordinary_vector", 0x1234, 0x5678, 0x0AD7),
+        ("zero_vector", 0x0000, 0x0000, 0x0246),
+        ("maximum_vector", 0xFFFF, 0xFFFF, 0x0A12),
+        ("mixed_vector", 0x8000, 0x7FFF, 0x0643),
+    )
+    vectors = []
+
+    for case_index, (name, previous_offset, previous_segment, dos_flags) in enumerate(
+        cases
+    ):
+        game_before = bytearray(
+            (index * 23 + case_index * 19 + 7) & 0xFF for index in range(8)
+        )
+        struct.pack_into("<HHB", game_before, 0, previous_offset, previous_segment, 1)
+        game_expected = bytearray(game_before)
+        game_expected[4] = 0
+        data_decoy = bytes(
+            (index * 31 + case_index * 13 + 9) & 0xFF for index in range(8)
+        )
+        initial = {
+            "ax": (0xA100 + case_index) & 0xFFFF,
+            "bx": (0xB200 + case_index) & 0xFFFF,
+            "cx": (0xC300 + case_index) & 0xFFFF,
+            "dx": (0xD400 + case_index) & 0xFFFF,
+            "si": (0xE500 + case_index) & 0xFFFF,
+            "di": (0xF600 + case_index) & 0xFFFF,
+            "bp": (0x9700 + case_index) & 0xFFFF,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2C00,
+            "gs": game_segment,
+            "flags": 0x0602 if case_index & 1 else 0x0202,
+        }
+        interrupts: list[dict[str, int]] = []
+        outputs: list[tuple[int, int, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "if": bool(machine.reg_read(UC_X86_REG_EFLAGS) & 0x0200),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+            machine.reg_write(UC_X86_REG_DX, 0xBEEF)
+            machine.reg_write(UC_X86_REG_EFLAGS, dos_flags)
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        machine = execute(
+            entry,
+            0x0812,
+            initial,
+            [
+                (data_segment, 0x0B1D, data_decoy),
+                (game_segment, 0x0B1D, bytes(game_before)),
+            ],
+            interrupt_handler=interrupt,
+            output_handler=output_port,
+        )
+        expected_interrupts = [
+            {
+                "number": 0x21,
+                "ax": 0x2508,
+                "dx": previous_offset,
+                "ds": previous_segment,
+                "if": True,
+            }
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x07ea {name}: interrupts={interrupts}")
+        expected_outputs = [(0x43, 1, 0x36), (0x40, 1, 0xFF), (0x40, 1, 0xFF)]
+        if outputs != expected_outputs:
+            raise AssertionError(f"0x07ea {name}: outputs={outputs}")
+        if bytes(machine.mem_read(game_segment * 16 + 0x0B1D, 8)) != bytes(
+            game_expected
+        ):
+            raise AssertionError(f"0x07ea {name}: timer state differs")
+        if bytes(machine.mem_read(data_segment * 16 + 0x0B1D, 8)) != data_decoy:
+            raise AssertionError(f"0x07ea {name}: wrote the DS decoy")
+        for register in ("ax", "dx", "ds"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x07ea {name}: did not preserve {register}")
+        for register in ("bx", "cx", "si", "di", "bp", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x07ea {name}: changed {register}")
+        vectors.append(
+            {
+                "name": name,
+                "restored_vector": [previous_offset, previous_segment],
+                "interrupts": interrupts,
+                "pit_outputs": [list(item) for item in outputs],
+                "timer_active": 0,
+                "final_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7,
+            }
+        )
+    return vectors
+
+
+def install_ctrl_break_handler_vectors() -> list[dict[str, object]]:
+    entry = 0x0BFF
+    expected_hash = "0576dc05ccd853136e3c3e3c936e4588052e3a92f626c1f9b14ccf53621064c1"
+    if hashlib.sha256(EXE[entry : entry + 26]).hexdigest() != expected_hash:
+        raise AssertionError("0x0bff: recovered 26-byte body changed")
+
+    vectors = []
+    for case_index, flags_after in enumerate((0x0202, 0x0AD7, 0x0646, 0x0A12)):
+        initial = {
+            "ax": (0xA100 + case_index) & 0xFFFF,
+            "bx": (0xB200 + case_index) & 0xFFFF,
+            "cx": (0xC300 + case_index) & 0xFFFF,
+            "dx": (0xD400 + case_index) & 0xFFFF,
+            "si": (0xE500 + case_index) & 0xFFFF,
+            "di": (0xF600 + case_index) & 0xFFFF,
+            "bp": (0x9700 + case_index) & 0xFFFF,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "fs": 0x2800,
+            "gs": 0x2C00,
+            "flags": 0x0202,
+        }
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                }
+            )
+            if len(interrupts) == 1:
+                machine.reg_write(UC_X86_REG_AX, 0x2523)
+            else:
+                machine.reg_write(UC_X86_REG_AX, 0xDEAD)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags_after)
+
+        machine = execute(
+            entry,
+            0x0C18,
+            initial,
+            [],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = [
+            {"number": 0x21, "ax": 0x2523, "dx": 0x0619, "ds": 0},
+            {"number": 0x21, "ax": 0x2524, "dx": 0x061A, "ds": 0},
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x0bff case {case_index}: {interrupts}")
+        for register in ("ax", "dx", "ds"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0bff: did not preserve {register}")
+        for register in ("bx", "cx", "si", "di", "bp", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0bff: changed {register}")
+        vectors.append(
+            {
+                "case": case_index,
+                "vectors": [[0x23, 0x0619, 0], [0x24, 0x061A, 0]],
+                "interrupts": interrupts,
+                "final_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7,
+            }
+        )
+    return vectors
+
+
+def mouse_reset_hide_vectors() -> list[dict[str, object]]:
+    entry = 0x0CEF
+    expected_hash = "93fcb283730c84a7e6d09b0f04862d9ca68850294f97a8ff107f627150a4999b"
+    if hashlib.sha256(EXE[entry : entry + 31]).hexdigest() != expected_hash:
+        raise AssertionError("0x0cef: recovered 31-byte body changed")
+
+    vectors = []
+    for case_index, final_flags in enumerate((0x0202, 0x0AD7, 0x0646, 0x0A12)):
+        initial = {
+            "ax": (0xA100 + case_index) & 0xFFFF,
+            "bx": (0xB200 + case_index) & 0xFFFF,
+            "cx": (0xC300 + case_index) & 0xFFFF,
+            "dx": (0xD400 + case_index) & 0xFFFF,
+            "si": (0xE500 + case_index) & 0xFFFF,
+            "di": (0xF600 + case_index) & 0xFFFF,
+            "bp": (0x9700 + case_index) & 0xFFFF,
+            "ds": 0x2000,
+            "es": 0x2400,
+            "fs": 0x2800,
+            "gs": 0x2C00,
+            "flags": 0x0202,
+        }
+        driver_results = (
+            (0x1111 + case_index, 0x2222, 0x3333, 0x4444, 0x5555),
+            (0x6666 + case_index, 0x7777, 0x8888, 0x9999, 0xAAAA),
+            (0xBBBB + case_index, 0xCCCC, 0xDDDD, 0xEEEE, 0xFFFF),
+        )
+        interrupts: list[dict[str, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            interrupts.append(
+                {
+                    "number": number,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                }
+            )
+            ax, bx, cx, dx, es = driver_results[len(interrupts) - 1]
+            machine.reg_write(UC_X86_REG_AX, ax & 0xFFFF)
+            machine.reg_write(UC_X86_REG_BX, bx)
+            machine.reg_write(UC_X86_REG_CX, cx)
+            machine.reg_write(UC_X86_REG_DX, dx)
+            machine.reg_write(UC_X86_REG_ES, es)
+            if len(interrupts) == 3:
+                machine.reg_write(UC_X86_REG_EFLAGS, final_flags)
+
+        machine = execute(
+            entry,
+            0x0D0D,
+            initial,
+            [],
+            interrupt_handler=interrupt,
+        )
+        expected_interrupts = [
+            {
+                "number": 0x33,
+                "ax": 0,
+                "bx": initial["bx"],
+                "cx": initial["cx"],
+                "dx": initial["dx"],
+                "es": initial["es"],
+            },
+            {
+                "number": 0x33,
+                "ax": 2,
+                "bx": driver_results[0][1],
+                "cx": driver_results[0][2],
+                "dx": driver_results[0][3],
+                "es": driver_results[0][4],
+            },
+            {
+                "number": 0x33,
+                "ax": 0x000F,
+                "bx": driver_results[1][1],
+                "cx": 0x000C,
+                "dx": 0x000C,
+                "es": driver_results[1][4],
+            },
+        ]
+        if interrupts != expected_interrupts:
+            raise AssertionError(f"0x0cef case {case_index}: {interrupts}")
+        for register in ("ax", "bx", "cx", "dx", "es"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0cef: did not preserve {register}")
+        for register in ("si", "di", "bp", "ds", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x0cef: changed {register}")
+        vectors.append(
+            {
+                "case": case_index,
+                "interrupts": interrupts,
+                "final_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0x0FD7,
+            }
+        )
+    return vectors
+
+
 def bcd_to_binary_vectors() -> list[dict[str, object]]:
     vectors = []
     for value in range(0x100):
@@ -26501,6 +26959,26 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0cc0_natural.json",
         set_video_mode_saved_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_079c_natural.json",
+        install_timer_isr_hook_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_07ea_natural.json",
+        restore_timer_isr_hook_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0bff_natural.json",
+        install_ctrl_break_handler_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0cef_natural.json",
+        mouse_reset_hide_vectors(),
         args.check,
     )
     update_vector(

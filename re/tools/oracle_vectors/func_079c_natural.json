@@ -1,0 +1,250 @@
+[
+  {
+    "name": "ordinary_vector",
+    "previous_vector": [
+      4660,
+      22136
+    ],
+    "installed_vector": [
+      531,
+      0
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 13576,
+        "bx": 45568,
+        "dx": 54272,
+        "ds": 8192,
+        "es": 9216
+      },
+      {
+        "number": 33,
+        "ax": 9480,
+        "bx": 0,
+        "dx": 531,
+        "ds": 0,
+        "es": 22136
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        70
+      ],
+      [
+        64,
+        1,
+        23
+      ]
+    ],
+    "timer_state": {
+      "active": 1,
+      "divider": 11,
+      "reload_ticks": 3,
+      "subtick_limit": 25
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "zero_vector",
+    "previous_vector": [
+      0,
+      0
+    ],
+    "installed_vector": [
+      531,
+      0
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 13576,
+        "bx": 45569,
+        "dx": 54273,
+        "ds": 8192,
+        "es": 9216
+      },
+      {
+        "number": 33,
+        "ax": 9480,
+        "bx": 0,
+        "dx": 531,
+        "ds": 0,
+        "es": 0
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        70
+      ],
+      [
+        64,
+        1,
+        23
+      ]
+    ],
+    "timer_state": {
+      "active": 1,
+      "divider": 11,
+      "reload_ticks": 3,
+      "subtick_limit": 25
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": false
+    }
+  },
+  {
+    "name": "maximum_vector",
+    "previous_vector": [
+      65535,
+      65535
+    ],
+    "installed_vector": [
+      531,
+      0
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 13576,
+        "bx": 45570,
+        "dx": 54274,
+        "ds": 8192,
+        "es": 9216
+      },
+      {
+        "number": 33,
+        "ax": 9480,
+        "bx": 0,
+        "dx": 531,
+        "ds": 0,
+        "es": 65535
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        70
+      ],
+      [
+        64,
+        1,
+        23
+      ]
+    ],
+    "timer_state": {
+      "active": 1,
+      "divider": 11,
+      "reload_ticks": 3,
+      "subtick_limit": 25
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "if": true,
+      "df": false,
+      "of": true
+    }
+  },
+  {
+    "name": "mixed_vector",
+    "previous_vector": [
+      32768,
+      32767
+    ],
+    "installed_vector": [
+      531,
+      0
+    ],
+    "interrupts": [
+      {
+        "number": 33,
+        "ax": 13576,
+        "bx": 45571,
+        "dx": 54275,
+        "ds": 8192,
+        "es": 9216
+      },
+      {
+        "number": 33,
+        "ax": 9480,
+        "bx": 0,
+        "dx": 531,
+        "ds": 0,
+        "es": 32767
+      }
+    ],
+    "pit_outputs": [
+      [
+        67,
+        1,
+        54
+      ],
+      [
+        64,
+        1,
+        70
+      ],
+      [
+        64,
+        1,
+        23
+      ]
+    ],
+    "timer_state": {
+      "active": 1,
+      "divider": 11,
+      "reload_ticks": 3,
+      "subtick_limit": 25
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "if": true,
+      "df": true,
+      "of": false
+    }
+  }
+]
