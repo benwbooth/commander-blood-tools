@@ -118,6 +118,14 @@ void CB_NEAR presentation_mode_dispatch(void); /* 0x0078D0 */
 void CB_NEAR camera_nav_update(void); /* 0x00792D */
 void CB_NEAR screen_mode_update(
         cb_u16 queued_scene_link_target); /* 0x0079E5; original input BP */
+void CB_FAR bridge_render_frame(
+        cb_u16 scene_link_target); /* 0x0077E0; original input BP */
+void CB_NEAR screen_flags_init(void); /* 0x00959D */
+void CB_NEAR camera_fsm_state_gate(void); /* 0x008A4E */
+void CB_NEAR nav_camera_state_check(void); /* 0x008CCE */
+void CB_NEAR mode_gate_27e8(void); /* 0x008BAB */
+void CB_NEAR nav_state_gate(void); /* 0x0082E8 */
+void CB_NEAR nav_choice_dispatch(void); /* 0x0085E2 */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_0(

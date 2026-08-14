@@ -51210,6 +51210,525 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bridge_render_frame_vectors() -> list[dict[str, object]]:
+    entry = 0x77E0
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    extra_segment = 0x6800
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    helper_entries = {
+        0x9710: ("dlg_line_id_scene_dispatch", 0x0971, 0x0000, True),
+        0x959D: ("screen_flags_init", 0x0000, 0x959D, False),
+        0x9656: ("bridge_steer_update", 0x0000, 0x9656, True),
+        0x954A: ("page_flip", 0x0000, 0x954A, True),
+        0x8A4E: ("camera_fsm_state_gate", 0x0000, 0x8A4E, False),
+        0x9510: ("presentation_mode_bits_update", 0x0000, 0x9510, False),
+        0x3DF7: ("sprite_slot_commit_dirty_range", 0x0299, 0x1467, True),
+        0x78D0: ("presentation_mode_dispatch", 0x0000, 0x78D0, False),
+        0x7D7B: ("nav_actor_slot_update_loop", 0x0000, 0x7D7B, False),
+        0x3E71: ("sprite_slot_dirty_range_render", 0x0299, 0x14E1, True),
+        0x4A9D: ("dirty_rects_copy_secondary_to_primary", 0x0299, 0x210D, True),
+        0x8CCE: ("nav_camera_state_check", 0x0000, 0x8CCE, False),
+        0x792D: ("camera_nav_update", 0x0000, 0x792D, False),
+        0x79E5: ("screen_mode_update", 0x0000, 0x79E5, False),
+        0x8BAB: ("mode_gate_27e8", 0x0000, 0x8BAB, False),
+        0x82E8: ("nav_state_gate", 0x0000, 0x82E8, False),
+        0x85E2: ("nav_choice_dispatch", 0x0000, 0x85E2, False),
+        0x2D9E: ("framebuffer_rect_palette_remap", 0x0299, 0x040E, True),
+    }
+    expected_hash = "fd36735a458af5a55d7422bf38c310ba96093914eb821ddf91d58859960bd86d"
+    if hashlib.sha256(EXE[entry : entry + 240]).hexdigest() != expected_hash:
+        raise AssertionError("0x77e0: recovered 240-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "inactive", "ui": 0},
+        {"name": "inactive_high_word", "ui": 0x8000},
+        {"name": "active_high_word", "ui": 0x8001},
+        {"name": "early_scene_dispatch", "transition_phase": 2},
+        {"name": "transition_high_bit_ignored", "transition_phase": 0x80},
+        {"name": "screen_rebuild_initializes", "rebuild": 1},
+        {
+            "name": "screen_rebuild_callback_sets_transition",
+            "rebuild": 1,
+            "screen_flags_transition": 1,
+        },
+        {"name": "bridge_changed_left_half", "bridge_changed": True, "mouse_x": 160},
+        {"name": "bridge_changed_right_half", "bridge_changed": True, "mouse_x": 161},
+        {"name": "transition_pending_renders_sprite_range", "nav_transition": 1},
+        {"name": "transition_high_bit_uses_dirty_copy", "nav_transition": 0x80},
+        {"name": "queued_scene_suppresses_dirty_copy", "queue": 1},
+        {"name": "queue_high_bit_ignored", "queue": 0x80},
+        {"name": "camera_state_suppresses_dirty_copy", "camera_state": 0x80},
+        {"name": "actor_callback_sets_queue", "nav_actor_queue": 1},
+        {"name": "screen_callback_sets_frame_ready", "screen_mode_frame": 1},
+        {"name": "frame_ready_without_completion", "frame_ready": 1},
+        {"name": "frame_ready_high_bit_ignored", "frame_ready": 0x80},
+        {"name": "late_completion_remaps", "frame_ready": 1, "completion": 1},
+        {"name": "completion_high_bit_ignored", "frame_ready": 1, "completion": 0x80},
+        {
+            "name": "choice_callback_completes",
+            "frame_ready": 1,
+            "nav_choice_completion": 1,
+        },
+    ]
+
+    def read_word(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def write_word(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def logic_flags(value: int) -> dict[str, bool]:
+        value &= 0xFF
+        return {
+            "cf": False,
+            "pf": value.bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & 0x80),
+            "of": False,
+        }
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui = int(case.get("ui", 1)) & 0xFFFF
+        transition_phase = int(case.get("transition_phase", 0)) & 0xFF
+        rebuild = int(case.get("rebuild", 0)) & 0xFF
+        nav_transition = int(case.get("nav_transition", 0)) & 0xFF
+        mouse_x_value = int(case.get("mouse_x", 200)) & 0xFFFF
+        queue = int(case.get("queue", 0)) & 0xFF
+        camera_state = int(case.get("camera_state", 0)) & 0xFF
+        frame_ready = int(case.get("frame_ready", 0)) & 0xFF
+        completion = int(case.get("completion", 0)) & 0xFF
+        bridge_changed = bool(case.get("bridge_changed", False))
+        entry_context = (0x5100 + case_index * 0x17) & 0xFFFF
+        bridge_context = (0x6200 + case_index * 0x1D) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 23 + (offset >> 8) * 7 + case_index * 31 + 0x71)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + case_index * 19 + 0xA5) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x2792] = transition_phase
+        write_word(data_before, 0x2793, ui)
+        data_before[0x27D9] = rebuild
+        data_before[0x27DA] = nav_transition
+        write_word(data_before, 0x0A2A, mouse_x_value)
+        data_before[0x1FB2] = queue
+        data_before[0x278B] = camera_state
+        data_before[0x0DB8] = frame_ready
+        data_before[0x27E5] = 0x5A
+        write_word(data_before, 0x0A32, 0xA1B2)
+        write_word(data_before, 0x0A36, 0xC3D4)
+        write_word(data_before, 0x5249, 0xE5F6)
+        game_before[0x27E5] = completion
+        expected_data = bytearray(data_before)
+        expected_game = bytearray(game_before)
+
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before = bytearray(
+            (offset * 7 + case_index * 37 + 0x63) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 12] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | entry_context,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        expected_calls: list[dict[str, object]] = []
+        current_ds = data_segment
+        current_es = extra_segment
+        current_bp = entry_context
+        final_si = initial["esi"] & 0xFFFF
+        final_di = initial["edi"] & 0xFFFF
+
+        def state_snapshot() -> dict[str, int]:
+            return {
+                "presentation_state": read_word(expected_data, 0x0A32),
+                "previous_state": read_word(expected_data, 0x0A36),
+                "clip_snapshot": read_word(expected_data, 0x5249),
+                "queue": expected_data[0x1FB2],
+                "frame_ready": expected_data[0x0DB8],
+                "nav_transition": expected_data[0x27DA],
+                "completion": expected_game[0x27E5],
+            }
+
+        def add_call(call: str, **arguments: object) -> None:
+            _name, cs, ip, far_return = helper_entries[
+                next(
+                    address
+                    for address, helper in helper_entries.items()
+                    if helper[0] == call
+                )
+            ]
+            expected_calls.append(
+                {
+                    "call": call,
+                    "cs": cs,
+                    "ip": ip,
+                    "sp": 0xFEF0 if far_return else 0xFEF2,
+                    "ds": current_ds,
+                    "es": current_es,
+                    "bp": current_bp,
+                    **state_snapshot(),
+                    **arguments,
+                }
+            )
+
+        active = (ui & 1) != 0
+        early_dispatch = active and (transition_phase & 2) != 0
+        remapped = False
+        if active:
+            current_es = game_segment
+            if early_dispatch:
+                add_call(
+                    "dlg_line_id_scene_dispatch",
+                    link_target=entry_context,
+                )
+            else:
+                if (rebuild & 1) != 0:
+                    write_word(expected_data, 0x0A32, 1)
+                    write_word(expected_data, 0x0A36, 1)
+                    add_call("screen_flags_init")
+                    if int(case.get("screen_flags_transition", 0)) != 0:
+                        expected_data[0x27DA] = int(
+                            case["screen_flags_transition"]
+                        ) & 0xFF
+
+                add_call(
+                    "bridge_steer_update",
+                    output_context=bridge_context,
+                    view_changed=bridge_changed,
+                )
+                current_bp = bridge_context
+                if bridge_changed:
+                    write_word(expected_data, 0x0A32, 2)
+                    if mouse_x_value <= 160:
+                        write_word(expected_data, 0x0A32, 3)
+                    add_call("page_flip")
+
+                if (expected_data[0x27DA] & 1) != 0:
+                    add_call("camera_fsm_state_gate")
+                add_call("presentation_mode_bits_update")
+                add_call(
+                    "sprite_slot_commit_dirty_range",
+                    first_object=0,
+                    last_object=31,
+                )
+                write_word(expected_data, 0x5249, 1)
+                add_call("presentation_mode_dispatch")
+                add_call("nav_actor_slot_update_loop")
+                if int(case.get("nav_actor_queue", 0)) != 0:
+                    expected_data[0x1FB2] = int(case["nav_actor_queue"]) & 0xFF
+
+                if (expected_data[0x1FB2] & 1) == 0:
+                    if (expected_data[0x27DA] & 1) != 0:
+                        add_call(
+                            "sprite_slot_dirty_range_render",
+                            first_object=20,
+                            last_object=31,
+                        )
+                    elif expected_data[0x278B] == 0:
+                        final_di = 0x6612
+                        add_call(
+                            "dirty_rects_copy_secondary_to_primary",
+                            rectangles_segment=game_segment,
+                            rectangles_offset=0x6612,
+                        )
+
+                add_call("nav_camera_state_check")
+                add_call("camera_nav_update")
+                add_call(
+                    "screen_mode_update",
+                    link_target=bridge_context,
+                )
+                if int(case.get("screen_mode_frame", 0)) != 0:
+                    expected_data[0x0DB8] = int(case["screen_mode_frame"]) & 0xFF
+
+                if (expected_data[0x0DB8] & 1) != 0:
+                    add_call(
+                        "sprite_slot_dirty_range_render",
+                        first_object=1,
+                        last_object=19,
+                    )
+                    current_ds = game_segment
+                    current_es = game_segment
+                    add_call("mode_gate_27e8")
+                    add_call("nav_state_gate")
+                    add_call("nav_choice_dispatch")
+                    if int(case.get("nav_choice_completion", 0)) != 0:
+                        expected_game[0x27E5] = int(
+                            case["nav_choice_completion"]
+                        ) & 0xFF
+                    if (expected_game[0x27E5] & 1) != 0:
+                        current_bp = 44
+                        final_si = 0x6011
+                        add_call(
+                            "framebuffer_rect_palette_remap",
+                            table_segment=game_segment,
+                            table_offset=0x6011,
+                            x=137,
+                            y=139,
+                            width=50,
+                            height=44,
+                        )
+                        remapped = True
+
+        actual_calls: list[dict[str, object]] = []
+
+        def machine_state_snapshot(machine: Uc) -> dict[str, int]:
+            return {
+                "presentation_state": struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0A32, 2)
+                )[0],
+                "previous_state": struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0A36, 2)
+                )[0],
+                "clip_snapshot": struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x5249, 2)
+                )[0],
+                "queue": machine.mem_read(data_segment * 16 + 0x1FB2, 1)[0],
+                "frame_ready": machine.mem_read(
+                    data_segment * 16 + 0x0DB8, 1
+                )[0],
+                "nav_transition": machine.mem_read(
+                    data_segment * 16 + 0x27DA, 1
+                )[0],
+                "completion": machine.mem_read(
+                    game_segment * 16 + 0x27E5, 1
+                )[0],
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helper_entries.get(address)
+            if helper is None:
+                return
+            call, expected_cs, expected_ip, _far_return = helper
+            event: dict[str, object] = {
+                "call": call,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                **machine_state_snapshot(machine),
+            }
+            if event["cs"] != expected_cs or event["ip"] != expected_ip:
+                raise AssertionError(f"0x77e0 {name}: bad helper transfer {event}")
+            if call in ("dlg_line_id_scene_dispatch", "screen_mode_update"):
+                event["link_target"] = machine.reg_read(UC_X86_REG_BP)
+            elif call == "bridge_steer_update":
+                event["output_context"] = bridge_context
+                event["view_changed"] = bridge_changed
+            elif call in (
+                "sprite_slot_commit_dirty_range",
+                "sprite_slot_dirty_range_render",
+            ):
+                event["first_object"] = machine.reg_read(UC_X86_REG_AX)
+                event["last_object"] = machine.reg_read(UC_X86_REG_BX)
+            elif call == "dirty_rects_copy_secondary_to_primary":
+                event["rectangles_segment"] = machine.reg_read(UC_X86_REG_ES)
+                event["rectangles_offset"] = machine.reg_read(UC_X86_REG_DI)
+            elif call == "framebuffer_rect_palette_remap":
+                event.update(
+                    {
+                        "table_segment": machine.reg_read(UC_X86_REG_DS),
+                        "table_offset": machine.reg_read(UC_X86_REG_SI),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            actual_calls.append(event)
+
+            if call == "screen_flags_init" and int(
+                case.get("screen_flags_transition", 0)
+            ) != 0:
+                machine.mem_write(
+                    data_segment * 16 + 0x27DA,
+                    bytes((int(case["screen_flags_transition"]) & 0xFF,)),
+                )
+            elif call == "nav_actor_slot_update_loop" and int(
+                case.get("nav_actor_queue", 0)
+            ) != 0:
+                machine.mem_write(
+                    data_segment * 16 + 0x1FB2,
+                    bytes((int(case["nav_actor_queue"]) & 0xFF,)),
+                )
+            elif call == "screen_mode_update" and int(
+                case.get("screen_mode_frame", 0)
+            ) != 0:
+                machine.mem_write(
+                    data_segment * 16 + 0x0DB8,
+                    bytes((int(case["screen_mode_frame"]) & 0xFF,)),
+                )
+            elif call == "nav_choice_dispatch" and int(
+                case.get("nav_choice_completion", 0)
+            ) != 0:
+                machine.mem_write(
+                    game_segment * 16 + 0x27E5,
+                    bytes((int(case["nav_choice_completion"]) & 0xFF,)),
+                )
+
+        stub_memory = [(0, return_address, b"\xCC")]
+        for helper_entry, (_call, _cs, _ip, far_return) in helper_entries.items():
+            if helper_entry == 0x9656:
+                bridge_stub = (
+                    b"\xBD"
+                    + struct.pack("<H", bridge_context)
+                    + (b"\xF9" if bridge_changed else b"\xF8")
+                    + b"\xCB"
+                )
+                stub_memory.append((0, helper_entry, bridge_stub))
+            else:
+                stub_memory.append(
+                    (0, helper_entry, b"\xCB" if far_return else b"\xC3")
+                )
+        stub_memory.extend(
+            [
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (extra_segment, 0, extra_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ]
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            stub_memory,
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x77e0 {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x77e0 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x77e0 {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, "
+                f"expected={expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x77e0 {name}: ES decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        if active:
+            expected_registers["es"] = game_segment
+        if active and not early_dispatch and (expected_data[0x0DB8] & 1) != 0:
+            expected_registers["ds"] = game_segment
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | final_si
+        expected_registers["edi"] = (
+            initial["edi"] & 0xFFFF0000
+        ) | final_di
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x77e0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x77e0 {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x77e0 {name}: caller stack changed")
+
+        if not active:
+            terminal_value = ui & 1
+        elif early_dispatch:
+            terminal_value = transition_phase & 2
+        elif (expected_data[0x0DB8] & 1) == 0:
+            terminal_value = expected_data[0x0DB8] & 1
+        else:
+            terminal_value = expected_game[0x27E5] & 1
+        expected_flags = logic_flags(terminal_value)
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x77e0 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "ui": ui,
+                "transition_phase": transition_phase,
+                "bridge_changed": bridge_changed,
+                "entry_context": entry_context,
+                "bridge_context": bridge_context,
+                "presentation_state_after": read_word(expected_data, 0x0A32),
+                "queue_after": expected_data[0x1FB2],
+                "frame_ready_after": expected_data[0x0DB8],
+                "completion_after": expected_game[0x27E5],
+                "final_remap": remapped,
+                "calls": expected_calls,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_mode_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x78D0
     data_segment = 0x4400
@@ -71295,6 +71814,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77a9_natural.json",
         music_voc_name_patcher_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_77e0_natural.json",
+        bridge_render_frame_vectors(),
         args.check,
     )
     update_vector(

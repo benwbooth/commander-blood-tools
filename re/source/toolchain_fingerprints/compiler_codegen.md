@@ -4768,6 +4768,37 @@ resource/DOS adapters that preserve the recovered result conventions. Direct
 replacement additionally needs the original helper register ABIs and exact
 register/flag envelope.
 
+## BLOODPRG bridge render-frame coordinator candidate
+
+`0x0077E0` is the bridge's per-frame coordinator. It gates the entire pass on
+UI bit zero and gives transition-phase bit `0x02` an early scene-dispatch path.
+The main path optionally publishes both presentation states before rebuilding
+screen flags, then calls `bridge_steer_update`. The original steering return is
+carry plus a live `BP` scene context; the natural API represents those values
+as a Boolean and an explicitly updated local.
+
+A changed view selects presentation state two or three at the unsigned mouse-x
+boundary 160 and flips the page. The routine then services transition state,
+commits sprite slots 0 through 31, publishes the clip snapshot, updates the
+presentation and six navigation actors, and chooses one of the 20-through-31
+dirty render or GS dirty-list copy paths. Camera and montage updates follow.
+When a frame is ready it additionally renders slots 1 through 19, switches to
+the game-data navigation pass, and remaps rectangle `(137,139,50,44)` only when
+the completion low bit is set.
+
+Twenty-one patched-helper vectors cover every gate, the exact helper order and
+arguments, unsigned mouse edges 160/161, high-bit-only state values, callback
+mutations of transition, queue, frame-ready, and completion state, both sprite
+ranges, dirty-copy ownership, late DS/ES ownership, remap geometry, all writes,
+register and segment residue, defined flags, stack integrity, and `RETF`.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
+warning-free to 85 instructions/248 bytes versus the original 78/240, with
+89.74 percent mnemonic-multiset overlap and no inline assembly. Full-source
+integration uses the explicit scene-context contract. Direct replacement still
+needs adapters for initial `ES=GS`, the original carry/live-`BP` steering
+result, the late `DS=ES=GS` transition, and the exact register/flag envelope.
+
 ## BLOODPRG presentation mode dispatch candidate
 
 `0x0078D0` selects the hit rectangle embedded in navigation actor slot zero for
