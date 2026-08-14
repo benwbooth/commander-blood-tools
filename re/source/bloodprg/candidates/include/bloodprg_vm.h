@@ -79,6 +79,7 @@ extern volatile cb_u8 vm_execution_enabled; /* GS:0x67A8 */
 extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
+extern volatile cb_u16 vm_query_mode_word;   /* GS:0x67AD; includes 0x67AE */
 extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
@@ -176,6 +177,8 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
+#pragma aux vm_token_advance parm [ds si] value [ds si] modify exact [si]
+#pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_op_a3_collect modify exact []
 #pragma aux vm_token_special parm [ax] [si] value [si] modify exact [si]
@@ -234,6 +237,10 @@ void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
+/* DS is the segment half of this far-pointer register contract. */
+bloodprg_vm_image_ptr CB_NEAR vm_token_advance(
+        bloodprg_vm_image_ptr script_bytes); /* 0x0062B6 */
+cb_u16 CB_NEAR vm_cod_scan(cb_u16 object_offset); /* 0x00739B */
 cb_u16 CB_NEAR vm_record_lookup_by_threshold(cb_u16 threshold); /* 0x006034 */
 const cb_u8 CB_NEAR *CB_NEAR vm_token_special(cb_u16 terminator,
         const cb_u8 CB_NEAR *script_bytes); /* 0x006293 */

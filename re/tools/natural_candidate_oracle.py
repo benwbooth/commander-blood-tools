@@ -4224,6 +4224,424 @@ def dlg_menu_words_inline_reveal_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_cod_scan_vectors() -> list[dict[str, object]]:
+    entry = 0x739B
+    return_address = 0xF39B
+    expected_hash = "378ed47245448b5c6573030e6e2128dd0a22c3ce1d73c1ac36ebd24239b55973"
+    token_advance_hash = "842c4deffde9b5b7b2a580569f372312d12238562730ca49ce23f5d062ea68d2"
+    token_special_hash = "a3ecf862dea3865807f3c95f91722c5c5e055832af9206d61ca8117b16f98d44"
+    field_offset_hash = "7dbb54cd24e4f0a70c96b557a988933bd79ff057be6881d5817d38fdb14ea932"
+    descriptor_hash = "abf6a5b0fa77c787b93c83a22f42116b7e3b5bc02f5481551102d8c3ad9befeb"
+    if hashlib.sha256(EXE[entry : entry + 110]).hexdigest() != expected_hash:
+        raise AssertionError("0x739b: recovered 110-byte body changed")
+    if hashlib.sha256(EXE[0x62B6 : 0x62B6 + 131]).hexdigest() != token_advance_hash:
+        raise AssertionError("0x739b: vm_token_advance dependency changed")
+    if hashlib.sha256(EXE[0x6293 : 0x6293 + 16]).hexdigest() != token_special_hash:
+        raise AssertionError("0x739b: vm_token_special dependency changed")
+    if hashlib.sha256(EXE[0x6023 : 0x6023 + 17]).hexdigest() != field_offset_hash:
+        raise AssertionError("0x739b: vm_field_offset dependency changed")
+    descriptors = EXE[0x14338 : 0x14338 + 192]
+    if hashlib.sha256(descriptors).hexdigest() != descriptor_hash:
+        raise AssertionError("0x739b: VM opcode descriptor table changed")
+
+    def a6_token(object_offset: int, flags: int, words: tuple[int, ...] = ()) -> bytes:
+        payload = b"".join(struct.pack("<H", word) for word in (*words, 0))
+        return (
+            bytes([0xA6])
+            + struct.pack("<H", object_offset)
+            + b"\x35\x79"
+            + bytes([flags])
+            + payload
+        )
+
+    def stream_bytes(
+        tokens: tuple[bytes, ...], terminator: int, suffix: bytes = b""
+    ) -> tuple[bytes, list[int]]:
+        image = bytearray()
+        a6_offsets = []
+        for token in tokens:
+            if token[0] == 0xA6:
+                a6_offsets.append(len(image))
+            image.extend(token)
+        image.append(terminator)
+        image.extend(suffix)
+        return bytes(image), a6_offsets
+
+    cases = (
+        {
+            "name": "zero_code_offset_and_plain_tokens",
+            "object_offset": 0x0040,
+            "kind": 0x0001,
+            "field_offset": 0x08,
+            "code_offset": 0,
+            "script_start": 0x0120,
+            "script_tokens": (b"\xA2\x11\x22",),
+            "script_terminator": 0xFF,
+            "code_start": 0x2300,
+            "code_tokens": (),
+            "code_terminator": 0xAA,
+            "record_start": 0x0100,
+            "mode_word": 0xA500,
+            "block_flags": 0xE2,
+        },
+        {
+            "name": "matching_script_and_aa_terminated_code",
+            "object_offset": 0x0300,
+            "kind": 0x00A0,
+            "field_offset": 0x12,
+            "code_offset": 0x0200,
+            "script_start": 0x2200,
+            "script_tokens": (
+                a6_token(0x0300, 0x01, (0x1111,)),
+                a6_token(0x7777, 0x40),
+                b"\xA0\x12\x34",
+                a6_token(0x0300, 0x7F, (0x2468, 0x1357)),
+                b"\xA1",
+            ),
+            "script_terminator": 0xFF,
+            "code_start": 0x1000,
+            "code_tokens": (
+                b"\xA2\x56\x78",
+                a6_token(0x9999, 0x00, (0xABCD,)),
+                a6_token(0x1111, 0x80),
+            ),
+            "code_terminator": 0xAA,
+            "code_suffix": a6_token(0x2222, 0x21),
+            "record_start": 0x0200,
+            "mode_word": 0xCE01,
+            "block_flags": 0,
+        },
+        {
+            "name": "ff_terminated_code_and_wrapped_offsets",
+            "object_offset": 0x0030,
+            "kind": 0x8000,
+            "field_offset": 0xF0,
+            "code_offset": 0xFFE0,
+            "script_start": 0xFFFA,
+            "script_tokens": (
+                b"\xA2\x9A\xBC",
+                a6_token(0x0030, 0x12),
+            ),
+            "script_terminator": 0xFF,
+            "code_start": 0x0020,
+            "code_tokens": (a6_token(0x1234, 0x55),),
+            "code_terminator": 0xFF,
+            "code_suffix": a6_token(0x4321, 0x31),
+            "record_start": 0xFFF0,
+            "mode_word": 0x5C01,
+            "block_flags": 0xFE,
+        },
+        {
+            "name": "mode_control_and_variable_token_restore_word",
+            "object_offset": 0x2468,
+            "kind": 0x0004,
+            "field_offset": 0x09,
+            "code_offset": 0,
+            "script_start": 0x4000,
+            "script_tokens": (
+                b"\xA0\x10\x20",
+                b"\xA5\x31",
+                b"\xA1",
+                b"\xA5\x41\x42\x43",
+                b"\xA8\x31\x42\x00\x00\x00",
+                a6_token(0x2468, 0x00),
+            ),
+            "script_terminator": 0xFF,
+            "code_start": 0x1800,
+            "code_tokens": (),
+            "code_terminator": 0xFF,
+            "record_start": 0x0500,
+            "mode_word": 0x7300,
+            "block_flags": 0x04,
+        },
+    )
+
+    game_segment = 0x3000
+    script_segment = 0x5000
+    code_segment = 0x7000
+    record_segment = 0x9000
+    data_segment = 0xB000
+    caller_sp = 0xFEF0
+    stack_sentinel = bytes.fromhex("a55a3cc3966978c3")
+    vectors = []
+
+    def write_wrapped(image: bytearray, offset: int, data: bytes) -> None:
+        for index, value in enumerate(data):
+            image[(offset + index) & 0xFFFF] = value
+
+    def write_u16(image: bytearray, offset: int, value: int) -> None:
+        write_wrapped(image, offset, struct.pack("<H", value & 0xFFFF))
+
+    def status_flags(result: int, bits: int) -> dict[str, bool]:
+        mask = (1 << bits) - 1
+        result &= mask
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": False,
+            "zf": result == 0,
+            "sf": bool(result & (1 << (bits - 1))),
+            "of": False,
+        }
+
+    def compare_flags(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": ((left ^ right ^ result) & 0x10) != 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    def merge_status(initial_flags: int, status: dict[str, bool]) -> int:
+        bits = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        result = initial_flags & ~0x08D5
+        for name, bit in bits.items():
+            if status[name]:
+                result |= bit
+        return result
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        object_offset = int(case["object_offset"])
+        kind = int(case["kind"])
+        field_byte = int(case["field_offset"])
+        field_word = field_byte if field_byte < 0x80 else field_byte | 0xFF00
+        code_offset = int(case["code_offset"])
+        script_start = int(case["script_start"])
+        code_base = int(case["code_start"])
+        record_base = int(case["record_start"])
+        script_stream, script_a6 = stream_bytes(
+            tuple(case["script_tokens"]), int(case["script_terminator"])
+        )
+        code_stream, code_a6 = stream_bytes(
+            tuple(case["code_tokens"]),
+            int(case["code_terminator"]),
+            bytes(case.get("code_suffix", b"")),
+        )
+
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 17 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        script_before = bytearray(
+            (offset * 7 + case_index * 31 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        code_before = bytearray(
+            (offset * 11 + case_index * 23 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + case_index * 19 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before = bytearray(
+            (offset * 3 + case_index * 37 + 0xCB) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        write_u16(game_before, 0x671C, script_start)
+        write_u16(game_before, 0x671E, script_segment)
+        write_u16(game_before, 0x6720, code_base)
+        write_u16(game_before, 0x6722, code_segment)
+        write_u16(game_before, 0x6724, record_base)
+        write_u16(game_before, 0x6726, record_segment)
+        write_u16(game_before, 0x67AD, int(case["mode_word"]))
+        game_before[0x67B2] = int(case["block_flags"])
+        bit_index = (kind & -kind).bit_length() - 1
+        table_offset = (0x6D60 + 2 * 16 + bit_index) & 0xFFFF
+        game_before[table_offset] = field_byte
+        write_wrapped(game_before, 0x6F18, descriptors)
+        write_u16(game_before, caller_sp, return_address)
+        write_wrapped(game_before, caller_sp + 2, stack_sentinel)
+
+        write_wrapped(script_before, script_start, script_stream)
+        code_start = (code_base + code_offset) & 0xFFFF
+        write_wrapped(code_before, code_start, code_stream)
+        record_object = (record_base + object_offset) & 0xFFFF
+        write_u16(record_before, record_object, kind)
+        record_code_field = (record_object + field_word) & 0xFFFF
+        write_u16(record_before, record_code_field, code_offset)
+
+        expected_game = bytearray(game_before)
+        expected_script = bytearray(script_before)
+        expected_code = bytearray(code_before)
+        expected_game[0x67B2] = 1
+        for relative in script_a6:
+            token = script_stream[relative:]
+            token_object = struct.unpack("<H", token[1:3])[0]
+            if token_object == object_offset:
+                expected_script[(script_start + relative + 5) & 0xFFFF] |= 0x80
+        if code_offset != 0:
+            for relative in code_a6:
+                expected_code[(code_start + relative + 5) & 0xFFFF] |= 0x80
+
+        initial_flags = 0x0AD7
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B20000 | object_offset,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0xC000,
+            "fs": 0xD000,
+            "gs": game_segment,
+            "ss": game_segment,
+            "flags": initial_flags,
+        }
+        token_trace: list[dict[str, object]] = []
+
+        def capture_token(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x62B6 and len(token_trace) < 64:
+                segment = machine.reg_read(UC_X86_REG_DS)
+                offset = machine.reg_read(UC_X86_REG_SI)
+                token_trace.append(
+                    {
+                        "event": "advance",
+                        "segment": segment,
+                        "offset": offset,
+                        "opcode": machine.mem_read(segment * 16 + offset, 1)[0],
+                    }
+                )
+            elif address == 0x6293 and len(token_trace) < 64:
+                token_trace.append(
+                    {
+                        "event": "special",
+                        "segment": machine.reg_read(UC_X86_REG_DS),
+                        "offset": machine.reg_read(UC_X86_REG_SI),
+                    }
+                )
+
+        try:
+            machine = execute(
+                entry,
+                return_address,
+                initial,
+                [
+                    (game_segment, 0, bytes(game_before)),
+                    (script_segment, 0, bytes(script_before)),
+                    (code_segment, 0, bytes(code_before)),
+                    (record_segment, 0, bytes(record_before)),
+                    (data_segment, 0, bytes(data_before)),
+                ],
+                code_handler=capture_token,
+                instruction_count=3000,
+            )
+        except RuntimeError as error:
+            raise RuntimeError(
+                f"0x739b {name}: {error}; token_trace={token_trace!r}"
+            ) from error
+
+        if bytes(machine.mem_read(game_segment * 16, 0xF000)) != bytes(
+            expected_game[:0xF000]
+        ):
+            raise AssertionError(f"0x739b {name}: game state differs")
+        if bytes(machine.mem_read(script_segment * 16, 0x10000)) != bytes(
+            expected_script
+        ):
+            raise AssertionError(f"0x739b {name}: script image differs")
+        if bytes(machine.mem_read(code_segment * 16, 0x10000)) != bytes(
+            expected_code
+        ):
+            raise AssertionError(f"0x739b {name}: code image differs")
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(
+            record_before
+        ):
+            raise AssertionError(f"0x739b {name}: record image changed")
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            data_before
+        ):
+            raise AssertionError(f"0x739b {name}: initial DS image changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | kind
+        expected_registers["sp"] = caller_sp + 2
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x739b {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+
+        if code_offset == 0:
+            final_status = status_flags(code_offset, 16)
+        else:
+            terminator = int(case["code_terminator"])
+            final_status = compare_flags(terminator, terminator)
+        expected_flags = merge_status(initial_flags, final_status)
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if (actual_flags & 0x0ED7) != (expected_flags & 0x0ED7):
+            raise AssertionError(
+                f"0x739b {name}: flags={actual_flags:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        if bytes(
+            machine.mem_read(
+                game_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x739b {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "object_offset": object_offset,
+                "record": {
+                    "pointer": [record_segment, record_base],
+                    "object_address": record_object,
+                    "kind": kind,
+                    "field_table_byte": field_byte,
+                    "code_field_address": record_code_field,
+                    "code_offset": code_offset,
+                },
+                "script": {
+                    "pointer": [script_segment, script_start],
+                    "matching_a6_offsets": [
+                        relative
+                        for relative in script_a6
+                        if struct.unpack(
+                            "<H", script_stream[relative + 1 : relative + 3]
+                        )[0]
+                        == object_offset
+                    ],
+                },
+                "code": {
+                    "pointer": [code_segment, code_base],
+                    "scan_start": code_start,
+                    "marked_a6_offsets": code_a6 if code_offset != 0 else [],
+                    "terminator": int(case["code_terminator"]),
+                },
+                "query_mode_word": int(case["mode_word"]),
+                "block_scan_flags_before": int(case["block_flags"]),
+                "block_scan_flags_after": 1,
+                "returned_kind_bx": machine.reg_read(UC_X86_REG_BX),
+                "flags_after": actual_flags & 0x0ED7,
+                "return": "near",
+                "dependencies": ["0x6023", "0x62b6", "0x6293"],
+                "token_trace": token_trace,
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -63338,6 +63756,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_72a8_natural.json",
         dlg_menu_words_inline_reveal_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_739b_natural.json",
+        vm_cod_scan_vectors(),
         args.check,
     )
     update_vector(

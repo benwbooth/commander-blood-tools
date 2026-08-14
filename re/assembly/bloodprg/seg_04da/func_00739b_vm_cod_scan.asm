@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_cod_scan
-; label_comment: COD script scanner (2 calls): lds si,gs:[0x671c] (COD script far ptr); lodsb; scan to 0xff. Walks/finds a marker in the loaded script - a script traversal helper
+; label_comment: marks A6 text tokens for one object in the top-level script and all A6 tokens in that object's code block; preserves the full query-mode word while using vm_token_advance
 ; byte_count: 110
 ; boundary: cfg_blocks_14_terminals_3
 ; terminal: jmp 0x73aa:1, jmp 0x73e7:1, ret:1

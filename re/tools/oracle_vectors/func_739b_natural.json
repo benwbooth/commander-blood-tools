@@ -1,0 +1,313 @@
+[
+  {
+    "name": "zero_code_offset_and_plain_tokens",
+    "object_offset": 64,
+    "record": {
+      "pointer": [
+        36864,
+        256
+      ],
+      "object_address": 320,
+      "kind": 1,
+      "field_table_byte": 8,
+      "code_field_address": 328,
+      "code_offset": 0
+    },
+    "script": {
+      "pointer": [
+        20480,
+        288
+      ],
+      "matching_a6_offsets": []
+    },
+    "code": {
+      "pointer": [
+        28672,
+        8960
+      ],
+      "scan_start": 8960,
+      "marked_a6_offsets": [],
+      "terminator": 170
+    },
+    "query_mode_word": 42240,
+    "block_scan_flags_before": 226,
+    "block_scan_flags_after": 1,
+    "returned_kind_bx": 1,
+    "flags_after": 582,
+    "return": "near",
+    "dependencies": [
+      "0x6023",
+      "0x62b6",
+      "0x6293"
+    ],
+    "token_trace": [
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 288,
+        "opcode": 162
+      }
+    ]
+  },
+  {
+    "name": "matching_script_and_aa_terminated_code",
+    "object_offset": 768,
+    "record": {
+      "pointer": [
+        36864,
+        512
+      ],
+      "object_address": 1280,
+      "kind": 160,
+      "field_table_byte": 18,
+      "code_field_address": 1298,
+      "code_offset": 512
+    },
+    "script": {
+      "pointer": [
+        20480,
+        8704
+      ],
+      "matching_a6_offsets": [
+        0,
+        21
+      ]
+    },
+    "code": {
+      "pointer": [
+        28672,
+        4096
+      ],
+      "scan_start": 4608,
+      "marked_a6_offsets": [
+        3,
+        13
+      ],
+      "terminator": 170
+    },
+    "query_mode_word": 52737,
+    "block_scan_flags_before": 0,
+    "block_scan_flags_after": 1,
+    "returned_kind_bx": 160,
+    "flags_after": 582,
+    "return": "near",
+    "dependencies": [
+      "0x6023",
+      "0x62b6",
+      "0x6293"
+    ],
+    "token_trace": [
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 8704,
+        "opcode": 166
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 8714,
+        "opcode": 166
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 8722,
+        "opcode": 160
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 8725,
+        "opcode": 166
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 8737,
+        "opcode": 161
+      },
+      {
+        "event": "advance",
+        "segment": 28672,
+        "offset": 4608,
+        "opcode": 162
+      },
+      {
+        "event": "advance",
+        "segment": 28672,
+        "offset": 4611,
+        "opcode": 166
+      },
+      {
+        "event": "advance",
+        "segment": 28672,
+        "offset": 4621,
+        "opcode": 166
+      }
+    ]
+  },
+  {
+    "name": "ff_terminated_code_and_wrapped_offsets",
+    "object_offset": 48,
+    "record": {
+      "pointer": [
+        36864,
+        65520
+      ],
+      "object_address": 32,
+      "kind": 32768,
+      "field_table_byte": 240,
+      "code_field_address": 16,
+      "code_offset": 65504
+    },
+    "script": {
+      "pointer": [
+        20480,
+        65530
+      ],
+      "matching_a6_offsets": [
+        3
+      ]
+    },
+    "code": {
+      "pointer": [
+        28672,
+        32
+      ],
+      "scan_start": 0,
+      "marked_a6_offsets": [
+        0
+      ],
+      "terminator": 255
+    },
+    "query_mode_word": 23553,
+    "block_scan_flags_before": 254,
+    "block_scan_flags_after": 1,
+    "returned_kind_bx": 32768,
+    "flags_after": 582,
+    "return": "near",
+    "dependencies": [
+      "0x6023",
+      "0x62b6",
+      "0x6293"
+    ],
+    "token_trace": [
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 65530,
+        "opcode": 162
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 65533,
+        "opcode": 166
+      },
+      {
+        "event": "advance",
+        "segment": 28672,
+        "offset": 0,
+        "opcode": 166
+      }
+    ]
+  },
+  {
+    "name": "mode_control_and_variable_token_restore_word",
+    "object_offset": 9320,
+    "record": {
+      "pointer": [
+        36864,
+        1280
+      ],
+      "object_address": 10600,
+      "kind": 4,
+      "field_table_byte": 9,
+      "code_field_address": 10609,
+      "code_offset": 0
+    },
+    "script": {
+      "pointer": [
+        20480,
+        16384
+      ],
+      "matching_a6_offsets": [
+        16
+      ]
+    },
+    "code": {
+      "pointer": [
+        28672,
+        6144
+      ],
+      "scan_start": 6144,
+      "marked_a6_offsets": [],
+      "terminator": 255
+    },
+    "query_mode_word": 29440,
+    "block_scan_flags_before": 4,
+    "block_scan_flags_after": 1,
+    "returned_kind_bx": 4,
+    "flags_after": 582,
+    "return": "near",
+    "dependencies": [
+      "0x6023",
+      "0x62b6",
+      "0x6293"
+    ],
+    "token_trace": [
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16384,
+        "opcode": 160
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16387,
+        "opcode": 165
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16389,
+        "opcode": 161
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16390,
+        "opcode": 165
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16394,
+        "opcode": 168
+      },
+      {
+        "event": "special",
+        "segment": 20480,
+        "offset": 16395
+      },
+      {
+        "event": "special",
+        "segment": 20480,
+        "offset": 16396
+      },
+      {
+        "event": "special",
+        "segment": 20480,
+        "offset": 16397
+      },
+      {
+        "event": "advance",
+        "segment": 20480,
+        "offset": 16400,
+        "opcode": 166
+      }
+    ]
+  }
+]

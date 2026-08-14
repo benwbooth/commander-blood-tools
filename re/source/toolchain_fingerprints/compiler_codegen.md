@@ -1171,6 +1171,32 @@ group and zero-offset DIC image. Direct replacement additionally needs the
 original ES menu cursor, ambient dictionary DS and restoration, stale AH color
 input, active-path upper-EAX clearing, and exact register/flag envelope.
 
+Object A6 scanner `0x00739B` receives an absolute object-record offset in BX.
+It walks the top-level script through the real `vm_token_advance` decoder and
+sets bit `0x80` at A6 offset+5 only when the token's offset+1 object word
+matches. It then forces `GS:0x67B2` to one, resolves the object's selector-two
+code field from its lowest kind bit, and marks every A6 in that code block
+until `0xFF` or `0xAA`. The routine temporarily permits decoder mode changes
+but restores the full overlapping word at `GS:0x67AD`, not only its mode byte.
+
+Four full-callee vectors execute the unmodified scanner together with original
+`0x0062B6`, `0x006293`, `0x006023`, and the 192-byte opcode descriptor window.
+They cover no-code, matched and unmatched top-level A6 tokens, both block
+terminators, existing flag bits, A0/A1 mode changes, mode-dependent A5 lengths,
+negative field offsets, wrapped script/code/record offsets, exact memory
+ownership, returned BX kind, preserved registers, final flags, stack integrity,
+and near return. No helper behavior is patched or restated by the oracle.
+
+Open Watcom 1.9 huge (`-3 -os -s -mh`) compiles the actual direct-far-pointer
+candidate warning-free to 59 instructions/127 bytes versus the original
+48/110, with 89.58 percent mnemonic-multiset overlap and no inline assembly.
+Keeping the record and code pointers live together naturally recovers the
+binary's `LES DI` plus `LDS SI` shape; direct far indexing also avoids pointer
+normalization helpers. Full-source integration still requires the recovered
+DS:SI token-decoder contract, `SS=GS` descriptor-table placement, and fixed
+game-data aliases. A drop-in body would additionally need the original
+stack-saved query word and exact AX/BX/register allocation.
+
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
 `0xFFFF`; post-match addition wrap; and optional-increment wrap and signed
