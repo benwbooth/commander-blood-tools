@@ -79,6 +79,7 @@ extern volatile cb_u16 CB_GAME_DATA vm_named_orxx_object_gs; /* GS:0x6750 */
 extern volatile cb_u16 vm_named_orxx_object; /* DS:0x6750 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_arche_record_offset_gs; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_honk_object_gs; /* GS:0x6754 */
+extern volatile cb_u16 vm_named_ark_object; /* DS:0x6758 */
 extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
 extern volatile cb_u16 CB_GAME_DATA vm_blood_history_ring_index; /* GS:0x6744 */

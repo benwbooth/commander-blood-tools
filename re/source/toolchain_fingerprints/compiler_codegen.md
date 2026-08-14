@@ -5666,6 +5666,38 @@ binary replacement additionally needs the original inherited-ES palette copy,
 32-bit EAX probe address, preserve envelope, helper residue, and terminal
 flags.
 
+## BLOODPRG ship-3D navigation coordinator candidate
+
+`0x00B34E` owns the navigation trigger and the remainder of the ship sequence.
+The trigger path copies the requested presentation state, increments the active
+record's access counter (following its `0x0080` redirect when present), scans
+the candidate offsets built at `SS:0x2B53`, and either publishes a deferred
+`0x00C4` record or opens the target list. It then stages the target PBM, copies
+the 192-byte high-palette block through the inherited `ES`, and arms closing.
+The steady path services the alien overlay and bridge update, presents the
+framebuffer, waits for rectangle interpolation and a nonnegative list result,
+or performs the complete HUD, dialogue, palette, and camera reset.
+
+Fourteen patched-helper original-binary vectors cover unrestricted and
+relation-gated candidates, Ark fallback, an empty candidate list, redirected
+counter increments, x/width-only rectangle capture, blocked and copied frames,
+both interpolation outcomes, negative and accepted list results, defer/opening
+gates, and final teardown. They verify helper order and arguments, the original
+`SS:BP` list read, DS/GS/ES/record/frame ownership, copy extents, preserved
+registers and segments, stack integrity, and the near return against the
+untouched 579-byte body.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+222-instruction function versus 162 instructions in the original, with 88.27
+percent mnemonic-multiset overlap and 75.31 percent ordered mnemonic overlap.
+The candidate uses typed records, normal pointers, direct calls, and ordinary C
+control flow, with no inline assembly or register-state facade.
+
+Full-source integration requires the shipped `SS=DS` candidate-list alias and
+the record segment used for list strings. Direct binary replacement also needs
+the inherited-ES palette destination, carry-return interpolation ABI, original
+save envelope, helper residue, and path-specific flags.
+
 ## BLOODPRG VM token-advance candidate
 
 `0x0062B6` consumes one opcode from the far script cursor in `DS:SI` while its

@@ -134,6 +134,8 @@ extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
 extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
 extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
 extern volatile cb_u8 ship_3d_exit_pending; /* DS:0x2532 */
+extern volatile cb_u8 ship_3d_navigation_trigger; /* DS:0x27D8 alias */
+extern volatile cb_u8 ship_3d_navigation_snapshot_pending; /* DS:0x2739 */
 extern volatile cb_u8 ship_3d_dialogue_phase_ready; /* DS:0x2534 */
 extern volatile cb_u16 ship_3d_dialogue_cycle_line; /* DS:0x24F5 */
 extern volatile cb_u8 ship_3d_alien_overlay_armed; /* DS:0x0AE3 */
@@ -189,6 +191,7 @@ extern volatile cb_u16 ship_3d_presentable_name_offsets[];
 extern volatile cb_u16 CB_GAME_DATA vm_arche_position_match_offsets[];
 /* Filter output is SS/DS:0x2B53 under the shipped SS=DS=GS data-group alias. */
 extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
+extern const cb_u16 ship_3d_navigation_trigger_target_list[]; /* DS:0x253B */
 /* Original clear uses SS:0x2BC7; later lookup uses GS:0x2BC7 (SS == GS). */
 extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 

@@ -54413,6 +54413,549 @@ def ship_3d_hud_init_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
+    entry = 0xB34E
+    body_size = 579
+    body_hash = "139b65834a72050bebc832debed5bb873478bcca4760ed8afa6c4d1da8270137"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0xb34e: recovered 579-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "idle_arms_opening_and_exit", "calls": []},
+        {"name": "idle_defer_gate_blocks_opening", "defer": 1, "calls": []},
+        {
+            "name": "active_sequence_blocked_before_frame_copy",
+            "sequence": 1,
+            "presentation_active": 1,
+            "calls": ["alien", "bridge"],
+        },
+        {
+            "name": "active_sequence_nonlayout_duration_copies_frame",
+            "sequence": 1,
+            "duration": 5,
+            "calls": ["alien", "bridge", "fullscreen"],
+        },
+        {
+            "name": "active_sequence_waits_for_interpolation",
+            "sequence": 1,
+            "interpolation_complete": 0,
+            "calls": ["alien", "bridge", "fullscreen", "interpolate"],
+        },
+        {
+            "name": "completed_interpolation_negative_query_keeps_sequence",
+            "sequence": 1,
+            "interpolation_complete": 1,
+            "layout_result": 0xffff,
+            "calls": [
+                "alien", "bridge", "fullscreen", "interpolate", "layout"
+            ],
+        },
+        {
+            "name": "completed_interpolation_selection_arms_exit",
+            "sequence": 1,
+            "interpolation_complete": 1,
+            "layout_result": 2,
+            "calls": [
+                "alien", "bridge", "fullscreen", "interpolate", "layout"
+            ],
+        },
+        {
+            "name": "exit_while_opening_reenters_active_sequence",
+            "exit_pending": 1,
+            "opening": 1,
+            "presentation_active": 1,
+            "calls": ["alien", "bridge"],
+        },
+        {
+            "name": "closed_exit_runs_final_reset",
+            "exit_pending": 1,
+            "calls": ["display_fill", "palette_clear", "back_init", "vm_stop"],
+        },
+        {
+            "name": "trigger_accepts_unrestricted_candidate",
+            "trigger": 1,
+            "current_flags": 2,
+            "candidate": 0x3000,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "c2", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+        {
+            "name": "trigger_opens_list_when_no_candidate_exists",
+            "trigger": 1,
+            "candidate": 0,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "layout", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+        {
+            "name": "trigger_accepts_candidate_related_to_current",
+            "trigger": 1,
+            "candidate": 0x3000,
+            "candidate_relation": 0x1200,
+            "ark": 0x1200,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "c2", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+        {
+            "name": "trigger_ark_relation_opens_target_list",
+            "trigger": 1,
+            "current_flags": 2,
+            "candidate": 0x3000,
+            "candidate_relation": 0x4444,
+            "ark": 0x4444,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "layout", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+        {
+            "name": "trigger_redirects_access_counter",
+            "trigger": 1,
+            "current_kind": 0x0080,
+            "counter_link": 0x1800,
+            "candidate": 0,
+            "presentation_active": 1,
+            "calls": [
+                "candidate_build", "layout", "back_fill", "pbm", "palette",
+                "alien", "bridge",
+            ],
+        },
+    ]
+
+    data_segment = 0x2000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    record_segment = 0x9000
+    frame_segment = 0xD000
+    stack_segment = 0xF000
+    caller_sp = 0xF800
+    return_address = 0xF34E
+    current = 0x1200
+    frame_offset = 0x3200
+    helpers = {
+        0x6AEE: ("candidate_build", "far"),
+        0x6E09: ("c2", "far"),
+        0x7E28: ("layout", "far"),
+        0x37BF: ("back_fill", "far"),
+        0x25FD: ("pbm", "far"),
+        0x1CE0: ("palette", "far"),
+        # The caller synthesizes a far call with PUSH CS + near CALL.
+        0xB591: ("alien", "far"),
+        0x9056: ("bridge", "far"),
+        0x3846: ("fullscreen", "far"),
+        0x185D: ("interpolate", "far"),
+        0x377B: ("display_fill", "far"),
+        0x1E8B: ("palette_clear", "far"),
+        0x11D9: ("back_init", "far"),
+        0x8696: ("vm_stop", "far"),
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        trigger = int(case.get("trigger", 0))
+        sequence = int(case.get("sequence", 0))
+        exit_pending = int(case.get("exit_pending", 0))
+        opening = int(case.get("opening", 0))
+        defer = int(case.get("defer", 0))
+        presentation_active = int(case.get("presentation_active", 0))
+        duration = int(case.get("duration", 6))
+        interpolation_complete = int(case.get("interpolation_complete", 0))
+        layout_result = int(case.get("layout_result", 0xffff))
+        candidate = int(case.get("candidate", 0))
+        candidate_relation = int(case.get("candidate_relation", 0x5555))
+        current_kind = int(case.get("current_kind", 0x0002))
+        current_flags = int(case.get("current_flags", 0))
+        counter_link = int(case.get("counter_link", 0))
+        ark = int(case.get("ark", 0x4444))
+
+        data_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytearray(
+            (offset * 17 + (offset >> 8) * 29 + case_index * 31 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 37 + case_index * 41 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        frame_before = bytes(
+            (offset * 3 + case_index * 43 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 19 + (offset >> 8) * 31 + case_index * 47 + 0xCB) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x27D8] = trigger
+        data_before[0x252A] = sequence
+        data_before[0x2532] = exit_pending
+        data_before[0x252F] = opening
+        data_before[0x67B0] = defer
+        data_before[0x67AC] = presentation_active
+        data_before[0x0ADA] = duration
+        data_before[0x0ADB] = 0x9B
+        put_word(data_before, 0x251B, current)
+        put_word(data_before, 0x0A36, 0xA636)
+        put_word(data_before, 0x0A32, 0xA232)
+        put_word(data_before, 0x6726, record_segment)
+        put_word(data_before, 0x6758, ark)
+        put_word(data_before, 0x6768, 0x6868)
+        put_word(data_before, 0x676A, 0x6A6A)
+        put_word(data_before, 0x2B53, candidate ^ 0x7777)
+        put_word(data_before, 0x2B55, 0x7777)
+        put_word(stack_before, 0x2B53, candidate)
+        put_word(stack_before, 0x2B55, 0)
+        put_word(data_before, 0x2AAB, 0x1A2B)
+        put_word(data_before, 0x2AAF, 0x3A4B)
+        put_word(data_before, 0x254D, 0x4D4D)
+        put_word(data_before, 0x2551, 0x5151)
+        put_word(data_before, 0x2793, 0x9393)
+        put_word(data_before, 0x279B, 0x9B9B)
+        put_word(data_before, 0x279D, 0x9D9D)
+        put_word(data_before, 0x1FA3, 0xA3A3)
+        put_word(data_before, 0x1FA7, 0xA7A7)
+        put_word(data_before, 0x1FAB, 0xABAB)
+        put_word(data_before, 0x6788, 0x8888)
+        put_word(data_before, 0x524F, 0x4F4F)
+        put_word(data_before, 0x524D, 0x4D4D)
+        put_word(data_before, 0x5239, 0x3939)
+        put_word(data_before, 0x523B, 0x3B3B)
+        put_word(data_before, 0x24F3, 0xF3F3)
+        put_dword(data_before, 0x5229, (frame_segment << 16) | frame_offset)
+        data_before[0x1FB2] = 0xB2
+        data_before[0x1FB3] = 0xB3
+        data_before[0x2529] = 0x29
+        data_before[0x252E] = 0x2E
+        data_before[0x2530] = 0x30
+        data_before[0x2531] = 0x31
+        data_before[0x2739] = 0x39
+        data_before[0x27D9] = 0xD9
+        data_before[0x27E6] = 0xE6
+        data_before[0x5B52] = 0x52
+        data_before[0x5B53] = 0x53
+        data_before[0x5B57] = 0x57
+        data_before[0x5E64] = 0x64
+        data_before[0x67AA] = 0xAB
+        data_before[0x67BA] = 0xBA
+        data_before[0x67BC] = 0xBC
+        data_before[0x0AE1] = 0xE1
+        data_before[0x0DB8] = 0xB8
+
+        put_word(record_before, current, current_kind)
+        record_before[current + 2] = current_flags
+        put_word(record_before, current + 0x14, counter_link)
+        if counter_link != 0:
+            put_word(record_before, counter_link + 0x14, 0x7FFE)
+        if candidate != 0:
+            put_word(record_before, candidate + 0x18, candidate_relation)
+
+        data_expected = bytearray(data_before)
+        game_expected = bytearray(game_before)
+        extra_expected = bytearray(extra_before)
+        record_expected = bytearray(record_before)
+
+        if trigger & 1:
+            put_word(data_expected, 0x0A32, 0xA636)
+            counter_record = counter_link if current_kind & 0x0080 else current
+            count = struct.unpack_from(
+                "<H", record_expected, counter_record + 0x14
+            )[0]
+            put_word(record_expected, counter_record + 0x14, count + 1)
+
+            accepted = candidate != 0
+            if accepted and (current_flags & 2) == 0:
+                accepted = candidate_relation == current
+            opens_list = not accepted
+            if accepted and ark != current and candidate_relation == ark:
+                opens_list = True
+
+            if opens_list:
+                data_expected[0x2793] |= 4
+                data_expected[0x0ADB] = 0
+                data_expected[0x0ADA] = 6
+                data_expected[0x27E6] = 0
+                put_word(data_expected, 0x254D, 0x1A2B)
+                put_word(data_expected, 0x2551, 0x3A4B)
+            else:
+                put_word(data_expected, 0x6768, 0x00C4)
+                put_word(data_expected, 0x676A, candidate)
+
+            data_expected[0x27D8] = 0
+            data_expected[0x252A] = 1
+            put_word(data_expected, 0x1FA7, 0x0023)
+            put_word(data_expected, 0x1FA3, 0xFFFF)
+            put_word(data_expected, 0x5239, 0)
+            put_word(data_expected, 0x523B, 200)
+            data_expected[0x5B53] = 0
+            data_expected[0x5B57] = 0
+            data_expected[0x0AE1] = 0
+            extra_expected[0x59D1 : 0x5A91] = data_before[0x53D1 : 0x5491]
+            data_expected[0x1FB3] = 0
+            put_word(data_expected, 0x1FAB, 0xFFFF)
+            data_expected[0x2530] = 1
+            data_expected[0x2531] = 2
+            sequence = 1
+            duration = data_expected[0x0ADA]
+
+        ran_active = bool((exit_pending & 1 and opening & 1) or (sequence & 1))
+        if not (exit_pending & 1):
+            if (sequence & 1) == 0 and (defer & 1) == 0:
+                data_expected[0x2532] = 1
+                data_expected[0x252F] = 1
+        if exit_pending & 1 and (opening & 1) == 0:
+            put_word(data_expected, 0x2793, 9)
+            put_word(data_expected, 0x279B, 0)
+            put_word(data_expected, 0x279D, 0x0032)
+            data_expected[0x27D9] = 1
+            data_expected[0x2739] = 1
+            put_word(data_expected, 0x24F3, 0)
+            put_word(data_expected, 0x1FA7, 0)
+            put_word(data_expected, 0x1FAB, 0xFFFF)
+            put_word(data_expected, 0x6788, 0xFFFF)
+            for offset in (
+                0x1FB2, 0x2532, 0x2529, 0x5E64, 0x67B0, 0x67BC,
+                0x252E, 0x252A, 0x67BA,
+            ):
+                data_expected[offset] = 0
+            data_expected[0x67AA] &= 0xFC
+            game_expected[0x5851 : 0x5A91] = data_before[0x5B58 : 0x5D98]
+            game_expected[0x5551 : 0x5851] = bytes(0x300)
+            data_expected[0x5B52] = 0xFF
+            put_word(data_expected, 0x524F, 0)
+            put_word(data_expected, 0x524D, 10)
+        elif ran_active and presentation_active == 0:
+            data_expected[0x0DB8] = 1
+            if duration == 6 and interpolation_complete:
+                if layout_result < 0x8000:
+                    data_expected[0x252A] = 0
+                    data_expected[0x2532] = 1
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xB000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        memory = [
+            (0, return_address, b"\xcc"),
+            (data_segment, 0, bytes(data_before)),
+            (game_segment, 0, bytes(game_before)),
+            (extra_segment, 0, bytes(extra_before)),
+            (record_segment, 0, bytes(record_before)),
+            (frame_segment, 0, frame_before),
+            (stack_segment, 0, bytes(stack_before)),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<H", return_address)
+                + bytes.fromhex("5aa596698778c33c"),
+            ),
+        ]
+        for address, (_helper_name, return_kind) in helpers.items():
+            memory.append(
+                (0, address, b"\xcb" if return_kind == "far" else b"\xc3")
+            )
+
+        calls: list[dict[str, int | str]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            calls.append(
+                {
+                    "name": helper_name,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+            if helper_name == "layout":
+                machine.reg_write(UC_X86_REG_AX, layout_result)
+            elif helper_name == "interpolate":
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags | 1) if interpolation_complete else (flags & ~1),
+                )
+
+        try:
+            machine = execute(
+                entry,
+                return_address,
+                initial,
+                memory,
+                code_handler=capture,
+                instruction_count=5000,
+            )
+        except RuntimeError as error:
+            raise RuntimeError(f"0xb34e {name}: {error}") from error
+
+        actual_names = [str(call["name"]) for call in calls]
+        expected_names = [str(item) for item in case["calls"]]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0xb34e {name}: calls={calls}, expected={expected_names}"
+            )
+
+        for call in calls:
+            helper_name = str(call["name"])
+            if helper_name == "candidate_build":
+                actual = (int(call["es"]), int(call["di"]))
+                if actual != (record_segment, current):
+                    raise AssertionError(
+                        f"0xb34e {name}: candidate inputs={actual}"
+                    )
+            elif helper_name == "c2":
+                if (int(call["es"]), int(call["di"])) != (
+                    record_segment, (candidate + 4) & 0xFFFF
+                ):
+                    raise AssertionError(f"0xb34e {name}: c2 inputs differ")
+            elif helper_name == "layout" and int(call["si"]) != 0x253B:
+                raise AssertionError(f"0xb34e {name}: layout SI differs")
+            elif helper_name == "back_fill" and int(call["ax"]) != 0:
+                raise AssertionError(f"0xb34e {name}: back fill AX differs")
+            elif helper_name == "pbm":
+                actual = (
+                    int(call["ds"]), int(call["si"]),
+                    int(call["es"]), int(call["di"]),
+                )
+                if actual != (data_segment, 0x0DD7, frame_segment, frame_offset):
+                    raise AssertionError(f"0xb34e {name}: PBM inputs={actual}")
+            elif helper_name == "palette":
+                actual = (
+                    int(call["ax"]), int(call["bx"]), int(call["cx"]),
+                    int(call["dx"]), int(call["di"]), int(call["es"]),
+                )
+                if actual != (0xFFCE, 0, 0, 0, 0x5F11, extra_segment):
+                    raise AssertionError(f"0xb34e {name}: palette inputs={actual}")
+            elif helper_name == "fullscreen":
+                actual = (int(call["ds"]), int(call["si"]))
+                if actual != (frame_segment, frame_offset):
+                    raise AssertionError(f"0xb34e {name}: fullscreen={actual}")
+            elif helper_name == "interpolate":
+                if (int(call["si"]), int(call["di"])) != (0x2AAB, 0x254D):
+                    raise AssertionError(
+                        f"0xb34e {name}: interpolation inputs differ"
+                    )
+
+        for segment_name, segment, expected_image in (
+            ("DS", data_segment, data_expected),
+            ("GS", game_segment, game_expected),
+            ("incoming ES", extra_segment, extra_expected),
+            ("record", record_segment, record_expected),
+        ):
+            actual_image = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual_image != bytes(expected_image):
+                mismatch = next(
+                    index
+                    for index, (actual, expected) in enumerate(
+                        zip(actual_image, expected_image)
+                    )
+                    if actual != expected
+                )
+                raise AssertionError(
+                    f"0xb34e {name}: {segment_name} differs at {mismatch:#x}: "
+                    f"{actual_image[mismatch]:#x} != {expected_image[mismatch]:#x}"
+                )
+        if bytes(machine.mem_read(frame_segment * 16, 0x10000)) != frame_before:
+            raise AssertionError(f"0xb34e {name}: framebuffer segment changed")
+
+        expected_preserved = {
+            "eax": initial["eax"],
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"],
+            "ds": data_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": caller_sp + 2,
+        }
+        for register, expected in expected_preserved.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb34e {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        expected_es = game_segment if exit_pending & 1 and opening == 0 else extra_segment
+        if machine.reg_read(UC_X86_REG_ES) != expected_es:
+            raise AssertionError(f"0xb34e {name}: final ES differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, 8)
+        ) != bytes.fromhex("5aa596698778c33c"):
+            raise AssertionError(f"0xb34e {name}: caller stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "trigger": trigger,
+                "sequence": int(case.get("sequence", 0)),
+                "exit_pending": exit_pending,
+                "opening": opening,
+                "defer": defer,
+                "presentation_active": presentation_active,
+                "duration": int(case.get("duration", 6)),
+                "interpolation_complete": interpolation_complete,
+                "layout_result": layout_result,
+                "candidate": candidate,
+                "candidate_relation": candidate_relation,
+                "calls": calls,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "game_sha256": hashlib.sha256(game_expected).hexdigest(),
+                "incoming_es_sha256": hashlib.sha256(extra_expected).hexdigest(),
+                "record_sha256": hashlib.sha256(record_expected).hexdigest(),
+                "registers_after": {
+                    register_name: machine.reg_read(register)
+                    for register_name, register in REGISTERS.items()
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def ship_presentation_fsm_vectors() -> list[dict[str, object]]:
     entry = 0xAFA0
     body_size = 217
@@ -83635,6 +84178,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b079_natural.json",
         ship_3d_hud_init_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b34e_natural.json",
+        ship_3d_navigation_update_vectors(),
         args.check,
     )
     update_vector(

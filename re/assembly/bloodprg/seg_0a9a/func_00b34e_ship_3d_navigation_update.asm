@@ -7,7 +7,7 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph
 ; label: ship_3d_navigation_update
-; label_comment: ship/navigation update branch gated by DS:0x27D8; updates target records and transition flags
+; label_comment: SHIP 3D NAVIGATION COORDINATOR: trigger path increments the target access counter, filters navigation candidates, opens the target list or publishes a C4 link, stages the PBM and palette, then the steady path advances interpolation/frame presentation or performs the complete ship-HUD teardown. NATURAL C: func_00b34e_ship_3d_navigation_update.c
 ; byte_count: 579
 ; boundary: cfg_blocks_25_terminals_4
 ; terminal: jmp 0xb3f0:1, jmp 0xb58c:2, ret:1

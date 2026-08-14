@@ -121,7 +121,7 @@
 "0x00B079","ship_3d_hud_init","initializes the ship HUD target/palette/framebuffer state, presents dirty regions, selects targets, reloads changed audio, and emits C1 target records"
 "0x00B24C","ship_3d_alt_framebuffer_band_copy_call","calls plane-band updater after swapping DS:0x5219 to DS:0x521D"
 "0x00B2BB","ship_3d_target_record_select","runs the target-list layout/interpolation phases, maps a selected DS:0x250B name offset back to its record, uses DS:0x2537 as a current-target fallback, and arms opening when the selected entry is 0xFFFF"
-"0x00B34E","ship_3d_navigation_update","ship/navigation update branch gated by DS:0x27D8; updates target records and transition flags"
+"0x00B34E","ship_3d_navigation_update","ship 3D navigation coordinator: resolves trigger candidates, stages the target-list PBM/palette, advances interpolation and framebuffer presentation, then performs final HUD teardown"
 "0x00B481","ship_3d_navigation_sequence_update","active ship/navigation sequence branch: temp 3D.snd path, procedural update, framebuffer copy, target-query exit arm"
 "0x00B5DC","ship_3d_snd_bank_load_call","direct SND bank-loader call for sn\3D.snd with AX=0 SI=DS:0x0D23"
 "0x00B610","ship_3d_snd_bank_restore_call","restores sn\tb.snd after the temporary 3D.snd presentation path"
