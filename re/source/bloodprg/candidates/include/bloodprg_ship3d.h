@@ -167,6 +167,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
         modify exact [bx dx]
 #pragma aux ship_3d_point_cloud_project modify exact []
 #pragma aux ship_3d_object_sprite_project modify exact []
+#pragma aux ship_3d_plane_band_copy modify exact []
 #pragma aux bridge_panorama_frame_load parm [ax] modify exact []
 #pragma aux page_flip value [ax] modify exact [ax bx]
 #endif
@@ -208,6 +209,7 @@ extern volatile cb_u16 bridge_frame_angle_bias; /* DS:0x27A7 */
 int CB_FAR bridge_steer_update(
         cb_u16 CB_NEAR *presentation_link_target); /* 0x009656 */
 void CB_FAR alien_overlay_cycle(void); /* 0x00B591 */
+void CB_FAR ship_3d_plane_band_copy(void); /* 0x00B6DD */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,

@@ -1,0 +1,596 @@
+[
+  {
+    "name": "gate_clear_zero",
+    "gate": 0,
+    "depth": 32,
+    "transition_increment": 9,
+    "percent_before": 41233,
+    "percent_after": 41233,
+    "destination_offset": 512,
+    "byte_count": 0,
+    "first_source_offset": null,
+    "second_source_offset": null,
+    "second_destination_offset": null,
+    "graphics_mode": 19,
+    "direction": "forward",
+    "port_inputs": [],
+    "port_outputs": [],
+    "framebuffer_before_sha256": "e52567144f8d21dbfd55ac876e87054e77179d0f723e7b0607303e14d1aaf450",
+    "framebuffer_after_sha256": "e52567144f8d21dbfd55ac876e87054e77179d0f723e7b0607303e14d1aaf450",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "gate_clear_other_bits",
+    "gate": 254,
+    "depth": 64,
+    "transition_increment": 9,
+    "percent_before": 41506,
+    "percent_after": 41506,
+    "destination_offset": 1024,
+    "byte_count": 0,
+    "first_source_offset": null,
+    "second_source_offset": null,
+    "second_destination_offset": null,
+    "graphics_mode": 39,
+    "direction": "forward",
+    "port_inputs": [],
+    "port_outputs": [],
+    "framebuffer_before_sha256": "09bbb002d20aa81c99357046f3778c6a719809b475a8402bc976e2128c8dd617",
+    "framebuffer_after_sha256": "09bbb002d20aa81c99357046f3778c6a719809b475a8402bc976e2128c8dd617",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "increment_ten_preserves_percent",
+    "gate": 1,
+    "depth": 65,
+    "transition_increment": 10,
+    "percent_before": 41779,
+    "percent_after": 41779,
+    "destination_offset": 1536,
+    "byte_count": 8000,
+    "first_source_offset": 49152,
+    "second_source_offset": 57152,
+    "second_destination_offset": 9536,
+    "graphics_mode": 59,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        57
+      ],
+      [
+        975,
+        1,
+        59
+      ]
+    ],
+    "framebuffer_before_sha256": "9ec96c7801a4b879be31156106de29ea65671c5fac4ab985f13d1d369cf704ac",
+    "framebuffer_after_sha256": "d3cc77e22ff1e2fdf6f45aa4cc13bedb70c43fd9f332412b4ba8caca158968c3",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "depth_zero_sets_percent_100",
+    "gate": 1,
+    "depth": 0,
+    "transition_increment": 9,
+    "percent_before": 42052,
+    "percent_after": 100,
+    "destination_offset": 2048,
+    "byte_count": 2800,
+    "first_source_offset": 54352,
+    "second_source_offset": 57152,
+    "second_destination_offset": 15248,
+    "graphics_mode": 79,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        77
+      ],
+      [
+        975,
+        1,
+        79
+      ]
+    ],
+    "framebuffer_before_sha256": "87bd823759ae8093df1388e063b74b180f0274ea9079731ad24707dcb4787fc2",
+    "framebuffer_after_sha256": "5924b68fdebafc021c080924b178766fe39c5ca1a1911f5836b7ca71997af0e8",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "depth_25_sets_percent_50",
+    "gate": 3,
+    "depth": 25,
+    "transition_increment": 11,
+    "percent_before": 42325,
+    "percent_after": 50,
+    "destination_offset": 2560,
+    "byte_count": 4800,
+    "first_source_offset": 52352,
+    "second_source_offset": 57152,
+    "second_destination_offset": 13760,
+    "graphics_mode": 99,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        97
+      ],
+      [
+        975,
+        1,
+        99
+      ]
+    ],
+    "framebuffer_before_sha256": "4ffae5880940884aec8b407f606fc5e7a2439b49e1c7319c38d5f346451d96af",
+    "framebuffer_after_sha256": "a979b174e52a7c27f9f615d664e91cf31d75fcff5e24ae50d70c252e825ecddb",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "depth_50_sets_percent_zero",
+    "gate": 1,
+    "depth": 50,
+    "transition_increment": 12,
+    "percent_before": 42598,
+    "percent_after": 0,
+    "destination_offset": 3072,
+    "byte_count": 6800,
+    "first_source_offset": 50352,
+    "second_source_offset": 57152,
+    "second_destination_offset": 12272,
+    "graphics_mode": 119,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        117
+      ],
+      [
+        975,
+        1,
+        119
+      ]
+    ],
+    "framebuffer_before_sha256": "06d30ffe45e52c8f481f47c979215fb563423e590bf793626fdfb33078773b1f",
+    "framebuffer_after_sha256": "bd6d4d42d389dcbeed38a4d8712ba8458db1e3cd46cf3e0e7c1a9059ddcbd24b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "depth_51_clamps_doubled_value",
+    "gate": 1,
+    "depth": 51,
+    "transition_increment": 13,
+    "percent_before": 42871,
+    "percent_after": 0,
+    "destination_offset": 3584,
+    "byte_count": 6880,
+    "first_source_offset": 50272,
+    "second_source_offset": 57152,
+    "second_destination_offset": 12704,
+    "graphics_mode": 139,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        137
+      ],
+      [
+        975,
+        1,
+        139
+      ]
+    ],
+    "framebuffer_before_sha256": "d5e8efe42e9f67509b5e3d05c6568d9fbf6fd19fee8ed09ecbc873690ef55f0a",
+    "framebuffer_after_sha256": "111c2ba95328464c4467dc6a6621d1ef88d372731b3f9ea4d55e2df54bfba9f2",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "signed_doubled_depth_is_not_clamped",
+    "gate": 1,
+    "depth": 16384,
+    "transition_increment": 14,
+    "percent_before": 43144,
+    "percent_after": 32868,
+    "destination_offset": 4096,
+    "byte_count": 2800,
+    "first_source_offset": 54352,
+    "second_source_offset": 57152,
+    "second_destination_offset": 17296,
+    "graphics_mode": 159,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        157
+      ],
+      [
+        975,
+        1,
+        159
+      ]
+    ],
+    "framebuffer_before_sha256": "09d5785b038b7bc02baa0ef68eeb12ac71632570ef1ca4c0ccf26a39170ffe51",
+    "framebuffer_after_sha256": "acb71218c26f7403f9363cfc622fbac2e4dee252351ad6c005b5c5153ab86f2b",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "low_byte_band_count_wraps_to_zero",
+    "gate": 1,
+    "depth": 221,
+    "transition_increment": 15,
+    "percent_before": 43417,
+    "percent_after": 0,
+    "destination_offset": 4608,
+    "byte_count": 0,
+    "first_source_offset": 57152,
+    "second_source_offset": 57152,
+    "second_destination_offset": 20608,
+    "graphics_mode": 179,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        177
+      ],
+      [
+        975,
+        1,
+        179
+      ]
+    ],
+    "framebuffer_before_sha256": "ea4faa2cafcec16bc9757e272b32f02861407e2a1480439fb59126dd66dfe105",
+    "framebuffer_after_sha256": "ea4faa2cafcec16bc9757e272b32f02861407e2a1480439fb59126dd66dfe105",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "maximum_band_count_wraps_second_destination",
+    "gate": 1,
+    "depth": 220,
+    "transition_increment": 16,
+    "percent_before": 43690,
+    "percent_after": 0,
+    "destination_offset": 5120,
+    "byte_count": 20400,
+    "first_source_offset": 36752,
+    "second_source_offset": 57152,
+    "second_destination_offset": 720,
+    "graphics_mode": 199,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        197
+      ],
+      [
+        975,
+        1,
+        199
+      ]
+    ],
+    "framebuffer_before_sha256": "445dd4c35a177c11d87fe0b8d869fed519c3f55e9c54c4b0f0a21777e8f32ce2",
+    "framebuffer_after_sha256": "ddc923c61ca65d367117e7dc5742e9ffd790bebbc977687c289369c47235416f",
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "destination_offsets_wrap",
+    "gate": 1,
+    "depth": 65,
+    "transition_increment": 17,
+    "percent_before": 48059,
+    "percent_after": 0,
+    "destination_offset": 61952,
+    "byte_count": 8000,
+    "first_source_offset": 49152,
+    "second_source_offset": 57152,
+    "second_destination_offset": 4416,
+    "graphics_mode": 219,
+    "direction": "forward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        217
+      ],
+      [
+        975,
+        1,
+        219
+      ]
+    ],
+    "framebuffer_before_sha256": "e3cd7d9afecad805d118addb916e12a460180fc25f41b8cc64d34ec38f3d743d",
+    "framebuffer_after_sha256": "0191439037ba7bc858fb5ebb912e10120bb109a4a72c64ec4e64dcb02c004080",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "inherited_backward_direction",
+    "gate": 1,
+    "depth": 5,
+    "transition_increment": 18,
+    "percent_before": 52428,
+    "percent_after": 90,
+    "destination_offset": 6144,
+    "byte_count": 3200,
+    "first_source_offset": 53952,
+    "second_source_offset": 57152,
+    "second_destination_offset": 18944,
+    "graphics_mode": 239,
+    "direction": "backward",
+    "port_inputs": [
+      [
+        975,
+        1
+      ]
+    ],
+    "port_outputs": [
+      [
+        964,
+        2,
+        3842
+      ],
+      [
+        974,
+        1,
+        5
+      ],
+      [
+        975,
+        1,
+        237
+      ],
+      [
+        975,
+        1,
+        239
+      ]
+    ],
+    "framebuffer_before_sha256": "df0e1b43e9bb08445882763c6ada963a83ec2af5dc11807806f822504243bd3d",
+    "framebuffer_after_sha256": "86975c5b4453065cfa49ff1c3ed7c93fe722ec7e976877b5d9dbafa7bd6dbb22",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": true
+    }
+  }
+]

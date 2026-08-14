@@ -47468,6 +47468,263 @@ def ship_3d_point_cloud_randomize_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_plane_band_copy_vectors() -> list[dict[str, object]]:
+    entry = 0xB6DD
+    return_address = 0xB75B
+    expected_hash = "616bbe2388ea24026c85002272ceaa97797ba660dbfa0531582defe5309fbe55"
+    if hashlib.sha256(EXE[entry : entry + 127]).hexdigest() != expected_hash:
+        raise AssertionError("0xb6dd: recovered 127-byte body changed")
+
+    data_segment = 0x3000
+    game_segment = 0x2000
+    buffer_segment = 0x5000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    cases = [
+        ("gate_clear_zero", 0x00, 0x0020, 9, 0xA111, 0x0200, 0x13, False),
+        ("gate_clear_other_bits", 0xFE, 0x0040, 9, 0xA222, 0x0400, 0x27, False),
+        ("increment_ten_preserves_percent", 0x01, 0x0041, 10, 0xA333, 0x0600, 0x3B, False),
+        ("depth_zero_sets_percent_100", 0x01, 0x0000, 9, 0xA444, 0x0800, 0x4F, False),
+        ("depth_25_sets_percent_50", 0x03, 0x0019, 11, 0xA555, 0x0A00, 0x63, False),
+        ("depth_50_sets_percent_zero", 0x01, 0x0032, 12, 0xA666, 0x0C00, 0x77, False),
+        ("depth_51_clamps_doubled_value", 0x01, 0x0033, 13, 0xA777, 0x0E00, 0x8B, False),
+        ("signed_doubled_depth_is_not_clamped", 0x01, 0x4000, 14, 0xA888, 0x1000, 0x9F, False),
+        ("low_byte_band_count_wraps_to_zero", 0x01, 0x00DD, 15, 0xA999, 0x1200, 0xB3, False),
+        ("maximum_band_count_wraps_second_destination", 0x01, 0x00DC, 16, 0xAAAA, 0x1400, 0xC7, False),
+        ("destination_offsets_wrap", 0x01, 0x0041, 17, 0xBBBB, 0xF200, 0xDB, False),
+        ("inherited_backward_direction", 0x01, 0x0005, 18, 0xCCCC, 0x1800, 0xEF, True),
+    ]
+    vectors = []
+
+    for case_index, (
+        name,
+        gate,
+        depth,
+        transition_increment,
+        percent_before,
+        destination_offset,
+        graphics_mode,
+        backward,
+    ) in enumerate(cases):
+        pointer = struct.pack("<HH", destination_offset, buffer_segment)
+        decoy_pointer = struct.pack(
+            "<HH", (0x2200 + case_index * 0x101) & 0xFFFF, extra_segment
+        )
+        buffer_before = bytearray(
+            (
+                offset * 29
+                + (offset >> 8) * 17
+                + case_index * 41
+                + 0x35
+            )
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        buffer_expected = bytearray(buffer_before)
+        active = (gate & 1) != 0
+        byte_count = ((depth + 35) & 0xFF) * 80
+        first_source = (0xDF40 - byte_count) & 0xFFFF
+        second_source = 0xDF40
+        second_destination = (
+            destination_offset + 0x3E80 - byte_count
+        ) & 0xFFFF
+        percent_after = percent_before
+        if active and transition_increment != 10:
+            doubled_depth = (depth + depth) & 0xFFFF
+            signed_doubled = (
+                doubled_depth if doubled_depth < 0x8000 else doubled_depth - 0x10000
+            )
+            if signed_doubled > 100:
+                doubled_depth = 100
+            percent_after = (100 - doubled_depth) & 0xFFFF
+
+        def copy_bytes(source: int, destination: int) -> None:
+            step = -1 if backward else 1
+            for _ in range(byte_count):
+                buffer_expected[destination] = buffer_expected[source]
+                source = (source + step) & 0xFFFF
+                destination = (destination + step) & 0xFFFF
+
+        if active:
+            copy_bytes(first_source, destination_offset)
+            copy_bytes(second_source, second_destination)
+
+        outputs: list[tuple[int, int, int]] = []
+        inputs: list[tuple[int, int]] = []
+
+        def input_port(_machine: Uc, port: int, size: int) -> int:
+            inputs.append((port, size))
+            if (port, size) != (0x03CF, 1):
+                raise AssertionError(
+                    f"0xb6dd {name}: unexpected input {port:#x}/{size}"
+                )
+            return graphics_mode
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if backward else 0),
+        }
+        game_decoy = bytes(
+            (case_index * 23 + index * 37 + 0x61) & 0xFF
+            for index in range(16)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (data_segment, 0x2527, struct.pack("<H", depth)),
+                (data_segment, 0x252E, bytes([gate])),
+                (data_segment, 0x5219, pointer),
+                (data_segment, 0x524D, struct.pack("<H", transition_increment)),
+                (data_segment, 0x524F, struct.pack("<H", percent_before)),
+                (game_segment, 0x2527, game_decoy),
+                (game_segment, 0x5219, decoy_pointer),
+                (buffer_segment, 0, bytes(buffer_before)),
+                (stack_segment, 0xFF00, stack_sentinel),
+            ],
+            input_handler=input_port,
+            output_handler=output_port,
+            instruction_count=50000,
+        )
+
+        expected_outputs = []
+        expected_inputs = []
+        if active:
+            expected_outputs = [
+                (0x03C4, 2, 0x0F02),
+                (0x03CE, 1, 5),
+                (0x03CF, 1, (graphics_mode & 0xFC) | 1),
+                (0x03CF, 1, graphics_mode),
+            ]
+            expected_inputs = [(0x03CF, 1)]
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"0xb6dd {name}: outputs={outputs}, expected={expected_outputs}"
+            )
+        if inputs != expected_inputs:
+            raise AssertionError(
+                f"0xb6dd {name}: inputs={inputs}, expected={expected_inputs}"
+            )
+
+        buffer_after = bytes(machine.mem_read(buffer_segment * 16, 0x10000))
+        if buffer_after != bytes(buffer_expected):
+            raise AssertionError(f"0xb6dd {name}: framebuffer mismatch")
+        actual_percent = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x524F, 2)
+        )[0]
+        if actual_percent != percent_after:
+            raise AssertionError(
+                f"0xb6dd {name}: percent={actual_percent:#x}, expected={percent_after:#x}"
+            )
+        immutable_data = [
+            (0x2527, struct.pack("<H", depth)),
+            (0x252E, bytes([gate])),
+            (0x5219, pointer),
+            (0x524D, struct.pack("<H", transition_increment)),
+        ]
+        for offset, expected_bytes in immutable_data:
+            actual_bytes = bytes(
+                machine.mem_read(data_segment * 16 + offset, len(expected_bytes))
+            )
+            if actual_bytes != expected_bytes:
+                raise AssertionError(
+                    f"0xb6dd {name}: DS input changed at {offset:#x}"
+                )
+        if bytes(
+            machine.mem_read(game_segment * 16 + 0x2527, len(game_decoy))
+        ) != game_decoy:
+            raise AssertionError(f"0xb6dd {name}: GS state decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x5219, 4)) != decoy_pointer:
+            raise AssertionError(f"0xb6dd {name}: GS pointer decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb6dd {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        if active:
+            left = (destination_offset + 0x1F40) & 0xFFFF
+            right = (0x1F40 - byte_count) & 0xFFFF
+            expected_flags = add16_flags(left, right)
+        else:
+            test_result = gate & 1
+            expected_flags = {
+                "cf": False,
+                "pf": (test_result & 0xFF).bit_count() % 2 == 0,
+                "zf": test_result == 0,
+                "sf": bool(test_result & 0x80),
+                "of": False,
+            }
+        expected_flags["df"] = backward
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xb6dd {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF00, 6)) != stack_sentinel:
+            raise AssertionError(f"0xb6dd {name}: stack sentinel changed")
+        if EXE[return_address] != 0xCB:
+            raise AssertionError("0xb6dd: expected far RET boundary")
+
+        vectors.append({
+            "name": name,
+            "gate": gate,
+            "depth": depth,
+            "transition_increment": transition_increment,
+            "percent_before": percent_before,
+            "percent_after": percent_after,
+            "destination_offset": destination_offset,
+            "byte_count": byte_count if active else 0,
+            "first_source_offset": first_source if active else None,
+            "second_source_offset": second_source if active else None,
+            "second_destination_offset": second_destination if active else None,
+            "graphics_mode": graphics_mode,
+            "direction": "backward" if backward else "forward",
+            "port_inputs": [list(values) for values in inputs],
+            "port_outputs": [list(values) for values in outputs],
+            "framebuffer_before_sha256": hashlib.sha256(buffer_before).hexdigest(),
+            "framebuffer_after_sha256": hashlib.sha256(buffer_after).hexdigest(),
+            "defined_flags": actual_flags,
+        })
+
+    return vectors
+
+
 def ship_3d_depth_scroll_step_vectors() -> list[dict[str, object]]:
     entry = 0xB75C
     expected_hash = "7b169cde9fa6c63a0388539519b45c9d087b3079b8bfc60fe27c28ade04553dd"
@@ -74028,6 +74285,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b98_natural.json",
         ship_3d_object_sprite_project_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b6dd_natural.json",
+        ship_3d_plane_band_copy_vectors(),
         args.check,
     )
     update_vector(

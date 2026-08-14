@@ -5146,6 +5146,32 @@ SS=DS slot alias, the preserve-all envelope, and a narrow field-read lowering
 for the original 32-bit effective offset because Watcom's 16:16 far-pointer
 arithmetic wraps it to 16 bits.
 
+## BLOODPRG ship-3D planar band-copy candidate
+
+`0x00B6DD` gates on ship-3D crop bit zero, optionally derives the transition
+percentage from a signed-clamped doubled depth, enables all four VGA planes,
+and temporarily selects graphics-controller write mode 1. Its byte count is
+`low8(depth + 35) * 80`. The first source begins at absolute offset
+`0xDF40 - count`; the second begins at absolute `0xDF40`. Their destinations
+are the framebuffer offset and `framebuffer offset + 0x3E80 - count`, all with
+16-bit offset wrapping under the framebuffer's segment.
+
+Twelve direct vectors cover both gate exits, skipped and active percentage
+updates, signed doubled-depth overflow, zero and maximum low-byte counts,
+source/destination wrapping, nonzero framebuffer offsets, sequential copy
+effects, inherited forward and backward direction, every VGA input/output,
+exact mode-byte restoration, DS ownership, flags, preservation, and far return.
+The sole real caller enters from the VM path under the shipped clear-DF C ABI;
+the backward vector records the raw assembly behavior as an integration guard.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+87-instruction/192-byte function versus 67/127 original, with 82.09 percent
+mnemonic-multiset overlap and no inline assembly. The VGA operations compile
+to direct IN/OUT instructions, while intrinsic `_fmemcpy` emits REP MOVSW plus
+an optional MOVSB tail rather than the original byte-only REP MOVSB. Direct
+replacement still needs fixed DS placement, exact source/destination segment
+construction, the original preserve-all envelope, and the clear-DF invariant.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
