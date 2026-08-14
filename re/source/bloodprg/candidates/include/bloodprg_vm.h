@@ -225,6 +225,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux vm_op_cd_state_gated parm [si] value [si] modify exact [ax bx cx dx si bp]
 #pragma aux vm_op_b7_record_op parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_op_b8_record_readwrite parm [si] value [si] modify exact [ax bx si es]
+#pragma aux vm_op_c3_state_record parm [si] value [si] modify exact [ax bx dx si bp es]
 #pragma aux vm_op_c5_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
 #pragma aux vm_op_c6_record_match parm [si] value [si] modify exact [ax dx si bp es]
 #pragma aux vm_op_c7_record_match parm [si] value [si] modify exact [ax bx dx si bp es]
@@ -315,6 +316,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006AA7 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_b8_record_readwrite(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006B06 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006EEE */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c5_record_match(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006D18 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c6_record_match(

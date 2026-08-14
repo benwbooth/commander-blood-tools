@@ -1750,6 +1750,25 @@ local, reallocates destination/related/inversion, materializes query truth,
 addresses globals through DS, and duplicates returns. Exact integration still
 needs fixed segment placement and the original compact BP/BX/AX/DL allocation.
 
+VM opcode-C3 handler `0x006EEE` loads the segment from GS:0x6724 but ignores
+the far pointer's offset. It consumes a destination offset, resolves that
+record's owner through the GS:0x672C threshold directory, then consumes a
+related offset. Query mode optionally inverts a match requiring an active
+owner and destination `{kind C3, related}`. Set mode ignores inversion and
+requires active owner and related records plus a destination kind other than
+C4 before writing `{0x00C3, related offset, 1}`.
+
+Sixteen direct vectors prove every query and set guard, prefix handling, the
+real threshold and branch helpers, no partial writes, ignored base-offset
+decoys, record and script boundary behavior, segmented ownership, registers,
+flags, and near return. Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles
+the natural one-to-one candidate warning-free to 55 instructions/141 bytes
+versus 43/116 original, with 83.72 percent mnemonic-multiset overlap and no
+inline assembly. Direct replacement still needs fixed GS placement and the
+original BP/DI/AX/BX/DL allocation; Watcom introduces a frame, uses BX as the
+cursor, SI as destination, DI as related, CX as inversion, materializes query
+truth, and duplicates returns.
+
 VM opcode-C9 handler `0x006FB9` consumes an absolute record offset in the
 segment loaded from GS:0x6724. It reads the old kind, clears kind, then reads
 the old related offset before clearing related and value. For old C4 records it

@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c3_state_record
-; label_comment: VM opcode 0xC3: object/line-record state op (les di,gs:0x6724 + 0xA1-skip prologue). C-range state-table family; exact field op partial || ALSO RECORDED as `vm_op_c3_record_link`: 0xC3 record-link handler; writes es:[record]={0xc3,related,1} on mode-0 success || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xC3 record-link handler; query mode optionally inverts owner-active plus {kind C3, related} matching, while set mode requires active owner/related records and a non-C4 destination before writing {C3, related, 1}; natural C: re/source/bloodprg/candidates/seg_04da/func_006eee_vm_op_c3_state_record.c
 ; incoming: vm_opcode_handlers:opcode_0xc3
 ; byte_count: 116
 ; boundary: cfg_blocks_16_terminals_4
