@@ -4228,6 +4228,43 @@ Whole-source integration needs fixed data placement and the shipped SS/DS
 layout; direct replacement additionally needs narrow direct-interrupt and
 helper-ABI adapters.
 
+## BLOODPRG scene-transition state-machine candidate
+
+`0x001855` is the priority-ordered coordinator behind the scene-transition byte
+at `DS:0x2751`. Bit zero first arms the clip snapshot at `DS:0x5249`. Exact
+phase one updates entity states 4 and 31, resets the UI word, publishes active
+line `0x29`, adopts the deferred record offset, and resolves its name. Later
+phases call the shared scene dispatcher before selecting load (`0x02`), deferred
+record (`0x04`), bridge (`0x08`), finish (`0x10`), or cleanup work in that
+order.
+
+The load path decodes `frigo.fd` into the back buffer and presents it. A record
+kind other than two clears rows 35 through 165 and advances to line `0x2B`.
+Kind two copies the upper 192 live-palette bytes to the transition target,
+builds the source by subtracting 40 from every component with a zero clamp,
+and starts the `0x80..0xBF` transition at increment five. The bridge path
+re-reads `DS:0x2751` after `bridge_steer_update`: a callback-written `0x80`
+blocks immediately, while callback-written `0x40` clears itself and reloads
+the image during the same call. The alien-complete path rotates target to
+source, live to target, and resets the transition percentage.
+
+Twenty-one patched-callee vectors cover inactivity and initialization,
+load-before-deferred priority, both load record kinds, every C2 gate, deferred
+arming, nonpresentation bridge finish, callback-written blocked and reload
+bits, line-seven reload arming, both alien gates, palette restoration, finish,
+and full cleanup. They prove exact helper order and arguments, `BP` forwarding
+to `0x009D10`, all state writes and palette bytes, record and buffer segments,
+preserved registers, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 179 instructions/674 bytes versus the original
+155/574, with 84.52 percent mnemonic-multiset overlap and no inline assembly.
+The source exposes the binary's inherited `BP` link cursor as an ordinary
+parameter and keeps the coordinator in one C function. Full-source integration
+requires the named state in one DS/GS game-data segment; direct replacement
+also needs the inherited-BP entry adapter and original selective register
+envelope.
+
 ## BLOODPRG presentation-choice transition candidate
 
 `0x001AD3` coordinates the modal presentation-choice list and its rectangle

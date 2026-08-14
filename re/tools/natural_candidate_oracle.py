@@ -52115,6 +52115,538 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def scene_transition_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1855
+    return_address = 0xF855
+    expected_hash = "29035d247ed5d6e49f85d71625ad49187155d5ddb69a56e4d50e2fd45e7d062b"
+    if hashlib.sha256(EXE[entry : entry + 574]).hexdigest() != expected_hash:
+        raise AssertionError("0x1855: recovered 574-byte body changed")
+
+    cases = (
+        {"name": "inactive_bit_clear", "phase": 0xFE, "record_kind": 2},
+        {"name": "active_initializes_record", "phase": 0x01, "record_kind": 2},
+        {
+            "name": "load_gate_after_dispatch",
+            "phase": 0x03,
+            "record_kind": 2,
+            "c2_gate": 1,
+        },
+        {"name": "load_nonpresentation", "phase": 0x03, "record_kind": 1},
+        {"name": "load_presentation_palette", "phase": 0x03, "record_kind": 2},
+        {"name": "load_precedes_deferred", "phase": 0x07, "record_kind": 2},
+        {
+            "name": "deferred_gate_after_dispatch",
+            "phase": 0x05,
+            "record_kind": 2,
+            "c2_gate": 1,
+        },
+        {"name": "deferred_record_armed", "phase": 0x05, "record_kind": 2},
+        {
+            "name": "bridge_nonpresentation_gate",
+            "phase": 0x09,
+            "record_kind": 1,
+            "c2_gate": 1,
+        },
+        {
+            "name": "bridge_nonpresentation_finishes",
+            "phase": 0x09,
+            "record_kind": 1,
+        },
+        {
+            "name": "bridge_callback_sets_blocked",
+            "phase": 0x09,
+            "record_kind": 2,
+            "bridge_phase": 0x89,
+        },
+        {
+            "name": "bridge_line_seven_sets_reload",
+            "phase": 0x09,
+            "record_kind": 2,
+            "active_line": 7,
+        },
+        {"name": "bridge_reload", "phase": 0x49, "record_kind": 2},
+        {
+            "name": "bridge_callback_sets_reload",
+            "phase": 0x09,
+            "record_kind": 2,
+            "bridge_phase": 0x49,
+        },
+        {
+            "name": "bridge_alien_remains_active",
+            "phase": 0x09,
+            "record_kind": 2,
+            "alien_active": 1,
+        },
+        {
+            "name": "bridge_alien_sets_c2_gate",
+            "phase": 0x09,
+            "record_kind": 2,
+            "alien_c2_gate": 1,
+        },
+        {"name": "bridge_palette_restore", "phase": 0x09, "record_kind": 2},
+        {
+            "name": "finish_gate_after_dispatch",
+            "phase": 0x11,
+            "record_kind": 2,
+            "c2_gate": 1,
+        },
+        {"name": "finish_transition", "phase": 0x11, "record_kind": 2},
+        {
+            "name": "cleanup_gate_after_dispatch",
+            "phase": 0x21,
+            "record_kind": 2,
+            "c2_gate": 1,
+        },
+        {"name": "cleanup_resets_presentation", "phase": 0x21, "record_kind": 2},
+    )
+    game_segment = 0x3000
+    record_segment = 0x5000
+    back_buffer_segment = 0x6000
+    caller_es_segment = 0x7100
+    caller_fs_segment = 0x7200
+    stack_segment = 0x9000
+    record_base_offset = 0x0200
+    record_offset = 0x0240
+    deferred_record_offset = 0x0380
+    back_buffer_offset = 0x0100
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa5966987783cc3")
+    helper_targets = {
+        0x03BD1: "entity_flag_state_transition",
+        0x09710: "dlg_line_id_scene_dispatch",
+        0x06E09: "vm_c2_descript_lookup",
+        0x025FD: "pbm_image_load_and_decode",
+        0x03846: "full_screen_blit",
+        0x037BF: "back_buffer_fill",
+        0x09056: "bridge_steer_update",
+        0x0AF91: "alien_overlay_cycle",
+        0x08696: "ship_3d_hud_palette_snapshot_and_camera_reset",
+    }
+    vectors = []
+
+    def word_at(data: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", data, offset)[0]
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        phase = int(case["phase"])
+        record_kind = int(case["record_kind"])
+        c2_gate = int(case.get("c2_gate", 0))
+        active_line = int(case.get("active_line", 0x0033))
+
+        game_before = bytearray(
+            (offset * 37 + (offset >> 8) * 13 + case_index * 29 + 0x41)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before[0x00F3 : 0x00FC] = b"frigo.fd\0"
+        game_before[0x2751] = phase
+        game_before[0x1FB2] = c2_gate
+        game_before[0x5B57] = 0xA6
+        struct.pack_into("<H", game_before, 0x274D, record_offset)
+        struct.pack_into("<H", game_before, 0x2793, 0x5A5A)
+        struct.pack_into("<H", game_before, 0x5249, 0xA55A)
+        struct.pack_into("<H", game_before, 0x6768, 0x6B6B)
+        struct.pack_into("<H", game_before, 0x676A, deferred_record_offset)
+        struct.pack_into("<H", game_before, 0x6788, active_line)
+        struct.pack_into(
+            "<HH", game_before, 0x6724, record_base_offset, record_segment
+        )
+        struct.pack_into(
+            "<HH",
+            game_before,
+            0x5229,
+            back_buffer_offset,
+            back_buffer_segment,
+        )
+        live_high = bytes(
+            (index * 17 + case_index * 11 + 3) & 0x3F
+            for index in range(192)
+        )
+        target_high = bytes(
+            (index * 23 + case_index * 7 + 0x91) & 0xFF
+            for index in range(192)
+        )
+        source_high = bytes(
+            (index * 31 + case_index * 5 + 0x53) & 0xFF
+            for index in range(192)
+        )
+        game_before[0x53D1 : 0x5491] = live_high
+        game_before[0x56D1 : 0x5791] = target_high
+        game_before[0x59D1 : 0x5A91] = source_high
+
+        record_before = bytearray(
+            (offset * 19 + case_index * 43 + 0x27) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", record_before, record_offset, record_kind)
+        expected = bytearray(game_before)
+        expected_calls: list[dict[str, object]] = []
+
+        def expected_call(
+            callee: str, return_ip: int, **arguments: object
+        ) -> None:
+            expected_calls.append(
+                {
+                    "callee": callee,
+                    "return": [return_ip, 0],
+                    **arguments,
+                }
+            )
+
+        if phase & 1:
+            struct.pack_into("<H", expected, 0x5249, 1)
+            if phase & 0xFE == 0:
+                expected_call("entity_flag_state_transition", 0x1874, ax=4)
+                expected_call("entity_flag_state_transition", 0x187C, ax=31)
+                struct.pack_into("<H", expected, 0x2793, 0)
+                expected[0x2751] |= 2
+                struct.pack_into("<H", expected, 0x6788, 0x0029)
+                struct.pack_into(
+                    "<H", expected, 0x274D, deferred_record_offset
+                )
+                expected_call(
+                    "vm_c2_descript_lookup",
+                    0x18A2,
+                    es=record_segment,
+                    di=deferred_record_offset + 4,
+                )
+            else:
+                expected_call(
+                    "dlg_line_id_scene_dispatch",
+                    0x18AA,
+                    ax=((0x7E00 + case_index) & 0xFF00) | phase,
+                    bp=(0x789A + case_index) & 0xFFFF,
+                )
+                if phase & 2:
+                    if c2_gate == 0:
+                        expected[0x2751] = 5
+                        struct.pack_into("<H", expected, 0x1FA7, 0x0023)
+                        expected[0x274F] = 1
+                        expected[0x5B53] = 1
+                        expected[0x5B57] = 0
+                        expected_call(
+                            "pbm_image_load_and_decode",
+                            0x18DF,
+                            path=[game_segment, 0x00F3],
+                            buffer=[back_buffer_segment, back_buffer_offset],
+                            palette_refresh=1,
+                            transparent_zero=0,
+                        )
+                        expected_call(
+                            "full_screen_blit",
+                            0x18E9,
+                            source=[back_buffer_segment, back_buffer_offset],
+                        )
+                        if record_kind != 2:
+                            struct.pack_into("<H", expected, 0x0A32, 0xFFFF)
+                            expected_call(
+                                "back_buffer_fill",
+                                0x1912,
+                                ax=0,
+                                top=0x0023,
+                                bottom=0x00A5,
+                            )
+                            struct.pack_into("<H", expected, 0x5239, 0)
+                            struct.pack_into("<H", expected, 0x523B, 200)
+                            expected[0x2751] = 9
+                            struct.pack_into("<H", expected, 0x6788, 0x002B)
+                        else:
+                            expected[0x56D1 : 0x5791] = live_high
+                            expected[0x59D1 : 0x5A91] = bytes(
+                                max(component - 40, 0)
+                                for component in live_high
+                            )
+                            expected[0x5B51] = 0x80
+                            expected[0x5B52] = 0xBF
+                            struct.pack_into("<H", expected, 0x524D, 5)
+                            struct.pack_into("<H", expected, 0x6788, 0x0027)
+                elif phase & 4:
+                    if c2_gate == 0:
+                        struct.pack_into("<H", expected, 0x6768, 0x00C4)
+                        expected[0x2751] = 0x89
+                        struct.pack_into("<H", expected, 0x0A32, 0)
+                elif phase & 8:
+                    expected_call("bridge_steer_update", 0x1994)
+                    if "bridge_phase" in case:
+                        expected[0x2751] = int(case["bridge_phase"])
+                    if record_kind != 2:
+                        if c2_gate == 0:
+                            struct.pack_into("<H", expected, 0x1FA7, 0)
+                            expected[0x2751] = 0x21
+                            struct.pack_into("<H", expected, 0x6788, 0x002A)
+                            expected[0x274F] = 0
+                    elif expected[0x2751] & 0x80:
+                        pass
+                    elif word_at(expected, 0x6788) == 7:
+                        expected[0x2751] |= 0x40
+                    elif expected[0x2751] & 0x40:
+                        expected[0x2751] &= 0xBF
+                        expected[0x5B53] = 0
+                        expected_call(
+                            "pbm_image_load_and_decode",
+                            0x19DC,
+                            path=[game_segment, 0x00F3],
+                            buffer=[back_buffer_segment, back_buffer_offset],
+                            palette_refresh=0,
+                            transparent_zero=0xA6,
+                        )
+                    else:
+                        expected_call("alien_overlay_cycle", 0x19E4)
+                        if "alien_active" in case:
+                            expected[0x67AC] = int(case["alien_active"])
+                        if "alien_c2_gate" in case:
+                            expected[0x1FB2] = int(case["alien_c2_gate"])
+                        if expected[0x67AC] & 1 == 0 and expected[0x1FB2] & 1 == 0:
+                            expected[0x2751] = 0x11
+                            struct.pack_into("<H", expected, 0x6788, 0x0028)
+                            expected[0x59D1 : 0x5A91] = target_high
+                            expected[0x56D1 : 0x5791] = live_high
+                            struct.pack_into("<H", expected, 0x524F, 0)
+                elif phase & 0x10:
+                    if c2_gate == 0:
+                        struct.pack_into("<H", expected, 0x1FA7, 0)
+                        expected[0x2751] = 0x21
+                        struct.pack_into("<H", expected, 0x6788, 0x002A)
+                        expected[0x274F] = 0
+                elif c2_gate == 0:
+                    struct.pack_into("<H", expected, 0x0A32, 0)
+                    expected[0x2751] = 0
+                    struct.pack_into("<H", expected, 0x2793, 1)
+                    struct.pack_into("<H", expected, 0x1FAB, 0xFFFF)
+                    struct.pack_into("<H", expected, 0x6788, 0xFFFF)
+                    expected[0x1FB2] = 0
+                    expected[0x5E64] = 0
+                    expected[0x67B0] = 0
+                    expected[0x67BC] = 0
+                    expected[0x67AA] &= 0xFC
+                    expected[0x67BA] = 0
+                    expected[0x27D9] = 1
+                    expected_call(
+                        "ship_3d_hud_palette_snapshot_and_camera_reset",
+                        0x1A8E,
+                    )
+
+        initial = {
+            "eax": 0xA5A57E00 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": game_segment,
+            "es": caller_es_segment,
+            "fs": caller_fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, object]] = []
+
+        def stack_word(machine: Uc, index: int = 0) -> int:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            return struct.unpack(
+                "<H",
+                machine.mem_read(
+                    stack_segment * 16 + stack_pointer + index * 2, 2
+                ),
+            )[0]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            callee = helper_targets.get(address)
+            if callee is None:
+                return
+            call: dict[str, object] = {
+                "callee": callee,
+                "return": [stack_word(machine), stack_word(machine, 1)],
+            }
+            if callee == "entity_flag_state_transition":
+                call["ax"] = machine.reg_read(UC_X86_REG_AX)
+            elif callee == "dlg_line_id_scene_dispatch":
+                call["ax"] = machine.reg_read(UC_X86_REG_AX)
+                call["bp"] = machine.reg_read(UC_X86_REG_BP)
+            elif callee == "vm_c2_descript_lookup":
+                call["es"] = machine.reg_read(UC_X86_REG_ES)
+                call["di"] = machine.reg_read(UC_X86_REG_DI)
+            elif callee == "pbm_image_load_and_decode":
+                call["path"] = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+                call["buffer"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+                call["palette_refresh"] = machine.mem_read(
+                    game_segment * 16 + 0x5B53, 1
+                )[0]
+                call["transparent_zero"] = machine.mem_read(
+                    game_segment * 16 + 0x5B57, 1
+                )[0]
+            elif callee == "full_screen_blit":
+                call["source"] = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+            elif callee == "back_buffer_fill":
+                call["ax"] = machine.reg_read(UC_X86_REG_AX)
+                call["top"] = struct.unpack(
+                    "<H", machine.mem_read(game_segment * 16 + 0x5239, 2)
+                )[0]
+                call["bottom"] = struct.unpack(
+                    "<H", machine.mem_read(game_segment * 16 + 0x523B, 2)
+                )[0]
+            calls.append(call)
+
+            if callee == "bridge_steer_update" and "bridge_phase" in case:
+                machine.mem_write(
+                    game_segment * 16 + 0x2751,
+                    bytes((int(case["bridge_phase"]),)),
+                )
+            elif callee == "alien_overlay_cycle":
+                if "alien_active" in case:
+                    machine.mem_write(
+                        game_segment * 16 + 0x67AC,
+                        bytes((int(case["alien_active"]),)),
+                    )
+                if "alien_c2_gate" in case:
+                    machine.mem_write(
+                        game_segment * 16 + 0x1FB2,
+                        bytes((int(case["alien_c2_gate"]),)),
+                    )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                *[
+                    (address >> 4, address & 0xF, b"\xCB")
+                    for address in helper_targets
+                ],
+                (game_segment, 0, bytes(game_before)),
+                (record_segment, 0, bytes(record_before)),
+                (
+                    back_buffer_segment,
+                    back_buffer_offset,
+                    bytes((index * 7 + case_index) & 0xFF for index in range(4096)),
+                ),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=5000,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x1855 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual != bytes(expected):
+            mismatch = next(
+                offset
+                for offset, (actual_byte, expected_byte) in enumerate(
+                    zip(actual, expected)
+                )
+                if actual_byte != expected_byte
+            )
+            raise AssertionError(
+                f"0x1855 {name}: first data mismatch at {mismatch:#06x}: "
+                f"{actual[mismatch]:#04x} != {expected[mismatch]:#04x}"
+            )
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(
+            record_before
+        ):
+            raise AssertionError(f"0x1855 {name}: record memory changed")
+
+        expected_registers = {
+            "eax": initial["eax"],
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"],
+            "edx": initial["edx"],
+            "esi": initial["esi"],
+            "edi": initial["edi"],
+            "ebp": initial["ebp"],
+            "sp": caller_sp + 2,
+            "ds": game_segment,
+            "es": caller_es_segment,
+            "fs": caller_fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        palette_loop = (
+            expected[0x56D1 : 0x5791] != game_before[0x56D1 : 0x5791]
+        )
+        if palette_loop:
+            expected_registers["ecx"] = initial["ecx"] & 0xFFFF0000
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x1855 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x1855 {name}: caller stack changed")
+
+        changed_offsets = [
+            offset
+            for offset, (before, after) in enumerate(zip(game_before, actual))
+            if before != after
+        ]
+        vectors.append(
+            {
+                "name": name,
+                "phase_before": phase,
+                "record_kind": record_kind,
+                "c2_gate_before": c2_gate,
+                "active_line_before": active_line,
+                "calls": calls,
+                "phase_after": actual[0x2751],
+                "clip_snapshot_flags": word_at(actual, 0x5249),
+                "scene_record_offset": word_at(actual, 0x274D),
+                "active_line_after": word_at(actual, 0x6788),
+                "scene_gate_after": actual[0x274F],
+                "c2_gate_after": actual[0x1FB2],
+                "palette_refresh_after": actual[0x5B53],
+                "transparent_zero_after": actual[0x5B57],
+                "target_high_sha256": hashlib.sha256(
+                    actual[0x56D1 : 0x5791]
+                ).hexdigest(),
+                "source_high_sha256": hashlib.sha256(
+                    actual[0x59D1 : 0x5A91]
+                ).hexdigest(),
+                "changed_byte_count": len(changed_offsets),
+                "changed_offsets": changed_offsets,
+                "preserved_registers": [
+                    "eax",
+                    "ebx",
+                    "edx",
+                    "esi",
+                    "edi",
+                    "ebp",
+                    "ds",
+                    "es",
+                    "fs",
+                    "gs",
+                    "ss",
+                ],
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def startup_loading_screen_and_write_directory_prepare_vectors() -> list[dict[str, object]]:
     entry = 0x16A7
     return_address = 0xF6A7
@@ -61401,6 +61933,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1610_natural.json",
         manu3_hand_frame_dispatch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1855_natural.json",
+        scene_transition_step_vectors(),
         args.check,
     )
     update_vector(

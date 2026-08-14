@@ -178,6 +178,8 @@ cb_u16 CB_FAR page_flip(void); /* 0x00954A */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
 void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */
 void CB_FAR ship_3d_hud_palette_snapshot_and_camera_reset(void); /* 0x008C96 */
+void CB_FAR bridge_steer_update(void); /* 0x009656 */
+void CB_FAR alien_overlay_cycle(void); /* 0x00B591 */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,

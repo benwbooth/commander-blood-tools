@@ -24,6 +24,7 @@ extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
+extern volatile cb_u16 vm_scene_record_offset; /* DS:0x274D */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
@@ -80,6 +81,7 @@ extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
+extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
 extern volatile cb_u8 vm_presentation_hold_ready; /* GS:0x67BC */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */

@@ -6,8 +6,8 @@
 ; seg_off: 008b:09a5
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: scene_transition_2751
-; label_comment: scene transition trigger: al=[0x2751]; if bit0 set, [0x5249]=1 (arm a scene/screen transition). Gates a scene change on the [0x2751] flag
+; label: scene_transition_step
+; label_comment: priority-ordered scene-transition state machine. Bit 0 arms DS:0x5249; phase 1 initializes record and presentation state; bits 1/2/3/4 select image/palette load, deferred-record arming, bridge/alien coordination, and finish, followed by full presentation cleanup. Direct vectors: re/tools/oracle_vectors/func_1855_natural.json
 ; byte_count: 574
 ; boundary: cfg_blocks_31_terminals_10
 ; terminal: jmp 0x1a8e:9, ret:1

@@ -35,6 +35,8 @@ extern volatile char CB_GAME_DATA
         back_buffer_init_image_path[]; /* DS:0x00EA */
 extern volatile char CB_GAME_DATA
         backbuffer_clear_image_path[]; /* DS:0x00E3 */
+extern volatile char CB_GAME_DATA
+        scene_transition_image_path[]; /* DS:0x00F3 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_live_palette[768]; /* GS:0x5251 */
 extern volatile cb_u8 CB_GAME_DATA
@@ -184,6 +186,7 @@ cb_i16 CB_FAR back_buffer_init(void); /* 0x008B:0x0929 */
 cb_i16 CB_FAR backbuffer_clear_flags(void); /* 0x008B:0x0967 */
 void CB_NEAR page_offset_helper(void); /* 0x0017AF */
 void CB_NEAR main_loop_hud_refresh(void); /* 0x001A93 */
+void CB_NEAR scene_transition_step(cb_u16 link_target_offset); /* 0x001855 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 cb_i16 CB_FAR palette_blend_remap_table_build(
