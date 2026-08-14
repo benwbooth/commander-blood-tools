@@ -53159,6 +53159,430 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def entity_draw_full_vectors() -> list[dict[str, object]]:
+    entry = 0x9240
+    data_segment = 0x4000
+    game_segment = 0x2000
+    frame_segment = 0x6000
+    extra_segment = 0x8000
+    stack_segment = 0xA000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    extent_helper = 0x3CCD       # 0299:133D
+    position_helper = 0x3C0D     # 0299:127D
+    expected_hash = "8a64f53286b9dab1afe8a31223091c0e2037b2c5bf5bc10e0da3c83c0b9c8462"
+    if hashlib.sha256(EXE[entry : entry + 99]).hexdigest() != expected_hash:
+        raise AssertionError("0x9240: recovered 99-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "nominal_positive",
+            "zoom": 10,
+            "source_extent": (40, 30),
+            "source_width": 40,
+            "target": (200, 120),
+            "current": (100, 80),
+        },
+        {
+            "name": "source_high_bytes_ignored",
+            "zoom": 4,
+            "source_extent": (0x12F0, 0xAB80),
+            "source_width": 75,
+            "target": (800, 500),
+            "current": (400, 300),
+        },
+        {
+            "name": "scale_product_low_byte_wrap",
+            "zoom": 86,
+            "source_extent": (0xFFFF, 0xFEFE),
+            "source_width": 100,
+            "target": (1500, 1200),
+            "current": (1000, 800),
+        },
+        {
+            "name": "signed_scale_128",
+            "zoom": 170,
+            "source_extent": (16, 8),
+            "source_width": 0,
+            "target": (1013, 977),
+            "current": (1000, 1000),
+        },
+        {
+            "name": "negative_division_truncates_to_zero",
+            "zoom": 10,
+            "source_extent": (17, 19),
+            "source_width": 0,
+            "target": (975, 765),
+            "current": (1000, 800),
+        },
+        {
+            "name": "sixteen_bit_delta_wrap",
+            "zoom": 8,
+            "source_extent": (255, 254),
+            "source_width": 1,
+            "target": (0, 0xFFF6),
+            "current": (0xFFFF, 0),
+        },
+        {
+            "name": "helper_mutation_visible_to_position",
+            "zoom": 12,
+            "source_extent": (31, 47),
+            "source_width": 7,
+            "target": (400, 500),
+            "current": (200, 300),
+            "mutated_source_width": 20,
+            "mutated_target": (900, 700),
+            "mutated_current": (600, 650),
+        },
+        {
+            "name": "frame_offset_wrap_and_reverse_df",
+            "zoom": 1,
+            "source_extent": (0x55AA, 0xCC33),
+            "source_width": 0xFFF0,
+            "target": (0x0010, 0x0008),
+            "current": (0x0000, 0xFFFE),
+            "frame_offset": 0xFFFE,
+            "direction": "reverse",
+        },
+        {
+            "name": "comparison_context_offset",
+            "zoom": 0xFF,
+            "source_extent": (0x0101, 0x0202),
+            "source_width": 12,
+            "target": (1300, 900),
+            "current": (1100, 850),
+            "context_offset": 0x3210,
+            "comparison_pointer": (0xBEEF, 0x6A00),
+        },
+        {
+            "name": "target_y_bias_wrap",
+            "zoom": 6,
+            "source_extent": (63, 127),
+            "source_width": 0,
+            "target": (13, 0xFFFA),
+            "current": (0, 0),
+        },
+    ]
+
+    def write_word_wrap(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset & 0xFFFF] = value & 0xFF
+        memory[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def read_word_wrap(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    def signed8(value: int) -> int:
+        value &= 0xFF
+        return value - 0x100 if value & 0x80 else value
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def trunc_div(value: int, divisor: int) -> int:
+        quotient = abs(value) // abs(divisor)
+        return -quotient if (value < 0) != (divisor < 0) else quotient
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        zoom = int(case["zoom"]) & 0xFF
+        frame_offset = int(case.get("frame_offset", 0x5100 + case_index * 0x31))
+        context_offset = int(case.get("context_offset", 0x3800 + case_index * 0x23))
+        comparison_offset, comparison_segment = case.get(
+            "comparison_pointer", (0x6200 + case_index * 0x17, 0x6A00)
+        )
+        source_extent = tuple(int(value) & 0xFFFF for value in case["source_extent"])
+        target = tuple(int(value) & 0xFFFF for value in case["target"])
+        current = tuple(int(value) & 0xFFFF for value in case["current"])
+        source_width = int(case["source_width"]) & 0xFFFF
+        reverse = case.get("direction") == "reverse"
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 11 + case_index * 29 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + (offset >> 8) * 7 + case_index * 31 + 0x71) & 0xFF
+            for offset in range(0x10000)
+        )
+        frame_before = bytearray(
+            (offset * 13 + (offset >> 8) * 19 + case_index * 37 + 0x95) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 5 + case_index * 41 + 0xA7) & 0xFF
+            for offset in range(0x10000)
+        )
+        write_word_wrap(data_before, 0x6216, frame_offset)
+        write_word_wrap(data_before, 0x6218, frame_segment)
+        data_before[0x2789] = zoom
+        write_word_wrap(data_before, 0x277E, source_width)
+        write_word_wrap(data_before, 0x2780, target[0])
+        write_word_wrap(data_before, 0x2782, target[1])
+        write_word_wrap(data_before, 0x2AAB, current[0])
+        write_word_wrap(data_before, 0x2AAD, current[1])
+        write_word_wrap(frame_before, frame_offset, source_extent[0])
+        write_word_wrap(frame_before, frame_offset + 2, source_extent[1])
+
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before = bytearray(
+            (offset * 7 + case_index * 43 + 0x63) & 0xFF
+            for offset in range(0x10000)
+        )
+        write_word_wrap(stack_before, caller_sp, return_address)
+        stack_before[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+        write_word_wrap(stack_before, context_offset + 4, int(comparison_offset))
+        write_word_wrap(stack_before, context_offset + 6, int(comparison_segment))
+
+        scale = ((((zoom * 3) & 0xFF) >> 1) + 1) & 0xFF
+        scaled_width = (((source_extent[0] & 0xFF) * scale) >> 4) & 0xFFFF
+        scaled_height = (((source_extent[1] & 0xFF) * scale) >> 4) & 0xFFFF
+
+        positioned_source_width = int(
+            case.get("mutated_source_width", source_width)
+        ) & 0xFFFF
+        positioned_target = tuple(
+            int(value) & 0xFFFF
+            for value in case.get("mutated_target", target)
+        )
+        positioned_current = tuple(
+            int(value) & 0xFFFF
+            for value in case.get("mutated_current", current)
+        )
+        delta_x = signed16(
+            positioned_target[0] - positioned_source_width - positioned_current[0]
+        )
+        delta_y = signed16(
+            positioned_target[1] + 10 - positioned_current[1]
+        )
+        quotient_x = trunc_div(delta_x, 13)
+        quotient_y = trunc_div(delta_y, 13)
+        if not (-128 <= quotient_x <= 127 and -128 <= quotient_y <= 127):
+            raise AssertionError(f"0x9240 {name}: test vector would raise #DE")
+        draw_x = (
+            positioned_current[0] + signed8(quotient_x) * signed8(scale)
+        ) & 0xFFFF
+        draw_y = (
+            positioned_current[1] + signed8(quotient_y) * signed8(scale)
+        ) & 0xFFFF
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B20000 | ((0x40 + case_index * 13) & 0xFF),
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | context_offset,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7600,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse else 0x0202,
+        }
+        expected_data = bytearray(data_before)
+        expected_calls = [
+            {
+                "call": "sprite_slot_extent_update",
+                "cs": 0x0299,
+                "ip": 0x133D,
+                "sp": 0xFEF8,
+                "ax": 0,
+                "cx": scaled_width,
+                "dx": scaled_height,
+                "es": frame_segment,
+                "di": frame_offset,
+                "si": 0x6212,
+                "bp": context_offset,
+                "comparison_offset": int(comparison_offset) & 0xFFFF,
+                "comparison_segment": int(comparison_segment) & 0xFFFF,
+            },
+            {
+                "call": "sprite_slot_position_update",
+                "cs": 0x0299,
+                "ip": 0x127D,
+                "sp": 0xFEFA,
+                "ax": 0,
+                "bx": draw_x,
+                "cx": draw_y,
+                "dx": (scale << 8) | 13,
+                "es": frame_segment,
+                "di": frame_offset,
+                "si": 0x6212,
+                "bp": context_offset,
+            },
+        ]
+        actual_calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (extent_helper, position_helper):
+                return
+            call = (
+                "sprite_slot_extent_update"
+                if address == extent_helper
+                else "sprite_slot_position_update"
+            )
+            event: dict[str, object] = {
+                "call": call,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+            }
+            if address == extent_helper:
+                event["comparison_offset"] = read_word_wrap(
+                    stack_before, context_offset + 4
+                )
+                event["comparison_segment"] = read_word_wrap(
+                    stack_before, context_offset + 6
+                )
+                if "mutated_target" in case:
+                    write_word_wrap(
+                        expected_data, 0x277E, int(case["mutated_source_width"])
+                    )
+                    write_word_wrap(
+                        expected_data, 0x2780, int(case["mutated_target"][0])
+                    )
+                    write_word_wrap(
+                        expected_data, 0x2782, int(case["mutated_target"][1])
+                    )
+                    write_word_wrap(
+                        expected_data, 0x2AAB, int(case["mutated_current"][0])
+                    )
+                    write_word_wrap(
+                        expected_data, 0x2AAD, int(case["mutated_current"][1])
+                    )
+                    machine.mem_write(
+                        data_segment * 16 + 0x277E,
+                        bytes(expected_data[0x277E : 0x2784]),
+                    )
+                    machine.mem_write(
+                        data_segment * 16 + 0x2AAB,
+                        bytes(expected_data[0x2AAB : 0x2AAF]),
+                    )
+            else:
+                event["bx"] = machine.reg_read(UC_X86_REG_BX)
+            actual_calls.append(event)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, extent_helper, b"\xCB"),
+                (0, position_helper, b"\xCB"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_before),
+                (frame_segment, 0, bytes(frame_before)),
+                (extra_segment, 0, extra_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=200,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x9240 {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(expected_data):
+            raise AssertionError(f"0x9240 {name}: DS data mismatch")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x9240 {name}: GS decoy changed")
+        if bytes(machine.mem_read(frame_segment * 16, 0x10000)) != bytes(frame_before):
+            raise AssertionError(f"0x9240 {name}: source extent changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x9240 {name}: entry ES decoy changed")
+
+        expected_registers = {
+            "eax": initial["eax"] & 0xFFFF0000,
+            "ebx": (initial["ebx"] & 0xFFFF0000) | draw_x,
+            "ecx": (initial["ecx"] & 0xFFFF0000) | draw_y,
+            "edx": (initial["edx"] & 0xFFFF0000) | (scale << 8) | 13,
+            "esi": (initial["esi"] & 0xFFFF0000) | 0x6212,
+            "edi": (initial["edi"] & 0xFFFF0000) | frame_offset,
+            "ebp": initial["ebp"],
+            "sp": caller_sp + 2,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9240 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9240 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9240 {name}: caller stack changed")
+
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "zf": True,
+            "sf": False,
+            "of": False,
+            "df": reverse,
+        }
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9240 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "zoom": zoom,
+                "scale": scale,
+                "source_extent": list(source_extent),
+                "scaled_extent": [scaled_width, scaled_height],
+                "source_width": source_width,
+                "target_before": list(target),
+                "current_before": list(current),
+                "target_for_position": list(positioned_target),
+                "current_for_position": list(positioned_current),
+                "draw_position": [draw_x, draw_y],
+                "comparison_pointer": [
+                    int(comparison_offset) & 0xFFFF,
+                    int(comparison_segment) & 0xFFFF,
+                ],
+                "calls": expected_calls,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def bridge_render_frame_vectors() -> list[dict[str, object]]:
     entry = 0x77E0
     data_segment = 0x4400
@@ -74130,6 +74554,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77e0_natural.json",
         bridge_render_frame_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9240_natural.json",
+        entity_draw_full_vectors(),
         args.check,
     )
     update_vector(

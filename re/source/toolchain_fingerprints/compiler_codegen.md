@@ -5146,6 +5146,33 @@ SS=DS slot alias, the preserve-all envelope, and a narrow field-read lowering
 for the original 32-bit effective offset because Watcom's 16:16 far-pointer
 arithmetic wraps it to 16 bits.
 
+## BLOODPRG location-panel entity draw candidate
+
+`0x009240` loads entity zero's sprite source extent through the DS alias of the
+entity table. It computes an eight-bit scale as
+`(((zoom * 3) & 0xff) >> 1) + 1`, scales only the low byte of each 16-bit source
+extent, and calls the extent updater. That helper's source-comparison pointer
+is the original ambient `SS:[BP+4]` context; the natural API exposes it as a
+typed far pointer instead of treating it as the sprite source.
+
+The position step reads the current panel rectangle only after the extent call,
+so helper mutations are visible. X uses `(target_x - source_width - current_x)`
+and Y uses `(target_y + 10 - current_y)`, both wrapped to signed 16 bits. Each
+delta is divided by signed byte 13 and multiplied by the scale interpreted as a
+signed byte before being added to the current coordinate. Ten direct vectors
+cover all of those width, sign, wrap, callback-order, segment, call-frame,
+register, flag, stack, and return boundaries.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+58-instruction/139-byte function versus 40/99 original, with 87.50 percent
+mnemonic-multiset overlap and no inline assembly. Watcom passes the explicit
+comparison pointer in `DX:AX`, moves it naturally to `ES:SI` for the recovered
+extent helper ABI, and uses ordinary 16-bit `IDIV` for the C quotient. Full
+source integration therefore requires the shipped DS=GS alias and the
+game-valid quotient range of signed byte `IDIV`; a drop-in binary boundary
+would additionally have to recover the ambient `SS:[BP+4]` context and exact
+byte `IDIV`/`IMUL` register behavior.
+
 ## BLOODPRG ship-3D planar band-copy candidate
 
 `0x00B6DD` gates on ship-3D crop bit zero, optionally derives the transition

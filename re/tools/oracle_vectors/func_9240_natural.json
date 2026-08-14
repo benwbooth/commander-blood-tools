@@ -1,0 +1,772 @@
+[
+  {
+    "name": "nominal_positive",
+    "zoom": 10,
+    "scale": 16,
+    "source_extent": [
+      40,
+      30
+    ],
+    "scaled_extent": [
+      40,
+      30
+    ],
+    "source_width": 40,
+    "target_before": [
+      200,
+      120
+    ],
+    "current_before": [
+      100,
+      80
+    ],
+    "target_for_position": [
+      200,
+      120
+    ],
+    "current_for_position": [
+      100,
+      80
+    ],
+    "draw_position": [
+      164,
+      128
+    ],
+    "comparison_pointer": [
+      25088,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 40,
+        "dx": 30,
+        "es": 24576,
+        "di": 20736,
+        "si": 25106,
+        "bp": 14336,
+        "comparison_offset": 25088,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 164,
+        "cx": 128,
+        "dx": 4109,
+        "es": 24576,
+        "di": 20736,
+        "si": 25106,
+        "bp": 14336
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "source_high_bytes_ignored",
+    "zoom": 4,
+    "scale": 7,
+    "source_extent": [
+      4848,
+      43904
+    ],
+    "scaled_extent": [
+      105,
+      56
+    ],
+    "source_width": 75,
+    "target_before": [
+      800,
+      500
+    ],
+    "current_before": [
+      400,
+      300
+    ],
+    "target_for_position": [
+      800,
+      500
+    ],
+    "current_for_position": [
+      400,
+      300
+    ],
+    "draw_position": [
+      575,
+      412
+    ],
+    "comparison_pointer": [
+      25111,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 105,
+        "dx": 56,
+        "es": 24576,
+        "di": 20785,
+        "si": 25106,
+        "bp": 14371,
+        "comparison_offset": 25111,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 575,
+        "cx": 412,
+        "dx": 1805,
+        "es": 24576,
+        "di": 20785,
+        "si": 25106,
+        "bp": 14371
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "scale_product_low_byte_wrap",
+    "zoom": 86,
+    "scale": 2,
+    "source_extent": [
+      65535,
+      65278
+    ],
+    "scaled_extent": [
+      31,
+      31
+    ],
+    "source_width": 100,
+    "target_before": [
+      1500,
+      1200
+    ],
+    "current_before": [
+      1000,
+      800
+    ],
+    "target_for_position": [
+      1500,
+      1200
+    ],
+    "current_for_position": [
+      1000,
+      800
+    ],
+    "draw_position": [
+      1060,
+      862
+    ],
+    "comparison_pointer": [
+      25134,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 31,
+        "dx": 31,
+        "es": 24576,
+        "di": 20834,
+        "si": 25106,
+        "bp": 14406,
+        "comparison_offset": 25134,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 1060,
+        "cx": 862,
+        "dx": 525,
+        "es": 24576,
+        "di": 20834,
+        "si": 25106,
+        "bp": 14406
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "signed_scale_128",
+    "zoom": 170,
+    "scale": 128,
+    "source_extent": [
+      16,
+      8
+    ],
+    "scaled_extent": [
+      128,
+      64
+    ],
+    "source_width": 0,
+    "target_before": [
+      1013,
+      977
+    ],
+    "current_before": [
+      1000,
+      1000
+    ],
+    "target_for_position": [
+      1013,
+      977
+    ],
+    "current_for_position": [
+      1000,
+      1000
+    ],
+    "draw_position": [
+      872,
+      1128
+    ],
+    "comparison_pointer": [
+      25157,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 128,
+        "dx": 64,
+        "es": 24576,
+        "di": 20883,
+        "si": 25106,
+        "bp": 14441,
+        "comparison_offset": 25157,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 872,
+        "cx": 1128,
+        "dx": 32781,
+        "es": 24576,
+        "di": 20883,
+        "si": 25106,
+        "bp": 14441
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "negative_division_truncates_to_zero",
+    "zoom": 10,
+    "scale": 16,
+    "source_extent": [
+      17,
+      19
+    ],
+    "scaled_extent": [
+      17,
+      19
+    ],
+    "source_width": 0,
+    "target_before": [
+      975,
+      765
+    ],
+    "current_before": [
+      1000,
+      800
+    ],
+    "target_for_position": [
+      975,
+      765
+    ],
+    "current_for_position": [
+      1000,
+      800
+    ],
+    "draw_position": [
+      984,
+      784
+    ],
+    "comparison_pointer": [
+      25180,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 17,
+        "dx": 19,
+        "es": 24576,
+        "di": 20932,
+        "si": 25106,
+        "bp": 14476,
+        "comparison_offset": 25180,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 984,
+        "cx": 784,
+        "dx": 4109,
+        "es": 24576,
+        "di": 20932,
+        "si": 25106,
+        "bp": 14476
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "sixteen_bit_delta_wrap",
+    "zoom": 8,
+    "scale": 13,
+    "source_extent": [
+      255,
+      254
+    ],
+    "scaled_extent": [
+      207,
+      206
+    ],
+    "source_width": 1,
+    "target_before": [
+      0,
+      65526
+    ],
+    "current_before": [
+      65535,
+      0
+    ],
+    "target_for_position": [
+      0,
+      65526
+    ],
+    "current_for_position": [
+      65535,
+      0
+    ],
+    "draw_position": [
+      65535,
+      0
+    ],
+    "comparison_pointer": [
+      25203,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 207,
+        "dx": 206,
+        "es": 24576,
+        "di": 20981,
+        "si": 25106,
+        "bp": 14511,
+        "comparison_offset": 25203,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 65535,
+        "cx": 0,
+        "dx": 3341,
+        "es": 24576,
+        "di": 20981,
+        "si": 25106,
+        "bp": 14511
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "helper_mutation_visible_to_position",
+    "zoom": 12,
+    "scale": 19,
+    "source_extent": [
+      31,
+      47
+    ],
+    "scaled_extent": [
+      36,
+      55
+    ],
+    "source_width": 7,
+    "target_before": [
+      400,
+      500
+    ],
+    "current_before": [
+      200,
+      300
+    ],
+    "target_for_position": [
+      900,
+      700
+    ],
+    "current_for_position": [
+      600,
+      650
+    ],
+    "draw_position": [
+      999,
+      726
+    ],
+    "comparison_pointer": [
+      25226,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 36,
+        "dx": 55,
+        "es": 24576,
+        "di": 21030,
+        "si": 25106,
+        "bp": 14546,
+        "comparison_offset": 25226,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 999,
+        "cx": 726,
+        "dx": 4877,
+        "es": 24576,
+        "di": 21030,
+        "si": 25106,
+        "bp": 14546
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "frame_offset_wrap_and_reverse_df",
+    "zoom": 1,
+    "scale": 2,
+    "source_extent": [
+      21930,
+      52275
+    ],
+    "scaled_extent": [
+      21,
+      6
+    ],
+    "source_width": 65520,
+    "target_before": [
+      16,
+      8
+    ],
+    "current_before": [
+      0,
+      65534
+    ],
+    "target_for_position": [
+      16,
+      8
+    ],
+    "current_for_position": [
+      0,
+      65534
+    ],
+    "draw_position": [
+      4,
+      0
+    ],
+    "comparison_pointer": [
+      25249,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 21,
+        "dx": 6,
+        "es": 24576,
+        "di": 65534,
+        "si": 25106,
+        "bp": 14581,
+        "comparison_offset": 25249,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 4,
+        "cx": 0,
+        "dx": 525,
+        "es": 24576,
+        "di": 65534,
+        "si": 25106,
+        "bp": 14581
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": true
+    }
+  },
+  {
+    "name": "comparison_context_offset",
+    "zoom": 255,
+    "scale": 127,
+    "source_extent": [
+      257,
+      514
+    ],
+    "scaled_extent": [
+      7,
+      15
+    ],
+    "source_width": 12,
+    "target_before": [
+      1300,
+      900
+    ],
+    "current_before": [
+      1100,
+      850
+    ],
+    "target_for_position": [
+      1300,
+      900
+    ],
+    "current_for_position": [
+      1100,
+      850
+    ],
+    "draw_position": [
+      2878,
+      1358
+    ],
+    "comparison_pointer": [
+      48879,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 7,
+        "dx": 15,
+        "es": 24576,
+        "di": 21128,
+        "si": 25106,
+        "bp": 12816,
+        "comparison_offset": 48879,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 2878,
+        "cx": 1358,
+        "dx": 32525,
+        "es": 24576,
+        "di": 21128,
+        "si": 25106,
+        "bp": 12816
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "target_y_bias_wrap",
+    "zoom": 6,
+    "scale": 10,
+    "source_extent": [
+      63,
+      127
+    ],
+    "scaled_extent": [
+      39,
+      79
+    ],
+    "source_width": 0,
+    "target_before": [
+      13,
+      65530
+    ],
+    "current_before": [
+      0,
+      0
+    ],
+    "target_for_position": [
+      13,
+      65530
+    ],
+    "current_for_position": [
+      0,
+      0
+    ],
+    "draw_position": [
+      10,
+      0
+    ],
+    "comparison_pointer": [
+      25295,
+      27136
+    ],
+    "calls": [
+      {
+        "call": "sprite_slot_extent_update",
+        "cs": 665,
+        "ip": 4925,
+        "sp": 65272,
+        "ax": 0,
+        "cx": 39,
+        "dx": 79,
+        "es": 24576,
+        "di": 21177,
+        "si": 25106,
+        "bp": 14651,
+        "comparison_offset": 25295,
+        "comparison_segment": 27136
+      },
+      {
+        "call": "sprite_slot_position_update",
+        "cs": 665,
+        "ip": 4733,
+        "sp": 65274,
+        "ax": 0,
+        "bx": 10,
+        "cx": 0,
+        "dx": 2573,
+        "es": 24576,
+        "di": 21177,
+        "si": 25106,
+        "bp": 14651
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  }
+]

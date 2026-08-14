@@ -65,6 +65,8 @@ typedef void CB_NEAR bloodprg_sprite_blitter(
 
 extern volatile bloodprg_entity_record CB_GAME_DATA
         bloodprg_entity_table[]; /* GS:0x6212 */
+/* DS:0x6212 alias used by the location-panel renderer after DS=GS setup. */
+extern volatile bloodprg_entity_record bloodprg_entity_table_ds[];
 extern volatile bloodprg_dirty_rect bloodprg_clip_bounds; /* GS:0x5235 */
 extern volatile cb_u16 bloodprg_clip_snapshot_flags; /* GS:0x5249 */
 extern volatile bloodprg_dirty_rect bloodprg_dirty_rect_list[]; /* GS:0x6612 */

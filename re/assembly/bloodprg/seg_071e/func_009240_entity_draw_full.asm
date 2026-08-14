@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph
 ; label: entity_draw_full
-; label_comment: entity render (FULL): les di,[0x6212+4] (entity data far ptr); scale bh=(3*[0x2789])/2+1; x=es:[di]*bh>>4 (cx), y=es:[di+2]*bh>>4 (dx); lcall 0x299:0x133d (draw at cx,dx). So the entity's DATA (the .ext-provided object data at record +0x04) is a COORDINATE record: +0x00 = x, +0x02 = y, scaled by the [0x2789] zoom factor. Connects the .ext object data -> entity_object_table -> scaled screen draw. The object-position render path || ALSO RECORDED as `entity_draw`: entity render/process (2 calls): si=0x6212 (entity_object_table); les di,[si+4] (the entity's data far pointer at record +0x04/+0x06); bh=[0x2789]; al=3 (draw mode). Reads a loaded entity's data pointer + renders it - the object-consumer/draw that walks entity_object_table (the per-object draw sought earlier). Connects the object-instance system to the render path || MERGED 2026-07-25 (#186): one address, several names, folded by union.
+; label_comment: location-panel entity-zero renderer: loads the sprite source extent through DS:[0x6212+4], derives byte scale (((3*[0x2789])&0xff)>>1)+1, and sends low-byte source width/height times scale >>4 to sprite_slot_extent_update. That helper intentionally inherits its comparison extent from SS:[BP+4]. The routine then interpolates DS:0x2AAB/0x2AAD toward DS:0x2780/0x2782 with signed byte quotient /13 and signed byte scale, subtracting DS:0x277E from X and adding 10 to Y, before calling sprite_slot_position_update for entity zero. The shipped caller has DS=GS; this is extent/position maintenance, not a coordinate payload draw.
 ; byte_count: 99
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1

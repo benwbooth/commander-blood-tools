@@ -67,6 +67,11 @@ extern volatile cb_u8 nav_camera_view_active; /* DS:0x278A */
 extern volatile cb_u8 nav_camera_view_state; /* DS:0x278B */
 extern volatile cb_u8 nav_camera_approach_phase; /* DS:0x27DF */
 extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
+extern volatile cb_u16 nav_location_panel_source_width; /* DS:0x277E */
+extern volatile bloodprg_rect_i16 nav_location_panel_target_rect; /* DS:0x2780 */
+extern volatile cb_u8 nav_location_panel_scale_step; /* DS:0x2789 */
+/* DS:0x2AAB alias shared with presentation_choice_current_rect. */
+extern volatile bloodprg_rect_i16 nav_location_panel_current_rect;
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
@@ -141,6 +146,10 @@ void CB_FAR bridge_render_frame(
 void CB_NEAR screen_flags_init(void); /* 0x00959D */
 void CB_NEAR camera_fsm_state_gate(void); /* 0x008A4E */
 void CB_NEAR nav_camera_state_check(void); /* 0x008CCE */
+/* comparison_extent normalizes the original inherited SS:[BP+4] context. */
+void CB_NEAR entity_draw_full(
+        const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
+        /* 0x009240 */
 void CB_NEAR mode_gate_27e8(void); /* 0x008BAB */
 void CB_NEAR nav_state_gate(void); /* 0x0082E8 */
 void CB_NEAR nav_choice_dispatch(void); /* 0x0085E2 */
