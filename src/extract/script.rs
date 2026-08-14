@@ -1968,6 +1968,76 @@ fn push_vm_token_disassembly(
             });
             true
         }
+        vm::VmToken::SharedState {
+            offset,
+            opcode,
+            field_offset,
+            operator,
+            rhs_mode,
+            rhs,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "shared_state".to_string(),
+                operands: format!(
+                    "field=0x{field_offset:04x} operator=0x{operator:02x} rhs_mode=0x{rhs_mode:02x} rhs=0x{rhs:04x}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::SharedBitState {
+            offset,
+            opcode,
+            field_offset,
+            mask,
+            inverted,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "shared_bit_state".to_string(),
+                operands: format!(
+                    "field=0x{field_offset:04x} mask=0x{mask:04x} inverted={inverted}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordWildcard {
+            offset,
+            opcode,
+            record_offset,
+            value,
+            inverted,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "record_wildcard".to_string(),
+                operands: format!(
+                    "record=0x{record_offset:04x} value=0x{value:04x} inverted={inverted}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
         vm::VmToken::RecordState {
             offset,
             opcode,
@@ -2163,6 +2233,9 @@ fn vm_token_offset(token: &vm::VmToken) -> usize {
         | vm::VmToken::RecordEntry { offset, .. }
         | vm::VmToken::RecordClear { offset, .. }
         | vm::VmToken::BitFlag { offset, .. }
+        | vm::VmToken::SharedState { offset, .. }
+        | vm::VmToken::SharedBitState { offset, .. }
+        | vm::VmToken::RecordWildcard { offset, .. }
         | vm::VmToken::RecordState { offset, .. }
         | vm::VmToken::GlobalWordCompare { offset, .. }
         | vm::VmToken::GlobalPairCompare { offset, .. }
@@ -2188,6 +2261,9 @@ fn vm_token_len(token: &vm::VmToken) -> usize {
         | vm::VmToken::RecordEntry { len, .. }
         | vm::VmToken::RecordClear { len, .. }
         | vm::VmToken::BitFlag { len, .. }
+        | vm::VmToken::SharedState { len, .. }
+        | vm::VmToken::SharedBitState { len, .. }
+        | vm::VmToken::RecordWildcard { len, .. }
         | vm::VmToken::RecordState { len, .. }
         | vm::VmToken::GlobalWordCompare { len, .. }
         | vm::VmToken::GlobalPairCompare { len, .. }

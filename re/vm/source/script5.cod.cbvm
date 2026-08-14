@@ -6,41 +6,41 @@
 
 00000000: .byte A9 01 F6 00 ; OP_A9 01 F6 00
 00000004: .byte A1 ; OP_A1
-00000005: .byte AE 4C 0F 02 00 ; OP_AE 4C 0F 02 00
-0000000A: .byte AE 82 0F 02 00 ; OP_AE 82 0F 02 00
-0000000F: .byte AE 60 0D 02 00 ; OP_AE 60 0D 02 00
-00000014: .byte AE 6A 09 02 00 ; OP_AE 6A 09 02 00
-00000019: .byte AE 4C 0C 02 00 ; OP_AE 4C 0C 02 00
-0000001E: .byte AE 74 0B 02 00 ; OP_AE 74 0B 02 00
-00000023: .byte AE E0 0B 02 00 ; OP_AE E0 0B 02 00
-00000028: .byte AE 10 0F 02 00 ; OP_AE 10 0F 02 00
-0000002D: .byte AE C4 09 02 00 ; OP_AE C4 09 02 00
-00000032: .byte AE 38 0B 02 00 ; OP_AE 38 0B 02 00
-00000037: .byte AE 30 0A 02 00 ; OP_AE 30 0A 02 00
-0000003C: .byte AE E4 0D 02 00 ; OP_AE E4 0D 02 00
-00000041: .byte AE 5C 0E 02 00 ; OP_AE 5C 0E 02 00
-00000046: .byte AE 98 0E 02 00 ; OP_AE 98 0E 02 00
-0000004B: .byte AE B6 0E 02 00 ; OP_AE B6 0E 02 00
-00000050: .byte AE 74 08 01 00 ; OP_AE 74 08 01 00
-00000055: .byte AE 3C 04 01 00 ; OP_AE 3C 04 01 00
-0000005A: .byte AF 8A 08 68 0F ; OP_AF 8A 08 68 0F
-0000005F: .byte AF 62 00 FF FF ; OP_AF 62 00 FF FF
-00000064: .byte AF 7A 03 FF FF ; OP_AF 7A 03 FF FF
-00000069: .byte AF 0A 04 FF FF ; OP_AF 0A 04 FF FF
-0000006E: .byte AF E2 04 FF FF ; OP_AF E2 04 FF FF
-00000073: .byte AF 52 04 2C 0F ; OP_AF 52 04 2C 0F
-00000078: .byte AF C2 03 FF FF ; OP_AF C2 03 FF FF
-0000007D: .byte AF 12 02 FF FF ; OP_AF 12 02 FF FF
-00000082: .byte C0 62 13 F5 C0 64 13 ; OP_C0 62 13 F5 C0 64 13
-00000089: .byte AF 02 06 14 0C ; OP_AF 02 06 14 0C
-0000008E: .byte AF C2 03 FF FF ; OP_AF C2 03 FF FF
-00000093: .byte AF 82 01 FF FF ; OP_AF 82 01 FF FF
-00000098: .byte AF 5A 02 FF FF ; OP_AF 5A 02 FF FF
-0000009D: .byte AF 72 05 FF FF ; OP_AF 72 05 FF FF
-000000A2: .byte AF BA 05 5E 0D ; OP_AF BA 05 5E 0D
-000000A7: .byte AF 4A 06 2C 0F ; OP_AF 4A 06 2C 0F
-000000AC: .byte C0 66 13 F5 C1 01 00 ; OP_C0 66 13 F5 C1 01 00
-000000B3: .byte C0 68 13 F5 C1 03 00 ; OP_C0 68 13 F5 C1 03 00
+00000005: .byte AE 4C 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0F4C mask=0x0002 inverted=false
+0000000A: .byte AE 82 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0F82 mask=0x0002 inverted=false
+0000000F: .byte AE 60 0D 02 00 ; OP_AE SHARED_BIT_STATE field=0x0D60 mask=0x0002 inverted=false
+00000014: .byte AE 6A 09 02 00 ; OP_AE SHARED_BIT_STATE field=0x096A mask=0x0002 inverted=false
+00000019: .byte AE 4C 0C 02 00 ; OP_AE SHARED_BIT_STATE field=0x0C4C mask=0x0002 inverted=false
+0000001E: .byte AE 74 0B 02 00 ; OP_AE SHARED_BIT_STATE field=0x0B74 mask=0x0002 inverted=false
+00000023: .byte AE E0 0B 02 00 ; OP_AE SHARED_BIT_STATE field=0x0BE0 mask=0x0002 inverted=false
+00000028: .byte AE 10 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0F10 mask=0x0002 inverted=false
+0000002D: .byte AE C4 09 02 00 ; OP_AE SHARED_BIT_STATE field=0x09C4 mask=0x0002 inverted=false
+00000032: .byte AE 38 0B 02 00 ; OP_AE SHARED_BIT_STATE field=0x0B38 mask=0x0002 inverted=false
+00000037: .byte AE 30 0A 02 00 ; OP_AE SHARED_BIT_STATE field=0x0A30 mask=0x0002 inverted=false
+0000003C: .byte AE E4 0D 02 00 ; OP_AE SHARED_BIT_STATE field=0x0DE4 mask=0x0002 inverted=false
+00000041: .byte AE 5C 0E 02 00 ; OP_AE SHARED_BIT_STATE field=0x0E5C mask=0x0002 inverted=false
+00000046: .byte AE 98 0E 02 00 ; OP_AE SHARED_BIT_STATE field=0x0E98 mask=0x0002 inverted=false
+0000004B: .byte AE B6 0E 02 00 ; OP_AE SHARED_BIT_STATE field=0x0EB6 mask=0x0002 inverted=false
+00000050: .byte AE 74 08 01 00 ; OP_AE SHARED_BIT_STATE field=0x0874 mask=0x0001 inverted=false
+00000055: .byte AE 3C 04 01 00 ; OP_AE SHARED_BIT_STATE field=0x043C mask=0x0001 inverted=false
+0000005A: .byte AF 8A 08 68 0F ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F68 inverted=false
+0000005F: .byte AF 62 00 FF FF ; OP_AF RECORD_WILDCARD record=0x0062 value=0xFFFF inverted=false
+00000064: .byte AF 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
+00000069: .byte AF 0A 04 FF FF ; OP_AF RECORD_WILDCARD record=0x040A value=0xFFFF inverted=false
+0000006E: .byte AF E2 04 FF FF ; OP_AF RECORD_WILDCARD record=0x04E2 value=0xFFFF inverted=false
+00000073: .byte AF 52 04 2C 0F ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
+00000078: .byte AF C2 03 FF FF ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
+0000007D: .byte AF 12 02 FF FF ; OP_AF RECORD_WILDCARD record=0x0212 value=0xFFFF inverted=false
+00000082: .byte C0 62 13 F5 C0 64 13 ; OP_C0 SHARED_STATE field=0x1362 operator=0xF5 rhs_mode=0xC0 rhs=0x1364
+00000089: .byte AF 02 06 14 0C ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
+0000008E: .byte AF C2 03 FF FF ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
+00000093: .byte AF 82 01 FF FF ; OP_AF RECORD_WILDCARD record=0x0182 value=0xFFFF inverted=false
+00000098: .byte AF 5A 02 FF FF ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+0000009D: .byte AF 72 05 FF FF ; OP_AF RECORD_WILDCARD record=0x0572 value=0xFFFF inverted=false
+000000A2: .byte AF BA 05 5E 0D ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0D5E inverted=false
+000000A7: .byte AF 4A 06 2C 0F ; OP_AF RECORD_WILDCARD record=0x064A value=0x0F2C inverted=false
+000000AC: .byte C0 66 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1366 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
+000000B3: .byte C0 68 13 F5 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0003
 000000BA: .byte CC 01 6D 61 74 63 68 00 00 ; OP_CC 01 6D 61 74 63 68 00 00
 000000C3: .byte CC 02 70 70 69 74 00 00 ; OP_CC 02 70 70 69 74 00 00
 000000CB: .byte CC 03 68 61 74 65 74 76 00 00 ; OP_CC 03 68 61 74 65 74 76 00 00
@@ -80,16 +80,16 @@
 0000018D: .byte A6 D2 02 FF 08 80 19 00 00 00 ; TEXT line=0x02D2 voice=0xFF flags=0x08,0x80 "..."
 00000197: .byte C9 0C 03 ; RECORD_CLEAR record=0x030C
 0000019A: .byte A9 01 A9 01 ; OP_A9 01 A9 01
-0000019E: .byte AF 3A 10 5A 0E ; OP_AF 3A 10 5A 0E
+0000019E: .byte AF 3A 10 5A 0E ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
 000001A3: .byte A1 ; OP_A1
-000001A4: .byte AF DA 06 5A 0E ; OP_AF DA 06 5A 0E
+000001A4: .byte AF DA 06 5A 0E ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0E5A inverted=false
 000001A9: .byte A9 01 B8 01 ; OP_A9 01 B8 01
-000001AD: .byte AF 3A 10 2E 0A ; OP_AF 3A 10 2E 0A
+000001AD: .byte AF 3A 10 2E 0A ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
 000001B2: .byte A1 ; OP_A1
-000001B3: .byte AF DA 06 2E 0A ; OP_AF DA 06 2E 0A
+000001B3: .byte AF DA 06 2E 0A ; OP_AF RECORD_WILDCARD record=0x06DA value=0x0A2E inverted=false
 000001B8: .byte A9 01 09 03 ; OP_A9 01 09 03
 000001BC: .byte D0 ; OP_D0
-000001BD: .byte AF 3A 10 5A 0E ; OP_AF 3A 10 5A 0E
+000001BD: .byte AF 3A 10 5A 0E ; OP_AF RECORD_WILDCARD record=0x103A value=0x0E5A inverted=false
 000001C2: .byte C4 FC 06 28 00 ; ACTOR record=0x06FC related=0x0028 inverted=false
 000001C7: .byte A1 ; OP_A1
 000001C8: .byte A6 C2 06 00 08 80 3C 00 41 00 19 00 48 00 4D 00 ; TEXT line=0x06C2 voice=0x00 flags=0x08,0x80 "Turn around ... Move on ... There are too many pilgrims ... The planet's inaccessible ..."
@@ -99,7 +99,7 @@
 000001FF: .byte A6 C2 06 01 00 80 6C 00 86 00 8D 00 92 00 79 00 ; TEXT line=0x06C2 voice=0x01 flags=0x00,0x80 "The planet KULT is inaccessible . There are too many pilgrims..."
 0000020F: .byte 95 00 50 00 56 00 5A 00 5E 00 97 00 00 00 ; continuation
 0000021D: .byte A0 FC 02 ; OP_A0 FC 02
-00000220: .byte BF F8 06 F1 C1 03 00 ; OP_BF F8 06 F1 C1 03 00
+00000220: .byte BF F8 06 F1 C1 03 00 ; OP_BF SHARED_STATE field=0x06F8 operator=0xF1 rhs_mode=0xC1 rhs=0x0003
 00000227: .byte A1 ; OP_A1
 00000228: .byte A6 C2 06 FF 28 80 1D 00 A3 00 19 00 AD 00 B2 00 ; TEXT line=0x06C2 voice=0xFF flags=0x28,0x80 "Commander... Commander ... It's the planet TUMUL with a new name .."
 00000238: .byte 86 00 B6 00 BC 00 C1 00 C3 00 C7 00 CC 00 00 00 ; continuation
@@ -141,8 +141,8 @@
 000003C8: .byte 35 02 2F 01 3B 02 10 00 40 02 DC 00 A3 00 CF 01 ; continuation
 000003D8: .byte 00 00 ; continuation
 000003DA: .byte A0 1E 05 ; OP_A0 1E 05
-000003DD: .byte BF D0 07 F2 C1 00 00 ; OP_BF D0 07 F2 C1 00 00
-000003E4: .byte C0 6A 13 F5 C1 01 00 ; OP_C0 6A 13 F5 C1 01 00
+000003DD: .byte BF D0 07 F2 C1 00 00 ; OP_BF SHARED_STATE field=0x07D0 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
+000003E4: .byte C0 6A 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000003EB: .byte A1 ; OP_A1
 000003EC: .byte A6 AA 03 05 00 80 48 02 4B 02 A3 00 DC 00 4D 02 ; TEXT line=0x03AA voice=0x05 flags=0x00,0x80 "Oh ! Commander , Honk told me you needed a ring ..."
 000003FC: .byte 52 02 10 00 57 02 5B 02 C1 00 62 02 19 00 00 00 ; continuation
@@ -165,14 +165,14 @@
 000004D7: .byte A6 AA 03 06 08 80 A3 00 19 00 99 01 15 03 C1 00 ; TEXT line=0x03AA voice=0x06 flags=0x08,0x80 "Commander ... I have a ring ... I want you to have it ... It's yours ..."
 000004E7: .byte 62 02 19 00 99 01 BE 01 57 02 2F 01 15 03 1A 03 ; continuation
 000004F7: .byte 19 00 AD 00 9E 01 19 00 00 00 ; continuation
-00000501: .byte AF F0 12 FF FF ; OP_AF F0 12 FF FF
+00000501: .byte AF F0 12 FF FF ; OP_AF RECORD_WILDCARD record=0x12F0 value=0xFFFF inverted=false
 00000506: .byte A6 AA 03 FF 20 80 A3 00 19 00 1D 03 21 03 26 03 ; TEXT line=0x03AA voice=0xFF flags=0x20,0x80 "Commander ... She gave us the ring ..."
 00000516: .byte B2 00 62 02 19 00 00 00 ; continuation
 0000051E: .byte A6 AA 03 14 08 80 19 00 00 00 ; TEXT line=0x03AA voice=0x14 flags=0x08,0x80 "..."
 00000528: .byte C9 E4 03 ; RECORD_CLEAR record=0x03E4
 0000052B: .byte A9 01 19 07 ; OP_A9 01 19 07
 0000052F: .byte D0 ; OP_D0
-00000530: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
+00000530: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
 00000535: .byte C4 CC 00 28 00 ; ACTOR record=0x00CC related=0x0028 inverted=false
 0000053A: .byte A1 ; OP_A1
 0000053B: .byte A6 92 00 00 00 80 BA 01 29 03 DC 00 2E 03 37 03 ; TEXT line=0x0092 voice=0x00 flags=0x00,0x80 "You here , Consumer Comrade ?"
@@ -209,16 +209,16 @@
 000006C7: .byte A6 92 00 FF 08 90 65 04 69 04 6C 04 DC 00 70 04 ; TEXT line=0x0092 voice=0xFF flags=0x08,0x90 "ALL OF YOU , INTO THE CRYOBOX RIGHT AWAY ..."
 000006D7: .byte 0F 04 75 04 7D 04 83 04 19 00 00 00 ; continuation
 000006E3: .byte A8 62 6F 62 62 2E 68 6E 6D 00 00 ; OP_A8 62 6F 62 62 2E 68 6E 6D 00 00
-000006EE: .byte C0 6C 13 F5 C1 01 00 ; OP_C0 6C 13 F5 C1 01 00
+000006EE: .byte C0 6C 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x136C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000006F5: .byte A6 92 00 FF 08 B0 88 04 19 00 00 00 ; TEXT line=0x0092 voice=0xFF flags=0x08,0xB0 "NOW ..."
 00000701: .byte A8 62 6F 62 62 2E 68 6E 6D 00 00 ; OP_A8 62 6F 62 62 2E 68 6E 6D 00 00
-0000070C: .byte AF AA 00 2C 0F ; OP_AF AA 00 2C 0F
-00000711: .byte AF B2 07 B8 0F ; OP_AF B2 07 B8 0F
+0000070C: .byte AF AA 00 2C 0F ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0F2C inverted=false
+00000711: .byte AF B2 07 B8 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FB8 inverted=false
 00000716: .byte C9 CC 00 ; RECORD_CLEAR record=0x00CC
 00000719: .byte A9 01 87 0B ; OP_A9 01 87 0B
 0000071D: .byte D1 ; OP_D1
 0000071E: .byte C4 84 00 28 00 ; ACTOR record=0x0084 related=0x0028 inverted=false
-00000723: .byte C0 6C 13 F5 C1 01 00 ; OP_C0 6C 13 F5 C1 01 00
+00000723: .byte C0 6C 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x136C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 0000072A: .byte A1 ; OP_A1
 0000072B: .byte A6 4A 00 01 00 80 36 04 B2 00 74 01 D6 02 36 04 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "What's the story ??? What's this BIG BANG business ???..."
 0000073B: .byte C0 02 D1 03 F1 03 8C 04 95 04 00 00 ; continuation
@@ -304,7 +304,7 @@
 00000B5F: .byte 3F 03 00 00 ; continuation
 00000B63: .byte A6 4A 00 FF 28 A0 D9 07 61 04 DC 00 26 04 2C 04 ; TEXT line=0x004A voice=0xFF flags=0x28,0xA0 "Yes sir , Cap'n Bob sir ..."
 00000B73: .byte 61 04 19 00 00 00 ; continuation
-00000B79: .byte C0 6A 13 F5 C1 01 00 ; OP_C0 6A 13 F5 C1 01 00
+00000B79: .byte C0 6A 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00000B80: .byte AB 00 1A 07 ; OP_AB 00 1A 07
 00000B84: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
 00000B87: .byte A9 01 CF 0C ; OP_A9 01 CF 0C
@@ -312,7 +312,7 @@
 00000B8C: .byte C4 84 00 28 00 ; ACTOR record=0x0084 related=0x0028 inverted=false
 00000B91: .byte A1 ; OP_A1
 00000B92: .byte A0 A7 0C ; OP_A0 A7 0C
-00000B95: .byte AE A1 BA 0F 02 00 ; OP_AE A1 BA 0F 02 00
+00000B95: .byte AE A1 BA 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
 00000B9B: .byte A1 ; OP_A1
 00000B9C: .byte A6 4A 00 02 00 80 DD 07 19 00 00 00 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Aaaah ..."
 00000BA8: .byte A6 4A 00 03 00 80 DE 00 E3 07 E3 00 A0 04 2F 01 ; TEXT line=0x004A voice=0x03 flags=0x00,0x80 "When will we get to the Big Bang ? It's URGENT , Commander ..."
@@ -337,7 +337,7 @@
 00000C94: .byte A6 4A 00 06 08 80 D5 05 DE 08 10 00 19 00 00 00 ; TEXT line=0x004A voice=0x06 flags=0x08,0x80 "Now leave me ..."
 00000CA4: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
 00000CA7: .byte A0 CF 0C ; OP_A0 CF 0C
-00000CAA: .byte AE BA 0F 02 00 ; OP_AE BA 0F 02 00
+00000CAA: .byte AE BA 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 00000CAF: .byte A1 ; OP_A1
 00000CB0: .byte A6 4A 00 02 00 80 E4 08 77 07 2F 01 B2 00 E9 08 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Lets go to the Bigbang..."
 00000CC0: .byte 00 00 ; continuation
@@ -345,7 +345,7 @@
 00000CCC: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
 00000CCF: .byte A9 01 BA 0E ; OP_A9 01 BA 0E
 00000CD3: .byte D0 ; OP_D0
-00000CD4: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
+00000CD4: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
 00000CD9: .byte C4 D4 07 28 00 ; ACTOR record=0x07D4 related=0x0028 inverted=false
 00000CDE: .byte A1 ; OP_A1
 00000CDF: .byte A6 9A 07 00 00 80 F4 08 19 00 AD 00 57 02 DC 00 ; TEXT line=0x079A voice=0x00 flags=0x00,0x80 "Ohhh ... It's you , Commander ..."
@@ -382,12 +382,12 @@
 00000E8B: .byte A6 9A 07 01 08 B0 74 0A 77 0A 7C 0A 6A 03 C1 00 ; TEXT line=0x079A voice=0x01 flags=0x08,0xB0 "Go join him for a stiff one , Commander ..."
 00000E9B: .byte 80 0A 86 0A DC 00 A3 00 19 00 00 00 ; continuation
 00000EA7: .byte AB 00 D0 0C ; OP_AB 00 D0 0C
-00000EAB: .byte AF 52 04 DC 0F ; OP_AF 52 04 DC 0F
-00000EB0: .byte AF B2 07 2C 0F ; OP_AF B2 07 2C 0F
+00000EAB: .byte AF 52 04 DC 0F ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
+00000EB0: .byte AF B2 07 2C 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
 00000EB5: .byte C1 46 13 DC 0F ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 00000EBA: .byte A9 01 18 10 ; OP_A9 01 18 10
 00000EBE: .byte D0 ; OP_D0
-00000EBF: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
+00000EBF: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
 00000EC4: .byte C4 74 04 28 00 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00000EC9: .byte A1 ; OP_A1
 00000ECA: .byte A6 3A 04 01 00 80 BA 01 29 03 DC 00 A3 00 4B 02 ; TEXT line=0x043A voice=0x01 flags=0x00,0x80 "You here , Commander ! My good friend ... Did Burny tell you the news ?"
@@ -415,13 +415,13 @@
 00000FEE: .byte A6 3A 04 02 08 C0 37 0B 57 02 96 02 DC 00 A3 00 ; TEXT line=0x043A voice=0x02 flags=0x08,0xC0 "See you soon , Commander ..."
 00000FFE: .byte 19 00 00 00 ; continuation
 00001002: .byte AB 00 BB 0E ; OP_AB 00 BB 0E
-00001006: .byte AF 52 04 2C 0F ; OP_AF 52 04 2C 0F
-0000100B: .byte AF B2 07 F4 0F ; OP_AF B2 07 F4 0F
-00001010: .byte AF 5A 02 B8 0F ; OP_AF 5A 02 B8 0F
+00001006: .byte AF 52 04 2C 0F ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0F2C inverted=false
+0000100B: .byte AF B2 07 F4 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0FF4 inverted=false
+00001010: .byte AF 5A 02 B8 0F ; OP_AF RECORD_WILDCARD record=0x025A value=0x0FB8 inverted=false
 00001015: .byte C9 74 04 ; RECORD_CLEAR record=0x0474
 00001018: .byte A9 01 5C 11 ; OP_A9 01 5C 11
 0000101C: .byte D0 ; OP_D0
-0000101D: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
+0000101D: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
 00001022: .byte C4 7C 02 28 00 ; ACTOR record=0x027C related=0x0028 inverted=false
 00001027: .byte A1 ; OP_A1
 00001028: .byte A6 42 02 01 00 80 A3 00 4B 02 3B 0B 40 0B 2F 01 ; TEXT line=0x0242 voice=0x01 flags=0x00,0x80 "Commander ! Yoko happy to see you again ..."
@@ -431,7 +431,7 @@
 00001056: .byte A6 42 02 02 00 80 4C 0B 42 01 55 0B 5A 0B 6A 03 ; TEXT line=0x0242 voice=0x02 flags=0x00,0x80 "Migrator and Tina wait for wedding ring ..."
 00001066: .byte 6E 03 62 02 19 00 00 00 ; continuation
 0000106E: .byte A0 E3 10 ; OP_A0 E3 10
-00001071: .byte AF F0 12 28 00 ; OP_AF F0 12 28 00
+00001071: .byte AF F0 12 28 00 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
 00001076: .byte A1 ; OP_A1
 00001077: .byte A6 42 02 05 00 80 BA 01 15 03 62 02 CF 01 00 00 ; TEXT line=0x0242 voice=0x05 flags=0x00,0x80 "You have ring ?"
 00001087: .byte A6 42 02 FF 20 80 EA 02 5F 0B DC 00 CF 02 3B 0B ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "No problem , Mister Yoko ... We have the wedding band right here ..."
@@ -442,7 +442,7 @@
 000010BD: .byte A6 42 02 07 08 A0 BA 01 77 07 36 0A DC 00 55 0B ; TEXT line=0x0242 voice=0x07 flags=0x08,0xA0 "You go bar , Tina be impatient ..."
 000010CD: .byte 66 08 6E 0B 19 00 00 00 ; continuation
 000010D5: .byte AB 00 19 10 ; OP_AB 00 19 10
-000010D9: .byte AF F2 00 DC 0F ; OP_AF F2 00 DC 0F
+000010D9: .byte AF F2 00 DC 0F ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0FDC inverted=false
 000010DE: .byte C1 46 13 DC 0F ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 000010E3: .byte A6 42 02 FF 20 80 BA 01 78 0B 2F 01 A0 04 C1 00 ; TEXT line=0x0242 voice=0xFF flags=0x20,0x80 "You agreed to get a ring , Commander . You'll have to deliver ..."
 000010F3: .byte 62 02 DC 00 A3 00 95 00 EC 0A 15 03 2F 01 7F 0B ; continuation
@@ -456,7 +456,7 @@
 00001159: .byte C9 7C 02 ; RECORD_CLEAR record=0x027C
 0000115C: .byte A9 01 09 12 ; OP_A9 01 09 12
 00001160: .byte D0 ; OP_D0
-00001161: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
+00001161: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
 00001166: .byte C4 14 01 28 00 ; ACTOR record=0x0114 related=0x0028 inverted=false
 0000116B: .byte A1 ; OP_A1
 0000116C: .byte A6 DA 00 01 00 80 B2 0B 00 00 ; TEXT line=0x00DA voice=0x01 flags=0x00,0x80 "Ga..."
@@ -471,13 +471,13 @@
 000011DC: .byte 19 00 00 00 ; continuation
 000011E0: .byte A6 DA 00 05 08 A0 BA 01 96 0B DC 00 A3 00 19 00 ; TEXT line=0x00DA voice=0x05 flags=0x08,0xA0 "You hurry , Commander ... Hee ! Hee! Hee!"
 000011F0: .byte 52 09 4B 02 E4 0B E4 0B 00 00 ; continuation
-000011FA: .byte AF F2 00 2C 0F ; OP_AF F2 00 2C 0F
-000011FF: .byte AF 52 04 DC 0F ; OP_AF 52 04 DC 0F
+000011FA: .byte AF F2 00 2C 0F ; OP_AF RECORD_WILDCARD record=0x00F2 value=0x0F2C inverted=false
+000011FF: .byte AF 52 04 DC 0F ; OP_AF RECORD_WILDCARD record=0x0452 value=0x0FDC inverted=false
 00001204: .byte C1 46 13 F4 0F ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FF4 inverted=false
 00001209: .byte A9 01 3D 14 ; OP_A9 01 3D 14
 0000120D: .byte D0 ; OP_D0
-0000120E: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
-00001213: .byte AF 40 13 F4 0F ; OP_AF 40 13 F4 0F
+0000120E: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001213: .byte AF 40 13 F4 0F ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FF4 inverted=false
 00001218: .byte C4 D4 07 28 00 ; ACTOR record=0x07D4 related=0x0028 inverted=false
 0000121D: .byte A1 ; OP_A1
 0000121E: .byte A6 9A 07 01 00 80 5B 06 E0 09 50 00 57 02 56 00 ; TEXT line=0x079A voice=0x01 flags=0x00,0x80 "Ah !! There you are at last , Commander ... Everyone's waiting for you ..."
@@ -524,8 +524,8 @@
 00001438: .byte C1 46 13 DC 0F ; OP_C1 RECORD_STATE record=0x1346 operand=0x0FDC inverted=false
 0000143D: .byte A9 01 11 15 ; OP_A9 01 11 15
 00001441: .byte D0 ; OP_D0
-00001442: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
-00001447: .byte AF 40 13 DC 0F ; OP_AF 40 13 DC 0F
+00001442: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+00001447: .byte AF 40 13 DC 0F ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0FDC inverted=false
 0000144C: .byte C4 74 04 28 00 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00001451: .byte A1 ; OP_A1
 00001452: .byte A6 3A 04 06 00 80 36 04 30 04 4D 00 CF 01 AC 01 ; TEXT line=0x043A voice=0x06 flags=0x00,0x80 "What's going on ? My Tina's in tears ..."
@@ -547,11 +547,11 @@
 000014EB: .byte A6 3A 04 08 08 90 3D 0D 43 0D 48 0D 82 0C 55 0D ; TEXT line=0x043A voice=0x08 flags=0x08,0x90 "Thank you, COMMANDER... Get comfortable... The show's about to start.."
 000014FB: .byte 6C 00 64 0D 69 01 2F 01 6B 0D 00 00 ; continuation
 00001507: .byte C1 46 13 0C 10 ; OP_C1 RECORD_STATE record=0x1346 operand=0x100C inverted=false
-0000150C: .byte AF 52 04 0C 10 ; OP_AF 52 04 0C 10
+0000150C: .byte AF 52 04 0C 10 ; OP_AF RECORD_WILDCARD record=0x0452 value=0x100C inverted=false
 00001511: .byte A9 01 77 17 ; OP_A9 01 77 17
 00001515: .byte D0 ; OP_D0
-00001516: .byte AF 3A 10 B8 0F ; OP_AF 3A 10 B8 0F
-0000151B: .byte AF 40 13 0C 10 ; OP_AF 40 13 0C 10
+00001516: .byte AF 3A 10 B8 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0FB8 inverted=false
+0000151B: .byte AF 40 13 0C 10 ; OP_AF RECORD_WILDCARD record=0x1340 value=0x100C inverted=false
 00001520: .byte C4 74 04 28 00 ; ACTOR record=0x0474 related=0x0028 inverted=false
 00001525: .byte A1 ; OP_A1
 00001526: .byte A6 3A 04 FF 28 80 5A 08 73 0D 78 0D 00 00 ; TEXT line=0x043A voice=0xFF flags=0x28,0x80 "SILENCE IT'S STARTING...."
@@ -608,8 +608,8 @@
 0000176D: .byte A8 66 69 6E 2E 68 6E 6D 00 00 ; OP_A8 66 69 6E 2E 68 6E 6D 00 00
 00001777: .byte A9 01 1C 18 ; OP_A9 01 1C 18
 0000177B: .byte D0 ; OP_D0
-0000177C: .byte C0 6E 13 F5 C1 00 00 ; OP_C0 6E 13 F5 C1 00 00
-00001783: .byte AF 3A 10 5E 0D ; OP_AF 3A 10 5E 0D
+0000177C: .byte C0 6E 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x136E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00001783: .byte AF 3A 10 5E 0D ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D5E inverted=false
 00001788: .byte C4 DC 05 28 00 ; ACTOR record=0x05DC related=0x0028 inverted=false
 0000178D: .byte A1 ; OP_A1
 0000178E: .byte A6 A2 05 02 00 80 FA 0D 40 0B 11 09 57 02 FD 08 ; TEXT line=0x05A2 voice=0x02 flags=0x00,0x80 "Izwalito happy see you again , friend ..."
@@ -624,7 +624,7 @@
 000017FA: .byte 6E 0B 19 00 00 00 ; continuation
 00001800: .byte A6 A2 05 05 08 90 21 0E 25 0E DC 00 8F 0A A3 00 ; TEXT line=0x05A2 voice=0x05 flags=0x08,0x90 "Bye bye , friend Commander ..."
 00001810: .byte 19 00 00 00 ; continuation
-00001814: .byte AF BA 05 2C 0F ; OP_AF BA 05 2C 0F
+00001814: .byte AF BA 05 2C 0F ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0F2C inverted=false
 00001819: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 0000181C: .byte A9 01 29 18 ; OP_A9 01 29 18
 00001820: .byte A1 ; OP_A1
@@ -700,25 +700,25 @@
 00001A8F: .byte C1 46 13 64 0A ; OP_C1 RECORD_STATE record=0x1346 operand=0x0A64 inverted=false
 00001A94: .byte A9 01 93 1C ; OP_A9 01 93 1C
 00001A98: .byte D0 ; OP_D0
-00001A99: .byte C0 70 13 F5 C1 00 00 ; OP_C0 70 13 F5 C1 00 00
+00001A99: .byte C0 70 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001AA0: .byte C4 EC 01 28 00 ; ACTOR record=0x01EC related=0x0028 inverted=false
-00001AA5: .byte AF 3A 10 2E 0A ; OP_AF 3A 10 2E 0A
+00001AA5: .byte AF 3A 10 2E 0A ; OP_AF RECORD_WILDCARD record=0x103A value=0x0A2E inverted=false
 00001AAA: .byte A1 ; OP_A1
 00001AAB: .byte A6 B2 01 05 00 80 6B 0B 36 09 57 02 19 00 BA 01 ; TEXT line=0x01B2 voice=0x05 flags=0x00,0x80 "Me know you ... You give me mummy ... and CURSE ..."
 00001ABB: .byte 3B 02 10 00 51 0F 19 00 42 01 57 0F 19 00 00 00 ; continuation
 00001ACB: .byte A6 B2 01 04 00 80 00 05 5D 0F 6C 04 19 00 00 00 ; TEXT line=0x01B2 voice=0x04 flags=0x00,0x80 "ME HATE YOU ..."
 00001ADB: .byte A6 B2 01 07 08 80 DC 04 6C 04 62 0F B6 0E CF 01 ; TEXT line=0x01B2 voice=0x07 flags=0x08,0x80 "WHAT YOU WANT STRANGER ?"
 00001AEB: .byte 00 00 ; continuation
-00001AED: .byte BC F8 01 01 00 ; OP_BC F8 01 01 00
+00001AED: .byte BC F8 01 01 00 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0001 inverted=false
 00001AF2: .byte A0 1F 1B ; OP_A0 1F 1B
-00001AF5: .byte C0 72 13 F5 C1 01 00 ; OP_C0 72 13 F5 C1 01 00
+00001AF5: .byte C0 72 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1372 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00001AFC: .byte A1 ; OP_A1
 00001AFD: .byte A6 B2 01 06 08 90 BA 01 24 02 67 0F 19 00 6B 0B ; TEXT line=0x01B2 voice=0x06 flags=0x08,0x90 "You like secrets ... Me tell secrets"
 00001B0D: .byte 05 06 67 0F 00 00 ; continuation
-00001B13: .byte BC F8 01 67 0F ; OP_BC F8 01 67 0F
-00001B18: .byte C0 72 13 F5 C1 00 00 ; OP_C0 72 13 F5 C1 00 00
+00001B13: .byte BC F8 01 67 0F ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x0F67 inverted=false
+00001B18: .byte C0 72 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1372 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001B1F: .byte A0 11 1C ; OP_A0 11 1C
-00001B22: .byte C0 74 13 F5 C1 01 00 ; OP_C0 74 13 F5 C1 01 00
+00001B22: .byte C0 74 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1374 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00001B29: .byte A1 ; OP_A1
 00001B2A: .byte A6 B2 01 0A 00 80 6F 0F 66 08 77 0F 7E 0F 8B 0F ; TEXT line=0x01B2 voice=0x0A flags=0x00,0x80 "SPLATCH be highly concentrated explosive . SPLATCH blow up jail ... LAUGH ... FOUL SWEAR"
 00001B3A: .byte 95 00 6F 0F 95 0F C5 02 9A 0F 19 00 9F 0F 19 00 ; continuation
@@ -736,29 +736,29 @@
 00001BDE: .byte 74 01 19 00 00 00 ; continuation
 00001BE4: .byte A6 B2 01 09 08 A0 BA 01 1B 10 CF 01 21 0E 25 0E ; TEXT line=0x01B2 voice=0x09 flags=0x08,0xA0 "You understand ? Bye bye ... ME WAIT YOU ..."
 00001BF4: .byte 19 00 00 05 26 10 6C 04 19 00 00 00 ; continuation
-00001C00: .byte C0 74 13 F5 C1 00 00 ; OP_C0 74 13 F5 C1 00 00
-00001C07: .byte C0 70 13 F5 C1 01 00 ; OP_C0 70 13 F5 C1 01 00
+00001C00: .byte C0 74 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1374 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00001C07: .byte C0 70 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00001C0E: .byte C9 EC 01 ; RECORD_CLEAR record=0x01EC
 00001C11: .byte A0 40 1C ; OP_A0 40 1C
-00001C14: .byte C0 68 13 F5 C1 00 00 ; OP_C0 68 13 F5 C1 00 00
+00001C14: .byte C0 68 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001C1B: .byte A1 ; OP_A1
 00001C1C: .byte A6 B2 01 FF 20 80 A3 00 DC 00 2B 10 DC 0A 67 07 ; TEXT line=0x01B2 voice=0xFF flags=0x20,0x80 "Commander , if I'd had some BIONIUM , I could have helped you ...."
 00001C2C: .byte 79 08 2E 10 DC 00 99 01 36 10 15 03 3C 10 57 02 ; continuation
 00001C3C: .byte 43 10 00 00 ; continuation
 00001C40: .byte A0 6A 1C ; OP_A0 6A 1C
-00001C43: .byte C0 68 13 F2 C1 03 00 ; OP_C0 68 13 F2 C1 03 00
+00001C43: .byte C0 68 13 F2 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0003
 00001C4A: .byte A1 ; OP_A1
 00001C4B: .byte A6 B2 01 FF 28 80 A3 00 DC 00 B5 04 ED 02 48 10 ; TEXT line=0x01B2 voice=0xFF flags=0x28,0x80 "Commander , there's no percentage staying here ..."
 00001C5B: .byte 53 10 29 03 19 00 00 00 ; continuation
-00001C63: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+00001C63: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 00001C6A: .byte A6 B2 01 06 48 80 21 0E 25 0E 95 00 BA 01 C4 0B ; TEXT line=0x01B2 voice=0x06 flags=0x48,0x80 "Bye bye . You come back see me . Me like visits ..."
 00001C7A: .byte A7 02 11 09 10 00 95 00 6B 0B 24 02 5B 10 19 00 ; continuation
 00001C8A: .byte FF FF 62 10 00 00 ; continuation
 00001C90: .byte C9 EC 01 ; RECORD_CLEAR record=0x01EC
 00001C93: .byte A9 01 07 1E ; OP_A9 01 07 1E
 00001C97: .byte D0 ; OP_D0
-00001C98: .byte C0 70 13 F5 C1 01 00 ; OP_C0 70 13 F5 C1 01 00
-00001C9F: .byte AF 40 13 64 0A ; OP_AF 40 13 64 0A
+00001C98: .byte C0 70 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
+00001C9F: .byte AF 40 13 64 0A ; OP_AF RECORD_WILDCARD record=0x1340 value=0x0A64 inverted=false
 00001CA4: .byte C4 EC 01 28 00 ; ACTOR record=0x01EC related=0x0028 inverted=false
 00001CA9: .byte A1 ; OP_A1
 00001CAA: .byte A6 B2 01 08 00 80 BA 01 15 03 6A 10 D6 02 00 00 ; TEXT line=0x01B2 voice=0x08 flags=0x00,0x80 "You have splatch ???"
@@ -766,16 +766,16 @@
 00001CCA: .byte 6B 0B BE 01 86 10 19 00 8D 10 19 00 8D 10 19 00 ; continuation
 00001CDA: .byte 91 10 19 00 00 00 ; continuation
 00001CE0: .byte A6 B2 01 01 08 80 8D 10 19 00 91 10 19 00 00 00 ; TEXT line=0x01B2 voice=0x01 flags=0x08,0x80 "CRY ... GNASH ..."
-00001CF0: .byte BC F8 01 6E 06 ; OP_BC F8 01 6E 06
+00001CF0: .byte BC F8 01 6E 06 ; OP_BC RECORD_WILDCARD record=0x01F8 value=0x066E inverted=false
 00001CF5: .byte A0 35 1D ; OP_A0 35 1D
-00001CF8: .byte AF 90 12 28 00 ; OP_AF 90 12 28 00
+00001CF8: .byte AF 90 12 28 00 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=false
 00001CFD: .byte A1 ; OP_A1
 00001CFE: .byte A6 B2 01 FF 20 80 97 10 7C 0A B2 00 6A 10 DC 00 ; TEXT line=0x01B2 voice=0xFF flags=0x20,0x80 "Give him the splatch , Commander ... We need the treasure ..."
 00001D0E: .byte A3 00 19 00 7F 05 A0 0C B2 00 BC 0F 19 00 00 00 ; continuation
 00001D1E: .byte A6 B2 01 FF 08 80 2F 0D 6F 0F D1 07 7A 10 00 00 ; TEXT line=0x01B2 voice=0xFF flags=0x08,0x80 "TELEPORT SPLATCH TO EVISCERATOR"
 00001D2E: .byte CD 30 00 7C 12 B2 01 ; RECORD_TRIPLE record=0x0030 first=0x127C second=0x01B2 inverted=false
 00001D35: .byte A0 AC 1D ; OP_A0 AC 1D
-00001D38: .byte AF 90 12 B2 01 ; OP_AF 90 12 B2 01
+00001D38: .byte AF 90 12 B2 01 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=false
 00001D3D: .byte A1 ; OP_A1
 00001D3E: .byte A6 B2 01 06 00 80 BA 01 BE 01 36 09 3B 09 66 08 ; TEXT line=0x01B2 voice=0x06 flags=0x00,0x80 "You want know where be treasure ..."
 00001D4E: .byte BC 0F 19 00 00 00 ; continuation
@@ -786,11 +786,11 @@
 00001D78: .byte A6 B2 01 FF 28 90 58 07 D6 10 24 02 C1 00 BC 0F ; TEXT line=0x01B2 voice=0xFF flags=0x28,0x90 "That sounded like a treasure location to me , Commander ... Way to go , champ !!!"
 00001D88: .byte DE 10 2F 01 10 00 DC 00 A3 00 19 00 E7 10 2F 01 ; continuation
 00001D98: .byte 77 07 DC 00 EB 10 3F 03 00 00 ; continuation
-00001DA2: .byte C0 70 13 F5 C1 02 00 ; OP_C0 70 13 F5 C1 02 00
+00001DA2: .byte C0 70 13 F5 C1 02 00 ; OP_C0 SHARED_STATE field=0x1370 operator=0xF5 rhs_mode=0xC1 rhs=0x0002
 00001DA9: .byte C9 EC 01 ; RECORD_CLEAR record=0x01EC
 00001DAC: .byte A0 07 1E ; OP_A0 07 1E
-00001DAF: .byte AF A1 90 12 28 00 ; OP_AF A1 90 12 28 00
-00001DB5: .byte AF A1 90 12 B2 01 ; OP_AF A1 90 12 B2 01
+00001DAF: .byte AF A1 90 12 28 00 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x0028 inverted=true
+00001DB5: .byte AF A1 90 12 B2 01 ; OP_AF RECORD_WILDCARD record=0x1290 value=0x01B2 inverted=true
 00001DBB: .byte A1 ; OP_A1
 00001DBC: .byte A6 B2 01 0A 00 80 F1 10 19 00 F8 10 AA 0F 19 00 ; TEXT line=0x01B2 voice=0x0A flags=0x00,0x80 "INSULT ... UGLY SWEAR ... GNASH ... GNASH ... UGLY LAUGH ..."
 00001DCC: .byte 91 10 19 00 91 10 19 00 F8 10 9F 0F 19 00 00 00 ; continuation
@@ -801,10 +801,10 @@
 00001E04: .byte C9 EC 01 ; RECORD_CLEAR record=0x01EC
 00001E07: .byte A9 01 B8 1E ; OP_A9 01 B8 1E
 00001E0B: .byte D0 ; OP_D0
-00001E0C: .byte AF 02 06 14 0C ; OP_AF 02 06 14 0C
+00001E0C: .byte AF 02 06 14 0C ; OP_AF RECORD_WILDCARD record=0x0602 value=0x0C14 inverted=false
 00001E11: .byte C4 24 06 28 00 ; ACTOR record=0x0624 related=0x0028 inverted=false
-00001E16: .byte AF 3A 10 DE 0B ; OP_AF 3A 10 DE 0B
-00001E1B: .byte C0 76 13 F5 C1 00 00 ; OP_C0 76 13 F5 C1 00 00
+00001E16: .byte AF 3A 10 DE 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0BDE inverted=false
+00001E1B: .byte C0 76 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1376 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001E22: .byte A1 ; OP_A1
 00001E23: .byte A6 EA 05 03 00 80 05 11 0A 11 B6 0E 3F 03 00 00 ; TEXT line=0x05EA voice=0x03 flags=0x00,0x80 "HALT HIC STRANGER !!!"
 00001E33: .byte A6 EA 05 05 00 80 6C 00 0E 11 14 11 4B 02 18 11 ; TEXT line=0x05EA voice=0x05 flags=0x00,0x80 "The Bar's hic ! shut ... Hic !"
@@ -829,7 +829,7 @@
 00001EEF: .byte A6 42 02 03 00 80 62 11 57 02 AE 07 26 03 BE 07 ; TEXT line=0x0242 voice=0x03 flags=0x00,0x80 "Can you drop us off there ? ..."
 00001EFF: .byte 89 0E CF 01 19 00 00 00 ; continuation
 00001F07: .byte A0 75 1F ; OP_A0 75 1F
-00001F0A: .byte AF 3A 10 72 0B ; OP_AF 3A 10 72 0B
+00001F0A: .byte AF 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00001F0F: .byte A1 ; OP_A1
 00001F10: .byte A6 42 02 FF 30 80 75 1F 9C 09 42 0C E3 00 26 0D ; TEXT line=0x0242 voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander ..."
 00001F20: .byte F3 05 DC 00 A3 00 19 00 FF FF 26 0D 66 11 00 00 ; continuation
@@ -838,8 +838,8 @@
 00001F36: .byte A1 ; OP_A1
 00001F37: .byte A6 42 02 FF 08 A0 2F 0D 6D 11 F6 04 4B 11 72 11 ; TEXT line=0x0242 voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON ON RONDO"
 00001F47: .byte 5C 11 00 00 ; continuation
-00001F4B: .byte AF 5A 02 72 0B ; OP_AF 5A 02 72 0B
-00001F50: .byte AF 72 05 A8 0B ; OP_AF 72 05 A8 0B
+00001F4B: .byte AF 5A 02 72 0B ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
+00001F50: .byte AF 72 05 A8 0B ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
 00001F55: .byte CF ; OP_CF
 00001F56: .byte A0 75 1F ; OP_A0 75 1F
 00001F59: .byte A3 66 11 ; OP_A3 66 11
@@ -849,12 +849,12 @@
 00001F71: .byte CF ; OP_CF
 00001F72: .byte C9 7C 02 ; RECORD_CLEAR record=0x027C
 00001F75: .byte A0 AB 1F ; OP_A0 AB 1F
-00001F78: .byte AF A1 3A 10 72 0B ; OP_AF A1 3A 10 72 0B
-00001F7E: .byte C0 68 13 F2 C1 03 00 ; OP_C0 68 13 F2 C1 03 00
+00001F78: .byte AF A1 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
+00001F7E: .byte C0 68 13 F2 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0003
 00001F85: .byte A1 ; OP_A1
 00001F86: .byte A6 42 02 FF 28 80 9B 05 A0 0C 2F 01 A0 04 75 11 ; TEXT line=0x0242 voice=0xFF flags=0x28,0x80 "We'll need to get closer to RONDO to teleport them ..."
 00001F96: .byte 2F 01 5C 11 2F 01 26 0D F3 05 19 00 00 00 ; continuation
-00001FA4: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+00001FA4: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 00001FAB: .byte A6 42 02 01 08 80 77 09 F9 0B DC 00 A3 00 19 00 ; TEXT line=0x0242 voice=0x01 flags=0x08,0x80 "We're waiting , Commander ..."
 00001FBB: .byte 00 00 ; continuation
 00001FBD: .byte C9 7C 02 ; RECORD_CLEAR record=0x027C
@@ -868,7 +868,7 @@
 00001FF7: .byte A6 5A 05 03 00 80 62 11 57 02 AE 07 26 03 BE 07 ; TEXT line=0x055A voice=0x03 flags=0x00,0x80 "Can you drop us off there ? ..."
 00002007: .byte 89 0E CF 01 19 00 00 00 ; continuation
 0000200F: .byte A0 79 20 ; OP_A0 79 20
-00002012: .byte AF 3A 10 72 0B ; OP_AF 3A 10 72 0B
+00002012: .byte AF 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00002017: .byte A1 ; OP_A1
 00002018: .byte A6 5A 05 FF 30 80 79 20 9C 09 42 0C E3 00 26 0D ; TEXT line=0x055A voice=0xFF flags=0x30,0x80 "Why don't we teleport them , Commander..."
 00002028: .byte F3 05 DC 00 1D 00 FF FF 26 0D 66 11 00 00 ; continuation
@@ -877,8 +877,8 @@
 0000203C: .byte A1 ; OP_A1
 0000203D: .byte A6 5A 05 FF 08 A0 2F 0D 6D 11 F6 04 4B 11 D1 07 ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "TELEPORT YOKO AND MAXXON TO RONDO"
 0000204D: .byte 5C 11 00 00 ; continuation
-00002051: .byte AF 72 05 A8 0B ; OP_AF 72 05 A8 0B
-00002056: .byte AF 5A 02 72 0B ; OP_AF 5A 02 72 0B
+00002051: .byte AF 72 05 A8 0B ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0BA8 inverted=false
+00002056: .byte AF 5A 02 72 0B ; OP_AF RECORD_WILDCARD record=0x025A value=0x0B72 inverted=false
 0000205B: .byte CF ; OP_CF
 0000205C: .byte A0 79 20 ; OP_A0 79 20
 0000205F: .byte A3 66 11 ; OP_A3 66 11
@@ -888,18 +888,18 @@
 00002075: .byte CF ; OP_CF
 00002076: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
 00002079: .byte A0 AF 20 ; OP_A0 AF 20
-0000207C: .byte AF A1 3A 10 72 0B ; OP_AF A1 3A 10 72 0B
-00002082: .byte C0 68 13 F2 C1 03 00 ; OP_C0 68 13 F2 C1 03 00
+0000207C: .byte AF A1 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=true
+00002082: .byte C0 68 13 F2 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0003
 00002089: .byte A1 ; OP_A1
 0000208A: .byte A6 5A 05 FF 28 80 9B 05 A0 0C 2F 01 A0 04 75 11 ; TEXT line=0x055A voice=0xFF flags=0x28,0x80 "We'll need to get closer to RONDO to teleport them ..."
 0000209A: .byte 2F 01 5C 11 2F 01 26 0D F3 05 19 00 00 00 ; continuation
-000020A8: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+000020A8: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 000020AF: .byte A6 5A 05 01 08 80 77 09 F9 0B DC 00 A3 00 19 00 ; TEXT line=0x055A voice=0x01 flags=0x08,0x80 "We're waiting , Commander ..."
 000020BF: .byte 00 00 ; continuation
 000020C1: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
 000020C4: .byte A9 01 6D 21 ; OP_A9 01 6D 21
 000020C8: .byte D0 ; OP_D0
-000020C9: .byte AF 3A 10 72 0B ; OP_AF 3A 10 72 0B
+000020C9: .byte AF 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 000020CE: .byte C4 7C 02 28 00 ; ACTOR record=0x027C related=0x0028 inverted=false
 000020D3: .byte A1 ; OP_A1
 000020D4: .byte A6 42 02 00 00 80 6B 0B 40 0B 66 08 A7 02 4D 00 ; TEXT line=0x0242 voice=0x00 flags=0x00,0x80 "Me happy be back on my planet , Commander ..."
@@ -913,12 +913,12 @@
 00002138: .byte 4B 02 BA 01 AA 11 DC 0F 3D 01 3B 0B 19 00 00 00 ; continuation
 00002148: .byte A6 42 02 05 48 A0 37 0B 57 02 96 02 DC 00 A3 00 ; TEXT line=0x0242 voice=0x05 flags=0x48,0xA0 "See you soon , Commander ..."
 00002158: .byte 19 00 FF FF 62 10 00 00 ; continuation
-00002160: .byte AF 5A 02 A8 0B ; OP_AF 5A 02 A8 0B
-00002165: .byte AF 72 05 72 0B ; OP_AF 72 05 72 0B
+00002160: .byte AF 5A 02 A8 0B ; OP_AF RECORD_WILDCARD record=0x025A value=0x0BA8 inverted=false
+00002165: .byte AF 72 05 72 0B ; OP_AF RECORD_WILDCARD record=0x0572 value=0x0B72 inverted=false
 0000216A: .byte C9 7C 02 ; RECORD_CLEAR record=0x027C
 0000216D: .byte A9 01 20 22 ; OP_A9 01 20 22
 00002171: .byte D0 ; OP_D0
-00002172: .byte AF 3A 10 72 0B ; OP_AF 3A 10 72 0B
+00002172: .byte AF 3A 10 72 0B ; OP_AF RECORD_WILDCARD record=0x103A value=0x0B72 inverted=false
 00002177: .byte C4 94 05 28 00 ; ACTOR record=0x0594 related=0x0028 inverted=false
 0000217C: .byte A1 ; OP_A1
 0000217D: .byte A6 5A 05 09 00 80 86 11 DC 00 8F 0A 19 00 00 00 ; TEXT line=0x055A voice=0x09 flags=0x00,0x80 "Hello , friend ..."
@@ -937,7 +937,7 @@
 0000221D: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
 00002220: .byte A9 01 64 23 ; OP_A9 01 64 23
 00002224: .byte D0 ; OP_D0
-00002225: .byte AF 3A 10 0E 0F ; OP_AF 3A 10 0E 0F
+00002225: .byte AF 3A 10 0E 0F ; OP_AF RECORD_WILDCARD record=0x103A value=0x0F0E inverted=false
 0000222A: .byte C4 BC 04 28 00 ; ACTOR record=0x04BC related=0x0028 inverted=false
 0000222F: .byte A1 ; OP_A1
 00002230: .byte A6 82 04 01 00 80 EA 11 4B 02 6C 00 ED 11 51 01 ; TEXT line=0x0482 voice=0x01 flags=0x00,0x80 "Ho ! The visitor from far away in space and time ..."
@@ -961,10 +961,10 @@
 0000232E: .byte 19 00 7E 02 4B 02 7E 02 4B 02 7E 02 19 00 00 00 ; continuation
 0000233E: .byte A6 82 04 FF 08 90 21 0E 25 0E DC 00 A3 00 19 00 ; TEXT line=0x0482 voice=0xFF flags=0x08,0x90 "Bye bye , Commander ... You'll always be welcome here ..."
 0000234E: .byte EC 0A C6 12 66 08 CD 12 29 03 19 00 00 00 ; continuation
-0000235C: .byte AF 9A 04 2C 0F ; OP_AF 9A 04 2C 0F
+0000235C: .byte AF 9A 04 2C 0F ; OP_AF RECORD_WILDCARD record=0x049A value=0x0F2C inverted=false
 00002361: .byte C9 BC 04 ; RECORD_CLEAR record=0x04BC
 00002364: .byte A9 01 ED 23 ; OP_A9 01 ED 23
-00002368: .byte AF 3A 10 68 09 ; OP_AF 3A 10 68 09
+00002368: .byte AF 3A 10 68 09 ; OP_AF RECORD_WILDCARD record=0x103A value=0x0968 inverted=false
 0000236D: .byte C4 CC 00 28 00 ; ACTOR record=0x00CC related=0x0028 inverted=false
 00002372: .byte A1 ; OP_A1
 00002373: .byte A6 92 00 01 00 80 D5 12 89 0E DC 00 2E 03 37 03 ; TEXT line=0x0092 voice=0x01 flags=0x00,0x80 "Hi there , Consumer Comrade . The VENUSIA SUPRAMARKET is shut today ..."
@@ -977,11 +977,11 @@
 000023C9: .byte B0 0F 34 06 05 13 00 00 ; continuation
 000023D1: .byte A6 92 00 00 08 90 21 0E 25 0E DC 00 2E 03 37 03 ; TEXT line=0x0092 voice=0x00 flags=0x08,0x90 "Bye bye , Consumer Comrade ..."
 000023E1: .byte 19 00 00 00 ; continuation
-000023E5: .byte AF AA 00 B8 0F ; OP_AF AA 00 B8 0F
+000023E5: .byte AF AA 00 B8 0F ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
 000023EA: .byte C9 CC 00 ; RECORD_CLEAR record=0x00CC
 000023ED: .byte A9 01 CD 26 ; OP_A9 01 CD 26
 000023F1: .byte D1 ; OP_D1
-000023F2: .byte C0 78 13 F5 C1 00 00 ; OP_C0 78 13 F5 C1 00 00
+000023F2: .byte C0 78 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1378 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 000023F9: .byte C4 9C 03 28 00 ; ACTOR record=0x039C related=0x0028 inverted=false
 000023FE: .byte A1 ; OP_A1
 000023FF: .byte A6 62 03 02 00 80 0B 13 DD 0C DC 00 A3 00 19 00 ; TEXT line=0x0362 voice=0x02 flags=0x00,0x80 "Everything's okay , Commander ..."
@@ -989,7 +989,7 @@
 00002411: .byte A6 62 03 03 00 80 F7 02 18 13 2B 10 57 02 A0 0C ; TEXT line=0x0362 voice=0x03 flags=0x00,0x80 "Don't hesitate if you need me ..."
 00002421: .byte 10 00 19 00 00 00 ; continuation
 00002427: .byte A0 8E 26 ; OP_A0 8E 26
-0000242A: .byte AE BA 0F 02 00 ; OP_AE BA 0F 02 00
+0000242A: .byte AE BA 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 0000242F: .byte A1 ; OP_A1
 00002430: .byte A6 62 03 05 00 80 21 13 10 00 2F 01 B2 00 D1 03 ; TEXT line=0x0362 voice=0x05 flags=0x00,0x80 "Teleport me to the BIG BANG , Commander ... I want to party ! Gee , I love weddings ..."
 00002440: .byte F1 03 DC 00 A3 00 19 00 99 01 BE 01 2F 01 C9 0B ; continuation
@@ -1047,7 +1047,7 @@
 000026CD: .byte A9 01 65 27 ; OP_A9 01 65 27
 000026D1: .byte D0 ; OP_D0
 000026D2: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000026D7: .byte C0 7A 13 F5 C1 00 00 ; OP_C0 7A 13 F5 C1 00 00
+000026D7: .byte C0 7A 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x137A operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 000026DE: .byte A1 ; OP_A1
 000026DF: .byte A6 72 08 01 00 80 6F 01 57 02 BE 01 DC 00 07 12 ; TEXT line=0x0872 voice=0x01 flags=0x00,0x80 "What you want , stranger ? You want murffalo meat ?"
 000026EF: .byte CF 01 BA 01 BE 01 39 14 52 14 CF 01 00 00 ; continuation
@@ -1058,11 +1058,11 @@
 00002739: .byte 22 04 6C 14 98 08 9B 08 19 00 00 00 ; continuation
 00002745: .byte A6 72 08 05 00 80 3C 0F 3C 0F 19 00 00 00 ; TEXT line=0x0872 voice=0x05 flags=0x00,0x80 "BYE BYE ..."
 00002753: .byte A6 72 08 FF 08 90 72 14 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
-0000275D: .byte AF 8A 08 2C 0F ; OP_AF 8A 08 2C 0F
+0000275D: .byte AF 8A 08 2C 0F ; OP_AF RECORD_WILDCARD record=0x088A value=0x0F2C inverted=false
 00002762: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
 00002765: .byte A9 01 F5 27 ; OP_A9 01 F5 27
 00002769: .byte D1 ; OP_D1
-0000276A: .byte AF 5A 02 FF FF ; OP_AF 5A 02 FF FF
+0000276A: .byte AF 5A 02 FF FF ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
 0000276F: .byte C4 34 02 28 00 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002774: .byte A1 ; OP_A1
 00002775: .byte A6 FA 01 01 00 80 7E 02 4B 02 A7 11 4B 02 E8 07 ; TEXT line=0x01FA voice=0x01 flags=0x00,0x80 "Ha ! ha ! Big Bang ... Black holes ... You're out of your mind ..."
@@ -1072,13 +1072,13 @@
 000027AD: .byte 52 11 24 02 2F 01 A0 04 A7 02 7A 07 4D 00 B2 00 ; continuation
 000027BD: .byte 86 00 5C 11 19 00 00 00 ; continuation
 000027C5: .byte A6 FA 01 06 08 80 B6 03 6E 0B 19 00 00 00 ; TEXT line=0x01FA voice=0x06 flags=0x08,0x80 "They're impatient ..."
-000027D3: .byte BC 40 02 01 00 ; OP_BC 40 02 01 00
+000027D3: .byte BC 40 02 01 00 ; OP_BC RECORD_WILDCARD record=0x0240 value=0x0001 inverted=false
 000027D8: .byte A6 FA 01 07 48 80 21 0E 8F 14 6B 0B 13 00 E7 02 ; TEXT line=0x01FA voice=0x07 flags=0x48,0x80 "Bye bye... Me sleep in star dust..."
 000027E8: .byte 96 14 9B 14 FF FF 62 10 00 00 ; continuation
 000027F2: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 000027F5: .byte A9 01 22 29 ; OP_A9 01 22 29
 000027F9: .byte D1 ; OP_D1
-000027FA: .byte AF A1 5A 02 FF FF ; OP_AF A1 5A 02 FF FF
+000027FA: .byte AF A1 5A 02 FF FF ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=true
 00002800: .byte C4 34 02 28 00 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002805: .byte A1 ; OP_A1
 00002806: .byte A6 FA 01 01 00 80 7E 02 4B 02 A7 11 4B 02 E8 07 ; TEXT line=0x01FA voice=0x01 flags=0x00,0x80 "Ha ! ha ! Big Bang ... Black holes ... You're out of your mind ..."
@@ -1102,11 +1102,11 @@
 000028F0: .byte 19 00 7F 05 A2 05 28 15 34 15 3B 15 19 00 00 00 ; continuation
 00002900: .byte A6 FA 01 04 08 90 21 0E 25 0E DC 00 98 08 09 0E ; TEXT line=0x01FA voice=0x04 flags=0x08,0x90 "Bye bye , my friends ... BYE BYE ..."
 00002910: .byte 19 00 3C 0F 3C 0F 19 00 00 00 ; continuation
-0000291A: .byte AF 12 02 36 0B ; OP_AF 12 02 36 0B
+0000291A: .byte AF 12 02 36 0B ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0B36 inverted=false
 0000291F: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 00002922: .byte A9 01 1D 2B ; OP_A9 01 1D 2B
 00002926: .byte D0 ; OP_D0
-00002927: .byte AF A1 F8 10 28 00 ; OP_AF A1 F8 10 28 00
+00002927: .byte AF A1 F8 10 28 00 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
 0000292D: .byte C4 34 02 28 00 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002932: .byte A1 ; OP_A1
 00002933: .byte A6 FA 01 02 00 80 44 15 07 12 19 00 BA 01 66 08 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Welcome stranger ... You be big traveller ..."
@@ -1144,18 +1144,18 @@
 00002AA6: .byte 19 00 00 00 ; continuation
 00002AAA: .byte A6 FA 01 05 08 80 FA 15 66 08 E7 02 03 16 0C 16 ; TEXT line=0x01FA voice=0x05 flags=0x08,0x80 "Cyberock be in Cyberius system , coordinates X234 Y546 ..."
 00002ABA: .byte DC 00 13 16 1F 16 24 16 19 00 00 00 ; continuation
-00002AC6: .byte AE 42 0D 02 00 ; OP_AE 42 0D 02 00
+00002AC6: .byte AE 42 0D 02 00 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=false
 00002ACB: .byte A6 FA 01 FF 20 80 7F 05 29 16 36 09 3D 01 DC 00 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "We already know that , Commander ... Old Tube-head's going gaga ..."
 00002ADB: .byte A3 00 19 00 31 16 35 16 30 04 41 16 19 00 00 00 ; continuation
 00002AEB: .byte A6 FA 01 06 00 80 6B 0B 5A 0B 29 03 BC 00 46 16 ; TEXT line=0x01FA voice=0x06 flags=0x00,0x80 "Me wait here with U.R.O.U.T ..."
 00002AFB: .byte 19 00 00 00 ; continuation
 00002AFF: .byte A6 FA 01 FF 08 A0 21 0E 25 0E 8F 0A 19 00 00 00 ; TEXT line=0x01FA voice=0xFF flags=0x08,0xA0 "Bye bye friend ..."
 00002B0F: .byte AB 00 F6 27 ; OP_AB 00 F6 27
-00002B13: .byte C0 7C 13 F5 C1 01 00 ; OP_C0 7C 13 F5 C1 01 00
+00002B13: .byte C0 7C 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x137C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00002B1A: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 00002B1D: .byte A9 01 05 2D ; OP_A9 01 05 2D
 00002B21: .byte D0 ; OP_D0
-00002B22: .byte C0 7C 13 F5 C1 01 00 ; OP_C0 7C 13 F5 C1 01 00
+00002B22: .byte C0 7C 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x137C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00002B29: .byte C4 34 02 28 00 ; ACTOR record=0x0234 related=0x0028 inverted=false
 00002B2E: .byte A1 ; OP_A1
 00002B2F: .byte A6 FA 01 02 00 80 44 15 07 12 19 00 BA 01 66 08 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "Welcome stranger ... You be big traveller ..."
@@ -1179,7 +1179,7 @@
 00002BFA: .byte A8 73 63 61 6E 64 6F 69 67 2E 68 6E 6D 00 00 ; OP_A8 73 63 61 6E 64 6F 69 67 2E 68 6E 6D 00 00
 00002C09: .byte CF ; OP_CF
 00002C0A: .byte A0 59 2C ; OP_A0 59 2C
-00002C0D: .byte AF A1 F8 10 28 00 ; OP_AF A1 F8 10 28 00
+00002C0D: .byte AF A1 F8 10 28 00 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=true
 00002C13: .byte A1 ; OP_A1
 00002C14: .byte A6 FA 01 FF 00 80 BA 01 BF 0E 97 12 46 16 D7 15 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "You must take U.R.O.U.T exam on planet CYBEROCK ..."
 00002C24: .byte 4D 00 86 00 DC 15 19 00 00 00 ; continuation
@@ -1189,7 +1189,7 @@
 00002C50: .byte FF FF 62 10 00 00 ; continuation
 00002C56: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 00002C59: .byte A0 05 2D ; OP_A0 05 2D
-00002C5C: .byte AF F8 10 28 00 ; OP_AF F8 10 28 00
+00002C5C: .byte AF F8 10 28 00 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x0028 inverted=false
 00002C61: .byte A1 ; OP_A1
 00002C62: .byte A6 FA 01 FF 00 80 55 16 A3 00 95 00 BA 01 66 08 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Bravo Commander . You be talented ..."
 00002C72: .byte 5B 16 19 00 00 00 ; continuation
@@ -1198,21 +1198,21 @@
 00002C98: .byte 19 00 00 00 ; continuation
 00002C9C: .byte A6 FA 01 FF 08 80 E8 07 EC 07 66 08 CE 03 13 16 ; TEXT line=0x01FA voice=0xFF flags=0x08,0x80 "Big Bang be at coordinates X543 Y769..."
 00002CAC: .byte 64 16 69 16 00 00 ; continuation
-00002CB2: .byte AE BA 0F 02 00 ; OP_AE BA 0F 02 00
+00002CB2: .byte AE BA 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=false
 00002CB7: .byte A6 FA 01 FF 00 80 21 0E 25 0E DC 00 8F 0A 19 00 ; TEXT line=0x01FA voice=0xFF flags=0x00,0x80 "Bye bye , friend ... ME see you at Big Bang .... Ha Ha Ha ..."
 00002CC7: .byte 00 05 11 09 57 02 CE 03 E8 07 EC 07 43 10 7E 02 ; continuation
 00002CD7: .byte 7E 02 7E 02 19 00 00 00 ; continuation
 00002CDF: .byte A6 FA 01 FF 20 80 4C 13 DC 00 65 06 69 01 3D 01 ; TEXT line=0x01FA voice=0xFF flags=0x20,0x80 "Well , how about that !"
 00002CEF: .byte 4B 02 00 00 ; continuation
 00002CF3: .byte A6 FA 01 FF 08 90 19 00 00 00 ; TEXT line=0x01FA voice=0xFF flags=0x08,0x90 "..."
-00002CFD: .byte AF 12 02 2C 0F ; OP_AF 12 02 2C 0F
+00002CFD: .byte AF 12 02 2C 0F ; OP_AF RECORD_WILDCARD record=0x0212 value=0x0F2C inverted=false
 00002D02: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 00002D05: .byte A9 01 59 2D ; OP_A9 01 59 2D
 00002D09: .byte D0 ; OP_D0
-00002D0A: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 7E 13 F5 C1 00 00
+00002D0A: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00002D11: .byte C4 C4 02 28 00 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002D16: .byte AF A1 F8 10 8A 02 ; OP_AF A1 F8 10 8A 02
-00002D1C: .byte AF 3A 10 40 0D ; OP_AF 3A 10 40 0D
+00002D16: .byte AF A1 F8 10 8A 02 ; OP_AF RECORD_WILDCARD record=0x10F8 value=0x028A inverted=true
+00002D1C: .byte AF 3A 10 40 0D ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002D21: .byte A1 ; OP_A1
 00002D22: .byte A6 8A 02 01 00 80 21 0E 25 0E DC 00 71 16 A3 00 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Bye bye , student Commander Blood . You are a member of the \"GUILD OF MEMBERS\" ..."
 00002D32: .byte 79 16 95 00 BA 01 56 00 C1 00 7F 16 FD 00 B2 00 ; continuation
@@ -1221,9 +1221,9 @@
 00002D56: .byte C9 C4 02 ; RECORD_CLEAR record=0x02C4
 00002D59: .byte A9 01 06 2E ; OP_A9 01 06 2E
 00002D5D: .byte D0 ; OP_D0
-00002D5E: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 7E 13 F5 C1 00 00
+00002D5E: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00002D65: .byte C4 C4 02 28 00 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002D6A: .byte AF 3A 10 40 0D ; OP_AF 3A 10 40 0D
+00002D6A: .byte AF 3A 10 40 0D ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002D6F: .byte A1 ; OP_A1
 00002D70: .byte AB 01 56 30 ; OP_AB 01 56 30
 00002D74: .byte AB 01 FF 30 ; OP_AB 01 FF 30
@@ -1257,15 +1257,15 @@
 00002DE4: .byte AB 01 2E 40 ; OP_AB 01 2E 40
 00002DE8: .byte AB 01 B5 40 ; OP_AB 01 B5 40
 00002DEC: .byte AB 01 40 41 ; OP_AB 01 40 41
-00002DF0: .byte C0 80 13 F5 C1 00 00 ; OP_C0 80 13 F5 C1 00 00
-00002DF7: .byte C0 82 13 F5 C1 00 00 ; OP_C0 82 13 F5 C1 00 00
+00002DF0: .byte C0 80 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00002DF7: .byte C0 82 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00002DFE: .byte AB 01 07 2E ; OP_AB 01 07 2E
 00002E02: .byte AB 00 5A 2D ; OP_AB 00 5A 2D
 00002E06: .byte A9 00 CF 2E ; OP_A9 00 CF 2E
 00002E0A: .byte D0 ; OP_D0
-00002E0B: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 7E 13 F5 C1 00 00
+00002E0B: .byte C0 7E 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x137E operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00002E12: .byte C4 C4 02 28 00 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002E17: .byte AF 3A 10 40 0D ; OP_AF 3A 10 40 0D
+00002E17: .byte AF 3A 10 40 0D ; OP_AF RECORD_WILDCARD record=0x103A value=0x0D40 inverted=false
 00002E1C: .byte A1 ; OP_A1
 00002E1D: .byte A6 8A 02 01 00 80 96 16 A3 00 79 16 19 00 17 04 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Student Commander Blood ... This is a big day in your life ..."
 00002E2D: .byte 92 00 C1 00 C5 03 2D 0B E7 02 34 06 9E 16 19 00 ; continuation
@@ -1285,7 +1285,7 @@
 00002ECF: .byte A9 01 BD 2F ; OP_A9 01 BD 2F
 00002ED3: .byte D0 ; OP_D0
 00002ED4: .byte C4 C4 02 28 00 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002ED9: .byte C0 82 13 F5 C1 05 00 ; OP_C0 82 13 F5 C1 05 00
+00002ED9: .byte C0 82 13 F5 C1 05 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0005
 00002EE0: .byte A1 ; OP_A1
 00002EE1: .byte A6 8A 02 01 00 80 5F 17 1A 03 EE 03 22 04 19 00 ; TEXT line=0x028A voice=0x01 flags=0x00,0x80 "Believe it or not ... You have passed your U.R.O.U.T."
 00002EF1: .byte BA 01 15 03 67 17 34 06 B4 16 00 00 ; continuation
@@ -1306,15 +1306,15 @@
 00002F7E: .byte C6 17 CC 17 CF 17 2F 01 34 06 D4 17 00 00 ; continuation
 00002F8C: .byte A6 8A 02 02 00 80 37 0B 57 02 DC 17 1D 00 00 00 ; TEXT line=0x028A voice=0x02 flags=0x00,0x80 "See you soon, Commander..."
 00002F9C: .byte A6 8A 02 FF 08 B0 72 14 00 00 ; TEXT line=0x028A voice=0xFF flags=0x08,0xB0 "stop"
-00002FA6: .byte C0 82 13 F5 C1 00 00 ; OP_C0 82 13 F5 C1 00 00
-00002FAD: .byte C0 80 13 F5 C1 00 00 ; OP_C0 80 13 F5 C1 00 00
-00002FB4: .byte AE A1 42 0D 02 00 ; OP_AE A1 42 0D 02 00
+00002FA6: .byte C0 82 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00002FAD: .byte C0 80 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00002FB4: .byte AE A1 42 0D 02 00 ; OP_AE SHARED_BIT_STATE field=0x0D42 mask=0x0002 inverted=true
 00002FBA: .byte C9 C4 02 ; RECORD_CLEAR record=0x02C4
 00002FBD: .byte A9 01 55 30 ; OP_A9 01 55 30
 00002FC1: .byte D0 ; OP_D0
 00002FC2: .byte C4 C4 02 28 00 ; ACTOR record=0x02C4 related=0x0028 inverted=false
-00002FC7: .byte C0 80 13 F5 C1 20 00 ; OP_C0 80 13 F5 C1 20 00
-00002FCE: .byte C0 82 13 F1 C1 0A 00 ; OP_C0 82 13 F1 C1 0A 00
+00002FC7: .byte C0 80 13 F5 C1 20 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0020
+00002FCE: .byte C0 82 13 F1 C1 0A 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF1 rhs_mode=0xC1 rhs=0x000A
 00002FD5: .byte A1 ; OP_A1
 00002FD6: .byte A6 8A 02 0A 00 80 BA 01 E2 17 00 00 ; TEXT line=0x028A voice=0x0A flags=0x00,0x80 "You failed!"
 00002FE2: .byte A6 8A 02 FF 20 80 99 01 EA 17 C0 02 52 11 EF 17 ; TEXT line=0x028A voice=0xFF flags=0x20,0x80 "I knew this would happen... I feel pity for you , Commander..."
@@ -1326,8 +1326,8 @@
 00003034: .byte 00 00 ; continuation
 00003036: .byte A6 8A 02 FF 08 B0 72 14 00 00 ; TEXT line=0x028A voice=0xFF flags=0x08,0xB0 "stop"
 00003040: .byte AB 01 5A 2D ; OP_AB 01 5A 2D
-00003044: .byte C0 80 13 F5 C1 00 00 ; OP_C0 80 13 F5 C1 00 00
-0000304B: .byte C0 82 13 F5 C1 00 00 ; OP_C0 82 13 F5 C1 00 00
+00003044: .byte C0 80 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+0000304B: .byte C0 82 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00003052: .byte C9 C4 02 ; RECORD_CLEAR record=0x02C4
 00003055: .byte A9 01 FE 30 ; OP_A9 01 FE 30
 00003059: .byte D0 ; OP_D0
@@ -1341,15 +1341,15 @@
 00003094: .byte A1 ; OP_A1
 00003095: .byte A6 8A 02 02 08 A0 6C 00 A5 18 AB 18 FD 00 B1 18 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "The Great Yolk, of course. You've been boning up , Commander..."
 000030A5: .byte 00 12 58 04 B9 18 C5 02 DC 00 1D 00 00 00 ; continuation
-000030B3: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000030BA: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000030B3: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000030BA: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000030C1: .byte CF ; OP_CF
 000030C2: .byte A0 EE 30 ; OP_A0 EE 30
 000030C5: .byte A3 A1 8A 18 ; OP_A3 A1 8A 18
 000030C9: .byte A1 ; OP_A1
 000030CA: .byte A6 8A 02 05 08 90 C0 18 22 04 34 06 CA 18 D6 18 ; TEXT line=0x028A voice=0x05 flags=0x08,0x90 "History's not your speciality. Maybe you're not ready for this"
 000030DA: .byte 54 0E 22 04 03 0E 6A 03 C0 02 00 00 ; continuation
-000030E6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000030E6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000030ED: .byte CF ; OP_CF
 000030EE: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000030FA: .byte AB 00 56 30 ; OP_AB 00 56 30
@@ -1365,8 +1365,8 @@
 00003135: .byte A1 ; OP_A1
 00003136: .byte A6 8A 02 07 08 A0 D9 07 23 19 DC 00 B2 00 2A 19 ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "Yes indeed , the incomparably Great Yolk... Hare Yolk Hare Hare..."
 00003146: .byte A5 18 37 19 3F 19 8A 18 3F 19 44 19 00 00 ; continuation
-00003154: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-0000315B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003154: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+0000315B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003162: .byte CF ; OP_CF
 00003163: .byte A0 95 31 ; OP_A0 95 31
 00003166: .byte A3 A1 1E 19 ; OP_A3 A1 1E 19
@@ -1374,7 +1374,7 @@
 0000316B: .byte A6 8A 02 08 08 90 4C 19 4F 19 DC 00 99 01 EE 05 ; TEXT line=0x028A voice=0x08 flags=0x08,0x90 "On Vista , I said . Get those ondoyants out of your brain..."
 0000317B: .byte 95 00 82 0C 55 19 AC 08 BB 05 FD 00 34 06 5B 19 ; continuation
 0000318B: .byte 00 00 ; continuation
-0000318D: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000318D: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003194: .byte CF ; OP_CF
 00003195: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000031A1: .byte AB 00 FF 30 ; OP_AB 00 FF 30
@@ -1389,14 +1389,14 @@
 000031DD: .byte A3 9B 19 ; OP_A3 9B 19
 000031E0: .byte A1 ; OP_A1
 000031E1: .byte A6 8A 02 04 08 A0 CF 00 D6 00 19 00 00 00 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "That's right ..."
-000031EF: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000031F6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000031EF: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000031F6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000031FD: .byte CF ; OP_CF
 000031FE: .byte A0 18 32 ; OP_A0 18 32
 00003201: .byte A3 A1 9B 19 ; OP_A3 A1 9B 19
 00003205: .byte A1 ; OP_A1
 00003206: .byte A6 8A 02 03 08 90 19 00 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "..."
-00003210: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003210: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003217: .byte CF ; OP_CF
 00003218: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003224: .byte AB 00 A6 31 ; OP_AB 00 A6 31
@@ -1411,8 +1411,8 @@
 0000325E: .byte A3 FB 19 ; OP_A3 FB 19
 00003261: .byte A1 ; OP_A1
 00003262: .byte A6 8A 02 09 08 A0 02 1A 0C 1A 00 00 ; TEXT line=0x028A voice=0x09 flags=0x08,0xA0 "Excellent answer..."
-0000326E: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003275: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000326E: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003275: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000327C: .byte CF ; OP_CF
 0000327D: .byte A0 B1 32 ; OP_A0 B1 32
 00003280: .byte A3 A1 FB 19 ; OP_A3 A1 FB 19
@@ -1420,7 +1420,7 @@
 00003285: .byte A6 8A 02 08 08 90 16 1A 1A 1A 23 1A 4B 02 85 0D ; TEXT line=0x028A voice=0x08 flags=0x08,0x90 "For goodness sakes ! It starts with an A and ends with an X..."
 00003295: .byte 29 1A BC 00 14 0A 06 04 42 01 30 1A BC 00 14 0A ; continuation
 000032A5: .byte 35 1A 00 00 ; continuation
-000032A9: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000032A9: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000032B0: .byte CF ; OP_CF
 000032B1: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000032BD: .byte AB 00 29 32 ; OP_AB 00 29 32
@@ -1436,15 +1436,15 @@
 000032F6: .byte A1 ; OP_A1
 000032F7: .byte A6 8A 02 05 08 A0 86 1A 8C 1A B2 00 D6 00 93 1A ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Fifi, that's the right answer ..."
 00003307: .byte 19 00 00 00 ; continuation
-0000330B: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003312: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000330B: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003312: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003319: .byte CF ; OP_CF
 0000331A: .byte A0 40 33 ; OP_A0 40 33
 0000331D: .byte A3 A1 BB 0B ; OP_A3 A1 BB 0B
 00003321: .byte A1 ; OP_A1
 00003322: .byte A6 8A 02 06 08 90 16 1A 1A 1A 9A 1A 82 0C C1 00 ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "For goodness sakes! Get a grip guy..."
 00003332: .byte A2 1A A7 1A 00 00 ; continuation
-00003338: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003338: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000333F: .byte CF ; OP_CF
 00003340: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 0000334C: .byte AB 00 C2 32 ; OP_AB 00 C2 32
@@ -1458,15 +1458,15 @@
 0000337E: .byte A3 B4 1A ; OP_A3 B4 1A
 00003381: .byte A1 ; OP_A1
 00003382: .byte A6 8A 02 03 08 A0 D6 1A C1 00 DB 1A 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Yes, a Slimer..."
-00003390: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003397: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003390: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003397: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000339E: .byte CF ; OP_CF
 0000339F: .byte A0 C7 33 ; OP_A0 C7 33
 000033A2: .byte A3 A1 B4 1A ; OP_A3 A1 B4 1A
 000033A6: .byte A1 ; OP_A1
 000033A7: .byte A6 8A 02 02 08 90 6C 00 A5 18 E5 1A 58 07 C5 19 ; TEXT line=0x028A voice=0x02 flags=0x08,0x90 "The Great Yolk? That was a mediocre effort"
 000033B7: .byte C1 00 EB 1A F4 1A 00 00 ; continuation
-000033BF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000033BF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000033C6: .byte CF ; OP_CF
 000033C7: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000033D3: .byte AB 00 51 33 ; OP_AB 00 51 33
@@ -1482,15 +1482,15 @@
 00003410: .byte A1 ; OP_A1
 00003411: .byte A6 8A 02 02 08 A0 4C 1B 52 1B 59 1B B2 00 5C 1B ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Quite right. In the cryobox..."
 00003421: .byte 00 00 ; continuation
-00003423: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-0000342A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003423: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+0000342A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003431: .byte CF ; OP_CF
 00003432: .byte A0 54 34 ; OP_A0 54 34
 00003435: .byte A3 A1 40 1B ; OP_A3 A1 40 1B
 00003439: .byte A1 ; OP_A1
 0000343A: .byte A6 8A 02 03 08 90 F7 02 57 02 15 03 C1 00 67 1B ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "Don't you have a radio?"
 0000344A: .byte 00 00 ; continuation
-0000344C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000344C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003453: .byte CF ; OP_CF
 00003454: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003460: .byte AB 00 D8 33 ; OP_AB 00 D8 33
@@ -1505,15 +1505,15 @@
 0000348F: .byte A1 ; OP_A1
 00003490: .byte A6 8A 02 05 08 A0 6C 00 77 14 AF 1B B6 1B BE 1B ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "The Black Larsen Hordes, yes..."
 000034A0: .byte 00 00 ; continuation
-000034A2: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000034A9: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000034A2: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000034A9: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000034B0: .byte CF ; OP_CF
 000034B1: .byte A0 D3 34 ; OP_A0 D3 34
 000034B4: .byte A3 A1 92 1B ; OP_A3 A1 92 1B
 000034B8: .byte A1 ; OP_A1
 000034B9: .byte A6 8A 02 06 08 90 EA 02 DC 00 ED 02 42 01 C5 1B ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "No , no and NO..."
 000034C9: .byte 00 00 ; continuation
-000034CB: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000034CB: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000034D2: .byte CF ; OP_CF
 000034D3: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000034DF: .byte AB 00 65 34 ; OP_AB 00 65 34
@@ -1527,15 +1527,15 @@
 00003511: .byte A3 1E 19 ; OP_A3 1E 19
 00003514: .byte A1 ; OP_A1
 00003515: .byte A6 8A 02 08 08 A0 6C 00 EF 1B 37 19 00 00 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "The incredible Yolk..."
-00003523: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-0000352A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003523: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+0000352A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003531: .byte CF ; OP_CF
 00003532: .byte A0 56 35 ; OP_A0 56 35
 00003535: .byte A3 A1 1E 19 ; OP_A3 A1 1E 19
 00003539: .byte A1 ; OP_A1
 0000353A: .byte A6 8A 02 09 08 90 69 08 22 04 C5 02 4D 00 34 06 ; TEXT line=0x028A voice=0x09 flags=0x08,0x90 "You're not up on your classics..."
 0000354A: .byte FA 1B 00 00 ; continuation
-0000354E: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000354E: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003555: .byte CF ; OP_CF
 00003556: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003562: .byte AB 00 E4 34 ; OP_AB 00 E4 34
@@ -1551,15 +1551,15 @@
 0000359D: .byte A1 ; OP_A1
 0000359E: .byte A6 8A 02 07 08 A0 24 1C E7 02 B2 00 28 1C 42 01 ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "One in the middle and twelve all around. Good..."
 000035AE: .byte 2F 1C 30 06 36 1C 3E 1C 00 00 ; continuation
-000035B8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000035BF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000035B8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000035BF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000035C6: .byte CF ; OP_CF
 000035C7: .byte A0 EB 35 ; OP_A0 EB 35
 000035CA: .byte A3 A1 50 18 ; OP_A3 A1 50 18
 000035CE: .byte A1 ; OP_A1
 000035CF: .byte A6 8A 02 06 08 90 46 1C 58 07 C5 19 B2 00 96 05 ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "Murffalos? That was the easy question..."
 000035DF: .byte 51 1C 00 00 ; continuation
-000035E3: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000035E3: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000035EA: .byte CF ; OP_CF
 000035EB: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000035F7: .byte AB 00 67 35 ; OP_AB 00 67 35
@@ -1573,13 +1573,13 @@
 00003627: .byte A3 75 1C ; OP_A3 75 1C
 0000362A: .byte A1 ; OP_A1
 0000362B: .byte A6 8A 02 04 08 90 8B 1C 99 1C 9D 1C A5 1C 00 00 ; TEXT line=0x028A voice=0x04 flags=0x08,0x90 "Paralleloped? Try contact lenses..."
-0000363B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000363B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003642: .byte CF ; OP_CF
 00003643: .byte A0 5F 36 ; OP_A0 5F 36
 00003646: .byte A3 A1 75 1C ; OP_A3 A1 75 1C
 0000364A: .byte A1 ; OP_A1
 0000364B: .byte A6 8A 02 03 08 90 69 08 AF 1C 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "You're hopeless...."
-00003657: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003657: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000365E: .byte CF ; OP_CF
 0000365F: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 0000366B: .byte AB 00 FC 35 ; OP_AB 00 FC 35
@@ -1594,14 +1594,14 @@
 0000369E: .byte A1 ; OP_A1
 0000369F: .byte A6 8A 02 01 08 A0 06 04 F7 1C FD 00 C1 00 FB 1C ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "A bit of a history buff , eh ?..."
 000036AF: .byte 03 1D DC 00 08 1D 0B 1D 00 00 ; continuation
-000036B9: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000036C0: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000036B9: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000036C0: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000036C7: .byte CF ; OP_CF
 000036C8: .byte A0 E6 36 ; OP_A0 E6 36
 000036CB: .byte A3 A1 EC 1C ; OP_A3 A1 EC 1C
 000036CF: .byte A1 ; OP_A1
 000036D0: .byte A6 8A 02 00 08 90 10 1D 10 1D 1D 00 00 00 ; TEXT line=0x028A voice=0x00 flags=0x08,0x90 "No! No! Commander..."
-000036DE: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000036DE: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000036E5: .byte CF ; OP_CF
 000036E6: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000036F2: .byte AB 00 70 36 ; OP_AB 00 70 36
@@ -1615,15 +1615,15 @@
 00003724: .byte A3 27 1D ; OP_A3 27 1D
 00003727: .byte A1 ; OP_A1
 00003728: .byte A6 8A 02 02 08 A0 3A 1D 4B 1D 00 00 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Protein-enriched Plastok."
-00003734: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-0000373B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003734: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+0000373B: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003742: .byte CF ; OP_CF
 00003743: .byte A0 67 37 ; OP_A0 67 37
 00003746: .byte A3 A1 27 1D ; OP_A3 A1 27 1D
 0000374A: .byte A1 ; OP_A1
 0000374B: .byte A6 8A 02 03 08 90 BA 01 35 14 54 1D 5E 1D 66 1D ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "You got something against Tubulars ?"
 0000375B: .byte CF 01 00 00 ; continuation
-0000375F: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000375F: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003766: .byte CF ; OP_CF
 00003767: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003773: .byte AB 00 F7 36 ; OP_AB 00 F7 36
@@ -1638,15 +1638,15 @@
 000037A6: .byte A1 ; OP_A1
 000037A7: .byte A6 8A 02 05 08 A0 88 1D 10 0A B2 00 8E 1D 6F 1D ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Bonus has the finest rings in the universe."
 000037B7: .byte E7 02 B2 00 95 1D 00 00 ; continuation
-000037BF: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000037C6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000037BF: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000037C6: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000037CD: .byte CF ; OP_CF
 000037CE: .byte A0 F4 37 ; OP_A0 F4 37
 000037D1: .byte A3 A1 82 1D ; OP_A3 A1 82 1D
 000037D5: .byte A1 ; OP_A1
 000037D6: .byte A6 8A 02 06 08 90 9F 1D BA 01 36 09 DC 00 55 19 ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "Rings... You know , those round things..."
 000037E6: .byte A8 1D AE 1D 00 00 ; continuation
-000037EC: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000037EC: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000037F3: .byte CF ; OP_CF
 000037F4: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003800: .byte AB 00 78 37 ; OP_AB 00 78 37
@@ -1661,15 +1661,15 @@
 00003831: .byte A1 ; OP_A1
 00003832: .byte A6 8A 02 08 08 A0 EA 1D C8 0C F1 1D F5 1D C5 02 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Yes... Just cut 'em up and you've got a family tree."
 00003842: .byte 42 01 F9 1D 35 14 C1 00 00 1E 07 1E 00 00 ; continuation
-00003850: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003857: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003850: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003857: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000385E: .byte CF ; OP_CF
 0000385F: .byte A0 89 38 ; OP_A0 89 38
 00003862: .byte A3 A1 CB 1D ; OP_A3 A1 CB 1D
 00003866: .byte A1 ; OP_A1
 00003867: .byte A6 8A 02 09 08 90 BA 01 0D 1E 47 0F C1 00 14 1E ; TEXT line=0x028A voice=0x09 flags=0x08,0x90 "You should open a dictionary from time to time"
 00003877: .byte 51 01 9B 08 2F 01 9B 08 00 00 ; continuation
-00003881: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003881: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003888: .byte CF ; OP_CF
 00003889: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003895: .byte AB 00 05 38 ; OP_AB 00 05 38
@@ -1684,15 +1684,15 @@
 000038C8: .byte A1 ; OP_A1
 000038C9: .byte A6 8A 02 01 08 A0 EA 1D 34 1E 51 01 0D 18 AF 1B ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "Yes... Made from oxidized Larsen liver..."
 000038D9: .byte 39 1E 00 00 ; continuation
-000038DD: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-000038E4: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000038DD: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+000038E4: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000038EB: .byte CF ; OP_CF
 000038EC: .byte A0 10 39 ; OP_A0 10 39
 000038EF: .byte A3 A1 28 1E ; OP_A3 A1 28 1E
 000038F3: .byte A1 ; OP_A1
 000038F4: .byte A6 8A 02 02 08 90 42 1E 3D 01 93 1A 48 1E 5A 00 ; TEXT line=0x028A voice=0x02 flags=0x08,0x90 "Well, that answer wasn't too explosive!"
 00003904: .byte 4F 1E 00 00 ; continuation
-00003908: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003908: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000390F: .byte CF ; OP_CF
 00003910: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 0000391C: .byte AB 00 9A 38 ; OP_AB 00 9A 38
@@ -1708,14 +1708,14 @@
 00003961: .byte A1 ; OP_A1
 00003962: .byte A6 8A 02 04 08 A0 95 1E DC 00 6B 1E FD 00 F8 00 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "Umatika , wife of king Betakam fourth, eighteenth dynasty..."
 00003972: .byte C9 19 9D 1E A5 1E B0 1E 00 00 ; continuation
-0000397C: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003983: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000397C: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003983: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000398A: .byte CF ; OP_CF
 0000398B: .byte A0 A9 39 ; OP_A0 A9 39
 0000398E: .byte A3 A1 74 1E ; OP_A3 A1 74 1E
 00003992: .byte A1 ; OP_A1
 00003993: .byte A6 8A 02 05 08 90 2B 0F BB 1E C0 1E 00 00 ; TEXT line=0x028A voice=0x05 flags=0x08,0x90 "Not even close..."
-000039A1: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000039A1: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000039A8: .byte CF ; OP_CF
 000039A9: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 000039B5: .byte AB 00 21 39 ; OP_AB 00 21 39
@@ -1729,15 +1729,15 @@
 000039E7: .byte A3 D5 1E ; OP_A3 D5 1E
 000039EA: .byte A1 ; OP_A1
 000039EB: .byte A6 8A 02 02 08 A0 0A 1F 10 1F 18 1F 00 00 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Avoid smoking them!"
-000039F9: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003A00: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000039F9: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003A00: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003A07: .byte CF ; OP_CF
 00003A08: .byte A0 2E 3A ; OP_A0 2E 3A
 00003A0B: .byte A3 A1 D5 1E ; OP_A3 A1 D5 1E
 00003A0F: .byte A1 ; OP_A1
 00003A10: .byte A6 8A 02 03 08 90 42 1E 1E 1F 1A 03 C5 19 C1 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "Well, maybe it was a tough question..."
 00003A20: .byte 24 1F 51 1C 00 00 ; continuation
-00003A26: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003A26: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003A2D: .byte CF ; OP_CF
 00003A2E: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003A3A: .byte AB 00 BA 39 ; OP_AB 00 BA 39
@@ -1753,15 +1753,15 @@
 00003A71: .byte A1 ; OP_A1
 00003A72: .byte A6 8A 02 05 08 A0 64 1F B2 00 F7 18 70 1F 19 00 ; TEXT line=0x028A voice=0x05 flags=0x08,0xA0 "Attroxcity, the Slimer city ... Quite right!"
 00003A82: .byte 4C 1B 75 1F 00 00 ; continuation
-00003A88: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003A8F: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003A88: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003A8F: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003A96: .byte CF ; OP_CF
 00003A97: .byte A0 BF 3A ; OP_A0 BF 3A
 00003A9A: .byte A3 A1 4F 1F ; OP_A3 A1 4F 1F
 00003A9E: .byte A1 ; OP_A1
 00003A9F: .byte A6 8A 02 06 08 90 EA 02 DC 00 3D 01 C5 19 C1 00 ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "No , that was a very wrong answer..."
 00003AAF: .byte 8D 15 7C 1F 0C 1A 00 00 ; continuation
-00003AB7: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003AB7: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003ABE: .byte CF ; OP_CF
 00003ABF: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003ACB: .byte AB 00 3F 3A ; OP_AB 00 3F 3A
@@ -1777,15 +1777,15 @@
 00003B06: .byte A1 ; OP_A1
 00003B07: .byte A6 8A 02 08 08 A0 C8 1F CC 1F 82 1F 1A 03 BC 00 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Van Gogue painted it with the Great One's own yellow blood..."
 00003B17: .byte B2 00 A5 18 D2 1F D8 1F DC 1F E3 1F 00 00 ; continuation
-00003B25: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003B2C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003B25: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003B2C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003B33: .byte CF ; OP_CF
 00003B34: .byte A0 58 3B ; OP_A0 58 3B
 00003B37: .byte A3 A1 BE 1F ; OP_A3 A1 BE 1F
 00003B3B: .byte A1 ; OP_A1
 00003B3C: .byte A6 8A 02 09 08 90 58 07 C5 19 EC 1F 2F 01 66 08 ; TEXT line=0x028A voice=0x09 flags=0x08,0x90 "That was supposed to be easy..."
 00003B4C: .byte B1 0D 00 00 ; continuation
-00003B50: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003B50: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003B57: .byte CF ; OP_CF
 00003B58: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003B64: .byte AB 00 D0 3A ; OP_AB 00 D0 3A
@@ -1800,14 +1800,14 @@
 00003B97: .byte A1 ; OP_A1
 00003B98: .byte A6 8A 02 00 08 A0 50 04 ED 02 26 20 57 02 BB 05 ; TEXT line=0x028A voice=0x00 flags=0x08,0xA0 "There's no catching you out , eh?"
 00003BA8: .byte DC 00 2F 20 00 00 ; continuation
-00003BAE: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003BB5: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003BAE: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003BB5: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003BBC: .byte CF ; OP_CF
 00003BBD: .byte A0 DB 3B ; OP_A0 DB 3B
 00003BC0: .byte A3 A1 1F 20 ; OP_A3 A1 1F 20
 00003BC4: .byte A1 ; OP_A1
 00003BC5: .byte A6 8A 02 01 08 90 36 04 B2 00 FB 1F 00 00 ; TEXT line=0x028A voice=0x01 flags=0x08,0x90 "What's the Croolicum?"
-00003BD3: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003BD3: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003BDA: .byte CF ; OP_CF
 00003BDB: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003BE7: .byte AB 00 69 3B ; OP_AB 00 69 3B
@@ -1822,14 +1822,14 @@
 00003C21: .byte A3 4F 20 ; OP_A3 4F 20
 00003C24: .byte A1 ; OP_A1
 00003C25: .byte A6 8A 02 02 08 A0 A2 11 7E 20 82 20 00 00 ; TEXT line=0x028A voice=0x02 flags=0x08,0xA0 "Good ol' Al..."
-00003C33: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003C3A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003C33: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003C3A: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003C41: .byte CF ; OP_CF
 00003C42: .byte A0 5C 3C ; OP_A0 5C 3C
 00003C45: .byte A3 A1 4F 20 ; OP_A3 A1 4F 20
 00003C49: .byte A1 ; OP_A1
 00003C4A: .byte A6 8A 02 03 08 90 88 20 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "Sorry..."
-00003C54: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003C54: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003C5B: .byte CF ; OP_CF
 00003C5C: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003C68: .byte AB 00 EC 3B ; OP_AB 00 EC 3B
@@ -1845,14 +1845,14 @@
 00003CA1: .byte A1 ; OP_A1
 00003CA2: .byte A6 8A 02 04 08 A0 C5 20 2F 01 46 01 DC 1F CB 20 ; TEXT line=0x028A voice=0x04 flags=0x08,0xA0 "Peace to his yellow soul... Bravo."
 00003CB2: .byte D3 20 00 00 ; continuation
-00003CB6: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003CBD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003CB6: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003CBD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003CC4: .byte CF ; OP_CF
 00003CC5: .byte A0 E5 3C ; OP_A0 E5 3C
 00003CC8: .byte A3 A1 1E 19 ; OP_A3 A1 1E 19
 00003CCC: .byte A1 ; OP_A1
 00003CCD: .byte A6 8A 02 05 08 90 DA 20 34 06 DF 20 19 00 00 00 ; TEXT line=0x028A voice=0x05 flags=0x08,0x90 "Read your classics ..."
-00003CDD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003CDD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003CE4: .byte CF ; OP_CF
 00003CE5: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003CF1: .byte AB 00 6D 3C ; OP_AB 00 6D 3C
@@ -1866,14 +1866,14 @@
 00003D23: .byte A3 F6 20 ; OP_A3 F6 20
 00003D26: .byte A1 ; OP_A1
 00003D27: .byte A6 8A 02 07 08 A0 27 21 30 21 35 21 00 00 ; TEXT line=0x028A voice=0x07 flags=0x08,0xA0 "Cruuuush meee baaaabbbyyyy!"
-00003D35: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003D3C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003D35: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003D3C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003D43: .byte CF ; OP_CF
 00003D44: .byte A0 60 3D ; OP_A0 60 3D
 00003D47: .byte A3 A1 43 21 ; OP_A3 A1 43 21
 00003D4B: .byte A1 ; OP_A1
 00003D4C: .byte A6 8A 02 08 08 90 53 21 19 00 00 00 ; TEXT line=0x028A voice=0x08 flags=0x08,0x90 "Ouch ..."
-00003D58: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003D58: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003D5F: .byte CF ; OP_CF
 00003D60: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003D6C: .byte AB 00 F6 3C ; OP_AB 00 F6 3C
@@ -1888,14 +1888,14 @@
 00003DA4: .byte A3 E0 1C ; OP_A3 E0 1C
 00003DA7: .byte A1 ; OP_A1
 00003DA8: .byte A6 8A 02 08 08 A0 A2 11 7E 20 7E 21 00 00 ; TEXT line=0x028A voice=0x08 flags=0x08,0xA0 "Good ol' Bob!"
-00003DB6: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003DBD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003DB6: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003DBD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003DC4: .byte CF ; OP_CF
 00003DC5: .byte A0 E5 3D ; OP_A0 E5 3D
 00003DC8: .byte A3 A1 E0 1C ; OP_A3 A1 E0 1C
 00003DCC: .byte A1 ; OP_A1
 00003DCD: .byte A6 8A 02 06 08 90 99 01 EE 05 B2 00 83 21 00 00 ; TEXT line=0x028A voice=0x06 flags=0x08,0x90 "I said the OLDEST..."
-00003DDD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003DDD: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003DE4: .byte CF ; OP_CF
 00003DE5: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003DF1: .byte AB 00 71 3D ; OP_AB 00 71 3D
@@ -1910,15 +1910,15 @@
 00003E2D: .byte A3 40 1B ; OP_A3 40 1B
 00003E30: .byte A1 ; OP_A1
 00003E31: .byte A6 8A 02 06 08 A0 6F 01 C1 00 D2 21 4B 02 00 00 ; TEXT line=0x028A voice=0x06 flags=0x08,0xA0 "What a performance !"
-00003E41: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003E48: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003E41: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003E48: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003E4F: .byte CF ; OP_CF
 00003E50: .byte A0 74 3E ; OP_A0 74 3E
 00003E53: .byte A3 A1 40 1B ; OP_A3 A1 40 1B
 00003E57: .byte A1 ; OP_A1
 00003E58: .byte A6 8A 02 09 08 90 65 01 F9 01 57 02 22 04 36 09 ; TEXT line=0x028A voice=0x09 flags=0x08,0x90 "How can you not know that?"
 00003E68: .byte DE 21 00 00 ; continuation
-00003E6C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003E6C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003E73: .byte CF ; OP_CF
 00003E74: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003E80: .byte AB 00 F6 3D ; OP_AB 00 F6 3D
@@ -1933,15 +1933,15 @@
 00003EB6: .byte A3 FC 21 ; OP_A3 FC 21
 00003EB9: .byte A1 ; OP_A1
 00003EBA: .byte A6 8A 02 09 08 A0 E7 10 5A 00 B1 0D 00 00 ; TEXT line=0x028A voice=0x09 flags=0x08,0xA0 "Way too easy..."
-00003EC8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003ECF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003EC8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003ECF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003ED6: .byte CF ; OP_CF
 00003ED7: .byte A0 FD 3E ; OP_A0 FD 3E
 00003EDA: .byte A3 A1 FC 21 ; OP_A3 A1 FC 21
 00003EDE: .byte A1 ; OP_A1
 00003EDF: .byte A6 8A 02 03 08 90 BA 01 7E 03 57 02 42 0C 36 09 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "You mean you don't know the Migrax?"
 00003EEF: .byte B2 00 F4 21 00 00 ; continuation
-00003EF5: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003EF5: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003EFC: .byte CF ; OP_CF
 00003EFD: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003F09: .byte AB 00 85 3E ; OP_AB 00 85 3E
@@ -1957,15 +1957,15 @@
 00003F42: .byte A1 ; OP_A1
 00003F43: .byte A6 8A 02 00 08 A0 6F 01 C1 00 78 22 DC 00 3D 01 ; TEXT line=0x028A voice=0x00 flags=0x08,0xA0 "What a poet , that Maxxon."
 00003F53: .byte 7D 22 00 00 ; continuation
-00003F57: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003F5E: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003F57: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003F5E: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003F65: .byte CF ; OP_CF
 00003F66: .byte A0 8E 3F ; OP_A0 8E 3F
 00003F69: .byte A3 A1 71 22 ; OP_A3 A1 71 22
 00003F6D: .byte A1 ; OP_A1
 00003F6E: .byte A6 8A 02 03 08 90 EA 02 85 22 E7 02 34 06 8C 22 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "No poetry in your withered soul , eh?"
 00003F7E: .byte 95 22 DC 00 2F 20 00 00 ; continuation
-00003F86: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003F86: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003F8D: .byte CF ; OP_CF
 00003F8E: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00003F9A: .byte AB 00 0E 3F ; OP_AB 00 0E 3F
@@ -1981,15 +1981,15 @@
 00003FD3: .byte A1 ; OP_A1
 00003FD4: .byte A6 8A 02 06 08 A0 59 1B B2 00 C4 22 CA 22 4D 00 ; TEXT line=0x028A voice=0x06 flags=0x08,0xA0 "In the SCRUT palace on Vista"
 00003FE4: .byte 4F 19 00 00 ; continuation
-00003FE8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00003FEF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00003FE8: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00003FEF: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00003FF6: .byte CF ; OP_CF
 00003FF7: .byte A0 1D 40 ; OP_A0 1D 40
 00003FFA: .byte A3 A1 75 1C ; OP_A3 A1 75 1C
 00003FFE: .byte A1 ; OP_A1
 00003FFF: .byte A6 8A 02 09 08 90 BA 01 0E 10 8B 03 FD 00 B2 00 ; TEXT line=0x028A voice=0x09 flags=0x08,0x90 "You never heard of the SCRUT palace?"
 0000400F: .byte C4 22 D1 22 00 00 ; continuation
-00004015: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00004015: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000401C: .byte CF ; OP_CF
 0000401D: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 00004029: .byte AB 00 9F 3F ; OP_AB 00 9F 3F
@@ -2004,15 +2004,15 @@
 0000405F: .byte A3 F3 22 ; OP_A3 F3 22
 00004062: .byte A1 ; OP_A1
 00004063: .byte A6 8A 02 03 08 A0 F8 22 DC 00 1D 00 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Indeed , Commander..."
-00004071: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00004078: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00004071: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00004078: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000407F: .byte CF ; OP_CF
 00004080: .byte A0 A4 40 ; OP_A0 A4 40
 00004083: .byte A3 A1 F3 22 ; OP_A3 A1 F3 22
 00004087: .byte A1 ; OP_A1
 00004088: .byte A6 8A 02 00 08 90 69 08 22 04 00 23 C8 09 B8 0C ; TEXT line=0x028A voice=0x00 flags=0x08,0x90 "You're not deaf by any chance?"
 00004098: .byte 05 23 00 00 ; continuation
-0000409C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+0000409C: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000040A3: .byte CF ; OP_CF
 000040A4: .byte A6 8A 02 03 08 80 0D 23 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "next question:"
 000040B0: .byte AB 00 2E 40 ; OP_AB 00 2E 40
@@ -2027,15 +2027,15 @@
 000040E5: .byte A1 ; OP_A1
 000040E6: .byte A6 8A 02 03 08 A0 3B 23 DC 00 B2 00 A7 0A 96 14 ; TEXT line=0x028A voice=0x03 flags=0x08,0xA0 "Gladis , the smart star ."
 000040F6: .byte 95 00 00 00 ; continuation
-000040FA: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00004101: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000040FA: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00004101: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 00004108: .byte CF ; OP_CF
 00004109: .byte A0 2F 41 ; OP_A0 2F 41
 0000410C: .byte A3 A1 25 23 ; OP_A3 A1 25 23
 00004110: .byte A1 ; OP_A1
 00004111: .byte A6 8A 02 01 08 90 BA 01 7E 03 57 02 0E 10 B0 11 ; TEXT line=0x028A voice=0x01 flags=0x08,0x90 "You mean you never went to Tumul?"
 00004121: .byte 2F 01 42 23 00 00 ; continuation
-00004127: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00004127: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000412E: .byte CF ; OP_CF
 0000412F: .byte A6 8A 02 03 08 80 DC 18 E1 18 00 00 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "Next question:"
 0000413B: .byte AB 00 B5 40 ; OP_AB 00 B5 40
@@ -2050,15 +2050,15 @@
 0000416E: .byte A1 ; OP_A1
 0000416F: .byte A6 8A 02 01 08 A0 6D 23 52 1B 78 23 92 00 80 23 ; TEXT line=0x028A voice=0x01 flags=0x08,0xA0 "Absolutely right. Moskito is moonless."
 0000417F: .byte 00 00 ; continuation
-00004181: .byte C0 82 13 F6 C1 01 00 ; OP_C0 82 13 F6 C1 01 00
-00004188: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+00004181: .byte C0 82 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1382 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
+00004188: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 0000418F: .byte CF ; OP_CF
 00004190: .byte A0 B6 41 ; OP_A0 B6 41
 00004193: .byte A3 A1 5D 23 ; OP_A3 A1 5D 23
 00004197: .byte A1 ; OP_A1
 00004198: .byte A6 8A 02 03 08 90 D6 18 57 02 15 03 8A 23 6A 03 ; TEXT line=0x028A voice=0x03 flags=0x08,0x90 "Maybe you have mosquitoes for a brain"
 000041A8: .byte C1 00 95 23 00 00 ; continuation
-000041AE: .byte C0 80 13 F6 C1 01 00 ; OP_C0 80 13 F6 C1 01 00
+000041AE: .byte C0 80 13 F6 C1 01 00 ; OP_C0 SHARED_STATE field=0x1380 operator=0xF6 rhs_mode=0xC1 rhs=0x0001
 000041B5: .byte CF ; OP_CF
 000041B6: .byte A6 8A 02 03 08 80 CC 0A 3D 01 9B 23 1A 03 C5 02 ; TEXT line=0x028A voice=0x03 flags=0x08,0x80 "And that wraps it up question-wise..."
 000041C6: .byte A2 23 00 00 ; continuation
@@ -2070,7 +2070,7 @@
 000041D9: .byte A6 52 07 13 00 80 A3 00 DC 00 57 02 77 07 B3 23 ; TEXT line=0x0752 voice=0x13 flags=0x00,0x80 "Commander , you go search BIONIUM in SCRUTER JO's cyberspace ..."
 000041E9: .byte 2E 10 E7 02 BA 23 C2 23 C7 23 19 00 00 00 ; continuation
 000041F7: .byte A0 A6 43 ; OP_A0 A6 43
-000041FA: .byte C0 66 13 F5 C1 00 00 ; OP_C0 66 13 F5 C1 00 00
+000041FA: .byte C0 66 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1366 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00004201: .byte A1 ; OP_A1
 00004202: .byte A6 52 07 FF 00 80 6B 0B D2 23 65 06 57 02 D2 14 ; TEXT line=0x0752 voice=0xFF flags=0x00,0x80 "Me explain how you pick up BIONIUM .."
 00004212: .byte C5 02 2E 10 CC 00 00 00 ; continuation
@@ -2111,7 +2111,7 @@
 000043B8: .byte A6 52 07 15 00 80 9D 15 19 00 6B 0B 21 0A C3 24 ; TEXT line=0x0752 voice=0x15 flags=0x00,0x80 "Ahh ... Me feel better ..."
 000043C8: .byte 19 00 00 00 ; continuation
 000043CC: .byte A0 56 44 ; OP_A0 56 44
-000043CF: .byte C0 68 13 F2 C1 00 00 ; OP_C0 68 13 F2 C1 00 00
+000043CF: .byte C0 68 13 F2 C1 00 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 000043D6: .byte A1 ; OP_A1
 000043D7: .byte A6 52 07 02 00 80 A2 11 CA 24 19 00 BA 01 11 02 ; TEXT line=0x0752 voice=0x02 flags=0x00,0x80 "Good work ... You did be successful ..."
 000043E7: .byte 66 08 CF 24 19 00 00 00 ; continuation
@@ -2123,9 +2123,9 @@
 00004429: .byte A6 52 07 FF 20 80 6C 00 2E 10 E3 07 56 13 10 00 ; TEXT line=0x0752 voice=0xFF flags=0x20,0x80 "The BIONIUM will make me smarter and I'll be able to help you better ..."
 00004439: .byte 15 0F 42 01 12 0D 66 08 E9 24 2F 01 EA 09 57 02 ; continuation
 00004449: .byte C3 24 19 00 00 00 ; continuation
-0000444F: .byte C0 66 13 F5 C1 01 00 ; OP_C0 66 13 F5 C1 01 00
+0000444F: .byte C0 66 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1366 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00004456: .byte A0 F1 44 ; OP_A0 F1 44
-00004459: .byte C0 68 13 F5 C1 00 00 ; OP_C0 68 13 F5 C1 00 00
+00004459: .byte C0 68 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00004460: .byte A1 ; OP_A1
 00004461: .byte A6 52 07 04 00 80 2B 0F 8A 0A DC 00 8F 0A 19 00 ; TEXT line=0x0752 voice=0x04 flags=0x00,0x80 "Not good , friend ... You fail ..."
 00004471: .byte BA 01 EE 24 19 00 00 00 ; continuation
@@ -2144,7 +2144,7 @@
 0000450D: .byte C9 8C 07 ; RECORD_CLEAR record=0x078C
 00004510: .byte A9 01 A3 46 ; OP_A9 01 A3 46
 00004514: .byte D0 ; OP_D0
-00004515: .byte AF B2 07 2C 0F ; OP_AF B2 07 2C 0F
+00004515: .byte AF B2 07 2C 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F2C inverted=false
 0000451A: .byte C4 74 04 28 00 ; ACTOR record=0x0474 related=0x0028 inverted=false
 0000451F: .byte A1 ; OP_A1
 00004520: .byte A6 3A 04 05 00 80 6B 0B 12 25 57 02 DC 00 8F 0A ; TEXT line=0x043A voice=0x05 flags=0x00,0x80 "Me greet you , friend ..."
@@ -2154,7 +2154,7 @@
 00004554: .byte 6F 0A F8 0A 95 00 00 05 26 25 6C 04 95 00 F8 07 ; continuation
 00004564: .byte 2D 25 D1 03 32 25 19 00 00 00 ; continuation
 0000456E: .byte A0 50 46 ; OP_A0 50 46
-00004571: .byte AF F0 12 28 00 ; OP_AF F0 12 28 00
+00004571: .byte AF F0 12 28 00 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x0028 inverted=false
 00004576: .byte A1 ; OP_A1
 00004577: .byte A6 3A 04 FF 20 80 21 13 7C 0A B2 00 62 02 DC 00 ; TEXT line=0x043A voice=0xFF flags=0x20,0x80 "Teleport him the ring , Commander . That'll make his day ...."
 00004587: .byte A3 00 95 00 63 13 56 13 46 01 2D 0B 43 10 00 00 ; continuation
@@ -2176,7 +2176,7 @@
 00004620: .byte A6 3A 04 02 00 80 3C 0F 3C 0F 40 0F 43 10 9A 03 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "BYE BYE FRIEND .... TINA SEND YOU BIG KISS ..."
 00004630: .byte 66 25 6C 04 D1 03 6B 25 19 00 00 00 ; continuation
 0000463C: .byte A6 3A 04 FF 08 90 19 00 00 00 ; TEXT line=0x043A voice=0xFF flags=0x08,0x90 "..."
-00004646: .byte C0 84 13 F5 C1 01 00 ; OP_C0 84 13 F5 C1 01 00
+00004646: .byte C0 84 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1384 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 0000464D: .byte C9 74 04 ; RECORD_CLEAR record=0x0474
 00004650: .byte A6 3A 04 02 00 80 BA 01 22 04 15 03 62 02 19 00 ; TEXT line=0x043A voice=0x02 flags=0x00,0x80 "You not have ring ... Me worried friend ..."
 00004660: .byte 6B 0B 14 0C 8F 0A 19 00 00 00 ; continuation
@@ -2188,7 +2188,7 @@
 000046A0: .byte C9 74 04 ; RECORD_CLEAR record=0x0474
 000046A3: .byte A9 01 BB 46 ; OP_A9 01 BB 46
 000046A7: .byte CE ; OP_CE
-000046A8: .byte AF AA 00 B8 0F ; OP_AF AA 00 B8 0F
+000046A8: .byte AF AA 00 B8 0F ; OP_AF RECORD_WILDCARD record=0x00AA value=0x0FB8 inverted=false
 000046AD: .byte A1 ; OP_A1
 000046AE: .byte C3 44 07 28 00 ; RECORD_LINK record=0x0744 related=0x0028 inverted=false
 000046B3: .byte AB 01 BC 46 ; OP_AB 01 BC 46
@@ -2225,7 +2225,7 @@
 0000480C: .byte A9 01 BF 48 ; OP_A9 01 BF 48
 00004810: .byte CE ; OP_CE
 00004811: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004816: .byte AF 7A 03 FF FF ; OP_AF 7A 03 FF FF
+00004816: .byte AF 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=false
 0000481B: .byte A1 ; OP_A1
 0000481C: .byte A6 02 09 FF 00 80 24 26 2E 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 00004828: .byte A6 02 09 FF 00 80 34 26 3A 26 3F 26 10 0A 46 26 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid out for you :"
@@ -2245,7 +2245,7 @@
 000048BF: .byte A9 01 6F 49 ; OP_A9 01 6F 49
 000048C3: .byte CE ; OP_CE
 000048C4: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
-000048C9: .byte AF A1 7A 03 FF FF ; OP_AF A1 7A 03 FF FF
+000048C9: .byte AF A1 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 000048CF: .byte A1 ; OP_A1
 000048D0: .byte A6 02 09 FF 00 80 E8 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000048DA: .byte A6 02 09 FF 00 80 EF 26 F7 26 53 05 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -2264,7 +2264,7 @@
 0000496F: .byte A9 01 19 4A ; OP_A9 01 19 4A
 00004973: .byte CE ; OP_CE
 00004974: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004979: .byte AF A1 7A 03 FF FF ; OP_AF A1 7A 03 FF FF
+00004979: .byte AF A1 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 0000497F: .byte A1 ; OP_A1
 00004980: .byte A6 02 09 FF 00 80 E8 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 0000498A: .byte A6 02 09 FF 00 80 EF 26 F7 26 53 05 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -2281,7 +2281,7 @@
 00004A16: .byte C9 3C 09 ; RECORD_CLEAR record=0x093C
 00004A19: .byte A9 01 C5 4A ; OP_A9 01 C5 4A
 00004A1D: .byte CE ; OP_CE
-00004A1E: .byte AF A1 7A 03 FF FF ; OP_AF A1 7A 03 FF FF
+00004A1E: .byte AF A1 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 00004A24: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
 00004A29: .byte A1 ; OP_A1
 00004A2A: .byte A6 02 09 FF 00 80 E8 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
@@ -2301,7 +2301,7 @@
 00004AC5: .byte A9 01 79 4B ; OP_A9 01 79 4B
 00004AC9: .byte CE ; OP_CE
 00004ACA: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004ACF: .byte AF A1 7A 03 FF FF ; OP_AF A1 7A 03 FF FF
+00004ACF: .byte AF A1 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 00004AD5: .byte A1 ; OP_A1
 00004AD6: .byte A6 02 09 FF 00 80 E8 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"MENU\""
 00004AE0: .byte A6 02 09 FF 00 80 EF 26 F7 26 53 05 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -2320,7 +2320,7 @@
 00004B79: .byte A9 01 35 4C ; OP_A9 01 35 4C
 00004B7D: .byte CE ; OP_CE
 00004B7E: .byte C4 3C 09 28 00 ; ACTOR record=0x093C related=0x0028 inverted=false
-00004B83: .byte AF A1 7A 03 FF FF ; OP_AF A1 7A 03 FF FF
+00004B83: .byte AF A1 7A 03 FF FF ; OP_AF RECORD_WILDCARD record=0x037A value=0xFFFF inverted=true
 00004B89: .byte A1 ; OP_A1
 00004B8A: .byte A6 02 09 FF 00 80 24 26 2E 26 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 00004B96: .byte A6 02 09 FF 00 80 EF 26 F7 26 53 05 00 00 ; TEXT line=0x0902 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -2349,7 +2349,7 @@
 00004C52: .byte A9 01 17 4E ; OP_A9 01 17 4E
 00004C56: .byte D1 ; OP_D1
 00004C57: .byte C4 84 00 28 00 ; ACTOR record=0x0084 related=0x0028 inverted=false
-00004C5C: .byte C0 86 13 F5 C1 00 00 ; OP_C0 86 13 F5 C1 00 00
+00004C5C: .byte C0 86 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1386 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00004C63: .byte A1 ; OP_A1
 00004C64: .byte A6 4A 00 07 00 80 4D 28 57 02 53 28 2F 01 36 09 ; TEXT line=0x004A voice=0x07 flags=0x00,0x80 "Would you care to know an unbearable truth , Commander ?"
 00004C74: .byte 14 0A 58 28 7A 15 DC 00 A3 00 CF 01 00 00 ; continuation
@@ -2393,7 +2393,7 @@
 00004E22: .byte A6 BA 08 FF 20 80 99 01 83 29 29 05 2F 01 89 29 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "I exist only to obey , Commander"
 00004E32: .byte DC 00 A3 00 00 00 ; continuation
 00004E38: .byte A0 AD 4E ; OP_A0 AD 4E
-00004E3B: .byte C0 68 13 F5 C1 00 00 ; OP_C0 68 13 F5 C1 00 00
+00004E3B: .byte C0 68 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00004E42: .byte A1 ; OP_A1
 00004E43: .byte A6 BA 08 FF 20 80 A3 00 DC 00 E3 00 42 0C 15 03 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "Commander , we don't have any BIONIUM ... COMMANDER , please ..."
 00004E53: .byte B8 0C 2E 10 19 00 AB 28 DC 00 8E 29 19 00 00 00 ; continuation
@@ -2405,7 +2405,7 @@
 00004E9B: .byte A3 00 95 00 48 0C A8 29 E7 02 B2 00 B1 29 19 00 ; continuation
 00004EAB: .byte 00 00 ; continuation
 00004EAD: .byte A0 0E 4F ; OP_A0 0E 4F
-00004EB0: .byte C0 68 13 F5 C1 01 00 ; OP_C0 68 13 F5 C1 01 00
+00004EB0: .byte C0 68 13 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00004EB7: .byte A1 ; OP_A1
 00004EB8: .byte A6 BA 08 FF 20 80 B9 29 35 14 86 0A BF 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got one dose of BIONIUM left , Commander"
 00004EC8: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
@@ -2415,96 +2415,96 @@
 00004EF8: .byte FD 00 C4 29 DC 00 1D 00 99 01 D8 13 A0 0C 3D 01 ; continuation
 00004F08: .byte EC 23 19 00 00 00 ; continuation
 00004F0E: .byte A0 49 4F ; OP_A0 49 4F
-00004F11: .byte C0 68 13 F5 C1 02 00 ; OP_C0 68 13 F5 C1 02 00
+00004F11: .byte C0 68 13 F5 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0002
 00004F18: .byte A1 ; OP_A1
 00004F19: .byte A6 BA 08 FF 20 80 B9 29 35 14 11 1C CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got two doses of BIONIUM left , Commander"
 00004F29: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00004F33: .byte A6 BA 08 FF 20 80 BA 01 BF 0E 95 29 C4 0E 9B 29 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "You must enter Scruter Jo's CYBERSPACE ..."
 00004F43: .byte A4 24 19 00 00 00 ; continuation
 00004F49: .byte A0 6E 4F ; OP_A0 6E 4F
-00004F4C: .byte C0 68 13 F5 C1 03 00 ; OP_C0 68 13 F5 C1 03 00
+00004F4C: .byte C0 68 13 F5 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0003
 00004F53: .byte A1 ; OP_A1
 00004F54: .byte A6 BA 08 FF 20 80 B9 29 35 14 C4 05 CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got three doses of BIONIUM left , Commander"
 00004F64: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00004F6E: .byte A0 93 4F ; OP_A0 93 4F
-00004F71: .byte C0 68 13 F5 C1 04 00 ; OP_C0 68 13 F5 C1 04 00
+00004F71: .byte C0 68 13 F5 C1 04 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0004
 00004F78: .byte A1 ; OP_A1
 00004F79: .byte A6 BA 08 FF 20 80 B9 29 35 14 15 1C CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got four doses of BIONIUM left , Commander"
 00004F89: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00004F93: .byte A0 B8 4F ; OP_A0 B8 4F
-00004F96: .byte C0 68 13 F5 C1 05 00 ; OP_C0 68 13 F5 C1 05 00
+00004F96: .byte C0 68 13 F5 C1 05 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0005
 00004F9D: .byte A1 ; OP_A1
 00004F9E: .byte A6 BA 08 FF 20 80 B9 29 35 14 58 23 CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got five doses of BIONIUM left , Commander"
 00004FAE: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00004FB8: .byte A0 DD 4F ; OP_A0 DD 4F
-00004FBB: .byte C0 68 13 F5 C1 06 00 ; OP_C0 68 13 F5 C1 06 00
+00004FBB: .byte C0 68 13 F5 C1 06 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0006
 00004FC2: .byte A1 ; OP_A1
 00004FC3: .byte A6 BA 08 FF 20 80 B9 29 35 14 1A 1C CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got six doses of BIONIUM left , Commander"
 00004FD3: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00004FDD: .byte A0 02 50 ; OP_A0 02 50
-00004FE0: .byte C0 68 13 F5 C1 07 00 ; OP_C0 68 13 F5 C1 07 00
+00004FE0: .byte C0 68 13 F5 C1 07 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0007
 00004FE7: .byte A1 ; OP_A1
 00004FE8: .byte A6 BA 08 FF 20 80 B9 29 35 14 D1 29 CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got seven doses of BIONIUM left , Commander"
 00004FF8: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00005002: .byte A0 3B 50 ; OP_A0 3B 50
-00005005: .byte C0 68 13 F5 C1 08 00 ; OP_C0 68 13 F5 C1 08 00
+00005005: .byte C0 68 13 F5 C1 08 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF5 rhs_mode=0xC1 rhs=0x0008
 0000500C: .byte A1 ; OP_A1
 0000500D: .byte A6 BA 08 FF 20 80 B9 29 35 14 1E 1C CB 29 FD 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "We've got eight doses of BIONIUM left , Commander"
 0000501D: .byte 2E 10 29 11 DC 00 A3 00 00 00 ; continuation
 00005027: .byte A6 BA 08 FF 20 80 69 08 B2 00 E0 0A DC 00 A3 00 ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "You're the best , Commander ..."
 00005037: .byte 19 00 00 00 ; continuation
 0000503B: .byte A0 88 50 ; OP_A0 88 50
-0000503E: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-00005045: .byte BF 30 02 F1 C1 02 00 ; OP_BF 30 02 F1 C1 02 00
-0000504C: .byte AE A1 BA 0F 02 00 ; OP_AE A1 BA 0F 02 00
+0000503E: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+00005045: .byte BF 30 02 F1 C1 02 00 ; OP_BF SHARED_STATE field=0x0230 operator=0xF1 rhs_mode=0xC1 rhs=0x0002
+0000504C: .byte AE A1 BA 0F 02 00 ; OP_AE SHARED_BIT_STATE field=0x0FBA mask=0x0002 inverted=true
 00005052: .byte A1 ; OP_A1
 00005053: .byte A6 BA 08 FF 28 80 A3 00 DC 00 E3 01 51 13 3D 01 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander , I'm sure that HOM is a vital link in the chain that leads to the Big Bang..."
 00005063: .byte D7 29 92 00 C1 00 DB 29 E1 29 E7 02 B2 00 E6 29 ; continuation
 00005073: .byte 3D 01 EC 29 2F 01 B2 00 E8 07 F2 29 00 00 ; continuation
-00005081: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+00005081: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 00005088: .byte A0 C6 50 ; OP_A0 C6 50
-0000508B: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-00005092: .byte C0 6A 13 F5 C1 00 00 ; OP_C0 6A 13 F5 C1 00 00
-00005099: .byte BF 70 04 F2 C1 00 00 ; OP_BF 70 04 F2 C1 00 00
+0000508B: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+00005092: .byte C0 6A 13 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x136A operator=0xF5 rhs_mode=0xC1 rhs=0x0000
+00005099: .byte BF 70 04 F2 C1 00 00 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 000050A0: .byte A1 ; OP_A1
 000050A1: .byte A6 BA 08 FF 28 80 A3 00 DC 00 CF 02 2C 04 BE 01 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander , Mister Bob want to see you in the Cryobox..."
 000050B1: .byte 2F 01 11 09 57 02 E7 02 B2 00 FA 29 00 00 ; continuation
-000050BF: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+000050BF: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 000050C6: .byte A0 FC 50 ; OP_A0 FC 50
-000050C9: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-000050D0: .byte AF 5A 02 FF FF ; OP_AF 5A 02 FF FF
-000050D5: .byte BF 78 02 F5 C1 00 00 ; OP_BF 78 02 F5 C1 00 00
+000050C9: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+000050D0: .byte AF 5A 02 FF FF ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+000050D5: .byte BF 78 02 F5 C1 00 00 ; OP_BF SHARED_STATE field=0x0278 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 000050DC: .byte A1 ; OP_A1
 000050DD: .byte A6 BA 08 FF 28 80 A3 07 42 0C D0 15 3B 0B 42 01 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander, don't forget Yoko and Maxxon asleep CRYOBOX..."
 000050ED: .byte 88 14 05 2A 0C 2A 00 00 ; continuation
-000050F5: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+000050F5: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 000050FC: .byte A0 46 51 ; OP_A0 46 51
-000050FF: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-00005106: .byte AF 5A 02 FF FF ; OP_AF 5A 02 FF FF
-0000510B: .byte BF 78 02 F2 C1 00 00 ; OP_BF 78 02 F2 C1 00 00
+000050FF: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+00005106: .byte AF 5A 02 FF FF ; OP_AF RECORD_WILDCARD record=0x025A value=0xFFFF inverted=false
+0000510B: .byte BF 78 02 F2 C1 00 00 ; OP_BF SHARED_STATE field=0x0278 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 00005112: .byte A1 ; OP_A1
 00005113: .byte A6 BA 08 FF 28 80 17 2A B2 00 86 00 5C 11 42 01 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Approach the planet RONDO and talk to Yoko or Maxxon in the CRYOBOX in order to teleport them..."
 00005123: .byte 01 00 2F 01 3B 0B EE 03 88 14 E7 02 B2 00 75 04 ; continuation
 00005133: .byte E7 02 20 2A 2F 01 26 0D 26 2A 00 00 ; continuation
-0000513F: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+0000513F: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 00005146: .byte A0 75 51 ; OP_A0 75 51
-00005149: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-00005150: .byte BF C8 00 F5 C1 00 00 ; OP_BF C8 00 F5 C1 00 00
+00005149: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+00005150: .byte BF C8 00 F5 C1 00 00 ; OP_BF SHARED_STATE field=0x00C8 operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00005157: .byte A1 ; OP_A1
 00005158: .byte A6 BA 08 FF 28 80 2E 2A 77 07 11 09 43 03 47 03 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Better go see Bug Deluxe on Venusia..."
 00005168: .byte 4D 00 35 2A 00 00 ; continuation
-0000516E: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+0000516E: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 00005175: .byte A0 B6 51 ; OP_A0 B6 51
-00005178: .byte C0 68 13 F2 C1 02 00 ; OP_C0 68 13 F2 C1 02 00
-0000517F: .byte AF F0 12 AA 03 ; OP_AF F0 12 AA 03
-00005184: .byte C0 88 13 F5 C0 8A 13 ; OP_C0 88 13 F5 C0 8A 13
-0000518B: .byte BF 70 04 F2 C1 00 00 ; OP_BF 70 04 F2 C1 00 00
+00005178: .byte C0 68 13 F2 C1 02 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF2 rhs_mode=0xC1 rhs=0x0002
+0000517F: .byte AF F0 12 AA 03 ; OP_AF RECORD_WILDCARD record=0x12F0 value=0x03AA inverted=false
+00005184: .byte C0 88 13 F5 C0 8A 13 ; OP_C0 SHARED_STATE field=0x1388 operator=0xF5 rhs_mode=0xC0 rhs=0x138A
+0000518B: .byte BF 70 04 F2 C1 00 00 ; OP_BF SHARED_STATE field=0x0470 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 00005192: .byte A1 ; OP_A1
 00005193: .byte A6 BA 08 FF 28 80 1D 00 D6 18 B2 00 5B 22 10 0A ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "Commander... Maybe the ondoyant has a ring for us ..."
 000051A3: .byte C1 00 62 02 6A 03 26 03 19 00 00 00 ; continuation
-000051AF: .byte C0 68 13 F7 C1 03 00 ; OP_C0 68 13 F7 C1 03 00
+000051AF: .byte C0 68 13 F7 C1 03 00 ; OP_C0 SHARED_STATE field=0x1368 operator=0xF7 rhs_mode=0xC1 rhs=0x0003
 000051B6: .byte A6 BA 08 FF 28 80 87 24 40 2A CF 01 00 00 ; TEXT line=0x08BA voice=0xFF flags=0x28,0x80 "More information ?"
-000051C4: .byte BC 00 09 01 00 ; OP_BC 00 09 01 00
+000051C4: .byte BC 00 09 01 00 ; OP_BC RECORD_WILDCARD record=0x0900 value=0x0001 inverted=false
 000051C9: .byte A6 BA 08 FF 68 80 21 0E 25 0E DC 00 A3 00 19 00 ; TEXT line=0x08BA voice=0xFF flags=0x68,0x80 "Bye bye , Commander ..."
 000051D9: .byte FF FF 62 10 00 00 ; continuation
 000051DF: .byte C9 F4 08 ; RECORD_CLEAR record=0x08F4

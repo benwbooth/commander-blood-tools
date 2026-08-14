@@ -668,6 +668,24 @@ pub fn is_pair_record_opcode(opcode: u8) -> bool {
     )
 }
 
+/// The seven opcodes that share the recovered six-byte state-operation operand
+/// layout and native handler at `0x6863`.
+pub fn is_shared_state_opcode(opcode: u8) -> bool {
+    ASSIGN_7.contains(&opcode)
+}
+
+/// The two opcodes that share the recovered optional-`A1` bit-mask operand
+/// layout and native handler at `0x6902`.
+pub fn is_shared_bit_state_opcode(opcode: u8) -> bool {
+    BITMASK_5.contains(&opcode)
+}
+
+/// The seven opcodes that share the recovered optional-`A1` direct-record
+/// operand layout and native handler at `0x6946`.
+pub fn is_record_wildcard_opcode(opcode: u8) -> bool {
+    ASSIGN_5.contains(&opcode)
+}
+
 /// What the record-entry family stores in the RELATED word — `0` for `0xC8`, the
 /// operand otherwise.
 ///
@@ -928,6 +946,42 @@ pub enum VmToken {
         clear: bool,
         len: usize,
     },
+    /// `0xB1/0xB4/0xB5/0xB6/0xBE/0xBF/0xC0` shared state operation.
+    ///
+    /// The operator is interpreted as a signed comparison in query mode or a
+    /// wrapping assignment/add/subtract in set mode. RHS modes `0xC0` and
+    /// `0xC2` dereference `rhs` through the VM state image; other values use the
+    /// immediate word.
+    SharedState {
+        offset: usize,
+        opcode: u8,
+        field_offset: u16,
+        operator: u8,
+        rhs_mode: u8,
+        rhs: u16,
+        len: usize,
+    },
+    /// `0xAE/0xB0` shared state-bit operation. An optional `0xA1` prefix clears
+    /// in set mode and inverts the any-bit comparison in query mode.
+    SharedBitState {
+        offset: usize,
+        opcode: u8,
+        field_offset: u16,
+        mask: u16,
+        inverted: bool,
+        len: usize,
+    },
+    /// `0xAD/0xAF/0xB2/0xB3/0xBA/0xBB/0xBC` direct record/wildcard operation.
+    /// Optional `0xA1` inverts query-mode equality; set mode retains the shared
+    /// handler's wildcard and `0xBC` publication behavior.
+    RecordWildcard {
+        offset: usize,
+        opcode: u8,
+        record_offset: u16,
+        value: u16,
+        inverted: bool,
+        len: usize,
+    },
     /// `0xC1..=0xC2` line-record state operations.
     ///
     /// Both consume the same raw token shape, `<opcode> <record:u16>
@@ -1016,6 +1070,9 @@ impl VmToken {
             | VmToken::RecordEntry { offset, .. }
             | VmToken::RecordClear { offset, .. }
             | VmToken::BitFlag { offset, .. }
+            | VmToken::SharedState { offset, .. }
+            | VmToken::SharedBitState { offset, .. }
+            | VmToken::RecordWildcard { offset, .. }
             | VmToken::RecordState { offset, .. }
             | VmToken::GlobalWordCompare { offset, .. }
             | VmToken::GlobalPairCompare { offset, .. }
@@ -1107,6 +1164,48 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             }
             w(&mut b, *flag_offset);
             b.push(*bit_index);
+        }
+        VmToken::SharedState {
+            opcode,
+            field_offset,
+            operator,
+            rhs_mode,
+            rhs,
+            ..
+        } => {
+            b.push(*opcode);
+            w(&mut b, *field_offset);
+            b.push(*operator);
+            b.push(*rhs_mode);
+            w(&mut b, *rhs);
+        }
+        VmToken::SharedBitState {
+            opcode,
+            field_offset,
+            mask,
+            inverted,
+            ..
+        } => {
+            b.push(*opcode);
+            if *inverted {
+                b.push(OP_POP);
+            }
+            w(&mut b, *field_offset);
+            w(&mut b, *mask);
+        }
+        VmToken::RecordWildcard {
+            opcode,
+            record_offset,
+            value,
+            inverted,
+            ..
+        } => {
+            b.push(*opcode);
+            if *inverted {
+                b.push(OP_POP);
+            }
+            w(&mut b, *record_offset);
+            w(&mut b, *value);
         }
         VmToken::GlobalWordCompare { operator, tag, value, .. } => {
             b.push(OP_GLOBAL_WORD_COMPARE);
@@ -1225,7 +1324,39 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             len = l;
         }
 
-        if op == OP_BIT_FLAG {
+        if is_shared_state_opcode(op) {
+            out.push(VmToken::SharedState {
+                offset: pos,
+                opcode: op,
+                field_offset: read_u16(cod, pos + 1).unwrap_or(0),
+                operator: cod.get(pos + 3).copied().unwrap_or(0),
+                rhs_mode: cod.get(pos + 4).copied().unwrap_or(0),
+                rhs: read_u16(cod, pos + 5).unwrap_or(0),
+                len,
+            });
+        } else if is_shared_bit_state_opcode(op) {
+            let inverted = cod.get(pos + 1) == Some(&OP_POP);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            out.push(VmToken::SharedBitState {
+                offset: pos,
+                opcode: op,
+                field_offset: read_u16(cod, operand_pos).unwrap_or(0),
+                mask: read_u16(cod, operand_pos + 2).unwrap_or(0),
+                inverted,
+                len,
+            });
+        } else if is_record_wildcard_opcode(op) {
+            let inverted = b1 == 0xFD && cod.get(pos + 1) == Some(&OP_POP);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            out.push(VmToken::RecordWildcard {
+                offset: pos,
+                opcode: op,
+                record_offset: read_u16(cod, operand_pos).unwrap_or(0),
+                value: read_u16(cod, operand_pos + 2).unwrap_or(0),
+                inverted,
+                len,
+            });
+        } else if op == OP_BIT_FLAG {
             let clear = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(clear);
             let flag_offset = read_u16(cod, operand_pos).unwrap_or(0);
@@ -10513,6 +10644,9 @@ mod tests {
                     | VmToken::RecordClear { offset, len, .. }
                     | VmToken::RecordState { offset, len, .. }
                     | VmToken::BitFlag { offset, len, .. }
+                    | VmToken::SharedState { offset, len, .. }
+                    | VmToken::SharedBitState { offset, len, .. }
+                    | VmToken::RecordWildcard { offset, len, .. }
                     | VmToken::GlobalWordCompare { offset, len, .. }
                     | VmToken::GlobalPairCompare { offset, len, .. }
                     | VmToken::PairRecord { offset, len, .. }

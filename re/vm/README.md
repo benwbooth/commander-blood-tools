@@ -67,6 +67,12 @@ a claim that its source-level meaning is understood. `RAW` retains bytes whose
 instruction framing is not yet established. Both forms are deliberate
 verification escapes and must be eliminated by evidence, not renamed guesses.
 
+The recovered shared handlers at native offsets `0x6863`, `0x6902`, and
+`0x6946` are represented as `SHARED_STATE`, `SHARED_BIT_STATE`, and
+`RECORD_WILDCARD`. These statements preserve the opcode-family byte, optional
+`A1` prefix, operator/mode bytes, and operands, so they are structured without
+weakening the byte-exact compiler contract.
+
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. BAS semantic coverage is intentionally conservative:
 only dictionary-validated menu tables and text records are labelled today;
@@ -80,6 +86,6 @@ historical source syntax is known.
 
 The first BloodScript corpus recompiles all 183,523 input bytes exactly. It
 contains 12,521 typed statements covering 179,743 bytes. Of that typed total,
-5,706 statements and 20,898 bytes are still generic `OP` forms; the BAS images
+4,016 statements and 10,421 bytes are still generic `OP` forms; the BAS images
 retain 3,780 `RAW` bytes. See `bloodscript/manifest.tsv` for per-image counts and
 [language-evidence.md](language-evidence.md) for the source-language inference.

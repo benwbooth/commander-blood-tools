@@ -28,6 +28,11 @@ both `CBVM-ASM` and `bloodscript-ir-v1`. The current BloodScript manifest record
 the unresolved generic-opcode and raw-byte totals rather than folding them into
 semantic coverage.
 
+Three dispatch-table-proven shared handler families now have lossless typed
+statements: `SHARED_STATE` (`0x6863`), `SHARED_BIT_STATE` (`0x6902`), and
+`RECORD_WILDCARD` (`0x6946`). This removes 10,477 bytes from generic `OP`
+coverage while retaining byte-exact output across all five COD images.
+
 ## What is not established
 
 The `.BAS` files are binary data, not surviving text source. No QuickBASIC,

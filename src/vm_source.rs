@@ -364,6 +364,34 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
             clear,
             ..
         } => format!("BIT_FLAG record=0x{flag_offset:04X} bit={bit_index} clear={clear}"),
+        VmToken::SharedState {
+            opcode,
+            field_offset,
+            operator,
+            rhs_mode,
+            rhs,
+            ..
+        } => format!(
+            "OP_{opcode:02X} SHARED_STATE field=0x{field_offset:04X} operator=0x{operator:02X} rhs_mode=0x{rhs_mode:02X} rhs=0x{rhs:04X}"
+        ),
+        VmToken::SharedBitState {
+            opcode,
+            field_offset,
+            mask,
+            inverted,
+            ..
+        } => format!(
+            "OP_{opcode:02X} SHARED_BIT_STATE field=0x{field_offset:04X} mask=0x{mask:04X} inverted={inverted}"
+        ),
+        VmToken::RecordWildcard {
+            opcode,
+            record_offset,
+            value,
+            inverted,
+            ..
+        } => format!(
+            "OP_{opcode:02X} RECORD_WILDCARD record=0x{record_offset:04X} value=0x{value:04X} inverted={inverted}"
+        ),
         VmToken::RecordState {
             opcode,
             record_offset,

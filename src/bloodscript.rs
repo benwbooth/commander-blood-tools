@@ -310,6 +310,39 @@ fn emit_token(
             "BIT_FLAG {flag_offset:04X} {bit_index:02X} {}",
             bool_digit(*clear)
         )?,
+        VmToken::SharedState {
+            opcode,
+            field_offset,
+            operator,
+            rhs_mode,
+            rhs,
+            ..
+        } => write!(
+            output,
+            "SHARED_STATE {opcode:02X} {field_offset:04X} {operator:02X} {rhs_mode:02X} {rhs:04X}"
+        )?,
+        VmToken::SharedBitState {
+            opcode,
+            field_offset,
+            mask,
+            inverted,
+            ..
+        } => write!(
+            output,
+            "SHARED_BIT_STATE {opcode:02X} {field_offset:04X} {mask:04X} {}",
+            bool_digit(*inverted)
+        )?,
+        VmToken::RecordWildcard {
+            opcode,
+            record_offset,
+            value,
+            inverted,
+            ..
+        } => write!(
+            output,
+            "RECORD_WILDCARD {opcode:02X} {record_offset:04X} {value:04X} {}",
+            bool_digit(*inverted)
+        )?,
         VmToken::RecordState {
             opcode,
             record_offset,
@@ -474,6 +507,48 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             word(&mut output, parse_word(args[0], line, "record")?);
             output.push(parse_byte(args[1], line, "bit index")?);
         }
+        "SHARED_STATE" => {
+            require_count(args, 5, line, name)?;
+            let opcode = parse_byte(args[0], line, "opcode")?;
+            if !vm::is_shared_state_opcode(opcode) {
+                bail!("line {line}: opcode {opcode:02X} is not a SHARED_STATE opcode");
+            }
+            output.push(opcode);
+            word(&mut output, parse_word(args[1], line, "field offset")?);
+            output.push(parse_byte(args[2], line, "operator")?);
+            output.push(parse_byte(args[3], line, "RHS mode")?);
+            word(&mut output, parse_word(args[4], line, "RHS")?);
+        }
+        "SHARED_BIT_STATE" => {
+            require_count(args, 4, line, name)?;
+            let opcode = parse_byte(args[0], line, "opcode")?;
+            if !vm::is_shared_bit_state_opcode(opcode) {
+                bail!("line {line}: opcode {opcode:02X} is not a SHARED_BIT_STATE opcode");
+            }
+            output.push(opcode);
+            if parse_bool(args[3], line, "inverted")? {
+                output.push(vm::OP_POP);
+            }
+            word(&mut output, parse_word(args[1], line, "field offset")?);
+            word(&mut output, parse_word(args[2], line, "mask")?);
+        }
+        "RECORD_WILDCARD" => {
+            require_count(args, 4, line, name)?;
+            let opcode = parse_byte(args[0], line, "opcode")?;
+            if !vm::is_record_wildcard_opcode(opcode) {
+                bail!("line {line}: opcode {opcode:02X} is not a RECORD_WILDCARD opcode");
+            }
+            let inverted = parse_bool(args[3], line, "inverted")?;
+            if inverted && vm::OPCODE_DESC[(opcode - vm::OP_MIN) as usize].1 != 0xFD {
+                bail!("line {line}: opcode {opcode:02X} cannot carry an A1 prefix");
+            }
+            output.push(opcode);
+            if inverted {
+                output.push(vm::OP_POP);
+            }
+            word(&mut output, parse_word(args[1], line, "record offset")?);
+            word(&mut output, parse_word(args[2], line, "value")?);
+        }
         "GLOBAL_WORD_COMPARE" => {
             require_count(args, 3, line, name)?;
             output.push(vm::OP_GLOBAL_WORD_COMPARE);
@@ -604,6 +679,43 @@ mod tests {
     #[test]
     fn typed_text_flags_must_match_optional_operands() {
         let source = "; format: bloodscript-ir-v1\n00000000: TEXT 0001 FF 00 80 1234 -\n";
+        assert!(compile(source).is_err());
+    }
+
+    #[test]
+    fn shared_state_families_compile_exact_bytes() {
+        let source = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: SHARED_STATE C0 1234 F6 C2 5678\n",
+            "00000007: SHARED_BIT_STATE AE 2345 00FF 1\n",
+            "0000000D: RECORD_WILDCARD AF 4567 FFFF 1\n",
+            "00000013: END\n",
+        );
+        let expected = vec![
+            0xC0, 0x34, 0x12, 0xF6, 0xC2, 0x78, 0x56, 0xAE, 0xA1, 0x45, 0x23, 0xFF, 0x00, 0xAF,
+            0xA1, 0x67, 0x45, 0xFF, 0xFF, 0xFF,
+        ];
+        assert_eq!(compile(source).unwrap(), expected);
+
+        let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
+        assert_eq!(decompiled.generic_op_statements, 0);
+        assert!(
+            decompiled
+                .source
+                .contains("SHARED_STATE C0 1234 F6 C2 5678")
+        );
+        assert!(
+            decompiled
+                .source
+                .contains("SHARED_BIT_STATE AE 2345 00FF 1")
+        );
+        assert!(decompiled.source.contains("RECORD_WILDCARD AF 4567 FFFF 1"));
+        assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn record_wildcard_rejects_prefix_for_fixed_length_opcode() {
+        let source = "; format: bloodscript-ir-v1\n00000000: RECORD_WILDCARD AD 4567 FFFF 1\n";
         assert!(compile(source).is_err());
     }
 

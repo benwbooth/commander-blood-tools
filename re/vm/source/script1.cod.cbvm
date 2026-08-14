@@ -7,7 +7,7 @@
 00000000: .byte A9 01 B3 00 ; OP_A9 01 B3 00
 00000004: .byte CE ; OP_CE
 00000005: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000000A: .byte AF 32 03 FF FF ; OP_AF 32 03 FF FF
+0000000A: .byte AF 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=false
 0000000F: .byte A1 ; OP_A1
 00000010: .byte A6 72 08 FF 00 80 0C 00 16 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 0000001C: .byte A6 72 08 FF 00 80 1C 00 22 00 27 00 2E 00 32 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid on for you :"
@@ -27,7 +27,7 @@
 000000B3: .byte A9 01 63 01 ; OP_A9 01 63 01
 000000B7: .byte CE ; OP_CE
 000000B8: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000000BD: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+000000BD: .byte AF A1 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 000000C3: .byte A1 ; OP_A1
 000000C4: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000000CE: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -46,7 +46,7 @@
 00000163: .byte A9 01 0D 02 ; OP_A9 01 0D 02
 00000167: .byte CE ; OP_CE
 00000168: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-0000016D: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+0000016D: .byte AF A1 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 00000173: .byte A1 ; OP_A1
 00000174: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 0000017E: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -63,7 +63,7 @@
 0000020A: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
 0000020D: .byte A9 01 B9 02 ; OP_A9 01 B9 02
 00000211: .byte CE ; OP_CE
-00000212: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+00000212: .byte AF A1 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 00000218: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
 0000021D: .byte A1 ; OP_A1
 0000021E: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
@@ -83,7 +83,7 @@
 000002B9: .byte A9 01 6D 03 ; OP_A9 01 6D 03
 000002BD: .byte CE ; OP_CE
 000002BE: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-000002C3: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+000002C3: .byte AF A1 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 000002C9: .byte A1 ; OP_A1
 000002CA: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
 000002D4: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -102,7 +102,7 @@
 0000036D: .byte A9 01 29 04 ; OP_A9 01 29 04
 00000371: .byte CE ; OP_CE
 00000372: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
-00000377: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+00000377: .byte AF A1 32 03 FF FF ; OP_AF RECORD_WILDCARD record=0x0332 value=0xFFFF inverted=true
 0000037D: .byte A1 ; OP_A1
 0000037E: .byte A6 72 08 FF 00 80 0C 00 16 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
 0000038A: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
@@ -143,7 +143,7 @@
 0000046D: .byte A1 ; OP_A1
 0000046E: .byte A6 5A 05 FF 08 80 A6 02 B3 02 48 02 B9 02 BF 02 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "You found the right button . So far so good ..."
 0000047E: .byte 65 00 C6 02 C9 02 CD 02 D0 02 D6 00 00 00 ; continuation
-0000048C: .byte BC A0 05 D5 02 ; OP_BC A0 05 D5 02
+0000048C: .byte BC A0 05 D5 02 ; OP_BC RECORD_WILDCARD record=0x05A0 value=0x02D5 inverted=false
 00000491: .byte A6 5A 05 FF 10 80 CE 04 DA 02 E0 02 E7 02 ED 02 ; TEXT line=0x055A voice=0xFF flags=0x10,0x80 "Click quick, Cap'n Bob is waiting ..."
 000004A1: .byte F1 02 F4 02 D6 00 FF FF FC 02 09 03 00 00 ; continuation
 000004AF: .byte A0 C6 04 ; OP_A0 C6 04
@@ -308,8 +308,8 @@
 00000BF1: .byte D2 02 ; RUN_PROFILE operand=0x02 profile=0x0001
 00000BF3: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
 00000BF6: .byte A9 01 0B 0C ; OP_A9 01 0B 0C
-00000BFA: .byte BF 60 08 F5 C1 01 00 ; OP_BF 60 08 F5 C1 01 00
-00000C01: .byte BF 80 00 F5 C1 01 00 ; OP_BF 80 00 F5 C1 01 00
+00000BFA: .byte BF 60 08 F5 C1 01 00 ; OP_BF SHARED_STATE field=0x0860 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
+00000C01: .byte BF 80 00 F5 C1 01 00 ; OP_BF SHARED_STATE field=0x0080 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00000C08: .byte A1 ; OP_A1
 00000C09: .byte D2 02 ; RUN_PROFILE operand=0x02 profile=0x0001
 00000C0B: .byte FF ; END
