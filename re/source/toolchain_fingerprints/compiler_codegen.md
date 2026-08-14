@@ -4130,6 +4130,35 @@ consume its ordinary fifth `height` argument instead of entry `BP`. A drop-in
 replacement additionally needs adapters for carry hit tests, inherited `BP`
 rectangle pointers, and the routine's selective `SI` exposure.
 
+## BLOODPRG archive-index backing initializer candidate
+
+`0x00155F` restores the original working directory, opens `blood.dat`, stores
+the source handle, and reads 65,535 bytes into the graphics work segment. It
+then preserves that archive index in the first available small backend. EMS
+maps logical pages zero through three to physical pages zero through three and
+copies the complete 64 KiB segment. XMS receives a standard 16-byte move request
+for the same 64 KiB. With neither backend, the routine enters the write
+directory, creates `dir.dat`, and writes 65,535 bytes from work-segment offset
+`0x00CB`. That offset is the literal residual `DX` from the filename and is
+preserved as shipped rather than normalized to zero.
+
+Six direct vectors cover primary-open failure, an ignored read failure, EMS
+handle zero taking precedence over available XMS, XMS handle zero, successful
+DOS-cache creation, and failed creation. They prove all filenames, handles,
+transfer counts and addresses, four EMS mappings, the full 64 KiB page-frame
+image, every XMS request byte, and the unusual failure path where DOS error AX
+is stored as the cache handle and still passed to the write interrupt. Segment
+restoration, stack integrity, and the near return are also checked.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 97 instructions/255 bytes versus the original
+68/169, with 72.06 percent mnemonic-multiset overlap and no inline assembly.
+The source expresses the EMS transfer as an ordinary far dword-pointer loop and
+uses typed DOS, EMS, and XMS calls. Whole-source integration must ensure
+`cb_dos_create_game_file` stores raw DOS AX even when create reports failure;
+drop-in replacement additionally needs the original direct-interrupt and
+DS/ES-only preservation boundaries.
+
 ## BLOODPRG presentation-choice transition candidate
 
 `0x001AD3` coordinates the modal presentation-choice list and its rectangle

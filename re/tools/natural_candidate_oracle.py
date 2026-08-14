@@ -52115,6 +52115,425 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_archive_index_backing_initialize_vectors() -> list[dict[str, object]]:
+    entry = 0x155F
+    return_address = 0xF55F
+    expected_hash = "09cfefd4f2bb1664679eba55ffebe044280f07dfc25e3cb65cd20b8d5325060c"
+    if hashlib.sha256(EXE[entry : entry + 169]).hexdigest() != expected_hash:
+        raise AssertionError("0x155f: recovered 169-byte body changed")
+
+    cases = [
+        {
+            "name": "open_failure",
+            "backend": "none",
+            "open_success": False,
+            "read_success": False,
+            "small_ems_handle": -1,
+            "small_xms_handle": -1,
+        },
+        {
+            "name": "ems_handle_zero_preferred_over_xms",
+            "backend": "ems",
+            "open_success": True,
+            "read_success": True,
+            "small_ems_handle": 0,
+            "small_xms_handle": 0x1357,
+        },
+        {
+            "name": "ems_after_read_failure",
+            "backend": "ems",
+            "open_success": True,
+            "read_success": False,
+            "small_ems_handle": 0x2468,
+            "small_xms_handle": -1,
+        },
+        {
+            "name": "xms_handle_zero",
+            "backend": "xms",
+            "open_success": True,
+            "read_success": True,
+            "small_ems_handle": -1,
+            "small_xms_handle": 0,
+        },
+        {
+            "name": "dos_cache_success",
+            "backend": "file",
+            "open_success": True,
+            "read_success": True,
+            "small_ems_handle": -1,
+            "small_xms_handle": -1,
+            "create_success": True,
+        },
+        {
+            "name": "dos_cache_create_failure_still_writes",
+            "backend": "file",
+            "open_success": True,
+            "read_success": True,
+            "small_ems_handle": -1,
+            "small_xms_handle": -1,
+            "create_success": False,
+        },
+    ]
+    data_segment = 0x2000
+    work_segment = 0x3000
+    work_offset = 0
+    page_frame_segment = 0x6000
+    xms_stub_segment = 0x7000
+    xms_stub_offset = 0x0100
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    source_handle = 0x0042
+    cache_handle = 0x0043
+    open_error = 0x0002
+    read_error = 0x0005
+    create_error = 0x0005
+    write_error = 0x0006
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    payload = bytes((index * 37 + 19) & 0xFF for index in range(0xFFFF))
+    vectors = []
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS,
+            flags | 1 if carry else flags & ~1,
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        backend = str(case["backend"])
+        open_success = bool(case["open_success"])
+        read_success = bool(case["read_success"])
+        create_success = bool(case.get("create_success", True))
+        small_ems_handle = int(case["small_ems_handle"])
+        small_xms_handle = int(case["small_xms_handle"])
+        calls: list[dict[str, object]] = []
+
+        game_before = bytearray(0x10000)
+        game_before[0x00C1 : 0x00CB] = b"blood.dat\0"
+        game_before[0x00CB : 0x00D3] = b"dir.dat\0"
+        struct.pack_into("<h", game_before, 0x0A62, small_xms_handle)
+        struct.pack_into("<h", game_before, 0x0A64, small_ems_handle)
+        struct.pack_into("<H", game_before, 0x0A66, page_frame_segment)
+        game_before[0x0A6C : 0x0A7C] = bytes.fromhex(
+            "00112233445566778899aabbccddeeff"
+        )
+        struct.pack_into("<H", game_before, 0x0A86, 0xA5A5)
+        struct.pack_into("<H", game_before, 0x0A88, 0x5A5A)
+        struct.pack_into(
+            "<HH", game_before, 0x0A4A, xms_stub_offset, xms_stub_segment
+        )
+        struct.pack_into(
+            "<HH", game_before, 0x0ABC, work_offset, work_segment
+        )
+
+        work_before = bytes(
+            (index * 13 + 7 + case_index) & 0xFF for index in range(0x20000)
+        )
+        expected_work = bytearray(work_before)
+        if open_success and read_success:
+            expected_work[work_offset : work_offset + 0xFFFF] = payload
+        page_frame_before = bytes(
+            (index * 11 + 3) & 0xFF for index in range(0x10000)
+        )
+
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x4000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def read_c_string(machine: Uc, segment: int, offset: int) -> str:
+            raw = bytes(machine.mem_read(segment * 16 + offset, 32))
+            return raw.split(b"\0", 1)[0].decode("ascii")
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x21E9:
+                calls.append(
+                    {
+                        "call": "startup_original_directory_restore",
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+            elif address == 0x21C3:
+                calls.append(
+                    {
+                        "call": "startup_write_directory_enter",
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                    }
+                )
+            elif address == xms_stub_segment * 16 + xms_stub_offset:
+                request = bytes(
+                    machine.mem_read(data_segment * 16 + 0x0A6C, 16)
+                )
+                calls.append(
+                    {
+                        "call": "xms_move",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "request_hex": request.hex(),
+                    }
+                )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number == 0x67:
+                calls.append(
+                    {
+                        "call": "ems_map_page",
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "physical_page": machine.reg_read(UC_X86_REG_BX) & 0xFF,
+                        "handle": machine.reg_read(UC_X86_REG_DX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AH, 0)
+                set_carry(machine, False)
+                return
+            if number != 0x21:
+                raise AssertionError(f"0x155f {name}: unexpected interrupt {number:#x}")
+
+            ax = machine.reg_read(UC_X86_REG_AX)
+            ah = machine.reg_read(UC_X86_REG_AH)
+            ds = machine.reg_read(UC_X86_REG_DS)
+            dx = machine.reg_read(UC_X86_REG_DX)
+            if ax == 0x3D00:
+                calls.append(
+                    {
+                        "call": "dos_open",
+                        "path": read_c_string(machine, ds, dx),
+                        "ds": ds,
+                        "dx": dx,
+                    }
+                )
+                machine.reg_write(
+                    UC_X86_REG_AX, source_handle if open_success else open_error
+                )
+                set_carry(machine, not open_success)
+            elif ah == 0x3F:
+                count = machine.reg_read(UC_X86_REG_CX)
+                destination = ds * 16 + dx
+                calls.append(
+                    {
+                        "call": "dos_read",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "segment": ds,
+                        "offset": dx,
+                        "count": count,
+                        "success": read_success,
+                    }
+                )
+                if read_success:
+                    machine.mem_write(destination, payload[:count])
+                    machine.reg_write(UC_X86_REG_AX, count)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, read_error)
+                set_carry(machine, not read_success)
+            elif ah == 0x3C:
+                result = cache_handle if create_success else create_error
+                calls.append(
+                    {
+                        "call": "dos_create",
+                        "path": read_c_string(machine, ds, dx),
+                        "attributes": machine.reg_read(UC_X86_REG_CX),
+                        "ax": ax,
+                        "result": result,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, result)
+                set_carry(machine, not create_success)
+            elif ah == 0x40:
+                count = machine.reg_read(UC_X86_REG_CX)
+                source = bytes(machine.mem_read(ds * 16 + dx, count))
+                calls.append(
+                    {
+                        "call": "dos_write",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "segment": ds,
+                        "offset": dx,
+                        "count": count,
+                        "source_sha256": hashlib.sha256(source).hexdigest(),
+                    }
+                )
+                machine.reg_write(
+                    UC_X86_REG_AX, count if create_success else write_error
+                )
+                set_carry(machine, not create_success)
+            else:
+                raise AssertionError(
+                    f"0x155f {name}: unexpected DOS AX={ax:#06x}"
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x21E9, b"\xCB"),
+                (0, 0x21C3, b"\xCB"),
+                (xms_stub_segment, xms_stub_offset, b"\xCB"),
+                (data_segment, 0, bytes(game_before)),
+                (work_segment, 0, work_before),
+                (page_frame_segment, 0, page_frame_before),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=0x5000,
+        )
+
+        call_names = [str(call["call"]) for call in calls]
+        expected_call_names = ["startup_original_directory_restore", "dos_open"]
+        if open_success:
+            expected_call_names.append("dos_read")
+            if backend == "ems":
+                expected_call_names.extend(["ems_map_page"] * 4)
+            elif backend == "xms":
+                expected_call_names.append("xms_move")
+            elif backend == "file":
+                expected_call_names.extend(
+                    ["startup_write_directory_enter", "dos_create", "dos_write"]
+                )
+        if call_names != expected_call_names:
+            raise AssertionError(
+                f"0x155f {name}: calls={call_names}, expected={expected_call_names}"
+            )
+
+        open_call = next(call for call in calls if call["call"] == "dos_open")
+        if open_call["path"] != "blood.dat" or open_call["dx"] != 0x00C1:
+            raise AssertionError(f"0x155f {name}: primary archive path differs")
+        actual_work = bytes(
+            machine.mem_read(work_segment * 16, len(work_before))
+        )
+        if actual_work != bytes(expected_work):
+            raise AssertionError(f"0x155f {name}: work buffer differs")
+
+        archive_handle = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0A86, 2)
+        )[0]
+        expected_archive_handle = source_handle if open_success else 0xA5A5
+        if archive_handle != expected_archive_handle:
+            raise AssertionError(f"0x155f {name}: archive handle differs")
+
+        page_frame = bytes(
+            machine.mem_read(page_frame_segment * 16, 0x10000)
+        )
+        expected_page_frame = (
+            bytes(expected_work[:0x10000]) if backend == "ems" else page_frame_before
+        )
+        if page_frame != expected_page_frame:
+            raise AssertionError(f"0x155f {name}: EMS page-frame contents differ")
+
+        if backend == "ems":
+            mappings = [call for call in calls if call["call"] == "ems_map_page"]
+            expected_handle = small_ems_handle & 0xFFFF
+            expected_mappings = [
+                {
+                    "call": "ems_map_page",
+                    "ax": 0x4400 | page,
+                    "physical_page": page,
+                    "handle": expected_handle,
+                }
+                for page in range(4)
+            ]
+            if mappings != expected_mappings:
+                raise AssertionError(f"0x155f {name}: EMS mappings differ")
+        elif backend == "xms":
+            expected_request = struct.pack(
+                "<IHHHHI",
+                0x10000,
+                0,
+                0,
+                work_segment,
+                small_xms_handle & 0xFFFF,
+                0,
+            )
+            xms_call = next(call for call in calls if call["call"] == "xms_move")
+            if (
+                xms_call["ax"] != 0x0B00
+                or xms_call["ds"] != data_segment
+                or xms_call["es"] != data_segment
+                or xms_call["si"] != 0x0A6C
+                or xms_call["request_hex"] != expected_request.hex()
+            ):
+                raise AssertionError(f"0x155f {name}: XMS request differs")
+        elif backend == "file":
+            create_call = next(call for call in calls if call["call"] == "dos_create")
+            write_call = next(call for call in calls if call["call"] == "dos_write")
+            expected_result = cache_handle if create_success else create_error
+            expected_source = bytes(expected_work[0x00CB : 0x00CB + 0xFFFF])
+            if create_call["path"] != "dir.dat" or create_call["attributes"] != 0:
+                raise AssertionError(f"0x155f {name}: cache create differs")
+            if (
+                write_call["handle"] != expected_result
+                or write_call["segment"] != work_segment
+                or write_call["offset"] != 0x00CB
+                or write_call["count"] != 0xFFFF
+                or write_call["source_sha256"]
+                != hashlib.sha256(expected_source).hexdigest()
+            ):
+                raise AssertionError(f"0x155f {name}: cache write differs")
+            stored_cache_handle = struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0A88, 2)
+            )[0]
+            if stored_cache_handle != expected_result:
+                raise AssertionError(f"0x155f {name}: cache handle differs")
+
+        if machine.reg_read(UC_X86_REG_DS) != data_segment:
+            raise AssertionError(f"0x155f {name}: DS not restored")
+        if machine.reg_read(UC_X86_REG_ES) != initial["es"]:
+            raise AssertionError(f"0x155f {name}: ES not restored")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x155f {name}: stack imbalance")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x155f {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "backend": backend,
+                "open_success": open_success,
+                "read_success": read_success,
+                "create_success": create_success if backend == "file" else None,
+                "small_ems_handle": small_ems_handle,
+                "small_xms_handle": small_xms_handle,
+                "calls": calls,
+                "archive_handle": archive_handle,
+                "work_sha256": hashlib.sha256(actual_work).hexdigest(),
+                "page_frame_sha256": hashlib.sha256(page_frame).hexdigest(),
+                "final_registers": {
+                    register: machine.reg_read(REGISTERS[register])
+                    for register in (
+                        "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp",
+                        "sp", "ds", "es", "fs", "gs", "flags"
+                    )
+                },
+            }
+        )
+
+    return vectors
+
+
 def confirm_dialog_step_vectors() -> list[dict[str, object]]:
     entry = 0x14CA
     return_address = 0xF568
@@ -60053,6 +60472,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1ad3_natural.json",
         presentation_choice_transition_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_155f_natural.json",
+        resource_archive_index_backing_initialize_vectors(),
         args.check,
     )
     update_vector(

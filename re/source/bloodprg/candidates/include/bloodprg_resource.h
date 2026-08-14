@@ -81,6 +81,10 @@ extern volatile cb_u16 CB_GAME_DATA
         resource_archive_handle;                    /* GS:0x0A86 */
 extern volatile cb_u16 CB_GAME_DATA
         resource_archive_cache_handle;              /* GS:0x0A88 */
+extern const volatile char CB_GAME_DATA
+        resource_archive_filename[];                 /* GS:0x00C1 */
+extern const volatile char CB_GAME_DATA
+        resource_archive_cache_filename[];           /* GS:0x00CB */
 extern volatile cb_u32 CB_GAME_DATA
         resource_archive_offset;                    /* GS:0x0A8A */
 extern volatile cb_u32 CB_GAME_DATA
@@ -140,6 +144,7 @@ cb_u32 CB_FAR resource_name_lookup(
 void CB_FAR startup_resource_file_copy(
         volatile char CB_FAR *source_path,
         const volatile char CB_FAR *destination_path); /* 0x01CE:0x052F */
+void CB_NEAR resource_archive_index_backing_initialize(void); /* 0x00155F */
 
 int CB_FAR resource_load_by_id(cb_u16 resource_id); /* 0x01CE:0x059B */
 int CB_FAR resource_named_file_load(cb_u16 resource_id,
@@ -155,6 +160,7 @@ void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
 cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,
         volatile cb_u8 CB_FAR *destination, cb_u16 byte_count);
 void CB_NEAR cb_dos_close(cb_u16 handle);
+/* Publishes DOS AX through handle on both success and failure. */
 int CB_NEAR cb_dos_create_game_file(
         const volatile char CB_GAME_DATA *path,
         volatile cb_u16 CB_GAME_DATA *handle);

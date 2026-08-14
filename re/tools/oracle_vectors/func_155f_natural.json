@@ -1,0 +1,378 @@
+[
+  {
+    "name": "open_failure",
+    "backend": "none",
+    "open_success": false,
+    "read_success": false,
+    "create_success": null,
+    "small_ems_handle": -1,
+    "small_xms_handle": -1,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      }
+    ],
+    "archive_handle": 42405,
+    "work_sha256": "c0c16a8c22fed76a0ee480dded83d72d8a156672423952384dfeb3e2c9d4f3d9",
+    "page_frame_sha256": "3417cf8f65de1c8eca8cc003d9f1445f36f2698e5ef2816cbc3182f1a1530970",
+    "final_registers": {
+      "eax": 2779054082,
+      "ebx": 3065389893,
+      "ecx": 3351721046,
+      "edx": 3638034625,
+      "esi": 3924383352,
+      "edi": 4210714505,
+      "ebp": 2882369690,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 515
+    }
+  },
+  {
+    "name": "ems_handle_zero_preferred_over_xms",
+    "backend": "ems",
+    "open_success": true,
+    "read_success": true,
+    "create_success": null,
+    "small_ems_handle": 0,
+    "small_xms_handle": 4951,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      },
+      {
+        "call": "dos_read",
+        "handle": 66,
+        "segment": 12288,
+        "offset": 0,
+        "count": 65535,
+        "success": true
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17408,
+        "physical_page": 0,
+        "handle": 0
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17409,
+        "physical_page": 1,
+        "handle": 0
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17410,
+        "physical_page": 2,
+        "handle": 0
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17411,
+        "physical_page": 3,
+        "handle": 0
+      }
+    ],
+    "archive_handle": 66,
+    "work_sha256": "6f4496639a71bc2536535528d00e14741fcbef886e3526b3f40f5436462d8e19",
+    "page_frame_sha256": "e86e6780385d3b7e813425c7f18ae8c2a7bf2953766e2bab5395b01c6be5cd08",
+    "final_registers": {
+      "eax": 2779054084,
+      "ebx": 3065380868,
+      "ecx": 3351707648,
+      "edx": 3638034432,
+      "esi": 3924361216,
+      "edi": 4210688000,
+      "ebp": 2882369691,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 514
+    }
+  },
+  {
+    "name": "ems_after_read_failure",
+    "backend": "ems",
+    "open_success": true,
+    "read_success": false,
+    "create_success": null,
+    "small_ems_handle": 9320,
+    "small_xms_handle": -1,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      },
+      {
+        "call": "dos_read",
+        "handle": 66,
+        "segment": 12288,
+        "offset": 0,
+        "count": 65535,
+        "success": false
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17408,
+        "physical_page": 0,
+        "handle": 9320
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17409,
+        "physical_page": 1,
+        "handle": 9320
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17410,
+        "physical_page": 2,
+        "handle": 9320
+      },
+      {
+        "call": "ems_map_page",
+        "ax": 17411,
+        "physical_page": 3,
+        "handle": 9320
+      }
+    ],
+    "archive_handle": 66,
+    "work_sha256": "5a18308d9240ad578b10d57f04b909eb6130a9ffe1491275a93528b30eecd0bc",
+    "page_frame_sha256": "116e7b52721e99e853fe0505adc5e4c7bab02b7722841829a1c7e3cc6b60d177",
+    "final_registers": {
+      "eax": 2779054084,
+      "ebx": 3065380868,
+      "ecx": 3351707648,
+      "edx": 3638043752,
+      "esi": 3924361216,
+      "edi": 4210688000,
+      "ebp": 2882369692,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 514
+    }
+  },
+  {
+    "name": "xms_handle_zero",
+    "backend": "xms",
+    "open_success": true,
+    "read_success": true,
+    "create_success": null,
+    "small_ems_handle": -1,
+    "small_xms_handle": 0,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      },
+      {
+        "call": "dos_read",
+        "handle": 66,
+        "segment": 12288,
+        "offset": 0,
+        "count": 65535,
+        "success": true
+      },
+      {
+        "call": "xms_move",
+        "ax": 2816,
+        "ds": 8192,
+        "es": 8192,
+        "si": 2668,
+        "request_hex": "00000100000000000030000000000000"
+      }
+    ],
+    "archive_handle": 66,
+    "work_sha256": "ad0b0f73099f882b86734d393fa17fc26e1a72ba679d1c00795512695c86b68c",
+    "page_frame_sha256": "3417cf8f65de1c8eca8cc003d9f1445f36f2698e5ef2816cbc3182f1a1530970",
+    "final_registers": {
+      "eax": 2816,
+      "ebx": 3065389056,
+      "ecx": 3351773183,
+      "edx": 3638034432,
+      "esi": 3924363884,
+      "edi": 4210690684,
+      "ebp": 2882369693,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 582
+    }
+  },
+  {
+    "name": "dos_cache_success",
+    "backend": "file",
+    "open_success": true,
+    "read_success": true,
+    "create_success": true,
+    "small_ems_handle": -1,
+    "small_xms_handle": -1,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      },
+      {
+        "call": "dos_read",
+        "handle": 66,
+        "segment": 12288,
+        "offset": 0,
+        "count": 65535,
+        "success": true
+      },
+      {
+        "call": "startup_write_directory_enter",
+        "ds": 12288,
+        "sp": 65272
+      },
+      {
+        "call": "dos_create",
+        "path": "dir.dat",
+        "attributes": 0,
+        "ax": 15360,
+        "result": 67
+      },
+      {
+        "call": "dos_write",
+        "handle": 67,
+        "segment": 12288,
+        "offset": 203,
+        "count": 65535,
+        "source_sha256": "383af39beb53834b82ef27589441b3fa4a7c50d131cc9f3d0e92c0e34f0bbb10"
+      }
+    ],
+    "archive_handle": 66,
+    "work_sha256": "4f0212c4d2cf3e75013d2a70307542a9a001adc5a06755f2c86568dcdab55d24",
+    "page_frame_sha256": "3417cf8f65de1c8eca8cc003d9f1445f36f2698e5ef2816cbc3182f1a1530970",
+    "final_registers": {
+      "eax": 2779119615,
+      "ebx": 3065380931,
+      "ecx": 3351773183,
+      "edx": 3638034635,
+      "esi": 3924383356,
+      "edi": 4210714509,
+      "ebp": 2882369694,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 582
+    }
+  },
+  {
+    "name": "dos_cache_create_failure_still_writes",
+    "backend": "file",
+    "open_success": true,
+    "read_success": true,
+    "create_success": false,
+    "small_ems_handle": -1,
+    "small_xms_handle": -1,
+    "calls": [
+      {
+        "call": "startup_original_directory_restore",
+        "ds": 8192,
+        "sp": 65272
+      },
+      {
+        "call": "dos_open",
+        "path": "blood.dat",
+        "ds": 8192,
+        "dx": 193
+      },
+      {
+        "call": "dos_read",
+        "handle": 66,
+        "segment": 12288,
+        "offset": 0,
+        "count": 65535,
+        "success": true
+      },
+      {
+        "call": "startup_write_directory_enter",
+        "ds": 12288,
+        "sp": 65272
+      },
+      {
+        "call": "dos_create",
+        "path": "dir.dat",
+        "attributes": 0,
+        "ax": 15360,
+        "result": 5
+      },
+      {
+        "call": "dos_write",
+        "handle": 5,
+        "segment": 12288,
+        "offset": 203,
+        "count": 65535,
+        "source_sha256": "a44274e2445fbc2344334e96f60cd8ba506343eeabd3be48b234296cc4f5e4c0"
+      }
+    ],
+    "archive_handle": 66,
+    "work_sha256": "afe058d5ea8416180a093d9c5ddd3b5eafe8bbe52917f9b005aa332fb0ad1146",
+    "page_frame_sha256": "3417cf8f65de1c8eca8cc003d9f1445f36f2698e5ef2816cbc3182f1a1530970",
+    "final_registers": {
+      "eax": 2779054086,
+      "ebx": 3065380869,
+      "ecx": 3351773183,
+      "edx": 3638034635,
+      "esi": 3924383357,
+      "edi": 4210714510,
+      "ebp": 2882369695,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 16384,
+      "gs": 8192,
+      "flags": 583
+    }
+  }
+]

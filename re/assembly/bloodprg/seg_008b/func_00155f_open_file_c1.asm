@@ -6,8 +6,8 @@
 ; seg_off: 008b:06af
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: open_file_c1
-; label_comment: resource open: lcall 0x1ce:0x509 (prep); dx=0xc1 (filename in the string seg); ax=0x3d00; int21h (DOS open). Opens a specific resource file (name at gs:0xc1)
+; label: resource_archive_index_backing_initialize
+; label_comment: Restore the original directory, open blood.dat, read 65535 bytes into the graphics work segment, then retain that archive index in four mapped EMS pages, a 64 KiB XMS block, or the write-directory dir.dat cache. The DOS fallback exactly preserves the binary's segment:0x00CB write source. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_00155f_resource_archive_index_backing_initialize.c and re/tools/oracle_vectors/func_155f_natural.json
 ; byte_count: 169
 ; boundary: cfg_blocks_7_terminals_3
 ; terminal: jmp 0x1605:2, ret:1
