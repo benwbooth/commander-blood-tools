@@ -7,7 +7,7 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph
 ; label: ship_3d_hud_init
-; label_comment: sets DS:0x2793 bit 3 and initializes ship HUD/procedural-3D state
+; label_comment: initializes ship-HUD target, palette, framebuffer, and subtitle state; each active frame steers the bridge, presents dirty regions, selects/loads a target, optionally reloads audio, and emits a C1 target record. Natural C and 15 direct vectors: re/source/bloodprg/candidates/seg_0a9a/func_00b079_ship_3d_hud_init.c and re/tools/oracle_vectors/func_b079_natural.json
 ; byte_count: 578
 ; boundary: cfg_blocks_24_terminals_2
 ; terminal: jmp 0xb2b3:1, ret:1

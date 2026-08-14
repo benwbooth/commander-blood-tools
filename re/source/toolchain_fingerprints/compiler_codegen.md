@@ -5637,6 +5637,35 @@ common helpers' preservation contracts. Direct binary replacement additionally
 needs the original DS/SI-only save envelope, same-segment far-call lowering for
 the band copy, terminal-helper clobber behavior, and path-specific flags.
 
+## BLOODPRG ship-HUD coordinator candidate
+
+`0x00B079` initializes the ship HUD from the arche record, builds the
+presentable-target list, stages the palette-transition buffers, and presents
+the first planar band. Its steady-state path updates bridge steering, builds
+the optional tint table, commits and presents dirty rectangles, waits for the
+subtitle cursor, runs target selection, reloads a changed music source, and
+writes a `{0x00C1, target, 0}` VM record.
+
+Fifteen patched-helper original-binary vectors cover both initialization target
+paths, pending palette-alias restoration, exact copy extents, deferred and
+completed close paths, subtitle gates, the exact 100/10 transition boundary,
+same/new/cancelled targets, optional audio reload, framebuffer restoration,
+C1 placement, all helper arguments and frames, DS/GS/ES/record/display
+ownership, registers, and stack. They also preserve the binary's unusual
+full-EAX record probe as an explicit direct-replacement boundary.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+212-instruction/674-byte function versus 160/578 original, with 86.88 percent
+mnemonic-multiset overlap and 75.62 percent ordered mnemonic overlap. The
+candidate is one natural typed C function with no inline assembly or
+register-state facade.
+
+Full-source integration requires the shipped `SS=DS=GS` aliases and the
+intended zero-upper-EAX invariant when following the 16-bit record link. Direct
+binary replacement additionally needs the original inherited-ES palette copy,
+32-bit EAX probe address, preserve envelope, helper residue, and terminal
+flags.
+
 ## BLOODPRG VM token-advance candidate
 
 `0x0062B6` consumes one opcode from the far script cursor in `DS:SI` while its

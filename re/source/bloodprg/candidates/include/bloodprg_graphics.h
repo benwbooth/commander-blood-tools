@@ -75,6 +75,8 @@ extern volatile cb_u8 CB_GAME_DATA
         bridge_panorama_palette[768]; /* GS:0x5B58 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_draw_framebuffer; /* GS:0x5219 */
+extern bloodprg_graphics_buffer_ptr
+        graphics_draw_framebuffer_ds; /* DS:0x5219 alias */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_screen_buffer; /* GS:0x521D */
 extern volatile cb_i16
@@ -292,6 +294,13 @@ void CB_FAR full_screen_blit(
         const cb_u32 CB_FAR *source); /* 0x003E46 */
 void CB_FAR fullscreen_copy_to_backbuffer(
         const cb_u32 CB_NEAR *source); /* 0x003E5B */
+#if defined(__WATCOMC__)
+void CB_FAR fullscreen_copy_to_backbuffer_far(
+        const cb_u32 CB_FAR *source);
+#else
+#define fullscreen_copy_to_backbuffer_far(source) \
+        fullscreen_copy_to_backbuffer((const cb_u32 CB_NEAR *)(source))
+#endif
 void CB_FAR bridge_panorama_frame_unpack(
         const cb_u8 CB_FAR *source); /* 0x002D50 */
 #if defined(__WATCOMC__)
@@ -400,6 +409,9 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux back_buffer_fill parm [ax] modify exact []
 #pragma aux full_screen_blit parm [ds si] modify exact []
 #pragma aux fullscreen_copy_to_backbuffer parm [si] modify exact []
+#pragma aux fullscreen_copy_to_backbuffer_far \
+        "fullscreen_copy_to_backbuffer_" \
+        parm [ds si] modify exact []
 #pragma aux bridge_panorama_frame_unpack parm [ds si]
 #pragma aux font8x8_text_draw_display \
         parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]

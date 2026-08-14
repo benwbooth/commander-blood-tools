@@ -133,6 +133,7 @@ extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
 extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
 extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
 extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
+extern volatile cb_u8 ship_3d_exit_pending; /* DS:0x2532 */
 extern volatile cb_u8 ship_3d_dialogue_phase_ready; /* DS:0x2534 */
 extern volatile cb_u16 ship_3d_dialogue_cycle_line; /* DS:0x24F5 */
 extern volatile cb_u8 ship_3d_alien_overlay_armed; /* DS:0x0AE3 */
@@ -170,6 +171,8 @@ extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_top;     /* GS:0x5239 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_clip_bottom;  /* GS:0x523B */
 extern volatile cb_u8 CB_GAME_DATA
         ship_3d_hud_palette_snapshot[SHIP_3D_HUD_PALETTE_BYTES]; /* GS:0x5CD8 */
+extern const cb_u32 ship_3d_hud_pyramid_palette_dwords[0x30]; /* DS:0x5D98 */
+extern cb_u32 CB_GAME_DATA ship_3d_hud_palette_stage_dwords[0x30]; /* GS:0x5491 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_x; /* GS:0x2F65 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_y; /* GS:0x2F67 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_z; /* GS:0x2F69 */

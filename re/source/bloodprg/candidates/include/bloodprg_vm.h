@@ -40,6 +40,7 @@ extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
 extern volatile cb_u8 CB_GAME_DATA vm_subtitle_display_mode; /* GS:0x27E2 */
+extern volatile cb_u8 vm_subtitle_display_mode_ds; /* DS:0x27E2 alias */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
 extern volatile cb_u16 vm_text_menu_inline_x; /* DS/GS:0x27D1 */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
@@ -75,6 +76,7 @@ extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_orxx_object_gs; /* GS:0x6750 */
+extern volatile cb_u16 vm_named_orxx_object; /* DS:0x6750 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_arche_record_offset_gs; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_honk_object_gs; /* GS:0x6754 */
 extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
