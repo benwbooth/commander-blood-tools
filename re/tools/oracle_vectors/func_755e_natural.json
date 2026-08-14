@@ -1,0 +1,263 @@
+[
+  {
+    "name": "exact_cache_hit",
+    "slot": 1,
+    "signed_slot_after_decrement": 0,
+    "target_offset": 3543,
+    "copied_name": "same.lbm",
+    "stopping_byte": 0,
+    "cache_hit": true,
+    "embedded_source": false,
+    "helper_calls": [],
+    "dos_calls": [],
+    "requested_bytes": 0,
+    "written_bytes": 0,
+    "source_handle": null,
+    "output_handle": null,
+    "final_source_offset": 25097,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "prefix_cache_hit",
+    "slot": 2,
+    "signed_slot_after_decrement": 1,
+    "target_offset": 3559,
+    "copied_name": "short",
+    "stopping_byte": 0,
+    "cache_hit": true,
+    "embedded_source": false,
+    "helper_calls": [],
+    "dos_calls": [],
+    "requested_bytes": 0,
+    "written_bytes": 0,
+    "source_handle": null,
+    "output_handle": null,
+    "final_source_offset": 25158,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "standalone_full_copy",
+    "slot": 3,
+    "signed_slot_after_decrement": 2,
+    "target_offset": 3575,
+    "copied_name": "new3.lbm",
+    "stopping_byte": 0,
+    "cache_hit": false,
+    "embedded_source": false,
+    "helper_calls": [
+      "write_directory",
+      "source_select",
+      "resource_lookup"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "open",
+      "read",
+      "write",
+      "close",
+      "close"
+    ],
+    "requested_bytes": 5,
+    "written_bytes": 5,
+    "source_handle": 9320,
+    "output_handle": 18058,
+    "final_source_offset": 25225,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "embedded_short_read",
+    "slot": 4,
+    "signed_slot_after_decrement": 3,
+    "target_offset": 3591,
+    "copied_name": "new4.lbm",
+    "stopping_byte": 0,
+    "cache_hit": false,
+    "embedded_source": true,
+    "helper_calls": [
+      "write_directory",
+      "source_select"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "read",
+      "write",
+      "close"
+    ],
+    "requested_bytes": 8,
+    "written_bytes": 3,
+    "source_handle": 13689,
+    "output_handle": 18058,
+    "final_source_offset": 25289,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ignored_source_open_error",
+    "slot": 1,
+    "signed_slot_after_decrement": 0,
+    "target_offset": 3543,
+    "copied_name": "fresh.lbm",
+    "stopping_byte": 0,
+    "cache_hit": false,
+    "embedded_source": false,
+    "helper_calls": [
+      "write_directory",
+      "source_select",
+      "resource_lookup"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "open",
+      "read",
+      "write",
+      "close",
+      "close"
+    ],
+    "requested_bytes": 3,
+    "written_bytes": 3,
+    "source_handle": 2,
+    "output_handle": 18058,
+    "final_source_offset": 25354,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ignored_destination_create_error",
+    "slot": 2,
+    "signed_slot_after_decrement": 1,
+    "target_offset": 3559,
+    "copied_name": "write.lbm",
+    "stopping_byte": 0,
+    "cache_hit": false,
+    "embedded_source": false,
+    "helper_calls": [
+      "write_directory",
+      "source_select",
+      "resource_lookup"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "open",
+      "read",
+      "write",
+      "close",
+      "close"
+    ],
+    "requested_bytes": 5,
+    "written_bytes": 5,
+    "source_handle": 9320,
+    "output_handle": 5,
+    "final_source_offset": 25418,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_source_low_control_stop",
+    "slot": 3,
+    "signed_slot_after_decrement": 2,
+    "target_offset": 3575,
+    "copied_name": "wrap",
+    "stopping_byte": 31,
+    "cache_hit": false,
+    "embedded_source": false,
+    "helper_calls": [
+      "write_directory",
+      "source_select",
+      "resource_lookup"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "open",
+      "read",
+      "write",
+      "close",
+      "close"
+    ],
+    "requested_bytes": 8,
+    "written_bytes": 8,
+    "source_handle": 9320,
+    "output_handle": 18058,
+    "final_source_offset": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "high_stop_decrement_before_sign_extend",
+    "slot": 128,
+    "signed_slot_after_decrement": 127,
+    "target_offset": 5575,
+    "copied_name": "high",
+    "stopping_byte": 128,
+    "cache_hit": false,
+    "embedded_source": false,
+    "helper_calls": [
+      "write_directory",
+      "source_select",
+      "resource_lookup"
+    ],
+    "dos_calls": [
+      "delete",
+      "create",
+      "open",
+      "read",
+      "write",
+      "close",
+      "close"
+    ],
+    "requested_bytes": 4,
+    "written_bytes": 4,
+    "source_handle": 9320,
+    "output_handle": 18058,
+    "final_source_offset": 25541,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

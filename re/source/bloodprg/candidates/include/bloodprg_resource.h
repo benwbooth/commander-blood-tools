@@ -156,10 +156,12 @@ int CB_FAR resource_named_file_load(cb_u16 resource_id,
 
 volatile bloodprg_dos_dta CB_FAR *CB_NEAR cb_dos_get_dta(void);
 int CB_NEAR cb_dos_find_first(const volatile char CB_FAR *path);
+/* Open/create publish raw DOS AX through handle on success and failure. */
 int CB_NEAR cb_dos_open_read_only(const volatile char CB_FAR *path,
         cb_u16 *handle);
 int CB_NEAR cb_dos_create_truncate(const volatile char CB_FAR *path,
         cb_u16 *handle);
+int CB_NEAR cb_dos_delete(const volatile char CB_FAR *path);
 void CB_NEAR cb_dos_seek_absolute(cb_u16 handle, cb_u32 offset);
 cb_u16 CB_NEAR cb_dos_read(cb_u16 handle,
         volatile cb_u8 CB_FAR *destination, cb_u16 byte_count);

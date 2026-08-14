@@ -12,6 +12,11 @@ extern volatile cb_u8 CB_FAR byte_parser_b16_flag;  /* GS:0x0B16 */
 extern volatile cb_u16 CB_GAME_DATA descript_directory_count; /* GS:0x0AAE */
 extern volatile cb_u16 CB_GAME_DATA descript_record_length; /* GS:0x0AB0 */
 extern volatile char CB_GAME_DATA descript_database_path[]; /* GS:0x0106 */
+extern volatile char CB_GAME_DATA byte_parser_background_path[]; /* GS:0x0DC7 */
+extern volatile char CB_GAME_DATA
+        byte_parser_background_slots[][16]; /* GS:0x0DD7 */
+extern volatile cb_u32 CB_GAME_DATA
+        byte_parser_background_source_size; /* GS:0x0A92 */
 extern char CB_GAME_DATA byte_parser_table_2460[]; /* ES:0x2460 */
 extern char CB_GAME_DATA byte_parser_table_247a[]; /* ES:0x247A */
 extern char CB_GAME_DATA byte_parser_line_name[];  /* ES:0x24C6 */

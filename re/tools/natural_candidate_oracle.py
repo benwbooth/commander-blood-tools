@@ -5112,6 +5112,481 @@ def vm_c2_descript_lookup_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def index_lookup_dca_vectors() -> list[dict[str, object]]:
+    entry = 0x755E
+    return_address = 0xF55E
+    write_directory_entry = 0x21C3  # Runtime 01CE:04E3.
+    source_select_entry = 0x2093  # Runtime 01CE:03B3.
+    resource_lookup_entry = 0x22CA  # Runtime 01CE:05EA.
+    expected_hash = "3a600e6ae82ab1392ea69afdee2ce9fde0f3d65e1017f91b416a04cfbcf28d63"
+    if hashlib.sha256(EXE[entry : entry + 180]).hexdigest() != expected_hash:
+        raise AssertionError("0x755e: recovered 180-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "exact_cache_hit",
+            "slot": 1,
+            "filename": b"same.lbm",
+            "stop": 0,
+            "target": b"same.lbm\0",
+            "matched": True,
+        },
+        {
+            "name": "prefix_cache_hit",
+            "slot": 2,
+            "filename": b"short",
+            "stop": 0,
+            "target": b"shorter.lbm\0",
+            "matched": True,
+        },
+        {
+            "name": "standalone_full_copy",
+            "slot": 3,
+            "filename": b"new3.lbm",
+            "stop": 0,
+            "target": b"old3.lbm\0",
+            "source_data": b"ABCDE",
+        },
+        {
+            "name": "embedded_short_read",
+            "slot": 4,
+            "filename": b"new4.lbm",
+            "stop": 0,
+            "target": b"old4.lbm\0",
+            "source_data": b"EMBEDDED",
+            "read_count": 3,
+            "embedded": True,
+        },
+        {
+            "name": "ignored_source_open_error",
+            "slot": 1,
+            "filename": b"fresh.lbm",
+            "stop": 0,
+            "target": b"stale.lbm\0",
+            "source_data": b"ERR",
+            "open_error": 2,
+        },
+        {
+            "name": "ignored_destination_create_error",
+            "slot": 2,
+            "filename": b"write.lbm",
+            "stop": 0,
+            "target": b"prior.lbm\0",
+            "source_data": b"WRITE",
+            "create_error": 5,
+        },
+        {
+            "name": "wrapped_source_low_control_stop",
+            "slot": 3,
+            "filename": b"wrap",
+            "stop": 0x1F,
+            "target": b"oldwrap.lbm\0",
+            "source_data": b"WRAPDATA",
+            "start": 0xFFFC,
+        },
+        {
+            "name": "high_stop_decrement_before_sign_extend",
+            "slot": 0x80,
+            "filename": b"high",
+            "stop": 0x80,
+            "target": b"oldhigh.lbm\0",
+            "source_data": b"HIGH",
+        },
+    ]
+
+    game_segment = 0x2C00
+    data_segment = 0x4400
+    back_buffer_segment = 0x4C00
+    decoy_segment = 0x5400
+    stack_segment = 0x9000
+    back_buffer_offset = 0x5200
+    caller_sp = 0xFF00
+    path_offset = 0x0DC7
+    name_offset = 0x0DCA
+    table_offset = 0x0DD7
+    source_handle_ok = 0x2468
+    embedded_handle = 0x3579
+    output_handle_ok = 0x468A
+    path_prefix = b"bg\\"
+    stack_sentinel = bytes.fromhex("a55a6996c33c5aa5")
+    vectors = []
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, (flags | 1) if carry else (flags & ~1)
+        )
+
+    def write_wrapped(
+        memory: list[tuple[int, int, bytes]], segment: int, offset: int, data: bytes
+    ) -> None:
+        for index, value in enumerate(data):
+            memory.append((segment, (offset + index) & 0xFFFF, bytes((value,))))
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        slot = int(case["slot"])
+        filename = bytes(case["filename"])
+        stop_byte = int(case["stop"])
+        target_before = bytes(case["target"])
+        matched = bool(case.get("matched", False))
+        embedded = bool(case.get("embedded", False))
+        source_data = bytes(case.get("source_data", b""))
+        source_size = int(case.get("source_size", len(source_data)))
+        read_count = int(case.get("read_count", len(source_data)))
+        open_error = int(case.get("open_error", 0))
+        create_error = int(case.get("create_error", 0))
+        start = int(case.get("start", 0x6200 + case_index * 0x40))
+
+        decremented_slot = (slot - 1) & 0xFF
+        signed_slot = (
+            decremented_slot if decremented_slot < 0x80 else decremented_slot - 0x100
+        )
+        target_offset = (table_offset + (signed_slot << 4)) & 0xFFFF
+        stop_offset = (start + 1 + len(filename)) & 0xFFFF
+        stream = bytes((slot,)) + filename + bytes((stop_byte,))
+        target_storage_size = max(16, len(target_before) + 4)
+        target_storage = target_before.ljust(target_storage_size, b"\xCC")
+        path_storage = (path_prefix + bytes((0xCC,)) * 13)[:16]
+        back_before = bytes((0xA5,)) * max(16, source_size + 4)
+        source_raw_handle = open_error or source_handle_ok
+        output_raw_handle = create_error or output_handle_ok
+        helper_calls: list[dict[str, int | str]] = []
+        dos_calls: list[dict[str, int | str | bool]] = []
+        written_payloads: list[bytes] = []
+
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66780 + case_index,
+            "ebp": 0x97977890 + case_index,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": game_segment,
+            "fs": 0x5800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        memory: list[tuple[int, int, bytes]] = [
+            (0, write_directory_entry, b"\xcb"),
+            (0, source_select_entry, b"\xcb"),
+            (0, resource_lookup_entry, b"\xcb"),
+            (0, return_address, b"\xcc"),
+            (game_segment, path_offset, path_storage),
+            (game_segment, target_offset, target_storage),
+            (game_segment, 0x0AE2, b"\xA4"),
+            (game_segment, 0x0A92, b"\x11\x22\x33\x44"),
+            (
+                game_segment,
+                0x5229,
+                struct.pack("<HH", back_buffer_offset, back_buffer_segment),
+            ),
+            (back_buffer_segment, back_buffer_offset, back_before),
+            (decoy_segment, path_offset, bytes((0x69,)) * 64),
+            (data_segment, path_offset, bytes((0x96,)) * 64),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        write_wrapped(memory, data_segment, start, stream)
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address not in (
+                write_directory_entry,
+                source_select_entry,
+                resource_lookup_entry,
+            ):
+                return
+            if address == write_directory_entry:
+                kind = "write_directory"
+            elif address == source_select_entry:
+                kind = "source_select"
+            else:
+                kind = "resource_lookup"
+            helper_calls.append(
+                {
+                    "kind": kind,
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                }
+            )
+            if address == source_select_entry:
+                machine.mem_write(
+                    game_segment * 16 + 0x0AE2,
+                    bytes((1 if embedded else 0,)),
+                )
+                if embedded:
+                    machine.mem_write(
+                        game_segment * 16 + 0x0A92,
+                        struct.pack("<I", source_size),
+                    )
+                    machine.reg_write(UC_X86_REG_BX, embedded_handle)
+            elif address == resource_lookup_entry:
+                machine.reg_write(UC_X86_REG_EBP, source_size)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21:
+                raise AssertionError(f"0x755e {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AH)
+            call: dict[str, int | str | bool] = {
+                "function": function,
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+            }
+            if function == 0x41:
+                call["kind"] = "delete"
+                machine.reg_write(UC_X86_REG_AX, 2)
+                set_carry(machine, True)
+            elif function == 0x3C:
+                call["kind"] = "create"
+                call["error"] = bool(create_error)
+                machine.reg_write(UC_X86_REG_AX, output_raw_handle)
+                set_carry(machine, bool(create_error))
+            elif function == 0x3D:
+                call["kind"] = "open"
+                call["error"] = bool(open_error)
+                machine.reg_write(UC_X86_REG_AX, source_raw_handle)
+                set_carry(machine, bool(open_error))
+            elif function == 0x3F:
+                call["kind"] = "read"
+                transferred = source_data[:read_count]
+                if transferred:
+                    machine.mem_write(
+                        machine.reg_read(UC_X86_REG_DS) * 16
+                        + machine.reg_read(UC_X86_REG_DX),
+                        transferred,
+                    )
+                machine.reg_write(UC_X86_REG_AX, len(transferred))
+                set_carry(machine, False)
+            elif function == 0x40:
+                call["kind"] = "write"
+                payload = bytes(
+                    machine.mem_read(
+                        machine.reg_read(UC_X86_REG_DS) * 16
+                        + machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_CX),
+                    )
+                )
+                written_payloads.append(payload)
+                machine.reg_write(UC_X86_REG_AX, len(payload))
+                set_carry(machine, False)
+            elif function == 0x3E:
+                call["kind"] = "close"
+                machine.reg_write(UC_X86_REG_AX, 0)
+                set_carry(machine, False)
+            else:
+                raise AssertionError(
+                    f"0x755e {name}: unexpected DOS function {function:#x}"
+                )
+            dos_calls.append(call)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=100000,
+        )
+
+        expected_helpers: list[str]
+        if matched:
+            expected_helpers = []
+        elif embedded:
+            expected_helpers = ["write_directory", "source_select"]
+        else:
+            expected_helpers = [
+                "write_directory",
+                "source_select",
+                "resource_lookup",
+            ]
+        actual_helpers = [str(call["kind"]) for call in helper_calls]
+        if actual_helpers != expected_helpers:
+            raise AssertionError(
+                f"0x755e {name}: helpers={actual_helpers}, "
+                f"expected={expected_helpers}"
+            )
+        for call in helper_calls:
+            if call["ds"] != game_segment or call["cs"] != 0x01CE:
+                raise AssertionError(f"0x755e {name}: helper ABI={call}")
+        if not matched:
+            if helper_calls[0]["dx"] != target_offset:
+                raise AssertionError(f"0x755e {name}: wrong old target path")
+            source_call = helper_calls[1]
+            if source_call["dx"] != path_offset:
+                raise AssertionError(f"0x755e {name}: wrong source path")
+            if not embedded and helper_calls[2]["si"] != path_offset:
+                raise AssertionError(f"0x755e {name}: wrong lookup path")
+
+        actual_scratch = bytes(
+            machine.mem_read(game_segment * 16 + name_offset, len(filename) + 1)
+        )
+        if actual_scratch != filename + b"\0":
+            raise AssertionError(
+                f"0x755e {name}: scratch={actual_scratch!r}, "
+                f"expected={filename + b'\0'!r}"
+            )
+        actual_target = bytes(
+            machine.mem_read(game_segment * 16 + target_offset, target_storage_size)
+        )
+        if matched:
+            expected_target = target_storage
+        else:
+            expected_target = (
+                filename
+                + b"\0"
+                + target_storage[len(filename) + 1 :]
+            )
+        if actual_target != expected_target:
+            raise AssertionError(
+                f"0x755e {name}: target={actual_target!r}, "
+                f"expected={expected_target!r}"
+            )
+
+        if matched:
+            expected_dos_kinds: list[str] = []
+            expected_written: list[bytes] = []
+        else:
+            expected_dos_kinds = ["delete", "create"]
+            if not embedded:
+                expected_dos_kinds.append("open")
+            expected_dos_kinds.extend(["read", "write"])
+            if not embedded:
+                expected_dos_kinds.append("close")
+            expected_dos_kinds.append("close")
+            expected_written = [source_data[:read_count]]
+        actual_dos_kinds = [str(call["kind"]) for call in dos_calls]
+        if actual_dos_kinds != expected_dos_kinds:
+            raise AssertionError(
+                f"0x755e {name}: DOS={actual_dos_kinds}, "
+                f"expected={expected_dos_kinds}"
+            )
+        if written_payloads != expected_written:
+            raise AssertionError(
+                f"0x755e {name}: writes={written_payloads}, "
+                f"expected={expected_written}"
+            )
+        if not matched:
+            read_call = next(call for call in dos_calls if call["kind"] == "read")
+            write_call = next(call for call in dos_calls if call["kind"] == "write")
+            if read_call["bx"] != (
+                embedded_handle if embedded else source_raw_handle
+            ):
+                raise AssertionError(f"0x755e {name}: wrong source handle")
+            if read_call["cx"] != (source_size & 0xFFFF):
+                raise AssertionError(f"0x755e {name}: wrong read extent")
+            if write_call["bx"] != output_raw_handle:
+                raise AssertionError(f"0x755e {name}: wrong output handle")
+            if write_call["cx"] != len(source_data[:read_count]):
+                raise AssertionError(f"0x755e {name}: wrong write extent")
+            close_handles = [
+                int(call["bx"]) for call in dos_calls if call["kind"] == "close"
+            ]
+            expected_close_handles = (
+                [output_raw_handle]
+                if embedded
+                else [source_raw_handle, output_raw_handle]
+            )
+            if close_handles != expected_close_handles:
+                raise AssertionError(
+                    f"0x755e {name}: closes={close_handles}, "
+                    f"expected={expected_close_handles}"
+                )
+
+        input_after = bytes(
+            machine.mem_read(
+                data_segment * 16 + ((start + index) & 0xFFFF), 1
+            )[0]
+            for index in range(len(stream))
+        )
+        if input_after != stream:
+            raise AssertionError(f"0x755e {name}: source stream changed")
+        if bytes(machine.mem_read(decoy_segment * 16 + path_offset, 64)) != bytes(
+            (0x69,)
+        ) * 64:
+            raise AssertionError(f"0x755e {name}: decoy segment changed")
+
+        expected_registers = {
+            "ebx": initial["ebx"],
+            "esi": (initial["esi"] & 0xFFFF0000) | stop_offset,
+            "ds": data_segment,
+            "es": game_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": caller_sp + 2,
+        }
+        if not matched:
+            expected_registers["eax"] = 0
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x755e {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 2, 8)) != stack_sentinel:
+            raise AssertionError(f"0x755e {name}: stack sentinel changed")
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        logic_flags = {
+            "cf": bool(flags & 0x001),
+            "pf": bool(flags & 0x004),
+            "zf": bool(flags & 0x040),
+            "sf": bool(flags & 0x080),
+            "of": bool(flags & 0x800),
+        }
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        if logic_flags != expected_flags:
+            raise AssertionError(
+                f"0x755e {name}: flags={logic_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "slot": slot,
+                "signed_slot_after_decrement": signed_slot,
+                "target_offset": target_offset,
+                "copied_name": filename.decode("ascii"),
+                "stopping_byte": stop_byte,
+                "cache_hit": matched,
+                "embedded_source": embedded,
+                "helper_calls": actual_helpers,
+                "dos_calls": actual_dos_kinds,
+                "requested_bytes": 0 if matched else source_size & 0xFFFF,
+                "written_bytes": 0 if matched else len(source_data[:read_count]),
+                "source_handle": None
+                if matched
+                else embedded_handle if embedded else source_raw_handle,
+                "output_handle": None if matched else output_raw_handle,
+                "final_source_offset": stop_offset,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -64889,6 +65364,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7557_natural.json",
         byte_parser_mark_b16_vectors(0x7557, 0x04),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_755e_natural.json",
+        index_lookup_dca_vectors(),
         args.check,
     )
     update_vector(

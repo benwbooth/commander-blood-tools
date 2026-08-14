@@ -4628,6 +4628,35 @@ integration requires the recovered far `DS:SI` handler declarations, shipped
 Direct replacement additionally needs the original raw DOS flag/error behavior,
 GS-qualified marker stores, and preserve-all allocation.
 
+## BLOODPRG background asset cache candidate
+
+`0x00755E` is the opcode-03 background-file cache/update handler. It decrements
+and sign-extends the slot byte, copies a printable name from the far `DS:SI`
+script cursor into the path at game-data offset `0x0DCA`, and prefix-compares
+that name with a 16-byte cache slot beginning at `0x0DD7 + slot * 16`. A hit
+returns without file operations. A miss replaces the slot, enters the write
+directory, and copies either an embedded resource or a standalone file through
+the game back buffer into the newly created output file.
+
+Eight direct vectors execute the original body while replacing only three
+already recovered helper boundaries. They prove wrapped slot arithmetic,
+printable bounds and an unconsumed stopping byte, the intentional prefix hit,
+delete/create/source-selection/lookup/open/read/write/close order, raw DOS error
+AX values retained as handles, one low-word read, actual short-read write size,
+embedded versus standalone close policy, source wrap, segmented ownership,
+cursor return, preservation, flags, stack, and `RETF`. The shipped
+`DESCRIPT.DES` contains 254 opcode-03 records and uses only slots one through
+four.
+
+Open Watcom 1.9 (`-3 -os -s -mh -we`) compiles the natural direct-array
+candidate warning-free to 111 instructions/301 bytes versus the original
+78/180, with 57.69 percent mnemonic-multiset overlap and no inline assembly.
+Full-source integration requires fixed game-data placement, the shipped
+`SS == GS` path-argument invariant, the one-buffer low-word extent, and narrow
+resource/DOS adapters that preserve the recovered result conventions. Direct
+replacement additionally needs the original helper register ABIs and exact
+register/flag envelope.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
