@@ -15,6 +15,11 @@
 #define BRIDGE_COMPLETION_FLAG 0x01u
 #define BRIDGE_LEFT_SCREEN_EDGE 160u
 
+typedef struct bridge_frame_context {
+    cb_u8 reserved_00[4];
+    const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent;
+} bridge_frame_context;
+
 #if defined(__WATCOMC__)
 #define BRIDGE_REMAP(table, x, y, width, height) \
     framebuffer_rect_palette_remap_ds_bp( \
@@ -27,6 +32,8 @@
 
 void CB_FAR bridge_render_frame(cb_u16 scene_link_target)
 {
+    const volatile bridge_frame_context CB_NEAR *frame_context;
+
     if ((vm_ui_state.word & BRIDGE_RENDER_ACTIVE_FLAG) == 0u) {
         return;
     }
@@ -69,7 +76,9 @@ void CB_FAR bridge_render_frame(cb_u16 scene_link_target)
         }
     }
 
-    nav_camera_state_check();
+    frame_context =
+            (const volatile bridge_frame_context CB_NEAR *)scene_link_target;
+    nav_camera_state_check(frame_context->comparison_extent);
     camera_nav_update();
     screen_mode_update(scene_link_target);
     if ((resource_frame_presented & BRIDGE_FRAME_READY_FLAG) == 0u) {

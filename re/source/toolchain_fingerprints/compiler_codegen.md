@@ -4972,7 +4972,9 @@ UI bit zero and gives transition-phase bit `0x02` an early scene-dispatch path.
 The main path optionally publishes both presentation states before rebuilding
 screen flags, then calls `bridge_steer_update`. The original steering return is
 carry plus a live `BP` scene context; the natural API represents those values
-as a Boolean and an explicitly updated local.
+as a Boolean and an explicitly updated local. Before the navigation-camera
+pass, the natural caller reads the comparison-extent far pointer at context
+offset `+4`, matching the downstream `SS:[BP+4]` use proved at `0x008CCE`.
 
 A changed view selects presentation state two or three at the unsigned mouse-x
 boundary 160 and flips the page. The routine then services transition state,
@@ -4990,11 +4992,12 @@ ranges, dirty-copy ownership, late DS/ES ownership, remap geometry, all writes,
 register and segment residue, defined flags, stack integrity, and `RETF`.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
-warning-free to 85 instructions/248 bytes versus the original 78/240, with
-89.74 percent mnemonic-multiset overlap and no inline assembly. Full-source
-integration uses the explicit scene-context contract. Direct replacement still
-needs adapters for initial `ES=GS`, the original carry/live-`BP` steering
-result, the late `DS=ES=GS` transition, and the exact register/flag envelope.
+warning-free to 88 instructions/257 bytes versus the original 78/240, with
+91.03 percent mnemonic-multiset overlap and 80.77 percent ordered mnemonic
+overlap and no inline assembly. Full-source integration uses the explicit
+scene-context contract. Direct replacement still needs adapters for initial
+`ES=GS`, the original carry/live-`BP` steering result, the late `DS=ES=GS`
+transition, and the exact register/flag envelope.
 
 ## BLOODPRG presentation mode dispatch candidate
 
@@ -5812,6 +5815,39 @@ There is no inline assembly or register-state facade. Full-source integration
 uses the shipped DS=GS alias and valid nonzero frame records; direct binary
 replacement would additionally need the original segment switch, save
 envelope, AX residue, and terminal flags.
+
+## Navigation camera state check at 0x008CCE
+
+The 949-byte body is the navigation-chart state machine. A zero transition
+state enters stable interaction only after the center wipe completes. Closing
+state eight converts the VGA panorama, builds the visible chart-object list,
+creates marker entities, places the arche marker, and then narrows the radial
+wipe. Opening state eight temporarily redirects the back buffer, restores the
+bridge panorama and palette/camera state, and expands the reverse wipe. Stable
+interaction updates marker flags, draws a clamped hover label, or starts the
+location panel for a newly clicked destination.
+
+Twelve patched-helper vectors execute the untouched original body. They prove
+both entry gates, the inherited `SS:[BP+4]` comparison-extent context, marker
+kind precedence and secondary offsets, arche coordinate clamps and kind
+adjustments, exact entity transitions, both halves of opening and closing
+wipes, full-row ordering, current-location and new-location clicks, temporary
+framebuffer restoration, helper arguments, DS/GS/SS/record ownership, complete
+preservation, stack integrity, and the near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles one warning-free natural
+typed function to 411 instructions/1,275 bytes versus 340/949 original, with
+72.94 percent mnemonic-multiset overlap and 59.71 percent ordered mnemonic
+overlap. It contains no inline assembly or register-state facade. The updated
+medium-model caller remains 88 instructions/257 bytes versus 78/240 original,
+with 91.03 percent multiset and 80.77 percent ordered overlap after making the
+scene-context `+4` extent handoff explicit.
+
+Full-source integration requires the shipped `DS=GS=SS` aliases, a zero-offset
+record heap, and ordinary bindings for the temporary framebuffer pointers.
+Direct binary replacement would additionally need the original inherited-BP
+context, segment transitions, full-EAX zero at the panorama helper, selective
+callee residue, preserve-all envelope, and path-specific terminal flags.
 
 ## Interpretation
 

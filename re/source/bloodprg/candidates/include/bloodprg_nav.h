@@ -164,6 +164,10 @@ extern const cb_u8 nav_location_panel_life_support_label[]; /* DS:0x014B */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */
+extern volatile cb_u8 nav_chart_secondary_marker; /* DS:0x278F */
+extern volatile cb_u8 nav_chart_subobject_count; /* DS:0x2790 */
+extern volatile cb_u8 nav_center_wipe_complete; /* DS:0x2791 */
+extern volatile cb_u8 nav_chart_entity_state_mask; /* DS:0x0B3F */
 extern const bloodprg_nav_wipe_point
         nav_center_wipe_endpoints[9]; /* DS:0x2752 */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
@@ -243,7 +247,9 @@ void CB_FAR bridge_render_frame(
         cb_u16 scene_link_target); /* 0x0077E0; original input BP */
 void CB_NEAR screen_flags_init(void); /* 0x00959D */
 void CB_NEAR camera_fsm_state_gate(void); /* 0x008A4E */
-void CB_NEAR nav_camera_state_check(void); /* 0x008CCE */
+void CB_NEAR nav_camera_state_check(
+        const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
+        /* 0x008CCE; original context is inherited through SS:BP. */
 /* comparison_extent normalizes the original inherited SS:[BP+4] context. */
 void CB_NEAR entity_draw_full(
         const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);

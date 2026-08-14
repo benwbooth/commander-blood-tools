@@ -1,0 +1,636 @@
+[
+  {
+    "name": "inactive",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 0,
+    "calls": [],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "d9b5661987ff3148e1f29b48710537544455110dd08f1f2d594f2ee54bb3cf3f",
+    "return": "near"
+  },
+  {
+    "name": "interactive_waits_for_wipe",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 1,
+    "calls": [],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "1b9c2a5f5f7b6716f9b3eba3528831daeb90480df415954b53c290a1882efe08",
+    "return": "near"
+  },
+  {
+    "name": "selected_panel_forwards_inherited_extent",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 1,
+    "calls": [
+      {
+        "name": "panel",
+        "context": [
+          30720,
+          25088,
+          48879
+        ]
+      }
+    ],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "bf48c2501e7805c248db51ae4782bd067f113d6dc4bd9d620dcd32ec827de8a6",
+    "return": "near"
+  },
+  {
+    "name": "hover_draws_clamped_object_label",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 1,
+    "calls": [
+      {
+        "name": "pick",
+        "record_segment": 28672,
+        "result": 4096
+      },
+      {
+        "name": "width",
+        "text": "ALPHA",
+        "font": 1
+      },
+      {
+        "name": "text",
+        "text": "ALPHA",
+        "position": [
+          0,
+          0
+        ],
+        "color": 239
+      }
+    ],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "0b535cfab7cb6d173ee89203a89086c3ac1755aa1a66cce15fd3270f0240e59b",
+    "return": "near"
+  },
+  {
+    "name": "click_current_location_only_updates_hand_and_input",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 1,
+    "calls": [
+      {
+        "name": "pick",
+        "record_segment": 28672,
+        "result": 8448
+      }
+    ],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "9749d87e1a2d66b3fe23f781421b13fb1d8ca5cc9207be49f78d8ba2a7405afe",
+    "return": "near"
+  },
+  {
+    "name": "click_new_right_location_starts_panel",
+    "state_before": 0,
+    "state_after": 0,
+    "active": 1,
+    "calls": [
+      {
+        "name": "pick",
+        "record_segment": 28672,
+        "result": 4096
+      },
+      {
+        "name": "transition",
+        "entity": 1
+      },
+      {
+        "name": "transition",
+        "entity": 5
+      },
+      {
+        "name": "transition",
+        "entity": 6
+      }
+    ],
+    "copy_count": 0,
+    "copy_head": [],
+    "copy_tail": [],
+    "copy_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "game_data_sha256": "e39d14b92da1fd36d42e58b65d0ba61789c3940f91989311240362c16cd1e9b9",
+    "return": "near"
+  },
+  {
+    "name": "closing_completion_copies_outside_center",
+    "state_before": 1,
+    "state_after": 0,
+    "active": 0,
+    "calls": [
+      {
+        "name": "wipe",
+        "endpoint_offset": 10066,
+        "endpoint": [
+          160,
+          109
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 92,
+    "copy_head": [
+      [
+        0,
+        110,
+        320
+      ],
+      [
+        0,
+        111,
+        320
+      ],
+      [
+        0,
+        112,
+        320
+      ],
+      [
+        0,
+        113,
+        320
+      ]
+    ],
+    "copy_tail": [
+      [
+        0,
+        198,
+        320
+      ],
+      [
+        0,
+        199,
+        320
+      ],
+      [
+        0,
+        109,
+        40
+      ],
+      [
+        100,
+        109,
+        220
+      ]
+    ],
+    "copy_sha256": "fdd2c76a596bdcfd863300e4fa0116edb490afb75115943000c2f411bd650025",
+    "game_data_sha256": "db9d47a93b8834defc68c68df604bd2fc9746bb76f356429dc939df2448ec53f",
+    "return": "near"
+  },
+  {
+    "name": "closing_upper_half_copies_inside_then_tail",
+    "state_before": 4,
+    "state_after": 3,
+    "active": 0,
+    "calls": [
+      {
+        "name": "wipe",
+        "endpoint_offset": 10078,
+        "endpoint": [
+          160,
+          110
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 90,
+    "copy_head": [
+      [
+        70,
+        110,
+        180
+      ],
+      [
+        80,
+        111,
+        160
+      ],
+      [
+        0,
+        112,
+        320
+      ],
+      [
+        0,
+        113,
+        320
+      ]
+    ],
+    "copy_tail": [
+      [
+        0,
+        196,
+        320
+      ],
+      [
+        0,
+        197,
+        320
+      ],
+      [
+        0,
+        198,
+        320
+      ],
+      [
+        0,
+        199,
+        320
+      ]
+    ],
+    "copy_sha256": "208f9b03ff56765079084fffc06139ee3a555ed9178cb023006954a28a82a807",
+    "game_data_sha256": "2086012a755d1e4f445e2513e8c655519814095ef14e39333f98cba1dd454866",
+    "return": "near"
+  },
+  {
+    "name": "opening_lower_half_reveals_rows_in_reverse",
+    "state_before": 4,
+    "state_after": 3,
+    "active": 1,
+    "calls": [
+      {
+        "name": "wipe",
+        "endpoint_offset": 10086,
+        "endpoint": [
+          160,
+          3
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 4,
+    "copy_head": [
+      [
+        0,
+        2,
+        320
+      ],
+      [
+        0,
+        1,
+        320
+      ],
+      [
+        90,
+        3,
+        140
+      ],
+      [
+        80,
+        4,
+        160
+      ]
+    ],
+    "copy_tail": [
+      [
+        0,
+        2,
+        320
+      ],
+      [
+        0,
+        1,
+        320
+      ],
+      [
+        90,
+        3,
+        140
+      ],
+      [
+        80,
+        4,
+        160
+      ]
+    ],
+    "copy_sha256": "b26cfedd9c04220735bcc1b321540145ed79041ec70c79dd2084b429d8223260",
+    "game_data_sha256": "453aa4c80e2f4f76de22138838c85aee9c5e848967cb28d1c4c9f752447a6324",
+    "return": "near"
+  },
+  {
+    "name": "opening_upper_half_copies_outside_center",
+    "state_before": 3,
+    "state_after": 2,
+    "active": 1,
+    "calls": [
+      {
+        "name": "wipe",
+        "endpoint_offset": 10090,
+        "endpoint": [
+          160,
+          110
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 111,
+    "copy_head": [
+      [
+        0,
+        109,
+        320
+      ],
+      [
+        0,
+        108,
+        320
+      ],
+      [
+        0,
+        107,
+        320
+      ],
+      [
+        0,
+        106,
+        320
+      ]
+    ],
+    "copy_tail": [
+      [
+        0,
+        2,
+        320
+      ],
+      [
+        0,
+        1,
+        320
+      ],
+      [
+        0,
+        110,
+        65
+      ],
+      [
+        255,
+        110,
+        65
+      ]
+    ],
+    "copy_sha256": "5a294f1cd1340eeaac9f9705527657b06cc16fc886e9d94eee97195baccd6de8",
+    "game_data_sha256": "89735f900db34ef5f05ae06d5d719f3ffe80f731f1a439e4f01ce99097bb6c53",
+    "return": "near"
+  },
+  {
+    "name": "closing_first_frame_builds_chart_entities",
+    "state_before": 8,
+    "state_after": 7,
+    "active": 0,
+    "calls": [
+      {
+        "name": "vga",
+        "source": [
+          40960,
+          49152
+        ],
+        "destination": [
+          40960,
+          8192
+        ]
+      },
+      {
+        "name": "list",
+        "result": 2
+      },
+      {
+        "name": "populate",
+        "entity": 0,
+        "resource": 44,
+        "position": [
+          50,
+          60
+        ],
+        "frame": 1
+      },
+      {
+        "name": "populate",
+        "entity": 5,
+        "resource": 44,
+        "position": [
+          47,
+          57
+        ],
+        "frame": 4
+      },
+      {
+        "name": "render",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "populate",
+        "entity": 0,
+        "resource": 44,
+        "position": [
+          100,
+          70
+        ],
+        "frame": 2
+      },
+      {
+        "name": "render",
+        "range": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "transition",
+        "entity": 0
+      },
+      {
+        "name": "populate",
+        "entity": 1,
+        "resource": 44,
+        "position": [
+          8,
+          2
+        ],
+        "frame": 6
+      },
+      {
+        "name": "transition",
+        "entity": 1
+      },
+      {
+        "name": "transition",
+        "entity": 5
+      },
+      {
+        "name": "transition",
+        "entity": 31
+      },
+      {
+        "name": "wipe",
+        "endpoint_offset": 10094,
+        "endpoint": [
+          160,
+          110
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 90,
+    "copy_head": [
+      [
+        75,
+        110,
+        170
+      ],
+      [
+        0,
+        111,
+        320
+      ],
+      [
+        0,
+        112,
+        320
+      ],
+      [
+        0,
+        113,
+        320
+      ]
+    ],
+    "copy_tail": [
+      [
+        0,
+        196,
+        320
+      ],
+      [
+        0,
+        197,
+        320
+      ],
+      [
+        0,
+        198,
+        320
+      ],
+      [
+        0,
+        199,
+        320
+      ]
+    ],
+    "copy_sha256": "bc349b74d458f09486746e20c01a61c19637ad6d340754466c4679207207479c",
+    "game_data_sha256": "dd74b86b813ba4935c546bd749e50983aa3b3adbe4ee593ac211ebe328562a4c",
+    "return": "near"
+  },
+  {
+    "name": "opening_first_frame_restores_panorama_buffer",
+    "state_before": 8,
+    "state_after": 7,
+    "active": 1,
+    "calls": [
+      {
+        "name": "transition",
+        "entity": 1
+      },
+      {
+        "name": "transition",
+        "entity": 5
+      },
+      {
+        "name": "transition",
+        "entity": 6
+      },
+      {
+        "name": "panorama",
+        "eax": 0
+      },
+      {
+        "name": "reset"
+      },
+      {
+        "name": "flip"
+      },
+      {
+        "name": "wipe",
+        "endpoint_offset": 10070,
+        "endpoint": [
+          160,
+          0
+        ]
+      },
+      {
+        "name": "dirty",
+        "rectangles": [
+          12288,
+          26130
+        ]
+      }
+    ],
+    "copy_count": 1,
+    "copy_head": [
+      [
+        100,
+        0,
+        120
+      ]
+    ],
+    "copy_tail": [
+      [
+        100,
+        0,
+        120
+      ]
+    ],
+    "copy_sha256": "651182f64eba3cae47455a68cb2153dadaff1273866b8544df4afc55a2153a2c",
+    "game_data_sha256": "49f1ed153b24d2266787e8ad060adac252486a28bec3e8f20036d14cbe7cad1b",
+    "return": "near"
+  }
+]

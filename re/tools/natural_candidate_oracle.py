@@ -63333,6 +63333,669 @@ def nav_chart_object_pick_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_camera_state_check_vectors() -> list[dict[str, object]]:
+    entry = 0x8CCE
+    body_size = 949
+    body_hash = "784167ae2bd32bc90fa2b0d00863a8c58c3058bd6cca8254c2a33dda68351900"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x8cce: recovered 949-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "inactive", "state": 0, "active": 0},
+        {
+            "name": "interactive_waits_for_wipe",
+            "state": 0,
+            "active": 1,
+            "wipe_complete": 0,
+        },
+        {
+            "name": "selected_panel_forwards_inherited_extent",
+            "state": 0,
+            "active": 1,
+            "wipe_complete": 1,
+            "selected": 0x1000,
+            "interaction": "panel",
+        },
+        {
+            "name": "hover_draws_clamped_object_label",
+            "state": 0,
+            "active": 1,
+            "wipe_complete": 1,
+            "picked": 0x1000,
+            "mouse": (12, 7),
+            "label_width": 30,
+            "interaction": "hover",
+        },
+        {
+            "name": "click_current_location_only_updates_hand_and_input",
+            "state": 0,
+            "active": 1,
+            "wipe_complete": 1,
+            "picked": 0x2100,
+            "mouse": (100, 70),
+            "pressed": 1,
+            "interaction": "click_current",
+        },
+        {
+            "name": "click_new_right_location_starts_panel",
+            "state": 0,
+            "active": 1,
+            "wipe_complete": 1,
+            "picked": 0x1000,
+            "mouse": (200, 80),
+            "pressed": 1,
+            "interaction": "click_new",
+        },
+        {
+            "name": "closing_completion_copies_outside_center",
+            "state": 1,
+            "active": 0,
+            "endpoint_y": 109,
+            "spans": [(40, 60)],
+            "wipe": "closing",
+        },
+        {
+            "name": "closing_upper_half_copies_inside_then_tail",
+            "state": 4,
+            "active": 0,
+            "endpoint_y": 110,
+            "spans": [(70, 180), (80, 160)],
+            "wipe": "closing",
+        },
+        {
+            "name": "opening_lower_half_reveals_rows_in_reverse",
+            "state": 4,
+            "active": 1,
+            "endpoint_y": 3,
+            "spans": [(90, 140), (80, 160)],
+            "wipe": "opening",
+        },
+        {
+            "name": "opening_upper_half_copies_outside_center",
+            "state": 3,
+            "active": 1,
+            "endpoint_y": 110,
+            "spans": [(65, 190)],
+            "wipe": "opening",
+        },
+        {
+            "name": "closing_first_frame_builds_chart_entities",
+            "state": 8,
+            "active": 0,
+            "endpoint_y": 110,
+            "spans": [(75, 170)],
+            "wipe": "closing",
+            "build_chart": True,
+        },
+        {
+            "name": "opening_first_frame_restores_panorama_buffer",
+            "state": 8,
+            "active": 1,
+            "endpoint_y": 0,
+            "spans": [(100, 120)],
+            "wipe": "opening",
+            "opening_setup": True,
+        },
+    ]
+
+    game_segment = 0x3000
+    incoming_ds_segment = 0x4400
+    incoming_es_segment = 0x5500
+    record_segment = 0x7000
+    span_segment = 0xB000
+    work_segment = 0xA000
+    back_segment = 0xC000
+    caller_sp = 0xFF00
+    return_address = 0xFCCE
+    context_offset = 0x7800
+    extent_offset = 0x6200
+    extent_segment = 0xBEEF
+    span_offset = 0x6000
+    work_offset = 0x2000
+    back_offset = 0x1000
+    arche_offset = 0x2000
+    current_offset = 0x2100
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helper_entries = {
+        0x3870: ("vga", "far"),       # 0299:0EE0
+        0x6C1A: ("list", "far"),      # 04DA:1E7A
+        0x3AD0: ("populate", "far"),  # 0299:1140
+        0x3E71: ("render", "far"),    # 0299:14E1
+        0x3BD1: ("transition", "far"),# 0299:1241
+        0x9364: ("wipe", "near"),
+        0x933A: ("copy", "near"),
+        0x4A9D: ("dirty", "far"),     # 0299:210D
+        0x981B: ("panorama", "near"),
+        0x8C96: ("reset", "far"),
+        0x954A: ("flip", "far"),
+        0x9083: ("panel", "near"),
+        0x92A3: ("pick", "near"),
+        0x2ACD: ("width", "far"),     # 0299:013D
+        0x2B92: ("text", "far"),      # 0299:0202
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    def get_word(image: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", image, offset)[0]
+
+    def read_string(machine: Uc, segment: int, offset: int) -> str:
+        value = bytearray()
+        for index in range(64):
+            character = machine.mem_read(
+                segment * 16 + ((offset + index) & 0xFFFF), 1
+            )[0]
+            if character == 0:
+                return value.decode("ascii")
+            value.append(character)
+        raise AssertionError("0x8cce: unterminated helper string")
+
+    def expected_wipe_copies(
+        direction: str, row: int, spans: list[tuple[int, int]]
+    ) -> list[tuple[int, int, int]]:
+        copies: list[tuple[int, int, int]] = []
+        if direction == "closing":
+            if row < 110:
+                copies.extend((0, y, 320) for y in range(110, 200))
+                for left, width in spans:
+                    copies.append((0, row, left))
+                    right = left + width
+                    copies.append((right, row, 320 - right))
+                    row += 1
+            else:
+                row = 110
+                for left, width in spans:
+                    copies.append((left, row, width))
+                    row += 1
+                copies.extend((0, y, 320) for y in range(row, 200))
+        elif row < 110:
+            copies.extend((0, y, 320) for y in range(row - 1, 0, -1))
+            for left, width in spans:
+                copies.append((left, row, width))
+                row += 1
+        else:
+            row = 110
+            copies.extend((0, y, 320) for y in range(109, 0, -1))
+            for left, width in spans:
+                copies.append((0, row, left))
+                right = left + width
+                copies.append((right, row, 320 - right))
+                row += 1
+        return copies
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        state = int(case["state"]) & 0xFF
+        active = int(case["active"]) & 0xFF
+        wipe_complete = int(case.get("wipe_complete", 0)) & 0xFF
+        selected = int(case.get("selected", 0)) & 0xFFFF
+        picked = int(case.get("picked", 0)) & 0xFFFF
+        mouse_x_value, mouse_y_value = (
+            int(value) & 0xFFFF for value in case.get("mouse", (80, 50))
+        )
+        pressed = int(case.get("pressed", 0)) & 0xFF
+        interaction = str(case.get("interaction", ""))
+        direction = str(case.get("wipe", ""))
+        endpoint_y = int(case.get("endpoint_y", 0))
+        spans = [
+            (int(left) & 0xFFFF, int(width) & 0xFFFF)
+            for left, width in case.get("spans", [])
+        ]
+        build_chart = bool(case.get("build_chart", False))
+        opening_setup = bool(case.get("opening_setup", False))
+
+        game_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 19 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        incoming_ds_before = bytes(
+            (offset * 11 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        incoming_es_before = bytes(
+            (offset * 17 + case_index * 29 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 31 + case_index * 37 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        span_before = bytes(
+            (offset * 3 + case_index * 41 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+        work_before = bytes(
+            (offset * 13 + case_index * 43 + 0xCB) & 0xFF
+            for offset in range(0x10000)
+        )
+        back_before = bytes(
+            (offset * 19 + case_index * 47 + 0xED) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        game_before[0x278A] = active
+        game_before[0x278B] = state
+        game_before[0x278F] = 0xA5
+        game_before[0x2790] = 2
+        game_before[0x2791] = wipe_complete
+        game_before[0x2793] = 0x81
+        game_before[0x0B3F] = 1
+        game_before[0x0A3E] = pressed
+        game_before[0x0A40] = 0x83
+        put_word(game_before, 0x0A2A, mouse_x_value)
+        put_word(game_before, 0x0A2C, mouse_y_value)
+        put_word(game_before, 0x0A32, 0x3232)
+        put_word(game_before, 0x0A34, 0x3434)
+        game_before[0x0ADA] = 0xDA
+        game_before[0x0ADB] = 0xDB
+        put_word(game_before, 0x27BF, selected)
+        put_word(game_before, 0x27C1, 0xC1C1)
+        put_word(game_before, 0x6752, arche_offset)
+        put_word(game_before, 0x676A, 0x6A6A)
+        put_dword(game_before, 0x6724, record_segment << 16)
+        put_dword(game_before, 0x0ABC, (work_segment << 16) | work_offset)
+        put_dword(game_before, 0x5221, (span_segment << 16) | span_offset)
+        put_dword(game_before, 0x5229, (back_segment << 16) | back_offset)
+        for entity_id in (1, 5, 6):
+            put_word(game_before, 0x6212 + entity_id * 0x20, 0xA0 + entity_id)
+
+        endpoint_index = 0
+        if direction == "closing":
+            endpoint_index = state - 1
+        elif direction == "opening":
+            endpoint_index = 9 - state
+        if direction:
+            put_word(game_before, 0x2752 + endpoint_index * 4, 160)
+            put_word(game_before, 0x2754 + endpoint_index * 4, endpoint_y)
+
+        object_offsets = [0x1000, 0x1100]
+        for index, object_offset in enumerate(object_offsets):
+            put_word(game_before, 0x2AD3 + index * 2, object_offset)
+        put_word(game_before, 0x2AD7, 0xFFFF)
+        put_word(record_before, 0x1000, 0x0100)
+        put_word(record_before, 0x1014, 0)
+        put_word(record_before, 0x1018, 50)
+        put_word(record_before, 0x101A, 60)
+        record_before[0x1004 : 0x100A] = b"ALPHA\0"
+        put_word(record_before, 0x1100, 0x0010)
+        put_word(record_before, 0x1114, 1)
+        put_word(record_before, 0x1118, 100)
+        put_word(record_before, 0x111A, 70)
+        put_word(record_before, arche_offset + 0x16, current_offset)
+        put_word(record_before, arche_offset + 0x18, 12)
+        put_word(record_before, arche_offset + 0x1A, 10)
+        put_word(record_before, current_offset, 0x0110)
+
+        put_word(game_before, caller_sp, return_address)
+        game_before[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+        put_word(game_before, context_offset + 4, extent_offset)
+        put_word(game_before, context_offset + 6, extent_segment)
+
+        expected_game = bytearray(game_before)
+        expected_calls: list[str] = []
+        expected_copies: list[tuple[int, int, int]] = []
+        if state == 0:
+            if active & 1 and wipe_complete & 1:
+                expected_game[0x2793] |= 4
+                if selected:
+                    expected_calls.append("panel")
+                else:
+                    expected_game[0x62B2] = 0xA7
+                    expected_game[0x62D2] = 0xA7
+                    expected_game[0x6232] = 0xA2
+                    expected_calls.append("pick")
+                    if picked and not pressed:
+                        expected_calls.extend(["width", "text"])
+                    elif picked and pressed:
+                        put_word(expected_game, 0x0A34, 0)
+                        put_word(
+                            expected_game,
+                            0x0A32,
+                            12 if mouse_x_value > 160 else 11,
+                        )
+                        expected_game[0x0A3E] = 0
+                        expected_game[0x0A40] = 0
+                        if interaction == "click_new":
+                            put_word(expected_game, 0x27BF, picked)
+                            struct.pack_into(
+                                "<hhhh",
+                                expected_game,
+                                0x2AAB,
+                                mouse_x_value,
+                                mouse_y_value,
+                                4,
+                                4,
+                            )
+                            expected_game[0x0ADB] = 0
+                            expected_game[0x0ADA] = 8
+                            expected_game[0x2788] = 1
+                            expected_game[0x2789] = 0
+                            expected_game[0x278C] = 1
+                            put_word(expected_game, 0x676A, picked)
+                            expected_calls.extend(
+                                ["transition", "transition", "transition"]
+                            )
+        else:
+            put_word(expected_game, 0x27BF, 0)
+            if build_chart:
+                expected_calls.extend(
+                    [
+                        "vga", "list", "populate", "populate", "render",
+                        "populate", "render", "transition", "populate",
+                        "transition", "transition", "transition",
+                    ]
+                )
+                put_word(expected_game, 0x27C1, 2)
+                expected_game[0x278F] = 0
+                expected_game[0x2790] = 1
+                put_word(expected_game, 0x2AD3, 0x1000)
+                put_word(expected_game, 0x2AD5, 0x1100)
+                put_word(expected_game, 0x2AD7, 0xFFFF)
+            if opening_setup:
+                expected_game[0x2791] = 0
+                expected_calls.extend(
+                    ["transition", "transition", "transition",
+                     "panorama", "reset", "flip"]
+                )
+                expected_game[0x5B53] = 0
+            if direction == "closing":
+                expected_game[0x2791] = 1 if state == 1 else 0
+            expected_calls.append("wipe")
+            expected_copies = expected_wipe_copies(direction, endpoint_y, spans)
+            expected_calls.extend(["copy"] * len(expected_copies))
+            expected_calls.append("dirty")
+            expected_game[0x278B] = (state - 1) & 0xFF
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | context_offset,
+            "sp": caller_sp,
+            "ds": incoming_ds_segment,
+            "es": incoming_es_segment,
+            "fs": 0xD000,
+            "gs": game_segment,
+            "ss": game_segment,
+            "flags": 0x0202,
+        }
+        memory = [
+            (0, return_address, b"\xCC"),
+            (game_segment, 0, bytes(game_before)),
+            (incoming_ds_segment, 0, incoming_ds_before),
+            (incoming_es_segment, 0, incoming_es_before),
+            (record_segment, 0, bytes(record_before)),
+            (span_segment, 0, span_before),
+            (work_segment, 0, work_before),
+            (back_segment, 0, back_before),
+        ]
+        for helper_address, (_helper_name, return_kind) in helper_entries.items():
+            memory.append(
+                (0, helper_address, b"\xCB" if return_kind == "far" else b"\xC3")
+            )
+
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helper_entries.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            event: dict[str, object] = {"name": helper_name}
+            if helper_name == "vga":
+                event["source"] = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+                event["destination"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+            elif helper_name == "list":
+                machine.reg_write(UC_X86_REG_AX, 2 if build_chart else 0)
+                event["result"] = machine.reg_read(UC_X86_REG_AX)
+            elif helper_name == "populate":
+                event["entity"] = machine.reg_read(UC_X86_REG_AX)
+                event["resource"] = machine.reg_read(UC_X86_REG_DX)
+                event["position"] = [
+                    machine.reg_read(UC_X86_REG_BX),
+                    machine.reg_read(UC_X86_REG_CX),
+                ]
+                event["frame"] = machine.reg_read(UC_X86_REG_BP)
+            elif helper_name == "render":
+                event["range"] = [
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_BX),
+                ]
+            elif helper_name == "transition":
+                event["entity"] = machine.reg_read(UC_X86_REG_AX)
+            elif helper_name == "wipe":
+                endpoint_offset = machine.reg_read(UC_X86_REG_SI)
+                event["endpoint_offset"] = endpoint_offset
+                event["endpoint"] = [
+                    get_word(game_before, endpoint_offset),
+                    get_word(game_before, endpoint_offset + 2),
+                ]
+                payload = b"".join(
+                    struct.pack("<HH", left, width) for left, width in spans
+                ) + b"\xff\xff\xff\xff"
+                machine.mem_write(span_segment * 16 + span_offset, payload)
+            elif helper_name == "copy":
+                event["rect"] = [
+                    machine.reg_read(UC_X86_REG_BX),
+                    machine.reg_read(UC_X86_REG_CX),
+                    machine.reg_read(UC_X86_REG_DX),
+                ]
+            elif helper_name == "dirty":
+                event["rectangles"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+            elif helper_name == "panorama":
+                event["eax"] = machine.reg_read(UC_X86_REG_EAX)
+            elif helper_name == "panel":
+                bp = machine.reg_read(UC_X86_REG_BP)
+                ss = machine.reg_read(UC_X86_REG_SS)
+                pointer = bytes(machine.mem_read(ss * 16 + bp + 4, 4))
+                event["context"] = [
+                    bp,
+                    struct.unpack_from("<H", pointer, 0)[0],
+                    struct.unpack_from("<H", pointer, 2)[0],
+                ]
+            elif helper_name == "pick":
+                event["record_segment"] = machine.reg_read(UC_X86_REG_ES)
+                machine.reg_write(UC_X86_REG_AX, picked)
+                event["result"] = picked
+            elif helper_name == "width":
+                event["text"] = read_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+                event["font"] = machine.reg_read(UC_X86_REG_AX)
+                machine.reg_write(
+                    UC_X86_REG_AX, int(case.get("label_width", 30))
+                )
+            elif helper_name == "text":
+                event["text"] = read_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+                event["position"] = [
+                    machine.reg_read(UC_X86_REG_BX),
+                    machine.reg_read(UC_X86_REG_DX),
+                ]
+                event["color"] = machine.reg_read(UC_X86_REG_AL)
+            calls.append(event)
+
+        try:
+            machine = execute(
+                entry,
+                return_address,
+                initial,
+                memory,
+                code_handler=capture,
+                instruction_count=10000,
+            )
+        except RuntimeError as error:
+            raise RuntimeError(f"0x8cce {name}: {error}") from error
+
+        actual_names = [str(call["name"]) for call in calls]
+        if actual_names != expected_calls:
+            raise AssertionError(
+                f"0x8cce {name}: calls={actual_names}, expected={expected_calls}"
+            )
+        actual_copies = [
+            tuple(int(value) for value in call["rect"])
+            for call in calls if call["name"] == "copy"
+        ]
+        if actual_copies != expected_copies:
+            mismatch = next(
+                (
+                    index
+                    for index, pair in enumerate(
+                        zip(actual_copies, expected_copies)
+                    )
+                    if pair[0] != pair[1]
+                ),
+                min(len(actual_copies), len(expected_copies)),
+            )
+            raise AssertionError(f"0x8cce {name}: copy trace differs at {mismatch}")
+
+        if interaction == "panel":
+            panel = next(call for call in calls if call["name"] == "panel")
+            if panel["context"] != [context_offset, extent_offset, extent_segment]:
+                raise AssertionError(f"0x8cce {name}: inherited context changed")
+        if interaction == "hover":
+            width_call = next(call for call in calls if call["name"] == "width")
+            text_call = next(call for call in calls if call["name"] == "text")
+            if width_call != {"name": "width", "text": "ALPHA", "font": 1}:
+                raise AssertionError(f"0x8cce {name}: width ABI={width_call}")
+            if text_call != {
+                "name": "text",
+                "text": "ALPHA",
+                "position": [0, 0],
+                "color": 0xEF,
+            }:
+                raise AssertionError(f"0x8cce {name}: text ABI={text_call}")
+        if build_chart:
+            populate = [call for call in calls if call["name"] == "populate"]
+            expected_populate = [
+                {"name": "populate", "entity": 0, "resource": 0x2C,
+                 "position": [50, 60], "frame": 1},
+                {"name": "populate", "entity": 5, "resource": 0x2C,
+                 "position": [47, 57], "frame": 4},
+                {"name": "populate", "entity": 0, "resource": 0x2C,
+                 "position": [100, 70], "frame": 2},
+                {"name": "populate", "entity": 1, "resource": 0x2C,
+                 "position": [8, 2], "frame": 6},
+            ]
+            if populate != expected_populate:
+                raise AssertionError(f"0x8cce {name}: populate ABI={populate}")
+            transitions = [
+                int(call["entity"])
+                for call in calls if call["name"] == "transition"
+            ]
+            if transitions != [0, 1, 5, 31]:
+                raise AssertionError(f"0x8cce {name}: transitions={transitions}")
+        if opening_setup:
+            transitions = [
+                int(call["entity"])
+                for call in calls if call["name"] == "transition"
+            ]
+            if transitions != [1, 5, 6]:
+                raise AssertionError(f"0x8cce {name}: transitions={transitions}")
+            panorama = next(call for call in calls if call["name"] == "panorama")
+            if panorama["eax"] != 0:
+                raise AssertionError(f"0x8cce {name}: panorama EAX not cleared")
+
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x8000))
+        if actual_game != bytes(expected_game[:0x8000]):
+            mismatch = next(
+                index
+                for index, pair in enumerate(zip(actual_game, expected_game))
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x8cce {name}: game data differs at {mismatch:#x}: "
+                f"{actual_game[mismatch]:#x} != {expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(record_before):
+            raise AssertionError(f"0x8cce {name}: record heap changed")
+        if bytes(machine.mem_read(incoming_ds_segment * 16, 0x10000)) != incoming_ds_before:
+            raise AssertionError(f"0x8cce {name}: incoming DS memory changed")
+        if bytes(machine.mem_read(incoming_es_segment * 16, 0x10000)) != incoming_es_before:
+            raise AssertionError(f"0x8cce {name}: incoming ES memory changed")
+        if bytes(machine.mem_read(work_segment * 16, 0x10000)) != work_before:
+            raise AssertionError(f"0x8cce {name}: work buffer changed by patched helpers")
+        if bytes(machine.mem_read(back_segment * 16, 0x10000)) != back_before:
+            raise AssertionError(f"0x8cce {name}: back buffer changed by patched helpers")
+
+        expected_registers = {
+            "eax": initial["eax"],
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"],
+            "edx": initial["edx"],
+            "esi": initial["esi"],
+            "edi": initial["edi"],
+            "ebp": initial["ebp"],
+            "sp": caller_sp + 2,
+            "ds": incoming_ds_segment,
+            "es": incoming_es_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": game_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8cce {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8cce {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(
+                game_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x8cce {name}: caller stack sentinel changed")
+
+        noncopy_calls = [call for call in calls if call["name"] != "copy"]
+        copy_bytes = b"".join(
+            struct.pack("<HHH", *copy) for copy in actual_copies
+        )
+        vectors.append(
+            {
+                "name": name,
+                "state_before": state,
+                "state_after": machine.mem_read(
+                    game_segment * 16 + 0x278B, 1
+                )[0],
+                "active": active,
+                "calls": noncopy_calls,
+                "copy_count": len(actual_copies),
+                "copy_head": [list(copy) for copy in actual_copies[:4]],
+                "copy_tail": [list(copy) for copy in actual_copies[-4:]],
+                "copy_sha256": hashlib.sha256(copy_bytes).hexdigest(),
+                "game_data_sha256": hashlib.sha256(actual_game).hexdigest(),
+                "return": "near",
+            }
+        )
+    return vectors
+
+
 def location_info_panel_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x9083
     body_size = 445
@@ -85349,6 +86012,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77e0_natural.json",
         bridge_render_frame_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8cce_natural.json",
+        nav_camera_state_check_vectors(),
         args.check,
     )
     update_vector(
