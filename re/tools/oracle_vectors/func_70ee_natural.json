@@ -1,0 +1,285 @@
+[
+  {
+    "name": "empty_source",
+    "source": [],
+    "honk": 30583,
+    "record_base": [
+      40960,
+      512
+    ],
+    "objects": {},
+    "output": [],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 9029,
+    "return": "far"
+  },
+  {
+    "name": "two_active_kind_two",
+    "source": [
+      16,
+      48
+    ],
+    "honk": 30583,
+    "record_base": [
+      40960,
+      256
+    ],
+    "objects": {
+      "0x0010": [
+        2,
+        1
+      ],
+      "0x0030": [
+        2,
+        165
+      ]
+    },
+    "output": [
+      16,
+      48
+    ],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  },
+  {
+    "name": "exclude_honk_before_record_read",
+    "source": [
+      32,
+      64
+    ],
+    "honk": 32,
+    "record_base": [
+      40960,
+      768
+    ],
+    "objects": {
+      "0x0020": [
+        2,
+        1
+      ],
+      "0x0040": [
+        2,
+        1
+      ]
+    },
+    "output": [
+      64
+    ],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  },
+  {
+    "name": "mixed_kind_and_activity",
+    "source": [
+      4,
+      16,
+      32,
+      48,
+      64
+    ],
+    "honk": 34952,
+    "record_base": [
+      40960,
+      291
+    ],
+    "objects": {
+      "0x0004": [
+        1,
+        1
+      ],
+      "0x0010": [
+        2,
+        0
+      ],
+      "0x0020": [
+        258,
+        1
+      ],
+      "0x0030": [
+        2,
+        128
+      ],
+      "0x0040": [
+        2,
+        129
+      ]
+    },
+    "output": [
+      64
+    ],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  },
+  {
+    "name": "zero_offset_is_valid",
+    "source": [
+      0,
+      6
+    ],
+    "honk": 39321,
+    "record_base": [
+      40960,
+      1024
+    ],
+    "objects": {
+      "0x0000": [
+        2,
+        1
+      ],
+      "0x0006": [
+        2,
+        1
+      ]
+    },
+    "output": [
+      0,
+      6
+    ],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  },
+  {
+    "name": "unsigned_high_offsets",
+    "source": [
+      32768,
+      65534
+    ],
+    "honk": 30583,
+    "record_base": [
+      40960,
+      0
+    ],
+    "objects": {
+      "0x8000": [
+        2,
+        1
+      ],
+      "0xfffe": [
+        2,
+        1
+      ]
+    },
+    "output": [
+      32768,
+      65534
+    ],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  },
+  {
+    "name": "all_rejected",
+    "source": [
+      16,
+      32,
+      48
+    ],
+    "honk": 16,
+    "record_base": [
+      40960,
+      1360
+    ],
+    "objects": {
+      "0x0020": [
+        3,
+        1
+      ],
+      "0x0030": [
+        2,
+        254
+      ]
+    },
+    "output": [],
+    "helper": {
+      "eax": 0,
+      "bp": 26758,
+      "target": [
+        36864,
+        9320
+      ],
+      "ds": 20480,
+      "return": [
+        28925,
+        0
+      ]
+    },
+    "final_bx": 2,
+    "return": "far"
+  }
+]

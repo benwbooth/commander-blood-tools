@@ -1059,6 +1059,31 @@ and substitutes BX for the cursor. It emits 51 instructions/113 bytes versus
 runtime SS=DS alias, and a narrow BP/BX adapter, but no register emulation is
 present in the recovered algorithm.
 
+Ship 3D navigation-candidate filter `0x0070EE` calls that source-list builder
+with inherited ES:DI as the target and SS:BP at `0x6886`. It then switches DS
+to GS and walks the helper's exact `0xFFFF`-terminated offsets. Honk at
+`DS:0x6754` is excluded before lookup. Every other offset is added to the far
+record base at `DS:0x6724`; only exact kind 2 records with flag bit 0 set are
+copied to `SS/DS:0x2B53`, followed by a zero terminator.
+
+Seven patched-helper vectors cover empty, accepted, Honk, wrong-kind,
+inactive, zero-offset, unsigned `0x8000`/`0xFFFE`, and all-rejected lists. They
+prove helper-before-filter ordering, helper EAX=0 and BP/ES:DI inputs, stale
+source replacement, nonzero far-base offsets, every selection rule, the
+different source/output sentinels, DS/SS/ES ownership, register effects, final
+comparison flags, stack integrity, and far return. The addr32 record load also
+exposes a shipped ABI precondition: EAX is cleared, but incoming upper EDI must
+already be zero because LES only replaces DI.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 29 instructions/76 bytes versus the original 32/79,
+with 75 percent mnemonic-multiset overlap and no inline assembly. Watcom uses
+DI as the output cursor and reloads GAME_DATA inside the loop; the binary uses
+BP for output and leaves DI at the record-base offset. Those clobber choices,
+the helper's inherited BP cursor, fixed segmented placement, and the addr32
+high-half convention remain integration boundaries around the recovered C
+algorithm.
+
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
 `0xFFFF`; post-match addition wrap; and optional-increment wrap and signed

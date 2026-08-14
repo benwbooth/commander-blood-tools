@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: ship_3d_navigation_candidate_build
-; label_comment: filters helper-produced source list into DS:0x2B53: kind 2, active bit set, excluding Honk
+; label_comment: calls ship_3d_nav_source_list_build_full with inherited ES:DI and SS:BP=0x6886, then filters the 0xffff-terminated source through DS=GS into a zero-terminated SS/DS:0x2b53 list. It excludes DS:0x6754 Honk before lookup and keeps only exact kind 2 records whose +2 flag byte has bit 0 set. The addr32 ES:[EAX+EDI] lookup clears EAX but requires incoming upper EDI to be zero.
 ; incoming: call@0x00b37b->04da:1d4e
 ; byte_count: 79
 ; boundary: cfg_blocks_8_terminals_2
