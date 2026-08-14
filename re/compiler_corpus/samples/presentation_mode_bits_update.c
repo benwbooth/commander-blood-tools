@@ -20,9 +20,9 @@ extern volatile i16 bridge_view_frame;
 
 u16 NEAR presentation_mode_bits_update_probe(void)
 {
-    u16 flags;
     u16 mode;
     i16 frame;
+    u16 flags;
 
     flags = (u16)(ui_state & 0xff0fu);
     if ((flags & 2u) == 0) {

@@ -2,9 +2,9 @@
 
 cb_u16 CB_NEAR presentation_mode_bits_update(void)
 {
-    cb_u16 flags;
     cb_u16 mode;
     cb_i16 frame;
+    cb_u16 flags;
 
     flags = (cb_u16)(vm_ui_state.word & 0xff0fu);
     if ((flags & 2u) == 0) {
