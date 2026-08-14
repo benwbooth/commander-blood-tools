@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_script_block_scan
-; label_comment: VM nested script-block scanner (2 calls): di=0x6eb0 (opcode handler table); lodsb opcode; scan to 0xff terminator - executes/skips a nested script block using the same dispatch as vm_exec_loop_dispatch. A block/subroutine executor
+; label_comment: execute one DS:SI nested VM block through GS:0x6eb0 for opcodes A0..D2; 0xff/control signal 1 stops successfully, other nonzero signals clear the skip count, invalid opcodes show coding error and return -1; natural C: re/source/bloodprg/candidates/seg_04da/func_0056a6_vm_script_block_scan.c
 ; byte_count: 88
 ; boundary: cfg_blocks_13_terminals_4
 ; terminal: jmp 0x56a9:2, jmp 0x56fd:1, ret:1

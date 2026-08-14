@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_token_advance
-; label_comment: decode+skip one script token; biases op by 0xa0, uses length table DS:0x6f18
+; label_comment: decode+skip one DS:SI script token; biases op by 0xa0 and uses the descriptor table through BP at SS:0x6f18 (runtime SS=GS), leaving DS on the script image
 ; byte_count: 131
 ; boundary: cfg_blocks_21_terminals_6
 ; terminal: jmp 0x6316:4, jmp 0x6335:1, ret:1

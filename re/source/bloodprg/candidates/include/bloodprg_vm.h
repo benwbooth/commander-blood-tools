@@ -14,6 +14,9 @@ typedef union bloodprg_vm_ui_state {
 
 typedef volatile cb_u8 CB_FAR *bloodprg_vm_image_ptr;
 
+typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
+        bloodprg_vm_image_ptr script_bytes);
+
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
 extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
@@ -95,6 +98,9 @@ extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS *
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_word_buffer_gs[]; /* explicit GS:0x67F8 alias */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
+/* The shipped runtime has SS=GS; handlers preserve the floating script DS. */
+extern bloodprg_vm_opcode_handler CB_NEAR *CB_NEAR
+        vm_opcode_handlers[];                /* GS/SS:0x6EB0 */
 extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime */
 extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
@@ -182,6 +188,11 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]
 #pragma aux vm_token_advance parm [ds si] value [ds si] modify exact [si]
+#pragma aux bloodprg_vm_opcode_handler_abi parm [ds si] value [ds si] \
+        modify exact [ax bx cx dx si bp es]
+#pragma aux (bloodprg_vm_opcode_handler, bloodprg_vm_opcode_handler_abi)
+#pragma aux vm_script_block_scan parm [ds si] value [ax] \
+        modify exact [ax bx cx dx si di bp es]
 #pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_op_a3_collect modify exact []
@@ -238,6 +249,8 @@ cb_i16 CB_FAR vm_run_wrapper(void);           /* 0x0055A4 */
 #pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif
 void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
+cb_i16 CB_NEAR vm_script_block_scan(
+        bloodprg_vm_image_ptr script_bytes);     /* 0x0056A6 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */

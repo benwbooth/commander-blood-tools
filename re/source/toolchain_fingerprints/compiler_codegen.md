@@ -5146,6 +5146,38 @@ SS=DS slot alias, the preserve-all envelope, and a narrow field-read lowering
 for the original 32-bit effective offset because Watcom's 16:16 far-pointer
 arithmetic wraps it to 16 bits.
 
+## BLOODPRG nested VM block executor candidate
+
+`0x0056A6` consumes a nested script block directly through `DS:SI`. It accepts
+only executable opcodes `0xA0..0xD2`, clears `GS:0x67B4`, and calls the typed
+near handler selected from `GS:0x6EB0`. Opcode `0xD3` is rejected even though
+the adjacent shipped table contains a null sentinel entry for it. A stream
+`0xFF` or handler signal one returns zero; any other nonzero signal clears the
+skip count and resumes execution.
+
+The zero-signal path tests only the low nibble of `GS:0x67AB` before entering
+the skip loop, but once entered it decrements the complete byte until zero.
+Each skip invokes the real `0x0062B6` token decoder. Direct execution also
+corrected an old segment annotation: that decoder keeps `DS` on the script and
+reads its opcode descriptors through `BP` at `SS:0x6F18`, where shipped
+`SS=GS` supplies the runtime metadata.
+
+Fifteen direct original-binary vectors cover immediate termination, both
+opcode bounds, D3 and below-range errors, chained handlers, signals one and
+two, both skip-counter edge rules, fixed and variable token lengths, callback
+cursor movement, offset wrap, split DS/GS/SS ownership, the coding-error far
+frame, reverse-direction LODSB behavior, registers, flags, stack, and near
+return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+38-instruction/103-byte function versus 32/88 original, with 71.88 percent
+mnemonic-multiset overlap and no inline assembly. Large model is intentional:
+the script segment is a floating DS while near runtime data stays under SS.
+Full-source integration requires the shipped SS=GS and clear-DF invariants. A
+direct binary replacement additionally needs the original final SI/DI residue
+and inherited DX on the coding-error path; ordinary C supplies the ignored
+detail pointer in DS:DX instead.
+
 ## BLOODPRG location-panel entity draw candidate
 
 `0x009240` loads entity zero's sprite source extent through the DS alias of the

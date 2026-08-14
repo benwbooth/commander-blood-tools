@@ -1,0 +1,398 @@
+[
+  {
+    "name": "immediate_end",
+    "start_offset": 512,
+    "reverse_direction": false,
+    "script_hex": "ff",
+    "handler_opcodes": [],
+    "handler_cursors": [],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 513,
+    "yield_before": 165,
+    "yield_after": 165,
+    "skip_before": 90,
+    "skip_after": 90,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "lowest_opcode",
+    "start_offset": 768,
+    "reverse_direction": false,
+    "script_hex": "a0ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      769
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 770,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "highest_opcode",
+    "start_offset": 1024,
+    "reverse_direction": false,
+    "script_hex": "d2ff",
+    "handler_opcodes": [
+      210
+    ],
+    "handler_cursors": [
+      1025
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 1026,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "two_handler_chain",
+    "start_offset": 1280,
+    "reverse_direction": false,
+    "script_hex": "a0d2ff",
+    "handler_opcodes": [
+      160,
+      210
+    ],
+    "handler_cursors": [
+      1281,
+      1282
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 1283,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "invalid_below_range",
+    "start_offset": 1536,
+    "reverse_direction": false,
+    "script_hex": "9f",
+    "handler_opcodes": [],
+    "handler_cursors": [],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": true,
+    "result": 65535,
+    "final_cursor": 1537,
+    "yield_before": 165,
+    "yield_after": 165,
+    "skip_before": 90,
+    "skip_after": 90,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "d3_table_sentinel_is_not_executable",
+    "start_offset": 1792,
+    "reverse_direction": false,
+    "script_hex": "d3",
+    "handler_opcodes": [],
+    "handler_cursors": [],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": true,
+    "result": 65535,
+    "final_cursor": 1793,
+    "yield_before": 60,
+    "yield_after": 60,
+    "skip_before": 195,
+    "skip_after": 195,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "handler_stop_signal",
+    "start_offset": 2048,
+    "reverse_direction": false,
+    "script_hex": "aad3",
+    "handler_opcodes": [
+      170
+    ],
+    "handler_cursors": [
+      2049
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 2049,
+    "yield_before": 109,
+    "yield_after": 1,
+    "skip_before": 0,
+    "skip_after": 7,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "handler_resume_signal_clears_skip",
+    "start_offset": 2304,
+    "reverse_direction": false,
+    "script_hex": "acff",
+    "handler_opcodes": [
+      172
+    ],
+    "handler_cursors": [
+      2305
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 2306,
+    "yield_before": 109,
+    "yield_after": 2,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "skip_two_single_byte_tokens",
+    "start_offset": 2560,
+    "reverse_direction": false,
+    "script_hex": "a0a1a1ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      2561
+    ],
+    "token_advance_offsets": [
+      2561,
+      2562
+    ],
+    "token_skip_values": [
+      2,
+      1
+    ],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 2564,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 0,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "skip_variable_length_token",
+    "start_offset": 2816,
+    "reverse_direction": false,
+    "script_hex": "a0a03412ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      2817
+    ],
+    "token_advance_offsets": [
+      2817
+    ],
+    "token_skip_values": [
+      1
+    ],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 2821,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 1,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "skip_low_nibble_gate_clear",
+    "start_offset": 3072,
+    "reverse_direction": false,
+    "script_hex": "a0ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      3073
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 3074,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 16,
+    "skip_after": 16,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "skip_full_byte_countdown",
+    "start_offset": 3328,
+    "reverse_direction": false,
+    "script_hex": "a0a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      3329
+    ],
+    "token_advance_offsets": [
+      3329,
+      3330,
+      3331,
+      3332,
+      3333,
+      3334,
+      3335,
+      3336,
+      3337,
+      3338,
+      3339,
+      3340,
+      3341,
+      3342,
+      3343,
+      3344,
+      3345
+    ],
+    "token_skip_values": [
+      17,
+      16,
+      15,
+      14,
+      13,
+      12,
+      11,
+      10,
+      9,
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 3347,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 17,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 0,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "handler_threads_cursor",
+    "start_offset": 3584,
+    "reverse_direction": false,
+    "script_hex": "a03132ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      3585
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 3588,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "script_offset_wrap",
+    "start_offset": 65535,
+    "reverse_direction": false,
+    "script_hex": "a0ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      0
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 1,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 68
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "start_offset": 4608,
+    "reverse_direction": true,
+    "script_hex": "a0ff",
+    "handler_opcodes": [
+      160
+    ],
+    "handler_cursors": [
+      4607
+    ],
+    "token_advance_offsets": [],
+    "token_skip_values": [],
+    "error_called": false,
+    "result": 0,
+    "final_cursor": 4606,
+    "yield_before": 109,
+    "yield_after": 0,
+    "skip_before": 0,
+    "skip_after": 0,
+    "query_before": 165,
+    "query_after": 165,
+    "defined_status_flags": 1092
+  }
+]

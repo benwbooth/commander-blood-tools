@@ -4224,6 +4224,480 @@ def dlg_menu_words_inline_reveal_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_script_block_scan_vectors() -> list[dict[str, object]]:
+    entry = 0x56A6
+    body_size = 88
+    body_hash = "c4ff3c09a33b3bccb3f6a403f17144eddad34f62d8c07c42e1245e707474266c"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x56a6: recovered 88-byte body changed")
+
+    static_handlers = struct.unpack("<52H", EXE[0x142D0 : 0x14338])
+    if static_handlers[0] + 0x53A0 != 0x6559:
+        raise AssertionError("0x56a6: shipped A0 handler changed")
+    if static_handlers[0x32] + 0x53A0 != 0x64B8:
+        raise AssertionError("0x56a6: shipped D2 handler changed")
+    if static_handlers[0x33] != 0:
+        raise AssertionError("0x56a6: shipped D3 table sentinel changed")
+
+    data_segment = 0x3000
+    extra_segment = 0x4000
+    game_segment = 0x5000
+    stack_segment = 0x9000
+    caller_sp = 0xF800
+    return_address = 0xF410
+    handler_entry = 0xE000
+    decoy_handler_entry = 0xE100
+    error_entry = 0x0775
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    length_table = EXE[0x14338 : 0x143A0]
+
+    ret_handler = bytes.fromhex("c3")
+    cases = [
+        {
+            "name": "immediate_end",
+            "start": 0x0200,
+            "script": [0xFF],
+            "handler_ops": [],
+            "yield_before": 0xA5,
+            "skip_before": 0x5A,
+            "yield_after": 0xA5,
+            "skip_after": 0x5A,
+            "final_si": 0x0201,
+        },
+        {
+            "name": "lowest_opcode",
+            "start": 0x0300,
+            "script": [0xA0, 0xFF],
+            "handler_ops": [0xA0],
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x0302,
+        },
+        {
+            "name": "highest_opcode",
+            "start": 0x0400,
+            "script": [0xD2, 0xFF],
+            "handler_ops": [0xD2],
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x0402,
+        },
+        {
+            "name": "two_handler_chain",
+            "start": 0x0500,
+            "script": [0xA0, 0xD2, 0xFF],
+            "handler_ops": [0xA0, 0xD2],
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x0503,
+        },
+        {
+            "name": "invalid_below_range",
+            "start": 0x0600,
+            "script": [0x9F],
+            "handler_ops": [],
+            "error": True,
+            "yield_before": 0xA5,
+            "skip_before": 0x5A,
+            "yield_after": 0xA5,
+            "skip_after": 0x5A,
+            "final_si": 0x0601,
+        },
+        {
+            "name": "d3_table_sentinel_is_not_executable",
+            "start": 0x0700,
+            "script": [0xD3],
+            "handler_ops": [],
+            "error": True,
+            "yield_before": 0x3C,
+            "skip_before": 0xC3,
+            "yield_after": 0x3C,
+            "skip_after": 0xC3,
+            "final_si": 0x0701,
+        },
+        {
+            "name": "handler_stop_signal",
+            "start": 0x0800,
+            "script": [0xAA, 0xD3],
+            "handler_ops": [0xAA],
+            "handler_code": bytes.fromhex(
+                "65c606b4670165c606ab6707c3"
+            ),
+            "yield_after": 1,
+            "skip_after": 7,
+            "final_si": 0x0801,
+        },
+        {
+            "name": "handler_resume_signal_clears_skip",
+            "start": 0x0900,
+            "script": [0xAC, 0xFF],
+            "handler_ops": [0xAC],
+            "handler_code": bytes.fromhex(
+                "65c606b4670265c606ab6709c3"
+            ),
+            "yield_after": 2,
+            "skip_after": 0,
+            "final_si": 0x0902,
+        },
+        {
+            "name": "skip_two_single_byte_tokens",
+            "start": 0x0A00,
+            "script": [0xA0, 0xA1, 0xA1, 0xFF],
+            "handler_ops": [0xA0],
+            "handler_code": bytes.fromhex("65c606ab6702c3"),
+            "token_offsets": [0x0A01, 0x0A02],
+            "token_skip_values": [2, 1],
+            "yield_after": 0,
+            "skip_after": 0,
+            "query_after": 0,
+            "final_si": 0x0A04,
+        },
+        {
+            "name": "skip_variable_length_token",
+            "start": 0x0B00,
+            "script": [0xA0, 0xA0, 0x34, 0x12, 0xFF],
+            "handler_ops": [0xA0],
+            "handler_code": bytes.fromhex("65c606ab6701c3"),
+            "token_offsets": [0x0B01],
+            "token_skip_values": [1],
+            "yield_after": 0,
+            "skip_after": 0,
+            "query_after": 1,
+            "final_si": 0x0B05,
+        },
+        {
+            "name": "skip_low_nibble_gate_clear",
+            "start": 0x0C00,
+            "script": [0xA0, 0xFF],
+            "handler_ops": [0xA0],
+            "skip_before": 0x10,
+            "yield_after": 0,
+            "skip_after": 0x10,
+            "final_si": 0x0C02,
+        },
+        {
+            "name": "skip_full_byte_countdown",
+            "start": 0x0D00,
+            "script": [0xA0] + [0xA1] * 17 + [0xFF],
+            "handler_ops": [0xA0],
+            "skip_before": 0x11,
+            "token_offsets": [0x0D01 + index for index in range(17)],
+            "token_skip_values": list(range(17, 0, -1)),
+            "yield_after": 0,
+            "skip_after": 0,
+            "query_after": 0,
+            "final_si": 0x0D13,
+        },
+        {
+            "name": "handler_threads_cursor",
+            "start": 0x0E00,
+            "script": [0xA0, 0x31, 0x32, 0xFF],
+            "handler_ops": [0xA0],
+            "handler_code": bytes.fromhex("83c602c3"),
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x0E04,
+        },
+        {
+            "name": "script_offset_wrap",
+            "start": 0xFFFF,
+            "script": [0xA0, 0xFF],
+            "handler_ops": [0xA0],
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x0001,
+        },
+        {
+            "name": "inherited_reverse_direction",
+            "start": 0x1200,
+            "script": [0xA0, 0xFF],
+            "reverse": True,
+            "handler_ops": [0xA0],
+            "yield_after": 0,
+            "skip_after": 0,
+            "final_si": 0x11FE,
+        },
+    ]
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        start = int(case["start"])
+        script = bytes(case["script"])
+        reverse = bool(case.get("reverse", False))
+        handler_ops = [int(opcode) for opcode in case["handler_ops"]]
+        token_offsets = [int(offset) for offset in case.get("token_offsets", [])]
+        token_skip_values = [
+            int(value) for value in case.get("token_skip_values", [])
+        ]
+        yield_before = int(case.get("yield_before", 0x6D))
+        skip_before = int(case.get("skip_before", 0))
+        query_before = int(case.get("query_before", 0xA5))
+        handler_code = bytes(case.get("handler_code", ret_handler))
+        initial_flags = 0x0602 if reverse else 0x0202
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x6000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+
+        handler_table = [decoy_handler_entry] * 52
+        for opcode in handler_ops:
+            handler_table[opcode - 0xA0] = handler_entry
+        handler_table_bytes = struct.pack("<52H", *handler_table)
+        decoy_table_bytes = struct.pack("<52H", *([decoy_handler_entry] * 52))
+        script_placements = [
+            (
+                data_segment,
+                (start - index if reverse else start + index) & 0xFFFF,
+                bytes([value]),
+            )
+            for index, value in enumerate(script)
+        ]
+        memory = [
+            (0, return_address, b"\xCC"),
+            (0, handler_entry, handler_code),
+            (0, decoy_handler_entry, b"\xC3"),
+            (0, error_entry, b"\xCB"),
+            (stack_segment, 0x6F18, length_table),
+            (game_segment, 0x6EB0, handler_table_bytes),
+            (data_segment, 0x6EB0, decoy_table_bytes),
+            (extra_segment, 0x6EB0, decoy_table_bytes),
+            (stack_segment, 0x6EB0, decoy_table_bytes),
+            (game_segment, 0x67B4, bytes([yield_before])),
+            (game_segment, 0x67AB, bytes([skip_before])),
+            (game_segment, 0x67AD, bytes([query_before])),
+            (data_segment, 0x67B4, b"\x3C"),
+            (data_segment, 0x67AB, b"\xC3"),
+            (extra_segment, 0x67B4, b"\x5A"),
+            (extra_segment, 0x67AB, b"\xA5"),
+            (stack_segment, 0x67B4, b"\x96"),
+            (stack_segment, 0x67AB, b"\x69"),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ] + script_placements
+
+        handler_calls = []
+        token_calls = []
+        error_calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == handler_entry:
+                handler_calls.append(
+                    {
+                        "opcode": 0xA0 + machine.reg_read(UC_X86_REG_BX) // 2,
+                        "cursor": machine.reg_read(UC_X86_REG_SI),
+                        "yield": machine.mem_read(
+                            game_segment * 16 + 0x67B4, 1
+                        )[0],
+                    }
+                )
+            elif address == decoy_handler_entry:
+                raise AssertionError(f"0x56a6 {name}: decoy handler dispatched")
+            elif address == 0x62B6:
+                token_calls.append(
+                    {
+                        "cursor": machine.reg_read(UC_X86_REG_SI),
+                        "skip": machine.mem_read(
+                            game_segment * 16 + 0x67AB, 1
+                        )[0],
+                    }
+                )
+            elif address == error_entry:
+                sp = machine.reg_read(UC_X86_REG_SP)
+                error_calls.append(
+                    {
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "dx": machine.reg_read(UC_X86_REG_DX),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "sp": sp,
+                        "frame": bytes(
+                            machine.mem_read(stack_segment * 16 + sp, 4)
+                        ).hex(),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=200000,
+        )
+
+        step = -1 if reverse else 1
+        expected_handler_calls = [
+            {
+                "opcode": opcode,
+                "cursor": (start + step * (index + 1)) & 0xFFFF,
+                "yield": 0,
+            }
+            for index, opcode in enumerate(handler_ops)
+        ]
+        if name == "handler_threads_cursor":
+            expected_handler_calls[0]["cursor"] = 0x0E01
+        if handler_calls != expected_handler_calls:
+            raise AssertionError(
+                f"0x56a6 {name}: handlers={handler_calls}, "
+                f"expected={expected_handler_calls}"
+            )
+        expected_token_calls = [
+            {"cursor": offset, "skip": skip}
+            for offset, skip in zip(
+                token_offsets, token_skip_values, strict=True
+            )
+        ]
+        if token_calls != expected_token_calls:
+            raise AssertionError(
+                f"0x56a6 {name}: tokens={token_calls}, "
+                f"expected={expected_token_calls}"
+            )
+
+        expected_error = bool(case.get("error", False))
+        if expected_error:
+            expected_frame = struct.pack("<HH", 0x56FA, 0).hex()
+            expected_error_calls = [
+                {
+                    "ax": 0,
+                    "dx": initial["edx"] & 0xFFFF,
+                    "ds": data_segment,
+                    "sp": caller_sp - 4,
+                    "frame": expected_frame,
+                }
+            ]
+        else:
+            expected_error_calls = []
+        if error_calls != expected_error_calls:
+            raise AssertionError(
+                f"0x56a6 {name}: errors={error_calls}, "
+                f"expected={expected_error_calls}"
+            )
+
+        expected_ax = 0xFFFF if expected_error else 0
+        expected_bx = initial["ebx"] & 0xFFFF
+        if handler_ops:
+            expected_bx = (handler_ops[-1] - 0xA0) * 2
+        elif expected_error:
+            expected_bx = (expected_bx & 0xFF00) | (
+                (script[0] - 0xA0) & 0xFF
+            )
+        expected_registers = {
+            "eax": (initial["eax"] & 0xFFFF0000) | expected_ax,
+            "ebx": (initial["ebx"] & 0xFFFF0000) | expected_bx,
+            "ecx": initial["ecx"],
+            "edx": initial["edx"],
+            "esi": (initial["esi"] & 0xFFFF0000) | int(case["final_si"]),
+            "edi": (initial["edi"] & 0xFFFF0000) | 0x6EB0,
+            "ebp": initial["ebp"],
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": caller_sp + 2,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x56a6 {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        yield_after = machine.mem_read(game_segment * 16 + 0x67B4, 1)[0]
+        skip_after = machine.mem_read(game_segment * 16 + 0x67AB, 1)[0]
+        query_after = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        expected_yield = int(case["yield_after"])
+        expected_skip = int(case["skip_after"])
+        expected_query = int(case.get("query_after", query_before))
+        if (yield_after, skip_after, query_after) != (
+            expected_yield,
+            expected_skip,
+            expected_query,
+        ):
+            raise AssertionError(
+                f"0x56a6 {name}: state={(yield_after, skip_after, query_after)}, "
+                f"expected={(expected_yield, expected_skip, expected_query)}"
+            )
+
+        for segment, offset, expected in [
+            (data_segment, 0x67B4, 0x3C),
+            (data_segment, 0x67AB, 0xC3),
+            (extra_segment, 0x67B4, 0x5A),
+            (extra_segment, 0x67AB, 0xA5),
+            (stack_segment, 0x67B4, 0x96),
+            (stack_segment, 0x67AB, 0x69),
+        ]:
+            actual = machine.mem_read(segment * 16 + offset, 1)[0]
+            if actual != expected:
+                raise AssertionError(f"0x56a6 {name}: segment decoy changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x6EB0, 104)) != (
+            handler_table_bytes
+        ):
+            raise AssertionError(f"0x56a6 {name}: handler table changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x6F18, 104)) != length_table:
+            raise AssertionError(f"0x56a6 {name}: token length table changed")
+        for segment, offset, expected in script_placements:
+            actual = machine.mem_read(segment * 16 + offset, 1)[0]
+            if actual != expected[0]:
+                raise AssertionError(f"0x56a6 {name}: script changed")
+        actual_sentinel = bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        )
+        if actual_sentinel != stack_sentinel:
+            raise AssertionError(f"0x56a6 {name}: stack sentinel changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        status_mask = 0x0CD5
+        expected_status = 0x0044 | (initial_flags & 0x0400)
+        if flags & status_mask != expected_status:
+            raise AssertionError(
+                f"0x56a6 {name}: flags={flags & status_mask:#x}, "
+                f"expected={expected_status:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "start_offset": start,
+                "reverse_direction": reverse,
+                "script_hex": script.hex(),
+                "handler_opcodes": handler_ops,
+                "handler_cursors": [call["cursor"] for call in handler_calls],
+                "token_advance_offsets": token_offsets,
+                "token_skip_values": token_skip_values,
+                "error_called": expected_error,
+                "result": expected_ax,
+                "final_cursor": int(case["final_si"]),
+                "yield_before": yield_before,
+                "yield_after": yield_after,
+                "skip_before": skip_before,
+                "skip_after": skip_after,
+                "query_before": query_before,
+                "query_after": query_after,
+                "defined_status_flags": expected_status,
+            }
+        )
+
+    return vectors
+
+
 def vm_cod_scan_vectors() -> list[dict[str, object]]:
     entry = 0x739B
     return_address = 0xF39B
@@ -75229,6 +75703,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_72a8_natural.json",
         dlg_menu_words_inline_reveal_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_56a6_natural.json",
+        vm_script_block_scan_vectors(),
         args.check,
     )
     update_vector(
