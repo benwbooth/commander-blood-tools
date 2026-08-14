@@ -4104,6 +4104,32 @@ share the original data segment; drop-in replacement still needs the original
 preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
 contract for the implicit mode table and palette destination.
 
+## BLOODPRG confirmation-dialog candidate
+
+`0x0014CA` is the complete `ARE_YOU_SURE?` modal. When `DS:0x0B13` bit one
+is set, it marks the UI active, draws a filled and outlined 140-by-40 box at
+`(90,80)`, then draws the question, `YES`, and `NO` strings at `(100,88)`,
+`(120,105)`, and `(180,105)`. It tests the `DS:0x2555` YES rectangle before
+the `DS:0x255D` NO rectangle. YES decrements the complete mode byte rather
+than merely clearing one bit. NO clears the mode, UI bit two, and both mouse
+latches, and publishes dialog state 11.
+
+Five patched-callee vectors cover the inactive gate, active no-hit path, an
+ordinary YES hit, a YES hit with unrelated gate bits preserved by the full-byte
+decrement, and NO dismissal. They prove exact fill, outline, text, and hit-test
+order and arguments, YES short-circuiting, word-width UI masking, all state
+mutations, active-path `SI=0x018D` residue, segment state, stack integrity, and
+near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 55 instructions/175 bytes versus the original
+47/149, with 72.34 percent mnemonic-multiset overlap and no inline assembly.
+The source uses ordinary Boolean hit tests and typed drawing calls. Before a
+whole-source link, the existing rectangle-fill candidate must be changed to
+consume its ordinary fifth `height` argument instead of entry `BP`. A drop-in
+replacement additionally needs adapters for carry hit tests, inherited `BP`
+rectangle pointers, and the routine's selective `SI` exposure.
+
 ## BLOODPRG presentation-choice transition candidate
 
 `0x001AD3` coordinates the modal presentation-choice list and its rectangle

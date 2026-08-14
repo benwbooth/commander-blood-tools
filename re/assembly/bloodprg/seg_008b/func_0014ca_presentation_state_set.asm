@@ -6,8 +6,8 @@
 ; seg_off: 008b:061a
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: presentation_state_set
-; label_comment: presentation state set: if [0xb13]&2, [0xa32]=1 and [0x2793]|=4 (mark presentation active/pending). Sets the dialogue/presentation-active flags
+; label: confirm_dialog_step
+; label_comment: ARE_YOU_SURE confirmation modal. DS:0x0B13 bit one draws the 140x40 box, question, YES and NO labels, tests DS:0x2555 then DS:0x255D, decrements the full gate byte on YES, and fully dismisses the UI and mouse latches on NO. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_0014ca_confirm_dialog_step.c and re/tools/oracle_vectors/func_14ca_natural.json
 ; byte_count: 149
 ; boundary: cfg_blocks_6_terminals_2
 ; terminal: jmp 0x1559:1, ret:1

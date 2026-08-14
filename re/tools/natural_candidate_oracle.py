@@ -52115,6 +52115,278 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def confirm_dialog_step_vectors() -> list[dict[str, object]]:
+    entry = 0x14CA
+    return_address = 0xF568
+    expected_hash = "c772c1c2d807635b141b909ee6256798bdc032089d63cd7dc7c33a893da42590"
+    if hashlib.sha256(EXE[entry : entry + 149]).hexdigest() != expected_hash:
+        raise AssertionError("0x14ca: recovered 149-byte body changed")
+
+    cases = [
+        {"name": "inactive", "gate": 1, "hits": []},
+        {"name": "active_without_hit", "gate": 2, "hits": [False, False]},
+        {"name": "yes_hit_decrements_gate", "gate": 2, "hits": [True]},
+        {"name": "yes_hit_preserves_other_gate_bits", "gate": 0x83, "hits": [True]},
+        {"name": "no_hit_dismisses_and_resets_mouse", "gate": 2, "hits": [False, True]},
+    ]
+    data_segment = 0x2000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        gate = int(case["gate"])
+        hits = [bool(value) for value in case["hits"]]
+        hit_index = 0
+        calls: list[dict[str, object]] = []
+
+        data = bytearray(0x10000)
+        data[0x017B : 0x0189] = b"ARE_YOU_SURE?\0"
+        data[0x0189 : 0x018D] = b"YES\0"
+        data[0x018D : 0x0190] = b"NO\0"
+        data[0x2555 : 0x255D] = struct.pack("<hhhh", 120, 105, 30, 10)
+        data[0x255D : 0x2565] = struct.pack("<hhhh", 180, 105, 20, 10)
+        data[0x0B13] = gate
+        data[0x0A32 : 0x0A34] = struct.pack("<H", 0x7777)
+        data[0x2793 : 0x2795] = struct.pack("<H", 0xA5A1)
+        data[0x0A3E] = 0x55
+        data[0x0A40] = 0x66
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": data_segment,
+            "fs": 0x4000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal hit_index
+            if address == 0x366C:
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_fill",
+                        "color": machine.reg_read(UC_X86_REG_AL),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            elif address == 0x3545:
+                calls.append(
+                    {
+                        "call": "composite_draw_a",
+                        "color": machine.reg_read(UC_X86_REG_AL),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            elif address == 0x2B06:
+                text_offset = machine.reg_read(UC_X86_REG_SI)
+                calls.append(
+                    {
+                        "call": "square_caps_text_draw_display",
+                        "text_offset": text_offset,
+                        "text": bytes(
+                            machine.mem_read(data_segment * 16 + text_offset, 16)
+                        ).split(b"\0", 1)[0].decode("ascii"),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_DX),
+                        "color": machine.reg_read(UC_X86_REG_AL),
+                    }
+                )
+                if machine.reg_read(UC_X86_REG_DS) != data_segment:
+                    raise AssertionError(f"0x14ca {name}: text DS")
+            elif address == 0x7C95:
+                result = hits[hit_index]
+                rect_offset = machine.reg_read(UC_X86_REG_BP)
+                calls.append(
+                    {
+                        "call": "region_record_hittest",
+                        "rect_offset": rect_offset,
+                        "hit": result,
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    flags | 1 if result else flags & ~1,
+                )
+                hit_index += 1
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x366C, b"\xCB"),
+                (0, 0x3545, b"\xCB"),
+                (0, 0x2B06, b"\xCB"),
+                (0, 0x7C95, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=120,
+        )
+
+        expected_calls: list[dict[str, object]] = []
+        if gate & 2:
+            expected_calls = [
+                {
+                    "call": "framebuffer_rect_fill",
+                    "color": 0xE2,
+                    "x": 90,
+                    "y": 80,
+                    "width": 140,
+                    "height": 40,
+                },
+                {
+                    "call": "composite_draw_a",
+                    "color": 0xE8,
+                    "x": 90,
+                    "y": 80,
+                    "width": 140,
+                    "height": 40,
+                },
+                {
+                    "call": "square_caps_text_draw_display",
+                    "text_offset": 0x017B,
+                    "text": "ARE_YOU_SURE?",
+                    "x": 100,
+                    "y": 88,
+                    "color": 0xE8,
+                },
+                {
+                    "call": "square_caps_text_draw_display",
+                    "text_offset": 0x0189,
+                    "text": "YES",
+                    "x": 120,
+                    "y": 105,
+                    "color": 0xE8,
+                },
+                {
+                    "call": "square_caps_text_draw_display",
+                    "text_offset": 0x018D,
+                    "text": "NO",
+                    "x": 180,
+                    "y": 105,
+                    "color": 0xE8,
+                },
+                {
+                    "call": "region_record_hittest",
+                    "rect_offset": 0x2555,
+                    "hit": hits[0],
+                },
+            ]
+            if not hits[0]:
+                expected_calls.append(
+                    {
+                        "call": "region_record_hittest",
+                        "rect_offset": 0x255D,
+                        "hit": hits[1],
+                    }
+                )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x14ca {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+
+        expected_data = bytearray(data)
+        if gate & 2:
+            expected_data[0x0A32 : 0x0A34] = struct.pack("<H", 1)
+            expected_ui = struct.unpack("<H", expected_data[0x2793:0x2795])[0]
+            expected_data[0x2793 : 0x2795] = struct.pack(
+                "<H", expected_ui | 4
+            )
+            if hits[0]:
+                expected_data[0x0B13] = (gate - 1) & 0xFF
+            elif hits[1]:
+                expected_data[0x0B13] = 0
+                expected_ui = struct.unpack(
+                    "<H", expected_data[0x2793:0x2795]
+                )[0]
+                expected_data[0x2793 : 0x2795] = struct.pack(
+                    "<H", expected_ui & 0xFFFB
+                )
+                expected_data[0x0A32 : 0x0A34] = struct.pack("<H", 11)
+                expected_data[0x0A3E] = 0
+                expected_data[0x0A40] = 0
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            for offset, (actual, expected) in enumerate(
+                zip(actual_data, expected_data)
+            ):
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x14ca {name}: data[{offset:#06x}]="
+                        f"{actual:#04x}, expected={expected:#04x}"
+                    )
+            raise AssertionError(f"0x14ca {name}: data length mismatch")
+        for register in ("eax", "ebx", "ecx", "edx", "edi", "ebp"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x14ca {name}: changed {register}")
+        expected_si = (
+            (initial["esi"] & 0xFFFF0000) | 0x018D
+            if gate & 2
+            else initial["esi"]
+        )
+        if machine.reg_read(UC_X86_REG_ESI) != expected_si:
+            raise AssertionError(f"0x14ca {name}: SI mismatch")
+        for register in ("ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x14ca {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x14ca {name}: near return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x14ca {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "initial": {"gate": gate, "hits": hits},
+                "calls": calls,
+                "final": {
+                    "gate": actual_data[0x0B13],
+                    "dialog_state": struct.unpack(
+                        "<H", actual_data[0x0A32:0x0A34]
+                    )[0],
+                    "ui_state": struct.unpack(
+                        "<H", actual_data[0x2793:0x2795]
+                    )[0],
+                    "mouse_primary": actual_data[0x0A3E],
+                    "mouse_pending": actual_data[0x0A40],
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def save_load_menu_step_vectors() -> list[dict[str, object]]:
     entry = 0x1B4B
     return_address = 0xF570
@@ -59781,6 +60053,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1ad3_natural.json",
         presentation_choice_transition_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_14ca_natural.json",
+        confirm_dialog_step_vectors(),
         args.check,
     )
     update_vector(

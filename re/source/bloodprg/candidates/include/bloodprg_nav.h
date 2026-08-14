@@ -3,6 +3,7 @@
 
 #include "bloodprg_common.h"
 #include "bloodprg_entity.h"
+#include "bloodprg_input.h"
 #include "bloodprg_resource.h"
 #include "bloodprg_vm.h"
 
@@ -43,6 +44,12 @@ extern const cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
 extern const cb_i16 presentation_choice_current_rect[4]; /* DS:0x2AAB */
 extern volatile cb_u16 presentation_choice_result; /* DS:0x0ACA */
 extern volatile cb_u8 presentation_list_editing; /* DS:0x27E6 */
+extern volatile cb_u16 confirm_dialog_state; /* DS:0x0A32 */
+extern const cb_u8 confirm_dialog_question[]; /* DS:0x017B */
+extern const cb_u8 confirm_dialog_yes[]; /* DS:0x0189 */
+extern const cb_u8 confirm_dialog_no[]; /* DS:0x018D */
+extern const bloodprg_rect_i16 confirm_dialog_yes_region; /* DS:0x2555 */
+extern const bloodprg_rect_i16 confirm_dialog_no_region; /* DS:0x255D */
 extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
 extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
@@ -57,6 +64,7 @@ int CB_NEAR presentation_line_helper(
 cb_i16 CB_FAR list_widget_layout_unified(
         const cb_u16 CB_NEAR *items); /* 0x008428 */
 void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */
+void CB_NEAR confirm_dialog_step(void); /* 0x0014CA */
 void CB_NEAR nav_choice_handler_0(void); /* 0x008713 */
 void CB_NEAR nav_choice_handler_3(void); /* 0x008848 */
 

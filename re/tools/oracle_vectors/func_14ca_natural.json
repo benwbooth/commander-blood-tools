@@ -1,0 +1,291 @@
+[
+  {
+    "name": "inactive",
+    "initial": {
+      "gate": 1,
+      "hits": []
+    },
+    "calls": [],
+    "final": {
+      "gate": 1,
+      "dialog_state": 30583,
+      "ui_state": 42401,
+      "mouse_primary": 85,
+      "mouse_pending": 102,
+      "si": 22136
+    },
+    "return": "near"
+  },
+  {
+    "name": "active_without_hit",
+    "initial": {
+      "gate": 2,
+      "hits": [
+        false,
+        false
+      ]
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 226,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "composite_draw_a",
+        "color": 232,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 379,
+        "text": "ARE_YOU_SURE?",
+        "x": 100,
+        "y": 88,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 393,
+        "text": "YES",
+        "x": 120,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 397,
+        "text": "NO",
+        "x": 180,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9557,
+        "hit": false
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9565,
+        "hit": false
+      }
+    ],
+    "final": {
+      "gate": 2,
+      "dialog_state": 1,
+      "ui_state": 42405,
+      "mouse_primary": 85,
+      "mouse_pending": 102,
+      "si": 397
+    },
+    "return": "near"
+  },
+  {
+    "name": "yes_hit_decrements_gate",
+    "initial": {
+      "gate": 2,
+      "hits": [
+        true
+      ]
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 226,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "composite_draw_a",
+        "color": 232,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 379,
+        "text": "ARE_YOU_SURE?",
+        "x": 100,
+        "y": 88,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 393,
+        "text": "YES",
+        "x": 120,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 397,
+        "text": "NO",
+        "x": 180,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9557,
+        "hit": true
+      }
+    ],
+    "final": {
+      "gate": 1,
+      "dialog_state": 1,
+      "ui_state": 42405,
+      "mouse_primary": 85,
+      "mouse_pending": 102,
+      "si": 397
+    },
+    "return": "near"
+  },
+  {
+    "name": "yes_hit_preserves_other_gate_bits",
+    "initial": {
+      "gate": 131,
+      "hits": [
+        true
+      ]
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 226,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "composite_draw_a",
+        "color": 232,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 379,
+        "text": "ARE_YOU_SURE?",
+        "x": 100,
+        "y": 88,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 393,
+        "text": "YES",
+        "x": 120,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 397,
+        "text": "NO",
+        "x": 180,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9557,
+        "hit": true
+      }
+    ],
+    "final": {
+      "gate": 130,
+      "dialog_state": 1,
+      "ui_state": 42405,
+      "mouse_primary": 85,
+      "mouse_pending": 102,
+      "si": 397
+    },
+    "return": "near"
+  },
+  {
+    "name": "no_hit_dismisses_and_resets_mouse",
+    "initial": {
+      "gate": 2,
+      "hits": [
+        false,
+        true
+      ]
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 226,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "composite_draw_a",
+        "color": 232,
+        "x": 90,
+        "y": 80,
+        "width": 140,
+        "height": 40
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 379,
+        "text": "ARE_YOU_SURE?",
+        "x": 100,
+        "y": 88,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 393,
+        "text": "YES",
+        "x": 120,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_offset": 397,
+        "text": "NO",
+        "x": 180,
+        "y": 105,
+        "color": 232
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9557,
+        "hit": false
+      },
+      {
+        "call": "region_record_hittest",
+        "rect_offset": 9565,
+        "hit": true
+      }
+    ],
+    "final": {
+      "gate": 0,
+      "dialog_state": 11,
+      "ui_state": 42401,
+      "mouse_primary": 0,
+      "mouse_pending": 0,
+      "si": 397
+    },
+    "return": "near"
+  }
+]
