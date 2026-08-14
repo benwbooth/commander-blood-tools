@@ -4753,6 +4753,34 @@ assembly. The generated comparisons and branches match the original shape;
 direct replacement only needs BP rather than BX rectangle allocation and the
 original shared epilogue.
 
+## BLOODPRG camera navigation update candidate
+
+`0x00792D` gates camera navigation on bit zero of the active-view byte and a
+zero approach phase. It follows the arche record's absolute `+0x16` link using
+only the segment word from `vm_record_base`, accepts object kinds with mask
+`0x18`, and requires the UI-region helper to return exactly 31.
+
+After publishing presentation state 12, a zero 16-bit access field sets the UI
+redraw bit and conditionally arms actor slot three unless its lock bit is set.
+A nonzero access field clears 768 bytes at `GS:0x5851`, copies 768 bytes from
+`DS:0x5251` to `GS:0x5551`, configures the palette transition, and resets the
+related navigation, VM, and ship state.
+
+Sixteen patched-helper vectors cover both entry gates, rejected kind values,
+exact positive and negative helper results, every no-destination slot outcome,
+the full transition, callback changes to the access word and slot flags, a
+wrapped arche link, and a nonzero ignored base offset. They prove the complete
+palette extents and segment ownership, all state writes, helper frame, register
+residue, terminal flags, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the header-integrated
+natural candidate warning-free to 70 instructions/195 bytes versus 57/184 in
+the original, with 98.25 percent mnemonic-multiset overlap and no inline
+assembly. The standalone compiler-corpus probe emits 56 instructions/179 bytes
+with 87.72 percent overlap. Direct replacement still needs the original
+far-call placement, AX/DS/SI/ES/DI preservation, dword `REP STOSD`/`MOVSD`
+lowering, and exact `CX`/`EAX` and flag residue.
+
 ## BLOODPRG navigation actor slot update loop candidate
 
 `0x007D7B` first combines nine low-byte busy sources. Only the low byte of the

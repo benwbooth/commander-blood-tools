@@ -74,6 +74,8 @@ extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
 extern cb_u8
         palette_transition_source[768]; /* DS:0x5851 */
 extern cb_u8 CB_GAME_DATA
+        palette_transition_source_gs[768]; /* GS:0x5851 */
+extern cb_u8 CB_GAME_DATA
         palette_transition_target[768]; /* GS:0x5551 */
 extern volatile cb_u16
         palette_transition_increment; /* DS:0x524D */

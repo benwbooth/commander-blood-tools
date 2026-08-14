@@ -1,0 +1,338 @@
+[
+  {
+    "name": "camera_active_gate",
+    "camera_active": 1,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": null,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": false,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "camera_high_bit_ignored",
+    "camera_active": 128,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 9,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "approach_phase_gate",
+    "camera_active": 0,
+    "approach_phase": 128,
+    "kind": 24,
+    "ui_result": null,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": false,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "object_kind_zero_rejected",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 0,
+    "ui_result": null,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": false,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "object_kind_unrelated_rejected",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 256,
+    "ui_result": null,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": false,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_poll_result_30_rejected",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 30,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_poll_negative_rejected",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 65535,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_08_no_destination_arms_slot",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 8,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 9,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_10_no_destination_locked_slot",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 16,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 162,
+    "slot_flags_after": 162,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "kind_18_no_destination_preserves_loaded_bits",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 161,
+    "slot_flags_after": 169,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "destination_available_full_transition",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 1,
+    "access_count_after": 1,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": true,
+    "full_transition": true,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_callback_clears_access_count",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 4660,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 9,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_callback_sets_access_count",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 32768,
+    "slot_flags_before": 1,
+    "slot_flags_after": 1,
+    "helper_called": true,
+    "full_transition": true,
+    "no_destination": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_callback_locks_slot",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 162,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_arche_link",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 9,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "record_base_offset_ignored",
+    "camera_active": 0,
+    "approach_phase": 0,
+    "kind": 24,
+    "ui_result": 31,
+    "access_count_before": 0,
+    "access_count_after": 0,
+    "slot_flags_before": 1,
+    "slot_flags_after": 9,
+    "helper_called": true,
+    "full_transition": false,
+    "no_destination": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

@@ -61,6 +61,7 @@ extern volatile cb_u8 nav_actor_transition_phase; /* DS:0x2792 */
 extern volatile cb_u16 nav_kind100_target_record; /* DS:0x27D5 */
 extern volatile cb_u8 nav_camera_view_active; /* DS:0x278A */
 extern volatile cb_u8 nav_camera_view_state; /* DS:0x278B */
+extern volatile cb_u8 nav_camera_approach_phase; /* DS:0x27DF */
 extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
@@ -109,6 +110,7 @@ int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
 void CB_NEAR nav_actor_slot_update_loop(void); /* 0x007D7B */
 void CB_NEAR presentation_mode_dispatch(void); /* 0x0078D0 */
+void CB_NEAR camera_nav_update(void); /* 0x00792D */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_0(

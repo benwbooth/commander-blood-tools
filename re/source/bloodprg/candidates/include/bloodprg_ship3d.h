@@ -103,6 +103,8 @@ extern volatile cb_u8 ship_3d_depth_opening; /* DS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
 extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
+extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
+extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
 extern volatile cb_u8 ship_3d_alien_overlay_armed; /* DS:0x0AE3 */
 extern volatile cb_u8 ship_3d_temp_snd_trigger; /* DS:0x0AE4 */
 extern volatile cb_u8 ship_3d_nav_choice_sound_gate; /* DS:0x0B13 */

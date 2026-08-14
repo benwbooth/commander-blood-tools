@@ -51066,6 +51066,374 @@ def presentation_mode_dispatch_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def camera_nav_update_vectors() -> list[dict[str, object]]:
+    entry = 0x792D
+    ui_poll_entry = 0x82C3
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    heap_segment = 0x6000
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    cases = [
+        {"name": "camera_active_gate", "camera_active": 0x01},
+        {"name": "camera_high_bit_ignored", "camera_active": 0x80},
+        {"name": "approach_phase_gate", "approach_phase": 0x80},
+        {"name": "object_kind_zero_rejected", "kind": 0x0000},
+        {"name": "object_kind_unrelated_rejected", "kind": 0x0100},
+        {"name": "ui_poll_result_30_rejected", "ui_result": 30},
+        {"name": "ui_poll_negative_rejected", "ui_result": 0xFFFF},
+        {"name": "kind_08_no_destination_arms_slot", "kind": 0x0008},
+        {
+            "name": "kind_10_no_destination_locked_slot",
+            "kind": 0x0010,
+            "slot_flags": 0xA2,
+        },
+        {
+            "name": "kind_18_no_destination_preserves_loaded_bits",
+            "kind": 0x0018,
+            "slot_flags": 0xA1,
+        },
+        {
+            "name": "destination_available_full_transition",
+            "kind": 0x0018,
+            "access_count": 1,
+        },
+        {
+            "name": "ui_callback_clears_access_count",
+            "access_count": 0x1234,
+            "helper_access_count": 0,
+        },
+        {
+            "name": "ui_callback_sets_access_count",
+            "access_count": 0,
+            "helper_access_count": 0x8000,
+        },
+        {
+            "name": "ui_callback_locks_slot",
+            "slot_flags": 0x01,
+            "helper_slot_flags": 0xA2,
+        },
+        {
+            "name": "wrapped_arche_link",
+            "arche_offset": 0xFFF8,
+            "target_offset": 0x4100,
+        },
+        {
+            "name": "record_base_offset_ignored",
+            "record_base_offset": 0x7331,
+            "target_offset": 0x4200,
+        },
+    ]
+    expected_hash = "de36e7ef9719c00e2e30248c395eb1bb6d6f39e379954e2d0cdc9d6a7c74cd2d"
+    if hashlib.sha256(EXE[entry : entry + 184]).hexdigest() != expected_hash:
+        raise AssertionError("0x792d: recovered 184-byte body changed")
+
+    def logic_flags(value: int, width: int) -> dict[str, bool]:
+        value &= (1 << width) - 1
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & (1 << (width - 1))),
+            "of": False,
+        }
+
+    def sub_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFFFF
+        return {
+            "cf": (left & 0xFFFF) < (right & 0xFFFF),
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        camera_active = int(case.get("camera_active", 0))
+        approach_phase = int(case.get("approach_phase", 0))
+        kind = int(case.get("kind", 0x0018))
+        ui_result = int(case.get("ui_result", 31))
+        access_count_before = int(case.get("access_count", 0))
+        helper_access_count = case.get("helper_access_count")
+        slot_flags_before = int(case.get("slot_flags", 0x01))
+        helper_slot_flags = case.get("helper_slot_flags")
+        arche_offset = int(case.get("arche_offset", 0x2300))
+        target_offset = int(case.get("target_offset", 0x4000))
+        record_base_offset = int(case.get("record_base_offset", 0x8123))
+        ui_word_before = (0xA140 + case_index * 0x0101) & 0xFFFF
+        presentation_before = (0x3200 + case_index * 0x0103) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x278A] = camera_active
+        data_before[0x27DF] = approach_phase
+        struct.pack_into("<H", data_before, 0x6724, record_base_offset)
+        struct.pack_into("<H", data_before, 0x6726, heap_segment)
+        struct.pack_into("<H", data_before, 0x6752, arche_offset)
+        struct.pack_into("<H", data_before, 0x2793, ui_word_before)
+        struct.pack_into("<H", data_before, 0x0A32, presentation_before)
+        data_before[0x2A63] = slot_flags_before
+        live_palette_before = bytes(
+            (index * 37 + case_index * 19 + 0x55) & 0xFF for index in range(768)
+        )
+        data_before[0x5251 : 0x5251 + 768] = live_palette_before
+
+        heap_before = bytearray(
+            (offset * 23 + (offset >> 8) * 31 + case_index * 11 + 0x79)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        link_offset = (arche_offset + 0x16) & 0xFFFF
+        heap_before[link_offset : link_offset + 2] = struct.pack("<H", target_offset)
+        heap_before[target_offset : target_offset + 2] = struct.pack("<H", kind)
+        heap_before[target_offset + 0x14 : target_offset + 0x16] = struct.pack(
+            "<H", access_count_before
+        )
+
+        game_before = bytearray(
+            (offset * 11 + case_index * 41 + 0xA3) & 0xFF
+            for offset in range(0x10000)
+        )
+        transition_target_before = bytes(
+            (index * 13 + case_index * 7 + 0x31) & 0xFF for index in range(768)
+        )
+        transition_source_before = bytes(
+            (index * 29 + case_index * 5 + 0x87) & 0xFF for index in range(768)
+        )
+        game_before[0x5551 : 0x5551 + 768] = transition_target_before
+        game_before[0x5851 : 0x5851 + 768] = transition_source_before
+
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 31 + 0x67)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_before[0xFF00 : 0xFF08] = struct.pack("<H", return_address) + stack_sentinel
+        initial = {
+            "eax": 0xA1A1BE00 | ((0x40 + case_index) & 0xFF),
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x5100,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, int]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != ui_poll_entry:
+                return
+            calls.append({
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "kind": struct.unpack(
+                    "<H", machine.mem_read(heap_segment * 16 + target_offset, 2)
+                )[0],
+                "access_count": struct.unpack(
+                    "<H", machine.mem_read(heap_segment * 16 + target_offset + 0x14, 2)
+                )[0],
+                "slot_flags": machine.mem_read(data_segment * 16 + 0x2A63, 1)[0],
+            })
+            if helper_access_count is not None:
+                machine.mem_write(
+                    heap_segment * 16 + target_offset + 0x14,
+                    struct.pack("<H", int(helper_access_count)),
+                )
+            if helper_slot_flags is not None:
+                machine.mem_write(
+                    data_segment * 16 + 0x2A63,
+                    bytes((int(helper_slot_flags),)),
+                )
+            machine.reg_write(UC_X86_REG_AX, ui_result)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, ui_poll_entry, b"\xCB"),
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (heap_segment, 0, bytes(heap_before)),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=2000,
+        )
+
+        accepted_kind = (kind & 0x18) != 0
+        helper_called = (
+            (camera_active & 1) == 0
+            and approach_phase == 0
+            and accepted_kind
+        )
+        expected_calls = []
+        if helper_called:
+            expected_calls.append({
+                "cs": 0,
+                "sp": 0xFEF2,
+                "ax": (initial["eax"] & 0xFF00) | approach_phase,
+                "di": target_offset,
+                "es": heap_segment,
+                "kind": kind,
+                "access_count": access_count_before,
+                "slot_flags": slot_flags_before,
+            })
+        if calls != expected_calls:
+            raise AssertionError(f"0x792d {name}: calls={calls}, expected={expected_calls}")
+
+        access_count_after = (
+            int(helper_access_count)
+            if helper_called and helper_access_count is not None
+            else access_count_before
+        )
+        slot_flags_after = (
+            int(helper_slot_flags)
+            if helper_called and helper_slot_flags is not None
+            else slot_flags_before
+        )
+        full_transition = helper_called and ui_result == 31 and access_count_after != 0
+        no_destination = helper_called and ui_result == 31 and access_count_after == 0
+
+        expected_data = bytearray(data_before)
+        expected_heap = bytearray(heap_before)
+        expected_game = bytearray(game_before)
+        if helper_called and helper_access_count is not None:
+            expected_heap[target_offset + 0x14 : target_offset + 0x16] = struct.pack(
+                "<H", access_count_after
+            )
+        if helper_called and helper_slot_flags is not None:
+            expected_data[0x2A63] = slot_flags_after
+
+        if no_destination:
+            struct.pack_into("<H", expected_data, 0x0A32, 12)
+            expected_data[0x2793] |= 4
+            if (slot_flags_after & 2) == 0:
+                slot_flags_after |= 8
+                expected_data[0x2A63] = slot_flags_after
+            if (int(expected_data[0x2A63]) & 2) != 0:
+                terminal_flags = logic_flags(int(expected_data[0x2A63]) & 2, 8)
+            else:
+                terminal_flags = logic_flags(slot_flags_after, 8)
+        elif full_transition:
+            struct.pack_into("<H", expected_data, 0x0A32, 12)
+            expected_game[0x5851 : 0x5851 + 768] = bytes(768)
+            expected_game[0x5551 : 0x5551 + 768] = live_palette_before
+            struct.pack_into("<H", expected_data, 0x524F, 0)
+            struct.pack_into("<H", expected_data, 0x524D, 0x14)
+            expected_data[0x5B51] = 0
+            expected_data[0x5B52] = 0xFF
+            struct.pack_into("<H", expected_data, 0x2793, 0)
+            struct.pack_into("<H", expected_data, 0x24F3, 5)
+            expected_data[0x2535] = 1
+            expected_data[0x67BB] = 0
+            expected_data[0x252D] = 0
+            struct.pack_into("<H", expected_data, 0x2527, 0)
+            expected_data[0x252F] = 0
+            expected_data[0x2529] = 0
+            terminal_flags = logic_flags(0, 32)
+        elif (camera_active & 1) != 0:
+            terminal_flags = logic_flags(camera_active & 1, 8)
+        elif approach_phase != 0:
+            terminal_flags = logic_flags(approach_phase, 8)
+        elif not accepted_kind:
+            terminal_flags = logic_flags(kind & 0x18, 16)
+        else:
+            terminal_flags = sub_flags_16(ui_result, 31)
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_data, expected_data))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x792d {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, expected={expected_data[mismatch]:#x}"
+            )
+        actual_heap = bytes(machine.mem_read(heap_segment * 16, 0x10000))
+        if actual_heap != bytes(expected_heap):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_heap, expected_heap))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x792d {name}: heap[{mismatch:#x}]={actual_heap[mismatch]:#x}, expected={expected_heap[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_game, expected_game))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x792d {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, expected={expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x792d {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if full_transition:
+            expected_registers["eax"] &= 0x0000FFFF
+            expected_registers["ecx"] &= 0xFFFF0000
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x792d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x792d {name}: return changed CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x792d {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append({
+            "name": name,
+            "camera_active": camera_active,
+            "approach_phase": approach_phase,
+            "kind": kind,
+            "ui_result": ui_result if helper_called else None,
+            "access_count_before": access_count_before,
+            "access_count_after": access_count_after,
+            "slot_flags_before": slot_flags_before,
+            "slot_flags_after": slot_flags_after,
+            "helper_called": helper_called,
+            "full_transition": full_transition,
+            "no_destination": no_destination,
+            "defined_flags": terminal_flags,
+        })
+    return vectors
+
+
 def nav_actor_slot_update_loop_vectors() -> list[dict[str, object]]:
     entry = 0x7D7B
     mouse_hit_entry = 0x8269
@@ -69299,6 +69667,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_78d0_natural.json",
         presentation_mode_dispatch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_792d_natural.json",
+        camera_nav_update_vectors(),
         args.check,
     )
     update_vector(
