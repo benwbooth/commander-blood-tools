@@ -883,6 +883,47 @@ pub enum VmToken {
         /// `0x0000`-terminated list of `SCRIPT*.DIC` word offsets.
         word_offsets: Vec<u16>,
     },
+    /// `0xA0 <target:u16>` begins or nests a query guard and pushes the branch
+    /// target consumed by a failing condition.
+    GuardPush {
+        offset: usize,
+        target: u16,
+        len: usize,
+    },
+    /// `0xA1` leaves query mode and pops one guard target when present.
+    GuardPop {
+        offset: usize,
+        len: usize,
+    },
+    /// `0xA4 <target:u16>` unconditional script jump.
+    Jump {
+        offset: usize,
+        target: u16,
+        len: usize,
+    },
+    /// `0xA5` state-array operation. Query mode carries only the signed-byte
+    /// index; set mode additionally carries the word written to that slot.
+    StateArray {
+        offset: usize,
+        index: u8,
+        value: Option<u16>,
+        len: usize,
+    },
+    /// `0xA9 <flags:u8> <target:u16>` top-level conditional block opener.
+    /// Bit zero chooses direct jump versus resetting the guard stack to target.
+    ConditionalBlock {
+        offset: usize,
+        flags: u8,
+        target: u16,
+        len: usize,
+    },
+    /// Operand-free `0xCE`/`0xD0` branch through the current guard target using
+    /// the presentation or game-flag condition handled by the native VM.
+    FlagBranch {
+        offset: usize,
+        opcode: u8,
+        len: usize,
+    },
     /// `0xC4` actor/object record operation.
     ///
     /// The DOS handler consumes two u16 operands. The first one is the record
@@ -1065,6 +1106,12 @@ impl VmToken {
     pub fn offset(&self) -> usize {
         match self {
             VmToken::Text { offset, .. }
+            | VmToken::GuardPush { offset, .. }
+            | VmToken::GuardPop { offset, .. }
+            | VmToken::Jump { offset, .. }
+            | VmToken::StateArray { offset, .. }
+            | VmToken::ConditionalBlock { offset, .. }
+            | VmToken::FlagBranch { offset, .. }
             | VmToken::Actor { offset, .. }
             | VmToken::RecordLink { offset, .. }
             | VmToken::RecordEntry { offset, .. }
@@ -1121,6 +1168,28 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             }
             w(&mut b, 0);
         }
+        VmToken::GuardPush { target, .. } => {
+            b.push(OP_PUSH);
+            w(&mut b, *target);
+        }
+        VmToken::GuardPop { .. } => b.push(OP_POP),
+        VmToken::Jump { target, .. } => {
+            b.push(OP_JUMP);
+            w(&mut b, *target);
+        }
+        VmToken::StateArray { index, value, .. } => {
+            b.push(OP_COND_STATE_ARRAY);
+            b.push(*index);
+            if let Some(value) = value {
+                w(&mut b, *value);
+            }
+        }
+        VmToken::ConditionalBlock { flags, target, .. } => {
+            b.push(OP_COND_JUMP);
+            b.push(*flags);
+            w(&mut b, *target);
+        }
+        VmToken::FlagBranch { opcode, .. } => b.push(*opcode),
         VmToken::Actor { record_offset, related_record_offset, inverted, .. } => {
             b.push(0xC4);
             if *inverted {
@@ -1324,7 +1393,41 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             len = l;
         }
 
-        if is_shared_state_opcode(op) {
+        if op == OP_PUSH {
+            out.push(VmToken::GuardPush {
+                offset: pos,
+                target: read_u16(cod, pos + 1).unwrap_or(0),
+                len,
+            });
+        } else if op == OP_POP {
+            out.push(VmToken::GuardPop { offset: pos, len });
+        } else if op == OP_JUMP {
+            out.push(VmToken::Jump {
+                offset: pos,
+                target: read_u16(cod, pos + 1).unwrap_or(0),
+                len,
+            });
+        } else if op == OP_COND_STATE_ARRAY {
+            out.push(VmToken::StateArray {
+                offset: pos,
+                index: cod.get(pos + 1).copied().unwrap_or(0),
+                value: (len == 4).then(|| read_u16(cod, pos + 2).unwrap_or(0)),
+                len,
+            });
+        } else if op == OP_COND_JUMP {
+            out.push(VmToken::ConditionalBlock {
+                offset: pos,
+                flags: cod.get(pos + 1).copied().unwrap_or(0),
+                target: read_u16(cod, pos + 2).unwrap_or(0),
+                len,
+            });
+        } else if matches!(op, OP_COND_BRANCH_PRESENTATION | OP_COND_BRANCH_GAMEFLAG) {
+            out.push(VmToken::FlagBranch {
+                offset: pos,
+                opcode: op,
+                len,
+            });
+        } else if is_shared_state_opcode(op) {
             out.push(VmToken::SharedState {
                 offset: pos,
                 opcode: op,
@@ -10638,7 +10741,13 @@ mod tests {
                         let enc = encode_token(t).unwrap();
                         (*offset, enc.len())
                     }
-                    VmToken::Actor { offset, len, .. }
+                    VmToken::GuardPush { offset, len, .. }
+                    | VmToken::GuardPop { offset, len, .. }
+                    | VmToken::Jump { offset, len, .. }
+                    | VmToken::StateArray { offset, len, .. }
+                    | VmToken::ConditionalBlock { offset, len, .. }
+                    | VmToken::FlagBranch { offset, len, .. }
+                    | VmToken::Actor { offset, len, .. }
                     | VmToken::RecordLink { offset, len, .. }
                     | VmToken::RecordEntry { offset, len, .. }
                     | VmToken::RecordClear { offset, len, .. }

@@ -1875,6 +1875,123 @@ fn push_vm_token_disassembly(
     token: &vm::VmToken,
 ) -> bool {
     match token {
+        vm::VmToken::GuardPush {
+            offset,
+            target,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a0".to_string(),
+                mnemonic: "guard_push".to_string(),
+                operands: format!("target=0x{target:04x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::GuardPop { offset, len } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a1".to_string(),
+                mnemonic: "guard_pop".to_string(),
+                operands: String::new(),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::Jump {
+            offset,
+            target,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a4".to_string(),
+                mnemonic: "jump".to_string(),
+                operands: format!("target=0x{target:04x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::StateArray {
+            offset,
+            index,
+            value,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a5".to_string(),
+                mnemonic: if value.is_some() {
+                    "state_array_set".to_string()
+                } else {
+                    "state_array_test".to_string()
+                },
+                operands: value.map_or_else(
+                    || format!("index=0x{index:02x}"),
+                    |value| format!("index=0x{index:02x} value=0x{value:04x}"),
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::ConditionalBlock {
+            offset,
+            flags,
+            target,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a9".to_string(),
+                mnemonic: "conditional_block".to_string(),
+                operands: format!("flags=0x{flags:02x} target=0x{target:04x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::FlagBranch {
+            offset,
+            opcode,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: if *opcode == vm::OP_COND_BRANCH_PRESENTATION {
+                    "branch_presentation".to_string()
+                } else {
+                    "branch_gameflag".to_string()
+                },
+                operands: String::new(),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
         vm::VmToken::Actor {
             offset,
             record_offset,
@@ -2228,6 +2345,12 @@ fn push_vm_token_disassembly(
 fn vm_token_offset(token: &vm::VmToken) -> usize {
     match token {
         vm::VmToken::Text { offset, .. }
+        | vm::VmToken::GuardPush { offset, .. }
+        | vm::VmToken::GuardPop { offset, .. }
+        | vm::VmToken::Jump { offset, .. }
+        | vm::VmToken::StateArray { offset, .. }
+        | vm::VmToken::ConditionalBlock { offset, .. }
+        | vm::VmToken::FlagBranch { offset, .. }
         | vm::VmToken::Actor { offset, .. }
         | vm::VmToken::RecordLink { offset, .. }
         | vm::VmToken::RecordEntry { offset, .. }
@@ -2256,7 +2379,13 @@ fn vm_token_len(token: &vm::VmToken) -> usize {
             word_offsets,
             ..
         } => text_token_end(*offset, *flags_b4, *loop_target, word_offsets.len()) - offset,
-        vm::VmToken::Actor { len, .. }
+        vm::VmToken::GuardPush { len, .. }
+        | vm::VmToken::GuardPop { len, .. }
+        | vm::VmToken::Jump { len, .. }
+        | vm::VmToken::StateArray { len, .. }
+        | vm::VmToken::ConditionalBlock { len, .. }
+        | vm::VmToken::FlagBranch { len, .. }
+        | vm::VmToken::Actor { len, .. }
         | vm::VmToken::RecordLink { len, .. }
         | vm::VmToken::RecordEntry { len, .. }
         | vm::VmToken::RecordClear { len, .. }

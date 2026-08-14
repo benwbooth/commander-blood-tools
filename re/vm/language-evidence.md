@@ -33,6 +33,13 @@ statements: `SHARED_STATE` (`0x6863`), `SHARED_BIT_STATE` (`0x6902`), and
 `RECORD_WILDCARD` (`0x6946`). This removes 10,477 bytes from generic `OP`
 coverage while retaining byte-exact output across all five COD images.
 
+Seven control-flow encodings now have lossless typed statements: `GUARD_PUSH`
+and `GUARD_POP` (`0xA0`/`0xA1`), `JUMP` (`0xA4`), `STATE_ARRAY_TEST` and
+`STATE_ARRAY_SET` (the query/set forms of `0xA5`), `CONDITIONAL_BLOCK` (`0xA9`),
+and the `0xCE`/`0xD0` flag branches. This removes another 5,854 generic bytes.
+Together the two lifts reduce generic coverage from 20,898 to 4,567 bytes, a
+78.15 percent reduction, without changing any compiled COD byte.
+
 ## What is not established
 
 The `.BAS` files are binary data, not surviving text source. No QuickBASIC,

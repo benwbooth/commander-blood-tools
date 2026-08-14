@@ -73,6 +73,12 @@ The recovered shared handlers at native offsets `0x6863`, `0x6902`, and
 `A1` prefix, operator/mode bytes, and operands, so they are structured without
 weakening the byte-exact compiler contract.
 
+The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
+`0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
+state-array test/set, conditional-block, and flag-branch statements. Their
+numeric targets, flags, indices, and values remain explicit in source; the
+compiler does not recalculate or normalize addresses.
+
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. BAS semantic coverage is intentionally conservative:
 only dictionary-validated menu tables and text records are labelled today;
@@ -84,8 +90,8 @@ text spans and preserves the remaining 3,780 bytes raw. These percentages are
 structural coverage, not a claim that every opcode's high-level meaning or the
 historical source syntax is known.
 
-The first BloodScript corpus recompiles all 183,523 input bytes exactly. It
+The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
 contains 12,521 typed statements covering 179,743 bytes. Of that typed total,
-4,016 statements and 10,421 bytes are still generic `OP` forms; the BAS images
+1,233 statements and 4,567 bytes are still generic `OP` forms; the BAS images
 retain 3,780 `RAW` bytes. See `bloodscript/manifest.tsv` for per-image counts and
 [language-evidence.md](language-evidence.md) for the source-language inference.

@@ -330,6 +330,27 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
                 spoken
             )
         }
+        VmToken::GuardPush { target, .. } => {
+            format!("GUARD_PUSH target=0x{target:04X}")
+        }
+        VmToken::GuardPop { .. } => "GUARD_POP".to_string(),
+        VmToken::Jump { target, .. } => format!("JUMP target=0x{target:04X}"),
+        VmToken::StateArray {
+            index,
+            value: Some(value),
+            ..
+        } => format!("STATE_ARRAY_SET index=0x{index:02X} value=0x{value:04X}"),
+        VmToken::StateArray {
+            index, value: None, ..
+        } => format!("STATE_ARRAY_TEST index=0x{index:02X}"),
+        VmToken::ConditionalBlock { flags, target, .. } => {
+            format!("CONDITIONAL_BLOCK flags=0x{flags:02X} target=0x{target:04X}")
+        }
+        VmToken::FlagBranch { opcode, .. } => match *opcode {
+            vm::OP_COND_BRANCH_PRESENTATION => "BRANCH_PRESENTATION".to_string(),
+            vm::OP_COND_BRANCH_GAMEFLAG => "BRANCH_GAMEFLAG".to_string(),
+            _ => format!("FLAG_BRANCH opcode=0x{opcode:02X}"),
+        },
         VmToken::Actor {
             record_offset,
             related_record_offset,

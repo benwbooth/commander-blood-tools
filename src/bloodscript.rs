@@ -266,6 +266,25 @@ fn emit_token(
                 write!(output, " {word:04X}")?;
             }
         }
+        VmToken::GuardPush { target, .. } => write!(output, "GUARD_PUSH {target:04X}")?,
+        VmToken::GuardPop { .. } => write!(output, "GUARD_POP")?,
+        VmToken::Jump { target, .. } => write!(output, "JUMP {target:04X}")?,
+        VmToken::StateArray {
+            index,
+            value: Some(value),
+            ..
+        } => write!(output, "STATE_ARRAY_SET {index:02X} {value:04X}")?,
+        VmToken::StateArray {
+            index, value: None, ..
+        } => write!(output, "STATE_ARRAY_TEST {index:02X}")?,
+        VmToken::ConditionalBlock { flags, target, .. } => {
+            write!(output, "CONDITIONAL_BLOCK {flags:02X} {target:04X}")?
+        }
+        VmToken::FlagBranch { opcode, .. } => match *opcode {
+            vm::OP_COND_BRANCH_PRESENTATION => write!(output, "BRANCH_PRESENTATION")?,
+            vm::OP_COND_BRANCH_GAMEFLAG => write!(output, "BRANCH_GAMEFLAG")?,
+            _ => bail!("unsupported flag-branch opcode {opcode:02X}"),
+        },
         VmToken::Actor {
             record_offset,
             related_record_offset,
@@ -444,6 +463,48 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
                 word(&mut output, parse_word(value, line, "menu word")?);
             }
             word(&mut output, 0);
+        }
+        "GUARD_PUSH" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_PUSH);
+            word(&mut output, parse_word(args[0], line, "guard target")?);
+        }
+        "GUARD_POP" => {
+            require_count(args, 0, line, name)?;
+            output.push(vm::OP_POP);
+        }
+        "JUMP" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_JUMP);
+            word(&mut output, parse_word(args[0], line, "jump target")?);
+        }
+        "STATE_ARRAY_TEST" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_COND_STATE_ARRAY);
+            output.push(parse_byte(args[0], line, "state index")?);
+        }
+        "STATE_ARRAY_SET" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_COND_STATE_ARRAY);
+            output.push(parse_byte(args[0], line, "state index")?);
+            word(&mut output, parse_word(args[1], line, "state value")?);
+        }
+        "CONDITIONAL_BLOCK" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_COND_JUMP);
+            output.push(parse_byte(args[0], line, "conditional flags")?);
+            word(
+                &mut output,
+                parse_word(args[1], line, "conditional target")?,
+            );
+        }
+        "BRANCH_PRESENTATION" | "BRANCH_GAMEFLAG" => {
+            require_count(args, 0, line, name)?;
+            output.push(if name == "BRANCH_PRESENTATION" {
+                vm::OP_COND_BRANCH_PRESENTATION
+            } else {
+                vm::OP_COND_BRANCH_GAMEFLAG
+            });
         }
         "TEXT" => {
             require_min_count(args, 6, line, name)?;
@@ -717,6 +778,44 @@ mod tests {
     fn record_wildcard_rejects_prefix_for_fixed_length_opcode() {
         let source = "; format: bloodscript-ir-v1\n00000000: RECORD_WILDCARD AD 4567 FFFF 1\n";
         assert!(compile(source).is_err());
+    }
+
+    #[test]
+    fn control_flow_families_compile_exact_bytes() {
+        let source = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: GUARD_PUSH 1234\n",
+            "00000003: STATE_ARRAY_TEST FE\n",
+            "00000005: GUARD_POP\n",
+            "00000006: STATE_ARRAY_SET 02 5678\n",
+            "0000000A: JUMP 9ABC\n",
+            "0000000D: CONDITIONAL_BLOCK 01 DEF0\n",
+            "00000011: BRANCH_PRESENTATION\n",
+            "00000012: BRANCH_GAMEFLAG\n",
+            "00000013: GUARD_POP\n",
+            "00000014: END\n",
+        );
+        let expected = vec![
+            0xA0, 0x34, 0x12, 0xA5, 0xFE, 0xA1, 0xA5, 0x02, 0x78, 0x56, 0xA4, 0xBC,
+            0x9A, 0xA9, 0x01, 0xF0, 0xDE, 0xCE, 0xD0, 0xA1, 0xFF,
+        ];
+        assert_eq!(compile(source).unwrap(), expected);
+
+        let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
+        assert_eq!(decompiled.generic_op_statements, 0);
+        for statement in [
+            "GUARD_PUSH 1234",
+            "STATE_ARRAY_TEST FE",
+            "GUARD_POP",
+            "STATE_ARRAY_SET 02 5678",
+            "JUMP 9ABC",
+            "CONDITIONAL_BLOCK 01 DEF0",
+            "BRANCH_PRESENTATION",
+            "BRANCH_GAMEFLAG",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), expected);
     }
 
     #[test]
