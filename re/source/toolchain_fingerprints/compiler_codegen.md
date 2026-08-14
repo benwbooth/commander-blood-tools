@@ -413,6 +413,32 @@ the original ambient DS:SI/ES/BX/CX/DX/DI/BP convention. Reverse DF records the
 binary behavior outside the shipped clear-DF C contract; the two real callers
 discard the original AX and flag residue.
 
+For `0x00A552`, fourteen direct vectors prove the queue-entry activation
+grammar. The routine normalizes a wrapping or out-of-bounds source to segment
+offset zero, skips at most one `sd` record and any following `pl` records by
+their declared byte extents, and resolves an `mm` far link only when the linked
+key matches. It copies layout and row mode into BP-selected or default storage,
+then publishes an empty stored frame, the original uncompressed header, an
+immediately decoded payload, or the deferred transparent rectangular stream
+consumed by `0x00AB25`. Cases cover both extent reset causes and exact equality,
+sound-flag outcomes, one and two palette records, matching and rejected links,
+both storage segments, every terminal class, split DS/GS ownership, reverse DF,
+exact helper states and frames, active pointers, memory, registers, flags,
+stack, and near return. Only independently proven decode/consume helpers are
+stubbed; the flag helper executes directly.
+
+The one-function natural candidate uses a packed typed link record, direct far
+pointers, and ordinary structured conditionals. It has no register model,
+memory emulator, or inline assembly. Open Watcom `-3 -ox -mh` compiles the
+actual candidate and probe warning-free to 177 instructions and 506 bytes
+versus 73/208 original. The probe has a 1.37 percent instruction LCS, 60.27
+percent mnemonic-sequence LCS, 78.08 percent mnemonic-multiset overlap, and
+8.22 percent byte-line LCS. Exact integration still needs the original
+AX/ES:SI/BP entry convention, DS/GS aliases, offset-only pointer updates,
+LODSW/STOSW lowering, hidden-result adaptation for the ignored decode result,
+and the tail jump into queue consumption. Reverse DF is recorded outside the
+shipped clear-DF C contract.
+
 For `0x00A867`, nine direct vectors prove the complete checksum-`0xAB` payload
 grammar: six skipped header bytes, LSB-first sentinel control words, literals,
 two-bit short lengths, compact and extended 13-bit negative back-references,
@@ -2816,6 +2842,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
 | `ems_transfer_dispatch` | medium, `-ox`, register | 13/22 | 0.3846 | 0.6154 | 0.3846 |

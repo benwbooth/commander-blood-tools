@@ -1,0 +1,415 @@
+[
+  {
+    "name": "direct_uncompressed",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      4096
+    ],
+    "parse_source": [
+      12800,
+      4096
+    ],
+    "layout": 17,
+    "row_mode": 4611,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      4096,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "24677c9ca09f9be956c2fcbfdef10850e747d67e25bc876dd18acd77fb441003"
+  },
+  {
+    "name": "no_coordinates_forces_default",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      4353
+    ],
+    "parse_source": [
+      12800,
+      4353
+    ],
+    "layout": 1033,
+    "row_mode": 13314,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 26624,
+    "result_kind": "published_source",
+    "active_pointer": [
+      4353,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "6c7a6481a264baf93ff067334fc91903f8ecbc78c2d5c2509e081bc79fe1e1d0"
+  },
+  {
+    "name": "zero_rows_stay_in_storage",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      4610
+    ],
+    "parse_source": [
+      12800,
+      4610
+    ],
+    "layout": 519,
+    "row_mode": 22016,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "stored_empty",
+    "active_pointer": [
+      0,
+      22016
+    ],
+    "calls": [],
+    "state_sha256": "e49b6a42033c44729b759a53d0b5a6bc03c229b79f98515efcc94f90cbdc3f5b"
+  },
+  {
+    "name": "compressed_dispatch_gate",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      4867
+    ],
+    "parse_source": [
+      12800,
+      4867
+    ],
+    "layout": 517,
+    "row_mode": 65283,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "decoded_storage",
+    "active_pointer": [
+      0,
+      22016
+    ],
+    "calls": [
+      {
+        "call": "resource_payload_decode_dispatch",
+        "source": [
+          12800,
+          4871
+        ],
+        "destination": [
+          22016,
+          4
+        ],
+        "alternate_segment": 22016,
+        "layout": 517,
+        "row_mode": 65283,
+        "return_ip": 42512,
+        "sp": 65276
+      }
+    ],
+    "state_sha256": "e2559a8dcadf1a599e1bac96a78e8f95ce73bfbe3cb4be0147552310c5ea11d9"
+  },
+  {
+    "name": "compressed_dispatch_nontransparent",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      5124
+    ],
+    "parse_source": [
+      12800,
+      5124
+    ],
+    "layout": 517,
+    "row_mode": 32259,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "decoded_storage",
+    "active_pointer": [
+      0,
+      22016
+    ],
+    "calls": [
+      {
+        "call": "resource_payload_decode_dispatch",
+        "source": [
+          12800,
+          5128
+        ],
+        "destination": [
+          22016,
+          4
+        ],
+        "alternate_segment": 22016,
+        "layout": 517,
+        "row_mode": 32259,
+        "return_ip": 42512,
+        "sp": 65276
+      }
+    ],
+    "state_sha256": "bc76266a204be98ae0e2d9a5ba161b8875bef282e05765e53234d5fdd261f88c"
+  },
+  {
+    "name": "compressed_rect_deferred",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      5381
+    ],
+    "parse_source": [
+      12800,
+      5381
+    ],
+    "layout": 521,
+    "row_mode": 65284,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "deferred_rect",
+    "active_pointer": [
+      5385,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "59c0babef5c64f59e50255dde0498bbf0db1542045597961497d33a958b3f914"
+  },
+  {
+    "name": "sound_then_palette",
+    "kind": "sound_palette",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      5638
+    ],
+    "parse_source": [
+      12800,
+      5638
+    ],
+    "layout": 21,
+    "row_mode": 8706,
+    "direction": "forward",
+    "sound_offset": 5640,
+    "palette_offsets": [
+      5650
+    ],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      5654,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "76c2b80c3c05a77d069406648e65882ab7ef985d55955acf74c3205aa7e7bb38"
+  },
+  {
+    "name": "sound_clear_then_two_palettes",
+    "kind": "sound_two_palettes",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      5895
+    ],
+    "parse_source": [
+      12800,
+      5895
+    ],
+    "layout": 23,
+    "row_mode": 13058,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [
+      5905,
+      5911
+    ],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      5915,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "3e99cdb082fbcbb4ec107d89244ef4f6f48d2a6cc5664ea314eb5ab869127618"
+  },
+  {
+    "name": "matching_link",
+    "kind": "link",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      6152
+    ],
+    "parse_source": [
+      12800,
+      6152
+    ],
+    "layout": 25,
+    "row_mode": 17410,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      9482,
+      17408
+    ],
+    "calls": [],
+    "state_sha256": "c5d278035a7ed788214ca847b67d123cf7741922cefe6ec823225345e019d9e0"
+  },
+  {
+    "name": "mismatching_link",
+    "kind": "link",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      6409
+    ],
+    "parse_source": [
+      12800,
+      6409
+    ],
+    "layout": 27,
+    "row_mode": 17666,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "consumed_mismatched_link",
+    "active_pointer": [
+      54025,
+      54281
+    ],
+    "calls": [
+      {
+        "call": "queue_d8c_consume",
+        "source": [
+          17408,
+          9517
+        ],
+        "layout": 27,
+        "sp": 65280
+      }
+    ],
+    "state_sha256": "87892885c6bd759e456b8b705dad39c11937bdf01d22fdd7f87f51dccc199730"
+  },
+  {
+    "name": "extent_add_wraps_to_zero",
+    "kind": "direct",
+    "entry_extent": 48,
+    "input_source": [
+      12800,
+      65520
+    ],
+    "parse_source": [
+      12800,
+      0
+    ],
+    "layout": 29,
+    "row_mode": 21762,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      0,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "7f614b5cc94fa9b41b408867433d2ae0dd1af3a12c614e98d945e8a5542e4f87"
+  },
+  {
+    "name": "extent_exceeds_buffer_end",
+    "kind": "direct",
+    "entry_extent": 1280,
+    "input_source": [
+      12800,
+      512
+    ],
+    "parse_source": [
+      12800,
+      0
+    ],
+    "layout": 31,
+    "row_mode": 26114,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      0,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "f1b5840ef2b1b37574e51b4ae8c45755683ee5093bbfc6f43166dc286ceaedbd"
+  },
+  {
+    "name": "extent_equal_buffer_end",
+    "kind": "direct",
+    "entry_extent": 256,
+    "input_source": [
+      12800,
+      1280
+    ],
+    "parse_source": [
+      12800,
+      1280
+    ],
+    "layout": 33,
+    "row_mode": 26370,
+    "direction": "forward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      1280,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "0f62ba5130388d3ecb7b37504a7978a5b0bf91b0cb07d35c8f1ea306b88f71f9"
+  },
+  {
+    "name": "reverse_direction",
+    "kind": "direct",
+    "entry_extent": 64,
+    "input_source": [
+      12800,
+      7437
+    ],
+    "parse_source": [
+      12800,
+      7437
+    ],
+    "layout": 35,
+    "row_mode": 30466,
+    "direction": "backward",
+    "sound_offset": null,
+    "palette_offsets": [],
+    "selected_storage_segment": 22016,
+    "result_kind": "published_source",
+    "active_pointer": [
+      7429,
+      12800
+    ],
+    "calls": [],
+    "state_sha256": "a6851658519bd03ff60304d2ee6d03db7d12172d15d0b7de4b538666a23e6e5b"
+  }
+]

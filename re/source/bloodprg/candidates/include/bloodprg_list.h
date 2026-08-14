@@ -28,6 +28,7 @@ extern volatile cb_u16 list_d8c_active_offset;     /* GS:0x0D94 */
 extern volatile cb_u16 list_d8c_active_segment;    /* GS:0x0D96 */
 extern volatile cb_u16 list_d8c_wrap_limit;        /* GS:0x0D98 */
 extern volatile cb_u16 list_d8c_byte_count;        /* game data:0x0D9A */
+extern volatile cb_u16 list_d8c_sound_offset;      /* game data:0x0D9C */
 extern volatile cb_u16 list_d8c_palette_offset;    /* game data:0x0D9E */
 extern cb_u16 list_d8c_iteration_count;            /* GS:0x0DA0 */
 extern cb_u16 list_d8c_entry_metric;               /* game data:0x0DAF */

@@ -52115,6 +52115,548 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_activate_entry_vectors() -> list[dict[str, object]]:
+    entry = 0xA552
+    expected_hash = "3783f26b33e432594b2256290f2c67a208dce8cfaedb64e2415705212c3c6d4e"
+    if hashlib.sha256(EXE[entry : entry + 208]).hexdigest() != expected_hash:
+        raise AssertionError("0xa552: recovered 208-byte body changed")
+
+    cases = [
+        {"name": "direct_uncompressed", "kind": "direct", "layout": 0x0011,
+         "row_mode": 0x1203},
+        {"name": "no_coordinates_forces_default", "kind": "direct",
+         "layout": 0x0409, "row_mode": 0x3402},
+        {"name": "zero_rows_stay_in_storage", "kind": "direct",
+         "layout": 0x0207, "row_mode": 0x5600},
+        {"name": "compressed_dispatch_gate", "kind": "direct",
+         "layout": 0x0205, "row_mode": 0xFF03, "skip_present": 1,
+         "dispatch": True},
+        {"name": "compressed_dispatch_nontransparent", "kind": "direct",
+         "layout": 0x0205, "row_mode": 0x7E03, "dispatch": True},
+        {"name": "compressed_rect_deferred", "kind": "direct",
+         "layout": 0x0209, "row_mode": 0xFF04, "deferred": True},
+        {"name": "sound_then_palette", "kind": "sound_palette",
+         "layout": 0x0015, "row_mode": 0x2202, "state_flag": 1},
+        {"name": "sound_clear_then_two_palettes", "kind": "sound_two_palettes",
+         "layout": 0x0017, "row_mode": 0x3302, "state_flag": 0},
+        {"name": "matching_link", "kind": "link", "layout": 0x0019,
+         "row_mode": 0x4402, "link_matches": True},
+        {"name": "mismatching_link", "kind": "link", "layout": 0x001B,
+         "row_mode": 0x4502, "link_matches": False},
+        {"name": "extent_add_wraps_to_zero", "kind": "direct",
+         "layout": 0x001D, "row_mode": 0x5502, "source_offset": 0xFFF0,
+         "extent": 0x0030, "parse_offset": 0},
+        {"name": "extent_exceeds_buffer_end", "kind": "direct",
+         "layout": 0x001F, "row_mode": 0x6602, "source_offset": 0x0200,
+         "extent": 0x0500, "buffer_end": 0x0600, "parse_offset": 0},
+        {"name": "extent_equal_buffer_end", "kind": "direct",
+         "layout": 0x0021, "row_mode": 0x6702, "source_offset": 0x0500,
+         "extent": 0x0100, "buffer_end": 0x0600},
+        {"name": "reverse_direction", "kind": "direct", "layout": 0x0023,
+         "row_mode": 0x7702, "reverse_df": True},
+    ]
+    data_segment = 0x2000
+    source_segment = 0x3200
+    linked_segment = 0x4400
+    storage_segment = 0x5600
+    default_segment = 0x6800
+    game_segment = 0x7A00
+    stack_segment = 0x8C00
+    fs_segment = 0x9E00
+    return_address = 0x1800
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        kind = str(case["kind"])
+        layout = int(case["layout"])
+        row_mode = int(case["row_mode"])
+        reverse_df = bool(case.get("reverse_df", False))
+        direction_step = -2 if reverse_df else 2
+        source_offset = int(case.get("source_offset", 0x1000 + case_index * 0x101))
+        extent = int(case.get("extent", 0x0040))
+        buffer_end = int(case.get("buffer_end", 0xF000))
+        parse_offset = int(case.get("parse_offset", source_offset))
+        state_flag = int(case.get("state_flag", case_index & 1))
+        skip_present = int(case.get("skip_present", 0))
+        back_buffer_mode = int(case.get("back_buffer_mode", 0))
+        linked_offset = 0x2400 + case_index * 0x21
+        link_key = 0x7100 + case_index
+
+        source_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29) & 0xFF
+            for offset in range(0x10000)
+        )
+        linked_before = bytearray(
+            (offset * 19 + (offset >> 8) * 11 + case_index * 23) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        def write_word(memory: bytearray, offset: int, value: int) -> None:
+            memory[offset & 0xFFFF] = value & 0xFF
+            memory[(offset + 1) & 0xFFFF] = value >> 8
+
+        if kind == "direct":
+            write_word(source_before, parse_offset, layout)
+            write_word(source_before, parse_offset + direction_step, row_mode)
+        elif kind == "sound_palette":
+            write_word(source_before, parse_offset, 0x6473)
+            write_word(source_before, parse_offset + 2, 8)
+            write_word(source_before, parse_offset + 8, 0x6C70)
+            write_word(source_before, parse_offset + 10, 8)
+            write_word(source_before, parse_offset + 16, layout)
+            write_word(source_before, parse_offset + 18, row_mode)
+        elif kind == "sound_two_palettes":
+            write_word(source_before, parse_offset, 0x6473)
+            write_word(source_before, parse_offset + 2, 6)
+            write_word(source_before, parse_offset + 6, 0x6C70)
+            write_word(source_before, parse_offset + 8, 6)
+            write_word(source_before, parse_offset + 12, 0x6C70)
+            write_word(source_before, parse_offset + 14, 8)
+            write_word(source_before, parse_offset + 20, layout)
+            write_word(source_before, parse_offset + 22, row_mode)
+        elif kind == "link":
+            write_word(source_before, parse_offset, 0x6D6D)
+            write_word(source_before, parse_offset + 2, linked_offset)
+            write_word(source_before, parse_offset + 4, linked_segment)
+            write_word(source_before, parse_offset + 6, link_key)
+            actual_key = link_key if bool(case["link_matches"]) else link_key ^ 0x00FF
+            write_word(linked_before, linked_offset, actual_key)
+            write_word(linked_before, linked_offset + 2, layout)
+            write_word(linked_before, linked_offset + 4, row_mode)
+        else:
+            raise AssertionError(f"0xa552 {name}: unknown case kind")
+
+        data_before = bytearray(
+            (offset * 23 + (offset >> 8) * 13 + case_index * 31) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 31 + (offset >> 8) * 5 + case_index * 17) & 0xFF
+            for offset in range(0x10000)
+        )
+        storage_before = bytes(
+            (offset * 37 + (offset >> 8) * 3 + case_index * 19) & 0xFF
+            for offset in range(0x10000)
+        )
+        default_before = bytes(
+            (offset * 41 + (offset >> 8) * 9 + case_index * 13) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x0D9C, 0xD100 + case_index)
+        struct.pack_into("<H", data_before, 0x0D9E, 0xD200 + case_index)
+        game_before[0x0B17] = state_flag
+        struct.pack_into("<H", game_before, 0x0AA0, 0xA100 + case_index)
+        struct.pack_into("<H", game_before, 0x0ABE, default_segment)
+        struct.pack_into("<H", game_before, 0x0D94, 0xD300 + case_index)
+        struct.pack_into("<H", game_before, 0x0D96, 0xD400 + case_index)
+        struct.pack_into("<H", game_before, 0x0DA4, 0xD500 + case_index)
+        struct.pack_into("<H", game_before, 0x0DA6, 0xD600 + case_index)
+        game_before[0x0DB9] = back_buffer_mode
+        game_before[0x0DBA] = 0x70 + case_index
+        game_before[0x0DBB] = skip_present
+        struct.pack_into("<H", game_before, 0x5233, buffer_end)
+        data_expected = bytearray(data_before)
+        game_expected = bytearray(game_before)
+        storage_expected = bytearray(storage_before)
+        default_expected = bytearray(default_before)
+        struct.pack_into("<H", data_expected, 0x0D9C, 0xFFFF)
+        struct.pack_into("<H", data_expected, 0x0D9E, 0xFFFF)
+        struct.pack_into("<H", game_expected, 0x0AA0, 0)
+        game_expected[0x0DBA] = 0
+
+        wrapped_end = source_offset + extent
+        cursor_segment = source_segment
+        cursor = 0 if wrapped_end > 0xFFFF or (wrapped_end & 0xFFFF) > buffer_end else source_offset
+
+        def read_word(memory: bytearray, offset: int) -> int:
+            return memory[offset & 0xFFFF] | (
+                memory[(offset + 1) & 0xFFFF] << 8
+            )
+
+        def lodsw(memory: bytearray, offset: int) -> tuple[int, int]:
+            return read_word(memory, offset), (offset + direction_step) & 0xFFFF
+
+        marker_start = cursor
+        active_layout, cursor = lodsw(source_before, cursor)
+        sound_offset = None
+        palette_offsets = []
+        if active_layout == 0x6473:
+            sound_offset = cursor if state_flag & 1 else None
+            record_extent, _ = lodsw(source_before, cursor)
+            cursor = (marker_start + record_extent) & 0xFFFF
+            marker_start = cursor
+            active_layout, cursor = lodsw(source_before, cursor)
+        while active_layout == 0x6C70:
+            record_extent, after_extent = lodsw(source_before, cursor)
+            palette_offsets.append(after_extent)
+            cursor = (marker_start + record_extent) & 0xFFFF
+            marker_start = cursor
+            active_layout, cursor = lodsw(source_before, cursor)
+        if sound_offset is not None:
+            struct.pack_into("<H", game_expected, 0x0D9C, sound_offset)
+        for palette_offset in palette_offsets:
+            struct.pack_into("<H", game_expected, 0x0D9E, palette_offset)
+
+        mismatch_tail = False
+        if active_layout == 0x6D6D:
+            link_pointer_offset = read_word(source_before, cursor)
+            link_pointer_segment = read_word(source_before, cursor + 2)
+            expected_key = read_word(source_before, cursor + 4)
+            if link_pointer_segment != linked_segment:
+                raise AssertionError(f"0xa552 {name}: link segment setup differs")
+            cursor_segment = linked_segment
+            cursor = link_pointer_offset
+            actual_key, cursor = lodsw(linked_before, cursor)
+            active_layout, cursor = lodsw(linked_before, cursor)
+            mismatch_tail = actual_key != expected_key
+
+        selected_storage_segment = (
+            default_segment if active_layout & 0x0400 else storage_segment
+        )
+        selected_expected = (
+            default_expected
+            if selected_storage_segment == default_segment
+            else storage_expected
+        )
+        other_expected = (
+            storage_expected
+            if selected_storage_segment == default_segment
+            else default_expected
+        )
+        expected_calls = []
+        if not mismatch_tail:
+            struct.pack_into("<H", game_expected, 0x0D96, selected_storage_segment)
+            struct.pack_into("<H", game_expected, 0x0D94, 0)
+            struct.pack_into("<H", game_expected, 0x0DA4, active_layout)
+            destination_offset = 0
+            write_word(selected_expected, destination_offset, active_layout)
+            destination_offset = (destination_offset + direction_step) & 0xFFFF
+            source_memory = (
+                source_before if cursor_segment == source_segment else linked_before
+            )
+            active_row_mode, cursor = lodsw(source_memory, cursor)
+            struct.pack_into("<H", game_expected, 0x0DA6, active_row_mode)
+            write_word(selected_expected, destination_offset, active_row_mode)
+            destination_offset = (destination_offset + direction_step) & 0xFFFF
+            if active_row_mode != row_mode:
+                raise AssertionError(f"0xa552 {name}: row-mode model differs")
+
+            rows = active_row_mode & 0xFF
+            if rows == 0:
+                result_kind = "stored_empty"
+            elif (active_layout & 0x0200) == 0:
+                result_kind = "published_source"
+                published_offset = (cursor - 4) & 0xFFFF
+                struct.pack_into("<H", game_expected, 0x0D94, published_offset)
+                struct.pack_into("<H", game_expected, 0x0D96, cursor_segment)
+            elif (
+                (skip_present & 1) == 0
+                and (back_buffer_mode & 1) == 0
+                and (active_row_mode >> 8) == 0xFF
+            ):
+                result_kind = "deferred_rect"
+                game_expected[0x0DBA] = 1
+                struct.pack_into("<H", game_expected, 0x0D94, cursor)
+                struct.pack_into("<H", game_expected, 0x0D96, cursor_segment)
+            else:
+                result_kind = "decoded_storage"
+                expected_calls.append(
+                    {
+                        "call": "resource_payload_decode_dispatch",
+                        "source": [cursor_segment, cursor],
+                        "destination": [selected_storage_segment, destination_offset],
+                        "alternate_segment": storage_segment,
+                        "layout": active_layout,
+                        "row_mode": active_row_mode,
+                        "return_ip": 0xA610,
+                        "sp": 0xFEFC,
+                    }
+                )
+        else:
+            result_kind = "consumed_mismatched_link"
+            expected_calls.append(
+                {
+                    "call": "queue_d8c_consume",
+                    "source": [cursor_segment, cursor],
+                    "layout": active_layout,
+                    "sp": 0xFF00,
+                }
+            )
+
+        stack_before = bytearray(
+            (offset * 43 + case_index * 11 + 0x51) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[0xFF00 : 0xFF0A] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "ax": extent,
+            "bx": 0x2100 + case_index,
+            "cx": 0x3200 + case_index,
+            "dx": 0x4300 + case_index,
+            "si": source_offset,
+            "di": 0x5400 + case_index,
+            "bp": storage_segment,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": source_segment,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse_df else 0x0202,
+        }
+        observed_calls = []
+        flag_helper_calls = []
+        callback_registers = {
+            "ax": 0xA500 + case_index,
+            "bx": 0xB500 + case_index,
+            "cx": 0xC500 + case_index,
+            "dx": 0xD500 + case_index,
+            "si": 0xE500 + case_index,
+            "di": 0xF500 + case_index,
+            "bp": 0x8500 + case_index,
+            "es": 0x9500 + case_index,
+            "fs": 0xA600 + case_index,
+        }
+        callback_flags = 0x0AD7 | (0x0400 if reverse_df else 0)
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0xA634:
+                actual = {
+                    "source": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "marker": machine.reg_read(UC_X86_REG_AX),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "return_ip": struct.unpack(
+                        "<H",
+                        machine.mem_read(
+                            stack_segment * 16 + machine.reg_read(UC_X86_REG_SP), 2
+                        ),
+                    )[0],
+                }
+                expected = {
+                    "source": [source_segment, parse_offset + 2],
+                    "marker": 0x6473,
+                    "sp": 0xFEFE,
+                    "return_ip": 0xA582,
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xa552 {name}: flag helper={actual}, expected={expected}"
+                    )
+                flag_helper_calls.append(actual)
+                return
+            if address not in (0xA82C, 0xA3D0):
+                return
+            if len(observed_calls) >= len(expected_calls):
+                raise AssertionError(f"0xa552 {name}: unexpected helper")
+            expected = expected_calls[len(observed_calls)]
+            if address == 0xA82C:
+                actual = {
+                    "call": "resource_payload_decode_dispatch",
+                    "source": [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "destination": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ],
+                    "alternate_segment": machine.reg_read(UC_X86_REG_BP),
+                    "layout": machine.reg_read(UC_X86_REG_BX),
+                    "row_mode": machine.reg_read(UC_X86_REG_CX),
+                    "return_ip": struct.unpack(
+                        "<H",
+                        machine.mem_read(
+                            stack_segment * 16 + machine.reg_read(UC_X86_REG_SP), 2
+                        ),
+                    )[0],
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xa552 {name}: decode={actual}, expected={expected}"
+                    )
+                for register, value in callback_registers.items():
+                    machine.reg_write(REGISTERS[register], value)
+                machine.reg_write(UC_X86_REG_EFLAGS, callback_flags)
+            else:
+                actual = {
+                    "call": "queue_d8c_consume",
+                    "source": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ],
+                    "layout": machine.reg_read(UC_X86_REG_AX),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xa552 {name}: tail={actual}, expected={expected}"
+                    )
+            observed_calls.append(actual)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, 0xA82C, b"\xc3"),
+                (0, 0xA3D0, b"\xc3"),
+                (data_segment, 0, bytes(data_before)),
+                (source_segment, 0, bytes(source_before)),
+                (linked_segment, 0, bytes(linked_before)),
+                (storage_segment, 0, storage_before),
+                (default_segment, 0, default_before),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=2000,
+        )
+        if len(observed_calls) != len(expected_calls):
+            raise AssertionError(
+                f"0xa552 {name}: calls={observed_calls}, expected={expected_calls}"
+            )
+        expected_flag_helper_count = int(kind.startswith("sound"))
+        if len(flag_helper_calls) != expected_flag_helper_count:
+            raise AssertionError(f"0xa552 {name}: flag-helper count differs")
+
+        for segment, expected, description in (
+            (data_segment, bytes(data_expected), "entry DS"),
+            (source_segment, bytes(source_before), "source"),
+            (linked_segment, bytes(linked_before), "linked source"),
+            (game_segment, bytes(game_expected), "game state"),
+            (
+                selected_storage_segment,
+                bytes(selected_expected),
+                "selected storage",
+            ),
+            (
+                default_segment if selected_storage_segment == storage_segment
+                else storage_segment,
+                bytes(other_expected),
+                "other storage",
+            ),
+        ):
+            actual_memory = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual_memory != expected:
+                mismatch = next(
+                    index
+                    for index, pair in enumerate(
+                        zip(actual_memory, expected, strict=True)
+                    )
+                    if pair[0] != pair[1]
+                )
+                raise AssertionError(
+                    f"0xa552 {name}: {description} differs at {mismatch:#x}: "
+                    f"{actual_memory[mismatch]:#x} != {expected[mismatch]:#x}"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        expected_registers["ds"] = data_segment
+        if mismatch_tail:
+            expected_registers["ax"] = active_layout
+            expected_registers["bx"] = link_key
+            expected_registers["si"] = cursor
+            expected_registers["es"] = cursor_segment
+        elif result_kind == "decoded_storage":
+            expected_registers.update(callback_registers)
+            expected_registers["ds"] = data_segment
+        else:
+            expected_registers["bx"] = active_layout
+            expected_registers["cx"] = row_mode
+            expected_registers["si"] = (
+                published_offset
+                if result_kind == "published_source"
+                else cursor
+            )
+            expected_registers["di"] = destination_offset
+            expected_registers["es"] = selected_storage_segment
+            expected_registers["ax"] = (
+                row_mode if result_kind == "stored_empty" else cursor_segment
+            )
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa552 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa552 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa552 {name}: stack sentinel changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_mask = 0x0CD5
+        if mismatch_tail:
+            actual_key = read_word(linked_before, linked_offset)
+            expected_flag_values = sub16_flags(actual_key, link_key)
+            expected_flags = sum(
+                mask
+                for flag, mask in {
+                    "cf": 1, "pf": 4, "af": 0x10, "zf": 0x40,
+                    "sf": 0x80, "of": 0x800,
+                }.items()
+                if expected_flag_values[flag]
+            ) | (0x0400 if reverse_df else 0)
+        elif result_kind == "decoded_storage":
+            expected_flags = callback_flags
+        elif result_kind == "stored_empty":
+            expected_flags = 0x0044 | (0x0400 if reverse_df else 0)
+        elif result_kind == "published_source":
+            expected_flag_values = sub16_flags(cursor, 4)
+            expected_flags = sum(
+                mask
+                for flag, mask in {
+                    "cf": 1, "pf": 4, "af": 0x10, "zf": 0x40,
+                    "sf": 0x80, "of": 0x800,
+                }.items()
+                if expected_flag_values[flag]
+            ) | (0x0400 if reverse_df else 0)
+        else:
+            expected_flags = 0x0044 | (0x0400 if reverse_df else 0)
+        if flags_after & flag_mask != expected_flags & flag_mask:
+            raise AssertionError(
+                f"0xa552 {name}: flags={flags_after & flag_mask:#x}, "
+                f"expected={expected_flags & flag_mask:#x}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "kind": kind,
+                "entry_extent": extent,
+                "input_source": [source_segment, source_offset],
+                "parse_source": [source_segment, parse_offset],
+                "layout": layout,
+                "row_mode": row_mode,
+                "direction": "backward" if reverse_df else "forward",
+                "sound_offset": sound_offset,
+                "palette_offsets": palette_offsets,
+                "selected_storage_segment": selected_storage_segment,
+                "result_kind": result_kind,
+                "active_pointer": list(
+                    struct.unpack_from("<HH", game_expected, 0x0D94)
+                ),
+                "calls": observed_calls,
+                "state_sha256": hashlib.sha256(game_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def resource_active_present_vectors() -> list[dict[str, object]]:
     entry = 0xA41A
     expected_hash = "d33eeda97f2b75f7d3446bce71daad29b5c669d95e5958ef7e178d11cf99eeab"
@@ -55258,6 +55800,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a552_natural.json",
+        list_d8c_activate_entry_vectors(),
         args.check,
     )
     update_vector(

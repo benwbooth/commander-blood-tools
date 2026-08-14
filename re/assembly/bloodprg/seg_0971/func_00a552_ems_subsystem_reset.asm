@@ -7,11 +7,11 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: list_d8c_activate_entry
-; label_comment: activate and parse one D8C queue entry from ES:SI with AX=extent and BP=storage segment. Resets entry-local state, handles sd/pl/mm record markers, stores the active far pointer at 0xd94:0xd96, and may consume rejected entries through queue_d8c_consume.
+; label_comment: Activates one D8C queue entry from ES:SI with AX=extent and BP=storage segment. It skips optional sd/pl records, resolves an mm link, publishes the two-word frame header, and selects original-source, immediate decode, or deferred transparent-rectangle storage.
 ; byte_count: 208
 ; boundary: cfg_blocks_24_terminals_5
 ; terminal: jmp 0xa3d0:1, jmp 0xa578:1, jmp 0xa615:1, ret:2
-; direct_callees: 0x00a634, 0x00a82c
+; direct_callees: 0x00a3d0, 0x00a634, 0x00a82c
 ; indirect_calls: 0
 ; routine_bytes_sha256: 3783f26b33e432594b2256290f2c67a208dce8cfaedb64e2415705212c3c6d4e
 
