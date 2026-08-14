@@ -1,0 +1,245 @@
+[
+  {
+    "name": "inactive",
+    "initial": {
+      "active": 164,
+      "phase": 0,
+      "current": 51,
+      "total": 68
+    },
+    "calls": [],
+    "final": {
+      "active": 164,
+      "phase": 0,
+      "current": 51,
+      "total": 68,
+      "editing": 85,
+      "ui_flags": 161,
+      "result": 30583
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_one_initializes_transition",
+    "initial": {
+      "active": 1,
+      "phase": 1,
+      "current": 5,
+      "total": 9
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 1,
+        "result": 2
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source_segment": 8192,
+        "source_offset": 10923,
+        "target_segment": 8192,
+        "target_offset": 9679,
+        "current": 0,
+        "total": 6
+      }
+    ],
+    "final": {
+      "active": 1,
+      "phase": 2,
+      "current": 1,
+      "total": 6,
+      "editing": 0,
+      "ui_flags": 165,
+      "result": 30583
+    },
+    "return": "near"
+  },
+  {
+    "name": "active_transition_returns",
+    "initial": {
+      "active": 1,
+      "phase": 2,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source_segment": 8192,
+        "source_offset": 10923,
+        "target_segment": 8192,
+        "target_offset": 9679,
+        "current": 3,
+        "total": 6
+      }
+    ],
+    "final": {
+      "active": 1,
+      "phase": 2,
+      "current": 4,
+      "total": 6,
+      "editing": 85,
+      "ui_flags": 165,
+      "result": 30583
+    },
+    "return": "near"
+  },
+  {
+    "name": "complete_transition_negative_selection",
+    "initial": {
+      "active": 1,
+      "phase": 2,
+      "current": 6,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source_segment": 8192,
+        "source_offset": 10923,
+        "target_segment": 8192,
+        "target_offset": 9679,
+        "current": 6,
+        "total": 6
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "final": {
+      "active": 1,
+      "phase": 0,
+      "current": 6,
+      "total": 6,
+      "editing": 85,
+      "ui_flags": 165,
+      "result": 30583
+    },
+    "return": "near"
+  },
+  {
+    "name": "sentinel_selection_closes_without_result",
+    "initial": {
+      "active": 1,
+      "phase": 0,
+      "current": 51,
+      "total": 68
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 85,
+        "result": 0
+      }
+    ],
+    "final": {
+      "active": 0,
+      "phase": 0,
+      "current": 51,
+      "total": 68,
+      "editing": 85,
+      "ui_flags": 161,
+      "result": 30583
+    },
+    "return": "near"
+  },
+  {
+    "name": "ordinary_selection_maps_one_based",
+    "initial": {
+      "active": 1,
+      "phase": 0,
+      "current": 51,
+      "total": 68
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 85,
+        "result": 3
+      }
+    ],
+    "final": {
+      "active": 0,
+      "phase": 0,
+      "current": 51,
+      "total": 68,
+      "editing": 85,
+      "ui_flags": 161,
+      "result": 4
+    },
+    "return": "near"
+  },
+  {
+    "name": "selection_four_maps_to_seven",
+    "initial": {
+      "active": 1,
+      "phase": 0,
+      "current": 51,
+      "total": 68
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 85,
+        "result": 4
+      }
+    ],
+    "final": {
+      "active": 0,
+      "phase": 0,
+      "current": 51,
+      "total": 68,
+      "editing": 85,
+      "ui_flags": 161,
+      "result": 7
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_three_initializes_then_selects",
+    "initial": {
+      "active": 1,
+      "phase": 3,
+      "current": 4,
+      "total": 4
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 1,
+        "result": 2
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 8192,
+        "items_offset": 9629,
+        "editing": 0,
+        "result": 1
+      }
+    ],
+    "final": {
+      "active": 0,
+      "phase": 4,
+      "current": 0,
+      "total": 6,
+      "editing": 0,
+      "ui_flags": 161,
+      "result": 2
+    },
+    "return": "near"
+  }
+]

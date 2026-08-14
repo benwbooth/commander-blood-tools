@@ -6,8 +6,8 @@
 ; seg_off: 008b:0c23
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: flag_gated_259b
-; label_comment: flag-gated routine: test byte [0x259b],1; if clear skip to 0x1b4a, else si=0x259d. Branches on the 0x259b enable bit and points at the 0x259d parameter block
+; label: presentation_choice_transition_step
+; label_comment: Presentation-choice coordinator. When DS:0x259B bit 0 is active, it initializes the list widget and a six-step rectangle transition from DS:0x2AAB toward DS:0x25CF, advances that transition through 0x001E5D, then polls the list at DS:0x259D. A nonnegative nonsentinel choice stores a one-based result at DS:0x0ACA, except index four maps to seven, and every accepted choice closes the UI. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001ad3_presentation_choice_transition_step.c and re/tools/oracle_vectors/func_1ad3_natural.json
 ; byte_count: 120
 ; boundary: cfg_blocks_13_terminals_1
 ; terminal: ret:1

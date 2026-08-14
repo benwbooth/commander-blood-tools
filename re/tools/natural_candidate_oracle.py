@@ -52115,6 +52115,293 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_choice_transition_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1AD3
+    return_address = 0xF560
+    expected_hash = "245ab7c35e055cac78510a7d33358c250623b597c8a326ad4649308f16d0f927"
+    if hashlib.sha256(EXE[entry : entry + 120]).hexdigest() != expected_hash:
+        raise AssertionError("0x1ad3: recovered 120-byte body changed")
+
+    cases = [
+        {"name": "inactive", "active": 0xA4, "phase": 0},
+        {
+            "name": "phase_one_initializes_transition",
+            "active": 1,
+            "phase": 1,
+            "current": 5,
+            "total": 9,
+            "widget_results": [2],
+        },
+        {
+            "name": "active_transition_returns",
+            "active": 1,
+            "phase": 2,
+            "current": 3,
+            "total": 6,
+        },
+        {
+            "name": "complete_transition_negative_selection",
+            "active": 1,
+            "phase": 2,
+            "current": 6,
+            "total": 6,
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "sentinel_selection_closes_without_result",
+            "active": 1,
+            "phase": 0,
+            "widget_results": [0],
+            "sentinel_index": 0,
+        },
+        {
+            "name": "ordinary_selection_maps_one_based",
+            "active": 1,
+            "phase": 0,
+            "widget_results": [3],
+        },
+        {
+            "name": "selection_four_maps_to_seven",
+            "active": 1,
+            "phase": 0,
+            "widget_results": [4],
+        },
+        {
+            "name": "phase_three_initializes_then_selects",
+            "active": 1,
+            "phase": 3,
+            "current": 4,
+            "total": 4,
+            "widget_results": [2, 1],
+        },
+    ]
+    data_segment = 0x2000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        active = int(case["active"])
+        phase = int(case["phase"])
+        current = int(case.get("current", 0x33))
+        total = int(case.get("total", 0x44))
+        widget_results = [int(value) for value in case.get("widget_results", [])]
+        sentinel_index = case.get("sentinel_index")
+        calls: list[dict[str, object]] = []
+        widget_index = 0
+
+        data = bytearray(0x10000)
+        data[0x259B] = active
+        data[0x259C] = phase
+        items = [0x3100, 0x3200, 0x3300, 0x3400, 0x3500, 0x3600]
+        if sentinel_index is not None:
+            items[int(sentinel_index)] = 0xFFFF
+        for index, value in enumerate(items):
+            data[0x259D + index * 2 : 0x259F + index * 2] = struct.pack(
+                "<H", value
+            )
+        data[0x25CF : 0x25D7] = struct.pack("<hhhh", 12, 23, 34, 45)
+        data[0x2AAB : 0x2AB3] = struct.pack("<hhhh", 56, 67, 78, 89)
+        data[0x0ACA : 0x0ACC] = struct.pack("<H", 0x7777)
+        data[0x27E6] = 0x55
+        data[0x2793] = 0xA1
+        data[0x0ADB] = current
+        data[0x0ADA] = total
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": data_segment,
+            "fs": 0x4000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal widget_index
+            if address == 0x7E28:
+                result = widget_results[widget_index]
+                calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items_segment": machine.reg_read(UC_X86_REG_DS),
+                        "items_offset": machine.reg_read(UC_X86_REG_SI),
+                        "editing": machine.mem_read(
+                            data_segment * 16 + 0x27E6, 1
+                        )[0],
+                        "result": result,
+                    }
+                )
+                widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == 0x1E5D:
+                step = machine.mem_read(data_segment * 16 + 0x0ADB, 1)[0]
+                limit = machine.mem_read(data_segment * 16 + 0x0ADA, 1)[0]
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_interpolate_and_remap_step",
+                        "source_segment": machine.reg_read(UC_X86_REG_DS),
+                        "source_offset": machine.reg_read(UC_X86_REG_SI),
+                        "target_segment": machine.reg_read(UC_X86_REG_DS),
+                        "target_offset": machine.reg_read(UC_X86_REG_DI),
+                        "current": step,
+                        "total": limit,
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if step == limit:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(
+                        data_segment * 16 + 0x0ADB,
+                        bytes([(step + 1) & 0xFF]),
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x7E28, b"\xCB"),
+                (0, 0x1E5D, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=150,
+        )
+
+        expected_data = bytearray(data)
+        expected_calls: list[dict[str, object]] = []
+        if active & 1:
+            expected_data[0x2793] |= 4
+            expected_phase = phase
+            result_index = 0
+            if expected_phase & 1:
+                expected_calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items_segment": data_segment,
+                        "items_offset": 0x259D,
+                        "editing": 1,
+                        "result": widget_results[result_index],
+                    }
+                )
+                result_index += 1
+                expected_data[0x27E6] = 0
+                expected_data[0x0ADB] = 0
+                expected_data[0x0ADA] = 6
+                expected_phase = (expected_phase + 1) & 0xFF
+                expected_data[0x259C] = expected_phase
+
+            returned_during_transition = False
+            if expected_phase & 2:
+                step = expected_data[0x0ADB]
+                limit = expected_data[0x0ADA]
+                expected_calls.append(
+                    {
+                        "call": "framebuffer_rect_interpolate_and_remap_step",
+                        "source_segment": data_segment,
+                        "source_offset": 0x2AAB,
+                        "target_segment": data_segment,
+                        "target_offset": 0x25CF,
+                        "current": step,
+                        "total": limit,
+                    }
+                )
+                if step != limit:
+                    expected_data[0x0ADB] = (step + 1) & 0xFF
+                    returned_during_transition = True
+                else:
+                    expected_data[0x259C] = 0
+
+            if not returned_during_transition:
+                selection = widget_results[result_index]
+                expected_calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items_segment": data_segment,
+                        "items_offset": 0x259D,
+                        "editing": expected_data[0x27E6],
+                        "result": selection,
+                    }
+                )
+                if selection < 0x8000:
+                    item = struct.unpack(
+                        "<H",
+                        expected_data[
+                            0x259D + selection * 2 : 0x259F + selection * 2
+                        ],
+                    )[0]
+                    if item != 0xFFFF:
+                        mapped = 7 if selection == 4 else selection + 1
+                        expected_data[0x0ACA : 0x0ACC] = struct.pack(
+                            "<H", mapped
+                        )
+                    expected_data[0x2793] &= 0xFB
+                    expected_data[0x259B] = 0
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x1ad3 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            raise AssertionError(f"0x1ad3 {name}: unexpected data mutation")
+        for register in ("ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x1ad3 {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x1ad3 {name}: near return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x1ad3 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "initial": {
+                    "active": active,
+                    "phase": phase,
+                    "current": current,
+                    "total": total,
+                },
+                "calls": calls,
+                "final": {
+                    "active": actual_data[0x259B],
+                    "phase": actual_data[0x259C],
+                    "current": actual_data[0x0ADB],
+                    "total": actual_data[0x0ADA],
+                    "editing": actual_data[0x27E6],
+                    "ui_flags": actual_data[0x2793],
+                    "result": struct.unpack(
+                        "<H", actual_data[0x0ACA:0x0ACC]
+                    )[0],
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def save_slot_name_edit_step_vectors() -> list[dict[str, object]]:
     entry = 0x1DD8
     return_address = 0xF580
@@ -58782,6 +59069,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1dd8_natural.json",
         save_slot_name_edit_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1ad3_natural.json",
+        presentation_choice_transition_step_vectors(),
         args.check,
     )
     update_vector(

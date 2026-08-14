@@ -4104,6 +4104,33 @@ share the original data segment; drop-in replacement still needs the original
 preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
 contract for the implicit mode table and palette destination.
 
+## BLOODPRG presentation-choice transition candidate
+
+`0x001AD3` coordinates the modal presentation-choice list and its rectangle
+transition. An active phase-one request calls the list widget while the editing
+flag is set, resets the transition counter to zero, sets a six-step limit, and
+advances the phase. A phase with bit one set calls the recovered rectangle
+interpolator from `DS:0x2AAB` toward `DS:0x25CF`; carry clear means another
+frame is required, while carry set clears the phase and permits selection.
+A nonnegative list result closes the UI. Nonsentinel choices publish a one-based
+result, except index four publishes seven.
+
+Eight patched-callee vectors cover the inactive exit, phase-one initialization,
+an active transition, transition completion followed by a negative result,
+sentinel and ordinary choices, the index-four special case, and the phase-three
+initialize-then-select path. They prove both list calls and editing state, exact
+rectangle pointers and counters, selection mapping, terminal UI state, segment
+state, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 49 instructions/160 bytes versus the original 38/120,
+with 78.95 percent mnemonic-multiset overlap and no inline assembly. The helper
+returns transition completion in carry in the binary; the natural C snapshots
+the equivalent byte-counter equality before making the typed void call. A
+source rebuild can use that ordinary Boolean directly once the globals share
+the game data segment. Drop-in replacement additionally needs the list widget's
+`DS:SI` argument and `AX` result ABI plus the original preservation envelope.
+
 ## BLOODPRG save-slot name-editor candidate
 
 `0x001DD8` is the save-slot name editor and selected-row renderer. It reads the
