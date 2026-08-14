@@ -7,7 +7,8 @@
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: draw_hud_element_2bc7
-; label_comment: draw a HUD element: ax=0x1f; lcall 0x299:0x1241 (draw); bp=0x2bc7 (element data table). Renders a HUD/status element from the 0x2bc7 layout data
+; label_comment: transitions entity 31, clears the SS:0x2bc7 world-art layout flags, collects directory objects whose selector-derived position matches GS:0x6752, then uses the first match's name to load a layout resource and create its entity offscreen
+; natural_c: re/source/bloodprg/candidates/seg_04da/func_006ff3_draw_hud_element_2bc7.c
 ; incoming: call@0x008c9d->04da:1c53
 ; byte_count: 251
 ; boundary: cfg_blocks_19_terminals_4

@@ -2907,6 +2907,657 @@ def ship_3d_navigation_candidate_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def draw_hud_element_2bc7_vectors() -> list[dict[str, object]]:
+    entry = 0x6FF3
+    return_address = 0xF0F3
+    expected_hash = "d3a65c8af19b8d9e6e126b8eaea038f1a7acdf239a0594e6681e1e028d612698"
+    if hashlib.sha256(EXE[entry : entry + 251]).hexdigest() != expected_hash:
+        raise AssertionError("0x6ff3: recovered 251-byte body changed")
+
+    current_offset = 0x1000
+    current_position = 0x13572468
+    cases: list[dict[str, object]] = [
+        {
+            "name": "only_current_object_has_no_match",
+            "objects": [],
+            "directory": [current_offset],
+            "layouts": [(b"PLANET", 0x12, 7, 0xA5)],
+        },
+        {
+            "name": "direct_position_match_loads_named_layout",
+            "objects": [(0x2000, 0x0002, b"PLANET", [current_position])],
+            "directory": [0x2000],
+            "layouts": [
+                (b"PLANET", 0x12, 7, 0xA5),
+                (b"OTHER", 0x34, 9, 0x5A),
+            ],
+            "matches": [0x2000],
+            "selected_layout": 0,
+        },
+        {
+            "name": "direct_position_mismatch",
+            "objects": [(0x2020, 0x0002, b"PLANET", [0x24681357])],
+            "directory": [0x2020],
+            "layouts": [(b"PLANET", 0x12, 7, 0xA5)],
+        },
+        {
+            "name": "direct_zero_field_offset_is_rejected",
+            "objects": [(0x2040, 0x0002, b"PLANET", [current_position])],
+            "directory": [0x2040],
+            "layouts": [(b"PLANET", 0x12, 7, 0xA5)],
+            "direct_field": 0,
+        },
+        {
+            "name": "kind100_first_position_matches",
+            "objects": [
+                (0x2100, 0x0100, b"STATION", [current_position, 0xAAAAAAAA])
+            ],
+            "directory": [0x2100],
+            "layouts": [(b"STATION", 0x23, 11, 0x44)],
+            "matches": [0x2100],
+            "selected_layout": 0,
+        },
+        {
+            "name": "kind100_second_position_matches",
+            "objects": [
+                (0x2120, 0x0100, b"STATION", [0xAAAAAAAA, current_position])
+            ],
+            "directory": [0x2120],
+            "layouts": [(b"STATION", 0x23, 11, 0x44)],
+            "matches": [0x2120],
+            "selected_layout": 0,
+        },
+        {
+            "name": "kind100_both_positions_mismatch",
+            "objects": [
+                (0x2140, 0x0100, b"STATION", [0xAAAAAAAA, 0xBBBBBBBB])
+            ],
+            "directory": [0x2140],
+            "layouts": [(b"STATION", 0x23, 11, 0x44)],
+        },
+        {
+            "name": "multiple_matches_select_first_directory_object",
+            "objects": [
+                (0x2200, 0x0002, b"SECOND", [current_position]),
+                (0x2240, 0x0002, b"FIRST", [current_position]),
+            ],
+            "directory": [0x2200, 0x2240],
+            "layouts": [
+                (b"FIRST", 0x31, 13, 0x11),
+                (b"SECOND", 0x32, 14, 0x22),
+            ],
+            "matches": [0x2200, 0x2240],
+            "selected_layout": 1,
+        },
+        {
+            "name": "matching_position_without_layout_name",
+            "objects": [(0x2280, 0x0002, b"UNKNOWN", [current_position])],
+            "directory": [0x2280],
+            "layouts": [(b"PLANET", 0x12, 7, 0xA5)],
+            "matches": [0x2280],
+        },
+        {
+            "name": "empty_layout_table_after_position_match",
+            "objects": [(0x22C0, 0x0002, b"PLANET", [current_position])],
+            "directory": [0x22C0],
+            "layouts": [],
+            "matches": [0x22C0],
+        },
+        {
+            "name": "resource_failure_result_is_ignored",
+            "objects": [(0x2300, 0x0002, b"PLANET", [current_position])],
+            "directory": [0x2300],
+            "layouts": [(b"PLANET", 0x45, 17, 0xA5)],
+            "matches": [0x2300],
+            "selected_layout": 0,
+            "resource_result": 0xFFFF,
+        },
+        {
+            "name": "nonactive_next_directory_entry_stops_scan",
+            "objects": [
+                (0x2340, 0x0002, b"FIRST", [current_position]),
+                (0x2380, 0x0002, b"SECOND", [current_position]),
+            ],
+            "directory": [0x2340, 0x2380],
+            "directory_kinds": [0x7777, 2],
+            "layouts": [
+                (b"FIRST", 0x51, 18, 0xA5),
+                (b"SECOND", 0x52, 19, 0x5A),
+            ],
+            "matches": [0x2340],
+            "selected_layout": 0,
+        },
+        {
+            "name": "negative_signed_position_offsets",
+            "objects": [(0x2400, 0x0002, b"NEGATIVE", [current_position])],
+            "directory": [0x2400],
+            "layouts": [(b"NEGATIVE", 0x61, 20, 0xA5)],
+            "matches": [0x2400],
+            "selected_layout": 0,
+            "current_field": -6,
+            "direct_field": -6,
+        },
+        {
+            "name": "addr32_position_crosses_64k_without_wrap",
+            "objects": [(0xFFF0, 0x0002, b"CROSS", [current_position])],
+            "directory": [0xFFF0],
+            "layouts": [(b"CROSS", 0x71, 21, 0xA5)],
+            "matches": [0xFFF0],
+            "selected_layout": 0,
+            "direct_field": 0x20,
+        },
+        {
+            "name": "addr32_position_inherits_upper_esi",
+            "objects": [(0x2480, 0x0002, b"UPPER", [current_position])],
+            "directory": [0x2480],
+            "layouts": [(b"UPPER", 0x72, 22, 0xA5)],
+            "matches": [0x2480],
+            "selected_layout": 0,
+            "esi_high": 1,
+        },
+        {
+            "name": "initial_ds_clear_is_distinct_from_later_gs_layout",
+            "objects": [(0x24C0, 0x0002, b"PLANET", [current_position])],
+            "directory": [0x24C0],
+            "layouts": [
+                (b"PLANET", 0x81, 23, 0xA5),
+                (b"OTHER", 0x82, 24, 0x5A),
+            ],
+            "matches": [0x24C0],
+            "selected_layout": 0,
+            "split_stack_layout": True,
+        },
+    ]
+
+    game_segment = 0x7000
+    data_segment = 0x6000
+    record_segment = 0x3000
+    directory_segment = 0x8000
+    resource_segment = 0x9000
+    stack_segment = 0xA000
+    directory_offset = 0x2000
+    layout_offset = 0x2BC7
+    match_offset = 0x6886
+    resource_offset = 0x3000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("3ca55a966987c378")
+    helper_entries = {
+        0x3BD1: "entity_flag_state_transition",
+        0x1FA4: "string_compare",
+        0x39C7: "resource_named_file_load",
+        0x3B4E: "entity_record_setter",
+    }
+    vectors: list[dict[str, object]] = []
+
+    def write_wrapped(memory: bytearray, offset: int, data: bytes) -> None:
+        for index, byte in enumerate(data):
+            memory[(offset + index) & 0xFFFF] = byte
+
+    def c_string(memory: Uc, segment: int, offset: int) -> bytes:
+        result = bytearray()
+        for _ in range(0x10000):
+            byte = memory.mem_read(segment * 16 + offset, 1)[0]
+            result.append(byte)
+            offset = (offset + 1) & 0xFFFF
+            if byte == 0:
+                return bytes(result)
+        raise AssertionError("0x6ff3: unterminated helper string")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        objects = [tuple(item) for item in case["objects"]]
+        directory = [int(value) for value in case["directory"]]
+        directory_kinds = [
+            int(value) for value in case.get("directory_kinds", [1] * len(directory))
+        ]
+        layouts = [tuple(item) for item in case["layouts"]]
+        expected_matches = [int(value) for value in case.get("matches", [])]
+        selected_layout = case.get("selected_layout")
+        current_field = int(case.get("current_field", 0x20))
+        direct_field = int(case.get("direct_field", 0x28))
+        kind100_field = int(case.get("kind100_field", 0x30))
+        esi_high = int(case.get("esi_high", 0))
+        split_stack_layout = bool(case.get("split_stack_layout", False))
+        resource_result = int(case.get("resource_result", 0)) & 0xFFFF
+
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 29 + case_index * 31 + 0x47) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 11 + case_index * 23 + 0x69) & 0xFF
+            for offset in range(0x10000)
+        )
+        directory_before = bytearray(
+            (offset * 19 + case_index * 7 + 0x35) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 3 + case_index * 37 + 0x53) & 0xFF
+            for offset in range(0x22000)
+        )
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 17 + case_index * 41 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        struct.pack_into("<HH", game_before, 0x672C, directory_offset, directory_segment)
+        struct.pack_into("<H", game_before, 0x6726, record_segment)
+        struct.pack_into("<H", game_before, 0x6752, current_offset)
+        struct.pack_into("<HH", game_before, 0x0A7C, resource_offset, resource_segment)
+        game_before[0x6D60 + (0x0B << 4) + 2] = current_field & 0xFF
+        game_before[0x6D60 + (0x0B << 4) + 1] = direct_field & 0xFF
+        game_before[0x6D60 + (0x09 << 4) + 8] = kind100_field & 0xFF
+
+        def layout_bytes(layout: tuple[object, ...]) -> bytes:
+            layout_name, resource_id, entity_id, active = layout
+            encoded_name = bytes(layout_name)[:15] + b"\0"
+            encoded_name = encoded_name.ljust(16, b"\0")
+            return encoded_name + struct.pack(
+                "<HHBB",
+                int(resource_id) & 0xFFFF,
+                int(entity_id) & 0xFFFF,
+                int(active) & 0xFF,
+                0xCC,
+            )
+
+        for index, layout in enumerate(layouts):
+            encoded = layout_bytes(layout)
+            game_before[layout_offset + index * 22 : layout_offset + (index + 1) * 22] = encoded
+            data_before[layout_offset + index * 22 : layout_offset + (index + 1) * 22] = encoded
+            stack_before[layout_offset + index * 22 : layout_offset + (index + 1) * 22] = encoded
+        game_before[
+            layout_offset + len(layouts) * 22 : layout_offset + (len(layouts) + 1) * 22
+        ] = bytes(22)
+        data_before[
+            layout_offset + len(layouts) * 22 : layout_offset + (len(layouts) + 1) * 22
+        ] = bytes(22)
+        stack_before[
+            layout_offset + len(layouts) * 22 : layout_offset + (len(layouts) + 1) * 22
+        ] = bytes(22)
+
+        for index, object_offset in enumerate(directory):
+            entry_name = f"DIR{index:02d}".encode("ascii") + b"\0"
+            encoded_name = entry_name.ljust(16, b"\0")
+            struct.pack_into(
+                "<16sHH",
+                directory_before,
+                directory_offset + index * 20,
+                encoded_name,
+                object_offset,
+                directory_kinds[index],
+            )
+        struct.pack_into(
+            "<16sHH",
+            directory_before,
+            directory_offset + len(directory) * 20,
+            b"END\0".ljust(16, b"\0"),
+            0xFFFF,
+            0,
+        )
+
+        current_kind = 0x0004
+        struct.pack_into("<H", record_before, current_offset, current_kind)
+        current_effective = (
+            (esi_high << 16) + current_offset + (current_field & 0xFFFF)
+        ) & 0xFFFFFFFF
+        struct.pack_into("<I", record_before, current_effective, current_position)
+
+        object_by_offset: dict[int, tuple[int, bytes, list[int]]] = {}
+        for object_offset_value, kind_value, object_name, positions_value in objects:
+            object_offset_value = int(object_offset_value)
+            kind_value = int(kind_value)
+            object_name = bytes(object_name)
+            positions = [int(value) & 0xFFFFFFFF for value in positions_value]
+            object_by_offset[object_offset_value] = (kind_value, object_name, positions)
+            struct.pack_into("<H", record_before, object_offset_value, kind_value)
+            write_wrapped(
+                record_before,
+                object_offset_value + 4,
+                (object_name[:31] + b"\0"),
+            )
+            field_offset = kind100_field if kind_value == 0x0100 else direct_field
+            effective = (
+                (esi_high << 16)
+                + object_offset_value
+                + (field_offset & 0xFFFF)
+            ) & 0xFFFFFFFF
+            if kind_value == 0x0100 or field_offset != 0:
+                for position_index, position in enumerate(positions):
+                    struct.pack_into("<I", record_before, effective + position_index * 4, position)
+
+        if not split_stack_layout:
+            stack_before = game_before
+        for index in range(16):
+            struct.pack_into("<H", stack_before, match_offset + index * 2, 0xD000 + index)
+        stack_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        active_stack_segment = stack_segment if split_stack_layout else game_segment
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": (esi_high << 16) | 0x5678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x5000,
+            "fs": 0xB000,
+            "gs": game_segment,
+            "ss": active_stack_segment,
+            "flags": 0x0AD7,
+        }
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helper_entries.get(address)
+            if helper is None:
+                if address == 0x6023:
+                    calls.append(
+                        {
+                            "call": "vm_field_offset",
+                            "selector": machine.reg_read(UC_X86_REG_AX),
+                            "kind": machine.reg_read(UC_X86_REG_BX),
+                        }
+                    )
+                return
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            frame = list(
+                struct.unpack(
+                    "<HH",
+                    machine.mem_read(active_stack_segment * 16 + stack_pointer, 4),
+                )
+            )
+            if helper == "entity_flag_state_transition":
+                calls.append(
+                    {
+                        "call": helper,
+                        "entity": machine.reg_read(UC_X86_REG_AX),
+                        "frame": frame,
+                    }
+                )
+            elif helper == "string_compare":
+                left = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+                right = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                )
+                matched = left == right
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags | 1) if matched else (flags & ~1),
+                )
+                calls.append(
+                    {
+                        "call": helper,
+                        "left": left[:-1].decode("ascii"),
+                        "right": right[:-1].decode("ascii"),
+                        "matched": matched,
+                        "frame": frame,
+                    }
+                )
+            elif helper == "resource_named_file_load":
+                calls.append(
+                    {
+                        "call": helper,
+                        "resource": machine.reg_read(UC_X86_REG_AX),
+                        "destination": [
+                            machine.reg_read(UC_X86_REG_ES),
+                            machine.reg_read(UC_X86_REG_DI),
+                        ],
+                        "frame": frame,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, resource_result)
+            elif helper == "entity_record_setter":
+                calls.append(
+                    {
+                        "call": helper,
+                        "entity": machine.reg_read(UC_X86_REG_AX),
+                        "resource": [
+                            machine.reg_read(UC_X86_REG_ES),
+                            machine.reg_read(UC_X86_REG_DI),
+                        ],
+                        "position": [
+                            machine.reg_read(UC_X86_REG_BX),
+                            machine.reg_read(UC_X86_REG_CX),
+                        ],
+                        "frame_index": machine.reg_read(UC_X86_REG_BP),
+                        "frame": frame,
+                    }
+                )
+
+        memory: list[tuple[int, int, bytes]] = [
+            (0, 0x3BD1, b"\xCB"),
+            (0, 0x1FA4, b"\xCB"),
+            (0, 0x39C7, b"\xCB"),
+            (0, 0x3B4E, b"\xCB"),
+            (game_segment, 0, bytes(game_before)),
+            (data_segment, 0, bytes(data_before)),
+            (record_segment, 0, bytes(record_before)),
+            (directory_segment, 0, bytes(directory_before)),
+        ]
+        if split_stack_layout:
+            memory.append((stack_segment, 0, bytes(stack_before)))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=5000,
+        )
+
+        expected_calls: list[dict[str, object]] = [
+            {
+                "call": "entity_flag_state_transition",
+                "entity": 31,
+                "frame": [0x7006, 0],
+            },
+            {
+                "call": "vm_field_offset",
+                "selector": 0x000B,
+                "kind": current_kind,
+            },
+        ]
+        scanned_directory: list[int] = []
+        modeled_matches: list[int] = []
+        for directory_index, object_offset_value in enumerate(directory):
+            scanned_directory.append(object_offset_value)
+            if object_offset_value != current_offset:
+                kind_value, _object_name, positions = object_by_offset[object_offset_value]
+                selector = 0x0009 if kind_value == 0x0100 else 0x000B
+                expected_calls.append(
+                    {
+                        "call": "vm_field_offset",
+                        "selector": selector,
+                        "kind": kind_value,
+                    }
+                )
+                if kind_value == 0x0100:
+                    if current_position in positions[:2]:
+                        modeled_matches.append(object_offset_value)
+                elif direct_field != 0 and positions[0] == current_position:
+                    modeled_matches.append(object_offset_value)
+            next_kind = (
+                directory_kinds[directory_index + 1]
+                if directory_index + 1 < len(directory_kinds)
+                else 0
+            )
+            if next_kind != 1:
+                break
+        if modeled_matches != expected_matches:
+            raise AssertionError(
+                f"0x6ff3 {name}: modeled matches={modeled_matches}, "
+                f"declared={expected_matches}"
+            )
+
+        if expected_matches:
+            selected_offset = expected_matches[0]
+            selected_name = object_by_offset[selected_offset][1].decode("ascii")
+            for layout_index, layout in enumerate(layouts):
+                layout_name = bytes(layout[0]).decode("ascii")
+                matched = layout_name == selected_name
+                expected_calls.append(
+                    {
+                        "call": "string_compare",
+                        "left": layout_name,
+                        "right": selected_name,
+                        "matched": matched,
+                        "frame": [0x70B8, 0],
+                    }
+                )
+                if matched:
+                    resource_id = int(layout[1])
+                    entity_id = int(layout[2])
+                    expected_calls.extend(
+                        [
+                            {
+                                "call": "resource_named_file_load",
+                                "resource": resource_id | 0x8000,
+                                "destination": [resource_segment, resource_offset],
+                                "frame": [0x70D2, 0],
+                            },
+                            {
+                                "call": "entity_record_setter",
+                                "entity": entity_id,
+                                "resource": [resource_segment, resource_offset],
+                                "position": [0xFC18, 0xFC18],
+                                "frame_index": 0,
+                                "frame": [0x70E2, 0],
+                            },
+                        ]
+                    )
+                    break
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x6ff3 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+
+        actual_matches = [
+            struct.unpack(
+                "<H",
+                machine.mem_read(active_stack_segment * 16 + match_offset + index * 2, 2),
+            )[0]
+            for index in range(len(expected_matches) + 1)
+        ]
+        if actual_matches != expected_matches + [0]:
+            raise AssertionError(
+                f"0x6ff3 {name}: scratch={actual_matches}, "
+                f"expected={expected_matches + [0]}"
+            )
+
+        game_active = [
+            machine.mem_read(game_segment * 16 + layout_offset + index * 22 + 20, 1)[0]
+            for index in range(len(layouts))
+        ]
+        stack_active = [
+            machine.mem_read(active_stack_segment * 16 + layout_offset + index * 22 + 20, 1)[0]
+            for index in range(len(layouts))
+        ]
+        expected_game_active = [int(layout[3]) for layout in layouts]
+        if not split_stack_layout:
+            expected_game_active = [0] * len(layouts)
+        if selected_layout is not None:
+            expected_game_active[int(selected_layout)] = 1
+        expected_stack_active = [0] * len(layouts)
+        if not split_stack_layout:
+            expected_stack_active = expected_game_active
+        if game_active != expected_game_active or stack_active != expected_stack_active:
+            raise AssertionError(
+                f"0x6ff3 {name}: active game/stack={game_active}/{stack_active}, "
+                f"expected={expected_game_active}/{expected_stack_active}"
+            )
+
+        if bytes(machine.mem_read(record_segment * 16, len(record_before))) != bytes(record_before):
+            raise AssertionError(f"0x6ff3 {name}: record memory changed")
+        if bytes(machine.mem_read(directory_segment * 16, 0x10000)) != bytes(directory_before):
+            raise AssertionError(f"0x6ff3 {name}: directory memory changed")
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_before):
+            raise AssertionError(f"0x6ff3 {name}: incoming DS decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x6ff3 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x6ff3 {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(
+                active_stack_segment * 16 + caller_sp + 4,
+                len(stack_sentinel),
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x6ff3 {name}: caller stack sentinel changed")
+
+        if selected_layout is not None:
+            resource_id = int(layouts[int(selected_layout)][1]) | 0x8000
+            terminal_flags = {
+                "cf": False,
+                "pf": (resource_id & 0xFF).bit_count() % 2 == 0,
+                "zf": resource_id == 0,
+                "sf": bool(resource_id & 0x8000),
+                "of": False,
+            }
+        elif expected_matches:
+            terminal_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            terminal_flags = sub16_flags(0, 1)
+            del terminal_flags["af"]
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x6ff3 {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "directory_scanned": scanned_directory,
+                "matches": expected_matches,
+                "selected_layout": selected_layout,
+                "layout_active_game": game_active,
+                "layout_active_stack": stack_active,
+                "helper_calls": calls,
+                "resource_result_ignored": resource_result if selected_layout is not None else None,
+                "esi_high": esi_high,
+                "return": "far",
+                "defined_flags": terminal_flags,
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_arche_position_match_list_build_vectors() -> list[dict[str, object]]:
     entry = 0x713D
     return_address = 0xF13D
@@ -79971,6 +80622,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_70ee_natural.json",
         ship_3d_navigation_candidate_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6ff3_natural.json",
+        draw_hud_element_2bc7_vectors(),
         args.check,
     )
     update_vector(

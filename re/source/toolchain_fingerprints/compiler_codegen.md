@@ -1864,6 +1864,33 @@ instead of DI plus STOSW, and addresses globals through DS. Exact integration
 still needs fixed GS placement and the original frameless AX/BX/CX/DI
 allocation.
 
+World-art HUD selector `0x006FF3` first transitions entity 31 and clears byte
+`+0x14` in each 22-byte `SS:0x2BC7` layout entry. It resolves the current
+object's selector-0x0B 32-bit position, then walks the far directory until the
+next entry kind is not one. Ordinary objects require a nonzero selector-0x0B
+field and one exact position; kind 0x0100 instead resolves selector 0x09 and
+accepts either of two consecutive positions. Every match is written in
+directory order to `SS:0x6886`, followed by zero, but only the first match is
+used: its name selects a layout, whose active byte is set before loading
+`resource_id | 0x8000` into the shared buffer and creating its entity at
+`(-1000,-1000)`, frame zero. The resource-loader result is ignored.
+
+Sixteen patched-helper vectors prove every phase, both position forms, zero
+offset rejection, directory stopping, multiple-match ordering, missing names,
+ignored load failure, exact helper frames, SS/GS split behavior, complete
+preservation, terminal flags, stack, and far return. They also isolate the
+binary's address-size details: unprefixed `0x98` in `vm_field_offset` produces
+a 16-bit `0xFFFA` result from table byte `-6`, while the caller's `EAX+ESI`
+reads do not wrap at 64 KiB and inherit upper ESI. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) compiles the natural one-to-one candidate warning-free
+to 134 instructions/364 bytes versus 92/251 original, with 81.52 percent
+mnemonic-multiset overlap and no inline assembly. The source keeps native
+16-bit far pointers because Watcom lowers `huge` arithmetic through `__PIA`,
+which is less like the original direct loads. Full-source game integration
+therefore requires the shipped SS=GS alias, zero upper ESI, and in-segment
+position sums; exact arbitrary-state replacement still needs narrow addr32 and
+far-helper ABI adapters.
+
 Byte-parser handlers `0x007542`, `0x007549`, `0x007550`, and `0x007557` are
 byte-identical entry points for opcodes 0x01, 0x02, 0x0F, and 0x04. Two direct
 vectors per entry execute through RET and prove the exact seven-byte body,

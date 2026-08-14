@@ -23,6 +23,8 @@
 #define SHIP_3D_HUD_PALETTE_FIRST 128u
 #define SHIP_3D_HUD_PALETTE_COLORS 64u
 #define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
+#define SHIP_3D_HUD_LAYOUT_NAME_BYTES 16u
+#define SHIP_3D_HUD_OFFSCREEN_COORD ((cb_i16)-1000)
 #define SHIP_3D_POINT_CLOUD_COUNT 1000u
 #define SHIP_3D_OBJECT_ANCHOR_COUNT 11u
 #define SHIP_3D_NAV_ENTITY_BASE 0x0015u
@@ -96,6 +98,22 @@ typedef struct ship_3d_position_field {
     cb_u16 y;
 } ship_3d_position_field;
 
+typedef union ship_3d_hud_layout_name {
+    char text[SHIP_3D_HUD_LAYOUT_NAME_BYTES];
+    cb_u16 first_word;
+} ship_3d_hud_layout_name;
+
+typedef struct ship_3d_hud_layout_entry {
+    ship_3d_hud_layout_name name;
+    cb_u16 resource_id;
+    cb_u16 entity_id;
+    cb_u8 active;
+    cb_u8 reserved;
+} ship_3d_hud_layout_entry;
+
+typedef char ship_3d_hud_layout_entry_size_must_be_22[
+        sizeof(ship_3d_hud_layout_entry) == 22 ? 1 : -1];
+
 extern volatile cb_u16 CB_GAME_DATA ship_3d_depth_offset; /* DS/GS:0x2527 */
 extern volatile cb_u8 CB_GAME_DATA
         ship_3d_plane_blit_crop_enabled; /* DS/GS:0x252E */
@@ -158,6 +176,8 @@ extern volatile cb_u16 ship_3d_presentable_name_offsets[];
 extern volatile cb_u16 CB_GAME_DATA vm_arche_position_match_offsets[];
 /* Filter output is SS/DS:0x2B53 under the shipped SS=DS=GS data-group alias. */
 extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
+/* Original clear uses SS:0x2BC7; later lookup uses GS:0x2BC7 (SS == GS). */
+extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 
 #if defined(__WATCOMC__)
 #pragma aux binary_u32_sqrt parm [dx ax] value [ax] modify exact [ax]
@@ -180,6 +200,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
 #pragma aux ship_3d_object_sprite_project modify exact []
 #pragma aux ship_3d_plane_band_copy modify exact []
 #pragma aux ship_3d_target_record_select value [ax] modify exact [ax]
+#pragma aux draw_hud_element_2bc7 modify exact []
 #pragma aux bridge_panorama_frame_load parm [ax] modify exact []
 #pragma aux page_flip value [ax] modify exact [ax bx]
 #pragma aux alien_overlay_cycle modify exact [ax dx si di bp]

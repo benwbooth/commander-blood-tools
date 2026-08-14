@@ -1,0 +1,1146 @@
+[
+  {
+    "name": "only_current_object_has_no_match",
+    "directory_scanned": [
+      4096
+    ],
+    "matches": [],
+    "selected_layout": null,
+    "layout_active_game": [
+      0
+    ],
+    "layout_active_stack": [
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_position_match_loads_named_layout",
+    "directory_scanned": [
+      8192
+    ],
+    "matches": [
+      8192
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1,
+      0
+    ],
+    "layout_active_stack": [
+      1,
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "PLANET",
+        "right": "PLANET",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32786,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 7,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_position_mismatch",
+    "directory_scanned": [
+      8224
+    ],
+    "matches": [],
+    "selected_layout": null,
+    "layout_active_game": [
+      0
+    ],
+    "layout_active_stack": [
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "direct_zero_field_offset_is_rejected",
+    "directory_scanned": [
+      8256
+    ],
+    "matches": [],
+    "selected_layout": null,
+    "layout_active_game": [
+      0
+    ],
+    "layout_active_stack": [
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind100_first_position_matches",
+    "directory_scanned": [
+      8448
+    ],
+    "matches": [
+      8448
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 9,
+        "kind": 256
+      },
+      {
+        "call": "string_compare",
+        "left": "STATION",
+        "right": "STATION",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32803,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 11,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind100_second_position_matches",
+    "directory_scanned": [
+      8480
+    ],
+    "matches": [
+      8480
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 9,
+        "kind": 256
+      },
+      {
+        "call": "string_compare",
+        "left": "STATION",
+        "right": "STATION",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32803,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 11,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind100_both_positions_mismatch",
+    "directory_scanned": [
+      8512
+    ],
+    "matches": [],
+    "selected_layout": null,
+    "layout_active_game": [
+      0
+    ],
+    "layout_active_stack": [
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 9,
+        "kind": 256
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "multiple_matches_select_first_directory_object",
+    "directory_scanned": [
+      8704,
+      8768
+    ],
+    "matches": [
+      8704,
+      8768
+    ],
+    "selected_layout": 1,
+    "layout_active_game": [
+      0,
+      1
+    ],
+    "layout_active_stack": [
+      0,
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "FIRST",
+        "right": "SECOND",
+        "matched": false,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "string_compare",
+        "left": "SECOND",
+        "right": "SECOND",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32818,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 14,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "matching_position_without_layout_name",
+    "directory_scanned": [
+      8832
+    ],
+    "matches": [
+      8832
+    ],
+    "selected_layout": null,
+    "layout_active_game": [
+      0
+    ],
+    "layout_active_stack": [
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "PLANET",
+        "right": "UNKNOWN",
+        "matched": false,
+        "frame": [
+          28856,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "empty_layout_table_after_position_match",
+    "directory_scanned": [
+      8896
+    ],
+    "matches": [
+      8896
+    ],
+    "selected_layout": null,
+    "layout_active_game": [],
+    "layout_active_stack": [],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      }
+    ],
+    "resource_result_ignored": null,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "resource_failure_result_is_ignored",
+    "directory_scanned": [
+      8960
+    ],
+    "matches": [
+      8960
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "PLANET",
+        "right": "PLANET",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32837,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 17,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 65535,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "nonactive_next_directory_entry_stops_scan",
+    "directory_scanned": [
+      9024
+    ],
+    "matches": [
+      9024
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1,
+      0
+    ],
+    "layout_active_stack": [
+      1,
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "FIRST",
+        "right": "FIRST",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32849,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 18,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_signed_position_offsets",
+    "directory_scanned": [
+      9216
+    ],
+    "matches": [
+      9216
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "NEGATIVE",
+        "right": "NEGATIVE",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32865,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 20,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "addr32_position_crosses_64k_without_wrap",
+    "directory_scanned": [
+      65520
+    ],
+    "matches": [
+      65520
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "CROSS",
+        "right": "CROSS",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32881,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 21,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "addr32_position_inherits_upper_esi",
+    "directory_scanned": [
+      9344
+    ],
+    "matches": [
+      9344
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1
+    ],
+    "layout_active_stack": [
+      1
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "UPPER",
+        "right": "UPPER",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32882,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 22,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 1,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "initial_ds_clear_is_distinct_from_later_gs_layout",
+    "directory_scanned": [
+      9408
+    ],
+    "matches": [
+      9408
+    ],
+    "selected_layout": 0,
+    "layout_active_game": [
+      1,
+      90
+    ],
+    "layout_active_stack": [
+      0,
+      0
+    ],
+    "helper_calls": [
+      {
+        "call": "entity_flag_state_transition",
+        "entity": 31,
+        "frame": [
+          28678,
+          0
+        ]
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 4
+      },
+      {
+        "call": "vm_field_offset",
+        "selector": 11,
+        "kind": 2
+      },
+      {
+        "call": "string_compare",
+        "left": "PLANET",
+        "right": "PLANET",
+        "matched": true,
+        "frame": [
+          28856,
+          0
+        ]
+      },
+      {
+        "call": "resource_named_file_load",
+        "resource": 32897,
+        "destination": [
+          36864,
+          12288
+        ],
+        "frame": [
+          28882,
+          0
+        ]
+      },
+      {
+        "call": "entity_record_setter",
+        "entity": 23,
+        "resource": [
+          36864,
+          12288
+        ],
+        "position": [
+          64536,
+          64536
+        ],
+        "frame_index": 0,
+        "frame": [
+          28898,
+          0
+        ]
+      }
+    ],
+    "resource_result_ignored": 0,
+    "esi_high": 0,
+    "return": "far",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]
