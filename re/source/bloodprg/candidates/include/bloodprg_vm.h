@@ -20,6 +20,7 @@ extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
 extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
 extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
+extern volatile cb_u8 vm_sequence_active_ds; /* DS:0x252A alias */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
@@ -66,6 +67,7 @@ extern volatile cb_u16 CB_GAME_DATA vm_program_counter; /* GS:0x6772 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
 extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
 extern volatile cb_u16 vm_presentation_owner_offset; /* DS:0x679A */
+extern volatile cb_u16 vm_named_vbio_object; /* DS:0x679C */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */

@@ -49,6 +49,7 @@ extern bloodprg_snd_clip_callback CB_GAME_DATA
         snd_play_clip_callback; /* GS:0x0AEC */
 extern bloodprg_audio_position_callback audio_position_callback; /* DS:0x0CF3 */
 extern volatile cb_u8 snd_driver_pending_flag; /* DS=GS:0x0BA0 */
+extern volatile cb_u16 snd_loader_flags_word; /* DS:0x0BA0 word alias */
 extern volatile cb_u8 voc_tablo2_active; /* DS:0x0BA3 */
 extern volatile cb_u8 snd_music_voc_name_changed; /* DS:0x0BA1 alias */
 extern volatile cb_u8 voc_playback_enabled; /* game data:0x0ADE */
@@ -78,11 +79,15 @@ extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_bank_memory; /* GS:0x0BB3 */
 extern volatile bloodprg_snd_clip_descriptor CB_GAME_DATA
         snd_clip_descriptor; /* GS:0x0BAB */
 extern volatile bloodprg_snd_bank_header CB_GAME_DATA snd_bank_header; /* GS:0x0BBB */
+extern volatile bloodprg_snd_bank_header
+        snd_bank_header_ds; /* DS:0x0BBB alias */
 extern volatile bloodprg_snd_memory_clip CB_GAME_DATA
         snd_memory_clips[]; /* GS:0x0BBF */
 extern volatile cb_u32 CB_GAME_DATA snd_source_offsets[]; /* GS:0x0F1A */
 extern volatile cb_u16 CB_GAME_DATA snd_streamed_clip_count; /* GS:0x0C53 */
 extern volatile cb_u32 CB_GAME_DATA snd_streamed_offsets[]; /* GS:0x0C57 */
+extern volatile char default_snd_bank_path[]; /* DS:0x0CFC, sn\\tb.snd */
+extern volatile char ship_3d_snd_bank_path[]; /* DS:0x0D23, sn\\3D.snd */
 
 void CB_NEAR cb_snd_stream_service(cb_u16 command,
         volatile bloodprg_snd_stream_buffer *buffer,

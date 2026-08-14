@@ -121,6 +121,13 @@ cb_u32 CB_FAR resource_file_load(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *destination); /* 0x01CE:0x07DB */
 cb_i16 CB_FAR pbm_image_load_and_decode(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *file_buffer_end); /* 0x01CE:0x091D */
+#if defined(__WATCOMC__)
+/* Ordinary C ABI name for calls between recovered source functions. */
+cb_i16 CB_FAR pbm_image_load_and_decode_c(volatile char CB_FAR *path,
+        volatile cb_u8 CB_FAR *file_buffer_end);
+#else
+#define pbm_image_load_and_decode_c pbm_image_load_and_decode
+#endif
 void CB_FAR resource_file_load_to_xms(volatile char CB_FAR *path,
         volatile cb_u8 CB_FAR *staging_buffer); /* 0x01CE:0x0621 */
 void CB_FAR resource_file_load_to_ems(

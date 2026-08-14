@@ -47468,6 +47468,721 @@ def ship_3d_point_cloud_randomize_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
+    entry = 0xB591
+    expected_hash = "7abf19b449320cd3b3a67b20979c0b29faf4fdf13dfa3ff5ba22cebdbc7094c3"
+    if hashlib.sha256(EXE[entry : entry + 257]).hexdigest() != expected_hash:
+        raise AssertionError("0xb591: recovered 257-byte body changed")
+
+    data_image = 0xD420
+    shipped_paths = (0x0087, 0x0090, 0x009C)
+    if struct.unpack_from("<HHH", EXE, data_image + 0x0ACC) != shipped_paths:
+        raise AssertionError("0xb591: shipped alien overlay path table changed")
+    for offset, expected in (
+        (0x0087, b"amer.xdb\0"),
+        (0x0090, b"croolis.xdb\0"),
+        (0x009C, b"scrut.xdb\0"),
+        (0x0113, b"manu3.xdb\0"),
+        (0x0CFC, b"sn\\tb.snd\0"),
+        (0x0D23, b"sn\\3D.snd\0"),
+    ):
+        actual = EXE[data_image + offset : data_image + offset + len(expected)]
+        if actual != expected:
+            raise AssertionError(
+                f"0xb591: shipped string at DS:{offset:#06x} changed"
+            )
+
+    data_segment = 0x4000
+    game_segment = 0x5000
+    extra_segment = 0x6000
+    heap_segment = 0xA000
+    output_segment = 0x7000
+    back_buffer_segment = 0x7800
+    overlay_segment = 0x8200
+    overlay_offset = 0x1200
+    overlay_entry = overlay_segment * 16 + overlay_offset
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    return_address = 0x6F00
+    helper_entries = {
+        0x01CE * 16 + 0x07DB: ("resource_file_load", 0x01CE, 0x07DB),
+        0x0B1B * 16 + 0x0855: ("snd_bank_loader", 0x0B1B, 0x0855),
+        0x008B * 16 + 0x0514: ("cdrom_audio_play_track_2", 0x008B, 0x0514),
+        overlay_entry: ("alien_overlay_entry", overlay_segment, overlay_offset),
+        0x008B * 16 + 0x04E7: ("cdrom_audio_stop", 0x008B, 0x04E7),
+        0x0299 * 16 + 0x0DEB: ("blit_fill_row_5221", 0x0299, 0x0DEB),
+        0x008B * 16 + 0x0967: ("backbuffer_clear_flags", 0x008B, 0x0967),
+        0x008B * 16 + 0x0929: ("back_buffer_init", 0x008B, 0x0929),
+        0x01CE * 16 + 0x091D: ("pbm_image_load_and_decode", 0x01CE, 0x091D),
+    }
+    cases: list[dict[str, object]] = [
+        {"name": "trigger_clear", "trigger": 0, "phase": 0, "sequence": 0},
+        {
+            "name": "trigger_high_bit_ignored",
+            "trigger": 0x80,
+            "phase": 1,
+            "sequence": 1,
+        },
+        {"name": "phase_0_sequence", "phase": 0, "sequence": 1},
+        {"name": "phase_1_nonsequence", "phase": 1, "sequence": 0},
+        {"name": "phase_2_wraps", "phase": 2, "sequence": 0},
+        {
+            "name": "sequence_high_bits_use_low_bit",
+            "phase": 0,
+            "sequence": 0x81,
+        },
+        {
+            "name": "overlay_switches_to_nonsequence",
+            "phase": 1,
+            "sequence": 1,
+            "overlay_sequence": 0,
+        },
+        {
+            "name": "overlay_switches_to_sequence",
+            "phase": 2,
+            "sequence": 0,
+            "overlay_sequence": 1,
+        },
+        {
+            "name": "back_init_replaces_back_pointer",
+            "phase": 0,
+            "sequence": 0,
+            "back_after_init": 0x7C003456,
+        },
+        {
+            "name": "viewport_offset_wrap",
+            "phase": 1,
+            "sequence": 0,
+            "output_offset": 0xFFF8,
+        },
+        {
+            "name": "inherited_reverse_direction",
+            "phase": 2,
+            "sequence": 1,
+            "direction": "reverse",
+            "output_offset": 0x4200,
+        },
+    ]
+
+    def word(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def dword(memory: bytes | bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def write_word(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def write_dword(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def write_wrapped(memory: bytearray, offset: int, payload: bytes) -> None:
+        for index, value in enumerate(payload):
+            memory[(offset + index) & 0xFFFF] = value
+
+    def flag_values(bits: int, include_af: bool = True) -> dict[str, bool]:
+        masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "df": 0x0400,
+            "of": 0x0800,
+        }
+        if not include_af:
+            del masks["af"]
+        return {name: bool(bits & mask) for name, mask in masks.items()}
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        trigger = int(case.get("trigger", 1)) & 0xFF
+        phase = int(case["phase"]) & 0xFF
+        sequence = int(case["sequence"]) & 0xFF
+        output_offset = int(case.get("output_offset", 0x2400 + case_index * 0x180))
+        reverse = case.get("direction") == "reverse"
+        original_mouse = (
+            (0x1234 + case_index * 0x111) & 0xFFFF,
+            (0xFEDC - case_index * 0x101) & 0xFFFF,
+        )
+        mutated_mouse = (
+            (0xA100 + case_index) & 0xFFFF,
+            (0xB200 + case_index) & 0xFFFF,
+        )
+        vbio_offset = (0x3600 + case_index * 0x22) & 0xFFFF
+        callback_pointer = (0x1357 + case_index * 3) | (0x2468 << 16)
+        sound_header = (0x31415926 + case_index * 0x01010101) & 0xFFFFFFFF
+        temporary_header = (0xA5A50000 | case_index) & 0xFFFFFFFF
+        restored_load_header = (0x5A5A0000 | case_index) & 0xFFFFFFFF
+        loader_flags = (0xA700 | (0x31 + case_index)) & 0xFFFF
+        back_pointer = (
+            back_buffer_segment << 16
+        ) | ((0x3100 + case_index * 0x40) & 0xFFFF)
+        back_after_init = int(case.get("back_after_init", back_pointer))
+        overlay_sequence = int(case.get("overlay_sequence", sequence)) & 0xFF
+        final_sequence = overlay_sequence
+        clear_result = (0x4100 + case_index) & 0xFFFF
+        clear_dx = (0x5100 + case_index) & 0xFFFF
+        back_init_result = (0x6100 + case_index) & 0xFFFF
+        back_init_dx = (0x7100 + case_index) & 0xFFFF
+        pbm_result = (0x2100 + case_index) & 0xFFFF
+        terminal_flag_bits = (0x08D5 if final_sequence & 1 else 0x0015)
+        if reverse:
+            terminal_flag_bits |= 0x0400
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + (offset >> 8) * 7 + case_index * 31 + 0x65)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 37 + 0x87)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        heap_before = bytearray(
+            (offset * 5 + (offset >> 8) * 23 + case_index * 41 + 0xA9)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        output_before = bytearray(
+            (offset * 7 + (offset >> 8) * 29 + case_index * 43 + 0xCB)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 13 + (offset >> 8) * 31 + case_index * 47 + 0xED)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x0AE4] = trigger
+        data_before[0x0AE3] = 0xD7
+        data_before[0x0AE5] = phase
+        for index, path_offset in enumerate(shipped_paths):
+            write_word(data_before, 0x0ACC + index * 2, path_offset)
+        for offset, value in (
+            (0x0087, b"amer.xdb\0"),
+            (0x0090, b"croolis.xdb\0"),
+            (0x009C, b"scrut.xdb\0"),
+            (0x0113, b"manu3.xdb\0"),
+            (0x00F3, b"frigo.fd\0"),
+            (0x0CFC, b"sn\\tb.snd\0"),
+            (0x0D23, b"sn\\3D.snd\0"),
+        ):
+            data_before[offset : offset + len(value)] = value
+        write_dword(data_before, 0x0A96, (overlay_segment << 16) | overlay_offset)
+        write_word(data_before, 0x0A2A, original_mouse[0])
+        write_word(data_before, 0x0A2C, original_mouse[1])
+        write_word(data_before, 0x679C, vbio_offset)
+        write_word(data_before, 0x6726, heap_segment)
+        write_dword(data_before, 0x0BBB, sound_header)
+        write_word(data_before, 0x0BA0, loader_flags)
+        write_dword(data_before, 0x522D, (output_segment << 16) | output_offset)
+        write_dword(data_before, 0x5229, back_pointer)
+        write_word(data_before, 0x0B3B, 0xBEEF)
+        data_before[0x5B55] = 0x9A
+        data_before[0x252A] = sequence
+        data_before[0x252E] = 0x7D
+        write_word(data_before, 0x1FA3, 0x2468)
+        data_before[0x5B53] = 0x6B
+        data_before[0x5B57] = 0xC3
+        write_word(heap_before, vbio_offset, 0x0012 + case_index)
+        write_dword(stack_before, 0x0AEC, callback_pointer)
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before[caller_sp : caller_sp + 12] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        expected_data = bytearray(data_before)
+        expected_heap = bytearray(heap_before)
+        expected_output = bytearray(output_before)
+        expected_stack_request = bytes(stack_before[0x0AE8 : 0x0AF0])
+        expected_calls: list[dict[str, object]] = []
+        selected_path = shipped_paths[phase] if phase < len(shipped_paths) else 0
+
+        if trigger & 1:
+            next_phase = (phase + 1) & 0xFF
+            if next_phase == 3:
+                next_phase = 0
+            expected_data[0x0AE4] = 0
+            expected_data[0x0AE3] = 0
+            expected_data[0x0AE5] = next_phase
+            expected_calls.extend(
+                [
+                    {
+                        "call": "resource_file_load_overlay",
+                        "cs": 0x01CE,
+                        "ip": 0x07DB,
+                        "sp": 0xFEF6,
+                        "path": [data_segment, selected_path],
+                        "destination": [overlay_segment, overlay_offset],
+                    },
+                    {
+                        "call": "snd_bank_loader_3d",
+                        "cs": 0x0B1B,
+                        "ip": 0x0855,
+                        "sp": 0xFEF2,
+                        "mode": 0,
+                        "path": [data_segment, 0x0D23],
+                        "sound_header": sound_header,
+                        "loader_flags": loader_flags,
+                    },
+                    {
+                        "call": "cdrom_audio_play_track_2",
+                        "cs": 0x008B,
+                        "ip": 0x0514,
+                        "sp": 0xFEF0,
+                        "loader_flags": loader_flags & 0xFF00,
+                    },
+                    {
+                        "call": "alien_overlay_entry",
+                        "cs": overlay_segment,
+                        "ip": overlay_offset,
+                        "sp": 0xFEF0,
+                        "bp": 0x0AE8,
+                        "timing_scale": [vbio_offset, heap_segment],
+                        "frame_callback": [
+                            callback_pointer & 0xFFFF,
+                            callback_pointer >> 16,
+                        ],
+                        "phase_after": next_phase,
+                        "mouse": list(original_mouse),
+                    },
+                    {
+                        "call": "cdrom_audio_stop",
+                        "cs": 0x008B,
+                        "ip": 0x04E7,
+                        "sp": 0xFEF0,
+                        "loader_flags": loader_flags & 0xFF00,
+                    },
+                    {
+                        "call": "snd_bank_loader_tb",
+                        "cs": 0x0B1B,
+                        "ip": 0x0855,
+                        "sp": 0xFEF2,
+                        "mode": 0,
+                        "path": [data_segment, 0x0CFC],
+                        "sound_header": temporary_header,
+                        "loader_flags": loader_flags,
+                    },
+                    {
+                        "call": "resource_file_load_manu3",
+                        "cs": 0x01CE,
+                        "ip": 0x07DB,
+                        "sp": 0xFEF6,
+                        "path": [data_segment, 0x0113],
+                        "destination": [overlay_segment, overlay_offset],
+                        "sound_header": sound_header,
+                    },
+                    {
+                        "call": "blit_fill_row_5221",
+                        "cs": 0x0299,
+                        "ip": 0x0DEB,
+                        "sp": 0xFEF6,
+                        "color": 0,
+                    },
+                ]
+            )
+
+            expected_data[0x252A] = overlay_sequence
+            write_dword(expected_data, 0x5229, back_pointer)
+            expected_heap_value = (word(heap_before, vbio_offset) + 1) & 0xFFFF
+            write_word(expected_heap, vbio_offset, expected_heap_value)
+            expected_data[0x0A2A : 0x0A2E] = struct.pack("<HH", *original_mouse)
+            write_dword(expected_data, 0x0BBB, sound_header)
+            write_word(expected_data, 0x0BA0, loader_flags)
+
+            descriptor = struct.pack("<HHIHHI", 0, 1, 4, 320, 200, 0)
+            if reverse:
+                cursor = output_offset
+                for field in (
+                    struct.pack("<H", 0),
+                    struct.pack("<H", 1),
+                    struct.pack("<I", 4),
+                    struct.pack("<H", 320),
+                    struct.pack("<H", 200),
+                    struct.pack("<I", 0),
+                ):
+                    write_wrapped(expected_output, cursor, field)
+                    cursor = (cursor - len(field)) & 0xFFFF
+                descriptor_cursor = cursor
+            else:
+                write_wrapped(expected_output, output_offset, descriptor)
+                descriptor_cursor = (output_offset + len(descriptor)) & 0xFFFF
+
+            write_word(expected_data, 0x0B3B, 0)
+            expected_data[0x5B55] = 1
+            if final_sequence & 1:
+                expected_data[0x252E] = 1
+                write_word(expected_data, 0x1FA3, 0xFFFF)
+                expected_calls.append(
+                    {
+                        "call": "backbuffer_clear_flags",
+                        "cs": 0x008B,
+                        "ip": 0x0967,
+                        "sp": 0xFEFA,
+                        "plane_copy_enabled": 0,
+                    }
+                )
+            else:
+                write_dword(expected_data, 0x5229, back_after_init)
+                expected_data[0x5B53] = 0
+                expected_data[0x5B57] = 0
+                expected_calls.extend(
+                    [
+                        {
+                            "call": "back_buffer_init",
+                            "cs": 0x008B,
+                            "ip": 0x0929,
+                            "sp": 0xFEFA,
+                            "back_buffer_before": back_pointer,
+                        },
+                        {
+                            "call": "pbm_image_load_and_decode",
+                            "cs": 0x01CE,
+                            "ip": 0x091D,
+                            "sp": 0xFEFA,
+                            "path": [data_segment, 0x00F3],
+                            "file_buffer_end": [
+                                back_after_init >> 16,
+                                back_after_init & 0xFFFF,
+                            ],
+                            "palette_refresh": 0,
+                            "transparent_zero": 0,
+                        },
+                    ]
+                )
+            expected_stack_request = struct.pack(
+                "<HHI", vbio_offset, heap_segment, callback_pointer
+            )
+        else:
+            next_phase = phase
+            descriptor_cursor = output_offset
+            expected_heap_value = word(heap_before, vbio_offset)
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if reverse else 0),
+        }
+        actual_calls: list[dict[str, object]] = []
+        resource_count = 0
+        snd_count = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal resource_count, snd_count
+            helper = helper_entries.get(address)
+            if helper is None:
+                return
+            generic_name, expected_cs, expected_ip = helper
+            event: dict[str, object] = {
+                "call": generic_name,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+            }
+            if event["cs"] != expected_cs or event["ip"] != expected_ip:
+                raise AssertionError(f"0xb591 {name}: bad helper transfer {event}")
+
+            if generic_name == "resource_file_load":
+                resource_count += 1
+                if resource_count == 1:
+                    event["call"] = "resource_file_load_overlay"
+                    event["path"] = [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ]
+                    event["destination"] = [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ]
+                    machine.reg_write(UC_X86_REG_EAX, 0x11112222)
+                else:
+                    event["call"] = "resource_file_load_manu3"
+                    event["path"] = [
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ]
+                    event["destination"] = [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ]
+                    event["sound_header"] = struct.unpack(
+                        "<I", machine.mem_read(data_segment * 16 + 0x0BBB, 4)
+                    )[0]
+                    machine.reg_write(UC_X86_REG_EAX, 0x33334444)
+            elif generic_name == "snd_bank_loader":
+                snd_count += 1
+                event["call"] = (
+                    "snd_bank_loader_3d" if snd_count == 1 else "snd_bank_loader_tb"
+                )
+                event["mode"] = machine.reg_read(UC_X86_REG_AX)
+                event["path"] = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+                event["sound_header"] = struct.unpack(
+                    "<I", machine.mem_read(data_segment * 16 + 0x0BBB, 4)
+                )[0]
+                event["loader_flags"] = struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0BA0, 2)
+                )[0]
+                machine.mem_write(
+                    data_segment * 16 + 0x0BBB,
+                    struct.pack(
+                        "<I", temporary_header if snd_count == 1 else restored_load_header
+                    ),
+                )
+            elif generic_name in (
+                "cdrom_audio_play_track_2",
+                "cdrom_audio_stop",
+            ):
+                event["loader_flags"] = struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0BA0, 2)
+                )[0]
+            elif generic_name == "alien_overlay_entry":
+                request_offset = machine.reg_read(UC_X86_REG_BP)
+                request = bytes(
+                    machine.mem_read(stack_segment * 16 + request_offset, 8)
+                )
+                timing_offset, timing_segment, callback_offset, callback_segment = (
+                    struct.unpack("<HHHH", request)
+                )
+                event.update(
+                    {
+                        "bp": request_offset,
+                        "timing_scale": [timing_offset, timing_segment],
+                        "frame_callback": [callback_offset, callback_segment],
+                        "phase_after": machine.mem_read(
+                            data_segment * 16 + 0x0AE5, 1
+                        )[0],
+                        "mouse": list(
+                            struct.unpack(
+                                "<HH",
+                                machine.mem_read(data_segment * 16 + 0x0A2A, 4),
+                            )
+                        ),
+                    }
+                )
+                current_scale = struct.unpack(
+                    "<H", machine.mem_read(heap_segment * 16 + vbio_offset, 2)
+                )[0]
+                machine.mem_write(
+                    heap_segment * 16 + vbio_offset,
+                    struct.pack("<H", (current_scale + 1) & 0xFFFF),
+                )
+                machine.mem_write(
+                    data_segment * 16 + 0x0A2A,
+                    struct.pack("<HH", *mutated_mouse),
+                )
+                machine.mem_write(
+                    data_segment * 16 + 0x252A,
+                    bytes((overlay_sequence,)),
+                )
+            elif generic_name == "blit_fill_row_5221":
+                event["color"] = machine.reg_read(UC_X86_REG_AX)
+            elif generic_name == "backbuffer_clear_flags":
+                event["plane_copy_enabled"] = machine.mem_read(
+                    data_segment * 16 + 0x252E, 1
+                )[0]
+                machine.reg_write(UC_X86_REG_AX, clear_result)
+                machine.reg_write(UC_X86_REG_DX, clear_dx)
+                machine.reg_write(UC_X86_REG_EFLAGS, terminal_flag_bits | 0x0002)
+            elif generic_name == "back_buffer_init":
+                event["back_buffer_before"] = struct.unpack(
+                    "<I", machine.mem_read(data_segment * 16 + 0x5229, 4)
+                )[0]
+                machine.mem_write(
+                    data_segment * 16 + 0x5229,
+                    struct.pack("<I", back_after_init),
+                )
+                machine.reg_write(UC_X86_REG_AX, back_init_result)
+                machine.reg_write(UC_X86_REG_DX, back_init_dx)
+            elif generic_name == "pbm_image_load_and_decode":
+                event["path"] = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+                event["file_buffer_end"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+                event["palette_refresh"] = machine.mem_read(
+                    data_segment * 16 + 0x5B53, 1
+                )[0]
+                event["transparent_zero"] = machine.mem_read(
+                    data_segment * 16 + 0x5B57, 1
+                )[0]
+                machine.reg_write(UC_X86_REG_AX, pbm_result)
+                machine.reg_write(UC_X86_REG_EFLAGS, terminal_flag_bits | 0x0002)
+
+            expected_event = expected_calls[len(actual_calls)]
+            if event != expected_event:
+                raise AssertionError(
+                    f"0xb591 {name}: call={event!r}, expected={expected_event!r}"
+                )
+            actual_calls.append(event)
+
+        memory = [
+            (data_segment, 0, bytes(data_before)),
+            (game_segment, 0, game_before),
+            (extra_segment, 0, extra_before),
+            (heap_segment, 0, bytes(heap_before)),
+            (output_segment, 0, bytes(output_before)),
+            (stack_segment, 0, bytes(stack_before)),
+            (0, return_address, b"\xCC"),
+        ]
+        for helper_entry in helper_entries:
+            memory.append((0, helper_entry, b"\xCB"))
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=1200,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0xb591 {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        for segment, expected, label in (
+            (data_segment, expected_data, "DS state"),
+            (game_segment, game_before, "GS decoy"),
+            (extra_segment, extra_before, "entry ES decoy"),
+            (heap_segment, expected_heap, "vbio heap"),
+            (output_segment, expected_output, "viewport output"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != bytes(expected):
+                mismatch = next(
+                    offset
+                    for offset, (left, right) in enumerate(zip(actual, expected))
+                    if left != right
+                )
+                raise AssertionError(
+                    f"0xb591 {name}: {label}[{mismatch:#x}]={actual[mismatch]:#x}, "
+                    f"expected={bytes(expected)[mismatch]:#x}"
+                )
+        actual_request = bytes(
+            machine.mem_read(stack_segment * 16 + 0x0AE8, 8)
+        )
+        if actual_request != expected_stack_request:
+            raise AssertionError(
+                f"0xb591 {name}: SS request={actual_request.hex()}, "
+                f"expected={expected_stack_request.hex()}"
+            )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 4, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xb591 {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        if trigger & 1:
+            expected_registers["ebp"] = (
+                initial["ebp"] & 0xFFFF0000
+            ) | 0x0AE8
+            if final_sequence & 1:
+                expected_registers["eax"] = clear_result
+                expected_registers["edx"] = (
+                    initial["edx"] & 0xFFFF0000
+                ) | clear_dx
+                expected_registers["esi"] = (
+                    initial["esi"] & 0xFFFF0000
+                ) | 0x0113
+                expected_registers["edi"] = (
+                    initial["edi"] & 0xFFFF0000
+                ) | descriptor_cursor
+            else:
+                expected_registers["eax"] = pbm_result
+                expected_registers["edx"] = (
+                    initial["edx"] & 0xFFFF0000
+                ) | back_init_dx
+                expected_registers["esi"] = (
+                    initial["esi"] & 0xFFFF0000
+                ) | 0x00F3
+                expected_registers["edi"] = (
+                    initial["edi"] & 0xFFFF0000
+                ) | (back_after_init & 0xFFFF)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb591 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb591 {name}: far return changed CS")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        if trigger & 1:
+            expected_flags = flag_values(terminal_flag_bits)
+        else:
+            tested = trigger & 1
+            expected_flags = {
+                "cf": False,
+                "pf": tested.bit_count() % 2 == 0,
+                "zf": tested == 0,
+                "sf": False,
+                "df": reverse,
+                "of": False,
+            }
+        actual_flags = {
+            flag: flag_values(flags_after)[flag] for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xb591 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "trigger": trigger,
+                "phase_before": phase,
+                "selected_path_offset": selected_path if trigger & 1 else None,
+                "phase_after": next_phase,
+                "sequence_before": sequence,
+                "sequence_after_callbacks": final_sequence if trigger & 1 else sequence,
+                "tail": (
+                    "inactive"
+                    if not trigger & 1
+                    else "sequence"
+                    if final_sequence & 1
+                    else "nonsequence"
+                ),
+                "direction": "reverse" if reverse else "forward",
+                "viewport_pointer": [output_offset, output_segment],
+                "viewport_cursor_after": descriptor_cursor,
+                "vbio_timing_before": word(heap_before, vbio_offset),
+                "vbio_timing_after": expected_heap_value,
+                "calls": expected_calls,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def ship_3d_plane_band_copy_vectors() -> list[dict[str, object]]:
     entry = 0xB6DD
     return_address = 0xB75B
@@ -75427,6 +76142,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b98_natural.json",
         ship_3d_object_sprite_project_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b591_natural.json",
+        alien_overlay_cycle_vectors(),
         args.check,
     )
     update_vector(

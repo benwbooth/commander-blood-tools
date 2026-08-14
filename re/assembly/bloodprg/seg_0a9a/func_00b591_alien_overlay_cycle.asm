@@ -7,7 +7,7 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: alien_overlay_cycle
-; label_comment: the {amer, croolis, scrut}.xdb overlay CYCLE (name table DS:0xACC, index [0xAE5] 0..2) with the cursor pushed around the load/call — the ALIEN-EXAMINATION screen path (validates the port's alien_view cycling). NOT the hand's per-frame caller (still pinned: the manu3 segment-storage consumer) || ALSO RECORDED as `ship_3d_temp_snd_setup`: temporary sn\3D.snd presentation path; cycles DS:0x0AE5 and restores sn\tb.snd || RESOLVED 2026-07-25 (#186): both readings are HALVES of one routine, and both are right. DS:0x0ACC is a 3-pointer table reading amer.xdb / croolis.xdb / scrut.xdb, cycled 0..2 by [0x0AE5] (inc ah / cmp ah,3 / jne / xor ah,ah at 0xB5B5); the same routine then loads DS:0x0D23 = 'sn\\3D.snd' via lcall 0xB1B:0x855. It cycles the alien overlay AND swaps the SND bank || MERGED 2026-07-25 (#186): one address, several names, folded by union.
+; label_comment: ALIEN OVERLAY/SOUND COORDINATOR: bit-zero-gated DS:0x0AE4 trigger selects amer/croolis/scrut through the old DS:0x0AE5 phase, publishes the next phase, loads and runs the XDB through DS:0x0A96 with an SS:0x0AE8 request, temporarily installs sn\\3D.snd around the call, restores sn\\tb.snd and the original sound header/gate, reloads manu3.xdb, rebuilds the 16-byte viewport descriptor, restores the mouse, and selects the callback-visible DS:0x252A graphics-reset tail. NATURAL C: func_00b591_alien_overlay_cycle.c
 ; incoming: call@0x0019df->0a9a:05f1
 ; byte_count: 257
 ; boundary: cfg_blocks_7_terminals_2

@@ -26,6 +26,7 @@ extern volatile cb_u8 mouse_primary_pressed;        /* DS:0x0A3E */
 extern volatile cb_u8 mouse_secondary_pressed;      /* DS:0x0A3F */
 extern volatile cb_u8 mouse_press_pending;          /* DS:0x0A40 */
 extern volatile cb_u16 mouse_motion_idle_counter;   /* GS:0x0B3B */
+extern volatile cb_u16 mouse_motion_idle_counter_ds; /* DS:0x0B3B alias */
 extern volatile cb_u8 input_dispatch_state_b15;     /* DS:0x0B15 */
 extern const cb_i8 CB_CODE_DATA
         input_action_translation[256];              /* CS:0x113E */

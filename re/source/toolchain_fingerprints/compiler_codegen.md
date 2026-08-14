@@ -5227,6 +5227,39 @@ the original `DS:SI` live-in, reverse `LODSW`/`STOSW` behavior, preserve-all
 register envelope, and terminal flags; those are ABI boundaries rather than
 reasons to encode register-state emulation in the recovered source.
 
+## BLOODPRG alien-overlay and temporary-SND coordinator candidate
+
+`0x00B591` is one coordinator, not two unrelated routines. Bit zero of
+`DS:0x0AE4` gates the whole body. The old `DS:0x0AE5` phase selects one of the
+shipped `amer.xdb`, `croolis.xdb`, or `scrut.xdb` paths at `DS:0x0ACC`; only
+after selection does the routine publish the next phase. It loads that XDB
+through the union-shaped far pointer at `DS:0x0A96`, builds an eight-byte
+request at `SS:0x0AE8` from the `vbio` object offset, object-heap segment, and
+existing sound callback, then invokes the overlay.
+
+The call is bracketed by a temporary `sn\\3D.snd` load and restoration of
+`sn\\tb.snd`, the prior four-byte sound header, and the two-byte loader flags.
+The routine then reloads `manu3.xdb`, clears the display band, writes the exact
+`{u16,u16,u32,u16,u16,u32}` viewport descriptor
+`{0,1,4,320,200,0}`, restores the saved mouse coordinates, clears the idle
+counter, and marks the palette dirty. It deliberately reads `DS:0x252A` only
+after all callbacks: the final value selects either the plane-copy-bracketed
+back-buffer reset or the background-image reload tail.
+
+Eleven patched-callee original-binary vectors cover both inactive triggers, all
+three phases and wrap, exact call order and frames, sound and mouse preservation,
+the SS request against a DS decoy, callback-mutated timing/sequence/back-buffer
+state, both tails, forward/reverse/wrapped viewport stores, register residue,
+flags, stack, and far return. Open Watcom 1.9 medium (`-3 -os -s -mm -we`)
+emits one warning-free 94-instruction/318-byte function versus 76/257 original,
+with 64.47 percent mnemonic-multiset overlap and no inline assembly.
+
+Full-source equivalence requires the shipped phase range 0..2, SS=DS for the
+request object, and the C runtime's clear-DF invariant. The recovered-source PBM
+call uses an ordinary C linkage name; a direct binary replacement would instead
+need the raw DS:SI/ES:DI helper ABI, BP=0x0AE8 overlay entry, original register
+residue, reverse STOS behavior, and callback-derived terminal flags.
+
 ## BLOODPRG ship-3D planar band-copy candidate
 
 `0x00B6DD` gates on ship-3D crop bit zero, optionally derives the transition

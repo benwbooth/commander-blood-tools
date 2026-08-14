@@ -12,6 +12,18 @@ typedef struct bloodprg_centered_text_line {
     cb_u16 centered_x;
 } bloodprg_centered_text_line;
 
+typedef struct bloodprg_viewport_descriptor {
+    cb_u16 field_00;
+    cb_u16 field_02;
+    cb_u32 field_04;
+    cb_u16 width;
+    cb_u16 height;
+    cb_u32 field_0c;
+} bloodprg_viewport_descriptor;
+
+typedef char bloodprg_viewport_descriptor_size_must_be_16[
+        sizeof(bloodprg_viewport_descriptor) == 16 ? 1 : -1];
+
 /* SS:0x0AF2 in 0x007CE8; ordinary data shares the runtime stack segment. */
 extern volatile bloodprg_centered_text_line CB_NEAR
         centered_text_line_layout[];
@@ -34,22 +46,29 @@ extern bloodprg_graphics_buffer_ptr
         bridge_panorama_load_buffer; /* DS:0x5221 alias */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_back_buffer; /* GS:0x5229 */
+extern bloodprg_graphics_buffer_ptr
+        graphics_back_buffer_ds; /* DS:0x5229 alias */
+extern volatile bloodprg_viewport_descriptor CB_FAR *
+        graphics_viewport_descriptor; /* DS:0x522D */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_ship_palette_limit; /* GS:0x24F3 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_scene_palette_limit; /* GS:0x274F */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_palette_refresh; /* GS:0x5B53 */
+extern volatile cb_u8 pbm_palette_refresh_ds; /* DS:0x5B53 alias */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_palette_dirty; /* GS:0x5B55 */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_transparent_zero; /* GS:0x5B57 */
+extern volatile cb_u8 pbm_transparent_zero_ds; /* DS:0x5B57 alias */
 extern volatile char CB_GAME_DATA
         back_buffer_init_image_path[]; /* DS:0x00EA */
 extern volatile char CB_GAME_DATA
         backbuffer_clear_image_path[]; /* DS:0x00E3 */
 extern volatile char CB_GAME_DATA
         scene_transition_image_path[]; /* DS:0x00F3 */
+extern volatile char scene_transition_image_path_ds[]; /* DS:0x00F3 alias */
 extern volatile cb_u8 CB_GAME_DATA
         pbm_live_palette[768]; /* GS:0x5251 */
 extern volatile cb_u8 CB_GAME_DATA

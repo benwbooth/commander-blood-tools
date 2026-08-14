@@ -99,6 +99,8 @@ typedef struct ship_3d_position_field {
 extern volatile cb_u16 CB_GAME_DATA ship_3d_depth_offset; /* DS/GS:0x2527 */
 extern volatile cb_u8 CB_GAME_DATA
         ship_3d_plane_blit_crop_enabled; /* DS/GS:0x252E */
+extern volatile cb_u8
+        ship_3d_plane_blit_crop_enabled_ds; /* DS:0x252E alias */
 extern volatile cb_u8 ship_3d_depth_opening; /* DS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
@@ -170,6 +172,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
 #pragma aux ship_3d_plane_band_copy modify exact []
 #pragma aux bridge_panorama_frame_load parm [ax] modify exact []
 #pragma aux page_flip value [ax] modify exact [ax bx]
+#pragma aux alien_overlay_cycle modify exact [ax dx si di bp]
 #endif
 
 cb_u16 CB_FAR binary_u32_sqrt(cb_u32 value); /* 0x002E33 */
