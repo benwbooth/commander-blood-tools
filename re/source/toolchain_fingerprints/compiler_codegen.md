@@ -5666,6 +5666,35 @@ binary replacement additionally needs the original inherited-ES palette copy,
 32-bit EAX probe address, preserve envelope, helper residue, and terminal
 flags.
 
+## BLOODPRG subtitle-reveal pump candidate
+
+`0x0093F5` is the complete subtitle reveal pump, superseding its earlier
+`screen_mode_check` label. It enters for the explicit subtitle redraw bit,
+active text, or a ready hold owned by `DS:0x5E64`. A zero cursor initializes the
+opening phase. The phase selects one of the primitive tables at `SS:0x5E6F` or
+`SS:0x5EAF` and colors `0xFF` or `0xFE`; phase zero advances at most one byte
+when `DS:0x0B31` expires, starts the terminal hold when no presentation gate
+blocks it, and redraws every CR-delimited line at an eight-pixel pitch.
+
+Eleven patched-helper original-binary vectors cover all entry gates, cursor
+initialization, both primitive tables, every opening phase/color, pulse hold and
+advance, character delay hold and advance, terminal hold start and its ship,
+complete-hold, and ready-hold exclusions, plus two-line rendering. They verify
+the exact primitive and text-draw arguments, `SS:BP` table ownership against DS
+decoys, DS text ownership, path-specific ES, saved registers, stack integrity,
+and the far return against the untouched 283-byte body.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+110-instruction function versus 96 instructions in the original, with 84.38
+percent mnemonic-multiset overlap and 76.04 percent ordered mnemonic overlap.
+The candidate is one typed C function with normal pointer traversal and no
+inline assembly or register-state facade.
+
+Full-source integration requires the shipped `SS=DS` primitive-table alias and
+the game's guaranteed CR termination. Direct binary replacement additionally
+needs the original BP cursor, selective save envelope, ES/register residue, and
+path-specific flags.
+
 ## BLOODPRG ship-3D navigation coordinator candidate
 
 `0x00B34E` owns the navigation trigger and the remainder of the ship sequence.

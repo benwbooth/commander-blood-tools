@@ -54956,6 +54956,382 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
+    entry = 0x93F5
+    body_size = 283
+    body_hash = "970702f7ce87cbad4c1f148d20926131674a76d5b3bb15b234927e5c94ba7639"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x93f5: recovered 283-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "all_display_gates_clear"},
+        {"name": "hold_owner_mismatch", "hold_ready": 1, "owner": 0x1111},
+        {
+            "name": "hold_owner_fallback_draws",
+            "hold_ready": 1,
+            "owner": 0x5E64,
+            "phase": 0,
+        },
+        {
+            "name": "zero_cursor_initializes_opening_frame",
+            "mode": 2,
+            "cursor": 0,
+            "phase": 0x7777,
+        },
+        {
+            "name": "phase_two_zero_pulse_advances_phase",
+            "active": 1,
+            "phase": 2,
+            "pulse": 0,
+        },
+        {
+            "name": "phase_one_uses_primary_frame_and_fe_color",
+            "mode": 2,
+            "phase": 1,
+            "pulse": 1,
+        },
+        {
+            "name": "phase_zero_delay_holds_cursor_and_draws_lines",
+            "active": 1,
+            "phase": 0,
+            "delay": 3,
+        },
+        {
+            "name": "phase_zero_delay_advances_one_character",
+            "mode": 2,
+            "phase": 0,
+            "delay": 0,
+        },
+        {
+            "name": "terminal_text_starts_line_hold",
+            "active": 1,
+            "phase": 0,
+            "cursor": 0x0E1E,
+        },
+        {
+            "name": "terminal_text_ship_gate_blocks_line_hold",
+            "active": 1,
+            "phase": 0,
+            "cursor": 0x0E1E,
+            "ship_flags": 4,
+        },
+        {
+            "name": "terminal_text_existing_hold_blocks_reload",
+            "mode": 2,
+            "phase": 0,
+            "cursor": 0x0E1E,
+            "hold_complete": 1,
+        },
+    ]
+
+    data_segment = 0x2000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    stack_segment = 0xF000
+    caller_sp = 0xF800
+    return_address = 0xF3F5
+    text_offset = 0x0E18
+    primary_table = 0x5E6F
+    secondary_table = 0x5EAF
+    helpers = {
+        0x33BB: ("span", "far"),
+        0x34B3: ("vertical", "far"),
+        0x3030: ("draw", "far"),
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_record(
+        image: bytearray,
+        offset: int,
+        kind: int,
+        x: int,
+        y: int,
+        extent: int,
+    ) -> None:
+        struct.pack_into("<hHHH", image, offset, kind, x, y, extent)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode = int(case.get("mode", 0))
+        active = int(case.get("active", 0))
+        hold_ready = int(case.get("hold_ready", 0))
+        owner = int(case.get("owner", 0x2222))
+        cursor = int(case.get("cursor", text_offset))
+        phase = int(case.get("phase", 0))
+        pulse = int(case.get("pulse", 1))
+        delay = int(case.get("delay", 3))
+        ship_flags = int(case.get("ship_flags", 0))
+        hold_complete = int(case.get("hold_complete", 0))
+        text_speed = 8
+
+        data_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 17 + (offset >> 8) * 29 + case_index * 31 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 19 + (offset >> 8) * 31 + case_index * 47 + 0xCB) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x27E2] = mode
+        data_before[0x5E64] = active
+        data_before[0x67BC] = hold_ready
+        put_word(data_before, 0x679A, owner)
+        put_word(data_before, 0x5E58, cursor)
+        put_word(data_before, 0x5E65, phase)
+        put_word(data_before, 0x0B37, pulse)
+        put_word(data_before, 0x0B31, delay)
+        put_word(data_before, 0x0ACA, text_speed)
+        put_word(data_before, 0x0B35, 0x3535)
+        put_word(data_before, 0x24F3, ship_flags)
+        data_before[0x67BB] = hold_complete
+        data_before[0x0CFB] = 0xFB
+        data_before[0x5B56] = 0x56
+        put_word(data_before, 0x5E5C, 10)
+        put_word(data_before, 0x5E5E, 8)
+        data_before[text_offset : text_offset + 7] = b"AB\rCD\r\0"
+
+        put_record(stack_before, primary_table, 0, 11, 22, 33)
+        put_record(stack_before, primary_table + 8, 1, 44, 55, 66)
+        put_record(stack_before, primary_table + 16, -1, 0, 0, 0)
+        put_record(stack_before, secondary_table, 2, 77, 88, 99)
+        put_record(stack_before, secondary_table + 8, -1, 0, 0, 0)
+        put_record(data_before, primary_table, -1, 0, 0, 0)
+        put_record(data_before, secondary_table, -1, 0, 0, 0)
+
+        data_expected = bytearray(data_before)
+        expected_calls: list[tuple[str, tuple[int, ...]]] = []
+        entered = bool(
+            mode & 2
+            or active & 1
+            or (hold_ready & 1 and owner == 0x5E64)
+        )
+        if entered:
+            if cursor == 0:
+                put_word(data_expected, 0x0B31, 2)
+                put_word(data_expected, 0x0B37, 1)
+                put_word(data_expected, 0x5E58, text_offset)
+                put_word(data_expected, 0x5E65, 2)
+                cursor = text_offset
+                phase = 2
+                pulse = 1
+
+            if phase == 2:
+                expected_calls.extend(
+                    [
+                        ("span", (0x00FF, 11, 22, 33)),
+                        ("vertical", (0x00FF, 44, 55, 66)),
+                    ]
+                )
+            elif phase == 1:
+                expected_calls.extend(
+                    [
+                        ("span", (0x00FE, 11, 22, 33)),
+                        ("vertical", (0x00FE, 44, 55, 66)),
+                    ]
+                )
+            else:
+                expected_calls.append(("span", (0x00FE, 77, 88, 99)))
+            data_expected[0x5B56] = 0
+
+            if phase != 0:
+                if pulse == 0:
+                    put_word(data_expected, 0x0B37, 1)
+                    put_word(data_expected, 0x5E65, phase - 1)
+            else:
+                if data_before[cursor] != 0:
+                    if delay == 0:
+                        put_word(data_expected, 0x0B31, text_speed >> 2)
+                        put_word(data_expected, 0x5E58, cursor + 1)
+                elif (
+                    ship_flags & 4 == 0
+                    and hold_complete & 1 == 0
+                    and hold_ready & 1 == 0
+                ):
+                    data_expected[0x0CFB] = 0
+                    put_word(data_expected, 0x0B35, text_speed << 2)
+                    data_expected[0x67BB] = 1
+                expected_calls.extend(
+                    [
+                        ("draw", (text_offset, 10, 8)),
+                        ("draw", (text_offset + 3, 10, 16)),
+                    ]
+                )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xB000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        memory = [
+            (0, return_address, b"\xcc"),
+            (data_segment, 0, bytes(data_before)),
+            (game_segment, 0, game_before),
+            (extra_segment, 0, extra_before),
+            (stack_segment, 0, bytes(stack_before)),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<HH", return_address, 0)
+                + bytes.fromhex("5aa596698778c33c"),
+            ),
+        ]
+        for address, (_helper_name, return_kind) in helpers.items():
+            memory.append(
+                (0, address, b"\xcb" if return_kind == "far" else b"\xc3")
+            )
+
+        calls: list[dict[str, int | str]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            calls.append(
+                {
+                    "name": helper[0],
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "dx": machine.reg_read(UC_X86_REG_DX),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "di": machine.reg_read(UC_X86_REG_DI),
+                    "bp": machine.reg_read(UC_X86_REG_BP),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=5000,
+        )
+
+        actual_names = [str(call["name"]) for call in calls]
+        expected_names = [item[0] for item in expected_calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x93f5 {name}: calls={calls}, expected={expected_names}"
+            )
+        for call, (_helper_name, arguments) in zip(calls, expected_calls):
+            if str(call["name"]) == "draw":
+                actual = (
+                    int(call["si"]), int(call["bx"]), int(call["dx"])
+                )
+                if actual != arguments:
+                    raise AssertionError(
+                        f"0x93f5 {name}: draw inputs={actual}, expected={arguments}"
+                    )
+                if (int(call["ds"]), int(call["es"])) != (
+                    data_segment, data_segment
+                ):
+                    raise AssertionError(f"0x93f5 {name}: draw segments differ")
+            else:
+                actual = (
+                    int(call["ax"]), int(call["bx"]),
+                    int(call["cx"]), int(call["dx"]),
+                )
+                if actual != arguments:
+                    raise AssertionError(
+                        f"0x93f5 {name}: primitive inputs={actual}, "
+                        f"expected={arguments}"
+                    )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_data, data_expected)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x93f5 {name}: DS differs at {mismatch:#x}: "
+                f"{actual_data[mismatch]:#x} != {data_expected[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x93f5 {name}: GS changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x93f5 {name}: incoming ES changed")
+
+        expected_preserved = {
+            "eax": initial["eax"],
+            "esi": initial["esi"],
+            "ebp": initial["ebp"],
+            "ds": data_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+            "sp": caller_sp + 4,
+        }
+        for register, expected in expected_preserved.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x93f5 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        expected_es = data_segment if entered and phase == 0 else extra_segment
+        if machine.reg_read(UC_X86_REG_ES) != expected_es:
+            raise AssertionError(f"0x93f5 {name}: final ES differs")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 4, 8)
+        ) != bytes.fromhex("5aa596698778c33c"):
+            raise AssertionError(f"0x93f5 {name}: caller stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "mode": mode,
+                "active": active,
+                "hold_ready": hold_ready,
+                "owner": owner,
+                "cursor": int(case.get("cursor", text_offset)),
+                "phase": int(case.get("phase", 0)),
+                "pulse": pulse,
+                "delay": delay,
+                "ship_flags": ship_flags,
+                "hold_complete": hold_complete,
+                "calls": calls,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "registers_after": {
+                    register_name: machine.reg_read(register)
+                    for register_name, register in REGISTERS.items()
+                },
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def ship_presentation_fsm_vectors() -> list[dict[str, object]]:
     entry = 0xAFA0
     body_size = 217
@@ -84113,6 +84489,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_933a_natural.json",
         back_buffer_copy_from_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_93f5_natural.json",
+        subtitle_reveal_pump_vectors(),
         args.check,
     )
     update_vector(

@@ -6,8 +6,8 @@
 ; seg_off: 071e:1c15
 ; group: seg_071e
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: screen_mode_check
-; label_comment: screen-mode gate: test [0x27e2]&2 and [0x5e64]&1 -> branch. Guards a screen/render mode-specific path
+; label: subtitle_reveal_pump
+; label_comment: SUBTITLE REVEAL COORDINATOR: gates redraw, animates the SS:0x5E6F/0x5EAF opening-frame primitives, advances DS:0x5E58 from the text-speed timer, starts the line-complete hold, and draws every CR-delimited line through the Mode-X reveal wrapper. NATURAL C: func_0093f5_subtitle_reveal_pump.c
 ; incoming: call@0x0012bd->071e:1c15
 ; incoming: call@0x00be52->071e:1c15
 ; byte_count: 283

@@ -12,6 +12,13 @@ typedef struct bloodprg_centered_text_line {
     cb_u16 centered_x;
 } bloodprg_centered_text_line;
 
+typedef struct bloodprg_subtitle_frame_primitive {
+    cb_i16 kind;
+    cb_u16 x;
+    cb_u16 y;
+    cb_u16 extent;
+} bloodprg_subtitle_frame_primitive;
+
 typedef struct bloodprg_viewport_descriptor {
     cb_u16 field_00;
     cb_u16 field_02;
@@ -158,7 +165,16 @@ extern const cb_u8 CB_GAME_DATA
         subtitle_console_glyphs[]; /* SS:0x71AA */
 extern volatile cb_u16 CB_GAME_DATA
         subtitle_reveal_cursor; /* GS:0x5E58 */
+extern volatile cb_u16 subtitle_reveal_delay; /* DS:0x0B31 */
+extern volatile cb_u16 subtitle_opening_frame_pulse; /* DS:0x0B37 */
+extern volatile cb_u16 subtitle_text_speed_step; /* DS:0x0ACA */
+extern volatile cb_u16 presentation_text_origin_x; /* DS:0x5E5C */
 extern volatile cb_u16 presentation_text_origin_y; /* DS:0x5E5E */
+/* Original BP addressing selects SS; shipped execution has SS == DS. */
+extern const bloodprg_subtitle_frame_primitive
+        subtitle_frame_primitives_primary[]; /* SS:0x5E6F */
+extern const bloodprg_subtitle_frame_primitive
+        subtitle_frame_primitives_secondary[]; /* SS:0x5EAF */
 extern const cb_u8 CB_GAME_DATA
         small_font_character_map[256]; /* GS:0x6FA8 */
 extern const cb_u8 CB_GAME_DATA
