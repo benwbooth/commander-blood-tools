@@ -1888,6 +1888,442 @@ def print_string_dos_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def error_overlay_draw_vectors() -> list[dict[str, object]]:
+    entry = 0x0D75
+    return_address = 0xFD75
+    expected_hash = "a03c615631c6c929440cfafa741891a1b0bdb4dc0b4b8a1c6b15607ec3f9e3a4"
+    if hashlib.sha256(EXE[entry : entry + 237]).hexdigest() != expected_hash:
+        raise AssertionError("0x0d75: recovered 237-byte body changed")
+
+    cases = (
+        {"name": "coding_error", "mode": 0},
+        {"name": "file_error", "mode": 1, "detail": b"blood.dat"},
+        {
+            "name": "allocation_error_positive",
+            "mode": 2,
+            "handle": 0x1234,
+            "free_bytes": 0x12345678,
+        },
+        {
+            "name": "allocation_error_signed",
+            "mode": 2,
+            "handle": 0xFFFF,
+            "free_bytes": 0x80000000,
+        },
+        {"name": "unknown_mode", "mode": 7},
+    )
+    data_file_offset = 0xD420
+    literal_offsets = (0x002E, 0x0041, 0x0055, 0x0073, 0x007D)
+    literals = {}
+    for offset in literal_offsets:
+        end = EXE.index(0, data_file_offset + offset)
+        literals[offset] = EXE[data_file_offset + offset : end]
+    if literals != {
+        0x002E: b"ERREUR DE CODAGE !",
+        0x0041: b"ERREUR DE FICHIER :",
+        0x0055: b"ERREUR D'ALLOCATION MEMOIRE !",
+        0x0073: b"HANDLE : ",
+        0x007D: b"LIBRE  : ",
+    }:
+        raise AssertionError("0x0d75: error-overlay literals changed")
+
+    game_segment = 0x3000
+    detail_segment = 0x4000
+    resource_segment = 0x5000
+    caller_es_segment = 0x7100
+    stack_segment = 0x9000
+    detail_offset = 0x0220
+    number_offset = 0x0AF2
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa5966987783cc3")
+    helper_targets = {
+        0x02065: "bloodprg_strlen",
+        0x00E62: "layout_offset_calc",
+        0x030EA: "small_text_render",
+        0x01EB2: "decimal_append_i16",
+        0x01EEB: "decimal_append_i32",
+    }
+    vectors = []
+
+    def signed16(value: int) -> int:
+        return value - 0x10000 if value & 0x8000 else value
+
+    def signed32(value: int) -> int:
+        return value - 0x100000000 if value & 0x80000000 else value
+
+    def c_string(machine: Uc, segment: int, offset: int) -> str:
+        raw = bytes(machine.mem_read(segment * 16 + offset, 128))
+        return raw.split(b"\0", 1)[0].decode("ascii")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mode = int(case["mode"])
+        detail = bytes(case.get("detail", b"unused"))
+        handle = int(case.get("handle", 0xA55A))
+        free_bytes = int(case.get("free_bytes", 0x89ABCDEF))
+        layout_x = 0x0040 + case_index * 7
+        layout_y = 0x0030 + case_index * 5
+
+        game_before = bytearray(
+            (offset * 31 + (offset >> 8) * 17 + case_index * 23 + 0x39)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        for offset, literal in literals.items():
+            game_before[offset : offset + len(literal) + 1] = literal + b"\0"
+        struct.pack_into("<HH", game_before, 0x5221, 0x2468, 0x5678)
+        struct.pack_into("<I", game_before, 0x0A46, free_bytes)
+        detail_before = bytearray(
+            (offset * 13 + case_index * 19 + 0x57) & 0xFF
+            for offset in range(0x10000)
+        )
+        detail_before[detail_offset : detail_offset + len(detail) + 1] = (
+            detail + b"\0"
+        )
+        resource_before = bytearray(
+            (offset * 29 + case_index * 11 + 0x73) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", resource_before, 0x0C00, handle)
+        expected_game = bytearray(game_before)
+        expected_calls: list[dict[str, object]] = []
+
+        def expected_call(
+            callee: str, return_ip: int, **arguments: object
+        ) -> None:
+            expected_calls.append(
+                {
+                    "callee": callee,
+                    "return": [return_ip, 0],
+                    "display_segment": 0xA000,
+                    **arguments,
+                }
+            )
+
+        if mode == 0:
+            expected_call(
+                "bloodprg_strlen",
+                0x0D9E,
+                pointer=[game_segment, 0x002E],
+                text=literals[0x002E].decode("ascii"),
+            )
+            expected_call(
+                "layout_offset_calc",
+                0x0DA5,
+                columns=len(literals[0x002E]),
+                rows=1,
+            )
+            expected_call(
+                "small_text_render",
+                0x0DAD,
+                pointer=[game_segment, 0x002E],
+                text=literals[0x002E].decode("ascii"),
+                x=layout_x,
+                y=layout_y,
+                color=15,
+            )
+        elif mode == 1:
+            expected_call(
+                "bloodprg_strlen",
+                0x0DC7,
+                pointer=[game_segment, 0x0041],
+                text=literals[0x0041].decode("ascii"),
+            )
+            expected_call(
+                "layout_offset_calc",
+                0x0DCE,
+                columns=len(literals[0x0041]),
+                rows=2,
+            )
+            expected_call(
+                "small_text_render",
+                0x0DD6,
+                pointer=[game_segment, 0x0041],
+                text=literals[0x0041].decode("ascii"),
+                x=layout_x,
+                y=layout_y,
+                color=15,
+            )
+            expected_call(
+                "small_text_render",
+                0x0DE0,
+                pointer=[detail_segment, detail_offset],
+                text=detail.decode("ascii"),
+                x=layout_x,
+                y=(layout_y + 6) & 0xFFFF,
+                color=15,
+            )
+        elif mode == 2:
+            handle_text = str(signed16(handle))
+            free_text = str(signed32(free_bytes))
+            expected_call(
+                "bloodprg_strlen",
+                0x0DF7,
+                pointer=[game_segment, 0x0055],
+                text=literals[0x0055].decode("ascii"),
+            )
+            expected_call(
+                "layout_offset_calc",
+                0x0DFE,
+                columns=len(literals[0x0055]),
+                rows=3,
+            )
+            expected_call(
+                "small_text_render",
+                0x0E06,
+                pointer=[game_segment, 0x0055],
+                text=literals[0x0055].decode("ascii"),
+                x=layout_x,
+                y=layout_y,
+                color=15,
+            )
+            expected_call(
+                "small_text_render",
+                0x0E11,
+                pointer=[game_segment, 0x0073],
+                text=literals[0x0073].decode("ascii"),
+                x=layout_x,
+                y=(layout_y + 6) & 0xFFFF,
+                color=15,
+            )
+            expected_call(
+                "bloodprg_strlen",
+                0x0E1A,
+                pointer=[game_segment, 0x0073],
+                text=literals[0x0073].decode("ascii"),
+            )
+            expected_call(
+                "decimal_append_i16",
+                0x0E2C,
+                value=signed16(handle),
+                destination=[game_segment, number_offset],
+                text=handle_text,
+            )
+            expected_game[
+                number_offset : number_offset + len(handle_text) + 1
+            ] = handle_text.encode("ascii") + b"\0"
+            expected_call(
+                "small_text_render",
+                0x0E34,
+                pointer=[game_segment, number_offset],
+                text=handle_text,
+                x=(layout_x + len(literals[0x0073]) * 4) & 0xFFFF,
+                y=(layout_y + 6) & 0xFFFF,
+                color=15,
+            )
+            expected_call(
+                "small_text_render",
+                0x0E40,
+                pointer=[game_segment, 0x007D],
+                text=literals[0x007D].decode("ascii"),
+                x=layout_x,
+                y=(layout_y + 12) & 0xFFFF,
+                color=15,
+            )
+            expected_call(
+                "decimal_append_i32",
+                0x0E4A,
+                value=signed32(free_bytes),
+                destination=[game_segment, number_offset],
+                text=free_text,
+            )
+            expected_game[
+                number_offset : number_offset + len(free_text) + 1
+            ] = free_text.encode("ascii") + b"\0"
+            expected_call(
+                "small_text_render",
+                0x0E53,
+                pointer=[game_segment, number_offset],
+                text=free_text,
+                x=(layout_x + len(literals[0x0073]) * 4) & 0xFFFF,
+                y=(layout_y + 12) & 0xFFFF,
+                color=15,
+            )
+
+        initial = {
+            "eax": 0xA5A50000 | mode,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D80000 | detail_offset,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": detail_segment,
+            "es": caller_es_segment,
+            "fs": resource_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, object]] = []
+
+        def stack_word(machine: Uc, index: int = 0) -> int:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            return struct.unpack(
+                "<H",
+                machine.mem_read(
+                    stack_segment * 16 + stack_pointer + index * 2, 2
+                ),
+            )[0]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            callee = helper_targets.get(address)
+            if callee is None:
+                return
+            display_segment = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x5223, 2)
+            )[0]
+            call: dict[str, object] = {
+                "callee": callee,
+                "return": [stack_word(machine), stack_word(machine, 1)],
+                "display_segment": display_segment,
+            }
+            if callee == "bloodprg_strlen":
+                segment = machine.reg_read(UC_X86_REG_ES)
+                offset = machine.reg_read(UC_X86_REG_DI)
+                text_value = c_string(machine, segment, offset)
+                call["pointer"] = [segment, offset]
+                call["text"] = text_value
+                machine.reg_write(UC_X86_REG_AX, len(text_value))
+            elif callee == "layout_offset_calc":
+                call["columns"] = machine.reg_read(UC_X86_REG_AX)
+                call["rows"] = machine.reg_read(UC_X86_REG_BX)
+                machine.reg_write(UC_X86_REG_AX, layout_x)
+                machine.reg_write(UC_X86_REG_BX, layout_y)
+            elif callee == "small_text_render":
+                segment = machine.reg_read(UC_X86_REG_DS)
+                offset = machine.reg_read(UC_X86_REG_SI)
+                call["pointer"] = [segment, offset]
+                call["text"] = c_string(machine, segment, offset)
+                call["x"] = machine.reg_read(UC_X86_REG_AX)
+                call["y"] = machine.reg_read(UC_X86_REG_BX)
+                call["color"] = machine.reg_read(UC_X86_REG_DX)
+            elif callee == "decimal_append_i16":
+                value = signed16(machine.reg_read(UC_X86_REG_AX))
+                segment = machine.reg_read(UC_X86_REG_ES)
+                offset = machine.reg_read(UC_X86_REG_DI)
+                text_value = str(value)
+                call["value"] = value
+                call["destination"] = [segment, offset]
+                call["text"] = text_value
+                machine.mem_write(
+                    segment * 16 + offset, text_value.encode("ascii") + b"\0"
+                )
+            else:
+                value = signed32(machine.reg_read(UC_X86_REG_EAX))
+                segment = machine.reg_read(UC_X86_REG_ES)
+                offset = machine.reg_read(UC_X86_REG_DI)
+                text_value = str(value)
+                call["value"] = value
+                call["destination"] = [segment, offset]
+                call["text"] = text_value
+                machine.mem_write(
+                    segment * 16 + offset, text_value.encode("ascii") + b"\0"
+                )
+            calls.append(call)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                *[
+                    (address >> 4, address & 0xF, b"\xCB")
+                    for address in helper_targets
+                ],
+                (game_segment, 0, bytes(game_before)),
+                (detail_segment, 0, bytes(detail_before)),
+                (resource_segment, 0, bytes(resource_before)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x0d75 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x0d75 {name}: game mismatch at {mismatch:#06x}"
+            )
+        if bytes(machine.mem_read(detail_segment * 16, 0x10000)) != bytes(
+            detail_before
+        ):
+            raise AssertionError(f"0x0d75 {name}: detail memory changed")
+        if bytes(machine.mem_read(resource_segment * 16, 0x10000)) != bytes(
+            resource_before
+        ):
+            raise AssertionError(f"0x0d75 {name}: resource memory changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x0d75 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 4, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x0d75 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "mode": mode,
+                "detail": detail.decode("ascii"),
+                "resource_handle_signed": signed16(handle),
+                "resource_free_bytes_signed": signed32(free_bytes),
+                "layout_result": [layout_x, layout_y] if mode <= 2 else None,
+                "calls": calls,
+                "display_pointer_after": list(
+                    struct.unpack_from("<HH", actual_game, 0x5221)
+                ),
+                "number_buffer_after": (
+                    c_string(machine, game_segment, number_offset)
+                    if mode == 2
+                    else None
+                ),
+                "preserved_registers": [
+                    "eax",
+                    "ebx",
+                    "ecx",
+                    "edx",
+                    "esi",
+                    "edi",
+                    "ebp",
+                    "ds",
+                    "es",
+                    "fs",
+                    "gs",
+                    "ss",
+                ],
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -60972,6 +61408,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0d61_natural.json",
         print_string_dos_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0d75_natural.json",
+        error_overlay_draw_vectors(),
         args.check,
     )
     update_vector(

@@ -4104,6 +4104,37 @@ share the original data segment; drop-in replacement still needs the original
 preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
 contract for the implicit mode table and palette destination.
 
+## BLOODPRG error-overlay candidate
+
+`0x000D75` is a centered error-overlay renderer, not a persistent VGA segment
+setter. It saves every general register plus DS and ES, replaces only the
+segment word of the display pointer at `GS:0x5223` with `A000`, and restores
+that word on every exit. AX selects a one-row `ERREUR DE CODAGE !` overlay, a
+two-row `ERREUR DE FICHIER :` overlay followed by caller `DS:DX`, or a
+three-row `ERREUR D'ALLOCATION MEMOIRE !` overlay.
+
+Allocation mode adds `HANDLE : ` and `LIBRE  : ` rows. It formats the signed
+16-bit current resource handle at `FS:0x0C00` and signed 32-bit free-byte count
+at `GS:0x0A46` through the recovered decimal helpers, reusing `GS:0x0AF2` as
+the text buffer. Both numbers begin at base x plus four times the nine-byte
+HANDLE prefix length. The direct oracle caught this four-pixel multiplication;
+a five-pixel interpretation produces visibly wrong horizontal placement.
+
+Five patched-callee vectors cover coding, file, positive and signed allocation,
+and unknown modes. They prove every literal, strlen/layout/text/decimal call and
+argument, distinct caller-detail DS ownership, signed values and formatted
+text, helper-time `A000` segment state, final pointer restoration, memory
+effects, complete register and segment preservation, stack integrity, and far
+return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 104 instructions/290 bytes versus the original
+91/237, with 62.64 percent mnemonic-multiset overlap and no inline assembly.
+The source keeps the coordinator in one function and exposes the detail as a
+typed far pointer mapped to the original `DS:DX` ABI. Full-source integration
+uses named segmented data; direct replacement still needs the fixed FS/GS data
+placement.
+
 ## BLOODPRG confirmation-dialog candidate
 
 `0x0014CA` is the complete `ARE_YOU_SURE?` modal. When `DS:0x0B13` bit one

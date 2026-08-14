@@ -1,0 +1,545 @@
+[
+  {
+    "name": "coding_error",
+    "mode": 0,
+    "detail": "unused",
+    "resource_handle_signed": -23206,
+    "resource_free_bytes_signed": -1985229329,
+    "layout_result": [
+      64,
+      48
+    ],
+    "calls": [
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3486,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          46
+        ],
+        "text": "ERREUR DE CODAGE !"
+      },
+      {
+        "callee": "layout_offset_calc",
+        "return": [
+          3493,
+          0
+        ],
+        "display_segment": 40960,
+        "columns": 18,
+        "rows": 1
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3501,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          46
+        ],
+        "text": "ERREUR DE CODAGE !",
+        "x": 64,
+        "y": 48,
+        "color": 15
+      }
+    ],
+    "display_pointer_after": [
+      9320,
+      22136
+    ],
+    "number_buffer_after": null,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "file_error",
+    "mode": 1,
+    "detail": "blood.dat",
+    "resource_handle_signed": -23206,
+    "resource_free_bytes_signed": -1985229329,
+    "layout_result": [
+      71,
+      53
+    ],
+    "calls": [
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3527,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          65
+        ],
+        "text": "ERREUR DE FICHIER :"
+      },
+      {
+        "callee": "layout_offset_calc",
+        "return": [
+          3534,
+          0
+        ],
+        "display_segment": 40960,
+        "columns": 19,
+        "rows": 2
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3542,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          65
+        ],
+        "text": "ERREUR DE FICHIER :",
+        "x": 71,
+        "y": 53,
+        "color": 15
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3552,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          16384,
+          544
+        ],
+        "text": "blood.dat",
+        "x": 71,
+        "y": 59,
+        "color": 15
+      }
+    ],
+    "display_pointer_after": [
+      9320,
+      22136
+    ],
+    "number_buffer_after": null,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "allocation_error_positive",
+    "mode": 2,
+    "detail": "unused",
+    "resource_handle_signed": 4660,
+    "resource_free_bytes_signed": 305419896,
+    "layout_result": [
+      78,
+      58
+    ],
+    "calls": [
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3575,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          85
+        ],
+        "text": "ERREUR D'ALLOCATION MEMOIRE !"
+      },
+      {
+        "callee": "layout_offset_calc",
+        "return": [
+          3582,
+          0
+        ],
+        "display_segment": 40960,
+        "columns": 29,
+        "rows": 3
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3590,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          85
+        ],
+        "text": "ERREUR D'ALLOCATION MEMOIRE !",
+        "x": 78,
+        "y": 58,
+        "color": 15
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3601,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          115
+        ],
+        "text": "HANDLE : ",
+        "x": 78,
+        "y": 64,
+        "color": 15
+      },
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3610,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          115
+        ],
+        "text": "HANDLE : "
+      },
+      {
+        "callee": "decimal_append_i16",
+        "return": [
+          3628,
+          0
+        ],
+        "display_segment": 40960,
+        "value": 4660,
+        "destination": [
+          12288,
+          2802
+        ],
+        "text": "4660"
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3636,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          2802
+        ],
+        "text": "4660",
+        "x": 114,
+        "y": 64,
+        "color": 15
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3648,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          125
+        ],
+        "text": "LIBRE  : ",
+        "x": 78,
+        "y": 70,
+        "color": 15
+      },
+      {
+        "callee": "decimal_append_i32",
+        "return": [
+          3658,
+          0
+        ],
+        "display_segment": 40960,
+        "value": 305419896,
+        "destination": [
+          12288,
+          2802
+        ],
+        "text": "305419896"
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3667,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          2802
+        ],
+        "text": "305419896",
+        "x": 114,
+        "y": 70,
+        "color": 15
+      }
+    ],
+    "display_pointer_after": [
+      9320,
+      22136
+    ],
+    "number_buffer_after": "305419896",
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "allocation_error_signed",
+    "mode": 2,
+    "detail": "unused",
+    "resource_handle_signed": -1,
+    "resource_free_bytes_signed": -2147483648,
+    "layout_result": [
+      85,
+      63
+    ],
+    "calls": [
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3575,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          85
+        ],
+        "text": "ERREUR D'ALLOCATION MEMOIRE !"
+      },
+      {
+        "callee": "layout_offset_calc",
+        "return": [
+          3582,
+          0
+        ],
+        "display_segment": 40960,
+        "columns": 29,
+        "rows": 3
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3590,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          85
+        ],
+        "text": "ERREUR D'ALLOCATION MEMOIRE !",
+        "x": 85,
+        "y": 63,
+        "color": 15
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3601,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          115
+        ],
+        "text": "HANDLE : ",
+        "x": 85,
+        "y": 69,
+        "color": 15
+      },
+      {
+        "callee": "bloodprg_strlen",
+        "return": [
+          3610,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          115
+        ],
+        "text": "HANDLE : "
+      },
+      {
+        "callee": "decimal_append_i16",
+        "return": [
+          3628,
+          0
+        ],
+        "display_segment": 40960,
+        "value": -1,
+        "destination": [
+          12288,
+          2802
+        ],
+        "text": "-1"
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3636,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          2802
+        ],
+        "text": "-1",
+        "x": 121,
+        "y": 69,
+        "color": 15
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3648,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          125
+        ],
+        "text": "LIBRE  : ",
+        "x": 85,
+        "y": 75,
+        "color": 15
+      },
+      {
+        "callee": "decimal_append_i32",
+        "return": [
+          3658,
+          0
+        ],
+        "display_segment": 40960,
+        "value": -2147483648,
+        "destination": [
+          12288,
+          2802
+        ],
+        "text": "-2147483648"
+      },
+      {
+        "callee": "small_text_render",
+        "return": [
+          3667,
+          0
+        ],
+        "display_segment": 40960,
+        "pointer": [
+          12288,
+          2802
+        ],
+        "text": "-2147483648",
+        "x": 121,
+        "y": 75,
+        "color": 15
+      }
+    ],
+    "display_pointer_after": [
+      9320,
+      22136
+    ],
+    "number_buffer_after": "-2147483648",
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "unknown_mode",
+    "mode": 7,
+    "detail": "unused",
+    "resource_handle_signed": -23206,
+    "resource_free_bytes_signed": -1985229329,
+    "layout_result": null,
+    "calls": [],
+    "display_pointer_after": [
+      9320,
+      22136
+    ],
+    "number_buffer_after": null,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs",
+      "ss"
+    ],
+    "return": "far"
+  }
+]

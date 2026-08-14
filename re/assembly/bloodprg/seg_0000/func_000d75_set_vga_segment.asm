@@ -6,8 +6,8 @@
 ; seg_off: 0000:0775
 ; group: seg_0000
 ; provenance: relocation_proven_far_transfer_target
-; label: set_vga_segment
-; label_comment: set the VGA video-memory segment: gs:[0x5223]=0xa000 (the VGA graphics segment A000:0). Establishes the base segment for direct VGA writes
+; label: error_overlay_draw
+; label_comment: centered French coding/file/allocation error overlay. Temporarily sets the GS:0x5221 display pointer segment to A000, renders one to three 4x5 text rows, includes caller DS:DX for file errors, and formats signed FS handle/GS free-byte values for allocation errors. Direct vectors: re/tools/oracle_vectors/func_0d75_natural.json
 ; incoming: call@0x005275->0000:0775
 ; incoming: call@0x005696->0000:0775
 ; incoming: call@0x0056f5->0000:0775

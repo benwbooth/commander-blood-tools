@@ -17,6 +17,8 @@ extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
+extern volatile cb_u16 CB_GAME_DATA
+        graphics_display_buffer_segment; /* GS:0x5223 */
 extern bloodprg_graphics_buffer_ptr
         bridge_panorama_load_buffer; /* DS:0x5221 alias */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
@@ -55,6 +57,18 @@ extern volatile cb_u8
         main_loop_hud_refresh_enabled; /* DS:0x0ADF */
 extern const cb_u8
         main_loop_hud_text[]; /* DS:0x0166 */
+extern const cb_u8 CB_GAME_DATA
+        error_overlay_coding_text[]; /* DS:0x002E */
+extern const cb_u8 CB_GAME_DATA
+        error_overlay_file_text[]; /* DS:0x0041 */
+extern const cb_u8 CB_GAME_DATA
+        error_overlay_allocation_text[]; /* DS:0x0055 */
+extern const cb_u8 CB_GAME_DATA
+        error_overlay_handle_text[]; /* DS:0x0073 */
+extern const cb_u8 CB_GAME_DATA
+        error_overlay_free_text[]; /* DS:0x007D */
+extern char CB_GAME_DATA
+        error_overlay_number_buffer[]; /* GS:0x0AF2 */
 extern cb_u32 palette_low_5251_dwords[]; /* caller ES:0x5251 */
 extern cb_u32 palette_low_5851_dwords[]; /* caller ES:0x5851 */
 extern cb_u8
@@ -187,6 +201,8 @@ cb_i16 CB_FAR backbuffer_clear_flags(void); /* 0x008B:0x0967 */
 void CB_NEAR page_offset_helper(void); /* 0x0017AF */
 void CB_NEAR main_loop_hud_refresh(void); /* 0x001A93 */
 void CB_NEAR scene_transition_step(cb_u16 link_target_offset); /* 0x001855 */
+void CB_FAR error_overlay_draw(cb_u16 mode,
+        const cb_u8 CB_FAR *detail); /* 0x000D75 */
 void CB_FAR video_retrace_phase_wait(void); /* 0x0000:0x05D7 */
 void CB_NEAR palette_upload_if_dirty(void); /* 0x00178B */
 cb_i16 CB_FAR palette_blend_remap_table_build(
@@ -282,6 +298,13 @@ void CB_FAR small_text_render(
         cb_u16 x,
         cb_u16 y,
         cb_u8 color); /* 0x0036EA */
+#if defined(__WATCOMC__)
+void CB_FAR small_text_render_far(
+        const cb_u8 CB_FAR *text,
+        cb_u16 x,
+        cb_u16 y,
+        cb_u8 color);
+#endif
 void CB_FAR main_font_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -291,6 +314,7 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]
+#pragma aux error_overlay_draw parm [ax] [ds dx] modify exact []
 #pragma aux gfx_horizontal_span parm [ax] [bx] [cx] [dx] modify exact []
 #pragma aux gfx_vertical_span parm [ax] [bx] [cx] [dx] modify exact [bx]
 #pragma aux framebuffer_rect_palette_remap \
@@ -346,6 +370,8 @@ void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
         parm [si] [bx] [dx] modify exact []
 #pragma aux small_text_render \
         parm [si] [ax] [bx] [dx] modify exact []
+#pragma aux small_text_render_far "small_text_render_" \
+        parm [ds si] [ax] [bx] [dx] modify exact []
 #pragma aux main_font_text_draw_display \
         parm [ds si] [bx] [dx] [ax] modify exact []
 #endif

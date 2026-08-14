@@ -58,10 +58,14 @@ extern volatile bloodprg_resource_handle_entry fs_resource_handle_table[]; /* FS
 extern volatile cb_u16 resource_resident_handles[256]; /* FS:0x0800 */
 extern volatile cb_u16 resource_eviction_handles[256]; /* FS:0x0A00 */
 extern volatile cb_u16 resource_current_handle; /* FS:0x0C00 */
+extern volatile cb_u16 CB_FS_DATA
+        resource_current_handle_fs; /* explicit FS:0x0C00 alias */
 extern volatile cb_u16 resource_current_entry_offset; /* FS:0x0C02 */
 extern volatile bloodprg_resource_name_entry CB_FS_DATA
         resource_name_table[]; /* FS:0x0C04 */
 extern volatile cb_u32 resource_free_bytes; /* GS:0x0A46 */
+extern volatile cb_u32 CB_GAME_DATA
+        resource_free_bytes_gs; /* explicit GS:0x0A46 alias */
 extern volatile cb_u16 resource_pool_end_segment; /* GS:0x0A6A */
 extern volatile cb_u16 CB_GAME_DATA resource_file_header; /* GS:0x0AF2 */
 extern volatile bloodprg_resource_index_entry resource_index[]; /* DS:0x1FB5 */
