@@ -1,0 +1,379 @@
+[
+  {
+    "name": "negative_initial_threshold",
+    "threshold": 65535,
+    "visible_index_before": 4,
+    "visible_index_after": 4,
+    "text_length": 7,
+    "line_records": [],
+    "next_threshold_before": 0,
+    "next_threshold_after": 0,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "initial_threshold_above_visible",
+    "threshold": 5,
+    "visible_index_before": 4,
+    "visible_index_after": 4,
+    "text_length": 7,
+    "line_records": [],
+    "next_threshold_before": 0,
+    "next_threshold_after": 0,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "equal_threshold_single_line",
+    "threshold": 4,
+    "visible_index_before": 4,
+    "visible_index_after": 4,
+    "text_length": 3,
+    "line_records": [
+      {
+        "character_count": 3,
+        "centered_x": 148
+      }
+    ],
+    "next_threshold_before": 4,
+    "next_threshold_after": 4,
+    "cursor_before": 12288,
+    "cursor_after": 12294,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "empty_text_zero_limit_draws_one_empty_line",
+    "threshold": 0,
+    "visible_index_before": 0,
+    "visible_index_after": 0,
+    "text_length": 0,
+    "line_records": [
+      {
+        "character_count": 0,
+        "centered_x": 160
+      }
+    ],
+    "next_threshold_before": 0,
+    "next_threshold_after": 0,
+    "cursor_before": 12288,
+    "cursor_after": 12291,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_next_threshold_keeps_cursor",
+    "threshold": 0,
+    "visible_index_before": 8,
+    "visible_index_after": 8,
+    "text_length": 4,
+    "line_records": [
+      {
+        "character_count": 4,
+        "centered_x": 144
+      }
+    ],
+    "next_threshold_before": 32768,
+    "next_threshold_after": 32768,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "next_threshold_above_visible_keeps_cursor",
+    "threshold": 2,
+    "visible_index_before": 3,
+    "visible_index_after": 3,
+    "text_length": 4,
+    "line_records": [
+      {
+        "character_count": 4,
+        "centered_x": 144
+      }
+    ],
+    "next_threshold_before": 4,
+    "next_threshold_after": 4,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "space_at_28_wraps",
+    "threshold": 1,
+    "visible_index_before": 5,
+    "visible_index_after": 5,
+    "text_length": 29,
+    "line_records": [
+      {
+        "character_count": 28,
+        "centered_x": 48
+      },
+      {
+        "character_count": 1,
+        "centered_x": 156
+      }
+    ],
+    "next_threshold_before": 2,
+    "next_threshold_after": 2,
+    "cursor_before": 12288,
+    "cursor_after": 12320,
+    "next_valid": true,
+    "helper_calls": 2,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "space_at_27_does_not_wrap",
+    "threshold": 1,
+    "visible_index_before": 5,
+    "visible_index_after": 5,
+    "text_length": 28,
+    "line_records": [
+      {
+        "character_count": 28,
+        "centered_x": 48
+      }
+    ],
+    "next_threshold_before": 2,
+    "next_threshold_after": 2,
+    "cursor_before": 12288,
+    "cursor_after": 12319,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "three_centered_lines",
+    "threshold": 2,
+    "visible_index_before": 7,
+    "visible_index_after": 7,
+    "text_length": 57,
+    "line_records": [
+      {
+        "character_count": 28,
+        "centered_x": 48
+      },
+      {
+        "character_count": 28,
+        "centered_x": 48
+      },
+      {
+        "character_count": 1,
+        "centered_x": 156
+      }
+    ],
+    "next_threshold_before": 3,
+    "next_threshold_after": 3,
+    "cursor_before": 12288,
+    "cursor_after": 12348,
+    "next_valid": true,
+    "helper_calls": 3,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_low_byte_suppresses_128_space_break",
+    "threshold": 3,
+    "visible_index_before": 7,
+    "visible_index_after": 7,
+    "text_length": 129,
+    "line_records": [
+      {
+        "character_count": 129,
+        "centered_x": 65180
+      }
+    ],
+    "next_threshold_before": 4,
+    "next_threshold_after": 4,
+    "cursor_before": 12288,
+    "cursor_after": 12420,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_cursor_and_text",
+    "threshold": 1,
+    "visible_index_before": 2,
+    "visible_index_after": 2,
+    "text_length": 4,
+    "line_records": [
+      {
+        "character_count": 4,
+        "centered_x": 144
+      }
+    ],
+    "next_threshold_before": 2,
+    "next_threshold_after": 2,
+    "cursor_before": 65534,
+    "cursor_after": 5,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "helper_invalidates_following_threshold",
+    "threshold": 1,
+    "visible_index_before": 5,
+    "visible_index_after": 5,
+    "text_length": 6,
+    "line_records": [
+      {
+        "character_count": 6,
+        "centered_x": 136
+      }
+    ],
+    "next_threshold_before": 2,
+    "next_threshold_after": 65535,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "helper_reduces_visible_index",
+    "threshold": 1,
+    "visible_index_before": 5,
+    "visible_index_after": 4,
+    "text_length": 5,
+    "line_records": [
+      {
+        "character_count": 5,
+        "centered_x": 140
+      }
+    ],
+    "next_threshold_before": 5,
+    "next_threshold_after": 5,
+    "cursor_before": 12288,
+    "cursor_after": 12288,
+    "next_valid": false,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "helper_increases_visible_index",
+    "threshold": 1,
+    "visible_index_before": 2,
+    "visible_index_after": 3,
+    "text_length": 4,
+    "line_records": [
+      {
+        "character_count": 4,
+        "centered_x": 144
+      }
+    ],
+    "next_threshold_before": 3,
+    "next_threshold_after": 3,
+    "cursor_before": 12288,
+    "cursor_after": 12295,
+    "next_valid": true,
+    "helper_calls": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

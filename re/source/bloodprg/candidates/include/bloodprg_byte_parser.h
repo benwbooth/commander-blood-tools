@@ -41,7 +41,11 @@ extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_detail_cursor; /* GS:0
 extern volatile cb_game_word_ptr CB_GAME_DATA byte_parser_asset_cursor; /* GS:0x1FAF */
 extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_table_131a_cursor; /* GS:0x131A */
 extern volatile cb_u8 CB_GAME_DATA byte_parser_table_131e_count; /* GS:0x131E */
+extern volatile cb_i16 CB_GAME_DATA
+        byte_parser_table_131c_visible_index; /* GS:0x131C */
 extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
+extern volatile cb_u8 CB_GAME_DATA
+        byte_parser_stream_segment[]; /* GS-relative byte arena */
 
 #if defined(__WATCOMC__)
 #pragma aux byte_parser_op_01_mark_b16 modify exact []

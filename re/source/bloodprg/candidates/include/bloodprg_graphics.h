@@ -7,6 +7,15 @@
 
 typedef volatile cb_u8 CB_FAR *bloodprg_graphics_buffer_ptr;
 
+typedef struct bloodprg_centered_text_line {
+    cb_u16 character_count;
+    cb_u16 centered_x;
+} bloodprg_centered_text_line;
+
+/* SS:0x0AF2 in 0x007CE8; ordinary data shares the runtime stack segment. */
+extern volatile bloodprg_centered_text_line CB_NEAR
+        centered_text_line_layout[];
+
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_work_surface; /* GS:0x0ABC */
 extern volatile cb_u8 palette_dirty; /* game data:0x5B55 */
@@ -321,6 +330,7 @@ void CB_FAR main_font_text_draw_display(
         cb_u16 y,
         cb_u8 color); /* 0x003192 */
 void CB_FAR subtitle_reveal_pump(void); /* 0x0093F5 */
+void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 
 #if defined(__WATCOMC__)
 #pragma aux layout_offset_calc parm [ax] [bx] value [bx ax]

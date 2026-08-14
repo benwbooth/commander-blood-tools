@@ -4781,6 +4781,39 @@ with 87.72 percent overlap. Direct replacement still needs the original
 far-call placement, AX/DS/SI/ES/DI preservation, dword `REP STOSD`/`MOVSD`
 lowering, and exact `CX`/`EAX` and flag residue.
 
+## BLOODPRG centered thresholded text candidate
+
+`0x007CE8` is more specific than its provisional `list_walk_f18` label. It
+reads a signed visibility threshold followed by a NUL string from the GS cursor
+at `0x0F18`. A negative threshold or one above signed `GS:0x131C` returns
+without drawing.
+
+Accepted text wraps only at a space whose running count has signed low byte at
+least 28. Each line writes a word character count and wrapping 16-bit
+`x = 160 - count * 4` to the near scratch records at `SS:0x0AF2`. The routine
+draws those records at y positions 110, 118, and so on through
+`font8x8_text_draw_display`, using color `0xEF` and the count byte as the font
+limit. It always emits a final record, including for an empty string. After all
+calls it rereads the following threshold and current visible index, advancing
+the GS cursor only when that next entry is visible.
+
+Fourteen patched-font vectors cover both initial rejects, an equal threshold,
+empty text, negative and above-limit following entries, exact-28 and one-before
+spaces, three lines, signed-low-byte behavior at 128, a cursor wrapping through
+`0xFFFF`, and helper changes to the next threshold and visible index. They prove
+all layout records, helper-return text offsets, post-call rereads, segment
+ownership, call frames, preservation, terminal flags, stack integrity, and near
+return.
+
+Open Watcom 1.9 huge (`-3 -os -s -mh -we`) compiles the natural 16-bit offset
+and named-arena candidate warning-free to 119 instructions/313 bytes versus
+70/147 in the original, with 72.86 percent mnemonic-multiset overlap and no
+inline assembly. The emitted font call loads `DS` from the GAME_DATA relocation
+and accesses layout records through `SS`. Direct replacement still needs the
+original fixed `BP` scratch allocation, `DS = GS`, `LODSB`/`LOOP` lowering,
+preserve-all and final-flag envelope, and the shipped clear-direction C
+invariant.
+
 ## BLOODPRG navigation actor slot update loop candidate
 
 `0x007D7B` first combines nine low-byte busy sources. Only the low byte of the

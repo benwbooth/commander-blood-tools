@@ -51434,6 +51434,434 @@ def camera_nav_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_walk_f18_vectors() -> list[dict[str, object]]:
+    entry = 0x7CE8
+    font_entry = 0x0299 * 16 + 0x00D6
+    data_segment = 0x3400
+    game_segment = 0x5000
+    stack_segment = 0x8000
+    extra_segment = 0xA000
+    return_address = 0x6F00
+    scratch_offset = 0x0AF2
+    cases = [
+        {
+            "name": "negative_initial_threshold",
+            "threshold": 0xFFFF,
+            "visible_index": 4,
+            "text": b"ignored\0",
+            "next_threshold": 0,
+        },
+        {
+            "name": "initial_threshold_above_visible",
+            "threshold": 5,
+            "visible_index": 4,
+            "text": b"ignored\0",
+            "next_threshold": 0,
+        },
+        {
+            "name": "equal_threshold_single_line",
+            "threshold": 4,
+            "visible_index": 4,
+            "text": b"ABC\0",
+            "next_threshold": 4,
+        },
+        {
+            "name": "empty_text_zero_limit_draws_one_empty_line",
+            "threshold": 0,
+            "visible_index": 0,
+            "text": b"\0",
+            "next_threshold": 0,
+        },
+        {
+            "name": "negative_next_threshold_keeps_cursor",
+            "threshold": 0,
+            "visible_index": 8,
+            "text": b"NEXT\0",
+            "next_threshold": 0x8000,
+        },
+        {
+            "name": "next_threshold_above_visible_keeps_cursor",
+            "threshold": 2,
+            "visible_index": 3,
+            "text": b"WAIT\0",
+            "next_threshold": 4,
+        },
+        {
+            "name": "space_at_28_wraps",
+            "threshold": 1,
+            "visible_index": 5,
+            "text": b"A" * 27 + b" B\0",
+            "next_threshold": 2,
+        },
+        {
+            "name": "space_at_27_does_not_wrap",
+            "threshold": 1,
+            "visible_index": 5,
+            "text": b"A" * 26 + b" B\0",
+            "next_threshold": 2,
+        },
+        {
+            "name": "three_centered_lines",
+            "threshold": 2,
+            "visible_index": 7,
+            "text": b"A" * 27 + b" " + b"B" * 27 + b" C\0",
+            "next_threshold": 3,
+        },
+        {
+            "name": "signed_low_byte_suppresses_128_space_break",
+            "threshold": 3,
+            "visible_index": 7,
+            "text": b"A" * 127 + b" B\0",
+            "next_threshold": 4,
+        },
+        {
+            "name": "wrapped_cursor_and_text",
+            "threshold": 1,
+            "visible_index": 2,
+            "text": b"WRAP\0",
+            "next_threshold": 2,
+            "list_offset": 0xFFFE,
+        },
+        {
+            "name": "helper_invalidates_following_threshold",
+            "threshold": 1,
+            "visible_index": 5,
+            "text": b"MUTATE\0",
+            "next_threshold": 2,
+            "helper_next_threshold": 0xFFFF,
+        },
+        {
+            "name": "helper_reduces_visible_index",
+            "threshold": 1,
+            "visible_index": 5,
+            "text": b"LIMIT\0",
+            "next_threshold": 5,
+            "helper_visible_index": 4,
+        },
+        {
+            "name": "helper_increases_visible_index",
+            "threshold": 1,
+            "visible_index": 2,
+            "text": b"OPEN\0",
+            "next_threshold": 3,
+            "helper_visible_index": 3,
+        },
+    ]
+    expected_hash = "92dc92ecf871a930484a022ef1e87302750ec7bd825a8a071e7f8a127ef44ebd"
+    if hashlib.sha256(EXE[entry : entry + 147]).hexdigest() != expected_hash:
+        raise AssertionError("0x7ce8: recovered 147-byte body changed")
+
+    def signed8(value: int) -> int:
+        return value - 0x100 if value & 0x80 else value
+
+    def signed16(value: int) -> int:
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic_flags_16(value: int) -> dict[str, bool]:
+        value &= 0xFFFF
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & 0x8000),
+            "of": False,
+        }
+
+    def write_wrapped(memory: bytearray, offset: int, data: bytes) -> None:
+        for index, value in enumerate(data):
+            memory[(offset + index) & 0xFFFF] = value
+
+    def read_word(memory: bytearray, offset: int) -> int:
+        return memory[offset] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        threshold = int(case["threshold"])
+        visible_index_before = int(case["visible_index"])
+        text_bytes = bytes(case["text"])
+        next_threshold_before = int(case["next_threshold"])
+        list_offset = int(case.get("list_offset", 0x3000))
+        text_offset = (list_offset + 2) & 0xFFFF
+        end_offset = (text_offset + len(text_bytes)) & 0xFFFF
+
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 17 + case_index * 29 + 0x41)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x0F18, list_offset)
+        struct.pack_into("<H", game_before, 0x131C, visible_index_before)
+        write_wrapped(game_before, list_offset, struct.pack("<H", threshold))
+        write_wrapped(game_before, text_offset, text_bytes)
+        write_wrapped(
+            game_before, end_offset, struct.pack("<H", next_threshold_before)
+        )
+
+        data_before = bytearray(
+            (offset * 23 + case_index * 31 + 0x79) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", data_before, 0x0F18, list_offset ^ 0x5555)
+        struct.pack_into(
+            "<H", data_before, 0x131C, visible_index_before ^ 0xAAAA
+        )
+        write_wrapped(data_before, list_offset, b"\xDE\xC0")
+
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 37 + 0x63)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        scratch_before = bytes(stack_before[scratch_offset : scratch_offset + 0x80])
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_before[0xFF00 : 0xFF08] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        extra_before = bytes(
+            (offset * 11 + case_index * 41 + 0xA7) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        initial_valid = (
+            signed16(threshold) >= 0
+            and signed16(threshold) <= signed16(visible_index_before)
+        )
+        records: list[tuple[int, int]] = []
+        if initial_valid:
+            scan = text_offset
+            line_length = 0
+            for _ in range(0x10000):
+                character = game_before[scan]
+                scan = (scan + 1) & 0xFFFF
+                line_length = (line_length + 1) & 0xFFFF
+                if character == 0:
+                    line_length = (line_length - 1) & 0xFFFF
+                    x = (0x00A0 - ((line_length << 2) & 0xFFFF)) & 0xFFFF
+                    records.append((line_length, x))
+                    break
+                if character == 0x20 and signed8(line_length & 0xFF) >= 0x1C:
+                    x = (0x00A0 - ((line_length << 2) & 0xFFFF)) & 0xFFFF
+                    records.append((line_length, x))
+                    line_length = 0
+            else:
+                raise AssertionError(f"0x7ce8 {name}: unterminated model text")
+
+        helper_next_threshold = case.get("helper_next_threshold")
+        helper_visible_index = case.get("helper_visible_index")
+        calls: list[dict[str, int]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != font_entry:
+                return
+            call = {
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+            }
+            calls.append(call)
+            character_limit = (call["dx"] >> 8) & 0xFF
+            remaining = character_limit if character_limit != 0 else 0x100
+            cursor = call["si"]
+            while remaining != 0 and machine.mem_read(
+                game_segment * 16 + cursor, 1
+            )[0] != 0:
+                cursor = (cursor + 1) & 0xFFFF
+                remaining -= 1
+            machine.reg_write(UC_X86_REG_SI, cursor)
+            if helper_next_threshold is not None:
+                machine.mem_write(
+                    game_segment * 16 + end_offset,
+                    struct.pack("<H", int(helper_next_threshold)),
+                )
+            if helper_visible_index is not None:
+                machine.mem_write(
+                    game_segment * 16 + 0x131C,
+                    struct.pack("<H", int(helper_visible_index)),
+                )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x6400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0x0299, 0x00D6, b"\xCB"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+                (extra_segment, 0, extra_before),
+            ],
+            code_handler=capture,
+            instruction_count=20000,
+        )
+
+        expected_calls = []
+        draw_cursor = text_offset
+        for record_index, (count, x) in enumerate(records):
+            expected_calls.append({
+                "cs": 0x0299,
+                "ip": 0x00D6,
+                "sp": 0xFEEC,
+                "ax": x,
+                "bx": (0x006E + record_index * 8) & 0xFFFF,
+                "cx": len(records) - record_index,
+                "dx": ((count & 0xFF) << 8) | 0x00EF,
+                "si": draw_cursor,
+                "di": end_offset,
+                "bp": (scratch_offset + record_index * 4) & 0xFFFF,
+                "ds": game_segment,
+                "es": extra_segment,
+            })
+            draw_cursor = (draw_cursor + count) & 0xFFFF
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x7ce8 {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_game = bytearray(game_before)
+        if initial_valid and helper_next_threshold is not None:
+            write_wrapped(
+                expected_game,
+                end_offset,
+                struct.pack("<H", int(helper_next_threshold)),
+            )
+        if initial_valid and helper_visible_index is not None:
+            struct.pack_into(
+                "<H", expected_game, 0x131C, int(helper_visible_index)
+            )
+
+        if initial_valid:
+            next_threshold_after = read_word(expected_game, end_offset)
+            visible_index_after = read_word(expected_game, 0x131C)
+            next_valid = (
+                signed16(next_threshold_after) >= 0
+                and signed16(next_threshold_after) <= signed16(visible_index_after)
+            )
+            if next_valid:
+                struct.pack_into("<H", expected_game, 0x0F18, end_offset)
+            if signed16(next_threshold_after) < 0:
+                terminal_flags = logic_flags_16(next_threshold_after)
+            else:
+                terminal_flags = sub16_flags(
+                    next_threshold_after, visible_index_after
+                )
+        elif signed16(threshold) < 0:
+            next_threshold_after = next_threshold_before
+            visible_index_after = visible_index_before
+            next_valid = False
+            terminal_flags = logic_flags_16(threshold)
+        else:
+            next_threshold_after = next_threshold_before
+            visible_index_after = visible_index_before
+            next_valid = False
+            terminal_flags = sub16_flags(threshold, visible_index_before)
+
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game, strict=True)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x7ce8 {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, expected={expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(data_before):
+            raise AssertionError(f"0x7ce8 {name}: incoming DS decoy changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x7ce8 {name}: ES decoy changed")
+
+        actual_scratch = bytes(
+            machine.mem_read(stack_segment * 16 + scratch_offset, 0x80)
+        )
+        expected_scratch = bytearray(scratch_before)
+        for record_index, (count, x) in enumerate(records):
+            struct.pack_into("<HH", expected_scratch, record_index * 4, count, x)
+        if actual_scratch != bytes(expected_scratch):
+            raise AssertionError(
+                f"0x7ce8 {name}: scratch={actual_scratch.hex()}, expected={expected_scratch.hex()}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x7ce8 {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7ce8 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x7ce8 {name}: near return changed CS")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x7ce8 {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append({
+            "name": name,
+            "threshold": threshold,
+            "visible_index_before": visible_index_before,
+            "visible_index_after": visible_index_after,
+            "text_length": len(text_bytes) - 1,
+            "line_records": [
+                {"character_count": count, "centered_x": x}
+                for count, x in records
+            ],
+            "next_threshold_before": next_threshold_before,
+            "next_threshold_after": next_threshold_after,
+            "cursor_before": list_offset,
+            "cursor_after": struct.unpack_from("<H", expected_game, 0x0F18)[0],
+            "next_valid": next_valid,
+            "helper_calls": len(calls),
+            "defined_flags": terminal_flags,
+        })
+    return vectors
+
+
 def nav_actor_slot_update_loop_vectors() -> list[dict[str, object]]:
     entry = 0x7D7B
     mouse_hit_entry = 0x8269
@@ -69672,6 +70100,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_792d_natural.json",
         camera_nav_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7ce8_natural.json",
+        list_walk_f18_vectors(),
         args.check,
     )
     update_vector(
