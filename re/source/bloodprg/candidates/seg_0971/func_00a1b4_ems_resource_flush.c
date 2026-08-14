@@ -16,7 +16,7 @@ void CB_NEAR ems_resource_flush(cb_u16 link_target_offset)
         }
 
         if (!list_d8c_activate_ready()) {
-            list_d8c_refill(link_target_offset);
+            link_target_offset = list_d8c_refill(link_target_offset);
             continue;
         }
 

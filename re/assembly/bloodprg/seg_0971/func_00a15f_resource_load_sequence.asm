@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: resource_load_sequence
-; label_comment: resource load sequence: call resource_switch 0x9f8e (store id + close old + reinit list); call 0xa642 (banked_list_load); carry-flag error handling. Loads a new banked resource end to end
+; label_comment: load and prime one presentation resource. AX selects resource_switch, carry from it or banked_list_load aborts, the first tail entry is activated in the default storage segment and presented, then the queue is reset and DS counters 0xd60/0x131c/0xd62 advance. Unless resource flag 0x40 is set, exactly 50 refills run while BP threads their evolving link-target cursor; DS:0xda2 then captures the timer tick.
 ; byte_count: 85
 ; boundary: cfg_blocks_6_terminals_1
 ; terminal: ret:1

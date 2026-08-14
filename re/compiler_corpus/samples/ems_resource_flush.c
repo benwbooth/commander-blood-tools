@@ -14,7 +14,7 @@ extern volatile u8 list_rollover_state_probe;
 
 int NEAR list_activate_ready_probe(void);
 int NEAR list_advance_due_probe(void);
-void NEAR list_refill_probe(u16 link_target_offset);
+u16 NEAR list_refill_probe(u16 link_target_offset);
 void NEAR list_refill_with_latch_probe(u16 link_target_offset);
 volatile u8 FAR *NEAR list_palette_apply_probe(void);
 void FAR list_active_present_probe(void);
@@ -35,7 +35,7 @@ void NEAR ems_resource_flush_probe(u16 link_target_offset)
         }
 
         if (!list_activate_ready_probe()) {
-            list_refill_probe(link_target_offset);
+            link_target_offset = list_refill_probe(link_target_offset);
             continue;
         }
 

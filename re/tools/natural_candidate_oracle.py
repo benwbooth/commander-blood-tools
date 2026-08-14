@@ -52115,6 +52115,380 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def resource_load_sequence_vectors() -> list[dict[str, object]]:
+    entry = 0xA15F
+    return_address = 0xF180
+    expected_hash = "3e1ca8aa98aaf77324b482441d46184dea56f924e68737181bede861f493c665"
+    if hashlib.sha256(EXE[entry : entry + 85]).hexdigest() != expected_hash:
+        raise AssertionError("0xa15f: recovered 85-byte body changed")
+
+    cases = [
+        {
+            "name": "resource_switch_failure",
+            "switch_succeeds": False,
+            "banked_load_succeeds": False,
+            "flags": 0,
+        },
+        {
+            "name": "banked_list_load_failure",
+            "switch_succeeds": True,
+            "banked_load_succeeds": False,
+            "flags": 0,
+        },
+        {
+            "name": "success_prefills_fifty",
+            "switch_succeeds": True,
+            "banked_load_succeeds": True,
+            "flags": 0x1200,
+        },
+        {
+            "name": "success_flag_40_skips_prefill",
+            "switch_succeeds": True,
+            "banked_load_succeeds": True,
+            "flags": 0x1240,
+        },
+    ]
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    buffer_segment = 0x4000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    tail_offset = 0x2340
+    entry_extent = 0x0137
+    storage_segment = 0x4560
+    refill_step = 7
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def stack_word(machine: Uc, index: int = 0) -> int:
+        sp = machine.reg_read(UC_X86_REG_SP)
+        return struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + sp + index * 2, 2)
+        )[0]
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS,
+            flags | 1 if carry else flags & ~1,
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        switch_succeeds = bool(case["switch_succeeds"])
+        banked_load_succeeds = bool(case["banked_load_succeeds"])
+        resource_flags = int(case["flags"])
+        resource_id = 0x20 + case_index
+        initial_read_index = 0xFFFE
+        initial_sequence = 0x3456
+        initial_wrap_count = 0xFFFF
+        tick = 0x789A + case_index
+        calls: list[dict[str, object]] = []
+        refill_targets: list[int] = []
+
+        initial = {
+            "eax": 0xA5A50000 | resource_id,
+            "ebx": 0xB6B61234,
+            "ecx": 0xC7C72345,
+            "edx": 0xD8D83456,
+            "esi": 0xE9E94567,
+            "edi": 0xFAFA5678,
+            "ebp": 0xABCD6789,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x5000,
+            "fs": 0x6000,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x9F8E:
+                calls.append(
+                    {
+                        "call": "resource_switch",
+                        "resource_id": machine.reg_read(UC_X86_REG_AX),
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0x9F00 + case_index)
+                set_carry(machine, not switch_succeeds)
+                return
+            if address == 0xA642:
+                calls.append(
+                    {
+                        "call": "banked_list_load",
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA600 + case_index)
+                machine.reg_write(UC_X86_REG_ES, 0x5A00 + case_index)
+                machine.reg_write(UC_X86_REG_SI, 0x6B00 + case_index)
+                set_carry(machine, not banked_load_succeeds)
+                return
+            if address == 0xA552:
+                calls.append(
+                    {
+                        "call": "list_d8c_activate_entry",
+                        "entry_extent": machine.reg_read(UC_X86_REG_AX),
+                        "entry_segment": machine.reg_read(UC_X86_REG_ES),
+                        "entry_offset": machine.reg_read(UC_X86_REG_SI),
+                        "storage_segment": machine.reg_read(UC_X86_REG_BP),
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA552)
+                return
+            if address == 0xA41A:
+                calls.append(
+                    {
+                        "call": "list_d8c_active_present",
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA41A)
+                return
+            if address == 0xA757:
+                calls.append(
+                    {
+                        "call": "list_d8c_init",
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA757)
+                return
+            if address == 0xA2AB:
+                link_target = machine.reg_read(UC_X86_REG_BP)
+                refill_targets.append(link_target)
+                calls.append(
+                    {
+                        "call": "list_d8c_refill",
+                        "link_target_offset": link_target,
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(
+                    UC_X86_REG_BP, (link_target + refill_step) & 0xFFFF
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA200 + len(refill_targets))
+                machine.reg_write(UC_X86_REG_BX, 0xBEEF)
+                machine.reg_write(UC_X86_REG_CX, 0xDEAD)
+                machine.reg_write(UC_X86_REG_DX, 0xD00D)
+                machine.reg_write(UC_X86_REG_SI, 0x5151)
+                machine.reg_write(UC_X86_REG_DI, 0xD1D1)
+                machine.reg_write(UC_X86_REG_EFLAGS, 0x0AD7)
+
+        memory = [
+            (0, return_address, b"\xCC"),
+            (0, 0x9F8E, b"\xC3"),
+            (0, 0xA642, b"\xC3"),
+            (0, 0xA552, b"\xC3"),
+            (0, 0xA41A, b"\xCB"),
+            (0, 0xA757, b"\xCB"),
+            (0, 0xA2AB, b"\xC3"),
+            (data_segment, 0x0ABE, struct.pack("<H", storage_segment)),
+            (data_segment, 0x0B29, struct.pack("<H", tick)),
+            (data_segment, 0x0D60, struct.pack("<H", initial_read_index)),
+            (data_segment, 0x0D62, struct.pack("<H", initial_wrap_count)),
+            (data_segment, 0x0D76, struct.pack("<H", resource_flags)),
+            (
+                data_segment,
+                0x0D90,
+                struct.pack("<HH", tail_offset, buffer_segment),
+            ),
+            (data_segment, 0x0DA2, struct.pack("<H", 0x1111)),
+            (data_segment, 0x131C, struct.pack("<H", initial_sequence)),
+            (buffer_segment, tail_offset, struct.pack("<H", entry_extent)),
+            (decoy_segment, 0x0ABE, struct.pack("<H", 0xDEAD)),
+            (decoy_segment, 0x0B29, struct.pack("<H", 0x2222)),
+            (decoy_segment, 0x0D60, struct.pack("<H", 0x3333)),
+            (decoy_segment, 0x0D62, struct.pack("<H", 0x4444)),
+            (decoy_segment, 0x0D76, struct.pack("<H", 0xFFFF)),
+            (decoy_segment, 0x0D90, struct.pack("<HH", 0x5555, 0x6666)),
+            (decoy_segment, 0x0DA2, struct.pack("<H", 0x7777)),
+            (decoy_segment, 0x131C, struct.pack("<H", 0x8888)),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        expected_prefix = [
+            {
+                "call": "resource_switch",
+                "resource_id": resource_id,
+                "return_ip": 0xA16B,
+            }
+        ]
+        if switch_succeeds:
+            expected_prefix.append(
+                {"call": "banked_list_load", "return_ip": 0xA170}
+            )
+        if switch_succeeds and banked_load_succeeds:
+            expected_prefix.extend(
+                [
+                    {
+                        "call": "list_d8c_activate_entry",
+                        "entry_extent": entry_extent,
+                        "entry_segment": buffer_segment,
+                        "entry_offset": (tail_offset + 2) & 0xFFFF,
+                        "storage_segment": storage_segment,
+                        "return_ip": 0xA17F,
+                    },
+                    {
+                        "call": "list_d8c_active_present",
+                        "return_ip": 0xA183,
+                        "return_cs": 0,
+                    },
+                    {
+                        "call": "list_d8c_init",
+                        "return_ip": 0xA187,
+                        "return_cs": 0,
+                    },
+                ]
+            )
+        if calls[: len(expected_prefix)] != expected_prefix:
+            raise AssertionError(
+                f"0xa15f {name}: calls={calls}, expected prefix={expected_prefix}"
+            )
+
+        successful = switch_succeeds and banked_load_succeeds
+        expected_refills = 50 if successful and (resource_flags & 0x40) == 0 else 0
+        expected_targets = [
+            (storage_segment + index * refill_step) & 0xFFFF
+            for index in range(expected_refills)
+        ]
+        if refill_targets != expected_targets:
+            raise AssertionError(
+                f"0xa15f {name}: refill targets={refill_targets}, "
+                f"expected={expected_targets}"
+            )
+        if len(calls) != len(expected_prefix) + expected_refills:
+            raise AssertionError(f"0xa15f {name}: unexpected helper call count")
+        for call in calls[len(expected_prefix) :]:
+            if call["return_ip"] != 0xA1A1:
+                raise AssertionError(f"0xa15f {name}: refill return IP differs")
+
+        def read_u16(segment: int, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(segment * 16 + offset, 2)
+            )[0]
+
+        if successful:
+            expected_state = {
+                "read_index": (initial_read_index + 1) & 0xFFFF,
+                "sequence": (initial_sequence + 1) & 0xFFFF,
+                "wrap_count": (initial_wrap_count + 1) & 0xFFFF,
+                "previous_tick": tick,
+            }
+        else:
+            expected_state = {
+                "read_index": initial_read_index,
+                "sequence": initial_sequence,
+                "wrap_count": initial_wrap_count,
+                "previous_tick": 0x1111,
+            }
+        observed_state = {
+            "read_index": read_u16(data_segment, 0x0D60),
+            "sequence": read_u16(data_segment, 0x131C),
+            "wrap_count": read_u16(data_segment, 0x0D62),
+            "previous_tick": read_u16(data_segment, 0x0DA2),
+        }
+        if observed_state != expected_state:
+            raise AssertionError(
+                f"0xa15f {name}: state={observed_state}, expected={expected_state}"
+            )
+        expected_decoys = {
+            "storage": 0xDEAD,
+            "tick": 0x2222,
+            "read_index": 0x3333,
+            "wrap_count": 0x4444,
+            "flags": 0xFFFF,
+            "tail_offset": 0x5555,
+            "tail_segment": 0x6666,
+            "previous_tick": 0x7777,
+            "sequence": 0x8888,
+        }
+        observed_decoys = {
+            "storage": read_u16(decoy_segment, 0x0ABE),
+            "tick": read_u16(decoy_segment, 0x0B29),
+            "read_index": read_u16(decoy_segment, 0x0D60),
+            "wrap_count": read_u16(decoy_segment, 0x0D62),
+            "flags": read_u16(decoy_segment, 0x0D76),
+            "tail_offset": read_u16(decoy_segment, 0x0D90),
+            "tail_segment": read_u16(decoy_segment, 0x0D92),
+            "previous_tick": read_u16(decoy_segment, 0x0DA2),
+            "sequence": read_u16(decoy_segment, 0x131C),
+        }
+        if observed_decoys != expected_decoys:
+            raise AssertionError(f"0xa15f {name}: GS decoy state changed")
+
+        initial_key = {
+            "ax": "eax",
+            "bx": "ebx",
+            "cx": "ecx",
+            "dx": "edx",
+            "si": "esi",
+            "di": "edi",
+            "bp": "ebp",
+        }
+        for register in (
+            "ax",
+            "bx",
+            "cx",
+            "dx",
+            "si",
+            "di",
+            "bp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+            "ss",
+        ):
+            expected = initial[initial_key.get(register, register)] & 0xFFFF
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa15f {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0xa15f {name}: caller stack not restored")
+        if machine.mem_read(
+            stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa15f {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "resource_id": resource_id,
+                "resource_flags": resource_flags,
+                "calls_before_refill": expected_prefix,
+                "refill_count": len(refill_targets),
+                "first_refill_target": refill_targets[0] if refill_targets else None,
+                "last_refill_target": refill_targets[-1] if refill_targets else None,
+                "refill_target_step": refill_step if refill_targets else None,
+                "result": observed_state,
+                "return_carry": machine.reg_read(UC_X86_REG_EFLAGS) & 1,
+            }
+        )
+
+    return vectors
+
+
 def ems_resource_flush_vectors() -> list[dict[str, object]]:
     entry = 0xA1B4
     normal_return = 0xF300
@@ -52168,6 +52542,7 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
     caller_sp = 0xFF00
     stack_sentinel = bytes.fromhex("5aa596698778c33c")
     helper_flags = 0x0AD7
+    refill_step = 5
     vectors = []
 
     def stack_word(machine: Uc, index: int = 0) -> int:
@@ -52251,10 +52626,11 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
             if address == 0xA2AB:
                 latch = machine.mem_read(data_segment * 16 + 0x0DAC, 1)[0]
                 return_ip = stack_word(machine)
+                link_target_offset = machine.reg_read(UC_X86_REG_BP)
                 calls.append(
                     {
                         "call": "list_d8c_refill",
-                        "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                        "link_target_offset": link_target_offset,
                         "rollover_latch": latch,
                         "return_ip": return_ip,
                     }
@@ -52262,6 +52638,9 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
                 last_refill_ax = 0xA200 + refill_index
                 refill_index += 1
                 machine.reg_write(UC_X86_REG_AX, last_refill_ax)
+                machine.reg_write(
+                    UC_X86_REG_BP, (link_target_offset + refill_step) & 0xFFFF
+                )
                 machine.reg_write(UC_X86_REG_EFLAGS, helper_flags)
                 if return_ip == 0xA1FE:
                     machine.mem_write(data_segment * 16 + 0x0DAC, b"\x5a")
@@ -52346,7 +52725,7 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
                 {"call": "list_d8c_activate_ready", "ready": False, "return_ip": 0xA1D7},
                 {
                     "call": "list_d8c_refill",
-                    "link_target_offset": link_target,
+                    "link_target_offset": (link_target + refill_step) & 0xFFFF,
                     "rollover_latch": 0xA5,
                     "return_ip": 0xA1DC,
                 },
@@ -52355,7 +52734,7 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
                 {"call": "refill_shared_tail_entry", "stack_top": link_target},
                 {
                     "call": "list_d8c_refill",
-                    "link_target_offset": link_target,
+                    "link_target_offset": (link_target + 2 * refill_step) & 0xFFFF,
                     "rollover_latch": 0x80,
                     "return_ip": 0xA1FE,
                 },
@@ -52465,6 +52844,7 @@ def ems_resource_flush_vectors() -> list[dict[str, object]]:
                 "resource_flags": flags,
                 "palette_offset": palette,
                 "link_target_offset": link_target,
+                "refill_target_step": refill_step,
                 "calls": calls,
                 "malformed_call_frame": malformed,
                 "escaped_to": escaped_to,
@@ -53347,6 +53727,12 @@ def list_d8c_refill_vectors() -> list[dict[str, object]]:
             machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
         ) != stack_sentinel:
             raise AssertionError(f"0xa2ab {name}: stack sentinel changed")
+        actual_link_target = machine.reg_read(UC_X86_REG_BP)
+        if actual_link_target != model_target:
+            raise AssertionError(
+                f"0xa2ab {name}: BP={actual_link_target:#x}, "
+                f"expected={model_target:#x}"
+            )
 
         result = {
             "pending": get_u16(data_expected, 0x0DA0),
@@ -53369,6 +53755,7 @@ def list_d8c_refill_vectors() -> list[dict[str, object]]:
                 "initial_source_offset": source_offset,
                 "initial_source_remaining": source_remaining,
                 "link_target_offset": link_target,
+                "result_link_target_offset": actual_link_target,
                 "result": result,
                 "calls": observed_calls,
                 "buffer_sha256": hashlib.sha256(buffer_expected).hexdigest(),
@@ -57063,6 +57450,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a15f_natural.json",
+        resource_load_sequence_vectors(),
         args.check,
     )
     update_vector(

@@ -6,6 +6,7 @@
     "initial_source_offset": 16909060,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 1,
@@ -42,6 +43,7 @@
     "initial_source_offset": 4660,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 4660,
       "wrap_count": 1,
@@ -78,6 +80,7 @@
     "initial_source_offset": 6128,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 1,
@@ -114,6 +117,7 @@
     "initial_source_offset": 8192,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 837,
       "wrap_count": 1,
@@ -144,6 +148,7 @@
     "initial_source_offset": 12288,
     "initial_source_remaining": 256,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 2,
@@ -190,6 +195,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 256,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 1,
@@ -218,6 +224,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 3,
@@ -241,6 +248,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 1,
@@ -269,6 +277,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 3,
@@ -299,6 +308,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 0,
@@ -337,6 +347,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 0,
@@ -386,6 +397,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1316,
     "result": {
       "pending": 8,
       "wrap_count": 4,
@@ -496,6 +508,7 @@
     "initial_source_offset": 4096,
     "initial_source_remaining": 0,
     "link_target_offset": 1280,
+    "result_link_target_offset": 1280,
     "result": {
       "pending": 0,
       "wrap_count": 0,

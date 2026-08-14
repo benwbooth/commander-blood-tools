@@ -1,0 +1,142 @@
+[
+  {
+    "name": "resource_switch_failure",
+    "resource_id": 32,
+    "resource_flags": 0,
+    "calls_before_refill": [
+      {
+        "call": "resource_switch",
+        "resource_id": 32,
+        "return_ip": 41323
+      }
+    ],
+    "refill_count": 0,
+    "first_refill_target": null,
+    "last_refill_target": null,
+    "refill_target_step": null,
+    "result": {
+      "read_index": 65534,
+      "sequence": 13398,
+      "wrap_count": 65535,
+      "previous_tick": 4369
+    },
+    "return_carry": 1
+  },
+  {
+    "name": "banked_list_load_failure",
+    "resource_id": 33,
+    "resource_flags": 0,
+    "calls_before_refill": [
+      {
+        "call": "resource_switch",
+        "resource_id": 33,
+        "return_ip": 41323
+      },
+      {
+        "call": "banked_list_load",
+        "return_ip": 41328
+      }
+    ],
+    "refill_count": 0,
+    "first_refill_target": null,
+    "last_refill_target": null,
+    "refill_target_step": null,
+    "result": {
+      "read_index": 65534,
+      "sequence": 13398,
+      "wrap_count": 65535,
+      "previous_tick": 4369
+    },
+    "return_carry": 1
+  },
+  {
+    "name": "success_prefills_fifty",
+    "resource_id": 34,
+    "resource_flags": 4608,
+    "calls_before_refill": [
+      {
+        "call": "resource_switch",
+        "resource_id": 34,
+        "return_ip": 41323
+      },
+      {
+        "call": "banked_list_load",
+        "return_ip": 41328
+      },
+      {
+        "call": "list_d8c_activate_entry",
+        "entry_extent": 311,
+        "entry_segment": 16384,
+        "entry_offset": 9026,
+        "storage_segment": 17760,
+        "return_ip": 41343
+      },
+      {
+        "call": "list_d8c_active_present",
+        "return_ip": 41347,
+        "return_cs": 0
+      },
+      {
+        "call": "list_d8c_init",
+        "return_ip": 41351,
+        "return_cs": 0
+      }
+    ],
+    "refill_count": 50,
+    "first_refill_target": 17760,
+    "last_refill_target": 18103,
+    "refill_target_step": 7,
+    "result": {
+      "read_index": 65535,
+      "sequence": 13399,
+      "wrap_count": 0,
+      "previous_tick": 30876
+    },
+    "return_carry": 1
+  },
+  {
+    "name": "success_flag_40_skips_prefill",
+    "resource_id": 35,
+    "resource_flags": 4672,
+    "calls_before_refill": [
+      {
+        "call": "resource_switch",
+        "resource_id": 35,
+        "return_ip": 41323
+      },
+      {
+        "call": "banked_list_load",
+        "return_ip": 41328
+      },
+      {
+        "call": "list_d8c_activate_entry",
+        "entry_extent": 311,
+        "entry_segment": 16384,
+        "entry_offset": 9026,
+        "storage_segment": 17760,
+        "return_ip": 41343
+      },
+      {
+        "call": "list_d8c_active_present",
+        "return_ip": 41347,
+        "return_cs": 0
+      },
+      {
+        "call": "list_d8c_init",
+        "return_ip": 41351,
+        "return_cs": 0
+      }
+    ],
+    "refill_count": 0,
+    "first_refill_target": null,
+    "last_refill_target": null,
+    "refill_target_step": null,
+    "result": {
+      "read_index": 65535,
+      "sequence": 13399,
+      "wrap_count": 0,
+      "previous_tick": 30877
+    },
+    "return_carry": 0
+  }
+]

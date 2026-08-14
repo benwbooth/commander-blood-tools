@@ -32,7 +32,7 @@ typedef char list_d8c_cached_range_size_must_be_8[
 typedef char list_d8c_link_body_size_must_be_8[
         sizeof(list_d8c_link_body) == 8 ? 1 : -1];
 
-void CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
+cb_u16 CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
 {
     const volatile bloodprg_resource_descriptor CB_NEAR *descriptor;
     const volatile list_d8c_cached_range CB_NEAR *cached_range;
@@ -64,11 +64,11 @@ void CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
                     }
                 }
                 if (!queue_d8c_has_room(chunk)) {
-                    return;
+                    return link_target_offset;
                 }
                 list_d8c_iteration_count -= chunk;
                 (void)ems_paged_read(chunk);
-                return;
+                return link_target_offset;
             }
         }
         check_source_first = 0u;
@@ -76,7 +76,7 @@ void CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
         if (list_d8c_wrap_count != list_d8c_secondary_wrap_limit &&
                 resource_source_remaining != 0UL) {
             if (!list_d8c_read(&entry_extent, &cursor_offset)) {
-                return;
+                return link_target_offset;
             }
             queue_d8c_wrap(entry_extent, cursor_offset);
             continue;
@@ -84,10 +84,10 @@ void CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
 
         if (((cb_u8)resource_flags & LIST_D8C_ROLLOVER_ENABLED) == 0u) {
             presentation_queue_finish();
-            return;
+            return link_target_offset;
         }
         if (!queue_d8c_has_room(LIST_D8C_ROLLOVER_RESERVATION)) {
-            return;
+            return link_target_offset;
         }
 
         previous_wrap_count = list_d8c_wrap_count;
@@ -104,7 +104,7 @@ void CB_NEAR list_d8c_refill(cb_u16 link_target_offset)
                     (cb_u16)(cached_range->source_offset >> 16) == 0u) {
                 resource_requested_id = resource_active_id;
                 /* The binary's fallback calls 0x009FA2 with an invalid frame. */
-                return;
+                return link_target_offset;
             }
             resource_requested_id = resource_active_id;
             resource_range_start = cached_range->source_offset;

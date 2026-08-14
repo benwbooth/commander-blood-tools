@@ -6,6 +6,7 @@
     "resource_flags": 4608,
     "palette_offset": 65535,
     "link_target_offset": 16640,
+    "refill_target_step": 5,
     "calls": [],
     "malformed_call_frame": false,
     "escaped_to": 62208,
@@ -20,6 +21,7 @@
     "resource_flags": 4736,
     "palette_offset": 65535,
     "link_target_offset": 16913,
+    "refill_target_step": 5,
     "calls": [
       {
         "call": "list_d8c_activate_ready",
@@ -39,7 +41,7 @@
       },
       {
         "call": "list_d8c_refill",
-        "link_target_offset": 16913,
+        "link_target_offset": 16918,
         "rollover_latch": 165,
         "return_ip": 41436
       },
@@ -59,7 +61,7 @@
       },
       {
         "call": "list_d8c_refill",
-        "link_target_offset": 16913,
+        "link_target_offset": 16923,
         "rollover_latch": 128,
         "return_ip": 41470
       }
@@ -77,6 +79,7 @@
     "resource_flags": 13440,
     "palette_offset": 65535,
     "link_target_offset": 17186,
+    "refill_target_step": 5,
     "calls": [
       {
         "call": "list_d8c_activate_ready",
@@ -121,6 +124,7 @@
     "resource_flags": 22016,
     "palette_offset": 4660,
     "link_target_offset": 17459,
+    "refill_target_step": 5,
     "calls": [
       {
         "call": "list_d8c_activate_ready",
@@ -170,6 +174,7 @@
     "resource_flags": 30848,
     "palette_offset": 65535,
     "link_target_offset": 17732,
+    "refill_target_step": 5,
     "calls": [
       {
         "call": "refill_shared_tail_entry",

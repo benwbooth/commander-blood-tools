@@ -67,7 +67,7 @@ void NEAR wrap_bounds_reset_probe(void);
 #pragma aux descriptor_lookup_probe parm [ax] value [bx] modify [bx]
 #endif
 
-void NEAR list_d8c_refill_probe(u16 link_target_offset)
+u16 NEAR list_d8c_refill_probe(u16 link_target_offset)
 {
     const volatile resource_descriptor_probe NEAR *descriptor;
     const volatile cached_range_probe NEAR *cached_range;
@@ -99,11 +99,11 @@ void NEAR list_d8c_refill_probe(u16 link_target_offset)
                     }
                 }
                 if (!queue_has_room_probe(chunk)) {
-                    return;
+                    return link_target_offset;
                 }
                 list_iteration_count_probe -= chunk;
                 (void)paged_read_probe(chunk);
-                return;
+                return link_target_offset;
             }
         }
         check_source_first = 0u;
@@ -111,7 +111,7 @@ void NEAR list_d8c_refill_probe(u16 link_target_offset)
         if (list_wrap_count_probe != list_secondary_wrap_limit_probe &&
                 resource_source_remaining_probe != 0UL) {
             if (!list_read_probe(&entry_extent, &cursor_offset)) {
-                return;
+                return link_target_offset;
             }
             queue_wrap_probe(entry_extent, cursor_offset);
             continue;
@@ -119,10 +119,10 @@ void NEAR list_d8c_refill_probe(u16 link_target_offset)
 
         if (((u8)resource_flags_probe & ROLLOVER_ENABLED) == 0u) {
             queue_finish_probe();
-            return;
+            return link_target_offset;
         }
         if (!queue_has_room_probe(ROLLOVER_RESERVATION)) {
-            return;
+            return link_target_offset;
         }
 
         previous_wrap_count = list_wrap_count_probe;
@@ -138,7 +138,7 @@ void NEAR list_d8c_refill_probe(u16 link_target_offset)
             if ((descriptor->flags & CACHED_RANGE_VALID) == 0u ||
                     (u16)(cached_range->source_offset >> 16) == 0u) {
                 resource_requested_id_probe = resource_active_id_probe;
-                return;
+                return link_target_offset;
             }
             resource_requested_id_probe = resource_active_id_probe;
             resource_range_start_probe = cached_range->source_offset;

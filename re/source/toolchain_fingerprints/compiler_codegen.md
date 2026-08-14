@@ -105,12 +105,34 @@ preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
 `SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
 and register ABI boundary, not an exact compiler match.
 
+For `0x00A15F`, four direct coordinator vectors prove the complete initial
+resource-load sequence. They cover carry-set exits from both `resource_switch`
+and `banked_list_load`, then verify the successful first-tail extent load,
+ES:SI payload and BP storage arguments, far presentation and queue-init frames,
+three wrapping DS counter increments, resource flag `0x40`, and the final timer
+baseline. The prefill case makes the refill stub advance BP by seven on every
+return; all 50 following calls receive that updated cursor. Separate DS and GS
+images, the complete 16-bit register/segment envelope, and the caller stack are
+also checked. A successful prefill may return carry set from the last refill,
+so the natural function is correctly `void` rather than inventing a status.
+
+The natural candidate composes the recovered typed helpers, reads the first
+entry through a far pointer, and threads `link_target_offset` through a bounded
+50-call loop. It has no register model, memory emulator, or inline assembly.
+Open Watcom `-3 -ox -mh` compiles it warning-free to 42 instructions and 110
+bytes versus 43 instructions and 85 bytes in the binary. The probe has a 20.93
+percent instruction and byte-line LCS, 44.19 percent mnemonic-sequence LCS,
+and 58.14 percent mnemonic-multiset overlap. Exact integration still needs the
+carry helper boundaries, AX input, ES:SI/BP activation ABI, far calls, and the
+original preserve-all wrapper.
+
 For `0x00A1B4`, five direct coordinator vectors prove the presentation-queue
 service flow. They cover the nonbanked zero-handle exit, two refill retries
 before activation, both timing outcomes, optional palette application, the far
 active-present call, queue consumption, and the shared latch/refill return.
-They verify exact helper order and near/far frames, inherited BP, DS/GS state,
-the parent register-save envelope, stack restoration, and final latch clear.
+They verify exact helper order and near/far frames, inherited and successively
+updated BP link cursors, DS/GS state, the parent register-save envelope, stack
+restoration, and final latch clear.
 The fifth case directly executes the nonbanked/high-flag branch at `0x00A1D1`:
 its `CALL 0x00A1F3` adds an unmatched return word, so A1F3 pops `0xA1D4` as BP,
 shifts every saved register, and returns through the saved DS value. All 45
@@ -121,7 +143,7 @@ The natural candidate is a structured retry loop with typed Boolean helper
 results and an explicit link-target argument. It has no register model, memory
 emulator, inline assembly, or nonlocal unwind. On the malformed edge it performs
 the apparent intended latch helper and returns safely. Open Watcom `-3 -ox -mh`
-compiles it warning-free to 33 instructions and exactly 88 bytes, versus 38
+compiles it warning-free to 33 instructions and 87 bytes, versus 38
 instructions and 88 bytes in the binary. The probe has a 13.16 percent
 instruction and byte-line LCS, 42.11 percent mnemonic-sequence LCS, and 60.53
 percent mnemonic-multiset overlap. Exact integration still needs carry-result
@@ -444,12 +466,14 @@ helpers execute directly; transport and capacity boundaries are patched with
 their independently proven contracts.
 
 The one-function natural candidate uses typed cached-range and packed far-link
-records plus a structured loop. It has no register model, memory emulator, or
-inline assembly. Open Watcom `-3 -ox -mh` compiles it warning-free to 180
-instructions and 564 bytes versus 91/253 original. The probe has a 2.20
+records plus a structured loop. It returns the possibly advanced link-target
+cursor so repeated natural callers preserve the binary's BP state. It has no
+register model, memory emulator, or inline assembly. Open Watcom `-3 -ox -mh`
+compiles it warning-free to 182 instructions and 572 bytes versus 91/253
+original. The probe has a 2.20
 percent instruction LCS, 64.84 percent mnemonic-sequence LCS, 81.32 percent
-mnemonic-multiset overlap, and 8.79 percent byte-line LCS. Exact integration
-still needs the inherited BP link-target offset, carry-returning helper ABIs,
+mnemonic-multiset overlap, and 7.69 percent byte-line LCS. Exact integration
+still needs the inherited BP input/output, carry-returning helper ABIs,
 the tail jump into `0x00A664`, DS/GS placement, and segment-offset queue
 writes. The candidate deliberately returns on an invalid cached descriptor:
 the shipped edge calls interior address `0x009FA2` with a two-byte near-call
@@ -2907,9 +2931,10 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
 | `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
 | `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
-| `list_d8c_refill` | huge, `-ox`, register | 91/180 | 0.0220 | 0.6484 | 0.0879 |
+| `list_d8c_refill` | huge, `-ox`, register | 91/182 | 0.0220 | 0.6484 | 0.0769 |
 | `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |

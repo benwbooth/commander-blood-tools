@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph, backward_cfg_completion
 ; label: list_d8c_refill
-; label_comment: refill the D8C ring queue. Consume pending bytes in chunks, cap ordinary resources at the next 0x800 boundary plus 0x800, read new extent headers when a chunk ends, and on source exhaustion either finish the queue or roll to the next resource range and optionally synthesize four 0x6d6d link records.
+; label_comment: refill the D8C ring queue. Consume pending bytes in chunks, cap ordinary resources at the next 0x800 boundary plus 0x800, read new extent headers when a chunk ends, and on source exhaustion either finish the queue or roll to the next resource range and optionally synthesize four 0x6d6d link records. BP is the incoming link-target cursor and remains advanced past synthesized targets for repeated callers.
 ; shared_tail_entries: 0x00a2dd, 0x00a664
 ; byte_count: 253
 ; boundary: cfg_blocks_26_terminals_4

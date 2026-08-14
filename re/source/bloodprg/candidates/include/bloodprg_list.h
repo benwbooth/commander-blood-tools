@@ -62,10 +62,11 @@ void CB_NEAR list_d8c_refill_with_rollover_latch(
         cb_u16 link_target_offset);              /* 0x00A1F3 */
 void CB_NEAR ems_resource_flush(
         cb_u16 link_target_offset);              /* 0x00A1B4 */
+void CB_NEAR resource_load_sequence(cb_u16 resource_id); /* 0x00A15F */
 void CB_NEAR list_d8c_activate_entry(cb_u16 entry_extent,
         volatile cb_u16 CB_FAR *entry,
         cb_u16 storage_segment);                /* 0x00A552 */
-void CB_NEAR list_d8c_refill(cb_u16 link_target_offset); /* 0x00A2AB */
+cb_u16 CB_NEAR list_d8c_refill(cb_u16 link_target_offset); /* 0x00A2AB */
 void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
 int CB_NEAR list_d8c_read(cb_u16 *entry_extent,
         cb_u16 *cursor_offset);                  /* 0x00A622 */
