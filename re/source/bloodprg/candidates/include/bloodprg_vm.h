@@ -94,7 +94,11 @@ extern volatile cb_u16 vm_named_ark_object; /* DS:0x6758 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_named_ark_object_gs;             /* explicit GS:0x6758 alias */
 extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_wildcard_ref_value_gs; /* explicit GS:0x674E alias */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_block_match_value_gs; /* explicit GS:0x6762 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_blood_history_ring_index; /* GS:0x6744 */
 extern volatile cb_u16 CB_FAR * CB_GAME_DATA
         vm_blood_history_words; /* GS:0x6746 */
@@ -119,6 +123,8 @@ extern volatile cb_u16 vm_displayed_line;    /* DS:0x678A */
 extern volatile cb_u16 vm_record_resource_handle; /* DS:0x6716 */
 extern volatile cb_u16 vm_resource_profile_index; /* DS:0x677E */
 extern volatile cb_u16 vm_presentation_primary_c4_record; /* DS:0x675E */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_primary_c4_record_gs; /* explicit GS:0x675E alias */
 extern volatile cb_u16 vm_named_scruter_jo_object; /* DS:0x6760 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
 extern volatile cb_u8 vm_execution_enabled; /* DS:0x67A8; runtime DS=GS */
@@ -126,23 +132,37 @@ extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_request_flags_gs; /* explicit GS:0x67AA alias */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_active_gs; /* explicit GS:0x67AC alias */
 extern volatile cb_u8 vm_presentation_word_choice_active; /* DS:0x27D7 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_word_choice_active_gs; /* explicit GS:0x27D7 alias */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
 extern volatile cb_u8 CB_GAME_DATA
         vm_query_mode_gs;                    /* explicit GS:0x67AD alias */
 extern volatile cb_u16 vm_query_mode_word;   /* GS:0x67AD; includes 0x67AE */
 extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_resume_state_gs;                  /* explicit GS:0x67B1 alias */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 CB_GAME_DATA
         vm_block_scan_flags_gs;              /* explicit GS:0x67B2 alias */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_pair_write_disabled; /* GS:0x67B6 */
 extern volatile cb_u8 CB_GAME_DATA vm_presentation_start_lock; /* GS:0x67B7 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_text_wait_gs; /* explicit GS:0x67BA alias */
 extern volatile cb_u8 vm_presentation_word_choice_phase; /* DS:0x67BA alias */
 extern volatile cb_u8 vm_dialogue_hold_complete; /* GS:0x67BB */
 extern volatile cb_u8 vm_presentation_hold_ready; /* GS:0x67BC */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_dialogue_hold_complete_gs; /* explicit GS:0x67BB alias */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_hold_ready_gs; /* explicit GS:0x67BC alias */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
 extern volatile cb_u16 vm_presentation_selected_word; /* DS:0x6796 */
@@ -160,6 +180,24 @@ extern volatile cb_u16 vm_profile_word_67a0;  /* GS:0x67A0 */
 extern volatile cb_u16 vm_profile_word_67a2;  /* GS:0x67A2 */
 extern volatile cb_u8 vm_query_auxiliary;     /* GS:0x67AE */
 extern volatile cb_u8 vm_profile_flag_67af;   /* GS:0x67AF */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_related_flag20;       /* GS:0x67AF */
+extern volatile bloodprg_vm_ui_state CB_GAME_DATA
+        vm_ui_state_gs;                       /* explicit GS:0x2793 alias */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_status_word;          /* GS:0x0A32 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_input_gate;           /* GS:0x2A19 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_deferred_record_type_gs;           /* GS:0x6768 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_deferred_record_related_gs;        /* GS:0x676A */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_deferred_record_value_gs;          /* GS:0x676C */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_presentation_owner_offset_gs;      /* explicit GS:0x679A alias */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_c2_presentation_gate_gs;           /* explicit GS:0x1FB2 alias */
 /* The shipped runtime has SS=GS; handlers preserve the floating script DS. */
 extern bloodprg_vm_opcode_handler CB_NEAR *CB_NEAR
         vm_opcode_handlers[];                /* GS/SS:0x6EB0 */
@@ -216,6 +254,12 @@ typedef struct bloodprg_vm_object_header {
     cb_u16 kind;
     cb_u8 flags;
 } bloodprg_vm_object_header;
+
+typedef struct bloodprg_vm_scan_object {
+    cb_u16 kind;
+    cb_u16 flags;
+    cb_u8 name[1];
+} bloodprg_vm_scan_object;
 
 typedef struct bloodprg_vm_state_record {
     cb_u16 kind;
@@ -354,6 +398,9 @@ void CB_NEAR vm_control_flow(
         cb_u16 code_offset);                     /* 0x0056FE */
 cb_u16 CB_NEAR vm_flag_test_67b1(void);           /* 0x005791 */
 void CB_NEAR presentation_scan(void);              /* 0x005816 */
+void CB_NEAR record_c1_ship3d_action(
+        volatile bloodprg_vm_scan_object CB_FAR *object,
+        volatile bloodprg_vm_record_triple CB_FAR *record); /* 0x005B38 */
 void CB_SAVE_REGS CB_NEAR vm_state_processor(void); /* 0x005A74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */

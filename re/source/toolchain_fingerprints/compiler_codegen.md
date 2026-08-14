@@ -5995,6 +5995,38 @@ requires `FS_DATA` placement and the shipped `DS=GS` aliases; direct replacement
 also needs the original carry-return string comparison and segmented helper
 ABIs.
 
+## BLOODPRG post-VM presentation scan at 0x005816
+
+The 606-byte near routine walks the 20-byte VM directory after script execution.
+The first entry is processed unconditionally; later entries continue only while
+the complete next-entry kind word equals one. Active owners resolve selector
+`0x13` to a six-byte record. Kind 2 may hand control to a character script,
+kinds `0x10` and `0x200` only dispatch their current record, and kind 1 owns the
+presentation start, teardown, and deferred-record lifecycle.
+
+The natural function preserves the exact ordering of the kind-1 state changes.
+Starting a C4 presentation clears the dialogue gates, latches the related actor,
+optionally performs the DESCRIPT lookup and resource/entity chain, and only then
+drains a pending record. Teardown clears the presentation flags, transitions
+entities 4 and 2, and zeroes eight history words. Deferred C1 and C6 records are
+redirected to the Arche ship field; other record types overwrite the current
+record. In every case, action eligibility is tested after that deferred write.
+
+Fourteen patched-helper vectors execute the untouched original body. They cover
+inactive records, kind-2 handoff and every action gate, both presentation-start
+paths, teardown, C1 and C6 Arche redirection, ordinary positive and negative
+deferred writes, multi-entry scans, full-word directory termination, helper
+arguments and order, complete game/record/history memory images, segment
+ownership, terminal flags, stack integrity, and the near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
+C89 function to 236 instructions/718 bytes versus 183/606 original, with 86.89
+percent mnemonic-multiset overlap and 69.40 percent ordered mnemonic overlap.
+It contains no inline assembly or register-state facade. Full-source integration
+requires `GAME_DATA` placement and the shipped record/directory segment
+contracts. Direct replacement additionally needs the original DS:SI/DS:BP
+helper ABIs, selective preservation envelope, and helper residue.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

@@ -9610,6 +9610,796 @@ def vm_flag_test_67b1_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_scan_vectors() -> list[dict[str, object]]:
+    entry = 0x5816
+    return_address = 0xF816
+    body_size = 606
+    body_hash = "d7a3c80e01ade4bb58a57cef8f1c2cc75889e9627b2b15c6c2d1ad304752b0f7"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x5816: recovered 606-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "inactive_first_entry_only_clears_pair_write_guard",
+            "entries": [{"kind": 1, "flags": 0, "record_kind": 0xC4}],
+        },
+        {
+            "name": "kind2_handoff_then_action",
+            "active": 1,
+            "entries": [
+                {
+                    "kind": 2,
+                    "record_kind": 0xC4,
+                    "record_value": 3,
+                    "target": 0x3456,
+                }
+            ],
+        },
+        {
+            "name": "kind2_blocked_owner_still_runs_action",
+            "active": 1,
+            "entries": [
+                {
+                    "kind": 2,
+                    "flags": 0x8001,
+                    "record_kind": 0xC4,
+                    "record_value": 4,
+                    "target": 0x4567,
+                }
+            ],
+        },
+        {
+            "name": "kind2_negative_value_suppresses_action",
+            "active": 1,
+            "entries": [
+                {
+                    "kind": 2,
+                    "record_kind": 0xC4,
+                    "record_value": 0x8000,
+                    "target": 0,
+                }
+            ],
+        },
+        {
+            "name": "kind1_starts_presentation_without_name_lookup",
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 5,
+                    "related_flags": 0x0021,
+                }
+            ],
+        },
+        {
+            "name": "kind1_start_runs_descript_effect_chain",
+            "ui": 0x0101,
+            "effect_active": 1,
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 6,
+                    "related_flags": 0x0001,
+                }
+            ],
+        },
+        {
+            "name": "kind1_active_c4_drains_ordinary_deferred_record",
+            "active": 1,
+            "deferred": (0xC2, 0x4A4A, 0x1234),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 7,
+                    "related_flags": 0x0020,
+                }
+            ],
+        },
+        {
+            "name": "kind1_teardown_clears_history_before_action",
+            "active": 1,
+            "entries": [
+                {"kind": 1, "record_kind": 0xC2, "record_value": 8}
+            ],
+        },
+        {
+            "name": "kind1_c1_deferred_targets_arche_ship_field",
+            "active": 1,
+            "deferred": (0xC1, 0x5151, 0x9999),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 9,
+                }
+            ],
+        },
+        {
+            "name": "kind1_c6_deferred_targets_arche_ship_field",
+            "active": 1,
+            "deferred": (0xC6, 0x6161, 0x8888),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 10,
+                }
+            ],
+        },
+        {
+            "name": "deferred_negative_value_is_tested_after_overwrite",
+            "active": 1,
+            "deferred": (0xC2, 0x7171, 0xFFFF),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 11,
+                }
+            ],
+        },
+        {
+            "name": "ship_and_special_entries_both_run_action",
+            "entries": [
+                {
+                    "kind": 0x10,
+                    "directory_kind": 7,
+                    "record_kind": 0xC1,
+                    "record_value": 12,
+                },
+                {
+                    "kind": 0x200,
+                    "directory_kind": 1,
+                    "record_kind": 0xC6,
+                    "record_value": 13,
+                },
+            ],
+        },
+        {
+            "name": "next_directory_kind_must_equal_full_word_one",
+            "entries": [
+                {
+                    "kind": 0x10,
+                    "record_kind": 0xC1,
+                    "record_value": 14,
+                },
+                {
+                    "kind": 0x200,
+                    "directory_kind": 0xAB01,
+                    "record_kind": 0xC6,
+                    "record_value": 15,
+                },
+            ],
+        },
+        {
+            "name": "unknown_active_kind_has_no_action",
+            "entries": [
+                {"kind": 0x40, "record_kind": 0xC4, "record_value": 16}
+            ],
+        },
+    ]
+
+    game_segment = 0x2000
+    record_segment = 0x4000
+    directory_segment = 0x6000
+    history_segment = 0x8000
+    data_segment = 0xA000
+    extra_segment = 0xC000
+    stack_segment = 0xE000
+    resource_segment = 0x1000
+    directory_offset = 0x1800
+    history_offset = 0x2200
+    resource_offset = 0x3000
+    primary_offset = 0x3000
+    arche_offset = 0x3200
+    wildcard_value = 0x2400
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helpers = {
+        0x6023: ("field", "near"),
+        0x56FE: ("control", "near"),
+        0x5B38: ("action", "near"),
+        0x7409: ("descript", "far"),
+        0x39C7: ("resource", "far"),
+        0x3B4E: ("setter", "far"),
+        0x3BD1: ("transition", "far"),
+    }
+    field_offsets = {
+        (0x13, 1): 0x10,
+        (0x13, 2): 0x12,
+        (0x13, 0x10): 0x14,
+        (0x13, 0x40): 0x18,
+        (0x13, 0x200): 0x16,
+        (2, 2): 0x08,
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def get_word(image: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", image, offset)[0]
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        entries = [dict(item) for item in case["entries"]]
+        game_before = bytearray(
+            (offset * 7 + (offset >> 8) * 11 + case_index * 17 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 13 + (offset >> 8) * 19 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        directory_before = bytearray(
+            (offset * 5 + (offset >> 8) * 29 + case_index * 31 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        history_before = bytearray(
+            (offset * 17 + case_index * 37 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before = bytes(
+            (offset * 3 + case_index * 41 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 23 + case_index * 43 + 0xCB) & 0xFF
+            for offset in range(0x10000)
+        )
+        resource_before = bytes(
+            (offset * 31 + case_index * 47 + 0xED) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 11 + case_index * 53 + 0x0F) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        active = int(case.get("active", 0)) & 0xFF
+        ui = int(case.get("ui", 0xA100)) & 0xFFFF
+        effect_active = int(case.get("effect_active", 0)) & 0xFF
+        deferred = tuple(case.get("deferred", (0, 0, 0)))
+        put_dword(game_before, 0x6724, (record_segment << 16) | 0x5555)
+        put_dword(
+            game_before,
+            0x672C,
+            (directory_segment << 16) | directory_offset,
+        )
+        put_dword(
+            game_before,
+            0x6746,
+            (history_segment << 16) | history_offset,
+        )
+        put_dword(
+            game_before,
+            0x0A80,
+            (resource_segment << 16) | resource_offset,
+        )
+        put_word(game_before, 0x6752, arche_offset)
+        put_word(game_before, 0x675E, primary_offset)
+        put_word(game_before, 0x674E, wildcard_value)
+        put_word(game_before, 0x6768, int(deferred[0]))
+        put_word(game_before, 0x676A, int(deferred[1]))
+        put_word(game_before, 0x676C, int(deferred[2]))
+        game_before[0x67B6] = 0xA6
+        game_before[0x67AC] = active
+        game_before[0x1FB2] = int(case.get("c2_gate", 0)) & 0xFF
+        game_before[0x27D7] = int(case.get("word_choice", 0)) & 0xFF
+        game_before[0x67B7] = int(case.get("start_lock", 0)) & 0xFF
+        game_before[0x67AF] = 0xAF
+        game_before[0x5B55] = 0x55
+        put_word(game_before, 0x0A32, 0xA032)
+        put_word(game_before, 0x6782, 0xA182)
+        put_word(game_before, 0x6784, 0xA184)
+        put_word(game_before, 0x6776, 0xA176)
+        put_word(game_before, 0x67F8, 0xA1F8)
+        put_word(game_before, 0x2A19, 0xA219)
+        game_before[0x67BA] = 0xBA
+        game_before[0x67BB] = 0xBB
+        game_before[0x67BC] = 0xBC
+        put_word(game_before, 0x679A, 0xA19A)
+        put_word(game_before, 0x2793, ui)
+        game_before[0x2751] = 0xF5
+        game_before[0x27E8] = effect_active
+        game_before[0x27E9] = 0xE9
+        game_before[0x67B1] = 0xB1
+        put_word(game_before, 0x6762, 0xA162)
+        game_before[0x67AA] = 0xAF
+
+        put_word(record_before, primary_offset, 0xC4)
+        put_word(record_before, primary_offset + 2, 0xDEAD)
+        put_word(record_before, primary_offset + 4, 0xBEEF)
+        directory_cursor = directory_offset
+        for entry_index, item in enumerate(entries):
+            object_offset = 0x1200 + entry_index * 0x100
+            related_offset = 0x2400 + entry_index * 0x100
+            item["object_offset"] = object_offset
+            item["related_offset"] = related_offset
+            kind = int(item["kind"]) & 0xFFFF
+            flags = int(item.get("flags", 1)) & 0xFFFF
+            record_kind = int(item.get("record_kind", 0xC4)) & 0xFFFF
+            record_related = int(item.get("record_related", wildcard_value)) & 0xFFFF
+            if kind == 1:
+                record_related = related_offset
+            record_value = int(item.get("record_value", 1)) & 0xFFFF
+            field_offset = field_offsets[(0x13, kind)]
+            record_offset = (object_offset + field_offset) & 0xFFFF
+            item["record_offset"] = record_offset
+
+            entry_name = f"ENTRY{entry_index}".encode("ascii").ljust(16, b"\0")
+            directory_before[
+                directory_cursor : directory_cursor + 20
+            ] = struct.pack(
+                "<16sHH",
+                entry_name,
+                object_offset,
+                int(item.get("directory_kind", 1)) & 0xFFFF,
+            )
+            directory_cursor += 20
+            put_word(record_before, object_offset, kind)
+            put_word(record_before, object_offset + 2, flags)
+            put_word(record_before, record_offset, record_kind)
+            put_word(record_before, record_offset + 2, record_related)
+            put_word(record_before, record_offset + 4, record_value)
+            if kind == 2:
+                put_word(
+                    record_before,
+                    object_offset + field_offsets[(2, 2)],
+                    int(item.get("target", 0)),
+                )
+            if kind == 1:
+                put_word(record_before, related_offset, 0x7777)
+                put_word(
+                    record_before,
+                    related_offset + 2,
+                    int(item.get("related_flags", 1)),
+                )
+                record_before[
+                    related_offset + 4 : related_offset + 16
+                ] = f"ACTOR{entry_index}".encode("ascii").ljust(12, b"\0")
+
+        directory_before[
+            directory_cursor : directory_cursor + 20
+        ] = struct.pack("<16sHH", b"SENTINEL".ljust(16, b"\0"), 0xDEAD, 0)
+
+        expected_game = bytearray(game_before)
+        expected_record = bytearray(record_before)
+        expected_history = bytearray(history_before)
+        expected_game[0x67B6] = 0
+        expected_calls: list[dict[str, object]] = []
+        processed_entries: list[int] = []
+        stop_kind = 0
+
+        for entry_index, item in enumerate(entries):
+            if entry_index != 0 and int(item.get("directory_kind", 1)) != 1:
+                stop_kind = int(item.get("directory_kind", 1)) & 0xFFFF
+                break
+            processed_entries.append(entry_index)
+            kind = int(item["kind"]) & 0xFFFF
+            flags = int(item.get("flags", 1)) & 0xFFFF
+            object_offset = int(item["object_offset"])
+            record_offset = int(item["record_offset"])
+            if flags & 1:
+                field_offset = field_offsets[(0x13, kind)]
+                expected_calls.append(
+                    {
+                        "name": "field",
+                        "selector": 0x13,
+                        "kind": kind,
+                        "result": field_offset,
+                    }
+                )
+                run_action = False
+                if kind == 2:
+                    if (
+                        expected_game[0x67AC] & 1
+                        and expected_game[0x1FB2] & 1 == 0
+                        and expected_game[0x27D7] & 1 == 0
+                        and expected_game[0x67B7] & 1 == 0
+                        and get_word(expected_record, primary_offset) == 0xC4
+                        and get_word(expected_record, record_offset) == 0xC4
+                        and get_word(expected_record, record_offset + 2)
+                            == get_word(expected_game, 0x674E)
+                        and flags & 0x8000 == 0
+                    ):
+                        target = get_word(
+                            expected_record,
+                            object_offset + field_offsets[(2, 2)],
+                        )
+                        expected_calls.append(
+                            {
+                                "name": "field",
+                                "selector": 2,
+                                "kind": 2,
+                                "result": field_offsets[(2, 2)],
+                            }
+                        )
+                        if target != 0:
+                            expected_calls.append(
+                                {
+                                    "name": "control",
+                                    "object": object_offset,
+                                    "target": target,
+                                }
+                            )
+                    run_action = True
+                elif kind in (0x10, 0x200):
+                    run_action = True
+                elif kind == 1:
+                    record_kind = get_word(expected_record, record_offset)
+                    related_offset = get_word(expected_record, record_offset + 2)
+                    if record_kind == 0xC4:
+                        related_flags = get_word(
+                            expected_record, related_offset + 2
+                        )
+                        expected_game[0x67AF] = int(bool(related_flags & 0x20))
+                        if expected_game[0x67AC] & 1 == 0:
+                            expected_game[0x5B55] = 1
+                            put_word(expected_game, 0x0A32, 1)
+                            expected_game[0x67AC] = 1
+                            for offset in (0x6782, 0x6784, 0x6776, 0x67F8, 0x2A19, 0x679A):
+                                put_word(expected_game, offset, 0)
+                            for offset in (0x67BA, 0x27D7, 0x67BC, 0x67BB):
+                                expected_game[offset] = 0
+                            expected_game[0x67B7] = 1
+                            expected_game[0x2793] |= 4
+                            put_word(
+                                expected_record,
+                                related_offset + 2,
+                                related_flags | 0x8000,
+                            )
+                            expected_game[0x2751] &= 0x7F
+                            if expected_game[0x2793] & 1:
+                                expected_calls.append(
+                                    {
+                                        "name": "descript",
+                                        "segment": record_segment,
+                                        "name_offset": related_offset + 4,
+                                    }
+                                )
+                                if expected_game[0x27E8] & 1:
+                                    expected_game[0x27E9] = 1
+                                    expected_calls.append(
+                                        {
+                                            "name": "resource",
+                                            "resource_id": 0x8007,
+                                            "segment": resource_segment,
+                                            "offset": resource_offset,
+                                        }
+                                    )
+                                    expected_calls.append(
+                                        {
+                                            "name": "setter",
+                                            "entity": 2,
+                                            "segment": resource_segment,
+                                            "offset": resource_offset,
+                                            "x": 0x10,
+                                            "y": 0x4A,
+                                            "frame": 0,
+                                        }
+                                    )
+                    elif expected_game[0x67AC] & 1:
+                        put_word(expected_game, 0x0A32, 1)
+                        put_word(expected_game, 0x6782, 0)
+                        put_word(expected_game, 0x6784, 0)
+                        expected_game[0x67B1] = 0
+                        expected_game[0x67AC] = 0
+                        put_word(expected_game, 0x6762, 0)
+                        put_word(
+                            expected_game,
+                            0x2793,
+                            get_word(expected_game, 0x2793) & 0xFFFB,
+                        )
+                        expected_game[0x67AA] &= 0xFC
+                        put_word(expected_game, 0x67F8, 0)
+                        expected_game[0x67B7] = 0
+                        expected_game[0x27E8] = 0
+                        expected_calls.extend(
+                            [
+                                {"name": "transition", "object_id": 4},
+                                {"name": "transition", "object_id": 2},
+                            ]
+                        )
+                        expected_history[
+                            history_offset : history_offset + 16
+                        ] = bytes(16)
+
+                    deferred_type = get_word(expected_game, 0x6768)
+                    deferred_related = get_word(expected_game, 0x676A)
+                    if deferred_related != 0 and deferred_type != 0:
+                        if deferred_type in (0xC1, 0xC6):
+                            expected_calls.append(
+                                {
+                                    "name": "field",
+                                    "selector": 0x13,
+                                    "kind": 0x10,
+                                    "result": field_offsets[(0x13, 0x10)],
+                                }
+                            )
+                            deferred_offset = (
+                                arche_offset + field_offsets[(0x13, 0x10)]
+                            ) & 0xFFFF
+                            put_word(expected_record, deferred_offset, deferred_type)
+                            put_word(
+                                expected_record,
+                                deferred_offset + 2,
+                                deferred_related,
+                            )
+                            put_word(expected_record, deferred_offset + 4, 0)
+                        else:
+                            put_word(expected_record, record_offset, deferred_type)
+                            put_word(
+                                expected_record,
+                                record_offset + 2,
+                                deferred_related,
+                            )
+                            put_word(
+                                expected_record,
+                                record_offset + 4,
+                                get_word(expected_game, 0x676C),
+                            )
+                        for offset in (0x6768, 0x676A, 0x676C):
+                            put_word(expected_game, offset, 0)
+                    run_action = True
+
+                if (
+                    run_action
+                    and get_word(expected_record, record_offset) != 0
+                    and get_word(expected_record, record_offset + 4) < 0x8000
+                ):
+                    expected_calls.append(
+                        {
+                            "name": "action",
+                            "object": object_offset,
+                            "record": record_offset,
+                            "triple": list(
+                                struct.unpack_from(
+                                    "<HHH", expected_record, record_offset
+                                )
+                            ),
+                        }
+                    )
+            next_index = entry_index + 1
+            if next_index < len(entries):
+                stop_kind = int(entries[next_index].get("directory_kind", 1)) & 0xFFFF
+            else:
+                stop_kind = 0
+            if stop_kind != 1:
+                break
+
+        stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xF000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        memory = [
+            (0, return_address, b"\xCC"),
+            (game_segment, 0, bytes(game_before)),
+            (record_segment, 0, bytes(record_before)),
+            (directory_segment, 0, bytes(directory_before)),
+            (history_segment, 0, bytes(history_before)),
+            (data_segment, 0, data_before),
+            (extra_segment, 0, extra_before),
+            (resource_segment, 0, resource_before),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        for helper_address, (_helper_name, return_kind) in helpers.items():
+            memory.append(
+                (0, helper_address, b"\xCB" if return_kind == "far" else b"\xC3")
+            )
+
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            if helper_name == "field":
+                selector = machine.reg_read(UC_X86_REG_AX)
+                kind = machine.reg_read(UC_X86_REG_BX)
+                result = field_offsets[(selector, kind)]
+                calls.append(
+                    {
+                        "name": "field",
+                        "selector": selector,
+                        "kind": kind,
+                        "result": result,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif helper_name == "control":
+                calls.append(
+                    {
+                        "name": "control",
+                        "object": machine.reg_read(UC_X86_REG_SI),
+                        "target": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+            elif helper_name == "action":
+                record_offset = machine.reg_read(UC_X86_REG_BP)
+                calls.append(
+                    {
+                        "name": "action",
+                        "object": machine.reg_read(UC_X86_REG_SI),
+                        "record": record_offset,
+                        "triple": list(
+                            struct.unpack(
+                                "<HHH",
+                                machine.mem_read(
+                                    record_segment * 16 + record_offset, 6
+                                ),
+                            )
+                        ),
+                    }
+                )
+            elif helper_name == "descript":
+                calls.append(
+                    {
+                        "name": "descript",
+                        "segment": machine.reg_read(UC_X86_REG_ES),
+                        "name_offset": machine.reg_read(UC_X86_REG_DI),
+                    }
+                )
+            elif helper_name == "resource":
+                calls.append(
+                    {
+                        "name": "resource",
+                        "resource_id": machine.reg_read(UC_X86_REG_AX),
+                        "segment": machine.reg_read(UC_X86_REG_ES),
+                        "offset": machine.reg_read(UC_X86_REG_DI),
+                    }
+                )
+            elif helper_name == "setter":
+                calls.append(
+                    {
+                        "name": "setter",
+                        "entity": machine.reg_read(UC_X86_REG_AX),
+                        "segment": machine.reg_read(UC_X86_REG_ES),
+                        "offset": machine.reg_read(UC_X86_REG_DI),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "frame": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            elif helper_name == "transition":
+                calls.append(
+                    {
+                        "name": "transition",
+                        "object_id": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=3000,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x5816 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        for segment_name, segment, expected in (
+            ("game", game_segment, expected_game),
+            ("record", record_segment, expected_record),
+            ("directory", directory_segment, directory_before),
+            ("history", history_segment, expected_history),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != bytes(expected):
+                mismatch = next(
+                    index
+                    for index, (actual_byte, expected_byte) in enumerate(
+                        zip(actual, expected)
+                    )
+                    if actual_byte != expected_byte
+                )
+                raise AssertionError(
+                    f"0x5816 {name}: {segment_name} differs at {mismatch:#x}: "
+                    f"{actual[mismatch]:#x} != {expected[mismatch]:#x}"
+                )
+        for segment_name, segment, expected in (
+            ("incoming DS", data_segment, data_before),
+            ("incoming ES", extra_segment, extra_before),
+            ("resource", resource_segment, resource_before),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != expected:
+                raise AssertionError(f"0x5816 {name}: {segment_name} changed")
+
+        last_processed = entries[processed_entries[-1]]
+        expected_registers = {
+            "eax": stop_kind,
+            "esi": int(last_processed["object_offset"]),
+            "edi": initial["edi"],
+            "sp": caller_sp + 2,
+            "ds": record_segment,
+            "es": directory_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if register in ("eax", "esi"):
+                actual &= 0xFFFFFFFF
+                expected &= 0xFFFF
+            if actual != expected:
+                raise AssertionError(
+                    f"0x5816 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        actual_stack = bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            )
+        )
+        if actual_stack != stack_sentinel:
+            raise AssertionError(f"0x5816 {name}: stack sentinel changed")
+
+        expected_flags = sub16_flags(stop_kind, 1)
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x5816 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags & 0x0400) != bool(initial["flags"] & 0x0400):
+            raise AssertionError(f"0x5816 {name}: direction flag changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "processed_entries": processed_entries,
+                "stop_directory_kind": stop_kind,
+                "calls": calls,
+                "presentation_active_after": expected_game[0x67AC],
+                "deferred_after": list(
+                    struct.unpack_from("<HHH", expected_game, 0x6768)
+                ),
+                "game_sha256": hashlib.sha256(expected_game).hexdigest(),
+                "record_sha256": hashlib.sha256(expected_record).hexdigest(),
+                "history_sha256": hashlib.sha256(expected_history).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_state_processor_vectors() -> list[dict[str, object]]:
     game_segment = 0x2C00
     record_segment = 0x5000
@@ -87755,6 +88545,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5791_natural.json",
         vm_flag_test_67b1_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5816_natural.json",
+        presentation_scan_vectors(),
         args.check,
     )
     update_vector(

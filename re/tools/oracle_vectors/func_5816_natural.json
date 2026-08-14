@@ -1,0 +1,617 @@
+[
+  {
+    "name": "inactive_first_entry_only_clears_pair_write_guard",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [],
+    "presentation_active_after": 0,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "34cd8da0b0393c543e964c13c4909a79d88cca2aa40652efd6eec4ce54befff3",
+    "record_sha256": "3c0f48cb50fce54e9609ef1c6d466fdf47c627112cb081249717d1e757c488cb",
+    "history_sha256": "5d2e6425e133c37ed7e22f05826ce15713d3374994ae8a4a6012317a0747ec44",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind2_handoff_then_action",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 2,
+        "result": 18
+      },
+      {
+        "name": "field",
+        "selector": 2,
+        "kind": 2,
+        "result": 8
+      },
+      {
+        "name": "control",
+        "object": 4608,
+        "target": 13398
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4626,
+        "triple": [
+          196,
+          9216,
+          3
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "4da9cf35924d940de2f2859d24d117bc9f855413276ce1ccec514c86fa56edf1",
+    "record_sha256": "b9cc2455eb7124abf99ed8f44843d5103d939f59ef535216ba937cdffad5cc8b",
+    "history_sha256": "d5e9aa21aec9faec6f1025139b731eabf857c83ef512becb1a9a8d1a4b9d8134",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind2_blocked_owner_still_runs_action",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 2,
+        "result": 18
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4626,
+        "triple": [
+          196,
+          9216,
+          4
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "ef2d5cf4195f9c66df388a98f0dd88a262f2242b4590e5f7d832e7704c3d89f7",
+    "record_sha256": "1c170f07575d45e0098f14dddd438e699d6dfa0f1accf07e77e08d382d5949eb",
+    "history_sha256": "5855d815bd7149b9bc448d7b671f327d6ce5dd5d39ad76aa1a2214b818504634",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind2_negative_value_suppresses_action",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 2,
+        "result": 18
+      },
+      {
+        "name": "field",
+        "selector": 2,
+        "kind": 2,
+        "result": 8
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "45800fe1210b2a950455b1eab85da289ac3302b1469286cf29a9158e52b5cc9a",
+    "record_sha256": "2faafd20841a6411e11b6e9a811439a9ae5b0478768815e4e373cd6d2c475f01",
+    "history_sha256": "f4c5e92b6beb0a5658564fb294ecc63d57d5db5535c585fc8c4dabdcceb82f7e",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_starts_presentation_without_name_lookup",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          196,
+          9216,
+          5
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "ad52f1f617751ac72d2ca93dad52e30f13d13f711b66d70f62bd9585a9249452",
+    "record_sha256": "aa20112a331126a6811ae555393e1da6d032a217ace89fc4d4810ad6d092e843",
+    "history_sha256": "e661038359440afec1f932bb651452a59890e26c0611b7c89d374d2dd4e8cd98",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_start_runs_descript_effect_chain",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "descript",
+        "segment": 16384,
+        "name_offset": 9220
+      },
+      {
+        "name": "resource",
+        "resource_id": 32775,
+        "segment": 4096,
+        "offset": 12288
+      },
+      {
+        "name": "setter",
+        "entity": 2,
+        "segment": 4096,
+        "offset": 12288,
+        "x": 16,
+        "y": 74,
+        "frame": 0
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          196,
+          9216,
+          6
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "884ccd3b0873006fcdc58205b70239e94799d143a7b54fbb0e42c79d224c599a",
+    "record_sha256": "d2430fa94add87fb32744af6a5ebe5ae21eacb33f0317a58bfbbe1757e6da85f",
+    "history_sha256": "89b196d098ccbb45d45bde1aefa45ba0cbd024049ac75fb51eedb64f6a9cf077",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_active_c4_drains_ordinary_deferred_record",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          194,
+          19018,
+          4660
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "85ede080bd5380667456a39c00731ef220974981ffe5d9cb19f384b59f962fd4",
+    "record_sha256": "32188f8cac7dfe14c09d0ceb60f3e95d2c28764595267013fca502e8d15d63de",
+    "history_sha256": "d6479411d14894cd0180b5f56115e9d99142e28988270584fc95e1fe99c83570",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_teardown_clears_history_before_action",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "transition",
+        "object_id": 4
+      },
+      {
+        "name": "transition",
+        "object_id": 2
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          194,
+          9216,
+          8
+        ]
+      }
+    ],
+    "presentation_active_after": 0,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "1ac8a516a5675127e3ef1091ca7e6788c13b2b7de1e26b8a17d76380c290e928",
+    "record_sha256": "301049304a6b9097858a9a0585a2cd1037b2e2ace3d8781739e8c06112e3bfe6",
+    "history_sha256": "cb63bf46f0464af96a706047a6b93a0f8bf8e679dfa9d26d7749fdb00a0ad7a1",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_c1_deferred_targets_arche_ship_field",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 20
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          196,
+          9216,
+          9
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "afb03c4f975a79ef7cfa54bbf48903483f2775c94be3c859da6c0059b20c372c",
+    "record_sha256": "cb43abe253d187e83982f88141bc4130416ae12b1cd74ee02af589f99a6acda0",
+    "history_sha256": "f1cc4dae44a4d0c4fe650668cede319d4f67c29a9f48cf85498d0a5620ea5cdf",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "kind1_c6_deferred_targets_arche_ship_field",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 20
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4624,
+        "triple": [
+          196,
+          9216,
+          10
+        ]
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "2ab940f2152ccfd765695c669cf00dbcd6f432ae0e6f239af0437fbb7474ee39",
+    "record_sha256": "74a6c708de57b558494e4dd89b3ff07e8efb5066de32f40f3715fa0b634146ca",
+    "history_sha256": "ae244796513257137f032a7a192384f169cf294cc0cc4692cbc660ed14f117f1",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "deferred_negative_value_is_tested_after_overwrite",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 16
+      }
+    ],
+    "presentation_active_after": 1,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "78112060898fc292f6643dc5ad7089dc99bc013421a725a5f740790df764a710",
+    "record_sha256": "03068495647d7dcff9edf29429f13779c9b50cf7c216934636552fc3e6f8b406",
+    "history_sha256": "e43c8e5787867d82efbba11f6f59fe65b3deeb7eec7850de3896d87d0938166c",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "ship_and_special_entries_both_run_action",
+    "processed_entries": [
+      0,
+      1
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 20
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4628,
+        "triple": [
+          193,
+          9216,
+          12
+        ]
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 512,
+        "result": 22
+      },
+      {
+        "name": "action",
+        "object": 4864,
+        "record": 4886,
+        "triple": [
+          198,
+          9216,
+          13
+        ]
+      }
+    ],
+    "presentation_active_after": 0,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "f7b0a2ff8e0c6f02abee654e4fec0c74f71c7ec5fecd05b48176c14c97555dcf",
+    "record_sha256": "c414cde06c80795158f43816126aed8e30393f1038a81c4c786d9e9404d6b8c6",
+    "history_sha256": "27d84fcd9ce3c6918757899c3dbb81d9a56525e599da08b25856b1c376e66f5a",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "next_directory_kind_must_equal_full_word_one",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 43777,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 20
+      },
+      {
+        "name": "action",
+        "object": 4608,
+        "record": 4628,
+        "triple": [
+          193,
+          9216,
+          14
+        ]
+      }
+    ],
+    "presentation_active_after": 0,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "50ae0d90ce5561fc19a66b9f6953b1f706f60e7951224791196990ebfe8a8425",
+    "record_sha256": "091b8767a1a2f05844f7996a712f331a08bfb5aa0485cc87aed672f758b7678f",
+    "history_sha256": "ce050bcbd9ab8de56160d72db156f195891961229ad1dbb6e1e34917136646ec",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "unknown_active_kind_has_no_action",
+    "processed_entries": [
+      0
+    ],
+    "stop_directory_kind": 0,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 64,
+        "result": 24
+      }
+    ],
+    "presentation_active_after": 0,
+    "deferred_after": [
+      0,
+      0,
+      0
+    ],
+    "game_sha256": "4335ff8b507ead90438e28fbcb38d5e4f6bb96b4cb9d4cd1dacacc8b241ec3b6",
+    "record_sha256": "a2ec5ba3c8d0c63840a6e6ef7ae6b1d03d7ed8da0dac9c995ea8e32486699f15",
+    "history_sha256": "f35fdb88c602b047e95365e57deafe7da00b287e813d66b5bca4627162a81104",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

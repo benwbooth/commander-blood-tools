@@ -43,6 +43,8 @@ extern volatile cb_u8 live_palette[768]; /* game data:0x5251 */
 /* First 192 RGB entries of live_palette, addressed through GS by 0x00248B. */
 extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
+extern volatile cb_u8 CB_GAME_DATA
+        render_update_flag_2751_gs; /* explicit GS:0x2751 alias */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
 extern bloodprg_graphics_buffer_ptr
