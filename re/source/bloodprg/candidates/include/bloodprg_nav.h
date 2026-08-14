@@ -51,6 +51,7 @@ extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
+extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
 extern volatile cb_u8 nav_actor_0_busy; /* DS:0x2A7B */
 extern volatile cb_u8 nav_actor_1_busy; /* DS:0x2A93 */
 extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
@@ -85,6 +86,8 @@ int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
+void CB_NEAR nav_actor_handler_0(
+        volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007F9C */
 void CB_NEAR nav_actor_handler_2(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00813A */
 void CB_NEAR nav_actor_handler_3(

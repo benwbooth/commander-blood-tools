@@ -1,0 +1,664 @@
+[
+  {
+    "name": "ui_gate_clear",
+    "ui_before": 0,
+    "ui_after": 0,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 8448,
+    "line_resource_after": 8448,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 25344,
+    "deferred_link_after": 22016,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_unrelated_bit_20",
+    "ui_before": 32,
+    "ui_after": 32,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 8705,
+    "line_resource_after": 8705,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 25601,
+    "deferred_link_after": 22273,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "actor_zero_busy_high_bit",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 8962,
+    "line_resource_after": 8962,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 25858,
+    "deferred_link_after": 22530,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "present_not_ready_panel_active",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 1,
+    "line_flags_after": 1,
+    "line_resource_before": 9219,
+    "line_resource_after": 9219,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 26115,
+    "deferred_link_after": 22787,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_not_ready_no_deferred",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 0,
+    "line_resource_before": 9476,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 26372,
+    "deferred_link_after": 0,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_not_ready_second_incomplete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 0,
+    "line_resource_before": 9733,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 26629,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_not_ready_second_complete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 0,
+    "line_resource_before": 9990,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 26886,
+    "deferred_link_after": 0,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "present_not_ready_helper_arms_panel",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 1,
+    "line_resource_before": 10247,
+    "line_resource_after": 18,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 27143,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_helper_sets_frame_one",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 10504,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 1,
+    "view_state_after": 8,
+    "deferred_type_after": 27400,
+    "deferred_link_after": 0,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_existing_view_state",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 10761,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 8,
+    "deferred_type_after": 27657,
+    "deferred_link_after": 0,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_terminal_c1",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 7,
+    "line_resource_before": 11018,
+    "line_resource_after": 11018,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 193,
+    "deferred_link_after": 24586,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_helper_clears_view_terminal",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 7,
+    "line_resource_before": 11275,
+    "line_resource_after": 11275,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 193,
+    "deferred_link_after": 24843,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_frame_one_panel_active",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 11532,
+    "line_resource_after": 11532,
+    "frame_before": 1,
+    "frame_after": 1,
+    "view_state_after": 8,
+    "deferred_type_after": 28428,
+    "deferred_link_after": 25100,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_no_deferred",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 11789,
+    "line_resource_after": 11789,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 28685,
+    "deferred_link_after": 0,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_reverse_panel_gate_zero",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 12046,
+    "line_resource_after": 12046,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 28942,
+    "deferred_link_after": 4660,
+    "helper_results": [],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_panel_high_bit_opens_gate",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 4,
+    "line_flags_after": 0,
+    "line_resource_before": 12303,
+    "line_resource_after": 12303,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 29199,
+    "deferred_link_after": 0,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_loaded_incomplete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 4,
+    "line_flags_after": 4,
+    "line_resource_before": 12560,
+    "line_resource_after": 12560,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 29456,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "absent_loaded_complete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 4,
+    "line_flags_after": 0,
+    "line_resource_before": 12817,
+    "line_resource_after": 12817,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 29713,
+    "deferred_link_after": 0,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_loaded_panel_complete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 4,
+    "line_flags_after": 1,
+    "line_resource_before": 13074,
+    "line_resource_after": 18,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 29970,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_unloaded_incomplete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 13331,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 30227,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "absent_unloaded_complete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 13588,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 30484,
+    "deferred_link_after": 0,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_unloaded_helper_arms_panel",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 0,
+    "line_flags_after": 1,
+    "line_resource_before": 13845,
+    "line_resource_after": 18,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 30741,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_second_pass_skips_startup",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 14102,
+    "line_resource_after": 20,
+    "frame_before": 1,
+    "frame_after": 1,
+    "view_state_after": 8,
+    "deferred_type_after": 30998,
+    "deferred_link_after": 0,
+    "helper_results": [
+      false,
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "entity_flag_state_transition",
+      "presentation_line_helper",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": false,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "present_not_ready_loaded_skips_startup",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 5,
+    "line_flags_after": 0,
+    "line_resource_before": 14359,
+    "line_resource_after": 20,
+    "frame_before": 2,
+    "frame_after": 2,
+    "view_state_after": 0,
+    "deferred_type_after": 31255,
+    "deferred_link_after": 4660,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

@@ -51371,6 +51371,604 @@ def nav_actor_handler_1_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_handler_0_vectors() -> list[dict[str, object]]:
+    entry = 0x7F9C
+    presentation_helper_entry = 0x7E1C
+    entity_transition_entry = 0x3BD1  # Runtime 0299:1241.
+    sound_clip_entry = 0xB2CD  # Runtime 0B1B:011D.
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    cases = [
+        {"name": "ui_gate_clear", "ui": 0, "line_flags": 9},
+        {"name": "ui_unrelated_bit_20", "ui": 0x20, "line_flags": 9},
+        {
+            "name": "actor_zero_busy_high_bit",
+            "ui": 0x10,
+            "actor_zero_busy": 0x80,
+            "line_flags": 9,
+        },
+        {
+            "name": "present_not_ready_panel_active",
+            "ui": 0x10,
+            "line_flags": 1,
+            "panel": 0xA1,
+        },
+        {
+            "name": "present_not_ready_no_deferred",
+            "ui": 0x10,
+            "line_flags": 1,
+            "deferred_link": 0,
+        },
+        {
+            "name": "present_not_ready_second_incomplete",
+            "ui": 0x10,
+            "line_flags": 1,
+            "deferred_link": 0x1234,
+            "helper_results": [False],
+        },
+        {
+            "name": "present_not_ready_second_complete",
+            "ui": 0x10,
+            "line_flags": 1,
+            "deferred_link": 0x1234,
+            "helper_results": [True],
+        },
+        {
+            "name": "present_not_ready_helper_arms_panel",
+            "ui": 0x10,
+            "line_flags": 1,
+            "deferred_link": 0x1234,
+            "helper_results": [True],
+            "helper_mutations": [{"panel": 0xA1}],
+        },
+        {
+            "name": "present_ready_helper_sets_frame_one",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 2,
+            "deferred_link": 0,
+            "helper_results": [False],
+            "helper_mutations": [{"frame": 1}],
+        },
+        {
+            "name": "present_ready_existing_view_state",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 2,
+            "view_state": 8,
+            "deferred_link": 0,
+            "helper_results": [True],
+        },
+        {
+            "name": "present_ready_terminal_c1",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 2,
+            "view_state": 0,
+            "helper_results": [False],
+        },
+        {
+            "name": "present_ready_helper_clears_view_terminal",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 2,
+            "view_state": 8,
+            "helper_results": [True],
+            "helper_mutations": [{"view_state": 0}],
+        },
+        {
+            "name": "present_ready_frame_one_panel_active",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 1,
+            "panel": 0xA1,
+            "helper_results": [False],
+        },
+        {
+            "name": "absent_no_deferred",
+            "ui": 0x10,
+            "line_flags": 0,
+            "deferred_link": 0,
+        },
+        {
+            "name": "absent_reverse_panel_gate_zero",
+            "ui": 0x10,
+            "line_flags": 0,
+            "deferred_link": 0x1234,
+        },
+        {
+            "name": "absent_panel_high_bit_opens_gate",
+            "ui": 0x10,
+            "line_flags": 4,
+            "deferred_link": 0x1234,
+            "panel": 0x80,
+            "helper_results": [True],
+        },
+        {
+            "name": "absent_loaded_incomplete",
+            "ui": 0x10,
+            "line_flags": 4,
+            "deferred_link": 0x1234,
+            "reverse": 1,
+            "helper_results": [False],
+        },
+        {
+            "name": "absent_loaded_complete",
+            "ui": 0x10,
+            "line_flags": 4,
+            "deferred_link": 0x1234,
+            "reverse": 1,
+            "helper_results": [True],
+        },
+        {
+            "name": "absent_loaded_panel_complete",
+            "ui": 0x10,
+            "line_flags": 4,
+            "deferred_link": 0x1234,
+            "panel": 0xA1,
+            "helper_results": [True],
+        },
+        {
+            "name": "absent_unloaded_incomplete",
+            "ui": 0x10,
+            "line_flags": 0,
+            "deferred_link": 0x1234,
+            "reverse": 1,
+            "helper_results": [False],
+        },
+        {
+            "name": "absent_unloaded_complete",
+            "ui": 0x10,
+            "line_flags": 0,
+            "deferred_link": 0x1234,
+            "reverse": 1,
+            "helper_results": [True],
+        },
+        {
+            "name": "absent_unloaded_helper_arms_panel",
+            "ui": 0x10,
+            "line_flags": 0,
+            "deferred_link": 0x1234,
+            "reverse": 1,
+            "helper_results": [True],
+            "helper_mutations": [{"panel": 0xA1}],
+        },
+        {
+            "name": "present_ready_second_pass_skips_startup",
+            "ui": 0x10,
+            "line_flags": 9,
+            "frame": 1,
+            "deferred_link": 0x1234,
+            "helper_results": [False, True],
+        },
+        {
+            "name": "present_not_ready_loaded_skips_startup",
+            "ui": 0x10,
+            "line_flags": 5,
+            "deferred_link": 0x1234,
+            "helper_results": [False],
+        },
+    ]
+    expected_hash = "1caceb16901003237d89814aa861ebbf5b25573214dbf0fd25688441a4805e24"
+    if hashlib.sha256(EXE[entry : entry + 230]).hexdigest() != expected_hash:
+        raise AssertionError("0x7f9c: recovered 230-byte body changed")
+
+    def logic_flags(value: int, width: int) -> dict[str, bool]:
+        value &= (1 << width) - 1
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & (1 << (width - 1))),
+            "of": False,
+        }
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui_before = int(case["ui"])
+        actor_zero_busy = int(case.get("actor_zero_busy", 0))
+        line_flags_before = int(case["line_flags"])
+        line_resource_before = (0x2100 + case_index * 0x101) & 0xFFFF
+        frame_before = int(case.get("frame", 2))
+        panel_before = int(case.get("panel", 0))
+        reverse_before = int(case.get("reverse", 0))
+        view_state_before = int(case.get("view_state", 0))
+        deferred_link_before = int(
+            case.get("deferred_link", (0x5600 + case_index * 0x101) & 0xFFFF)
+        )
+        helper_results = [bool(value) for value in case.get("helper_results", [])]
+        helper_mutations = [
+            {str(key): int(value) for key, value in mutation.items()}
+            for mutation in case.get("helper_mutations", [])
+        ]
+        while len(helper_mutations) < len(helper_results):
+            helper_mutations.append({})
+        target_presentation_before = (0x3100 + case_index * 0x101) & 0xFFFF
+        presentation_before = (0x4200 + case_index * 0x101) & 0xFFFF
+        deferred_type_before = (0x6300 + case_index * 0x101) & 0xFFFF
+        transition_before = (0x80 + case_index) & 0xFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x2793] = ui_before
+        data_before[0x2A7B] = actor_zero_busy
+        struct.pack_into("<H", data_before, 0x0A34, target_presentation_before)
+        struct.pack_into("<H", data_before, 0x0A32, presentation_before)
+        data_before[0x278B] = view_state_before
+        data_before[0x278C] = panel_before
+        data_before[0x27E4] = reverse_before
+        data_before[0x27DA] = transition_before
+        struct.pack_into("<H", data_before, 0x6768, deferred_type_before)
+        struct.pack_into("<H", data_before, 0x676A, deferred_link_before)
+
+        line_before = struct.pack(
+            "<BBHHHH10sHH",
+            line_flags_before,
+            0xB0 + case_index,
+            line_resource_before,
+            0x3200 + case_index,
+            0x4300 + case_index,
+            frame_before,
+            bytes((0x50 + case_index + index) & 0xFF for index in range(10)),
+            0x6500 + case_index,
+            0x7600 + case_index,
+        )
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 31 + 0x67)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[line_offset : line_offset + len(line_before)] = line_before
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_before[0xFF00 : 0xFF08] = struct.pack("<H", return_address) + stack_sentinel
+        game_before = bytes(
+            (offset * 11 + case_index * 41 + 0xA3) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        helper_flag_words = []
+        for helper_index, result in enumerate(helper_results):
+            pattern = 0x0202 | ((case_index * 0xA4 + helper_index * 0x61) & 0x08D4)
+            helper_flag_words.append((pattern & ~1) | int(result))
+        entity_flags = 0x0202 | ((case_index * 0xC1 + 0x853) & 0x08D5)
+        initial = {
+            "eax": 0xA1A1BE00 | ((0x40 + case_index) & 0xFF),
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, object]] = []
+        actual_helper_index = 0
+
+        def read_byte(machine: Uc, offset: int) -> int:
+            return machine.mem_read(data_segment * 16 + offset, 1)[0]
+
+        def read_word(machine: Uc, offset: int) -> int:
+            return struct.unpack("<H", machine.mem_read(data_segment * 16 + offset, 2))[0]
+
+        def capture_state(machine: Uc) -> dict[str, int]:
+            return {
+                "line_flags": machine.mem_read(stack_segment * 16 + line_offset, 1)[0],
+                "line_resource": struct.unpack(
+                    "<H", machine.mem_read(stack_segment * 16 + line_offset + 2, 2)
+                )[0],
+                "line_frame": struct.unpack(
+                    "<H", machine.mem_read(stack_segment * 16 + line_offset + 8, 2)
+                )[0],
+                "ui": read_byte(machine, 0x2793),
+                "target_presentation": read_word(machine, 0x0A34),
+                "presentation": read_word(machine, 0x0A32),
+                "view_state": read_byte(machine, 0x278B),
+                "panel": read_byte(machine, 0x278C),
+                "reverse": read_byte(machine, 0x27E4),
+                "transition": read_byte(machine, 0x27DA),
+                "deferred_type": read_word(machine, 0x6768),
+                "deferred_link": read_word(machine, 0x676A),
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal actual_helper_index
+            if address == presentation_helper_entry:
+                if actual_helper_index >= len(helper_results):
+                    raise AssertionError(f"0x7f9c {name}: unexpected line helper")
+                calls.append({
+                    "kind": "presentation_line_helper",
+                    "index": actual_helper_index,
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    **capture_state(machine),
+                })
+                mutation = helper_mutations[actual_helper_index]
+                if "frame" in mutation:
+                    machine.mem_write(
+                        stack_segment * 16 + line_offset + 8,
+                        struct.pack("<H", mutation["frame"]),
+                    )
+                if "view_state" in mutation:
+                    machine.mem_write(data_segment * 16 + 0x278B, bytes((mutation["view_state"],)))
+                if "panel" in mutation:
+                    machine.mem_write(data_segment * 16 + 0x278C, bytes((mutation["panel"],)))
+                machine.reg_write(UC_X86_REG_EFLAGS, helper_flag_words[actual_helper_index])
+                actual_helper_index += 1
+            elif address == entity_transition_entry:
+                calls.append({
+                    "kind": "entity_flag_state_transition",
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    **capture_state(machine),
+                })
+                machine.reg_write(UC_X86_REG_EFLAGS, entity_flags)
+            elif address == sound_clip_entry:
+                calls.append({
+                    "kind": "snd_play_clip",
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    **capture_state(machine),
+                })
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, presentation_helper_entry, b"\xC3"),
+                (0, entity_transition_entry, b"\xCB"),
+                (0, sound_clip_entry, b"\xCB"),
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        state = {
+            "line_flags": line_flags_before,
+            "line_resource": line_resource_before,
+            "line_frame": frame_before,
+            "ui": ui_before,
+            "target_presentation": target_presentation_before,
+            "presentation": presentation_before,
+            "view_state": view_state_before,
+            "panel": panel_before,
+            "reverse": reverse_before,
+            "transition": transition_before,
+            "deferred_type": deferred_type_before,
+            "deferred_link": deferred_link_before,
+        }
+        expected_calls: list[dict[str, object]] = []
+        expected_eax = initial["eax"]
+        expected_ebx = initial["ebx"]
+        expected_helper_index = 0
+        terminal_flags = logic_flags(ui_before & 0x10, 8)
+
+        def expected_call(kind: str, cs: int, sp: int) -> None:
+            call = {
+                "kind": kind,
+                "cs": cs,
+                "sp": sp,
+                "ax": expected_eax & 0xFFFF,
+                "bx": expected_ebx & 0xFFFF,
+                **state,
+            }
+            if kind == "presentation_line_helper":
+                call["index"] = expected_helper_index
+            expected_calls.append(call)
+
+        def run_helper() -> bool:
+            nonlocal expected_helper_index, terminal_flags
+            if expected_helper_index >= len(helper_results):
+                raise AssertionError(f"0x7f9c {name}: missing helper result")
+            expected_call("presentation_line_helper", 0, 0xFEFE)
+            mutation = helper_mutations[expected_helper_index]
+            if "frame" in mutation:
+                state["line_frame"] = mutation["frame"]
+            if "view_state" in mutation:
+                state["view_state"] = mutation["view_state"]
+            if "panel" in mutation:
+                state["panel"] = mutation["panel"]
+            result = helper_results[expected_helper_index]
+            flag_word = helper_flag_words[expected_helper_index]
+            terminal_flags = {
+                "cf": bool(flag_word & 1),
+                "pf": bool(flag_word & 4),
+                "af": bool(flag_word & 0x10),
+                "zf": bool(flag_word & 0x40),
+                "sf": bool(flag_word & 0x80),
+                "of": bool(flag_word & 0x800),
+            }
+            expected_helper_index += 1
+            return result
+
+        def run_entity() -> None:
+            nonlocal expected_eax, terminal_flags
+            expected_eax = (expected_eax & 0xFFFF0000) | 4
+            expected_call("entity_flag_state_transition", 0x0299, 0xFEFC)
+            terminal_flags = {
+                "cf": bool(entity_flags & 1),
+                "pf": bool(entity_flags & 4),
+                "af": bool(entity_flags & 0x10),
+                "zf": bool(entity_flags & 0x40),
+                "sf": bool(entity_flags & 0x80),
+                "of": bool(entity_flags & 0x800),
+            }
+
+        if (ui_before & 0x10) != 0:
+            terminal_flags = logic_flags(actor_zero_busy, 8)
+            if actor_zero_busy == 0:
+                expected_eax = (expected_eax & 0xFFFFFF00) | line_flags_before
+                continue_to_deferred = True
+                if (line_flags_before & 1) != 0:
+                    if (line_flags_before & 8) != 0:
+                        state["target_presentation"] = 0
+                        state["presentation"] = 10
+                        expected_eax = expected_eax & 0xFFFF0000
+                        expected_call("entity_flag_state_transition", 0x0299, 0xFEFC)
+                        expected_eax = (expected_eax & 0xFFFF0000) | 4
+                        expected_call("entity_flag_state_transition", 0x0299, 0xFEFC)
+                        run_helper()
+                        terminal_flags = logic_flags((state["line_frame"] - 1) & 0xFFFF, 16)
+                        if state["line_frame"] == 1:
+                            state["view_state"] = 8
+                        elif state["view_state"] == 0:
+                            state["line_flags"] = 7
+                            state["deferred_type"] = 0x00C1
+                            state["transition"] = 1
+                            run_entity()
+                            state["panel"] = 0
+                            state["ui"] |= 4
+                            terminal_flags = logic_flags(state["ui"], 8)
+                            continue_to_deferred = False
+                    if continue_to_deferred:
+                        terminal_flags = logic_flags(state["panel"] & 1, 8)
+                        if (state["panel"] & 1) != 0:
+                            continue_to_deferred = False
+                        else:
+                            state["line_resource"] = 0x14
+                            state["reverse"] = 1
+                            state["line_flags"] = 0
+                            state["ui"] |= 4
+                if continue_to_deferred:
+                    expected_ebx = (expected_ebx & 0xFFFF0000) | state["deferred_link"]
+                    terminal_flags = logic_flags(state["deferred_link"], 16)
+                    if state["deferred_link"] != 0:
+                        second_gate = state["reverse"] | state["panel"]
+                        expected_ebx = (
+                            expected_ebx & 0xFFFF0000
+                        ) | ((state["deferred_link"] & 0xFF00) | second_gate)
+                        terminal_flags = logic_flags(second_gate, 8)
+                        if second_gate != 0:
+                            if (expected_eax & 4) == 0:
+                                run_entity()
+                                state["line_resource"] = 0x14
+                                expected_eax = (expected_eax & 0xFFFF0000) | 5
+                                expected_call("snd_play_clip", 0x0B1B, 0xFEFC)
+                            if run_helper():
+                                terminal_flags = logic_flags(state["panel"] & 1, 8)
+                                if (state["panel"] & 1) == 0:
+                                    state["deferred_link"] = 0
+                                    run_entity()
+                                    state["line_flags"] = 0
+                                else:
+                                    state["line_flags"] = 1
+                                    state["ui"] |= 4
+                                    terminal_flags = logic_flags(state["ui"], 8)
+                                    state["line_resource"] = 0x12
+
+        if expected_helper_index != len(helper_results):
+            raise AssertionError(
+                f"0x7f9c {name}: used {expected_helper_index} helper results, provided {len(helper_results)}"
+            )
+        if actual_helper_index != len(helper_results):
+            raise AssertionError(
+                f"0x7f9c {name}: actual helper calls={actual_helper_index}, expected={len(helper_results)}"
+            )
+        if calls != expected_calls:
+            raise AssertionError(f"0x7f9c {name}: calls={calls}, expected={expected_calls}")
+
+        expected_data = bytearray(data_before)
+        expected_data[0x2793] = state["ui"]
+        struct.pack_into("<H", expected_data, 0x0A34, state["target_presentation"])
+        struct.pack_into("<H", expected_data, 0x0A32, state["presentation"])
+        expected_data[0x278B] = state["view_state"]
+        expected_data[0x278C] = state["panel"]
+        expected_data[0x27E4] = state["reverse"]
+        expected_data[0x27DA] = state["transition"]
+        struct.pack_into("<H", expected_data, 0x6768, state["deferred_type"])
+        struct.pack_into("<H", expected_data, 0x676A, state["deferred_link"])
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_data, expected_data))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x7f9c {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, expected={expected_data[mismatch]:#x}"
+            )
+
+        expected_line = bytearray(line_before)
+        expected_line[0] = state["line_flags"]
+        expected_line[2:4] = struct.pack("<H", state["line_resource"])
+        expected_line[8:10] = struct.pack("<H", state["line_frame"])
+        actual_line = bytes(machine.mem_read(stack_segment * 16 + line_offset, len(line_before)))
+        if actual_line != bytes(expected_line):
+            raise AssertionError(
+                f"0x7f9c {name}: line={actual_line.hex()}, expected={bytes(expected_line).hex()}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x7f9c {name}: GS decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x7f9c {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = expected_eax
+        expected_registers["ebx"] = expected_ebx
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7f9c {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x7f9c {name}: return changed CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x7f9c {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append({
+            "name": name,
+            "ui_before": ui_before,
+            "ui_after": state["ui"],
+            "line_flags_before": line_flags_before,
+            "line_flags_after": state["line_flags"],
+            "line_resource_before": line_resource_before,
+            "line_resource_after": state["line_resource"],
+            "frame_before": frame_before,
+            "frame_after": state["line_frame"],
+            "view_state_after": state["view_state"],
+            "deferred_type_after": state["deferred_type"],
+            "deferred_link_after": state["deferred_link"],
+            "helper_results": helper_results,
+            "call_sequence": [call["kind"] for call in calls],
+            "defined_flags": terminal_flags,
+        })
+    return vectors
+
+
 def nav_actor_handler_5_vectors() -> list[dict[str, object]]:
     entry = 0x8082
     presentation_helper_entry = 0x7E1C
@@ -67993,6 +68591,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7ec0_natural.json",
         nav_actor_handler_1_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7f9c_natural.json",
+        nav_actor_handler_0_vectors(),
         args.check,
     )
     update_vector(

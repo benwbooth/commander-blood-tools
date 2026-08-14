@@ -4760,6 +4760,36 @@ Its generated code directly loads the heap segment into `ES`, reads
 needs the inherited-`BP` actor input, carry-valued helper result, original
 temporary register allocation, and exact call preservation and final flags.
 
+## BLOODPRG navigation actor handler 0 candidate
+
+`0x007F9C` coordinates two passes over actor zero's presentation line. A
+present, ready line enters presentation state ten after entity-zero and
+entity-four transitions. The routine deliberately ignores the first line-step
+result, then uses the callback-visible frame and camera state either to retarget
+resource `0x14` or publish terminal deferred type `0xC1` and a pending
+transition.
+
+The common deferred pass requires a nonzero record link and any nonzero bit in
+the reverse-or-panel bytes. It skips entity/audio startup for an initially
+loaded line and for every ready first pass. Completion tests only panel bit zero,
+then either clears the deferred link and line after an entity-four transition or
+publishes line one, redraw, and resource `0x12`.
+
+Twenty-four patched-helper vectors cover every gate, both passes, complete and
+incomplete outcomes, helper-written frame/view/panel state, the full-byte gate
+versus bit-zero completion distinction, loaded/unloaded startup, and the
+prepared second-pass bypass. They prove call order and state, SS line ownership,
+DS global ownership, all named writes, registers, flags, stack integrity, and
+near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 74 instructions/237 bytes versus the original
+62/230, with 83.87 percent mnemonic-multiset overlap and no inline assembly.
+Its generated code keeps the flag snapshot and prepared state in `AL`/`AH` and
+uses byte loads for the deferred gate. Direct replacement still needs the
+inherited-`BP` actor input, carry-valued helper result, original `AL` lifetime,
+near/far placement adapters, and exact call preservation and final flags.
+
 ## BLOODPRG navigation actor handler 5 candidate
 
 `0x008082` owns the fifth navigation actor's presentation and camera-view
