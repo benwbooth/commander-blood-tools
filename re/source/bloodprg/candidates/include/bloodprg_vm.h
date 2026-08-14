@@ -34,6 +34,8 @@ extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_sequence_active_ds; /* DS:0x252A alias */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_ship_active_flags_gs; /* explicit GS:0x24F3 alias */
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
 extern volatile cb_u16 vm_dialogue_hold_countdown; /* game data:0x0B35 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
@@ -41,6 +43,8 @@ extern volatile cb_u16 vm_scene_record_offset; /* DS:0x274D */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_bridge_redraw_pending_gs; /* explicit GS:0x27D8 alias */
 extern volatile cb_u8 CB_GAME_DATA vm_subtitle_display_mode; /* GS:0x27E2 */
 extern volatile cb_u8 vm_subtitle_display_mode_ds; /* DS:0x27E2 alias */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
@@ -110,6 +114,10 @@ extern volatile cb_u16 CB_GAME_DATA vm_parent_program_counter; /* GS:0x6774 */
 extern volatile cb_u16 CB_GAME_DATA vm_pc_saved; /* GS:0x6776 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_post_update_record_offset; /* GS:0x6798 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_cd_replacement_kind_gs; /* GS:0x6792 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_cd_replacement_related_gs; /* GS:0x6794 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
 extern volatile cb_u16 CB_GAME_DATA vm_resume_cursor; /* GS:0x677A */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_a; /* GS:0x6782 */
@@ -119,6 +127,8 @@ extern volatile cb_u16 vm_named_vbio_object; /* DS:0x679C */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_active_line_gs; /* explicit GS:0x6788 alias */
 extern volatile cb_u16 vm_displayed_line;    /* DS:0x678A */
 extern volatile cb_u16 vm_record_resource_handle; /* DS:0x6716 */
 extern volatile cb_u16 vm_resource_profile_index; /* DS:0x677E */

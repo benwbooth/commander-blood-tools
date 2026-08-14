@@ -6027,6 +6027,41 @@ requires `GAME_DATA` placement and the shipped record/directory segment
 contracts. Direct replacement additionally needs the original DS:SI/DS:BP
 helper ABIs, selective preservation envelope, and helper residue.
 
+## BLOODPRG record action ladder at 0x005B38
+
+The 1,184-byte near routine is a seven-way record action ladder for C1, C2, C3,
+C4, C6, C9, and CD records. C1 relinks ship objects, coordinates DESCRIPT and
+music loading, resets the ship HUD, and copies a resolved position. C2 inserts
+a special object and selects presentation line 39 or 43. C3 promotes or claims
+a wildcard record and may play radio clip 6. C4 writes reciprocal relationships
+and runs COD post-updates. C6 drives the three-phase camera transition and
+position handoff. C9 and CD remove or replace existing relationships.
+
+Direct execution exposed two non-obvious C1 dependencies. The selector-`0x11`
+field offset remains in `DX` and becomes the kind-`0x100` comparison passed to
+the position resolver. On the music-reload path, `SI` is reused for the VOC path
+at offset `0x0D2D` and is not restored before the final position copy, so the
+shipped destination uses `0x0D2D + selector_0B` instead of the owner offset. The
+natural source states both behaviors directly.
+
+The shipped C2 success tail reaches byte `07` (`POP ES`) at `0x005D33` without
+a matching path-local push. The common epilogue then performs a second `POP ES`,
+shifting the saved frame and return address. Two vectors stop immediately before
+`0x005D33` and prove the complete C2 state plus an intact 20-byte saved frame;
+the natural C preserves those state changes but deliberately does not express
+stack corruption.
+
+Thirty-two patched-helper vectors execute the untouched original body. They
+cover every record type and major gate, both C2 pre-defect states, exact helper
+arguments and order, complete game and record images, segmented ownership,
+normal stack integrity, and the C2 saved frame. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) compiles the warning-free natural C89 function to 434
+instructions/1,320 bytes versus 368/1,184 original, with 77.99 percent
+mnemonic-multiset overlap and 67.12 percent ordered mnemonic overlap. It uses no
+inline assembly or register-state facade. Full-source integration requires the
+shipped record and `GAME_DATA` segment contracts; direct replacement also needs
+the recovered helper ABIs and an explicit policy for the original C2 defect.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

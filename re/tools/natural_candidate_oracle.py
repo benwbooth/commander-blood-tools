@@ -10400,6 +10400,662 @@ def presentation_scan_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def record_action_ladder_vectors() -> list[dict[str, object]]:
+    entry = 0x5B38
+    body_size = 1184
+    body_hash = "2d0daac856af58f268f9364938bebdb1f47dbfa88fafc80b559c0988e67b891f"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x5b38: recovered 1184-byte body changed")
+    if EXE[0x5D33] != 0x07 or EXE[0x5FD0] != 0x07:
+        raise AssertionError("0x5b38: expected unmatched and epilogue POP ES bytes")
+
+    cases: list[dict[str, object]] = [
+        {"name": "unknown_record_is_ignored", "record_kind": 0xD7},
+        {
+            "name": "c1_arche_waits_for_approach_phase_four",
+            "record_kind": 0xC1,
+            "owner_kind": 0x10,
+            "owner_is_arche": True,
+            "approach": 3,
+        },
+        {"name": "c1_ship_relinks_and_copies_position", "record_kind": 0xC1,
+         "owner_kind": 0x10},
+        {"name": "c1_special_inactive_still_copies_position", "record_kind": 0xC1,
+         "owner_kind": 0x200, "ship_flags": 0},
+        {"name": "c1_special_descript_failure_skips_hud_reset", "record_kind": 0xC1,
+         "owner_kind": 0x200, "ship_flags": 1, "descript_result": 0},
+        {"name": "c1_special_same_target_resets_hud_and_pair", "record_kind": 0xC1,
+         "owner_kind": 0x200, "ship_flags": 1, "same_target": True,
+         "primary_kind": 0xC4},
+        {"name": "c1_special_changed_target_resets_hud_without_audio", "record_kind": 0xC1,
+         "owner_kind": 0x200, "ship_flags": 1, "descript_result": 1,
+         "music_changed": 0},
+        {"name": "c1_special_changed_target_runs_audio_chain", "record_kind": 0xC1,
+         "owner_kind": 0x200, "ship_flags": 1, "descript_result": 1,
+         "music_changed": 1, "primary_kind": 0xC4},
+        {"name": "c1_null_position_source_stops_after_resolve", "record_kind": 0xC1,
+         "owner_kind": 0x10, "position_result": 0},
+        {"name": "c2_full_special_list_returns_normally", "record_kind": 0xC2,
+         "related_kind": 2, "insert_success": False},
+        {"name": "c2_character_state_before_shipped_stack_defect", "record_kind": 0xC2,
+         "related_kind": 2, "insert_success": True, "defect_boundary": True},
+        {"name": "c2_descript_state_before_shipped_stack_defect", "record_kind": 0xC2,
+         "related_kind": 0x400, "insert_success": True, "descript_result": 1,
+         "defect_boundary": True},
+        {"name": "c3_nonwildcard_promotes_to_c4", "record_kind": 0xC3,
+         "record_related": 0x3100},
+        {"name": "c3_wildcard_claims_owner_while_ui_inactive", "record_kind": 0xC3,
+         "ui": 0},
+        {"name": "c3_wildcard_requests_audio_but_honors_busy_state", "record_kind": 0xC3,
+         "ui": 1, "voc_enabled": 0, "clip_state": 3},
+        {"name": "c3_wildcard_plays_radio_clip", "record_kind": 0xC3,
+         "ui": 1, "voc_enabled": 1, "clip_state": 0},
+        {"name": "c4_nonzero_value_is_ignored", "record_kind": 0xC4,
+         "record_value": 1},
+        {"name": "c4_pair_write_guard_is_honored", "record_kind": 0xC4,
+         "record_value": 0, "pair_guard": 1},
+        {"name": "c4_actor_owner_updates_related_counter", "record_kind": 0xC4,
+         "record_value": 0, "owner_kind": 1, "related_kind": 0x40,
+         "counter_field": 0x50},
+        {"name": "c4_actor_related_updates_owner_counter", "record_kind": 0xC4,
+         "record_value": 0, "owner_kind": 0x40, "related_kind": 1,
+         "counter_field": 0x50},
+        {"name": "c4_nonactors_only_write_reciprocal", "record_kind": 0xC4,
+         "record_value": 0, "owner_kind": 0x40, "related_kind": 0x80},
+        {"name": "c6_phase_zero_waits_for_actor", "record_kind": 0xC6,
+         "phase": 0, "actor_busy": 0},
+        {"name": "c6_phase_zero_starts_camera_transition", "record_kind": 0xC6,
+         "phase": 0, "actor_busy": 1},
+        {"name": "c6_phase_one_waits_for_camera", "record_kind": 0xC6,
+         "phase": 1, "view_state": 5},
+        {"name": "c6_phase_one_starts_line_44", "record_kind": 0xC6,
+         "phase": 1, "view_state": 0, "actor_busy": 1, "view_active": 1},
+        {"name": "c6_final_phase_waits_for_presentation_gate", "record_kind": 0xC6,
+         "phase": 2, "view_state": 0, "c2_gate": 1},
+        {"name": "c6_final_phase_uses_matching_position_pair", "record_kind": 0xC6,
+         "owner_kind": 0x10, "related_kind": 0x100, "phase": 2,
+         "view_state": 0, "owner_relation": 0x1234, "related_compare": 0x1234},
+        {"name": "c6_final_phase_uses_mismatching_position_pair", "record_kind": 0xC6,
+         "owner_kind": 0x10, "related_kind": 0x100, "phase": 2,
+         "view_state": 0, "owner_relation": 0x1234, "related_compare": 0x5678},
+        {"name": "c9_clears_matching_reciprocal", "record_kind": 0xC9,
+         "reciprocal_kind": 0xC4, "reciprocal_owner_matches": True},
+        {"name": "c9_preserves_nonmatching_reciprocal", "record_kind": 0xC9,
+         "reciprocal_kind": 0xC4, "reciprocal_owner_matches": False},
+        {"name": "cd_restores_related_link_and_replaces_record", "record_kind": 0xCD,
+         "related_kind": 0x40},
+        {"name": "cd_descript_queues_line_43", "record_kind": 0xCD,
+         "related_kind": 0x400, "descript_result": 1},
+    ]
+
+    record_segment = 0x3000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    owner_offset = 0x1800
+    record_offset = 0x2000
+    related_offset_default = 0x3000
+    prior_offset = 0x3800
+    primary_offset = 0x4000
+    primary_related_offset = 0x4200
+    source_position_offset = 0x3074
+    caller_sp = 0xFF00
+    return_address = 0xF538
+    wildcard = related_offset_default
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helpers = {
+        0x5FD8: ("remove", "near"),
+        0x5FF6: ("insert", "near"),
+        0x6023: ("field", "near"),
+        0x61A6: ("position", "near"),
+        0x739B: ("cod", "near"),
+        0x7409: ("descript", "far"),
+        0xB0DD: ("plane", "far"),
+        0xB59D: ("driver", "far"),
+        0xB7B7: ("source", "far"),
+        0xB5B3: ("start", "far"),
+        0xB2CD: ("clip", "far"),
+        0x3BD1: ("transition", "far"),
+        0x8696: ("hud_reset", "far"),
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def get_word(image: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", image, offset)[0]
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        record_kind = int(case["record_kind"])
+        owner_kind = int(case.get("owner_kind", 0x40))
+        related_kind = int(case.get("related_kind", 0x80))
+        related_offset = int(case.get("record_related", related_offset_default))
+        game_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 29 + case_index * 31 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 37 + case_index * 41 + 0x97) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        put_word(game_before, 0x6726, record_segment)
+        put_word(game_before, 0x6752,
+                 owner_offset if case.get("owner_is_arche") else 0x1111)
+        game_before[0x27DF] = int(case.get("approach", 4))
+        put_word(game_before, 0x24F3, int(case.get("ship_flags", 0)))
+        put_word(game_before, 0x251B,
+                 related_offset if case.get("same_target") else 0x2222)
+        put_word(game_before, 0x675E, primary_offset)
+        put_word(game_before, 0x67F8, 0xA1F8)
+        game_before[0x27D7] = 0xD7
+        game_before[0x67AA] = int(case.get("request_flags", 0))
+        game_before[0x1FB2] = int(case.get("c2_gate", 0))
+        put_word(game_before, 0x2529, 0xA529)
+        game_before[0x27D8] = 0xD8
+        put_word(game_before, 0x1FA5, 0x5A5A)
+        put_word(game_before, 0x1FA7, 0xA7A7)
+        put_word(game_before, 0x6788, 0xA888)
+        put_word(game_before, 0x2793, int(case.get("ui", 0)))
+        put_word(game_before, 0x674E, wildcard)
+        put_word(game_before, 0x675A, 0xA75A)
+        game_before[0x0ADE] = int(case.get("voc_enabled", 1))
+        game_before[0x0B19] = 0xB8
+        put_word(game_before, 0x0B39, int(case.get("clip_state", 0)))
+        game_before[0x67B6] = int(case.get("pair_guard", 0))
+        put_word(game_before, 0x6798, 0xA998)
+        game_before[0x2792] = int(case.get("phase", 0))
+        game_before[0x278B] = int(case.get("view_state", 0))
+        game_before[0x2A7B] = int(case.get("actor_busy", 0))
+        game_before[0x278A] = int(case.get("view_active", 0))
+        game_before[0x27D9] = 0xD9
+        put_word(game_before, 0x6792, 0xC2C2)
+        put_word(game_before, 0x6794, 0x3434)
+        put_dword(game_before, 0x5219, (0x1357 << 16) | 0x2468)
+        put_dword(game_before, 0x521D, (0x3579 << 16) | 0x468A)
+        game_before[0x0BA1] = int(case.get("music_changed", 0))
+
+        put_word(record_before, owner_offset, owner_kind)
+        put_word(record_before, owner_offset + 2, 0x1235)
+        put_word(record_before, owner_offset + 0x20, prior_offset)
+        put_word(record_before, owner_offset + 0x50, 0x1050)
+        put_word(record_before, owner_offset + 0x60,
+                 int(case.get("owner_relation", 0x1234)))
+        put_word(record_before, record_offset, record_kind)
+        put_word(record_before, record_offset + 2, related_offset)
+        put_word(record_before, record_offset + 4,
+                 int(case.get("record_value", 0x4567)))
+        put_word(record_before, related_offset, related_kind)
+        put_word(record_before, related_offset + 2, 0x5679)
+        record_before[related_offset + 4 : related_offset + 16] = (
+            b"RELATED-NAME".ljust(12, b"\0")
+        )
+        put_word(record_before, related_offset + 0x20, 0xABCD)
+        put_word(record_before, related_offset + 0x40,
+                 int(case.get("reciprocal_kind", 0xB4B4)))
+        put_word(record_before, related_offset + 0x42,
+                 owner_offset if case.get("reciprocal_owner_matches") else 0x9999)
+        put_word(record_before, related_offset + 0x44, 0x4444)
+        put_word(record_before, related_offset + 0x50, 0x2050)
+        put_word(record_before, related_offset + 0x70,
+                 int(case.get("related_compare", 0x5678)))
+        put_word(record_before, related_offset + 0x72, 0x0D0D)
+        put_dword(record_before, related_offset + 0x74, 0xAABBCCDD)
+        put_dword(record_before, related_offset + 0x78, 0x11223344)
+        put_word(record_before, prior_offset, int(case.get("prior_kind", 0x20)))
+        put_word(record_before, prior_offset + 2, 0x33F5)
+        put_word(record_before, primary_offset, int(case.get("primary_kind", 0)))
+        put_word(record_before, primary_offset + 2, primary_related_offset)
+        put_word(record_before, primary_offset + 4, 0xBEEF)
+        put_word(record_before, primary_related_offset, 0x80)
+        put_word(record_before, primary_related_offset + 0x40, 0xC4)
+        put_word(record_before, primary_related_offset + 0x42, 0x7777)
+        put_word(record_before, primary_related_offset + 0x44, 0x8888)
+
+        expected_game = bytearray(game_before)
+        expected_record = bytearray(record_before)
+        expected_calls: list[dict[str, object]] = []
+
+        def field_result(selector: int, kind: int) -> int:
+            if selector == 0x08:
+                return int(case.get("counter_field", 0))
+            offsets = {
+                0x09: 0x78,
+                0x0A: 0x74,
+                0x0B: 0x30,
+                0x0C: 0x70,
+                0x0D: 0x72,
+                0x0E: 0x60,
+                0x11: 0x20,
+                0x13: 0x40,
+            }
+            if selector not in offsets:
+                raise AssertionError(
+                    f"0x5b38 {name}: unexpected field {selector:#x}/{kind:#x}"
+                )
+            return offsets[selector]
+
+        def model_field(selector: int, kind: int) -> int:
+            result = field_result(selector, kind)
+            expected_calls.append({"name": "field", "selector": selector,
+                                   "kind": kind, "result": result})
+            return result
+
+        owner_offset_for_position = owner_offset
+        if record_kind == 0xC1:
+            if not (case.get("owner_is_arche") and int(case.get("approach", 4)) < 4):
+                field_offset = model_field(0x11, owner_kind)
+                old_link = get_word(expected_record, owner_offset + field_offset)
+                if get_word(expected_record, old_link) == 0x20:
+                    expected_record[old_link + 2] &= 0xFE
+                put_word(expected_record, owner_offset + field_offset, related_offset)
+                put_word(expected_record, record_offset, 0)
+                continue_to_position = owner_kind == 0x10
+                if owner_kind == 0x200:
+                    continue_to_position = True
+                    if get_word(expected_game, 0x24F3) & 1:
+                        reset_hud = related_offset == get_word(expected_game, 0x251B)
+                        if not reset_hud:
+                            expected_calls.append(
+                                {"name": "descript", "segment": record_segment,
+                                 "name_offset": related_offset + 4,
+                                 "result": int(case.get("descript_result", 0))}
+                            )
+                            reset_hud = bool(case.get("descript_result", 0))
+                            if reset_hud and int(case.get("music_changed", 0)) & 1:
+                                expected_calls.extend([
+                                    {"name": "plane", "draw_framebuffer": 0x3579468A},
+                                    {"name": "driver"},
+                                    {"name": "source", "ds": game_segment,
+                                     "path_offset": 0x0D2D},
+                                    {"name": "start"},
+                                ])
+                                owner_offset_for_position = 0x0D2D
+                        if reset_hud:
+                            if get_word(expected_record, primary_offset) == 0xC4:
+                                primary_related = get_word(
+                                    expected_record, primary_offset + 2
+                                )
+                                put_word(expected_record, primary_offset, 0)
+                                put_word(expected_record, primary_offset + 2, 0)
+                                primary_kind = get_word(expected_record, primary_related)
+                                field_offset = model_field(0x13, primary_kind)
+                                for delta in (0, 2, 4):
+                                    put_word(expected_record,
+                                             primary_related + field_offset + delta, 0)
+                            put_word(expected_game, 0x251B, related_offset)
+                            put_word(expected_game, 0x24F3, 9)
+                            put_word(expected_game, 0x67F8, 0)
+                            expected_game[0x27D7] = 0
+                            expected_game[0x67AA] = 0
+                            expected_game[0x1FB2] = 0
+                            put_word(expected_game, 0x2529, 1)
+                            expected_game[0x27D8] = 0
+                            put_word(expected_game, 0x1FA7,
+                                     get_word(expected_game, 0x1FA5))
+                            put_word(expected_game, 0x6788, 3)
+                elif owner_kind != 0x10:
+                    continue_to_position = False
+                if continue_to_position:
+                    position_result = int(case.get(
+                        "position_result", source_position_offset
+                    ))
+                    expected_calls.append(
+                        {"name": "position", "record": related_offset,
+                         "compare": 0x20, "result": position_result}
+                    )
+                    if position_result != 0:
+                        field_offset = model_field(0x0B, owner_kind)
+                        expected_record[
+                            owner_offset_for_position + field_offset :
+                            owner_offset_for_position + field_offset + 4
+                        ] = expected_record[position_result : position_result + 4]
+        elif record_kind == 0xC2:
+            insert_success = bool(case.get("insert_success", True))
+            expected_calls.append(
+                {"name": "insert", "owner": related_offset,
+                 "success_carry": insert_success}
+            )
+            if insert_success:
+                field_offset = model_field(0x11, related_kind)
+                put_word(expected_record, related_offset + field_offset, 0xFFFF)
+                put_word(expected_record, record_offset, 0)
+                if (get_word(expected_game, 0x2793) & 1) == 0 \
+                        and (expected_game[0x67AA] & 2) == 0:
+                    if related_kind == 2:
+                        expected_game[0x1FB2] = 0
+                        put_word(expected_game, 0x6788, 0x27)
+                    elif related_kind == 0x400:
+                        expected_calls.append(
+                            {"name": "descript", "segment": record_segment,
+                             "name_offset": related_offset + 4,
+                             "result": int(case.get("descript_result", 0))}
+                        )
+                        if case.get("descript_result"):
+                            expected_game[0x1FB2] = 0
+                            put_word(expected_game, 0x6788, 0x2B)
+                            expected_game[0x67AA] |= 2
+        elif record_kind == 0xC3:
+            if related_offset != get_word(expected_game, 0x674E):
+                put_word(expected_record, record_offset, 0xC4)
+                put_word(expected_record, record_offset + 4, 0)
+            else:
+                put_word(expected_game, 0x675A, owner_offset)
+                if get_word(expected_game, 0x2793) & 1:
+                    if expected_game[0x0ADE] & 1 == 0:
+                        expected_game[0x0B19] |= 1
+                    if get_word(expected_game, 0x0B39) == 0:
+                        expected_calls.append({"name": "clip", "clip": 6})
+                        put_word(expected_game, 0x0B39, 2)
+        elif record_kind == 0xC4:
+            if get_word(expected_record, record_offset + 4) == 0 \
+                    and expected_game[0x67B6] & 1 == 0:
+                put_word(expected_record, record_offset + 4, 0xFFFF)
+                skip_related_actor = False
+                if owner_kind == 1:
+                    put_word(expected_game, 0x675A, 0)
+                    field_offset = model_field(0x08, related_kind)
+                    if field_offset != 0:
+                        counter = get_word(expected_record,
+                                           related_offset + field_offset)
+                        put_word(expected_record, related_offset + field_offset,
+                                 counter + 1)
+                        put_word(expected_record, owner_offset + 2,
+                                 get_word(expected_record, owner_offset + 2) | 0x8000)
+                        put_word(expected_game, 0x6798, related_offset)
+                        expected_calls.append({"name": "cod", "object": related_offset})
+                        skip_related_actor = True
+                if not skip_related_actor and related_kind == 1:
+                    field_offset = model_field(0x08, owner_kind)
+                    if field_offset != 0:
+                        counter = get_word(expected_record, owner_offset + field_offset)
+                        put_word(expected_record, owner_offset + field_offset, counter + 1)
+                        put_word(expected_record, owner_offset + 2,
+                                 get_word(expected_record, owner_offset + 2) | 0x8000)
+                        put_word(expected_game, 0x6798, owner_offset)
+                        expected_calls.append({"name": "cod", "object": owner_offset})
+                field_offset = model_field(0x13, related_kind)
+                put_word(expected_record, related_offset + field_offset, 0xC4)
+                put_word(expected_record, related_offset + field_offset + 2,
+                         owner_offset)
+                put_word(expected_record, related_offset + field_offset + 4, 0xFFFF)
+        elif record_kind == 0xC6:
+            phase = expected_game[0x2792]
+            if phase == 0:
+                if expected_game[0x2A7B] == 1:
+                    expected_game[0x2792] = 1
+                    expected_game[0x278B] = 8
+                    expected_calls.append({"name": "transition", "object_id": 4})
+            elif expected_game[0x278B] == 0:
+                if phase == 1:
+                    expected_game[0x2792] = 2
+                    expected_game[0x2A7B] = 0
+                    expected_game[0x278A] = 0
+                    put_word(expected_game, 0x6788, 0x2C)
+                elif expected_game[0x1FB2] & 1 == 0:
+                    expected_game[0x2792] = 0
+                    expected_game[0x27D9] = 1
+                    expected_calls.append({"name": "hud_reset"})
+                    expected_game[0x2793] &= 0xFB
+                    put_word(expected_record, record_offset, 0)
+                    put_word(expected_record, record_offset + 2, 0)
+                    put_word(expected_record, record_offset + 4, 0)
+                    owner_field = model_field(0x0E, owner_kind)
+                    relation = get_word(expected_record, owner_offset + owner_field)
+                    owner_position = model_field(0x0B, owner_kind)
+                    compare_field = model_field(0x0C, related_kind)
+                    comparison = get_word(expected_record,
+                                          related_offset + compare_field)
+                    if relation == comparison:
+                        relation_field = model_field(0x0D, related_kind)
+                        relation = get_word(expected_record,
+                                            related_offset + relation_field)
+                        related_position = model_field(0x0A, related_kind)
+                    else:
+                        compare_field = model_field(0x0C, related_kind)
+                        relation = comparison
+                        related_position = model_field(0x09, related_kind)
+                    expected_record[
+                        owner_offset + owner_position : owner_offset + owner_position + 4
+                    ] = expected_record[
+                        related_offset + related_position :
+                        related_offset + related_position + 4
+                    ]
+                    put_word(expected_record, owner_offset + owner_field, relation)
+        elif record_kind == 0xC9:
+            put_word(expected_record, record_offset, 0)
+            put_word(expected_record, record_offset + 2, 0)
+            put_word(expected_record, record_offset + 4, 0)
+            field_offset = model_field(0x13, related_kind)
+            reciprocal = related_offset + field_offset
+            if get_word(expected_record, reciprocal) == 0xC4 \
+                    and get_word(expected_record, reciprocal + 2) == owner_offset:
+                put_word(expected_record, reciprocal, 0)
+                put_word(expected_record, reciprocal + 2, 0)
+                put_word(expected_record, reciprocal + 4, 0)
+        elif record_kind == 0xCD:
+            expected_calls.append(
+                {"name": "remove", "owner": related_offset,
+                 "success_carry": bool(case.get("remove_success", False))}
+            )
+            field_offset = model_field(0x11, related_kind)
+            put_word(expected_record, related_offset + field_offset,
+                     get_word(expected_record, record_offset + 4))
+            put_word(expected_record, record_offset,
+                     get_word(expected_game, 0x6792))
+            put_word(expected_record, record_offset + 2,
+                     get_word(expected_game, 0x6794))
+            put_word(expected_record, record_offset + 4, 0)
+            if (get_word(expected_game, 0x2793) & 1) == 0 \
+                    and (expected_game[0x67AA] & 2) == 0 \
+                    and related_kind == 0x400:
+                expected_calls.append(
+                    {"name": "descript", "segment": record_segment,
+                     "name_offset": related_offset + 4,
+                     "result": int(case.get("descript_result", 0))}
+                )
+                if case.get("descript_result"):
+                    expected_game[0x1FB2] = 0
+                    put_word(expected_game, 0x6788, 0x2B)
+                    expected_game[0x67AA] |= 2
+
+        stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | owner_offset,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | record_offset,
+            "sp": caller_sp,
+            "ds": record_segment,
+            "es": extra_segment,
+            "fs": 0xB000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD6,
+        }
+        memory = [
+            (0, return_address, b"\xCC"),
+            (game_segment, 0, bytes(game_before)),
+            (record_segment, 0, bytes(record_before)),
+            (extra_segment, 0, extra_before),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        for helper_address, (_helper_name, return_kind) in helpers.items():
+            memory.append(
+                (0, helper_address, b"\xCB" if return_kind == "far" else b"\xC3")
+            )
+
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            if helper_name == "field":
+                selector = machine.reg_read(UC_X86_REG_AX)
+                kind = machine.reg_read(UC_X86_REG_BX)
+                result = field_result(selector, kind)
+                calls.append({"name": "field", "selector": selector,
+                              "kind": kind, "result": result})
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif helper_name in ("insert", "remove"):
+                success = bool(case.get(
+                    "insert_success" if helper_name == "insert" else "remove_success",
+                    helper_name == "insert",
+                ))
+                calls.append({"name": helper_name,
+                              "owner": machine.reg_read(UC_X86_REG_AX),
+                              "success_carry": success})
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS, flags | 1 if success else flags & ~1
+                )
+            elif helper_name == "position":
+                result = int(case.get("position_result", source_position_offset))
+                calls.append({"name": "position",
+                              "record": machine.reg_read(UC_X86_REG_SI),
+                              "compare": machine.reg_read(UC_X86_REG_DX),
+                              "result": result})
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif helper_name == "cod":
+                calls.append({"name": "cod",
+                              "object": machine.reg_read(UC_X86_REG_BX)})
+            elif helper_name == "descript":
+                result = int(case.get("descript_result", 0))
+                calls.append({"name": "descript",
+                              "segment": machine.reg_read(UC_X86_REG_ES),
+                              "name_offset": machine.reg_read(UC_X86_REG_DI),
+                              "result": result})
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif helper_name == "plane":
+                draw = struct.unpack(
+                    "<I", machine.mem_read(game_segment * 16 + 0x5219, 4)
+                )[0]
+                calls.append({"name": "plane", "draw_framebuffer": draw})
+            elif helper_name == "source":
+                calls.append({"name": "source",
+                              "ds": machine.reg_read(UC_X86_REG_DS),
+                              "path_offset": machine.reg_read(UC_X86_REG_SI)})
+            elif helper_name == "clip":
+                calls.append({"name": "clip",
+                              "clip": machine.reg_read(UC_X86_REG_AX)})
+            elif helper_name == "transition":
+                calls.append({"name": "transition",
+                              "object_id": machine.reg_read(UC_X86_REG_AX)})
+            else:
+                calls.append({"name": helper_name})
+
+        stop_address = 0x5D33 if case.get("defect_boundary") else return_address
+        machine = execute(
+            entry,
+            stop_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=3000,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x5b38 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        for segment_name, segment, expected in (
+            ("game", game_segment, expected_game),
+            ("record", record_segment, expected_record),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual != bytes(expected):
+                mismatch = next(
+                    index for index, pair in enumerate(zip(actual, expected))
+                    if pair[0] != pair[1]
+                )
+                raise AssertionError(
+                    f"0x5b38 {name}: {segment_name} differs at {mismatch:#x}: "
+                    f"{actual[mismatch]:#x} != {expected[mismatch]:#x}"
+                )
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x5b38 {name}: incoming ES decoy changed")
+
+        if case.get("defect_boundary"):
+            expected_sp = caller_sp - 20
+            if machine.reg_read(UC_X86_REG_SP) != expected_sp:
+                raise AssertionError(f"0x5b38 {name}: defect-boundary SP changed")
+            saved_frame = struct.pack(
+                "<HHHHIHHI",
+                initial["ebp"] & 0xFFFF,
+                initial["esi"] & 0xFFFF,
+                initial["edi"] & 0xFFFF,
+                initial["es"],
+                initial["edx"] & 0xFFFFFFFF,
+                initial["ecx"] & 0xFFFF,
+                initial["ebx"] & 0xFFFF,
+                initial["eax"] & 0xFFFFFFFF,
+            )
+            actual_frame = bytes(
+                machine.mem_read(stack_segment * 16 + expected_sp, 20)
+            )
+            if actual_frame != saved_frame:
+                raise AssertionError(f"0x5b38 {name}: saved frame changed before defect")
+        else:
+            expected_registers = {
+                "eax": initial["eax"],
+                "ecx": initial["ecx"],
+                "edx": initial["edx"],
+                "esi": initial["esi"] & 0xFFFF,
+                "edi": initial["edi"] & 0xFFFF,
+                "ebp": initial["ebp"],
+                "sp": caller_sp + 2,
+                "ds": record_segment,
+                "es": extra_segment,
+                "fs": initial["fs"],
+                "gs": game_segment,
+                "ss": stack_segment,
+            }
+            for register, expected in expected_registers.items():
+                actual = machine.reg_read(REGISTERS[register])
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x5b38 {name}: {register}={actual:#x}, expected={expected:#x}"
+                    )
+            if machine.reg_read(UC_X86_REG_BX) != initial["ebx"] & 0xFFFF:
+                raise AssertionError(f"0x5b38 {name}: BX not preserved")
+            actual_sentinel = bytes(machine.mem_read(
+                stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            ))
+            if actual_sentinel != stack_sentinel:
+                raise AssertionError(f"0x5b38 {name}: stack sentinel changed")
+
+        vectors.append({
+            "name": name,
+            "record_kind": record_kind,
+            "calls": calls,
+            "stopped_before_unmatched_pop_es": bool(case.get("defect_boundary")),
+            "game_sha256": hashlib.sha256(expected_game).hexdigest(),
+            "record_sha256": hashlib.sha256(expected_record).hexdigest(),
+        })
+
+    return vectors
+
+
 def vm_state_processor_vectors() -> list[dict[str, object]]:
     game_segment = 0x2C00
     record_segment = 0x5000
@@ -88550,6 +89206,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5816_natural.json",
         presentation_scan_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5b38_natural.json",
+        record_action_ladder_vectors(),
         args.check,
     )
     update_vector(

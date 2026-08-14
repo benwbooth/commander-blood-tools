@@ -1,0 +1,629 @@
+[
+  {
+    "name": "unknown_record_is_ignored",
+    "record_kind": 215,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "b83e26094987eb43881688d87e264bc49e38390417ee40adc45a3c1212cb4290",
+    "record_sha256": "9cba40ecac59b987cc823e9df55baa2c6cfa0b3bb01b43f0618ebdd8f2cfa83b"
+  },
+  {
+    "name": "c1_arche_waits_for_approach_phase_four",
+    "record_kind": 193,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "e34c3d502222da0f735e1bd7b99bf2fd19ffcb47390f6cab2744f412fe33c1e4",
+    "record_sha256": "c443d8fe3c083277ae7a0630364ed4c83fe8ccce28d8d0bb65188bc3bbaddde6"
+  },
+  {
+    "name": "c1_ship_relinks_and_copies_position",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 16,
+        "result": 32
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 16,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "3b291e0b88a0582762435e9c11a536ce130338fc84e78ba908e047898647243c",
+    "record_sha256": "1aa9ac3cadff9c95fcc402987f011fa3732b9205e528590850c5c5d8cd4f0fdf"
+  },
+  {
+    "name": "c1_special_inactive_still_copies_position",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 512,
+        "result": 32
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 512,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "c6e262e70e470003b5f02dc7e14ab8869adc8df5fcd178a8e36aec952ebea3b9",
+    "record_sha256": "910081f3daf36ea617cf49a97ace61e618ea0b5f8ee0e3f4a3786690a5be7a9b"
+  },
+  {
+    "name": "c1_special_descript_failure_skips_hud_reset",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 512,
+        "result": 32
+      },
+      {
+        "name": "descript",
+        "segment": 12288,
+        "name_offset": 12292,
+        "result": 0
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 512,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "08092932d8c55fbaa1ad070f7e0b31f82ed8a73f71c4b9ba621342339d9ebbe6",
+    "record_sha256": "aab1a8c12848ec65b49a76488d5bc198c648c40e724dbcbf86bf5267a4d12380"
+  },
+  {
+    "name": "c1_special_same_target_resets_hud_and_pair",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 512,
+        "result": 32
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 128,
+        "result": 64
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 512,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "baea03622289bfbe980e97504cc1915f094e51a71996c63c1ab6375ca6bb9135",
+    "record_sha256": "3645b59ec3c372b1c68aba32eb63b356f94e8c514284fc5423278c844545592d"
+  },
+  {
+    "name": "c1_special_changed_target_resets_hud_without_audio",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 512,
+        "result": 32
+      },
+      {
+        "name": "descript",
+        "segment": 12288,
+        "name_offset": 12292,
+        "result": 1
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 512,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "7a45efddbda7b3733384dd6658fa9f6a07767cead660c7ca8b7eb36c931bc8f6",
+    "record_sha256": "72ae48b703821521a844783cac7199e11647da997da9cb1cfd33441cb2f10eb8"
+  },
+  {
+    "name": "c1_special_changed_target_runs_audio_chain",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 512,
+        "result": 32
+      },
+      {
+        "name": "descript",
+        "segment": 12288,
+        "name_offset": 12292,
+        "result": 1
+      },
+      {
+        "name": "plane",
+        "draw_framebuffer": 897140362
+      },
+      {
+        "name": "driver"
+      },
+      {
+        "name": "source",
+        "ds": 20480,
+        "path_offset": 3373
+      },
+      {
+        "name": "start"
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 128,
+        "result": 64
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 12404
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 512,
+        "result": 48
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "99f581d42baffefde44999b59683e820c98a2ee30ff901662628d8419953738a",
+    "record_sha256": "75196c4496d2639393da80d1946804674cccb4af4d66f91d26b3e918e30029a8"
+  },
+  {
+    "name": "c1_null_position_source_stops_after_resolve",
+    "record_kind": 193,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 16,
+        "result": 32
+      },
+      {
+        "name": "position",
+        "record": 12288,
+        "compare": 32,
+        "result": 0
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "8e8e71718872d14936e811095ef3fddd16040bb11e0d5940a4a7d4e6b247302c",
+    "record_sha256": "bc7ff6f82832deedc58a3528997131e637c99e0bbac57684edbe86efe5366974"
+  },
+  {
+    "name": "c2_full_special_list_returns_normally",
+    "record_kind": 194,
+    "calls": [
+      {
+        "name": "insert",
+        "owner": 12288,
+        "success_carry": false
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "c990bd17660923712ed11958a9b2f44736d045874ab34b30ecba8a12f3c17a56",
+    "record_sha256": "d4cc03787295d94af267a3f51d4f4b55d2b6f117786a9e2bcfed73d68af55bc8"
+  },
+  {
+    "name": "c2_character_state_before_shipped_stack_defect",
+    "record_kind": 194,
+    "calls": [
+      {
+        "name": "insert",
+        "owner": 12288,
+        "success_carry": true
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 2,
+        "result": 32
+      }
+    ],
+    "stopped_before_unmatched_pop_es": true,
+    "game_sha256": "476239f11376905ef421f916de535bbbdd0848f670431c2e8e946525b8d845c3",
+    "record_sha256": "eba6c14296cbb434dd3a28d2d0f8923f1fb96a64f27d98b0939d05279100359e"
+  },
+  {
+    "name": "c2_descript_state_before_shipped_stack_defect",
+    "record_kind": 194,
+    "calls": [
+      {
+        "name": "insert",
+        "owner": 12288,
+        "success_carry": true
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 1024,
+        "result": 32
+      },
+      {
+        "name": "descript",
+        "segment": 12288,
+        "name_offset": 12292,
+        "result": 1
+      }
+    ],
+    "stopped_before_unmatched_pop_es": true,
+    "game_sha256": "557a293e707b03a2ad1603b71a634df0f8530f89326cef1b4d60ceee4399c0d9",
+    "record_sha256": "d453f4c86c467976b2e9a740a3a88c9bec01ac9d0c138c872d478eac2796b83f"
+  },
+  {
+    "name": "c3_nonwildcard_promotes_to_c4",
+    "record_kind": 195,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "8a5baa1b88c1e362664a26e8aa532b5a1b1f53883234e3d951273ab3618f1c93",
+    "record_sha256": "bc512dea1302a49a22e176c60f6d99e2cd625da6264f271b52fc92a447c1a0aa"
+  },
+  {
+    "name": "c3_wildcard_claims_owner_while_ui_inactive",
+    "record_kind": 195,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "686e7df7729f27eb0a35c84106140d3d11990adfa47b49ff50eed6eb3bfb83cb",
+    "record_sha256": "ed1ab26d5ab18780a17607f5c1743c5da08c7057f8b54f4de60620b0431b1652"
+  },
+  {
+    "name": "c3_wildcard_requests_audio_but_honors_busy_state",
+    "record_kind": 195,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "388cb4d40bcb2aca5655d28b4899fd2ba79962c4ca65dea30cad1acc6b4dea0d",
+    "record_sha256": "fcbe4947d3ab8c3634b28d772cdf7a4ac6619c97b1d09026027aa0bb87b3901c"
+  },
+  {
+    "name": "c3_wildcard_plays_radio_clip",
+    "record_kind": 195,
+    "calls": [
+      {
+        "name": "clip",
+        "clip": 6
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "b58e67ab47a020fef11a1a4f8b641566ff6cc2ec1072a6b959813e9ede2884d6",
+    "record_sha256": "a588b0ab9c13cf4b90287f5c94bb6537865cd37a0668955ed1863066bed661d1"
+  },
+  {
+    "name": "c4_nonzero_value_is_ignored",
+    "record_kind": 196,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "04417d999b56807931fdefba8b04236fd4afd83f5a0b09354406697feb2e9bfa",
+    "record_sha256": "f535c417170050b53a7d75499753399d3615c03ddf3aecad99833d3ab6b32a74"
+  },
+  {
+    "name": "c4_pair_write_guard_is_honored",
+    "record_kind": 196,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "a45e5aac527621df3b28ed9d6e8fff1e7e0a9ca86091aead3681ccbf2284927d",
+    "record_sha256": "8f4e2e021b165ec9f1095569547702a149c2ce7d3a33e352ac3128b7519fa085"
+  },
+  {
+    "name": "c4_actor_owner_updates_related_counter",
+    "record_kind": 196,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 8,
+        "kind": 64,
+        "result": 80
+      },
+      {
+        "name": "cod",
+        "object": 12288
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 64,
+        "result": 64
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "e861f253a364debd596c86e691d30651584ed7c19c3045ef9e633d7a4a0a998e",
+    "record_sha256": "4291290495b5be907d4b78e4c8a91f0665c485171ffd9e9f8588469af61e218f"
+  },
+  {
+    "name": "c4_actor_related_updates_owner_counter",
+    "record_kind": 196,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 8,
+        "kind": 64,
+        "result": 80
+      },
+      {
+        "name": "cod",
+        "object": 6144
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 1,
+        "result": 64
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "5bd5223d56c37f9c740eb240bf385c83e16eca21a81e6c5d7c52a49606e65c02",
+    "record_sha256": "e4d09c98569a83cdea4e64fadd5869f1f57a71e51f91f6a472b051135a253267"
+  },
+  {
+    "name": "c4_nonactors_only_write_reciprocal",
+    "record_kind": 196,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 128,
+        "result": 64
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "5da16868da6a895bf6c4f122d9b9c8042dede95f96c48a614d7a98483dfbd2f3",
+    "record_sha256": "70a26c7ddc2774370863f093e67dd565b76e6f7e1b5e7ee28bdbacbd36e92cb5"
+  },
+  {
+    "name": "c6_phase_zero_waits_for_actor",
+    "record_kind": 198,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "3be5b64ef0b26b540ff346fe470da0d091554df163c7ad7807d197261675a600",
+    "record_sha256": "da94caddf8c49350f8e8e06926385d006ceea3f8f5cca82567282a64f2ef324b"
+  },
+  {
+    "name": "c6_phase_zero_starts_camera_transition",
+    "record_kind": 198,
+    "calls": [
+      {
+        "name": "transition",
+        "object_id": 4
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "05c3a941ba0f6570481cbae580456a966bb553351abd7d84978d3557ad5a71ec",
+    "record_sha256": "6ec180c9a247e4df7e7982b56cc45ae6d655d1c2eebedd099b890ee44957bd36"
+  },
+  {
+    "name": "c6_phase_one_waits_for_camera",
+    "record_kind": 198,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "ac47ceeb90f4fdf87f4510a4bf78532ae05794a1f6062a2b3ff079335892b108",
+    "record_sha256": "00c232b662b6b31514d487dbace24a13a57ed2ccb89b3dcc88ea535b5aa787d3"
+  },
+  {
+    "name": "c6_phase_one_starts_line_44",
+    "record_kind": 198,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "8d7427afec8994d010fdf48b94ab94dfcfab84204307076543e72ff65d270e61",
+    "record_sha256": "b6fa3061b0fc4062705a994928f6733cd026c92839120ec2af68be998106f166"
+  },
+  {
+    "name": "c6_final_phase_waits_for_presentation_gate",
+    "record_kind": 198,
+    "calls": [],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "a63185d2872d179ff24787821057de6e5f95bea36a0aba958196e26792ad3b30",
+    "record_sha256": "360e942c3035731d23f1e291fb29580b88ccaa8fb8143673aa8fa174cd3a829c"
+  },
+  {
+    "name": "c6_final_phase_uses_matching_position_pair",
+    "record_kind": 198,
+    "calls": [
+      {
+        "name": "hud_reset"
+      },
+      {
+        "name": "field",
+        "selector": 14,
+        "kind": 16,
+        "result": 96
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "field",
+        "selector": 12,
+        "kind": 256,
+        "result": 112
+      },
+      {
+        "name": "field",
+        "selector": 13,
+        "kind": 256,
+        "result": 114
+      },
+      {
+        "name": "field",
+        "selector": 10,
+        "kind": 256,
+        "result": 116
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "267684c694e0ab8b01288d9956e3ae284a3ef191666a2c1ed7d5e8d30b1ee1c0",
+    "record_sha256": "984a4da6c368b6c28f895232a6a93a81ccbd7269be2614e6d0fb452811d0be71"
+  },
+  {
+    "name": "c6_final_phase_uses_mismatching_position_pair",
+    "record_kind": 198,
+    "calls": [
+      {
+        "name": "hud_reset"
+      },
+      {
+        "name": "field",
+        "selector": 14,
+        "kind": 16,
+        "result": 96
+      },
+      {
+        "name": "field",
+        "selector": 11,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "field",
+        "selector": 12,
+        "kind": 256,
+        "result": 112
+      },
+      {
+        "name": "field",
+        "selector": 12,
+        "kind": 256,
+        "result": 112
+      },
+      {
+        "name": "field",
+        "selector": 9,
+        "kind": 256,
+        "result": 120
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "851788e6e63903ce4ecdd96fdea5ed697d9a3503c6516d0ecedefea69fd4805a",
+    "record_sha256": "3065fe49736c9c690a87d4376774f4588e815731c2bf95372faeb7e563d9fb7d"
+  },
+  {
+    "name": "c9_clears_matching_reciprocal",
+    "record_kind": 201,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 128,
+        "result": 64
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "c759f9f62d853d2a44648518a0a67cd7667a5cdda05314e3a27d3ce1d251f6f0",
+    "record_sha256": "a268cc0a43b3d71433b6475309a2a7039d97d2983a7484db4dd7d3b7cc9789ff"
+  },
+  {
+    "name": "c9_preserves_nonmatching_reciprocal",
+    "record_kind": 201,
+    "calls": [
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 128,
+        "result": 64
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "1e356debf6983a764f64f4d50c896d68ebc95471a72194b3d6ac928274ef2c40",
+    "record_sha256": "54b30019aed98e2c5fa7959b9a6f3cd00d92529d74f7632c53cdb1037788a9a5"
+  },
+  {
+    "name": "cd_restores_related_link_and_replaces_record",
+    "record_kind": 205,
+    "calls": [
+      {
+        "name": "remove",
+        "owner": 12288,
+        "success_carry": false
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 64,
+        "result": 32
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "2f9f06b625550d8e63b521ffef0b3d447042d5bda40a58052a50eac2c976b3f3",
+    "record_sha256": "5a5c40a8ca5d6a0584f736e6d99c1636ab6b40e9bcaab780d0db750f526576e1"
+  },
+  {
+    "name": "cd_descript_queues_line_43",
+    "record_kind": 205,
+    "calls": [
+      {
+        "name": "remove",
+        "owner": 12288,
+        "success_carry": false
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 1024,
+        "result": 32
+      },
+      {
+        "name": "descript",
+        "segment": 12288,
+        "name_offset": 12292,
+        "result": 1
+      }
+    ],
+    "stopped_before_unmatched_pop_es": false,
+    "game_sha256": "2a784ee00c6a195a8e7d872310826d1a36e564219717c9501f066157c226d98a",
+    "record_sha256": "3d4f85ea4645fdc275f0442342ac77bab6d0cbd91f72fe50f76ca77c943e0577"
+  }
+]

@@ -131,6 +131,8 @@ extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
 extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
 extern volatile cb_u16 nav_pending_record_link; /* DS:0x675A */
+extern volatile cb_u16 CB_GAME_DATA
+        nav_pending_record_link_gs; /* explicit GS:0x675A alias */
 /* SS:0x2B13 in the binary; runtime SS=DS makes this ordinary near data. */
 extern volatile cb_u16 nav_kind2_target_offsets[];
 /* DS:0x6D3E alias used as a zero-skipping, sentinel-terminated contact list. */
@@ -146,10 +148,18 @@ extern volatile cb_i16 presentation_box_phase; /* DS:0x2B93 alias */
 extern volatile cb_u8 nav_actor_completion_latch; /* DS:0x27E5 */
 extern volatile cb_u16 nav_target_presentation_state; /* DS:0x0A34 */
 extern volatile cb_u8 nav_actor_transition_phase; /* DS:0x2792 */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_actor_transition_phase_gs; /* explicit GS:0x2792 alias */
 extern volatile cb_u16 nav_kind100_target_record; /* DS:0x27D5 */
 extern volatile cb_u8 nav_camera_view_active; /* DS:0x278A */
 extern volatile cb_u8 nav_camera_view_state; /* DS:0x278B */
 extern volatile cb_u8 nav_camera_approach_phase; /* DS:0x27DF */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_camera_view_active_gs; /* explicit GS:0x278A alias */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_camera_view_state_gs; /* explicit GS:0x278B alias */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_camera_approach_phase_gs; /* explicit GS:0x27DF alias */
 extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
 extern volatile cb_u16 nav_location_panel_source_width; /* DS:0x277E */
 extern volatile cb_u16 nav_chart_pick_width; /* DS:0x277A */
@@ -177,12 +187,16 @@ extern volatile cb_u8 nav_chart_entity_state_mask; /* DS:0x0B3F */
 extern const bloodprg_nav_wipe_point
         nav_center_wipe_endpoints[9]; /* DS:0x2752 */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_screen_rebuild_pending_gs; /* explicit GS:0x27D9 alias */
 extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
 extern volatile cb_u8 nav_target_hover_row; /* DS/GS:0x27C7 */
 extern volatile cb_u8 nav_target_selection; /* DS:0x27E7 */
 extern volatile cb_u16 nav_console_selected_item; /* DS:0x2A19 */
 extern volatile cb_u16 nav_bridge_seek_target_arc; /* DS:0x279B */
 extern volatile cb_u8 nav_actor_0_busy; /* DS:0x2A7B */
+extern volatile cb_u8 CB_GAME_DATA
+        nav_actor_0_busy_gs; /* explicit GS:0x2A7B alias */
 extern volatile cb_u8 nav_actor_1_busy; /* DS:0x2A93 */
 /* The binary addresses these records through BP; runtime SS=DS. */
 extern volatile bloodprg_nav_actor_slot nav_actor_slots[6]; /* SS:0x2A1B */

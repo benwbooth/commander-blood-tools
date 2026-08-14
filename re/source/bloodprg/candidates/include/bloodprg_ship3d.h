@@ -132,6 +132,8 @@ extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
 extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
 extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
+extern volatile cb_u16 CB_GAME_DATA
+        ship_3d_hud_initialized_word_gs; /* GS:0x2529 word write */
 extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
 extern volatile cb_u8 ship_3d_exit_pending; /* DS:0x2532 */
 extern volatile cb_u8 ship_3d_navigation_trigger; /* DS:0x27D8 alias */
@@ -147,6 +149,8 @@ extern volatile cb_u8 ship_3d_target_layout_preserve_widths; /* DS:0x0ADC */
 extern volatile cb_u8 ship_3d_target_layout_extra_entry; /* DS:0x0ADD */
 extern volatile cb_u8 ship_3d_interpolation_duration; /* DS:0x0ADA */
 extern volatile cb_u16 ship_3d_current_target; /* DS:0x251B */
+extern volatile cb_u16 CB_GAME_DATA
+        ship_3d_current_target_gs; /* explicit GS:0x251B alias */
 extern volatile cb_u8 ship_3d_target_select_phase; /* DS:0x252B */
 extern volatile cb_u8 ship_3d_target_fallback; /* DS:0x252C */
 extern const cb_u16 ship_3d_fallback_target_table[]; /* DS:0x2537 */

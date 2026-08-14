@@ -53,7 +53,13 @@ extern volatile cb_u16 snd_loader_flags_word; /* DS:0x0BA0 word alias */
 extern volatile cb_u8 voc_tablo2_active; /* DS:0x0BA3 */
 extern volatile cb_u8 snd_music_voc_name_changed; /* DS:0x0BA1 alias */
 extern volatile cb_u8 voc_playback_enabled; /* game data:0x0ADE */
+extern volatile cb_u8 CB_GAME_DATA
+        voc_playback_enabled_gs; /* explicit GS:0x0ADE alias */
 extern volatile cb_u8 game_mode_0adf; /* game data:0x0ADF */
+extern volatile cb_u8 CB_GAME_DATA
+        snd_clip_enable_request_gs; /* GS:0x0B19 */
+extern volatile cb_u16 CB_GAME_DATA
+        snd_clip_playback_state_gs; /* GS:0x0B39 */
 extern volatile cb_u8 snd_chatter_cooldown; /* game data:0x0B2F */
 extern volatile cb_u16 snd_dialogue_delay; /* game data:0x0B33 */
 extern volatile cb_u16 snd_last_clip; /* game data:0x0C4D */
@@ -73,6 +79,8 @@ extern const volatile char CB_GAME_DATA snd_music_temp_filename[]; /* GS:0x00AE 
 extern const volatile char CB_GAME_DATA snd_voice_temp_filename[]; /* GS:0x00A6 */
 extern volatile char snd_credits_voc_path[]; /* DS:0x0D4B */
 extern volatile char presentation_music_voc_path[]; /* DS:0x0D2D */
+extern volatile char CB_GAME_DATA
+        presentation_music_voc_path_gs[]; /* explicit GS:0x0D2D alias */
 extern volatile cb_u8 voc_tablo2_reset_gate; /* DS:0x0D30 */
 extern volatile char voc_tablo2_path[]; /* DS:0x0D3D */
 extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_bank_memory; /* GS:0x0BB3 */
