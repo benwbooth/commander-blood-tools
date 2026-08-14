@@ -2036,6 +2036,30 @@ result. Direct replacement additionally needs BP input, carry-result and far
 helper adapters, the AX entity argument, and the original register/flag
 envelope.
 
+Navigation actor handler 4 at `0x0081FB` accepts only UI bit `0x20`, marks its
+SS:BP line present, and snapshots the resulting flags once. A loaded line is
+stepped immediately. An unloaded line must be ready and have either a deferred
+record at DS:0x676A or a pending record at DS:0x675A; a ready line with neither
+is reset to state one without invoking the helper. The active path publishes
+presentation state four and steps the line helper.
+
+On completion it plays clip two, replaces the deferred link with the pending
+link even when that value is zero, sets deferred type C4, clears the pending
+link, resets the line, transitions entity four, requests a redraw, and reloads
+`sn\\radio.snd` in mode one. Nine direct vectors isolate the four already
+recovered helper boundaries and prove the gate and line precedence, both record
+availability tests, every mutation and call in order, the zero-replacement
+edge, SS/DS ownership against decoys, far-call arguments and frames, registers,
+defined flags, stack, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 38 instructions/111 bytes versus the original
+33/110, with 78.79 percent mnemonic-multiset overlap and no inline assembly.
+Huge model grows to 42 instructions/123 bytes. Watcom rejects an attempted BP
+parameter declaration with E1122, so direct replacement still needs the
+inherited BP actor input and carry-return line-helper boundary; ordinary source
+integration uses the explicit near pointer and Boolean helper result directly.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned

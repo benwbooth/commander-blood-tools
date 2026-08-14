@@ -50378,6 +50378,411 @@ def nav_actor_handler_3_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
+    entry = 0x81FB
+    presentation_helper_entry = 0x7E1C
+    sound_clip_entry = 0xB2CD  # Runtime 0B1B:011D.
+    entity_transition_entry = 0x3BD1  # Runtime 0299:1241.
+    sound_bank_entry = 0xBA05  # Runtime 0B1B:0855.
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    cases = [
+        ("ui_gate_clear", 0x00, 0x0C, 0x1111, 0x2222, False),
+        ("ui_unrelated_bit_40", 0x40, 0x04, 0x1112, 0x2223, True),
+        ("line_not_ready", 0x20, 0x00, 0x1113, 0x2224, True),
+        ("ready_without_records", 0x20, 0x08, 0x0000, 0x0000, True),
+        ("loaded_without_records_in_progress", 0x20, 0x04, 0x0000, 0x0000, False),
+        ("ready_existing_deferred_in_progress", 0x20, 0x08, 0x3311, 0x0000, False),
+        ("ready_pending_in_progress", 0x20, 0x08, 0x0000, 0x4422, False),
+        ("loaded_complete_transfers_pending", 0x20, 0x04, 0x5533, 0x6644, True),
+        ("ready_complete_clears_deferred", 0xA0, 0x08, 0x7755, 0x0000, True),
+    ]
+    expected_hash = "f414ae0fbcf0b4cc14391122fc2818f19e7033e3f44fd400f0e1394c64df9087"
+    if hashlib.sha256(EXE[entry : entry + 110]).hexdigest() != expected_hash:
+        raise AssertionError("0x81fb: recovered 110-byte body changed")
+
+    vectors = []
+    for case_index, (
+        name,
+        ui_before,
+        line_flags_before,
+        deferred_before,
+        pending_before,
+        helper_complete,
+    ) in enumerate(cases):
+        presentation_state_before = 0x3100 + case_index
+        deferred_type_before = 0x7200 + case_index
+        line_before = struct.pack(
+            "<BBHHHH10sHH",
+            line_flags_before,
+            0xA0 + case_index,
+            0x1100 + case_index,
+            0x2200 + case_index,
+            0x3300 + case_index,
+            0x4400 + case_index,
+            bytes((0x50 + case_index + i) & 0xFF for i in range(10)),
+            0x6600 + case_index,
+            0x7700 + case_index,
+        )
+        radio_path = b"sn\\radio.snd\x00"
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        memory = [
+            (0, presentation_helper_entry, b"\xc3"),
+            (0, sound_clip_entry, b"\xcb"),
+            (0, entity_transition_entry, b"\xcb"),
+            (0, sound_bank_entry, b"\xcb"),
+            (0, return_address, b"\xcc"),
+            (data_segment, 0x2793, bytes([ui_before])),
+            (
+                data_segment,
+                0x0A32,
+                struct.pack("<H", presentation_state_before),
+            ),
+            (data_segment, 0x675A, struct.pack("<H", pending_before)),
+            (data_segment, 0x6768, struct.pack("<H", deferred_type_before)),
+            (data_segment, 0x676A, struct.pack("<H", deferred_before)),
+            (data_segment, 0x0D16, radio_path),
+            (stack_segment, line_offset, line_before),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x0A32, b"\x69\x96"),
+            (game_segment, 0x675A, b"\x87\x78"),
+            (game_segment, 0x6768, b"\xa5\x5a"),
+            (game_segment, 0x676A, b"\x3c\xc3"),
+            (game_segment, 0x0D16, b"game-decoy\x00"),
+            (stack_segment, 0x2793, b"\xf0"),
+            (stack_segment, 0x0A32, b"\x0f\xf0"),
+            (stack_segment, 0x675A, b"\x55\xaa"),
+            (stack_segment, 0x6768, b"\x12\x34"),
+            (stack_segment, 0x676A, b"\x56\x78"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        flags_before = ((0x0AD7 + case_index * 0x81) & 0x0FFF) & ~0x100
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        calls = []
+
+        def read_byte(machine: Uc, offset: int) -> int:
+            return machine.mem_read(data_segment * 16 + offset, 1)[0]
+
+        def read_word(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+
+        def read_line_flags(machine: Uc) -> int:
+            return machine.mem_read(stack_segment * 16 + line_offset, 1)[0]
+
+        def capture_state(machine: Uc) -> dict[str, int]:
+            return {
+                "line_flags": read_line_flags(machine),
+                "ui": read_byte(machine, 0x2793),
+                "presentation_state": read_word(machine, 0x0A32),
+                "pending": read_word(machine, 0x675A),
+                "deferred_type": read_word(machine, 0x6768),
+                "deferred": read_word(machine, 0x676A),
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == presentation_helper_entry:
+                calls.append(
+                    {
+                        "kind": "presentation_line_helper",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags & ~1) | int(helper_complete),
+                )
+            elif address == sound_clip_entry:
+                calls.append(
+                    {
+                        "kind": "snd_play_clip",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+            elif address == entity_transition_entry:
+                calls.append(
+                    {
+                        "kind": "entity_flag_state_transition",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+            elif address == sound_bank_entry:
+                calls.append(
+                    {
+                        "kind": "snd_bank_loader",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "si": machine.reg_read(UC_X86_REG_SI),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "path": bytes(
+                            machine.mem_read(data_segment * 16 + 0x0D16, len(radio_path))
+                        ).decode("ascii").rstrip("\x00"),
+                        **capture_state(machine),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        ui_gate = (ui_before & 0x20) != 0
+        line_flags_after_or = line_flags_before | 1
+        loaded = (line_flags_after_or & 0x04) != 0
+        ready = (line_flags_after_or & 0x08) != 0
+        records_available = deferred_before != 0 or pending_before != 0
+        helper_called = ui_gate and (loaded or (ready and records_available))
+        completed = helper_called and helper_complete
+        reset_without_records = ui_gate and not loaded and ready and not records_available
+
+        line_before_helper = line_flags_after_or
+        expected_calls = []
+        state_before_completion = {
+            "line_flags": line_before_helper,
+            "ui": ui_before,
+            "presentation_state": 4,
+            "pending": pending_before,
+            "deferred_type": deferred_type_before,
+            "deferred": deferred_before,
+        }
+        if helper_called:
+            expected_calls.append(
+                {
+                    "kind": "presentation_line_helper",
+                    "cs": 0,
+                    "bp": line_offset,
+                    "sp": 0xFEFE,
+                    **state_before_completion,
+                }
+            )
+        if completed:
+            expected_calls.append(
+                {
+                    "kind": "snd_play_clip",
+                    "cs": 0x0B1B,
+                    "ax": 2,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    **state_before_completion,
+                }
+            )
+            state_after_transfer = {
+                "line_flags": 1,
+                "ui": ui_before,
+                "presentation_state": 4,
+                "pending": 0,
+                "deferred_type": 0x00C4,
+                "deferred": pending_before,
+            }
+            expected_calls.append(
+                {
+                    "kind": "entity_flag_state_transition",
+                    "cs": 0x0299,
+                    "ax": 4,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    **state_after_transfer,
+                }
+            )
+            expected_calls.append(
+                {
+                    "kind": "snd_bank_loader",
+                    "cs": 0x0B1B,
+                    "ax": 1,
+                    "si": 0x0D16,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    "path": "sn\\radio.snd",
+                    **{**state_after_transfer, "ui": ui_before | 4},
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x81fb {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_line_flags = line_flags_before
+        if ui_gate:
+            expected_line_flags = line_flags_after_or
+        if reset_without_records or completed:
+            expected_line_flags = 1
+        expected_line = bytes([expected_line_flags]) + line_before[1:]
+        actual_line = bytes(
+            machine.mem_read(stack_segment * 16 + line_offset, len(line_before))
+        )
+        if actual_line != expected_line:
+            raise AssertionError(
+                f"0x81fb {name}: line={actual_line.hex()}, "
+                f"expected={expected_line.hex()}"
+            )
+
+        expected_state = {
+            "ui": ui_before | (4 if completed else 0),
+            "presentation_state": 4 if helper_called else presentation_state_before,
+            "pending": 0 if completed else pending_before,
+            "deferred_type": 0x00C4 if completed else deferred_type_before,
+            "deferred": pending_before if completed else deferred_before,
+        }
+        actual_state = {
+            "ui": read_byte(machine, 0x2793),
+            "presentation_state": read_word(machine, 0x0A32),
+            "pending": read_word(machine, 0x675A),
+            "deferred_type": read_word(machine, 0x6768),
+            "deferred": read_word(machine, 0x676A),
+        }
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x81fb {name}: state={actual_state}, expected={expected_state}"
+            )
+
+        immutable = (
+            (data_segment, 0x0D16, radio_path),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x0A32, b"\x69\x96"),
+            (game_segment, 0x675A, b"\x87\x78"),
+            (game_segment, 0x6768, b"\xa5\x5a"),
+            (game_segment, 0x676A, b"\x3c\xc3"),
+            (game_segment, 0x0D16, b"game-decoy\x00"),
+            (stack_segment, 0x2793, b"\xf0"),
+            (stack_segment, 0x0A32, b"\x0f\xf0"),
+            (stack_segment, 0x675A, b"\x55\xaa"),
+            (stack_segment, 0x6768, b"\x12\x34"),
+            (stack_segment, 0x676A, b"\x56\x78"),
+        )
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x81fb {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if ui_gate:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFFFF00
+            ) | line_flags_after_or
+        if ui_gate and not loaded and ready:
+            final_bx = deferred_before if deferred_before != 0 else pending_before
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | final_bx
+        if completed:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 1
+            expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | 0x0D16
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x81fb {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x81fb {name}: return changed CS")
+
+        if completed:
+            test_value = (ui_before | 4) & 0xFF
+        elif helper_called:
+            expected_flags = {
+                "cf": False,
+            }
+            test_value = None
+        elif not ui_gate:
+            test_value = ui_before & 0x20
+        elif not loaded and not ready:
+            test_value = line_flags_after_or & 0x08
+        else:
+            test_value = 0
+        if test_value is not None:
+            expected_flags = {
+                "cf": False,
+                "pf": (test_value & 0xFF).bit_count() % 2 == 0,
+                "zf": test_value == 0,
+                "sf": bool(test_value & 0x80),
+                "of": False,
+            }
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x81fb {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x81fb {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "ui_before": ui_before,
+                "ui_after": expected_state["ui"],
+                "line_flags_before": line_flags_before,
+                "line_flags_after": expected_line_flags,
+                "pending_before": pending_before,
+                "pending_after": expected_state["pending"],
+                "deferred_before": deferred_before,
+                "deferred_after": expected_state["deferred"],
+                "deferred_type_after": expected_state["deferred_type"],
+                "line_helper_called": helper_called,
+                "line_helper_completed": completed,
+                "sound_clip": 2 if completed else None,
+                "entity_transition_id": 4 if completed else None,
+                "sound_bank_mode": 1 if completed else None,
+                "sound_bank_path": "sn\\radio.snd" if completed else None,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -66269,6 +66674,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_817e_natural.json",
         nav_actor_handler_3_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_81fb_natural.json",
+        nav_actor_handler_4_vectors(),
         args.check,
     )
     update_vector(

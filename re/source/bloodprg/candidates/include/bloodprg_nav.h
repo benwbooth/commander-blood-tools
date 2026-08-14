@@ -31,6 +31,7 @@ typedef struct bloodprg_presentation_line_record {
 extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
 extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
+extern volatile cb_u16 nav_pending_record_link; /* DS:0x675A */
 /* SS:0x2B13 in the binary; runtime SS=DS makes this ordinary near data. */
 extern volatile cb_u16 nav_kind2_target_offsets[];
 extern volatile cb_u16 nav_deferred_record_type; /* DS:0x6768 */
@@ -75,6 +76,8 @@ void CB_NEAR nav_actor_handler_2(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00813A */
 void CB_NEAR nav_actor_handler_3(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00817E */
+void CB_NEAR nav_actor_handler_4(
+        volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x0081FB */
 cb_i16 CB_FAR list_widget_layout_unified(
         const cb_u16 CB_NEAR *items); /* 0x008428 */
 void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */
