@@ -26,6 +26,8 @@ extern cb_u32 CB_GAME_DATA scene_palette_dwords[0x90]; /* GS:0x5251 */
 extern volatile cb_u8 render_update_flag_2751; /* GS:0x2751 */
 extern bloodprg_graphics_buffer_ptr CB_GAME_DATA
         graphics_display_buffer; /* GS:0x5221 */
+extern bloodprg_graphics_buffer_ptr
+        graphics_display_buffer_ds; /* DS:0x5221 alias */
 extern volatile cb_u16 CB_GAME_DATA
         graphics_display_buffer_segment; /* GS:0x5223 */
 extern bloodprg_graphics_buffer_ptr

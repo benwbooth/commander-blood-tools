@@ -5200,6 +5200,33 @@ the shipped SS=DS alias and a normalized zero-offset record base; direct binary
 replacement would additionally need the ambient ES entry, original BP/CX/DI
 allocation, frame-free stack behavior, and terminal CMP/XOR flags.
 
+## BLOODPRG navigation center-wipe span-table candidate
+
+`0x009364` is not a centered drawing primitive. It reads a signed endpoint
+through `DS:SI`, orders that point with center `(160,110)` by Y, and runs a
+16-bit Bresenham line walk. For each affected scanline it emits a typed
+`(left, width)` pair through the full far pointer at `DS:0x5221`, where width is
+`2 * (160 - left)`, then appends two `0xFFFF` words. Caller `0x008CCE` consumes
+the resulting stream in its row-copy loops. The shipped endpoint table at
+`DS:0x2752` contains `(160,0)`, `(140,0)`, `(120,0)`, `(60,0)`, `(0,0)`,
+`(0,50)`, `(0,90)`, `(0,130)`, and `(0,190)`.
+
+Twenty direct original-binary vectors cover all nine shipped endpoints, the
+vertical- and horizontal-major branches, equal deltas, wrapped coordinates and
+far output offsets, inherited reverse-direction behavior, complete span streams
+and sentinel, register/segment/memory ownership, flags, stack, and near return.
+They also preserve the original center-point pathology: `LOOP` begins at zero,
+so that input emits 65,536 spans before the sentinel. The natural C uses a
+deliberate `do/while` with 16-bit iteration state rather than hiding that edge.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+69-instruction/163-byte function versus 85/145 original, with 52.94 percent
+mnemonic-multiset overlap and no inline assembly. It is logically equivalent in
+the shipped clear-DF C environment. A direct binary replacement would also need
+the original `DS:SI` live-in, reverse `LODSW`/`STOSW` behavior, preserve-all
+register envelope, and terminal flags; those are ABI boundaries rather than
+reasons to encode register-state emulation in the recovered source.
+
 ## BLOODPRG ship-3D planar band-copy candidate
 
 `0x00B6DD` gates on ship-3D crop bit zero, optionally derives the transition

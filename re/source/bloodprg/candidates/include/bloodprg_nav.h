@@ -54,6 +54,16 @@ typedef struct bloodprg_nav_chart_arche {
     cb_u16 endpoint_context;
 } bloodprg_nav_chart_arche;
 
+typedef struct bloodprg_nav_wipe_point {
+    cb_i16 x;
+    cb_i16 y;
+} bloodprg_nav_wipe_point;
+
+typedef struct bloodprg_nav_wipe_span {
+    cb_u16 left;
+    cb_u16 width;
+} bloodprg_nav_wipe_span;
+
 typedef void (CB_NEAR *bloodprg_nav_actor_handler)(
         volatile bloodprg_presentation_line_record CB_NEAR *line);
 typedef void (CB_NEAR *bloodprg_nav_choice_handler)(void);
@@ -66,6 +76,10 @@ typedef char bloodprg_nav_chart_object_size_must_be_32[
         sizeof(bloodprg_nav_chart_object) == 32 ? 1 : -1];
 typedef char bloodprg_nav_chart_arche_size_must_be_36[
         sizeof(bloodprg_nav_chart_arche) == 36 ? 1 : -1];
+typedef char bloodprg_nav_wipe_point_size_must_be_4[
+        sizeof(bloodprg_nav_wipe_point) == 4 ? 1 : -1];
+typedef char bloodprg_nav_wipe_span_size_must_be_4[
+        sizeof(bloodprg_nav_wipe_span) == 4 ? 1 : -1];
 
 extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
@@ -101,6 +115,8 @@ extern volatile bloodprg_rect_i16 nav_location_panel_current_rect;
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */
+extern const bloodprg_nav_wipe_point
+        nav_center_wipe_endpoints[9]; /* DS:0x2752 */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
 extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
 extern volatile cb_u8 nav_target_hover_row; /* DS/GS:0x27C7 */
@@ -161,6 +177,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #pragma aux nav_chart_object_pick \
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
+#pragma aux nav_center_wipe_span_table_build parm [si]
 #endif
 
 int CB_NEAR presentation_line_helper(
@@ -207,5 +224,7 @@ cb_u16 CB_FAR nav_kind2_target_list_build(void); /* 0x0071CF */
 /* record_base normalizes the original implicit ES record-table segment. */
 cb_u16 CB_NEAR nav_chart_object_pick(
         const volatile cb_u8 CB_FAR *record_base); /* 0x0092A3 */
+void CB_NEAR nav_center_wipe_span_table_build(
+        const volatile bloodprg_nav_wipe_point CB_NEAR *endpoint); /* 0x009364 */
 
 #endif

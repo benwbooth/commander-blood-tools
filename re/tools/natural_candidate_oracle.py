@@ -53159,6 +53159,289 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_center_wipe_span_table_build_vectors() -> list[dict[str, object]]:
+    entry = 0x9364
+    data_segment = 0x3400
+    entry_es_segment = 0x4800
+    output_segment = 0x6000
+    stack_segment = 0x7800
+    game_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    expected_hash = "ff5a7011935b6206a9c3bd69d939108d3e2f36613bd0160236a3af05584c3dad"
+    if hashlib.sha256(EXE[entry : entry + 145]).hexdigest() != expected_hash:
+        raise AssertionError("0x9364: recovered 145-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "shipped_phase_0", "point": (160, 0)},
+        {"name": "shipped_phase_1", "point": (140, 0)},
+        {"name": "shipped_phase_2", "point": (120, 0)},
+        {"name": "shipped_phase_3", "point": (60, 0)},
+        {"name": "shipped_phase_4", "point": (0, 0)},
+        {"name": "shipped_phase_5", "point": (0, 50)},
+        {"name": "shipped_phase_6", "point": (0, 90)},
+        {"name": "shipped_phase_7", "point": (0, 130)},
+        {"name": "shipped_phase_8", "point": (0, 190)},
+        {"name": "steep_up_right", "point": (150, 50)},
+        {"name": "steep_up_left", "point": (200, 50)},
+        {"name": "shallow_up_right", "point": (100, 100)},
+        {"name": "shallow_down_right", "point": (220, 120)},
+        {"name": "shallow_down_left", "point": (100, 120)},
+        {"name": "vertical_up", "point": (160, 105)},
+        {"name": "horizontal_has_no_spans", "point": (100, 110)},
+        {"name": "diagonal_uses_vertical_major_path", "point": (150, 100)},
+        {
+            "name": "output_offset_wrap",
+            "point": (150, 108),
+            "output_offset": 0xFFFC,
+        },
+        {
+            "name": "inherited_reverse_direction",
+            "point": (180, 100),
+            "direction": "reverse",
+            "input_offset": 0x3100,
+            "output_offset": 0x4200,
+        },
+        {
+            "name": "center_point_runs_wrapped_zero_counter",
+            "point": (160, 110),
+            "output_offset": 0x5000,
+        },
+    ]
+
+    def write_word_wrap(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset & 0xFFFF] = value & 0xFF
+        memory[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        loaded_x, loaded_y = (int(value) & 0xFFFF for value in case["point"])
+        input_offset = int(case.get("input_offset", 0x2800 + case_index * 0x80))
+        output_offset = int(case.get("output_offset", 0x1800 + case_index * 0x200))
+        reverse = case.get("direction") == "reverse"
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 11 + case_index * 23 + 0x35) & 0xFF
+            for offset in range(0x10000)
+        )
+        output_before = bytearray(
+            (offset * 13 + (offset >> 8) * 7 + case_index * 29 + 0x57) & 0xFF
+            for offset in range(0x10000)
+        )
+        entry_es_before = bytes(
+            (offset * 19 + (offset >> 8) * 5 + case_index * 31 + 0x79) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 23 + (offset >> 8) * 3 + case_index * 37 + 0x9B) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 5 + (offset >> 8) * 17 + case_index * 41 + 0xBD) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        write_word_wrap(data_before, 0x5221, output_offset)
+        write_word_wrap(data_before, 0x5223, output_segment)
+        write_word_wrap(data_before, input_offset, loaded_x)
+        second_input_offset = input_offset - 2 if reverse else input_offset + 2
+        write_word_wrap(data_before, second_input_offset, loaded_y)
+        write_word_wrap(stack_before, caller_sp, return_address)
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+
+        start_x = loaded_x
+        start_y = loaded_y
+        end_x = 160
+        end_y = 110
+        if signed16(start_y) >= 110:
+            start_x, end_x = 160, start_x
+            start_y, end_y = 110, start_y
+
+        horizontal_delta = (end_x - start_x) & 0xFFFF
+        vertical_delta = (end_y - start_y) & 0xFFFF
+        x_step = 1
+        if signed16(horizontal_delta) < 0:
+            horizontal_delta = (-horizontal_delta) & 0xFFFF
+            x_step = -1
+
+        output_expected = bytearray(output_before)
+        output_cursor = output_offset & 0xFFFF
+        cursor_step = -2 if reverse else 2
+        spans: list[tuple[int, int]] = []
+
+        def emit_word(value: int) -> None:
+            nonlocal output_cursor
+            write_word_wrap(output_expected, output_cursor, value)
+            output_cursor = (output_cursor + cursor_step) & 0xFFFF
+
+        def emit_span(x: int) -> None:
+            width = (((160 - x) & 0xFFFF) * 2) & 0xFFFF
+            spans.append((x & 0xFFFF, width))
+            emit_word(x)
+            emit_word(width)
+
+        if signed16(vertical_delta) >= signed16(horizontal_delta):
+            major = vertical_delta
+            doubled_minor = (horizontal_delta * 2) & 0xFFFF
+            doubled_major = (vertical_delta * 2) & 0xFFFF
+            error = (doubled_minor - vertical_delta) & 0xFFFF
+            remaining = major
+            while True:
+                emit_span(start_x)
+                if signed16(error) >= 0:
+                    start_x = (start_x + x_step) & 0xFFFF
+                    error = (error - doubled_major) & 0xFFFF
+                add_left = error
+                error = (error + doubled_minor) & 0xFFFF
+                final_flags = add16_flags(add_left, doubled_minor)
+                remaining = (remaining - 1) & 0xFFFF
+                if remaining == 0:
+                    break
+            path = "vertical_major"
+        else:
+            major = horizontal_delta
+            doubled_minor = (vertical_delta * 2) & 0xFFFF
+            doubled_major = (horizontal_delta * 2) & 0xFFFF
+            error = (doubled_minor - horizontal_delta) & 0xFFFF
+            remaining = major
+            while True:
+                error_nonnegative = signed16(error) >= 0
+                start_x = (start_x + x_step) & 0xFFFF
+                if error_nonnegative:
+                    emit_span(start_x)
+                    error = (error - doubled_major) & 0xFFFF
+                add_left = error
+                error = (error + doubled_minor) & 0xFFFF
+                final_flags = add16_flags(add_left, doubled_minor)
+                remaining = (remaining - 1) & 0xFFFF
+                if remaining == 0:
+                    break
+            path = "horizontal_major"
+
+        emit_word(0xFFFF)
+        emit_word(0xFFFF)
+        expected_flags = {
+            flag: bool(final_flags[flag])
+            for flag in ("cf", "pf", "af", "zf", "sf", "of")
+        }
+        expected_flags["df"] = reverse
+
+        initial = {
+            "eax": 0xA1A11111 + case_index,
+            "ebx": 0xB2B22468,
+            "ecx": 0xC3C3369C,
+            "edx": 0xD4D455AA,
+            "esi": 0xE5E50000 | (input_offset & 0xFFFF),
+            "edi": 0xF6F6789A,
+            "ebp": 0x97971357,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": entry_es_segment,
+            "fs": 0xA000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse else 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (entry_es_segment, 0, entry_es_before),
+                (output_segment, 0, bytes(output_before)),
+                (stack_segment, 0, bytes(stack_before)),
+                (game_segment, 0, game_before),
+            ],
+            instruction_count=1_500_000 if major == 0 else 20_000,
+        )
+
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(data_before):
+            raise AssertionError(f"0x9364 {name}: DS source or pointer changed")
+        if bytes(machine.mem_read(output_segment * 16, 0x10000)) != bytes(output_expected):
+            raise AssertionError(f"0x9364 {name}: output span table mismatch")
+        if bytes(machine.mem_read(entry_es_segment * 16, 0x10000)) != entry_es_before:
+            raise AssertionError(f"0x9364 {name}: entry ES decoy changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x9364 {name}: GS decoy changed")
+
+        expected_registers = {
+            "eax": initial["eax"],
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"],
+            "edx": initial["edx"],
+            "esi": initial["esi"],
+            "edi": initial["edi"],
+            "ebp": initial["ebp"],
+            "sp": caller_sp + 2,
+            "ds": data_segment,
+            "es": entry_es_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9364 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9364 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9364 {name}: caller stack changed")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x9364 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        span_bytes = b"".join(
+            int(value).to_bytes(2, "little") for span in spans for value in span
+        )
+        vectors.append(
+            {
+                "name": name,
+                "loaded_point": [loaded_x, loaded_y],
+                "direction": "reverse" if reverse else "forward",
+                "path": path,
+                "horizontal_delta": horizontal_delta,
+                "vertical_delta": vertical_delta,
+                "output_pointer": [output_offset & 0xFFFF, output_segment],
+                "span_count": len(spans),
+                "spans_head": [list(span) for span in spans[:8]],
+                "spans_tail": [list(span) for span in spans[-8:]],
+                "span_bytes_sha256": hashlib.sha256(span_bytes).hexdigest(),
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def nav_chart_object_pick_vectors() -> list[dict[str, object]]:
     entry = 0x92A3
     data_segment = 0x3400
@@ -74984,6 +75267,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_92a3_natural.json",
         nav_chart_object_pick_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9364_natural.json",
+        nav_center_wipe_span_table_build_vectors(),
         args.check,
     )
     update_vector(

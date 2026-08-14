@@ -6,8 +6,8 @@
 ; seg_off: 071e:1b84
 ; group: seg_071e
 ; provenance: recursive_graph
-; label: gfx_draw_centered
-; label_comment: centered graphics draw (2 calls): les di,[0x5221] (display); dx=0xA0(160), bp=0x6e(110) center coords; lodsw source. Draws content centered on screen (160,110)
+; label: nav_center_wipe_span_table_build
+; label_comment: NAVIGATION CENTER-WIPE SPAN-TABLE BUILDER: reads one signed (x,y) endpoint from DS:SI, orders it with center (160,110) by Y, and runs 16-bit Bresenham error arithmetic. For every affected scanline it writes (left=x, width=2*(160-x)) as two words through the full far pointer at DS:0x5221, then appends 0xFFFF,0xFFFF. It builds data consumed by caller 0x8CCE's row-copy loops; it does not draw pixels itself. The shipped endpoint table at DS:0x2752 is (160,0),(140,0),(120,0),(60,0),(0,0),(0,50),(0,90),(0,130),(0,190). Equal deltas select the vertical-major path; a center endpoint produces 65536 spans because LOOP starts at zero. NATURAL C: func_009364_nav_center_wipe_span_table_build.c
 ; byte_count: 145
 ; boundary: cfg_blocks_12_terminals_2
 ; terminal: jmp 0x93e7:1, ret:1

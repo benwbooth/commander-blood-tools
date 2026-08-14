@@ -1,0 +1,1744 @@
+[
+  {
+    "name": "shipped_phase_0",
+    "loaded_point": [
+      160,
+      0
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 0,
+    "vertical_delta": 110,
+    "output_pointer": [
+      6144,
+      24576
+    ],
+    "span_count": 110,
+    "spans_head": [
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "spans_tail": [
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "a48fc70ffdba457eb9e33eb47c5977d2b35055ad3bc7c2d8bb1d84695af83a95",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_1",
+    "loaded_point": [
+      140,
+      0
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 20,
+    "vertical_delta": 110,
+    "output_pointer": [
+      6656,
+      24576
+    ],
+    "span_count": 110,
+    "spans_head": [
+      [
+        140,
+        40
+      ],
+      [
+        140,
+        40
+      ],
+      [
+        140,
+        40
+      ],
+      [
+        141,
+        38
+      ],
+      [
+        141,
+        38
+      ],
+      [
+        141,
+        38
+      ],
+      [
+        141,
+        38
+      ],
+      [
+        141,
+        38
+      ]
+    ],
+    "spans_tail": [
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "ec8b71a198f468559ff8e205778d73731ddb7d687c321faf1dd62e0dbb5b35dc",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_2",
+    "loaded_point": [
+      120,
+      0
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 40,
+    "vertical_delta": 110,
+    "output_pointer": [
+      7168,
+      24576
+    ],
+    "span_count": 110,
+    "spans_head": [
+      [
+        120,
+        80
+      ],
+      [
+        120,
+        80
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        122,
+        76
+      ],
+      [
+        122,
+        76
+      ],
+      [
+        123,
+        74
+      ]
+    ],
+    "spans_tail": [
+      [
+        157,
+        6
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "586ffbf75457116ccc6b9ebb462e2c72999c6e1d7937e384c4fe1851b66a5fcf",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_3",
+    "loaded_point": [
+      60,
+      0
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 100,
+    "vertical_delta": 110,
+    "output_pointer": [
+      7680,
+      24576
+    ],
+    "span_count": 110,
+    "spans_head": [
+      [
+        60,
+        200
+      ],
+      [
+        61,
+        198
+      ],
+      [
+        62,
+        196
+      ],
+      [
+        63,
+        194
+      ],
+      [
+        64,
+        192
+      ],
+      [
+        65,
+        190
+      ],
+      [
+        65,
+        190
+      ],
+      [
+        66,
+        188
+      ]
+    ],
+    "spans_tail": [
+      [
+        153,
+        14
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        156,
+        8
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        159,
+        2
+      ]
+    ],
+    "span_bytes_sha256": "f188766fd3dd35a24703b6aa470c29c85a9a5058e4184e325115c971bd757a37",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_4",
+    "loaded_point": [
+      0,
+      0
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 160,
+    "vertical_delta": 110,
+    "output_pointer": [
+      8192,
+      24576
+    ],
+    "span_count": 110,
+    "spans_head": [
+      [
+        1,
+        318
+      ],
+      [
+        3,
+        314
+      ],
+      [
+        4,
+        312
+      ],
+      [
+        6,
+        308
+      ],
+      [
+        7,
+        306
+      ],
+      [
+        8,
+        304
+      ],
+      [
+        10,
+        300
+      ],
+      [
+        11,
+        298
+      ]
+    ],
+    "spans_tail": [
+      [
+        150,
+        20
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        152,
+        16
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "5282fee8b6c7d7d96ab030a2cfe77549d75ea6d567393d9395d7f174c2c601a9",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_5",
+    "loaded_point": [
+      0,
+      50
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 160,
+    "vertical_delta": 60,
+    "output_pointer": [
+      8704,
+      24576
+    ],
+    "span_count": 60,
+    "spans_head": [
+      [
+        2,
+        316
+      ],
+      [
+        4,
+        312
+      ],
+      [
+        7,
+        306
+      ],
+      [
+        10,
+        300
+      ],
+      [
+        12,
+        296
+      ],
+      [
+        15,
+        290
+      ],
+      [
+        18,
+        284
+      ],
+      [
+        20,
+        280
+      ]
+    ],
+    "spans_tail": [
+      [
+        140,
+        40
+      ],
+      [
+        143,
+        34
+      ],
+      [
+        146,
+        28
+      ],
+      [
+        148,
+        24
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        156,
+        8
+      ],
+      [
+        159,
+        2
+      ]
+    ],
+    "span_bytes_sha256": "7226fc5436b8c3ab6f1e8b2128da01e0e1503058fb95a7dad9289f12a153d7e1",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_6",
+    "loaded_point": [
+      0,
+      90
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 160,
+    "vertical_delta": 20,
+    "output_pointer": [
+      9216,
+      24576
+    ],
+    "span_count": 20,
+    "spans_head": [
+      [
+        4,
+        312
+      ],
+      [
+        12,
+        296
+      ],
+      [
+        20,
+        280
+      ],
+      [
+        28,
+        264
+      ],
+      [
+        36,
+        248
+      ],
+      [
+        44,
+        232
+      ],
+      [
+        52,
+        216
+      ],
+      [
+        60,
+        200
+      ]
+    ],
+    "spans_tail": [
+      [
+        100,
+        120
+      ],
+      [
+        108,
+        104
+      ],
+      [
+        116,
+        88
+      ],
+      [
+        124,
+        72
+      ],
+      [
+        132,
+        56
+      ],
+      [
+        140,
+        40
+      ],
+      [
+        148,
+        24
+      ],
+      [
+        156,
+        8
+      ]
+    ],
+    "span_bytes_sha256": "10536d6bee594c7268862533baf40773ccf765d76507d63a5e61d075596f8cb2",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_7",
+    "loaded_point": [
+      0,
+      130
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 160,
+    "vertical_delta": 20,
+    "output_pointer": [
+      9728,
+      24576
+    ],
+    "span_count": 20,
+    "spans_head": [
+      [
+        156,
+        8
+      ],
+      [
+        148,
+        24
+      ],
+      [
+        140,
+        40
+      ],
+      [
+        132,
+        56
+      ],
+      [
+        124,
+        72
+      ],
+      [
+        116,
+        88
+      ],
+      [
+        108,
+        104
+      ],
+      [
+        100,
+        120
+      ]
+    ],
+    "spans_tail": [
+      [
+        60,
+        200
+      ],
+      [
+        52,
+        216
+      ],
+      [
+        44,
+        232
+      ],
+      [
+        36,
+        248
+      ],
+      [
+        28,
+        264
+      ],
+      [
+        20,
+        280
+      ],
+      [
+        12,
+        296
+      ],
+      [
+        4,
+        312
+      ]
+    ],
+    "span_bytes_sha256": "398becd0b551b1c0a409fa7af666baf709549e03b6f0631e141308420324fd9d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shipped_phase_8",
+    "loaded_point": [
+      0,
+      190
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 160,
+    "vertical_delta": 80,
+    "output_pointer": [
+      10240,
+      24576
+    ],
+    "span_count": 80,
+    "spans_head": [
+      [
+        159,
+        2
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        153,
+        14
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        149,
+        22
+      ],
+      [
+        147,
+        26
+      ],
+      [
+        145,
+        30
+      ]
+    ],
+    "spans_tail": [
+      [
+        15,
+        290
+      ],
+      [
+        13,
+        294
+      ],
+      [
+        11,
+        298
+      ],
+      [
+        9,
+        302
+      ],
+      [
+        7,
+        306
+      ],
+      [
+        5,
+        310
+      ],
+      [
+        3,
+        314
+      ],
+      [
+        1,
+        318
+      ]
+    ],
+    "span_bytes_sha256": "3e312ce11f5ff71013256d87a0147b5ef6ddfc8b0251e5033da93a1f7f820bd0",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "steep_up_right",
+    "loaded_point": [
+      150,
+      50
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 10,
+    "vertical_delta": 60,
+    "output_pointer": [
+      10752,
+      24576
+    ],
+    "span_count": 60,
+    "spans_head": [
+      [
+        150,
+        20
+      ],
+      [
+        150,
+        20
+      ],
+      [
+        150,
+        20
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        151,
+        18
+      ]
+    ],
+    "spans_tail": [
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        159,
+        2
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "06bb0f05bf35b90b244c2e7e7e23866de999a400f59664302436549fbe2cbc09",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "steep_up_left",
+    "loaded_point": [
+      200,
+      50
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 40,
+    "vertical_delta": 60,
+    "output_pointer": [
+      11264,
+      24576
+    ],
+    "span_count": 60,
+    "spans_head": [
+      [
+        200,
+        65456
+      ],
+      [
+        199,
+        65458
+      ],
+      [
+        199,
+        65458
+      ],
+      [
+        198,
+        65460
+      ],
+      [
+        197,
+        65462
+      ],
+      [
+        197,
+        65462
+      ],
+      [
+        196,
+        65464
+      ],
+      [
+        195,
+        65466
+      ]
+    ],
+    "spans_tail": [
+      [
+        165,
+        65526
+      ],
+      [
+        165,
+        65526
+      ],
+      [
+        164,
+        65528
+      ],
+      [
+        163,
+        65530
+      ],
+      [
+        163,
+        65530
+      ],
+      [
+        162,
+        65532
+      ],
+      [
+        161,
+        65534
+      ],
+      [
+        161,
+        65534
+      ]
+    ],
+    "span_bytes_sha256": "fe24178e7f2c57b670245910580aea4739667eebfbd593d29cf5006674254d97",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shallow_up_right",
+    "loaded_point": [
+      100,
+      100
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 60,
+    "vertical_delta": 10,
+    "output_pointer": [
+      11776,
+      24576
+    ],
+    "span_count": 10,
+    "spans_head": [
+      [
+        103,
+        114
+      ],
+      [
+        109,
+        102
+      ],
+      [
+        115,
+        90
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        127,
+        66
+      ],
+      [
+        133,
+        54
+      ],
+      [
+        139,
+        42
+      ],
+      [
+        145,
+        30
+      ]
+    ],
+    "spans_tail": [
+      [
+        115,
+        90
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        127,
+        66
+      ],
+      [
+        133,
+        54
+      ],
+      [
+        139,
+        42
+      ],
+      [
+        145,
+        30
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        157,
+        6
+      ]
+    ],
+    "span_bytes_sha256": "269a174faee02c7232a787ff3225c2e090a4ba4e833ed0ef38b2646b7e479669",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shallow_down_right",
+    "loaded_point": [
+      220,
+      120
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 60,
+    "vertical_delta": 10,
+    "output_pointer": [
+      12288,
+      24576
+    ],
+    "span_count": 10,
+    "spans_head": [
+      [
+        163,
+        65530
+      ],
+      [
+        169,
+        65518
+      ],
+      [
+        175,
+        65506
+      ],
+      [
+        181,
+        65494
+      ],
+      [
+        187,
+        65482
+      ],
+      [
+        193,
+        65470
+      ],
+      [
+        199,
+        65458
+      ],
+      [
+        205,
+        65446
+      ]
+    ],
+    "spans_tail": [
+      [
+        175,
+        65506
+      ],
+      [
+        181,
+        65494
+      ],
+      [
+        187,
+        65482
+      ],
+      [
+        193,
+        65470
+      ],
+      [
+        199,
+        65458
+      ],
+      [
+        205,
+        65446
+      ],
+      [
+        211,
+        65434
+      ],
+      [
+        217,
+        65422
+      ]
+    ],
+    "span_bytes_sha256": "9636cff27cc77123b104bfa9720024506a769e859d0810e888d736527af1ca54",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "shallow_down_left",
+    "loaded_point": [
+      100,
+      120
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 60,
+    "vertical_delta": 10,
+    "output_pointer": [
+      12800,
+      24576
+    ],
+    "span_count": 10,
+    "spans_head": [
+      [
+        157,
+        6
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        145,
+        30
+      ],
+      [
+        139,
+        42
+      ],
+      [
+        133,
+        54
+      ],
+      [
+        127,
+        66
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        115,
+        90
+      ]
+    ],
+    "spans_tail": [
+      [
+        145,
+        30
+      ],
+      [
+        139,
+        42
+      ],
+      [
+        133,
+        54
+      ],
+      [
+        127,
+        66
+      ],
+      [
+        121,
+        78
+      ],
+      [
+        115,
+        90
+      ],
+      [
+        109,
+        102
+      ],
+      [
+        103,
+        114
+      ]
+    ],
+    "span_bytes_sha256": "67ff91cb89d4080f660e5e0128a42cd4c50b2acc1c57fa41dacb10a52b87e33d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "vertical_up",
+    "loaded_point": [
+      160,
+      105
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 0,
+    "vertical_delta": 5,
+    "output_pointer": [
+      13312,
+      24576
+    ],
+    "span_count": 5,
+    "spans_head": [
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "spans_tail": [
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ],
+      [
+        160,
+        0
+      ]
+    ],
+    "span_bytes_sha256": "98701fff10da5e1d10cc95aea38bcbc4e552d0304d7af0264b03f017835362db",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "horizontal_has_no_spans",
+    "loaded_point": [
+      100,
+      110
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 60,
+    "vertical_delta": 0,
+    "output_pointer": [
+      13824,
+      24576
+    ],
+    "span_count": 0,
+    "spans_head": [],
+    "spans_tail": [],
+    "span_bytes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "diagonal_uses_vertical_major_path",
+    "loaded_point": [
+      150,
+      100
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 10,
+    "vertical_delta": 10,
+    "output_pointer": [
+      14336,
+      24576
+    ],
+    "span_count": 10,
+    "spans_head": [
+      [
+        150,
+        20
+      ],
+      [
+        151,
+        18
+      ],
+      [
+        152,
+        16
+      ],
+      [
+        153,
+        14
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        156,
+        8
+      ],
+      [
+        157,
+        6
+      ]
+    ],
+    "spans_tail": [
+      [
+        152,
+        16
+      ],
+      [
+        153,
+        14
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        156,
+        8
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        159,
+        2
+      ]
+    ],
+    "span_bytes_sha256": "f6b27d7695a0e45a0ca49cb02c5ec9e3f64ce3722e27818131a424414895b471",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "output_offset_wrap",
+    "loaded_point": [
+      150,
+      108
+    ],
+    "direction": "forward",
+    "path": "horizontal_major",
+    "horizontal_delta": 10,
+    "vertical_delta": 2,
+    "output_pointer": [
+      65532,
+      24576
+    ],
+    "span_count": 2,
+    "spans_head": [
+      [
+        153,
+        14
+      ],
+      [
+        158,
+        4
+      ]
+    ],
+    "spans_tail": [
+      [
+        153,
+        14
+      ],
+      [
+        158,
+        4
+      ]
+    ],
+    "span_bytes_sha256": "1729f3fd22ebfae0a915322fb17d1a8404fbb0362b4f7e0df820080b377b8389",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "loaded_point": [
+      180,
+      100
+    ],
+    "direction": "reverse",
+    "path": "horizontal_major",
+    "horizontal_delta": 20,
+    "vertical_delta": 10,
+    "output_pointer": [
+      16896,
+      24576
+    ],
+    "span_count": 10,
+    "spans_head": [
+      [
+        179,
+        65498
+      ],
+      [
+        177,
+        65502
+      ],
+      [
+        175,
+        65506
+      ],
+      [
+        173,
+        65510
+      ],
+      [
+        171,
+        65514
+      ],
+      [
+        169,
+        65518
+      ],
+      [
+        167,
+        65522
+      ],
+      [
+        165,
+        65526
+      ]
+    ],
+    "spans_tail": [
+      [
+        175,
+        65506
+      ],
+      [
+        173,
+        65510
+      ],
+      [
+        171,
+        65514
+      ],
+      [
+        169,
+        65518
+      ],
+      [
+        167,
+        65522
+      ],
+      [
+        165,
+        65526
+      ],
+      [
+        163,
+        65530
+      ],
+      [
+        161,
+        65534
+      ]
+    ],
+    "span_bytes_sha256": "006b0149cf84388c08d0a1c2079d5a63942c384adde9cd4e9fd4c53e4535a0fa",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": true
+    }
+  },
+  {
+    "name": "center_point_runs_wrapped_zero_counter",
+    "loaded_point": [
+      160,
+      110
+    ],
+    "direction": "forward",
+    "path": "vertical_major",
+    "horizontal_delta": 0,
+    "vertical_delta": 0,
+    "output_pointer": [
+      20480,
+      24576
+    ],
+    "span_count": 65536,
+    "spans_head": [
+      [
+        160,
+        0
+      ],
+      [
+        161,
+        65534
+      ],
+      [
+        162,
+        65532
+      ],
+      [
+        163,
+        65530
+      ],
+      [
+        164,
+        65528
+      ],
+      [
+        165,
+        65526
+      ],
+      [
+        166,
+        65524
+      ],
+      [
+        167,
+        65522
+      ]
+    ],
+    "spans_tail": [
+      [
+        152,
+        16
+      ],
+      [
+        153,
+        14
+      ],
+      [
+        154,
+        12
+      ],
+      [
+        155,
+        10
+      ],
+      [
+        156,
+        8
+      ],
+      [
+        157,
+        6
+      ],
+      [
+        158,
+        4
+      ],
+      [
+        159,
+        2
+      ]
+    ],
+    "span_bytes_sha256": "6edf9265d0818851ce8c87d00604819011fe4a6f9a1411f06a04a65eb1ce053d",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  }
+]
