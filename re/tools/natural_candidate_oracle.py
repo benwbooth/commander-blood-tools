@@ -49558,6 +49558,431 @@ def snd_bank_file_page_read_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_handler_2_vectors() -> list[dict[str, object]]:
+    entry = 0x813A
+    presentation_helper_entry = 0x7E1C
+    audio_entry = 0xB2CD  # Runtime 0B1B:011D.
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    palette_byte_count = 0x90 * 4
+    cases = [
+        {
+            "name": "ui_gate_clear",
+            "ui": 0x00,
+            "line_flags": 0x08,
+            "helper_complete": False,
+            "flags": 0x0AD7,
+            "audio_flags": 0x0012,
+        },
+        {
+            "name": "ui_unrelated_bits_only",
+            "ui": 0x6F,
+            "line_flags": 0x88,
+            "helper_complete": False,
+            "flags": 0x0803,
+            "audio_flags": 0x0046,
+        },
+        {
+            "name": "line_not_ready",
+            "ui": 0x10,
+            "line_flags": 0x82,
+            "helper_complete": False,
+            "flags": 0x00D6,
+            "audio_flags": 0x0897,
+        },
+        {
+            "name": "presentation_in_progress",
+            "ui": 0x90,
+            "line_flags": 0xA8,
+            "helper_complete": False,
+            "flags": 0x0812,
+            "audio_flags": 0x0057,
+        },
+        {
+            "name": "completion_ui_bit_10",
+            "ui": 0x10,
+            "line_flags": 0x08,
+            "helper_complete": True,
+            "flags": 0x00C3,
+            "audio_flags": 0x0012,
+        },
+        {
+            "name": "completion_ui_bit_80",
+            "ui": 0x80,
+            "line_flags": 0xE8,
+            "helper_complete": True,
+            "flags": 0x0896,
+            "audio_flags": 0x0AD7,
+        },
+    ]
+    expected_hash = "c42f71c2705b768ec78d8834bbc52c0765ee76e2c1120adbe5bbf54ab0f92e70"
+    if hashlib.sha256(EXE[entry : entry + 68]).hexdigest() != expected_hash:
+        raise AssertionError("0x813a: recovered 68-byte body changed")
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui_before = int(case["ui"])
+        line_flags_before = int(case["line_flags"])
+        helper_complete = bool(case["helper_complete"])
+        flags_before = int(case["flags"])
+        audio_flags = int(case["audio_flags"])
+        presentation_state_before = 0x3100 + case_index
+        ship_flags_before = 0x4200 + case_index
+        depth_before = 0x5300 + case_index
+        line_before = struct.pack(
+            "<BBHHHH10sHH",
+            line_flags_before,
+            0xA0 + case_index,
+            0x1100 + case_index,
+            0x2200 + case_index,
+            0x3300 + case_index,
+            0x4400 + case_index,
+            bytes((0x50 + case_index + i) & 0xFF for i in range(10)),
+            0x6600 + case_index,
+            0x7700 + case_index,
+        )
+        source_palette = bytes(
+            (case_index * 29 + index * 37 + 11) & 0xFF
+            for index in range(palette_byte_count)
+        )
+        destination_before = bytes(
+            (case_index * 17 + index * 13 + 7) & 0xFF
+            for index in range(palette_byte_count + 8)
+        )
+        source_decoy = bytes([0x87]) * palette_byte_count
+        destination_decoy = bytes([0x78]) * (palette_byte_count + 8)
+        game_source_decoy = bytes([0xA5]) * palette_byte_count
+        game_destination_decoy = bytes([0x5A]) * (palette_byte_count + 8)
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        memory = [
+            (0, presentation_helper_entry, b"\xc3"),
+            (0, audio_entry, b"\xcb"),
+            (0, return_address, b"\xcc"),
+            (data_segment, 0x2793, bytes([ui_before])),
+            (
+                data_segment,
+                0x0A32,
+                struct.pack("<H", presentation_state_before),
+            ),
+            (data_segment, 0x24F3, struct.pack("<H", ship_flags_before)),
+            (data_segment, 0x2527, struct.pack("<H", depth_before)),
+            (data_segment, 0x5251, source_palette),
+            (data_segment, 0x5B58, destination_decoy),
+            (extra_segment, 0x5251, source_decoy),
+            (extra_segment, 0x5B58, destination_before),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x0A32, b"\x69\x96"),
+            (game_segment, 0x24F3, b"\x87\x78"),
+            (game_segment, 0x2527, b"\xa5\x5a"),
+            (game_segment, 0x5251, game_source_decoy),
+            (game_segment, 0x5B58, game_destination_decoy),
+            (stack_segment, line_offset, line_before),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (stack_segment, 0x2793, b"\x3c"),
+            (stack_segment, 0x0A32, b"\xc3\x3c"),
+            (stack_segment, 0x24F3, b"\xf0\x0f"),
+            (stack_segment, 0x2527, b"\x55\xaa"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        calls = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == presentation_helper_entry:
+                calls.append(
+                    {
+                        "kind": "presentation_line_helper",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "ss": machine.reg_read(UC_X86_REG_SS),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "line_flags": machine.mem_read(
+                            stack_segment * 16 + line_offset, 1
+                        )[0],
+                        "presentation_state": struct.unpack(
+                            "<H",
+                            machine.mem_read(data_segment * 16 + 0x0A32, 2),
+                        )[0],
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags & ~1) | int(helper_complete),
+                )
+            elif address == audio_entry:
+                calls.append(
+                    {
+                        "kind": "snd_play_clip",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "es": machine.reg_read(UC_X86_REG_ES),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "ship_flags": struct.unpack(
+                            "<H",
+                            machine.mem_read(data_segment * 16 + 0x24F3, 2),
+                        )[0],
+                        "depth": struct.unpack(
+                            "<H",
+                            machine.mem_read(data_segment * 16 + 0x2527, 2),
+                        )[0],
+                        "destination_sha256": hashlib.sha256(
+                            bytes(
+                                machine.mem_read(
+                                    extra_segment * 16 + 0x5B58,
+                                    palette_byte_count,
+                                )
+                            )
+                        ).hexdigest(),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_EFLAGS, audio_flags)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        ui_gate = (ui_before & 0x90) != 0
+        line_flags_after_or = line_flags_before | 1
+        helper_called = ui_gate and (line_flags_after_or & 0x08) != 0
+        completed = helper_called and helper_complete
+        expected_calls = []
+        if helper_called:
+            expected_calls.append(
+                {
+                    "kind": "presentation_line_helper",
+                    "cs": 0,
+                    "bp": line_offset,
+                    "ds": data_segment,
+                    "es": extra_segment,
+                    "ss": stack_segment,
+                    "sp": 0xFEFC,
+                    "line_flags": line_flags_after_or,
+                    "presentation_state": 0x10,
+                }
+            )
+        if completed:
+            expected_calls.append(
+                {
+                    "kind": "snd_play_clip",
+                    "cs": 0x0B1B,
+                    "ax": 5,
+                    "bp": line_offset,
+                    "ds": data_segment,
+                    "es": extra_segment,
+                    "sp": 0xFEFA,
+                    "ship_flags": ship_flags_before,
+                    "depth": depth_before,
+                    "destination_sha256": hashlib.sha256(
+                        destination_before[:palette_byte_count]
+                    ).hexdigest(),
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x813a {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_line_flags = line_flags_before
+        if ui_gate:
+            expected_line_flags = line_flags_after_or
+        if completed:
+            expected_line_flags = 7
+        expected_line = bytes([expected_line_flags]) + line_before[1:]
+        actual_line = bytes(
+            machine.mem_read(stack_segment * 16 + line_offset, len(line_before))
+        )
+        if actual_line != expected_line:
+            raise AssertionError(
+                f"0x813a {name}: line={actual_line.hex()}, "
+                f"expected={expected_line.hex()}"
+            )
+
+        expected_presentation_state = (
+            0x10 if helper_called else presentation_state_before
+        )
+        expected_ship_flags = 1 if completed else ship_flags_before
+        expected_depth = 0 if completed else depth_before
+        actual_state = (
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x0A32, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x24F3, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x2527, 2)
+            )[0],
+        )
+        expected_state = (
+            expected_presentation_state,
+            expected_ship_flags,
+            expected_depth,
+        )
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x813a {name}: state={actual_state}, expected={expected_state}"
+            )
+
+        expected_destination = (
+            source_palette + destination_before[palette_byte_count:]
+            if completed
+            else destination_before
+        )
+        actual_destination = bytes(
+            machine.mem_read(
+                extra_segment * 16 + 0x5B58, len(destination_before)
+            )
+        )
+        if actual_destination != expected_destination:
+            raise AssertionError(f"0x813a {name}: destination palette differs")
+
+        immutable = (
+            (data_segment, 0x2793, bytes([ui_before])),
+            (data_segment, 0x5251, source_palette),
+            (data_segment, 0x5B58, destination_decoy),
+            (extra_segment, 0x5251, source_decoy),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x0A32, b"\x69\x96"),
+            (game_segment, 0x24F3, b"\x87\x78"),
+            (game_segment, 0x2527, b"\xa5\x5a"),
+            (game_segment, 0x5251, game_source_decoy),
+            (game_segment, 0x5B58, game_destination_decoy),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (stack_segment, 0x2793, b"\x3c"),
+            (stack_segment, 0x0A32, b"\xc3\x3c"),
+            (stack_segment, 0x24F3, b"\xf0\x0f"),
+            (stack_segment, 0x2527, b"\x55\xaa"),
+        )
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x813a {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if ui_gate:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFFFF00
+            ) | line_flags_after_or
+        if completed:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 5
+            expected_registers["esi"] = (
+                initial["esi"] & 0xFFFF0000
+            ) | ((0x5251 + palette_byte_count) & 0xFFFF)
+            expected_registers["edi"] = (
+                initial["edi"] & 0xFFFF0000
+            ) | ((0x5B58 + palette_byte_count) & 0xFFFF)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x813a {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x813a {name}: return changed CS")
+
+        if completed:
+            flag_value = audio_flags
+            expected_flags = {
+                "cf": bool(flag_value & 1),
+                "pf": bool(flag_value & 4),
+                "af": bool(flag_value & 0x10),
+                "zf": bool(flag_value & 0x40),
+                "sf": bool(flag_value & 0x80),
+                "of": bool(flag_value & 0x800),
+            }
+        else:
+            if not ui_gate:
+                test_value = ui_before & 0x90
+            else:
+                test_value = line_flags_after_or & 0x08
+            expected_flags = {
+                "cf": False,
+                "pf": (test_value & 0xFF).bit_count() % 2 == 0,
+                "zf": test_value == 0,
+                "sf": bool(test_value & 0x80),
+                "of": False,
+            }
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x813a {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x813a {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "ui_flags": ui_before,
+                "line_flags_before": line_flags_before,
+                "line_flags_after": expected_line_flags,
+                "helper_called": helper_called,
+                "helper_completed": completed,
+                "presentation_state_after": expected_presentation_state,
+                "sound_clip": 5 if completed else None,
+                "ship_flags_after": expected_ship_flags,
+                "depth_after": expected_depth,
+                "palette_bytes_copied": palette_byte_count if completed else 0,
+                "final_si": machine.reg_read(UC_X86_REG_SI),
+                "final_di": machine.reg_read(UC_X86_REG_DI),
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -65439,6 +65864,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7e1c_natural.json",
         presentation_line_helper_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_813a_natural.json",
+        nav_actor_handler_2_vectors(),
         args.check,
     )
     update_vector(

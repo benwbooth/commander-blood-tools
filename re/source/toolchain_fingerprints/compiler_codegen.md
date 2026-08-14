@@ -1979,15 +1979,37 @@ boundaries additionally prove the resource loader receives DS:SI at
 `FS:0x0C04 + (resource_id << 4)` and ES:DI from DS:0x0A80, while the entity
 setter receives AX=4, the same ES:DI, BX/CX coordinates, and the frame in BP.
 
-The natural typed candidate now represents the filename as a real far pointer;
-Watcom consequently emits a segment relocation instead of treating the FS
-table as near DS data. Open Watcom `-3 -ox -mm` compiles the actual candidate
-without warnings to 59 instructions/161 bytes versus 60/152 original; Turbo C
-2.01 medium emits 78 instructions. The similar counts are not an ABI match:
-Watcom uses AX for the record pointer, ordinary helper-call conventions, and AX
-for the logical Boolean result. An attempted BP parameter pragma is rejected
-by Watcom with E1122, so BP input and carry output remain narrow integration
-boundaries rather than inline-assembly code in the candidate.
+The natural typed candidate now represents the actor as an explicit near pointer
+and the filename as a real far pointer. Watcom consequently emits SS-qualified
+actor accesses plus a segment relocation for the FS filename table. Open
+Watcom `-3 -os -s -mh -we` compiles the actual candidate without warnings to
+62 instructions/179 bytes versus 60/152 original, with 83.33 percent
+mnemonic-multiset overlap. The similar counts are not an ABI match: Watcom uses
+AX for the record pointer, ordinary helper-call conventions, and AX for the
+logical Boolean result. An attempted BP parameter pragma is rejected by Watcom
+with E1122, so BP input and carry output remain narrow integration boundaries
+rather than inline-assembly code in the candidate.
+
+Navigation actor handler 2 at `0x00813A` gates on either UI bit `0x10` or
+`0x80`, marks its SS:BP line record present, and requires line bit three before
+publishing presentation state `0x10` and stepping the line helper. On helper
+carry completion it plays sound clip five, publishes ship state one, copies 144
+dwords from DS:0x5251 to ES:0x5B58, clears the ship-depth offset, and sets the
+line state to seven.
+
+Six direct vectors isolate only the already recovered presentation-line and
+sound helpers. They cover each UI-gate bit, unrelated UI bits, a line-not-ready
+exit, incomplete and complete helper results, state at both helper entries,
+the 576-byte palette extent and DS/ES ownership against decoys, final state,
+registers, callback-derived completion flags, stack, and near return.
+
+Open Watcom `-3 -os -s -mh -we` compiles the natural explicit-near record and
+fixed-size `memcpy` candidate warning-free to 31 instructions/86 bytes versus
+the original 21/68, with 85.71 percent mnemonic-multiset overlap and no inline
+assembly. Full-source integration needs the shipped `SS == DS == ES` data
+group and an ordinary Boolean result from the line helper. Direct replacement
+additionally needs BP input, carry-result adaptation, the AX sound argument,
+`REP MOVSD` lowering, and the original register/flag envelope.
 
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,

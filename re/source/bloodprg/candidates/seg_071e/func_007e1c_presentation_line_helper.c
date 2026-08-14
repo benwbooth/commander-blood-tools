@@ -1,7 +1,7 @@
 #include "../include/bloodprg_nav.h"
 
 int CB_NEAR presentation_line_helper(
-        volatile bloodprg_presentation_line_record *line)
+        volatile bloodprg_presentation_line_record CB_NEAR *line)
 {
     const volatile bloodprg_presentation_resource_header CB_FAR *resource;
     cb_u16 frame;

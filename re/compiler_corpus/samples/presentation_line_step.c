@@ -47,7 +47,7 @@ void FAR entity_record_setter_probe(u16 entity_id,
         u16 draw_y,
         u16 frame_index);
 
-int NEAR presentation_line_step_probe(volatile line_record *line)
+int NEAR presentation_line_step_probe(volatile line_record NEAR *line)
 {
     const volatile resource_header FAR *resource;
     u16 frame;
