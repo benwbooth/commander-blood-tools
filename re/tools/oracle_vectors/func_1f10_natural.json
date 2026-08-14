@@ -1,0 +1,190 @@
+[
+  {
+    "name": "input_exit_before_scene",
+    "active_line": 1,
+    "link_target_offset": 19008,
+    "calls": [
+      {
+        "call": "snd_stream_source_load",
+        "path_segment": 8192,
+        "path_offset": 3403
+      },
+      {
+        "call": "snd_stream_start"
+      },
+      {
+        "call": "vga_dac_clear"
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0
+      },
+      {
+        "call": "back_buffer_fill",
+        "color": 0
+      },
+      {
+        "call": "input_action_dispatch",
+        "iteration": 0,
+        "stop": 1
+      }
+    ],
+    "final_state": {
+      "active_line": 1,
+      "input_stop": 1,
+      "presentation_gate": 90,
+      "crop_enabled": 0,
+      "vertical_offset": 0
+    },
+    "final_segments": {
+      "ds": 8192,
+      "es": 8192,
+      "gs": 8192
+    },
+    "return": "near"
+  },
+  {
+    "name": "scene_completes_without_frame",
+    "active_line": 1,
+    "link_target_offset": 19008,
+    "calls": [
+      {
+        "call": "snd_stream_source_load",
+        "path_segment": 8192,
+        "path_offset": 3403
+      },
+      {
+        "call": "snd_stream_start"
+      },
+      {
+        "call": "vga_dac_clear"
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0
+      },
+      {
+        "call": "back_buffer_fill",
+        "color": 0
+      },
+      {
+        "call": "input_action_dispatch",
+        "iteration": 0,
+        "stop": 0
+      },
+      {
+        "call": "dlg_line_id_scene_dispatch",
+        "line": 1,
+        "link_target_offset": 19008,
+        "gate": 0
+      }
+    ],
+    "final_state": {
+      "active_line": 1,
+      "input_stop": 0,
+      "presentation_gate": 0,
+      "crop_enabled": 0,
+      "vertical_offset": 0
+    },
+    "final_segments": {
+      "ds": 8192,
+      "es": 8192,
+      "gs": 8192
+    },
+    "return": "near"
+  },
+  {
+    "name": "two_frames_then_input_exit",
+    "active_line": 1,
+    "link_target_offset": 19008,
+    "calls": [
+      {
+        "call": "snd_stream_source_load",
+        "path_segment": 8192,
+        "path_offset": 3403
+      },
+      {
+        "call": "snd_stream_start"
+      },
+      {
+        "call": "vga_dac_clear"
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0
+      },
+      {
+        "call": "back_buffer_fill",
+        "color": 0
+      },
+      {
+        "call": "input_action_dispatch",
+        "iteration": 0,
+        "stop": 0
+      },
+      {
+        "call": "dlg_line_id_scene_dispatch",
+        "line": 1,
+        "link_target_offset": 19008,
+        "gate": 1
+      },
+      {
+        "call": "snd_stream_refill"
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source_segment": 20480,
+        "source_offset": 17185
+      },
+      {
+        "call": "page_offset_helper"
+      },
+      {
+        "call": "palette_upload_if_dirty"
+      },
+      {
+        "call": "input_action_dispatch",
+        "iteration": 1,
+        "stop": 0
+      },
+      {
+        "call": "dlg_line_id_scene_dispatch",
+        "line": 1,
+        "link_target_offset": 19008,
+        "gate": 1
+      },
+      {
+        "call": "snd_stream_refill"
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source_segment": 20480,
+        "source_offset": 17185
+      },
+      {
+        "call": "page_offset_helper"
+      },
+      {
+        "call": "palette_upload_if_dirty"
+      },
+      {
+        "call": "input_action_dispatch",
+        "iteration": 2,
+        "stop": 1
+      }
+    ],
+    "final_state": {
+      "active_line": 1,
+      "input_stop": 1,
+      "presentation_gate": 1,
+      "crop_enabled": 0,
+      "vertical_offset": 0
+    },
+    "final_segments": {
+      "ds": 8192,
+      "es": 8192,
+      "gs": 8192
+    },
+    "return": "near"
+  }
+]

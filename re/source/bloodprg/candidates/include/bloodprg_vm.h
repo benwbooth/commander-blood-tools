@@ -90,6 +90,10 @@ extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
 
 void CB_FAR dlg_line_id_scene_dispatch(
         cb_u16 link_target_offset); /* 0x009D10 */
+void CB_NEAR presentation_line_zero_run(
+        cb_u16 link_target_offset); /* 0x001EC1 */
+void CB_NEAR presentation_line_one_stream_run(
+        cb_u16 link_target_offset); /* 0x001F10 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u

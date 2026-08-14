@@ -105,6 +105,7 @@ void CB_FAR print_string_dos(
 cb_u16 CB_FAR kbd_read_int16(void);     /* 0x00267D */
 
 #if defined(__WATCOMC__)
+#pragma aux kbd_read_int16 value [ax] modify exact [ax]
 #pragma aux mouse_set_ranges parm [ax] [bx] [cx] [dx]
 #pragma aux print_string_dos parm [si]
 #pragma aux cdrom_audio_prepare modify exact []

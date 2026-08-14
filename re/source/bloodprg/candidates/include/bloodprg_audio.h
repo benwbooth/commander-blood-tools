@@ -68,6 +68,7 @@ extern volatile cb_u32 CB_GAME_DATA snd_source_remaining; /* GS:0x0A92 */
 extern const volatile char CB_GAME_DATA snd_wait_prompt_text[]; /* GS:0x0190 */
 extern const volatile char CB_GAME_DATA snd_music_temp_filename[]; /* GS:0x00AE */
 extern const volatile char CB_GAME_DATA snd_voice_temp_filename[]; /* GS:0x00A6 */
+extern volatile char snd_credits_voc_path[]; /* DS:0x0D4B */
 extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_bank_memory; /* GS:0x0BB3 */
 extern volatile bloodprg_snd_clip_descriptor CB_GAME_DATA
         snd_clip_descriptor; /* GS:0x0BAB */

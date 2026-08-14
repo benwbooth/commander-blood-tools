@@ -6,8 +6,8 @@
 ; seg_off: 008b:1060
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: seg_setup_clear_ax
-; label_comment: segment setup: ds=es=gs; xor ax,ax. Rebases DS/ES to the work arena and zeroes ax before a data operation
+; label: presentation_line_one_stream_run
+; label_comment: Streamed credits presentation loop for scene line one. Rebases DS/ES from GS, clears navigation/crop/vertical state, loads mu\credits.voc, starts streaming, clears the DAC and framebuffers, then polls input and services 0971:0000. Every active frame refills audio before chunky conversion, page advance, and palette upload. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001f10_presentation_line_one_stream_run.c and re/tools/oracle_vectors/func_1f10_natural.json
 ; byte_count: 104
 ; boundary: cfg_blocks_5_terminals_2
 ; terminal: jmp 0x1f45:1, ret:1

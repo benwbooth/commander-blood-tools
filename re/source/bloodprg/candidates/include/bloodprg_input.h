@@ -14,6 +14,8 @@ typedef struct bloodprg_rect_i16 {
     cb_i16 height;
 } bloodprg_rect_i16;
 
+typedef void (CB_NEAR *bloodprg_input_action_handler)(cb_u8 raw_low_byte);
+
 extern volatile cb_i16 mouse_x;                     /* DS:0x0A2A */
 extern volatile cb_i16 mouse_y;                     /* DS:0x0A2C */
 extern volatile cb_u16 mouse_button_state;          /* DS:0x0A2E */
@@ -24,6 +26,11 @@ extern volatile cb_u8 mouse_primary_pressed;        /* DS:0x0A3E */
 extern volatile cb_u8 mouse_secondary_pressed;      /* DS:0x0A3F */
 extern volatile cb_u8 mouse_press_pending;          /* DS:0x0A40 */
 extern volatile cb_u16 mouse_motion_idle_counter;   /* GS:0x0B3B */
+extern volatile cb_u8 input_dispatch_state_b15;     /* DS:0x0B15 */
+extern const cb_i8 CB_CODE_DATA
+        input_action_translation[256];              /* CS:0x113E */
+extern bloodprg_input_action_handler CB_CODE_DATA
+        input_action_handlers[];                    /* CS:0x123E */
 
 void CB_FAR poll_mouse(void); /* 0x000D0E */
 cb_u16 CB_NEAR mouse_button_edges_update(void); /* 0x001FBC */
@@ -31,6 +38,7 @@ void CB_NEAR mouse_hit_test(const bloodprg_rect_i16 CB_NEAR *rect,
         volatile cb_u8 CB_NEAR *flags); /* 0x008269 */
 int CB_FAR region_record_hittest(
         const bloodprg_rect_i16 CB_NEAR *rect); /* 0x008295 */
+void CB_FAR input_action_dispatch(void);        /* 0x00210E */
 
 #if defined(__WATCOMC__)
 #pragma aux mouse_button_edges_update value [ax] modify exact [ax]

@@ -1,0 +1,152 @@
+[
+  {
+    "name": "no_key",
+    "key": 0,
+    "translated_code": 0,
+    "translation_result": 3,
+    "calls": [
+      {
+        "call": "kbd_read_int16",
+        "result": 0
+      }
+    ],
+    "state_b15": 0,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "ordinary_low_byte",
+    "key": 7777,
+    "translated_code": 97,
+    "translation_result": 3,
+    "calls": [
+      {
+        "call": "kbd_read_int16",
+        "result": 7777
+      },
+      {
+        "call": "input_action_handler",
+        "action": 3,
+        "raw_low_byte": 97
+      }
+    ],
+    "state_b15": 0,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "extended_high_byte",
+    "key": 15104,
+    "translated_code": 187,
+    "translation_result": 5,
+    "calls": [
+      {
+        "call": "kbd_read_int16",
+        "result": 15104
+      },
+      {
+        "call": "input_action_handler",
+        "action": 5,
+        "raw_low_byte": 0
+      }
+    ],
+    "state_b15": 0,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "signed_rejection",
+    "key": 12386,
+    "translated_code": 98,
+    "translation_result": 255,
+    "calls": [
+      {
+        "call": "kbd_read_int16",
+        "result": 12386
+      }
+    ],
+    "state_b15": 0,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "far"
+  },
+  {
+    "name": "high_bit_low_byte",
+    "key": 8832,
+    "translated_code": 128,
+    "translation_result": 7,
+    "calls": [
+      {
+        "call": "kbd_read_int16",
+        "result": 8832
+      },
+      {
+        "call": "input_action_handler",
+        "action": 7,
+        "raw_low_byte": 128
+      }
+    ],
+    "state_b15": 0,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "far"
+  }
+]

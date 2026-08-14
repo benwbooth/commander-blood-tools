@@ -52115,6 +52115,511 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def input_action_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x210E
+    return_address = 0xF500
+    expected_hash = "3c635d7aebb8a3fe33353a58934f677a59d093ec7906b1b57aa30bf0fe8cfd6d"
+    if hashlib.sha256(EXE[entry : entry + 50]).hexdigest() != expected_hash:
+        raise AssertionError("0x210e: recovered 50-byte body changed")
+
+    cases = [
+        {
+            "name": "no_key",
+            "key": 0x0000,
+            "translated_code": 0x00,
+            "action": 3,
+            "dispatches": False,
+        },
+        {
+            "name": "ordinary_low_byte",
+            "key": 0x1E61,
+            "translated_code": 0x61,
+            "action": 3,
+            "dispatches": True,
+        },
+        {
+            "name": "extended_high_byte",
+            "key": 0x3B00,
+            "translated_code": 0xBB,
+            "action": 5,
+            "dispatches": True,
+        },
+        {
+            "name": "signed_rejection",
+            "key": 0x3062,
+            "translated_code": 0x62,
+            "action": 0xFF,
+            "dispatches": False,
+        },
+        {
+            "name": "high_bit_low_byte",
+            "key": 0x2280,
+            "translated_code": 0x80,
+            "action": 7,
+            "dispatches": True,
+        },
+    ]
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        key = int(case["key"])
+        translated_code = int(case["translated_code"])
+        action = int(case["action"])
+        dispatches = bool(case["dispatches"])
+        handler_entry = 0x7000 + (action & 0x0F) * 0x10
+        calls: list[dict[str, object]] = []
+        translation = bytearray([0xFF]) * 256
+        translation[translated_code] = action
+        handlers = bytearray(32)
+        if dispatches:
+            handlers[action * 2 : action * 2 + 2] = struct.pack(
+                "<H", handler_entry
+            )
+
+        data = bytearray(0x10000)
+        decoy = bytearray([0xCC]) * 0x10000
+        data[0x0B15] = 0xA5
+        decoy[0x0B15] = 0x5A
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": decoy_segment,
+            "fs": 0x4000,
+            "gs": 0x5000,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x207D:
+                calls.append({"call": "kbd_read_int16", "result": key})
+                machine.reg_write(UC_X86_REG_AX, key)
+            elif dispatches and address == handler_entry:
+                calls.append(
+                    {
+                        "call": "input_action_handler",
+                        "action": action,
+                        "raw_low_byte": machine.reg_read(UC_X86_REG_DX) & 0xFF,
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x207D, b"\xCB"),
+                (0, 0x113E, bytes(translation)),
+                (0, 0x123E, bytes(handlers)),
+                (0, handler_entry, b"\xC3"),
+                (data_segment, 0, bytes(data)),
+                (decoy_segment, 0, bytes(decoy)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=100,
+        )
+
+        expected_calls = [{"call": "kbd_read_int16", "result": key}]
+        if dispatches and key != 0:
+            expected_calls.append(
+                {
+                    "call": "input_action_handler",
+                    "action": action,
+                    "raw_low_byte": key & 0xFF,
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x210e {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        if machine.mem_read(data_segment * 16 + 0x0B15, 1)[0] != 0:
+            raise AssertionError(f"0x210e {name}: did not clear DS:0x0b15")
+        if machine.mem_read(decoy_segment * 16 + 0x0B15, 1)[0] != 0x5A:
+            raise AssertionError(f"0x210e {name}: changed non-DS state")
+        for register in ("eax", "ebx", "edx"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(
+                    f"0x210e {name}: {register}={actual:#x}, "
+                    f"expected={initial[register]:#x}"
+                )
+        for register in ("ecx", "esi", "edi", "ebp", "ds", "es", "fs", "gs"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(f"0x210e {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 4:
+            raise AssertionError(f"0x210e {name}: far return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 4, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x210e {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "key": key,
+                "translated_code": translated_code,
+                "translation_result": action,
+                "calls": calls,
+                "state_b15": 0,
+                "preserved_registers": [
+                    "eax",
+                    "ebx",
+                    "ecx",
+                    "edx",
+                    "esi",
+                    "edi",
+                    "ebp",
+                    "ds",
+                    "es",
+                    "fs",
+                    "gs",
+                ],
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
+def presentation_loop_vectors(entry: int, streamed: bool) -> list[dict[str, object]]:
+    if streamed:
+        body_size = 104
+        expected_hash = "884c493750fa6ba16c66642e3acf546ee0e0c831a153c1a246c32462360c1459"
+        label = "0x1f10"
+        active_line = 1
+    else:
+        body_size = 79
+        expected_hash = "03d13c948ca0c97cc97cc8b7d6f970ded618a7f10e97ba1d70caec6370633334"
+        label = "0x1ec1"
+        active_line = 0
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != expected_hash:
+        raise AssertionError(f"{label}: recovered {body_size}-byte body changed")
+
+    cases = [
+        {
+            "name": "input_exit_before_scene",
+            "input_stops": [1],
+            "scene_gates": [],
+        },
+        {
+            "name": "scene_completes_without_frame",
+            "input_stops": [0],
+            "scene_gates": [0],
+        },
+        {
+            "name": "two_frames_then_input_exit",
+            "input_stops": [0, 0, 1],
+            "scene_gates": [1, 1],
+        },
+    ]
+    data_segment = 0x2000
+    display_segment = 0x5000
+    display_offset = 0x4321
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    return_address = 0xF600 + (0x10 if streamed else 0)
+    link_target_offset = 0x4A40
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        input_stops = [int(value) for value in case["input_stops"]]
+        scene_gates = [int(value) for value in case["scene_gates"]]
+        calls: list[dict[str, object]] = []
+        input_index = 0
+        scene_index = 0
+        data = bytearray(0x10000)
+        data[0x0B13] = 0xA5
+        data[0x1FB2] = 0x5A
+        data[0x252E] = 0x66
+        data[0x1FA7 : 0x1FA9] = struct.pack("<H", 0x7788)
+        data[0x6788 : 0x678A] = struct.pack("<H", 0x9999)
+        data[0x5221 : 0x5225] = struct.pack(
+            "<HH", display_offset, display_segment
+        )
+        data[0x0D4B : 0x0D4B + 15] = b"mu\\credits.voc\0"
+        display = bytes((index * 17 + 3) & 0xFF for index in range(256))
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD0000 | link_target_offset,
+            "sp": caller_sp,
+            "ds": 0x3000 if streamed else data_segment,
+            "es": 0x4000 if streamed else data_segment,
+            "fs": 0x6000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal input_index, scene_index
+            if address == 0xB7B7:
+                calls.append(
+                    {
+                        "call": "snd_stream_source_load",
+                        "path_segment": machine.reg_read(UC_X86_REG_DS),
+                        "path_offset": machine.reg_read(UC_X86_REG_SI),
+                    }
+                )
+            elif address == 0xB5B3:
+                calls.append({"call": "snd_stream_start"})
+            elif address == 0x29A6:
+                calls.append({"call": "vga_dac_clear"})
+            elif address == 0x377B:
+                calls.append(
+                    {
+                        "call": "blit_fill_row_5221",
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+            elif address == 0x37BF:
+                calls.append(
+                    {
+                        "call": "back_buffer_fill",
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+            elif address == 0x210E:
+                stop = input_stops[input_index]
+                calls.append(
+                    {
+                        "call": "input_action_dispatch",
+                        "iteration": input_index,
+                        "stop": stop,
+                    }
+                )
+                machine.mem_write(data_segment * 16 + 0x0B13, bytes([stop]))
+                input_index += 1
+            elif address == 0x9710:
+                gate = scene_gates[scene_index]
+                calls.append(
+                    {
+                        "call": "dlg_line_id_scene_dispatch",
+                        "line": machine.reg_read(UC_X86_REG_AX),
+                        "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                        "gate": gate,
+                    }
+                )
+                machine.mem_write(data_segment * 16 + 0x1FB2, bytes([gate]))
+                scene_index += 1
+            elif address == 0xB650:
+                calls.append({"call": "snd_stream_refill"})
+            elif address == 0x38CE:
+                calls.append(
+                    {
+                        "call": "chunky_to_planar_framebuffer",
+                        "source_segment": machine.reg_read(UC_X86_REG_DS),
+                        "source_offset": machine.reg_read(UC_X86_REG_SI),
+                    }
+                )
+            elif address == 0x17AF:
+                calls.append({"call": "page_offset_helper"})
+            elif address == 0x178B:
+                calls.append({"call": "palette_upload_if_dirty"})
+
+        stub_memory = [
+            (0, return_address, b"\xCC"),
+            (0, 0x377B, b"\xCB"),
+            (0, 0x37BF, b"\xCB"),
+            (0, 0x210E, b"\xCB"),
+            (0, 0x9710, b"\xCB"),
+            (0, 0x38CE, b"\xCB"),
+            (0, 0x17AF, b"\xC3"),
+            (0, 0x178B, b"\xC3"),
+        ]
+        if streamed:
+            stub_memory.extend(
+                [
+                    (0, 0xB7B7, b"\xCB"),
+                    (0, 0xB5B3, b"\xCB"),
+                    (0, 0x29A6, b"\xCB"),
+                    (0, 0xB650, b"\xCB"),
+                ]
+            )
+        stub_memory.extend(
+            [
+                (data_segment, 0, bytes(data)),
+                (display_segment, display_offset, display),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ]
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            stub_memory,
+            code_handler=capture,
+            instruction_count=300,
+        )
+
+        expected_calls: list[dict[str, object]] = []
+        if streamed:
+            expected_calls.extend(
+                [
+                    {
+                        "call": "snd_stream_source_load",
+                        "path_segment": data_segment,
+                        "path_offset": 0x0D4B,
+                    },
+                    {"call": "snd_stream_start"},
+                    {"call": "vga_dac_clear"},
+                ]
+            )
+        expected_calls.extend(
+            [
+                {"call": "blit_fill_row_5221", "color": 0},
+                {"call": "back_buffer_fill", "color": 0},
+            ]
+        )
+        for iteration, stop in enumerate(input_stops):
+            expected_calls.append(
+                {
+                    "call": "input_action_dispatch",
+                    "iteration": iteration,
+                    "stop": stop,
+                }
+            )
+            if stop:
+                break
+            gate = scene_gates[iteration]
+            expected_calls.append(
+                {
+                    "call": "dlg_line_id_scene_dispatch",
+                    "line": active_line,
+                    "link_target_offset": link_target_offset,
+                    "gate": gate,
+                }
+            )
+            if not gate:
+                break
+            if streamed:
+                expected_calls.append({"call": "snd_stream_refill"})
+            expected_calls.extend(
+                [
+                    {
+                        "call": "chunky_to_planar_framebuffer",
+                        "source_segment": display_segment,
+                        "source_offset": display_offset,
+                    },
+                    {"call": "page_offset_helper"},
+                    {"call": "palette_upload_if_dirty"},
+                ]
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"{label} {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+
+        actual_active_line = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x6788, 2)
+        )[0]
+        actual_stop = machine.mem_read(data_segment * 16 + 0x0B13, 1)[0]
+        actual_gate = machine.mem_read(data_segment * 16 + 0x1FB2, 1)[0]
+        if streamed:
+            expected_active_line = 1
+            expected_stop = input_stops[min(input_index, len(input_stops)) - 1]
+            expected_gate = scene_gates[scene_index - 1] if scene_index else 0x5A
+            if machine.mem_read(data_segment * 16 + 0x252E, 1)[0] != 0:
+                raise AssertionError(f"{label} {name}: crop gate not cleared")
+            if struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + 0x1FA7, 2)
+            )[0] != 0:
+                raise AssertionError(f"{label} {name}: vertical offset not cleared")
+            if machine.reg_read(UC_X86_REG_DS) != data_segment:
+                raise AssertionError(f"{label} {name}: DS not rebased from GS")
+            if machine.reg_read(UC_X86_REG_ES) != data_segment:
+                raise AssertionError(f"{label} {name}: ES not rebased from GS")
+        else:
+            expected_active_line = 0xFFFF
+            expected_stop = 0
+            expected_gate = 0
+        if (
+            actual_active_line != expected_active_line
+            or actual_stop != expected_stop
+            or actual_gate != expected_gate
+        ):
+            raise AssertionError(
+                f"{label} {name}: final state "
+                f"line={actual_active_line:#x}, stop={actual_stop:#x}, "
+                f"gate={actual_gate:#x}"
+            )
+        if machine.reg_read(UC_X86_REG_BP) != initial["ebp"] & 0xFFFF:
+            raise AssertionError(f"{label} {name}: changed BP link cursor")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"{label} {name}: near return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"{label} {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "active_line": active_line,
+                "link_target_offset": link_target_offset,
+                "calls": calls,
+                "final_state": {
+                    "active_line": actual_active_line,
+                    "input_stop": actual_stop,
+                    "presentation_gate": actual_gate,
+                    "crop_enabled": machine.mem_read(
+                        data_segment * 16 + 0x252E, 1
+                    )[0],
+                    "vertical_offset": struct.unpack(
+                        "<H", machine.mem_read(data_segment * 16 + 0x1FA7, 2)
+                    )[0],
+                },
+                "final_segments": {
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "gs": machine.reg_read(UC_X86_REG_GS),
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
+def presentation_line_zero_run_vectors() -> list[dict[str, object]]:
+    return presentation_loop_vectors(0x1EC1, streamed=False)
+
+
+def presentation_line_one_stream_run_vectors() -> list[dict[str, object]]:
+    return presentation_loop_vectors(0x1F10, streamed=True)
+
+
 def dlg_line_id_scene_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x9D10
     return_address = 0xF700
@@ -58033,6 +58538,21 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9d10_natural.json",
         dlg_line_id_scene_dispatch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1ec1_natural.json",
+        presentation_line_zero_run_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1f10_natural.json",
+        presentation_line_one_stream_run_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_210e_natural.json",
+        input_action_dispatch_vectors(),
         args.check,
     )
     update_vector(

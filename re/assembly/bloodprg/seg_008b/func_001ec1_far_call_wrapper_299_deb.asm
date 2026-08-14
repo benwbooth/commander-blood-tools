@@ -6,8 +6,8 @@
 ; seg_off: 008b:1011
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: far_call_wrapper_299_deb
-; label_comment: far-call wrapper: xor ax,ax; lcall 0x299:0xdeb; xor ax,ax. Thin wrapper invoking the 0x299:0xdeb far routine with a zero argument
+; label: presentation_line_zero_run
+; label_comment: Modal presentation loop for scene line zero. Clears both framebuffers, sets DS:0x6788=0, polls the far-return input dispatcher, services 0971:0000 with inherited BP, and presents each active frame through chunky conversion, page advance, and palette upload. Exit clears DS:0x0B13/0x1FB2 and sets the active line to 0xFFFF. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001ec1_presentation_line_zero_run.c and re/tools/oracle_vectors/func_1ec1_natural.json
 ; byte_count: 79
 ; boundary: cfg_blocks_5_terminals_2
 ; terminal: jmp 0x1ed2:1, ret:1

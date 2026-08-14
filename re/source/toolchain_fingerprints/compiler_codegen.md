@@ -4104,6 +4104,64 @@ share the original data segment; drop-in replacement still needs the original
 preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
 contract for the implicit mode table and palette destination.
 
+## BLOODPRG line-zero presentation-loop candidate
+
+`0x001EC1` is the modal scene-line-zero loop. It clears the current display band
+in both buffers, publishes active line zero, polls input before every scene
+service, and presents an active frame through chunky-to-planar conversion, page
+advance, and palette upload. Either the navigation input bit or a cleared scene
+gate reaches shared cleanup that clears both gates and retires the active line.
+
+Three patched-callee vectors cover immediate input exit, scene completion before
+the first frame, and two complete frames followed by input exit. They prove call
+order and arguments, DS:SI display-buffer ownership, inherited BP forwarding,
+terminal state, segment state, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 37 instructions/92 bytes versus the original 24/79,
+with 79.17 percent mnemonic-multiset overlap. No inline assembly is used. The
+source API normalizes the ambient BP link cursor to an explicit argument; a
+drop-in binary replacement needs that narrow entry adapter.
+
+## BLOODPRG streamed credits presentation-loop candidate
+
+`0x001F10` establishes the game data segment, selects scene line one, loads
+`mu\\credits.voc`, starts streaming, clears the VGA palette and both buffers,
+and then runs the same input/scene/presentation loop. Each active frame refills
+the stream before converting and presenting the framebuffer.
+
+Three patched-callee vectors cover both early exits and two active frames. They
+prove GS-to-DS/ES rebasing, all initialization, the exact VOC pathname and call
+order, per-frame refill placement, inherited BP forwarding, final state, stack,
+and near return.
+
+Open Watcom compiles the actual natural candidate warning-free to 45
+instructions/123 bytes versus the original 32/104, with 71.88 percent
+mnemonic-multiset overlap and no inline assembly. A source rebuild binds the
+named objects in one game-data segment; a drop-in replacement additionally
+needs the original segment-entry and inherited-BP adapters.
+
+## BLOODPRG input-action dispatcher candidate
+
+`0x00210E` clears the input-dispatch state byte, polls a BIOS-style 16-bit key,
+uses AL for ordinary keys or AH-or-0x80 for extended keys, translates that byte
+through `CS:0x113E`, rejects a signed-negative action, and calls the indexed
+near handler from `CS:0x123E`. The original low byte remains in DL at the
+handler boundary. The dispatcher mechanism is recovered; the shipped table's
+extent and target identities are still deliberately unresolved.
+
+Five direct vectors cover no key, ordinary and high-bit low bytes, an extended
+key, and signed rejection. They prove the exact table indices, raw handler byte,
+DS state ownership, complete register and segment preservation, stack, and far
+return.
+
+Open Watcom compiles the actual natural candidate warning-free to 30
+instructions/74 bytes versus the original 24/50, with 66.67 percent
+mnemonic-multiset overlap. Natural C stack-passes the typed callback argument;
+exact linking therefore needs a raw-DL callback adapter, the original
+preserve-all envelope, and verified code-segment table placement. No handler
+identities or table entries are guessed.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
