@@ -4698,6 +4698,367 @@ def vm_script_block_scan_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_control_flow_vectors() -> list[dict[str, object]]:
+    record_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    code_segment = 0x5200
+    stack_segment = 0x9000
+    first_value = 0x1111
+    second_value = 0x2222
+    cases = [
+        {"name": "empty_field_defaults_to_first", "field": 0},
+        {"name": "field_selects_first", "field": first_value},
+        {"name": "field_selects_second", "field": second_value},
+        {
+            "name": "branch_a_overrides_field",
+            "field": first_value,
+            "branch_a": second_value,
+        },
+        {"name": "branch_a_unmatched", "branch_a": 0x3333},
+        {"name": "field_unmatched", "field": 0x3333},
+        {"name": "parent_selects_first", "branch_b": first_value},
+        {"name": "parent_selects_second", "branch_b": second_value},
+        {"name": "parent_unmatched", "branch_b": 0x3333},
+        {
+            "name": "first_miss_parent_second",
+            "field": 0x3333,
+            "branch_b": second_value,
+        },
+        {
+            "name": "negative_field_offset",
+            "field": second_value,
+            "field_offset": -6,
+        },
+        {
+            "name": "wrapped_field_offset",
+            "field": first_value,
+            "field_offset": 8,
+            "object_offset": 0xFFFC,
+        },
+        {
+            "name": "code_list_starts_at_zero",
+            "field": 0,
+            "code_offset": 0xFFFF,
+        },
+        {
+            "name": "lowest_kind_bit_selects_column",
+            "field": second_value,
+            "kind": 0x0120,
+            "field_offset": 0x12,
+        },
+    ]
+    vectors = []
+
+    def logic_flags_16(value: int) -> dict[str, bool]:
+        result = value & 0xFFFF
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": False,
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        kind = int(case.get("kind", 1 << (case_index % 8)))
+        kind_column = (kind & -kind).bit_length() - 1
+        field_offset = int(case.get("field_offset", 0x10))
+        object_offset = int(case.get("object_offset", 0x0800 + case_index * 0x40))
+        field_address = (object_offset + field_offset) & 0xFFFF
+        field_before = int(case.get("field", 0))
+        branch_a_before = int(case.get("branch_a", 0))
+        branch_b = int(case.get("branch_b", 0))
+        code_offset = int(case.get("code_offset", 0x4FFF + case_index * 0x20))
+        code_start = (code_offset + 1) & 0xFFFF
+        second_node = 0x0100 if code_start == 0 else 0x7000 + case_index * 0x10
+        first_payload = (code_start + 4) & 0xFFFF
+        second_payload = (second_node + 4) & 0xFFFF
+        selected = branch_a_before or field_before or first_value
+        first_match = (
+            first_payload
+            if selected == first_value
+            else second_payload if selected == second_value else 0
+        )
+        parent_match = (
+            first_payload
+            if branch_b == first_value
+            else second_payload if branch_b == second_value else 0
+        )
+        program_before = 0xA000 + case_index
+        program_after = first_match or program_before
+        base_offset = 0x1234
+        pointer = struct.pack("<HH", base_offset, code_segment)
+        record_pointer_decoy = struct.pack("<HH", 0x3333, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x4444, stack_segment)
+        relative_code = (base_offset + code_start) & 0xFFFF
+        relative_decoy = b"\xad\xde\xad\xde\xad\xde\xad\xde"
+        field_table_offset = 0x6D60 + 0x0F * 16 + kind_column
+        memory = [
+            (0, 0x56A6, b"\xc3"),
+            (0, 0x5AFD, b"\xc3"),
+            (game_segment, 0x6720, pointer),
+            (record_segment, 0x6720, record_pointer_decoy),
+            (stack_segment, 0x6720, stack_pointer_decoy),
+            (game_segment, field_table_offset, bytes([field_offset & 0xFF])),
+            (record_segment, field_table_offset, b"\x5a"),
+            (code_segment, field_table_offset, b"\xa5"),
+            (stack_segment, field_table_offset, b"\x3c"),
+            (record_segment, object_offset, struct.pack("<H", kind)),
+            (record_segment, field_address, struct.pack("<H", field_before)),
+            (
+                code_segment,
+                code_start,
+                struct.pack("<HH", first_value, second_node),
+            ),
+            (
+                code_segment,
+                second_node,
+                struct.pack("<HH", second_value, 0),
+            ),
+            (code_segment, relative_code, relative_decoy),
+            (game_segment, 0x6772, struct.pack("<H", program_before)),
+            (game_segment, 0x6776, struct.pack("<H", 0x7777)),
+            (game_segment, 0x6782, struct.pack("<H", branch_a_before)),
+            (game_segment, 0x6784, struct.pack("<H", branch_b)),
+            (game_segment, 0x67B2, b"\x6d"),
+        ]
+        global_decoys = []
+        for segment, xor_mask in (
+            (record_segment, 0x5555),
+            (code_segment, 0xAAAA),
+            (stack_segment, 0x0F0F),
+        ):
+            entries = [
+                (0x6772, struct.pack("<H", program_before ^ xor_mask)),
+                (0x6776, struct.pack("<H", 0x7777 ^ xor_mask)),
+                (0x6782, struct.pack("<H", branch_a_before ^ xor_mask)),
+                (0x6784, struct.pack("<H", branch_b ^ xor_mask)),
+                (0x67B2, bytes([0x6D ^ (xor_mask & 0xFF)])),
+            ]
+            for offset, data in entries:
+                memory.append((segment, offset, data))
+                global_decoys.append((segment, offset, data))
+        record_before = struct.pack("<H", kind)
+        code_nodes_before = [
+            (code_start, struct.pack("<HH", first_value, second_node)),
+            (second_node, struct.pack("<HH", second_value, 0)),
+        ]
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B20000 | code_offset,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | object_offset,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": record_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        calls = []
+
+        def capture_calls(machine: Uc, address: int, _size: int) -> None:
+            if address in (0x6023, 0x577A, 0x56A6, 0x5AFD):
+                calls.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+
+        machine = execute(
+            0x56FE,
+            0x5779,
+            initial,
+            memory,
+            code_handler=capture_calls,
+        )
+
+        initial_dx = initial["edx"] & 0xFFFF
+        expected_calls = [
+            (
+                0x6023,
+                0x000F,
+                kind,
+                initial_dx,
+                code_start,
+                code_segment,
+                record_segment,
+            ),
+            (
+                0x577A,
+                selected,
+                field_address,
+                selected,
+                code_start,
+                code_segment,
+                record_segment,
+            ),
+        ]
+        if first_match != 0:
+            expected_calls.extend(
+                [
+                    (
+                        0x56A6,
+                        first_match,
+                        selected,
+                        selected,
+                        first_match,
+                        code_segment,
+                        record_segment,
+                    ),
+                    (
+                        0x5AFD,
+                        first_match,
+                        selected,
+                        selected,
+                        first_match,
+                        code_segment,
+                        record_segment,
+                    ),
+                ]
+            )
+        if branch_b != 0:
+            expected_calls.append(
+                (
+                    0x577A,
+                    branch_b,
+                    selected,
+                    selected,
+                    code_start,
+                    code_segment,
+                    record_segment,
+                )
+            )
+            if parent_match != 0:
+                expected_calls.append(
+                    (
+                        0x56A6,
+                        parent_match,
+                        branch_b,
+                        selected,
+                        parent_match,
+                        code_segment,
+                        record_segment,
+                    )
+                )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x56fe {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | parent_match
+        expected_registers["edx"] = (
+            initial["edx"] & 0xFFFF0000
+        ) | selected
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x56fe {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_field = struct.unpack(
+            "<H", machine.mem_read(record_segment * 16 + field_address, 2)
+        )[0]
+        state_after = (
+            struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x6772, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x6776, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x6782, 2)
+            )[0],
+            struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x6784, 2)
+            )[0],
+            machine.mem_read(game_segment * 16 + 0x67B2, 1)[0],
+        )
+        expected_state = (program_after, code_start, selected, branch_b, 1)
+        if (actual_field, state_after) != (selected, expected_state):
+            raise AssertionError(
+                f"0x56fe {name}: field/state={(actual_field, state_after)}, "
+                f"expected={(selected, expected_state)}"
+            )
+        if bytes(machine.mem_read(record_segment * 16 + object_offset, 2)) != record_before:
+            raise AssertionError(f"0x56fe {name}: object kind changed")
+        for node_offset, expected in code_nodes_before:
+            if bytes(machine.mem_read(code_segment * 16 + node_offset, 4)) != expected:
+                raise AssertionError(f"0x56fe {name}: code node changed")
+        if bytes(machine.mem_read(code_segment * 16 + relative_code, 8)) != relative_decoy:
+            raise AssertionError(f"0x56fe {name}: base-relative code decoy changed")
+        for segment, offset, expected in global_decoys:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x56fe {name}: global segment decoy changed")
+        if bytes(machine.mem_read(record_segment * 16 + 0x6720, 4)) != record_pointer_decoy:
+            raise AssertionError(f"0x56fe {name}: record pointer decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x6720, 4)) != stack_pointer_decoy:
+            raise AssertionError(f"0x56fe {name}: stack pointer decoy changed")
+
+        expected_flags = logic_flags_16(parent_match)
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x56fe {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x5779] != 0xC3:
+            raise AssertionError("0x56fe: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "kind_mask": kind,
+                "field_offset": field_offset,
+                "object_offset": object_offset,
+                "code_pointer_offset_ignored": base_offset,
+                "code_start": code_start,
+                "field_before": field_before,
+                "branch_a_before": branch_a_before,
+                "selected_control": selected,
+                "first_match": first_match,
+                "branch_b": branch_b,
+                "parent_match": parent_match,
+                "program_counter_after": program_after,
+                "block_calls": [
+                    call[4] for call in calls if call[0] == 0x56A6
+                ],
+                "collector_called": any(call[0] == 0x5AFD for call in calls),
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_cod_scan_vectors() -> list[dict[str, object]]:
     entry = 0x739B
     return_address = 0xF39B
@@ -76147,6 +76508,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_56a6_natural.json",
         vm_script_block_scan_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_56fe_natural.json",
+        vm_control_flow_vectors(),
         args.check,
     )
     update_vector(

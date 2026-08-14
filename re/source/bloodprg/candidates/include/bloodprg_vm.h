@@ -67,8 +67,10 @@ extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_reg_6770_gs; /* explicit GS:0x6770 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_program_counter; /* GS:0x6772 */
+extern volatile cb_u16 CB_GAME_DATA vm_pc_saved; /* GS:0x6776 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
-extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
+extern volatile cb_u16 CB_GAME_DATA vm_branch_a; /* GS:0x6782 */
+extern volatile cb_u16 CB_GAME_DATA vm_branch_b; /* GS:0x6784 */
 extern volatile cb_u16 vm_presentation_owner_offset; /* DS:0x679A */
 extern volatile cb_u16 vm_named_vbio_object; /* DS:0x679C */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
@@ -160,7 +162,7 @@ typedef struct bloodprg_vm_record_triple {
 
 typedef struct bloodprg_value_node {
     cb_u16 value;
-    const struct bloodprg_value_node CB_NEAR *next;
+    cb_u16 next_offset;
     cb_u8 payload[1];
 } bloodprg_value_node;
 
@@ -193,6 +195,8 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux (bloodprg_vm_opcode_handler, bloodprg_vm_opcode_handler_abi)
 #pragma aux vm_script_block_scan parm [ds si] value [ax] \
         modify exact [ax bx cx dx si di bp es]
+#pragma aux vm_control_flow parm [ds si] [bx] modify exact [ax cx dx]
+#pragma aux value_scan_match parm [ax] [ds si] value [ax] modify exact [ax bx]
 #pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_op_a3_collect modify exact []
@@ -240,7 +244,7 @@ void CB_NEAR object_heap_access(void);       /* 0x00149B */
 void CB_NEAR active_object_list_build(void); /* 0x00604E */
 cb_u16 CB_FAR nav_chart_list_build(void);    /* 0x00721A */
 const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
-        const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
+        const bloodprg_value_node CB_FAR *node); /* 0x00577A */
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
 cb_u16 CB_NEAR vm_patch_stream_build(void);  /* 0x001D94 */
 cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile); /* 0x0053A0 */
@@ -252,6 +256,9 @@ cb_i16 CB_FAR vm_run_wrapper(void);           /* 0x0055A4 */
 void CB_NEAR vm_op_a3_collect(void);             /* 0x005AFD */
 cb_i16 CB_NEAR vm_script_block_scan(
         bloodprg_vm_image_ptr script_bytes);     /* 0x0056A6 */
+void CB_NEAR vm_control_flow(
+        const volatile bloodprg_vm_object_header CB_FAR *object,
+        cb_u16 code_offset);                     /* 0x0056FE */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */

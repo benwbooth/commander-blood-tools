@@ -5197,6 +5197,42 @@ direct binary replacement additionally needs the original final SI/DI residue
 and inherited DX on the coding-error path; ordinary C supplies the ignored
 detail pointer in DS:DX instead.
 
+## BLOODPRG VM control-flow candidate
+
+`0x0056FE` receives an object at `DS:SI` and a code-list offset in `BX`. It
+keeps the object under ES, loads only the code-image segment from GS:0x6720,
+increments the supplied offset, and saves it to GS:0x6776. Selector `0x0F`
+resolves the object's control field. A zero field takes the first code-node
+value, then a nonzero GS:0x6782 overrides either choice. The selected value is
+written to both the field and GS:0x6782.
+
+The routine scans segment-relative `{value,next_offset,payload}` nodes. A first
+match publishes its payload offset to GS:0x6772, executes that block, and runs
+the collector. A nonzero GS:0x6784 independently rescans from the saved head
+and executes its match without updating the program counter or collecting.
+Fourteen patched-callee vectors execute the shipped body with the real field
+resolver and node scanner while instrumenting only the independently verified
+block executor and collector. They cover every selection source, both node
+positions, misses, both dispatch phases, signed and wrapping fields, lowest
+kind-bit columns, a list at offset zero, ignored far-pointer base offsets,
+segments, registers, flags, stack, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits a warning-free natural
+69-instruction/163-byte function versus 53/124 original, with 86.79 percent
+mnemonic-multiset overlap and no inline assembly. Large model permits the
+floating code-image DS while SS continues to address runtime data. Full-source
+integration therefore needs the shipped SS=GS invariant. Direct replacement
+also needs the original frameless register allocation and nested-callee
+clobbers; Watcom keeps far-pointer state in a six-byte frame.
+
+The same work corrected `0x00577A`: its link is a segment-relative `u16`
+offset, not a host near pointer, and offset zero is a valid initial node even
+though a zero next link terminates the walk. The candidate now exposes the
+recovered target-AX, node-DS:SI, result-AX ABI. Watcom large emits 11
+instructions/21 bytes versus 13/23 original. It preserves the natural node
+walk but compares AX directly, folds payload movement into `SI += 4`, and does
+not reproduce the original BX clobber or LODSW-derived flags.
+
 ## BLOODPRG location-panel entity draw candidate
 
 `0x009240` loads entity zero's sprite source extent through the DS alias of the

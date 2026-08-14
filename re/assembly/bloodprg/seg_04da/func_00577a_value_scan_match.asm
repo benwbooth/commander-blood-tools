@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: value_scan_match
-; label_comment: value-match scan (2 calls): bx=ax; loop lodsw; cmp ax,bx until match. Linear search for a 16-bit value in a word stream
+; label_comment: scan DS:SI linked {value,next_offset,payload} nodes for AX and return the matching payload offset +4 or zero in AX; natural C: re/source/bloodprg/candidates/seg_04da/func_00577a_value_scan_match.c
 ; byte_count: 23
 ; boundary: cfg_blocks_6_terminals_2
 ; terminal: jmp 0x577d:1, ret:1

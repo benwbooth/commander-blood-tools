@@ -1,0 +1,364 @@
+[
+  {
+    "name": "empty_field_defaults_to_first",
+    "kind_mask": 1,
+    "field_offset": 16,
+    "object_offset": 2048,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20480,
+    "field_before": 0,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20484,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 20484,
+    "block_calls": [
+      20484
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "field_selects_first",
+    "kind_mask": 2,
+    "field_offset": 16,
+    "object_offset": 2112,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20512,
+    "field_before": 4369,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20516,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 20516,
+    "block_calls": [
+      20516
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "field_selects_second",
+    "kind_mask": 4,
+    "field_offset": 16,
+    "object_offset": 2176,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20544,
+    "field_before": 8738,
+    "branch_a_before": 0,
+    "selected_control": 8738,
+    "first_match": 28708,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 28708,
+    "block_calls": [
+      28708
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "branch_a_overrides_field",
+    "kind_mask": 8,
+    "field_offset": 16,
+    "object_offset": 2240,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20576,
+    "field_before": 4369,
+    "branch_a_before": 8738,
+    "selected_control": 8738,
+    "first_match": 28724,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 28724,
+    "block_calls": [
+      28724
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "branch_a_unmatched",
+    "kind_mask": 16,
+    "field_offset": 16,
+    "object_offset": 2304,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20608,
+    "field_before": 0,
+    "branch_a_before": 13107,
+    "selected_control": 13107,
+    "first_match": 0,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 40964,
+    "block_calls": [],
+    "collector_called": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "field_unmatched",
+    "kind_mask": 32,
+    "field_offset": 16,
+    "object_offset": 2368,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20640,
+    "field_before": 13107,
+    "branch_a_before": 0,
+    "selected_control": 13107,
+    "first_match": 0,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 40965,
+    "block_calls": [],
+    "collector_called": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "parent_selects_first",
+    "kind_mask": 64,
+    "field_offset": 16,
+    "object_offset": 2432,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20672,
+    "field_before": 0,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20676,
+    "branch_b": 4369,
+    "parent_match": 20676,
+    "program_counter_after": 20676,
+    "block_calls": [
+      20676,
+      20676
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "parent_selects_second",
+    "kind_mask": 128,
+    "field_offset": 16,
+    "object_offset": 2496,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20704,
+    "field_before": 0,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20708,
+    "branch_b": 8738,
+    "parent_match": 28788,
+    "program_counter_after": 20708,
+    "block_calls": [
+      20708,
+      28788
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "parent_unmatched",
+    "kind_mask": 1,
+    "field_offset": 16,
+    "object_offset": 2560,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20736,
+    "field_before": 0,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20740,
+    "branch_b": 13107,
+    "parent_match": 0,
+    "program_counter_after": 20740,
+    "block_calls": [
+      20740
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_miss_parent_second",
+    "kind_mask": 2,
+    "field_offset": 16,
+    "object_offset": 2624,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20768,
+    "field_before": 13107,
+    "branch_a_before": 0,
+    "selected_control": 13107,
+    "first_match": 0,
+    "branch_b": 8738,
+    "parent_match": 28820,
+    "program_counter_after": 40969,
+    "block_calls": [
+      28820
+    ],
+    "collector_called": false,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "negative_field_offset",
+    "kind_mask": 4,
+    "field_offset": -6,
+    "object_offset": 2688,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20800,
+    "field_before": 8738,
+    "branch_a_before": 0,
+    "selected_control": 8738,
+    "first_match": 28836,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 28836,
+    "block_calls": [
+      28836
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "wrapped_field_offset",
+    "kind_mask": 8,
+    "field_offset": 8,
+    "object_offset": 65532,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20832,
+    "field_before": 4369,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 20836,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 20836,
+    "block_calls": [
+      20836
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "code_list_starts_at_zero",
+    "kind_mask": 16,
+    "field_offset": 16,
+    "object_offset": 2816,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 0,
+    "field_before": 0,
+    "branch_a_before": 0,
+    "selected_control": 4369,
+    "first_match": 4,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 4,
+    "block_calls": [
+      4
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lowest_kind_bit_selects_column",
+    "kind_mask": 288,
+    "field_offset": 18,
+    "object_offset": 2880,
+    "code_pointer_offset_ignored": 4660,
+    "code_start": 20896,
+    "field_before": 8738,
+    "branch_a_before": 0,
+    "selected_control": 8738,
+    "first_match": 28884,
+    "branch_b": 0,
+    "parent_match": 0,
+    "program_counter_after": 28884,
+    "block_calls": [
+      28884
+    ],
+    "collector_called": true,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]
