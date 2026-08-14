@@ -186,6 +186,7 @@ extern const char
 extern volatile char CB_GAME_DATA
         ship_3d_hyperspace_filename_suffix[]; /* ES=GS:0x2106 */
 extern volatile cb_u16 bridge_panorama_file_handle; /* DS:0x0AC4 */
+extern volatile char bridge_panorama_path[]; /* DS:0x00D3, tb.big */
 extern volatile bridge_panorama_directory_entry
         bridge_panorama_directory; /* DS:0x0AD2 */
 extern volatile bridge_panorama_station_record CB_GAME_DATA

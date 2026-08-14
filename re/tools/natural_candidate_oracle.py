@@ -562,6 +562,627 @@ def bloodprg_entry_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bloodprg_main_vectors() -> list[dict[str, object]]:
+    entry = 0x0EB0
+    return_address = 0xFEB0
+    expected_hash = "11c25185af4cf3fc10569a0bf64706d13f4c7ca5463cee449152d6b4279f5a00"
+    if hashlib.sha256(EXE[entry : entry + 1172]).hexdigest() != expected_hash:
+        raise AssertionError("0x0EB0: recovered 1172-byte body changed")
+
+    game_segment = 0x1800
+    resource_segment = 0x2400
+    allocation_segments = [0x3000, 0x3100, 0x3200, 0x4300, 0x4400, 0x4500]
+    driver_resource_segment = 0x5200
+    caller_sp = 0xF000
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+
+    helper_targets = {
+        0x4B90: ("resource_allocate", True),
+        0x16A7: ("startup_loading_screen_and_write_directory_prepare", False),
+        0x155F: ("resource_archive_index_backing_initialize", False),
+        0x1344: ("cdrom_audio_prepare", False),
+        0x24BB: ("resource_file_load", True),
+        0x2093: ("resource_source_select", True),
+        0x227B: ("resource_load_by_id", True),
+        0x4D20: ("resource_handle_resolve", True),
+        0xB1B0: ("audio_param_init_cd5", True),
+        0x39C7: ("resource_named_file_load", True),
+        0x9567: ("ship_3d_point_cloud_randomize", True),
+        0x1EC1: ("presentation_line_zero_run", False),
+        0xBA05: ("snd_bank_loader", True),
+        0x17D9: ("back_buffer_init", True),
+        0x210E: ("input_action_dispatch", True),
+        0x070E: ("poll_mouse", True),
+        0x1A93: ("main_loop_hud_refresh", False),
+        0x1FBC: ("mouse_button_edges_update", False),
+        0x4FA4: ("vm_run_wrapper", True),
+        0x4DA0: ("vm_resource_profile_select", True),
+        0x4F5B: ("vm_record_state_proc", True),
+        0x149B: ("object_heap_access", False),
+        0x8696: ("ship_3d_hud_palette_snapshot_and_camera_reset", True),
+        0xB59D: ("snd_driver_call", True),
+        0xB7B7: ("snd_stream_source_load", True),
+        0xB5B3: ("snd_stream_start", True),
+        0x71E0: ("bridge_render_frame", True),
+        0x14CA: ("confirm_dialog_step", False),
+        0xB650: ("snd_stream_refill", True),
+        0xB1E3: ("audio_process_ade", True),
+        0xA9A0: ("ship_presentation_fsm", True),
+        0x1855: ("scene_transition_step", False),
+        0x1B4B: ("save_load_menu_step", False),
+        0x1AD3: ("presentation_choice_transition_step", False),
+        0x8363: ("presentation_ready_gate", True),
+        0x38CE: ("chunky_to_planar_framebuffer", True),
+        0x6CA8: ("dlg_menu_words_inline_reveal_step", True),
+        0x8DF5: ("subtitle_reveal_pump", True),
+        0x1610: ("manu3_hand_frame_dispatch", False),
+        0x1F78: ("palette_transition_step", True),
+        0x17AF: ("page_offset_helper", False),
+        0x178B: ("palette_upload_if_dirty", False),
+        0x9953: ("presentation_update_1fb2", True),
+        0x1F10: ("presentation_line_one_stream_run", False),
+        0x21C3: ("startup_write_directory_enter", True),
+        0x147F: ("startup_transient_files_delete", False),
+        0x21E9: ("startup_original_directory_restore", True),
+    }
+    initialization_names = [
+        "resource_allocate",
+        "resource_allocate",
+        "resource_allocate",
+        "resource_allocate",
+        "resource_allocate",
+        "resource_allocate",
+        "startup_loading_screen_and_write_directory_prepare",
+        "resource_archive_index_backing_initialize",
+        "cdrom_audio_prepare",
+        "resource_file_load",
+        "resource_source_select",
+        "dos_open",
+    ]
+    successful_initialization_tail = [
+        "resource_file_load",
+        "resource_load_by_id",
+        "resource_handle_resolve",
+        "audio_param_init_cd5",
+        "resource_named_file_load",
+        "ship_3d_point_cloud_randomize",
+        "presentation_line_zero_run",
+        "snd_bank_loader",
+        "back_buffer_init",
+        "mouse_position_set",
+    ]
+    common_frame_tail = [
+        "bridge_render_frame",
+        "confirm_dialog_step",
+        "snd_stream_refill",
+        "audio_process_ade",
+        "ship_presentation_fsm",
+        "scene_transition_step",
+        "save_load_menu_step",
+        "presentation_choice_transition_step",
+        "presentation_ready_gate",
+        "chunky_to_planar_framebuffer",
+        "dlg_menu_words_inline_reveal_step",
+        "subtitle_reveal_pump",
+        "manu3_hand_frame_dispatch",
+        "palette_transition_step",
+        "page_offset_helper",
+        "palette_upload_if_dirty",
+    ]
+    shutdown_names = [
+        "presentation_update_1fb2",
+        "snd_driver_call",
+        "presentation_line_one_stream_run",
+        "snd_driver_call",
+        "startup_write_directory_enter",
+        "dos_close",
+        "dos_delete",
+        "dos_close",
+        "dos_delete",
+        "dos_close",
+        "dos_delete",
+        "startup_transient_files_delete",
+        "startup_original_directory_restore",
+        "dos_close",
+    ]
+    cases = (
+        {"name": "tb_big_open_failure", "open_ok": False, "frames": 0},
+        {"name": "input_exit_and_complete_cleanup", "frames": 0},
+        {"name": "one_normal_frame_then_exit", "frames": 1},
+        {"name": "profile_switch_full_sequence", "frames": 1,
+         "profile_request": 3},
+        {"name": "profile_switch_failure_shuts_down", "frames": 0,
+         "profile_request": 4, "profile_result": -1},
+        {"name": "vm_failure_shuts_down", "frames": 0,
+         "presentation_mode": 0, "vm_result": -1},
+        {"name": "presentation_owner_is_forwarded", "frames": 1,
+         "presentation_active": 1, "scene_gate": 1,
+         "active_line": 7, "entry_metric": 5, "wrap_index": 1,
+         "owner_offset": 0x5E64},
+        {"name": "zero_owner_selects_menu_word_buffer", "frames": 1,
+         "presentation_active": 1, "scene_gate": 1,
+         "active_line": 7, "entry_metric": 5, "wrap_index": 1,
+         "owner_offset": 0},
+        {"name": "request_bit_zero_preserves_text_modes_and_plays_audio",
+         "frames": 1, "request_flags": 1, "audio_pending": 1,
+         "text_mode": 0xA5, "voice_mode": 0x5A},
+        {"name": "request_bit_one_clears_text_modes", "frames": 1,
+         "request_flags": 2, "text_mode": 0xA5, "voice_mode": 0x5A},
+        {"name": "dialogue_countdown_holds_completion", "frames": 1,
+         "hold_complete": 1, "word_choice": 0x1234,
+         "dialogue_countdown": 1},
+    )
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        events: list[dict[str, object]] = []
+        allocation_index = 0
+        input_count = 0
+        vm_call_count = 0
+        open_ok = bool(case.get("open_ok", True))
+        opened_handle = 0x6000 + case_index
+
+        data_before = bytearray(0x10000)
+        static_data = EXE[0xD420 : 0xD420 + 0x10000]
+        data_before[: len(static_data)] = static_data
+        struct.pack_into("<HH", data_before, caller_sp,
+                         return_address, 0)
+        data_before[caller_sp + 4 : caller_sp + 4 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+        data_before[0x0C3B] = 2
+        data_before[0x0C3C] = 0
+        if open_ok:
+            struct.pack_into("<HH", data_before, 0x0C47, 0x1111, 0x2222)
+            struct.pack_into("<HH", data_before, 0x0A86, 0x4444, 0x3333)
+        else:
+            struct.pack_into("<HH", data_before, 0x0C47, 0, 0)
+            struct.pack_into("<HH", data_before, 0x0A86, 0, 0)
+
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": game_segment,
+            "es": game_segment,
+            "fs": resource_segment,
+            "gs": game_segment,
+            "ss": game_segment,
+            "flags": 0x0202,
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def game_write_u8(machine: Uc, offset: int, value: int) -> None:
+            machine.mem_write(game_segment * 16 + offset,
+                              bytes((value & 0xFF,)))
+
+        def game_write_u16(machine: Uc, offset: int, value: int) -> None:
+            machine.mem_write(game_segment * 16 + offset,
+                              struct.pack("<H", value & 0xFFFF))
+
+        def game_read_u8(machine: Uc, offset: int) -> int:
+            return machine.mem_read(game_segment * 16 + offset, 1)[0]
+
+        def game_read_u16(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+
+        def c_string(machine: Uc, segment: int, offset: int) -> str:
+            raw = bytes(machine.mem_read(segment * 16 + offset, 64))
+            return raw.split(b"\0", 1)[0].decode("ascii")
+
+        def inject_frame_state(machine: Uc) -> None:
+            game_write_u8(machine, 0x0B13, 0)
+            game_write_u8(machine, 0x0ADF, 0)
+            game_write_u16(machine, 0x2793, 1)
+            game_write_u16(machine, 0x6780,
+                           int(case.get("profile_request", -1)))
+            game_write_u8(machine, 0x67AC,
+                          int(case.get("presentation_active", 0)))
+            game_write_u8(machine, 0x24F3, 0)
+            game_write_u8(machine, 0x2751, 0)
+            game_write_u8(machine, 0x67B0, 0)
+            game_write_u8(machine, 0x5E64, 0)
+            game_write_u8(machine, 0x2565, 0)
+            game_write_u8(machine, 0x2736, 0)
+            game_write_u8(machine, 0x2737, 0)
+            game_write_u8(machine, 0x27DA, 0)
+            game_write_u8(machine, 0x2792, 0)
+            game_write_u8(machine, 0x1FB2, 0)
+            game_write_u8(machine, 0x67AA,
+                          int(case.get("request_flags", 0)))
+            game_write_u8(machine, 0x274F,
+                          int(case.get("scene_gate", 0)))
+            game_write_u8(machine, 0x252A, 0)
+            game_write_u16(machine, 0x6788,
+                           int(case.get("active_line", 0xFFFF)))
+            game_write_u16(machine, 0x0DAF,
+                           int(case.get("entry_metric", 0)))
+            game_write_u16(machine, 0x0D60,
+                           int(case.get("wrap_index", 0)))
+            game_write_u16(machine, 0x679A,
+                           int(case.get("owner_offset", 0)))
+            game_write_u8(machine, 0x67BC, 0)
+            game_write_u8(machine, 0x67BB,
+                          int(case.get("hold_complete", 0)))
+            game_write_u16(machine, 0x67F8,
+                           int(case.get("word_choice", 0)))
+            game_write_u16(machine, 0x0B35,
+                           int(case.get("dialogue_countdown", 0)))
+            game_write_u8(machine, 0x0A3F, 0)
+            game_write_u8(machine, 0x1FB3, 0)
+            game_write_u8(machine, 0x27EB,
+                          int(case.get("audio_pending", 0)))
+            game_write_u8(machine, 0x0CFA,
+                          int(case.get("text_mode", 0)))
+            game_write_u8(machine, 0x0CFB,
+                          int(case.get("voice_mode", 0)))
+            game_write_u8(machine, 0x0DB8, 0)
+            game_write_u8(machine, 0x0A40, 0)
+            game_write_u8(machine, 0x27E0,
+                          int(case.get("presentation_mode", 1)))
+
+        def return_frame(machine: Uc, far_return: bool) -> list[int]:
+            sp = machine.reg_read(UC_X86_REG_SP)
+            count = 2 if far_return else 1
+            return list(struct.unpack(
+                "<" + "H" * count,
+                machine.mem_read(game_segment * 16 + sp, count * 2),
+            ))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal allocation_index, input_count, vm_call_count
+            target = helper_targets.get(address)
+            if target is None:
+                return
+            helper_name, far_return = target
+            event: dict[str, object] = {
+                "event": helper_name,
+                "return_frame": return_frame(machine, far_return),
+            }
+            if helper_name == "resource_allocate":
+                event["handle"] = machine.reg_read(UC_X86_REG_AX)
+                event["bytes"] = machine.reg_read(UC_X86_REG_EBP)
+                machine.reg_write(UC_X86_REG_DS,
+                                  allocation_segments[allocation_index])
+                allocation_index += 1
+            elif helper_name == "resource_file_load":
+                event["path"] = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+                event["destination"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+            elif helper_name == "resource_source_select":
+                event["path"] = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_DX),
+                )
+            elif helper_name in ("resource_load_by_id",
+                                  "resource_handle_resolve",
+                                  "resource_named_file_load"):
+                event["resource_id"] = machine.reg_read(UC_X86_REG_AX)
+                if helper_name == "resource_handle_resolve":
+                    machine.reg_write(UC_X86_REG_DS,
+                                      driver_resource_segment)
+            elif helper_name == "audio_param_init_cd5":
+                event["driver_segment"] = machine.reg_read(UC_X86_REG_AX)
+                event["storage"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                ]
+            elif helper_name in ("presentation_line_zero_run",
+                                  "presentation_line_one_stream_run",
+                                  "bridge_render_frame",
+                                  "scene_transition_step"):
+                event["scene_link_target"] = machine.reg_read(UC_X86_REG_BP)
+            elif helper_name == "snd_bank_loader":
+                event["mode"] = machine.reg_read(UC_X86_REG_AX)
+                event["path"] = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+            elif helper_name == "input_action_dispatch":
+                input_count += 1
+                event["frame"] = input_count
+                if input_count == 1:
+                    inject_frame_state(machine)
+                    if int(case.get("frames", 0)) == 0 \
+                            and "profile_result" not in case \
+                            and "vm_result" not in case:
+                        game_write_u8(machine, 0x0B13, 1)
+                else:
+                    game_write_u8(machine, 0x0B13, 1)
+            elif helper_name == "vm_resource_profile_select":
+                event["profile"] = machine.reg_read(UC_X86_REG_AX)
+                machine.reg_write(UC_X86_REG_AX,
+                                  int(case.get("profile_result", 0)) & 0xFFFF)
+            elif helper_name == "vm_run_wrapper":
+                vm_call_count += 1
+                event["call"] = vm_call_count
+                machine.reg_write(UC_X86_REG_AX,
+                                  int(case.get("vm_result", 0)) & 0xFFFF)
+            elif helper_name == "snd_stream_source_load":
+                event["path"] = c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+            elif helper_name == "palette_transition_step":
+                game_write_u16(machine, 0x0B2D, 0)
+            events.append(event)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number == 0x33:
+                events.append({
+                    "event": "mouse_position_set",
+                    "function": machine.reg_read(UC_X86_REG_AX),
+                    "position": [
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DX),
+                    ],
+                })
+                return
+            if number != 0x21:
+                raise AssertionError(f"0x0EB0 {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x3D:
+                events.append({
+                    "event": "dos_open",
+                    "path": c_string(machine,
+                                     machine.reg_read(UC_X86_REG_DS),
+                                     machine.reg_read(UC_X86_REG_DX)),
+                })
+                machine.reg_write(UC_X86_REG_AX,
+                                  opened_handle if open_ok else 2)
+                set_carry(machine, not open_ok)
+            elif function == 0x3E:
+                events.append({
+                    "event": "dos_close",
+                    "handle": machine.reg_read(UC_X86_REG_BX),
+                })
+                set_carry(machine, False)
+            elif function == 0x41:
+                events.append({
+                    "event": "dos_delete",
+                    "path": c_string(machine,
+                                     machine.reg_read(UC_X86_REG_DS),
+                                     machine.reg_read(UC_X86_REG_DX)),
+                })
+                set_carry(machine, False)
+            else:
+                raise AssertionError(
+                    f"0x0EB0 {name}: unexpected DOS function {function:#x}"
+                )
+
+        code_patches = [
+            (0, address, b"\xcb" if far_return else b"\xc3")
+            for address, (_helper_name, far_return) in helper_targets.items()
+        ]
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            code_patches + [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0, bytes(data_before)),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=5000,
+        )
+
+        actual_names = [str(event["event"]) for event in events]
+        expected_names = list(initialization_names)
+        if open_ok:
+            expected_names.extend(successful_initialization_tail)
+            expected_names.extend([
+                "input_action_dispatch",
+                "poll_mouse",
+            ])
+            if name != "input_exit_and_complete_cleanup":
+                expected_names.extend([
+                    "main_loop_hud_refresh",
+                    "mouse_button_edges_update",
+                ])
+            if "vm_result" in case:
+                expected_names.append("vm_run_wrapper")
+            elif "profile_request" in case:
+                expected_names.append("vm_resource_profile_select")
+                if int(case.get("profile_result", 0)) >= 0:
+                    expected_names.extend([
+                        "vm_run_wrapper",
+                        "vm_record_state_proc",
+                        "object_heap_access",
+                        "ship_3d_hud_palette_snapshot_and_camera_reset",
+                    ])
+            if int(case.get("frames", 0)) != 0:
+                if int(case.get("audio_pending", 0)) != 0:
+                    expected_names.extend([
+                        "snd_driver_call",
+                        "snd_stream_source_load",
+                        "snd_stream_start",
+                    ])
+                expected_names.extend(common_frame_tail)
+                expected_names.extend([
+                    "input_action_dispatch",
+                    "poll_mouse",
+                ])
+        expected_names.extend(shutdown_names if open_ok else [
+            "presentation_update_1fb2",
+            "snd_driver_call",
+            "presentation_line_one_stream_run",
+            "snd_driver_call",
+            "startup_write_directory_enter",
+            "startup_transient_files_delete",
+            "startup_original_directory_restore",
+        ])
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x0EB0 {name}: events={actual_names}, expected={expected_names}"
+            )
+
+        allocations = [
+            (int(event["handle"]), int(event["bytes"]))
+            for event in events if event["event"] == "resource_allocate"
+        ]
+        expected_allocations = [
+            (8, 0x10000), (10, 0x10000), (11, 0x10010),
+            (12, 0x10000), (9, 0x10000), (100, 0x10010),
+        ]
+        if allocations != expected_allocations:
+            raise AssertionError(f"0x0EB0 {name}: allocations={allocations}")
+
+        data_after = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        pointer_words = {
+            "overlay": struct.unpack_from("<HH", data_after, 0x0A96),
+            "display": struct.unpack_from("<HH", data_after, 0x5221),
+            "back": struct.unpack_from("<HH", data_after, 0x5229),
+            "viewport": struct.unpack_from("<HH", data_after, 0x522D),
+            "resource": struct.unpack_from("<HH", data_after, 0x0A7C),
+            "presentation": struct.unpack_from("<HH", data_after, 0x0A80),
+            "work": struct.unpack_from("<HH", data_after, 0x0ABC),
+            "snd_bank": struct.unpack_from("<HH", data_after, 0x0BB3),
+            "snd_stream": struct.unpack_from("<HH", data_after, 0x0BB7),
+        }
+        expected_pointers = {
+            "overlay": (0, allocation_segments[0]),
+            "display": (0, allocation_segments[1]),
+            "back": (0, allocation_segments[2] + 1),
+            "viewport": (0, allocation_segments[2]),
+            "resource": (0, allocation_segments[3]),
+            "presentation": (0, allocation_segments[3] + 0x640),
+            "work": (0, allocation_segments[4]),
+            "snd_bank": (0, allocation_segments[5]),
+            "snd_stream": (0, allocation_segments[5] + 0x800),
+        }
+        if pointer_words != expected_pointers:
+            raise AssertionError(
+                f"0x0EB0 {name}: pointers={pointer_words}, expected={expected_pointers}"
+            )
+        viewport = struct.unpack(
+            "<HHIHHI",
+            bytes(machine.mem_read(allocation_segments[2] * 16, 16)),
+        )
+        if viewport != (0, 1, 4, 320, 200, 0):
+            raise AssertionError(f"0x0EB0 {name}: viewport={viewport}")
+
+        if open_ok:
+            if struct.unpack_from("<H", data_after, 0x0AC4)[0] != opened_handle:
+                raise AssertionError(f"0x0EB0 {name}: panorama handle changed")
+            if struct.unpack_from("<H", data_after, 0x0AC2)[0] != 0x01B2:
+                raise AssertionError(f"0x0EB0 {name}: default table not selected")
+            audio_init = next(
+                event for event in events
+                if event["event"] == "audio_param_init_cd5"
+            )
+            if audio_init["driver_segment"] != driver_resource_segment - 0x10:
+                raise AssertionError(f"0x0EB0 {name}: audio init={audio_init}")
+            if audio_init["storage"] != [allocation_segments[5] + 0x800, 0]:
+                raise AssertionError(f"0x0EB0 {name}: audio storage={audio_init}")
+            if data_after[0x0ADE] != 1:
+                raise AssertionError(f"0x0EB0 {name}: VOC playback not enabled")
+
+        expected_scene_link = int(case.get("owner_offset", 0x0010))
+        if name == "zero_owner_selects_menu_word_buffer":
+            expected_scene_link = 0
+            if struct.unpack_from("<HH", data_after, 0x674A) != (
+                    0x6790, game_segment):
+                raise AssertionError(f"0x0EB0 {name}: menu words pointer changed")
+            if data_after[0x67B0] != 1:
+                raise AssertionError(f"0x0EB0 {name}: defer flag not raised")
+        if name == "presentation_owner_is_forwarded":
+            if data_after[0x5E64] != 1:
+                raise AssertionError(f"0x0EB0 {name}: owner byte not raised")
+        scene_events = [
+            event for event in events
+            if event["event"] in (
+                "bridge_render_frame", "scene_transition_step",
+                "presentation_line_one_stream_run",
+            )
+        ]
+        if any(int(event["scene_link_target"]) != expected_scene_link
+               for event in scene_events):
+            raise AssertionError(f"0x0EB0 {name}: scene links={scene_events}")
+
+        if name == "request_bit_zero_preserves_text_modes_and_plays_audio":
+            if data_after[0x0CFA:0x0CFC] != bytes((0xA5, 0x5A)):
+                raise AssertionError(f"0x0EB0 {name}: text modes were cleared")
+        if name == "request_bit_one_clears_text_modes":
+            if data_after[0x0CFA:0x0CFC] != b"\0\0":
+                raise AssertionError(f"0x0EB0 {name}: text modes survived")
+        if name == "dialogue_countdown_holds_completion":
+            if data_after[0x67BB] != 1 or data_after[0x27D7] != 0:
+                raise AssertionError(f"0x0EB0 {name}: hold state changed")
+
+        expected_handles = [0x1111, 0x2222, 0x3333, 0x4444] if open_ok else []
+        closed_handles = [
+            int(event["handle"]) for event in events
+            if event["event"] == "dos_close"
+        ]
+        if closed_handles != expected_handles:
+            raise AssertionError(
+                f"0x0EB0 {name}: closed={closed_handles}, expected={expected_handles}"
+            )
+        deleted_paths = [
+            str(event["path"]) for event in events
+            if event["event"] == "dos_delete"
+        ]
+        if deleted_paths != (["son.snd", "mus.snd", "dir.dat"] if open_ok else []):
+            raise AssertionError(f"0x0EB0 {name}: deleted={deleted_paths}")
+
+        for register, expected in {
+            "ds": game_segment,
+            "es": game_segment,
+            "fs": resource_segment,
+            "gs": game_segment,
+            "ss": game_segment,
+        }.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x0EB0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_BP) != expected_scene_link:
+            raise AssertionError(f"0x0EB0 {name}: final BP changed")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 4:
+            raise AssertionError(f"0x0EB0 {name}: stack pointer changed")
+        if data_after[caller_sp + 4 : caller_sp + 4 + len(stack_sentinel)] \
+                != stack_sentinel:
+            raise AssertionError(f"0x0EB0 {name}: stack sentinel changed")
+
+        vectors.append({
+            "name": name,
+            "allocations": allocations,
+            "arena_pointers": {key: list(value)
+                               for key, value in pointer_words.items()},
+            "viewport": list(viewport),
+            "events": events,
+            "final_scene_link_target": expected_scene_link,
+            "closed_handles": closed_handles,
+            "deleted_paths": deleted_paths,
+        })
+    return vectors
+
+
 def cmos_rtc_read_vectors() -> list[dict[str, object]]:
     vectors = []
     for seconds in (0x00, 0x01, 0x09, 0x10, 0x59, 0x80, 0xFE, 0xFF):
@@ -86416,6 +87037,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0600_natural.json",
         bloodprg_entry_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_0eb0_natural.json",
+        bloodprg_main_vectors(),
         args.check,
     )
     update_vector(

@@ -6,8 +6,8 @@
 ; seg_off: 008b:0000
 ; group: seg_008b
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: mem_alloc_64k
-; label_comment: memory alloc 64K: ax=8; ebp=0x10000 (65536 bytes); lcall 0x4b9:0 (allocator); gs:[0xa98]=ds (store returned segment). Allocates a 64KB arena and records its segment
+; label: bloodprg_main
+; label_comment: Primary game owner: allocates six conventional-memory arenas, initializes resources/audio/video state, runs the input/VM/presentation/render loop, and closes transient files on every shutdown path. Natural C and eleven direct vectors: re/source/bloodprg/candidates/seg_008b/func_000eb0_bloodprg_main.c and re/tools/oracle_vectors/func_0eb0_natural.json
 ; incoming: call@0x0006d0->008b:0000
 ; byte_count: 1172
 ; boundary: cfg_blocks_77_terminals_11

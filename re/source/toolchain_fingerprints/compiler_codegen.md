@@ -5940,6 +5940,31 @@ executable integration must provide the loader-owned relocated `DS=SS=GS`,
 `FS=0x0BBF`, `SP=0x7E78`, and PSP `ES` state through linker/startup machinery;
 standard C cannot safely replace its own live stack.
 
+## BLOODPRG primary game owner at 0x000EB0
+
+The 1,172-byte routine previously labeled `mem_alloc_64k` is the complete game
+lifecycle beneath the MZ bootstrap. It allocates six conventional-memory
+arenas, derives the overlay, framebuffer, viewport, resource, presentation,
+work, and sound pointers, initializes the resource and audio systems, then
+runs the input/VM/presentation/render loop until any common shutdown path.
+
+Eleven patched-boundary vectors execute the untouched original bytes. They
+cover failed `tb.big` opening, complete cleanup, one full frame, profile switch
+success and failure, VM failure, presentation-owner forwarding, the zero-owner
+menu-word path, both subtitle request-bit mode cases, dialogue hold timing, and
+the temporary audio trigger. The vectors also prove all six allocation sizes,
+the exact derived segment pointers and viewport descriptor, helper ordering and
+arguments, close/delete paths, segment ownership, and stack integrity.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
+C89 coordinator to 434 instructions/1,595 bytes versus 337/1,172 original,
+with 78.93 percent mnemonic-multiset overlap and 71.81 percent ordered mnemonic
+overlap. The function contains no inline assembly or register-state facade.
+Full-source integration requires the shipped `DS=GS=SS` data aliases,
+asynchronous updates to `main_frame_delay_ticks`, and adapters for recovered
+register ABIs. Direct replacement additionally needs the original inherited-BP
+handoffs, direct interrupt frames, selective callee residue, and terminal flags.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

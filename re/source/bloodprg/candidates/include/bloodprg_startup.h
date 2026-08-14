@@ -26,9 +26,12 @@ extern char startup_original_file_path[
 extern char startup_write_file_path[
         BLOODPRG_WRITE_DIRECTORY_CAPACITY];         /* game data:0x021A */
 extern const cb_u8 startup_loading_text[];           /* game data:0x0159 */
+extern const cb_u8 main_default_presentation_colors[]; /* game data:0x01B2 */
+extern const cb_u8 CB_NEAR *main_presentation_color_table; /* data:0x0AC2 */
 extern volatile cb_u8 CB_GAME_DATA startup_write_directory_active; /* GS:0x0AE0 */
 extern char startup_transient_paths[4][16];          /* game data:0x0DD7 */
 extern volatile cb_u8 CB_GAME_DATA startup_audio_driver_id; /* GS:0x0C3B */
+extern volatile cb_u16 startup_audio_resource_id; /* DS:0x0C3B word alias */
 extern volatile cb_u16 CB_GAME_DATA startup_audio_configuration; /* GS:0x0C45 */
 extern volatile cb_u8 CB_FAR *startup_dos_pool;          /* game data:0x0A42 */
 extern volatile cb_u16 startup_reserved_word_0af0;       /* game data:0x0AF0 */

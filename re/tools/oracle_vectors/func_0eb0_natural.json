@@ -1,0 +1,4882 @@
+[
+  {
+    "name": "tb_big_open_failure",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [],
+    "deleted_paths": []
+  },
+  {
+    "name": "input_exit_and_complete_cleanup",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "one_normal_frame_then_exit",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "profile_switch_full_sequence",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "vm_resource_profile_select",
+        "return_frame": [
+          4301,
+          0
+        ],
+        "profile": 3
+      },
+      {
+        "event": "vm_run_wrapper",
+        "return_frame": [
+          4323,
+          0
+        ],
+        "call": 1
+      },
+      {
+        "event": "vm_record_state_proc",
+        "return_frame": [
+          4328,
+          0
+        ]
+      },
+      {
+        "event": "object_heap_access",
+        "return_frame": [
+          4331
+        ]
+      },
+      {
+        "event": "ship_3d_hud_palette_snapshot_and_camera_reset",
+        "return_frame": [
+          4336,
+          0
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "profile_switch_failure_shuts_down",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "vm_resource_profile_select",
+        "return_frame": [
+          4301,
+          0
+        ],
+        "profile": 4
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "vm_failure_shuts_down",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "vm_run_wrapper",
+        "return_frame": [
+          4232,
+          0
+        ],
+        "call": 1
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "presentation_owner_is_forwarded",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 24164
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 24164
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 24164
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 24164,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "zero_owner_selects_menu_word_buffer",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 0
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 0
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 0
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 0,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "request_bit_zero_preserves_text_modes_and_plays_audio",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4695,
+          0
+        ]
+      },
+      {
+        "event": "snd_stream_source_load",
+        "return_frame": [
+          4708,
+          0
+        ],
+        "path": "mu\\tablo2.voc"
+      },
+      {
+        "event": "snd_stream_start",
+        "return_frame": [
+          4713,
+          0
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "request_bit_one_clears_text_modes",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  },
+  {
+    "name": "dialogue_countdown_holds_completion",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "mouse_button_edges_update",
+        "return_frame": [
+          4220
+        ]
+      },
+      {
+        "event": "bridge_render_frame",
+        "return_frame": [
+          4718,
+          0
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "confirm_dialog_step",
+        "return_frame": [
+          4721
+        ]
+      },
+      {
+        "event": "snd_stream_refill",
+        "return_frame": [
+          4726,
+          0
+        ]
+      },
+      {
+        "event": "audio_process_ade",
+        "return_frame": [
+          4731,
+          0
+        ]
+      },
+      {
+        "event": "ship_presentation_fsm",
+        "return_frame": [
+          4736,
+          0
+        ]
+      },
+      {
+        "event": "scene_transition_step",
+        "return_frame": [
+          4739
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "save_load_menu_step",
+        "return_frame": [
+          4742
+        ]
+      },
+      {
+        "event": "presentation_choice_transition_step",
+        "return_frame": [
+          4745
+        ]
+      },
+      {
+        "event": "presentation_ready_gate",
+        "return_frame": [
+          4781,
+          0
+        ]
+      },
+      {
+        "event": "chunky_to_planar_framebuffer",
+        "return_frame": [
+          4791,
+          0
+        ]
+      },
+      {
+        "event": "dlg_menu_words_inline_reveal_step",
+        "return_frame": [
+          4797,
+          0
+        ]
+      },
+      {
+        "event": "subtitle_reveal_pump",
+        "return_frame": [
+          4802,
+          0
+        ]
+      },
+      {
+        "event": "manu3_hand_frame_dispatch",
+        "return_frame": [
+          4805
+        ]
+      },
+      {
+        "event": "palette_transition_step",
+        "return_frame": [
+          4809,
+          0
+        ]
+      },
+      {
+        "event": "page_offset_helper",
+        "return_frame": [
+          4820
+        ]
+      },
+      {
+        "event": "palette_upload_if_dirty",
+        "return_frame": [
+          4823
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "poll_mouse",
+        "return_frame": [
+          4133,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
+  }
+]

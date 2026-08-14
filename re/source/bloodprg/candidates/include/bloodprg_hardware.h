@@ -11,6 +11,7 @@ extern volatile cb_u16 CB_GAME_DATA video_crtc_base_port; /* GS:0x0A9E */
 extern volatile cb_u16 video_crtc_base_port_ds; /* DS:0x0A9E alias */
 extern volatile cb_u8 CB_GAME_DATA video_retrace_phase;   /* GS:0x0B12 */
 extern volatile cb_u16 CB_GAME_DATA video_calibration_ticks; /* GS:0x0B35 */
+extern volatile cb_u16 main_frame_delay_ticks; /* DS:0x0B2D */
 extern bloodprg_font_ptr CB_GAME_DATA bios_font_8x8; /* GS:0x5225 */
 
 typedef void (CB_INTERRUPT CB_FAR *bloodprg_interrupt_handler)(void);
