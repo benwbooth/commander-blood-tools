@@ -24,6 +24,14 @@
 #define SHIP_3D_HUD_PALETTE_COLORS 64u
 #define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
 #define SHIP_3D_HUD_LAYOUT_NAME_BYTES 16u
+#define SHIP_PRESENTATION_ACTIVE 0x0001u
+#define SHIP_PRESENTATION_DIALOGUE 0x0002u
+#define SHIP_PRESENTATION_HUD 0x0004u
+#define SHIP_PRESENTATION_TRAVEL 0x0008u
+#define SHIP_PRESENTATION_NAVIGATION 0x0010u
+#define SHIP_PRESENTATION_PHASE_MASK 0x001eu
+#define SHIP_PRESENTATION_DIALOGUE_LINE_END 6u
+#define SHIP_PRESENTATION_TRANSITION_COMPLETE 100u
 #define SHIP_3D_HUD_OFFSCREEN_COORD ((cb_i16)-1000)
 #define SHIP_3D_POINT_CLOUD_COUNT 1000u
 #define SHIP_3D_OBJECT_ANCHOR_COUNT 11u
@@ -125,6 +133,8 @@ extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
 extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
 extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
 extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
+extern volatile cb_u8 ship_3d_dialogue_phase_ready; /* DS:0x2534 */
+extern volatile cb_u16 ship_3d_dialogue_cycle_line; /* DS:0x24F5 */
 extern volatile cb_u8 ship_3d_alien_overlay_armed; /* DS:0x0AE3 */
 extern volatile cb_u8 ship_3d_temp_snd_trigger; /* DS:0x0AE4 */
 extern volatile cb_u8 ship_3d_nav_choice_sound_gate; /* DS:0x0B13 */
@@ -246,6 +256,9 @@ int CB_FAR bridge_steer_update(
         cb_u16 CB_NEAR *presentation_link_target); /* 0x009656 */
 void CB_FAR alien_overlay_cycle(void); /* 0x00B591 */
 void CB_FAR ship_3d_plane_band_copy(void); /* 0x00B6DD */
+void CB_FAR ship_presentation_fsm(void); /* 0x00AFA0 */
+void CB_NEAR ship_3d_hud_init(void); /* 0x00B079 */
+void CB_NEAR ship_3d_navigation_update(void); /* 0x00B34E */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
         const volatile ship_3d_projection_context CB_GAME_DATA *projection,

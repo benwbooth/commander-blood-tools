@@ -7,7 +7,7 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: ship_presentation_fsm
-; label_comment: ship/navigation presentation FSM; dispatches ship HUD, procedural 3D, and dialogue update branches
+; label_comment: far ship-presentation phase owner; bit 0 gates initialization, then bits 1..4 prioritize dialogue cycling, HUD readiness, travel redraw, and navigation after the common depth/band/scene pass
 ; incoming: call@0x00127b->0a9a:0000
 ; byte_count: 217
 ; boundary: cfg_blocks_23_terminals_6

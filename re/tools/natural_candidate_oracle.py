@@ -53881,6 +53881,481 @@ def ship_3d_point_cloud_randomize_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_presentation_fsm_vectors() -> list[dict[str, object]]:
+    entry = 0xAFA0
+    body_size = 217
+    body_hash = "097da2c66843f677d4d07cd154d36336f0a000e7fac1d2d575eb53e9c7bcfa34"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0xafa0: recovered 217-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "inactive_returns_without_side_effects",
+            "state": 0x001E,
+            "calls": [],
+            "writes": [],
+            "ax": 0x001E,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "active_only_initializes_ship_presentation",
+            "state": 0x0001,
+            "calls": ["entity:4", "entity:31"],
+            "writes": [
+                (0x5249, 2, 1),
+                (0x2793, 2, 0),
+                (0x24F3, 2, 3),
+                (0x24F5, 2, 4),
+                (0x252D, 1, 0),
+                (0x2527, 2, 0),
+                (0x252F, 1, 0),
+            ],
+            "ax": 0x001F,
+            "final": ("logic8", 3),
+        },
+        {
+            "name": "initialization_mask_ignores_high_and_bit_five",
+            "state": 0x8021,
+            "calls": ["entity:4", "entity:31"],
+            "writes": [
+                (0x5249, 2, 1),
+                (0x2793, 2, 0),
+                (0x24F3, 2, 0x8023),
+                (0x24F5, 2, 4),
+                (0x252D, 1, 0),
+                (0x2527, 2, 0),
+                (0x252F, 1, 0),
+            ],
+            "ax": 0x001F,
+            "final": ("logic8", 0x23),
+        },
+        {
+            "name": "dialogue_phase_waits_for_presentation_gate",
+            "state": 0x0003,
+            "gate": 1,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1)],
+            "ax": 0x0003,
+            "final": ("logic8", 1),
+        },
+        {
+            "name": "zero_dialogue_cycle_closes_phase",
+            "state": 0x0003,
+            "cycle": 0,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x2534, 1, 0), (0x24F3, 2, 5)],
+            "ax": 0,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "dialogue_cycle_publishes_line_four",
+            "state": 0x0003,
+            "cycle": 4,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x6788, 2, 4), (0x24F5, 2, 5)],
+            "ax": 5,
+            "final": ("cmp16", 5, 6),
+        },
+        {
+            "name": "dialogue_cycle_wraps_after_line_five",
+            "state": 0x0003,
+            "cycle": 5,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x6788, 2, 5), (0x24F5, 2, 0)],
+            "ax": 0,
+            "final": ("logic16", 0),
+        },
+        {
+            "name": "dialogue_cycle_word_wraps",
+            "state": 0x0003,
+            "cycle": 0xFFFF,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [
+                (0x5249, 2, 1),
+                (0x6788, 2, 0xFFFF),
+                (0x24F5, 2, 0),
+            ],
+            "ax": 0,
+            "final": ("cmp16", 0, 6),
+        },
+        {
+            "name": "ready_dialogue_phase_closes_to_hud_state",
+            "state": 0x0003,
+            "ready": 1,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x2534, 1, 0), (0x24F3, 2, 5)],
+            "ax": 3,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "combined_dialogue_and_hud_runs_hud_after_ready",
+            "state": 0x0007,
+            "ready": 1,
+            "calls": ["depth", "band", "dispatch", "hud"],
+            "writes": [(0x5249, 2, 1), (0x2534, 1, 0), (0x24F3, 2, 5)],
+            "tail": "hud",
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "zero_cycle_suppresses_combined_hud_bit",
+            "state": 0x0007,
+            "cycle": 0,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x2534, 1, 0), (0x24F3, 2, 5)],
+            "ax": 0,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "hud_phase_runs_without_pending_gate",
+            "state": 0x0005,
+            "calls": ["depth", "band", "dispatch", "hud"],
+            "writes": [(0x5249, 2, 1)],
+            "tail": "hud",
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "hud_pending_waits_below_full_transition",
+            "state": 0x0005,
+            "hud_pending": 1,
+            "percent": 99,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1)],
+            "ax": 5,
+            "final": ("cmp16", 99, 100),
+        },
+        {
+            "name": "hud_pending_runs_at_full_transition",
+            "state": 0x0005,
+            "hud_pending": 1,
+            "percent": 100,
+            "calls": ["depth", "band", "dispatch", "hud"],
+            "writes": [(0x5249, 2, 1)],
+            "tail": "hud",
+            "final": ("cmp16", 100, 100),
+        },
+        {
+            "name": "travel_redraw_clears_display_band",
+            "state": 0x0009,
+            "redraw": 1,
+            "calls": ["depth", "band", "dispatch", "fill"],
+            "writes": [(0x5249, 2, 1), (0x24F3, 2, 0x0011)],
+            "tail": "fill",
+            "final": ("logic16", 0),
+        },
+        {
+            "name": "travel_waits_for_presentation_gate",
+            "state": 0x0009,
+            "gate": 1,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1)],
+            "ax": 9,
+            "final": ("logic8", 1),
+        },
+        {
+            "name": "travel_without_redraw_requests_line_three",
+            "state": 0x0009,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x6788, 2, 3), (0x27D8, 1, 0)],
+            "ax": 9,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "travel_phase_precedes_navigation_bit",
+            "state": 0x0019,
+            "calls": ["depth", "band", "dispatch"],
+            "writes": [(0x5249, 2, 1), (0x6788, 2, 3), (0x27D8, 1, 0)],
+            "ax": 0x19,
+            "final": ("logic8", 0),
+        },
+        {
+            "name": "navigation_phase_dispatches_update",
+            "state": 0x0011,
+            "calls": ["depth", "band", "dispatch", "nav"],
+            "writes": [(0x5249, 2, 1)],
+            "tail": "nav",
+            "final": ("logic8", 0x10),
+        },
+        {
+            "name": "hud_phase_precedes_navigation_bit",
+            "state": 0x0015,
+            "calls": ["depth", "band", "dispatch", "hud"],
+            "writes": [(0x5249, 2, 1)],
+            "tail": "hud",
+            "final": ("logic8", 0),
+        },
+    ]
+
+    data_segment = 0x3000
+    game_segment = 0x5000
+    stack_segment = 0x7000
+    caller_sp = 0xF800
+    tail_ax = 0x3333
+    tail_dx = 0x4444
+    helpers = {
+        0x3BD1: ("entity", "far"),
+        0xB75C: ("depth", "near"),
+        0xB6DD: ("band", "far"),
+        0x9710: ("dispatch", "far"),
+        0xB079: ("hud", "near"),
+        0x377B: ("fill", "far"),
+        0xB34E: ("nav", "near"),
+    }
+    vectors: list[dict[str, object]] = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        state = int(case["state"])
+        cycle = int(case.get("cycle", 0x2468))
+        ready = int(case.get("ready", 0))
+        gate = int(case.get("gate", 0))
+        hud_pending = int(case.get("hud_pending", 0))
+        percent = int(case.get("percent", 0x4321))
+        redraw = int(case.get("redraw", 0))
+
+        data_before = bytearray(
+            (offset * 7 + (offset >> 8) * 11 + case_index * 13 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 17 + (offset >> 8) * 19 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 29 + (offset >> 8) * 31 + case_index * 37 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        struct.pack_into("<H", data_before, 0x24F3, state)
+        struct.pack_into("<H", data_before, 0x24F5, cycle)
+        struct.pack_into("<H", data_before, 0x2527, 0x1357)
+        data_before[0x252D] = 0x7D
+        data_before[0x252F] = 0x5F
+        data_before[0x2530] = 0x60
+        data_before[0x2534] = ready
+        data_before[0x2535] = hud_pending
+        struct.pack_into("<H", data_before, 0x2793, 0xBEEF)
+        data_before[0x27D8] = redraw
+        data_before[0x1FB2] = gate
+        struct.pack_into("<H", data_before, 0x5249, 0xA55A)
+        struct.pack_into("<H", data_before, 0x524F, percent)
+        struct.pack_into("<H", data_before, 0x6788, 0x7777)
+
+        for offset, size, value in (
+            (0x24F3, 2, state ^ 0xFFFF),
+            (0x24F5, 2, cycle ^ 0xFFFF),
+            (0x2527, 2, 0xECA8),
+            (0x252D, 1, 0xD2),
+            (0x252F, 1, 0xD0),
+            (0x2534, 1, ready ^ 0x81),
+            (0x2535, 1, hud_pending ^ 0x82),
+            (0x2793, 2, 0x4110),
+            (0x27D8, 1, redraw ^ 0x84),
+            (0x1FB2, 1, gate ^ 0x88),
+            (0x5249, 2, 0x5AA5),
+            (0x524F, 2, percent ^ 0xFFFF),
+            (0x6788, 2, 0x8888),
+        ):
+            if size == 1:
+                game_before[offset] = value & 0xFF
+            else:
+                struct.pack_into("<H", game_before, offset, value & 0xFFFF)
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x1000,
+            "fs": 0x9000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+
+        expected_stack = bytearray(stack_before)
+        struct.pack_into("<H", expected_stack, 0xF7FE, data_segment)
+        struct.pack_into("<H", expected_stack, 0xF7FC, initial["esi"] & 0xFFFF)
+        expected_names = list(case["calls"])
+        if expected_names and expected_names[0].startswith("entity"):
+            struct.pack_into("<H", expected_stack, 0xF7FA, 0)
+            struct.pack_into("<H", expected_stack, 0xF7F8, 0xAFC6)
+        elif expected_names:
+            struct.pack_into("<H", expected_stack, 0xF7FA, 0)
+            struct.pack_into("<H", expected_stack, 0xF7F8, 0xAFF6)
+            tail = case.get("tail")
+            if tail == "hud":
+                struct.pack_into("<H", expected_stack, 0xF7FA, 0xB03F)
+            elif tail == "fill":
+                struct.pack_into("<H", expected_stack, 0xF7FA, 0)
+                struct.pack_into("<H", expected_stack, 0xF7F8, 0xB059)
+            elif tail == "nav":
+                struct.pack_into("<H", expected_stack, 0xF7FA, 0xB076)
+
+        memory = [
+            (data_segment, 0, bytes(data_before)),
+            (game_segment, 0, bytes(game_before)),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        for address, (_helper_name, return_kind) in helpers.items():
+            memory.append((0, address, b"\xcb" if return_kind == "far" else b"\xc3"))
+
+        actual_calls: list[dict[str, int | str]] = []
+        entity_index = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal entity_index
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            call_name = helper_name
+            if helper_name == "entity":
+                call_name = f"entity:{machine.reg_read(UC_X86_REG_AX)}"
+                entity_index += 1
+            actual_calls.append(
+                {
+                    "name": call_name,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+            if helper_name in ("hud", "fill", "nav"):
+                machine.reg_write(UC_X86_REG_AX, tail_ax)
+                machine.reg_write(UC_X86_REG_DX, tail_dx)
+                machine.reg_write(UC_X86_REG_DS, 0x1111)
+                machine.reg_write(UC_X86_REG_SI, 0x2222)
+
+        machine = execute(
+            entry,
+            0xB078,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=2000,
+        )
+
+        actual_names = [str(call["name"]) for call in actual_calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0xafa0 {name}: calls={actual_names}, expected={expected_names}"
+            )
+        expected_call_ax = []
+        expected_call_sp = []
+        for call_name in expected_names:
+            if call_name.startswith("entity:"):
+                expected_call_ax.append(int(call_name.split(":", 1)[1]))
+                expected_call_sp.append(0xF7F8)
+            elif call_name == "fill":
+                expected_call_ax.append(0)
+                expected_call_sp.append(0xF7F8)
+            else:
+                expected_call_ax.append(state)
+                expected_call_sp.append(
+                    0xF7FA
+                    if call_name in ("depth", "hud", "nav")
+                    else 0xF7F8
+                )
+        if [int(call["ax"]) for call in actual_calls] != expected_call_ax:
+            raise AssertionError(f"0xafa0 {name}: helper AX inputs differ")
+        if [int(call["sp"]) for call in actual_calls] != expected_call_sp:
+            raise AssertionError(f"0xafa0 {name}: helper stack frames differ")
+
+        expected_data = bytearray(data_before)
+        for offset, size, value in case["writes"]:
+            if int(size) == 1:
+                expected_data[int(offset)] = int(value) & 0xFF
+            else:
+                struct.pack_into(
+                    "<H", expected_data, int(offset), int(value) & 0xFFFF
+                )
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(
+            expected_data
+        ):
+            raise AssertionError(f"0xafa0 {name}: data segment differs")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_before
+        ):
+            raise AssertionError(f"0xafa0 {name}: GS decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16, 0x10000)) != bytes(
+            expected_stack
+        ):
+            raise AssertionError(f"0xafa0 {name}: stack segment differs")
+
+        tail_called = "tail" in case
+        expected_ax = tail_ax if tail_called else int(case["ax"])
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_ax
+        if tail_called:
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFF0000
+            ) | tail_dx
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xafa0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        final = tuple(case["final"])
+        if final[0] == "cmp16":
+            expected_flags = sub16_flags(int(final[1]), int(final[2]))
+        else:
+            result = int(final[1])
+            width = 16 if final[0] == "logic16" else 8
+            expected_flags = {
+                "cf": False,
+                "pf": (result & 0xFF).bit_count() % 2 == 0,
+                "zf": (result & ((1 << width) - 1)) == 0,
+                "sf": bool(result & (0x8000 if width == 16 else 0x80)),
+                "of": False,
+            }
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if final[0] == "cmp16":
+            actual_flags["af"] = bool(flags & 0x0010)
+        comparable_expected = {
+            key: value for key, value in expected_flags.items() if key in actual_flags
+        }
+        if actual_flags != comparable_expected:
+            raise AssertionError(
+                f"0xafa0 {name}: flags={actual_flags}, expected={comparable_expected}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "state_before": state,
+                "dialogue_cycle_before": cycle,
+                "ready": ready,
+                "presentation_gate": gate,
+                "hud_pending": hud_pending,
+                "transition_percent": percent,
+                "redraw": redraw,
+                "calls": actual_calls,
+                "writes": [list(item) for item in case["writes"]],
+                "registers_after": expected_registers,
+                "defined_flags": actual_flags,
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def alien_overlay_cycle_vectors() -> list[dict[str, object]]:
     entry = 0xB591
     expected_hash = "7abf19b449320cd3b3a67b20979c0b29faf4fdf13dfa3ff5ba22cebdbc7094c3"
@@ -82618,6 +83093,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9b98_natural.json",
         ship_3d_object_sprite_project_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_afa0_natural.json",
+        ship_presentation_fsm_vectors(),
         args.check,
     )
     update_vector(

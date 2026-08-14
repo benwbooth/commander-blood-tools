@@ -5609,6 +5609,34 @@ needs the original resolver's simultaneous AX plus conditional DS:SI result,
 the enabled path's upper-register clearing and BP residue, and path-specific
 flags.
 
+## BLOODPRG ship-presentation phase-owner candidate
+
+`0x00AFA0` snapshots the state word at `DS:0x24F3`. Bit zero gates the
+subsystem. If none of bits one through four are set, it advances entity slots 4
+and 31, clears the UI/depth state, and arms dialogue phase one. Every active
+phase first runs the depth step, planar band copy, and scene dispatcher.
+
+The remaining bits are ordered rather than independent. Dialogue can publish
+the cyclic lines 4 and 5, wait on the presentation gate, close to state 5, or
+suppress later bits when its cycle value is zero. A ready dialogue phase may
+fall through into HUD handling. HUD waits for an exact transition value of 100.
+Travel either clears the display band, requests line 3, or waits on the same
+presentation gate; it takes priority over navigation. HUD does likewise.
+
+Twenty patched-helper original-binary vectors cover both initialization forms,
+every phase branch and boundary, combined-bit precedence, exact call order and
+near/far frames, DS ownership against a GS decoy, state writes, helper inputs,
+tail AX/DX clobber propagation, DS/SI restoration, flags, stack, and far return.
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+87-instruction/251-byte function versus 68/217 original, with 83.82 percent
+ordered and multiset mnemonic overlap. The candidate is one natural state
+coordinator with no inline assembly or register-state facade.
+
+Full-source integration requires the shipped DS=GS game-data layout and the
+common helpers' preservation contracts. Direct binary replacement additionally
+needs the original DS/SI-only save envelope, same-segment far-call lowering for
+the band copy, terminal-helper clobber behavior, and path-specific flags.
+
 ## BLOODPRG VM token-advance candidate
 
 `0x0062B6` consumes one opcode from the far script cursor in `DS:SI` while its

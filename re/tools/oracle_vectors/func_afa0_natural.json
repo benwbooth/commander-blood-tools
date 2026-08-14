@@ -1,0 +1,1299 @@
+[
+  {
+    "name": "inactive_returns_without_side_effects",
+    "state_before": 30,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [],
+    "writes": [],
+    "registers_after": {
+      "eax": 2711683102,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "active_only_initializes_ship_presentation",
+    "state_before": 1,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "entity:4",
+        "ax": 4,
+        "sp": 63480
+      },
+      {
+        "name": "entity:31",
+        "ax": 31,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        10131,
+        2,
+        0
+      ],
+      [
+        9459,
+        2,
+        3
+      ],
+      [
+        9461,
+        2,
+        4
+      ],
+      [
+        9517,
+        1,
+        0
+      ],
+      [
+        9511,
+        2,
+        0
+      ],
+      [
+        9519,
+        1,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683103,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "initialization_mask_ignores_high_and_bit_five",
+    "state_before": 32801,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "entity:4",
+        "ax": 4,
+        "sp": 63480
+      },
+      {
+        "name": "entity:31",
+        "ax": 31,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        10131,
+        2,
+        0
+      ],
+      [
+        9459,
+        2,
+        32803
+      ],
+      [
+        9461,
+        2,
+        4
+      ],
+      [
+        9517,
+        1,
+        0
+      ],
+      [
+        9511,
+        2,
+        0
+      ],
+      [
+        9519,
+        1,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683103,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "dialogue_phase_waits_for_presentation_gate",
+    "state_before": 3,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 1,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683075,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "zero_dialogue_cycle_closes_phase",
+    "state_before": 3,
+    "dialogue_cycle_before": 0,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        9524,
+        1,
+        0
+      ],
+      [
+        9459,
+        2,
+        5
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683072,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "dialogue_cycle_publishes_line_four",
+    "state_before": 3,
+    "dialogue_cycle_before": 4,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        26504,
+        2,
+        4
+      ],
+      [
+        9461,
+        2,
+        5
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683077,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "af": true
+    },
+    "return": "far"
+  },
+  {
+    "name": "dialogue_cycle_wraps_after_line_five",
+    "state_before": 3,
+    "dialogue_cycle_before": 5,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        26504,
+        2,
+        5
+      ],
+      [
+        9461,
+        2,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683072,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "dialogue_cycle_word_wraps",
+    "state_before": 3,
+    "dialogue_cycle_before": 65535,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        26504,
+        2,
+        65535
+      ],
+      [
+        9461,
+        2,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683072,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "af": true
+    },
+    "return": "far"
+  },
+  {
+    "name": "ready_dialogue_phase_closes_to_hud_state",
+    "state_before": 3,
+    "dialogue_cycle_before": 9320,
+    "ready": 1,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 3,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 3,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 3,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        9524,
+        1,
+        0
+      ],
+      [
+        9459,
+        2,
+        5
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683075,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "combined_dialogue_and_hud_runs_hud_after_ready",
+    "state_before": 7,
+    "dialogue_cycle_before": 9320,
+    "ready": 1,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 7,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 7,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 7,
+        "sp": 63480
+      },
+      {
+        "name": "hud",
+        "ax": 7,
+        "sp": 63482
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        9524,
+        1,
+        0
+      ],
+      [
+        9459,
+        2,
+        5
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "zero_cycle_suppresses_combined_hud_bit",
+    "state_before": 7,
+    "dialogue_cycle_before": 0,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 7,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 7,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 7,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        9524,
+        1,
+        0
+      ],
+      [
+        9459,
+        2,
+        5
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683072,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "hud_phase_runs_without_pending_gate",
+    "state_before": 5,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 5,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 5,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 5,
+        "sp": 63480
+      },
+      {
+        "name": "hud",
+        "ax": 5,
+        "sp": 63482
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "hud_pending_waits_below_full_transition",
+    "state_before": 5,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 1,
+    "transition_percent": 99,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 5,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 5,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 5,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683077,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "af": true
+    },
+    "return": "far"
+  },
+  {
+    "name": "hud_pending_runs_at_full_transition",
+    "state_before": 5,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 1,
+    "transition_percent": 100,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 5,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 5,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 5,
+        "sp": 63480
+      },
+      {
+        "name": "hud",
+        "ax": 5,
+        "sp": 63482
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "af": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "travel_redraw_clears_display_band",
+    "state_before": 9,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 1,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 9,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 9,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 9,
+        "sp": 63480
+      },
+      {
+        "name": "fill",
+        "ax": 0,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        9459,
+        2,
+        17
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "travel_waits_for_presentation_gate",
+    "state_before": 9,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 1,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 9,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 9,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 9,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683081,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "travel_without_redraw_requests_line_three",
+    "state_before": 9,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 9,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 9,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 9,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        26504,
+        2,
+        3
+      ],
+      [
+        10200,
+        1,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683081,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "travel_phase_precedes_navigation_bit",
+    "state_before": 25,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 25,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 25,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 25,
+        "sp": 63480
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ],
+      [
+        26504,
+        2,
+        3
+      ],
+      [
+        10200,
+        1,
+        0
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711683097,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "navigation_phase_dispatches_update",
+    "state_before": 17,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 17,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 17,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 17,
+        "sp": 63480
+      },
+      {
+        "name": "nav",
+        "ax": 17,
+        "sp": 63482
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "hud_phase_precedes_navigation_bit",
+    "state_before": 21,
+    "dialogue_cycle_before": 9320,
+    "ready": 0,
+    "presentation_gate": 0,
+    "hud_pending": 0,
+    "transition_percent": 17185,
+    "redraw": 0,
+    "calls": [
+      {
+        "name": "depth",
+        "ax": 21,
+        "sp": 63482
+      },
+      {
+        "name": "band",
+        "ax": 21,
+        "sp": 63480
+      },
+      {
+        "name": "dispatch",
+        "ax": 21,
+        "sp": 63480
+      },
+      {
+        "name": "hud",
+        "ax": 21,
+        "sp": 63482
+      }
+    ],
+    "writes": [
+      [
+        21065,
+        2,
+        1
+      ]
+    ],
+    "registers_after": {
+      "eax": 2711696179,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570680900,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "sp": 63488,
+      "ds": 12288,
+      "es": 4096,
+      "fs": 36864,
+      "gs": 20480,
+      "ss": 28672
+    },
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  }
+]
