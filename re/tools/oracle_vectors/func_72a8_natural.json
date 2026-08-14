@@ -1,0 +1,916 @@
+[
+  {
+    "name": "inactive_gates_return",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 0,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8194
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 51966,
+    "hold_after": 0,
+    "complete_after": 0,
+    "eax_after": 2779058740,
+    "flags_after": 1606,
+    "return": "far"
+  },
+  {
+    "name": "ready_owner_mismatch_returns",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 0,
+      "ready": 1,
+      "owner": 4660
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8194
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 51966,
+    "hold_after": 0,
+    "complete_after": 0,
+    "eax_after": 2779058741,
+    "flags_after": 1671,
+    "return": "far"
+  },
+  {
+    "name": "ready_owner_allows_but_ready_blocks_completion",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 0,
+      "ready": 1,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        0
+      ],
+      "end_before": 8192,
+      "end_after": 8192
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 10,
+    "hold_after": 0,
+    "complete_after": 0,
+    "eax_after": 4662,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "zero_sentinel_completes",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        0
+      ],
+      "end_before": 8192,
+      "end_after": 8192
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 10,
+    "hold_after": 21,
+    "complete_after": 1,
+    "eax_after": 4663,
+    "flags_after": 1554,
+    "return": "far"
+  },
+  {
+    "name": "ffff_sentinel_wrapped_hold_math",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        65535
+      ],
+      "end_before": 8192,
+      "end_after": 8192
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 10,
+    "hold_after": 32775,
+    "complete_after": 1,
+    "eax_after": 4664,
+    "flags_after": 1666,
+    "return": "far"
+  },
+  {
+    "name": "completion_flag_blocks_duplicate_completion",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        0
+      ],
+      "end_before": 8192,
+      "end_after": 8192
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [],
+    "x_after": 10,
+    "hold_after": 9320,
+    "complete_after": 1,
+    "eax_after": 4665,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "single_word_advances_reveal_end",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8196
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 7,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 13,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 23,
+    "hold_after": 12,
+    "complete_after": 0,
+    "eax_after": 4666,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "existing_hold_blocks_reveal_advance",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8194
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 7,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 13,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 23,
+    "hold_after": 5,
+    "complete_after": 0,
+    "eax_after": 4667,
+    "flags_after": 1542,
+    "return": "far"
+  },
+  {
+    "name": "punctuation_peek_at_exclusive_end",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        32,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8196
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 8,
+        "return": [
+          29435,
+          0
+        ]
+      }
+    ],
+    "x_after": 18,
+    "hold_after": 4,
+    "complete_after": 0,
+    "eax_after": 4668,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "visible_punctuation_uses_no_leading_gap",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        32,
+        0
+      ],
+      "end_before": 8196,
+      "end_after": 8198
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 8,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          32
+        ],
+        "x": 18,
+        "y": 8,
+        "ax": 239,
+        "width": 3,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 9,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 27,
+    "hold_after": 4,
+    "complete_after": 0,
+    "eax_after": 4669,
+    "flags_after": 1542,
+    "return": "far"
+  },
+  {
+    "name": "next_word_wraps_to_second_row",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        48,
+        0
+      ],
+      "end_before": 8196,
+      "end_after": 8198
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 280,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          48
+        ],
+        "font": 1,
+        "bx": 286,
+        "y": 8,
+        "result": 10,
+        "return": [
+          29486,
+          0
+        ]
+      },
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          48
+        ],
+        "x": 10,
+        "y": 16,
+        "ax": 239,
+        "width": 5,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 11,
+        "y": 16,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 21,
+    "hold_after": 6,
+    "complete_after": 0,
+    "eax_after": 4670,
+    "flags_after": 1542,
+    "return": "far"
+  },
+  {
+    "name": "signed_layout_sum_avoids_false_wrap",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        48,
+        0
+      ],
+      "end_before": 8196,
+      "end_after": 8198
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 32752,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          48
+        ],
+        "font": 1,
+        "bx": 32758,
+        "y": 8,
+        "result": 20,
+        "return": [
+          29486,
+          0
+        ]
+      },
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          48
+        ],
+        "x": 32768,
+        "y": 8,
+        "ax": 239,
+        "width": 5,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 11,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 32779,
+    "hold_after": 6,
+    "complete_after": 0,
+    "eax_after": 4671,
+    "flags_after": 1542,
+    "return": "far"
+  },
+  {
+    "name": "sentinel_before_end_completes_after_draw",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0,
+        48
+      ],
+      "end_before": 8198,
+      "end_after": 8198
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 7,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 13,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 23,
+    "hold_after": 26,
+    "complete_after": 1,
+    "eax_after": 4672,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "nonzero_dictionary_base_preserves_asymmetric_peek",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        32,
+        0
+      ],
+      "end_before": 8196,
+      "end_after": 8198
+    },
+    "dictionary": [
+      32768,
+      256
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          272
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 9,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          32
+        ],
+        "font": 1,
+        "bx": 15,
+        "y": 8,
+        "result": 11,
+        "return": [
+          29486,
+          0
+        ]
+      },
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          288
+        ],
+        "x": 25,
+        "y": 8,
+        "ax": 239,
+        "width": 4,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 10,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 35,
+    "hold_after": 7,
+    "complete_after": 0,
+    "eax_after": 4673,
+    "flags_after": 1542,
+    "return": "far"
+  },
+  {
+    "name": "split_data_segments_expose_shipped_alias",
+    "split_data_segments": true,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        8192
+      ],
+      "words": [
+        16,
+        0
+      ],
+      "end_before": 8194,
+      "end_after": 8196
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 4660,
+        "y": 8,
+        "ax": 239,
+        "width": 6,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          0
+        ],
+        "font": 1,
+        "bx": 12,
+        "y": 8,
+        "result": 65534,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 10,
+    "hold_after": 9,
+    "complete_after": 0,
+    "eax_after": 4674,
+    "flags_after": 1538,
+    "return": "far"
+  },
+  {
+    "name": "unsigned_cursor_wrap_stops_at_high_offset",
+    "split_data_segments": false,
+    "gates": {
+      "defer": 1,
+      "ready": 0,
+      "owner": 26544
+    },
+    "menu": {
+      "pointer": [
+        24576,
+        65532
+      ],
+      "words": [
+        16,
+        48
+      ],
+      "end_before": 2,
+      "end_after": 4
+    },
+    "dictionary": [
+      32768,
+      0
+    ],
+    "calls": [
+      {
+        "call": "draw",
+        "text": [
+          32768,
+          16
+        ],
+        "x": 10,
+        "y": 8,
+        "ax": 239,
+        "width": 5,
+        "return": [
+          29435,
+          0
+        ]
+      },
+      {
+        "call": "width",
+        "text": [
+          32768,
+          48
+        ],
+        "font": 1,
+        "bx": 11,
+        "y": 8,
+        "result": 12,
+        "return": [
+          29486,
+          0
+        ]
+      }
+    ],
+    "x_after": 21,
+    "hold_after": 3,
+    "complete_after": 0,
+    "eax_after": 4675,
+    "flags_after": 1538,
+    "return": "far"
+  }
+]

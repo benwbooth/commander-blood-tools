@@ -6,8 +6,8 @@
 ; seg_off: 04da:1f08
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: dlg_menu_words_inline_draw
-; label_comment: draws the line's CONCEPT-MENU words (far ptr [0x674a]..[0x27d3], the post-0xFFFF words) INLINE: x=[0x27d1] init 0x0A, y=dx init 8, color 0xEF via 0x299:0x5de; punctuation advances by [0x27cd]; words advance width+6 (width via 0x299:0x13d); wrap when x+next>=0x12C(300) -> x=10, y+=8. Runs at reveal-completion (gates [0x67b0]/[0x67bc]). NOTE: this is the INLINE mode — the vertical box list in captures is a DIFFERENT renderer (unfound) || ALSO RECORDED as `dlg_record_end_hold`: sets gs:0x0b35=gs:0x27cf*(gs:0x0aca/2)+6 and gs:0x67bb=1 || MERGED 2026-07-25 (#186): one address, several names, folded by union.
+; label: dlg_menu_words_inline_reveal_step
+; label_comment: redraws the visible prefix of the current concept-menu word list from DS:[0x674a] through the unsigned GS:0x27d3 reveal boundary. Each word is drawn at x=GS:0x27d1/y=8 with color 0xef; punctuation removes the six-pixel gap, and a signed x+next-width comparison wraps at 300. When GS:0x0b35 reaches zero it advances the boundary by one word and reloads the selected delay at GS:0x0aca. A 0/0xffff word instead sets the final hold to GS:0x27cf*(GS:0x0aca>>1)+6 and raises GS:0x67bb, subject to the presentation gates.
 ; incoming: call@0x0012b8->04da:1f08
 ; byte_count: 243
 ; boundary: cfg_blocks_21_terminals_3

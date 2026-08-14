@@ -23,6 +23,7 @@ extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
+extern volatile cb_u16 vm_dialogue_hold_countdown; /* game data:0x0B35 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
 extern volatile cb_u16 vm_scene_record_offset; /* DS:0x274D */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
@@ -30,6 +31,7 @@ extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
 extern volatile cb_u8 vm_bridge_redraw_pending; /* GS:0x27D8 */
 extern volatile cb_u8 CB_GAME_DATA vm_subtitle_display_mode; /* GS:0x27E2 */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
+extern volatile cb_u16 vm_text_menu_inline_x; /* DS/GS:0x27D1 */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
 extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
 extern volatile cb_u8 vm_text_mode_0cf9;     /* GS:0x0CF9 */
@@ -63,6 +65,7 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u16 CB_GAME_DATA vm_program_counter; /* GS:0x6772 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
 extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
+extern volatile cb_u16 vm_presentation_owner_offset; /* DS:0x679A */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
@@ -82,6 +85,7 @@ extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
+extern volatile cb_u8 vm_dialogue_hold_complete; /* GS:0x67BB */
 extern volatile cb_u8 vm_presentation_hold_ready; /* GS:0x67BC */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
@@ -99,6 +103,7 @@ void CB_NEAR presentation_line_zero_run(
         cb_u16 link_target_offset); /* 0x001EC1 */
 void CB_NEAR presentation_line_one_stream_run(
         cb_u16 link_target_offset); /* 0x001F10 */
+void CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
@@ -163,6 +168,7 @@ extern volatile cb_u16 vm_active_object_offsets[]; /* 0x6A16 */
 extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 #if defined(__WATCOMC__)
+#pragma aux dlg_menu_words_inline_reveal_step modify exact []
 #pragma aux object_heap_access modify exact []
 #pragma aux active_object_list_build modify exact []
 #pragma aux nav_chart_list_build value [ax] modify exact [ax]

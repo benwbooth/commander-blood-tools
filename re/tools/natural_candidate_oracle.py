@@ -3611,6 +3611,619 @@ def ship_3d_presentable_name_list_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def dlg_menu_words_inline_reveal_step_vectors() -> list[dict[str, object]]:
+    entry = 0x72A8
+    return_address = 0xF2A8
+    expected_hash = "894d53441a36ff524fc93c8b3785a259c65a9eddd978f94ed81b57b1eb1ec500"
+    if hashlib.sha256(EXE[entry : entry + 243]).hexdigest() != expected_hash:
+        raise AssertionError("0x72a8: recovered 243-byte body changed")
+
+    cases = (
+        {
+            "name": "inactive_gates_return",
+            "defer": 0,
+            "ready": 0,
+            "menu": [0x0010, 0],
+            "end_words": 1,
+        },
+        {
+            "name": "ready_owner_mismatch_returns",
+            "defer": 0,
+            "ready": 1,
+            "owner": 0x1234,
+            "menu": [0x0010, 0],
+            "end_words": 1,
+        },
+        {
+            "name": "ready_owner_allows_but_ready_blocks_completion",
+            "defer": 0,
+            "ready": 1,
+            "owner": 0x67B0,
+            "menu": [0],
+            "end_words": 0,
+        },
+        {
+            "name": "zero_sentinel_completes",
+            "defer": 1,
+            "ready": 0,
+            "complete": 0,
+            "operand_count": 3,
+            "delay": 10,
+            "menu": [0],
+            "end_words": 0,
+        },
+        {
+            "name": "ffff_sentinel_wrapped_hold_math",
+            "defer": 1,
+            "ready": 0,
+            "complete": 0,
+            "operand_count": 0xFFFF,
+            "delay": 0xFFFF,
+            "menu": [0xFFFF],
+            "end_words": 0,
+        },
+        {
+            "name": "completion_flag_blocks_duplicate_completion",
+            "defer": 1,
+            "ready": 0,
+            "complete": 1,
+            "hold": 0x2468,
+            "menu": [0],
+            "end_words": 0,
+        },
+        {
+            "name": "single_word_advances_reveal_end",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 12,
+            "menu": [0x0010, 0],
+            "end_words": 1,
+            "draw_widths": [7],
+            "measure_widths": [0xFFFE],
+        },
+        {
+            "name": "existing_hold_blocks_reveal_advance",
+            "defer": 1,
+            "ready": 0,
+            "hold": 5,
+            "delay": 12,
+            "menu": [0x0010, 0],
+            "end_words": 1,
+            "draw_widths": [7],
+            "measure_widths": [0xFFFE],
+        },
+        {
+            "name": "punctuation_peek_at_exclusive_end",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 4,
+            "menu": [0x0010, 0x0020, 0],
+            "end_words": 1,
+            "draw_widths": [8],
+            "measure_widths": [],
+        },
+        {
+            "name": "visible_punctuation_uses_no_leading_gap",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 4,
+            "menu": [0x0010, 0x0020, 0],
+            "end_words": 2,
+            "draw_widths": [8, 3],
+            "measure_widths": [0xFFFE],
+        },
+        {
+            "name": "next_word_wraps_to_second_row",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 6,
+            "menu": [0x0010, 0x0030, 0],
+            "end_words": 2,
+            "draw_widths": [280, 5],
+            "measure_widths": [10, 0xFFFE],
+        },
+        {
+            "name": "signed_layout_sum_avoids_false_wrap",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 6,
+            "menu": [0x0010, 0x0030, 0],
+            "end_words": 2,
+            "draw_widths": [0x7FF0, 5],
+            "measure_widths": [20, 0xFFFE],
+        },
+        {
+            "name": "sentinel_before_end_completes_after_draw",
+            "defer": 1,
+            "ready": 0,
+            "complete": 0,
+            "operand_count": 5,
+            "delay": 8,
+            "menu": [0x0010, 0, 0x0030],
+            "end_words": 3,
+            "draw_widths": [7],
+            "measure_widths": [0xFFFE],
+        },
+        {
+            "name": "nonzero_dictionary_base_preserves_asymmetric_peek",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 7,
+            "dictionary_base": 0x0100,
+            "first_chars": {0x0020: ord("B"), 0x0120: ord("!")},
+            "menu": [0x0010, 0x0020, 0],
+            "end_words": 2,
+            "draw_widths": [9, 4],
+            "measure_widths": [11, 0xFFFE],
+        },
+        {
+            "name": "split_data_segments_expose_shipped_alias",
+            "split_data": True,
+            "defer": 1,
+            "ready": 0,
+            "state_ready": 0,
+            "state_x": 0x1234,
+            "hold": 0,
+            "delay": 9,
+            "menu": [0x0010, 0],
+            "end_words": 1,
+            "draw_widths": [6],
+            "measure_widths": [0xFFFE],
+        },
+        {
+            "name": "unsigned_cursor_wrap_stops_at_high_offset",
+            "defer": 1,
+            "ready": 0,
+            "hold": 0,
+            "delay": 3,
+            "menu_start": 0xFFFC,
+            "menu_end": 0x0002,
+            "menu": [0x0010, 0x0030],
+            "draw_widths": [5],
+            "measure_widths": [12],
+        },
+    )
+    control_segment = 0x3000
+    game_segment = 0x4000
+    menu_segment = 0x6000
+    dictionary_segment = 0x8000
+    stack_segment = 0xA000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("a55a3cc3966978c3")
+    draw_entry = 0x0299 * 16 + 0x05DE
+    width_entry = 0x0299 * 16 + 0x013D
+    vectors = []
+
+    def write_u16(image: bytearray, offset: int, value: int) -> None:
+        image[offset & 0xFFFF] = value & 0xFF
+        image[(offset + 1) & 0xFFFF] = value >> 8
+
+    def read_u16(image: bytearray, offset: int) -> int:
+        return image[offset & 0xFFFF] | (
+            image[(offset + 1) & 0xFFFF] << 8
+        )
+
+    def logic_flags(result: int, bits: int) -> dict[str, bool]:
+        mask = (1 << bits) - 1
+        result &= mask
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": False,
+            "zf": result == 0,
+            "sf": (result & (1 << (bits - 1))) != 0,
+            "of": False,
+        }
+
+    def merge_status_flags(initial_flags: int, status: dict[str, bool]) -> int:
+        bits = {"cf": 0x0001, "pf": 0x0004, "af": 0x0010,
+                "zf": 0x0040, "sf": 0x0080, "of": 0x0800}
+        result = initial_flags & ~0x08D5
+        for name, bit in bits.items():
+            if status[name]:
+                result |= bit
+        return result
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        split_data = bool(case.get("split_data", False))
+        initial_data_segment = control_segment if split_data else game_segment
+        menu_start = int(case.get("menu_start", 0x2000))
+        menu_words = [int(value) for value in case["menu"]]
+        menu_end = int(
+            case.get(
+                "menu_end",
+                (menu_start + int(case.get("end_words", 0)) * 2) & 0xFFFF,
+            )
+        )
+        dictionary_base = int(case.get("dictionary_base", 0))
+        defer = int(case.get("defer", 0))
+        ready = int(case.get("ready", 0))
+        owner = int(case.get("owner", 0x67B0))
+        state_ready = int(case.get("state_ready", ready))
+        complete = int(case.get("complete", 0))
+        hold = int(case.get("hold", 0))
+        operand_count = int(case.get("operand_count", 2))
+        delay = int(case.get("delay", 8))
+        draw_widths = [int(value) for value in case.get("draw_widths", [])]
+        measure_widths = [
+            int(value) for value in case.get("measure_widths", [])
+        ]
+
+        game_before = bytearray(
+            (offset * 17 + (offset >> 8) * 29 + case_index * 31 + 0x4B)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        control_before = (
+            bytearray(
+                (offset * 7 + (offset >> 8) * 13 + case_index * 19 + 0xA5)
+                & 0xFF
+                for offset in range(0x10000)
+            )
+            if split_data
+            else game_before
+        )
+        control_before[0x67B0] = defer
+        control_before[0x67BC] = ready
+        write_u16(control_before, 0x679A, owner)
+        write_u16(control_before, 0x27D1, 0xBEEF)
+        write_u16(control_before, 0x674A, menu_start)
+        write_u16(control_before, 0x674C, menu_segment)
+        game_before[0x67BC] = state_ready
+        game_before[0x67BB] = complete
+        write_u16(game_before, 0x27D1, int(case.get("state_x", 0xCAFE)))
+        write_u16(game_before, 0x27D3, menu_end)
+        write_u16(game_before, 0x27CD, 0xD00D)
+        write_u16(game_before, 0x0B35, hold)
+        write_u16(game_before, 0x0ACA, delay)
+        write_u16(game_before, 0x27CF, operand_count)
+        write_u16(game_before, 0x6728, dictionary_base)
+        write_u16(game_before, 0x672A, dictionary_segment)
+
+        menu_before = bytearray(
+            (offset * 11 + case_index * 23 + 0x69) & 0xFF
+            for offset in range(0x10000)
+        )
+        menu_by_offset: dict[int, int] = {}
+        for index, value in enumerate(menu_words):
+            offset = (menu_start + index * 2) & 0xFFFF
+            write_u16(menu_before, offset, value)
+            menu_by_offset[offset] = value
+
+        dictionary_before = bytearray(
+            (offset * 5 + (offset >> 8) * 3 + case_index * 37 + 0x35)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        first_chars = {
+            0x0000: 0,
+            0x0010: ord("A"),
+            0x0020: ord(","),
+            0x0030: ord("B"),
+            0x0040: ord("."),
+        }
+        first_chars.update(
+            {int(offset): int(value) for offset, value in
+             dict(case.get("first_chars", {})).items()}
+        )
+        for offset, value in first_chars.items():
+            dictionary_before[offset & 0xFFFF] = value
+
+        stack_before = bytearray(
+            (offset * 3 + case_index * 11 + 0x57) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        expected_game = bytearray(game_before)
+        expected_control = (
+            bytearray(control_before) if split_data else expected_game
+        )
+        expected_calls: list[dict[str, object]] = []
+        entered = False
+        final_status: dict[str, bool]
+
+        if (defer & 1) == 0:
+            final_status = logic_flags(defer & 1, 8)
+            if (ready & 1) == 0:
+                final_status = logic_flags(ready & 1, 8)
+            elif owner != 0x67B0:
+                final_status = sub16_flags(owner, 0x67B0)
+            else:
+                entered = True
+        else:
+            final_status = logic_flags(defer & 1, 8)
+            entered = True
+
+        if entered:
+            write_u16(expected_control, 0x27D1, 10)
+            cursor = menu_start
+            y = 8
+            draw_index = 0
+            measure_index = 0
+            while True:
+                current = menu_by_offset[cursor]
+                if current == 0 or current == 0xFFFF:
+                    if (state_ready & 1) != 0:
+                        final_status = logic_flags(state_ready & 1, 8)
+                    elif (complete & 1) != 0:
+                        final_status = logic_flags(complete & 1, 8)
+                    else:
+                        product = (operand_count * (delay >> 1)) & 0xFFFF
+                        completion_hold = (product + 6) & 0xFFFF
+                        write_u16(expected_game, 0x0B35, completion_hold)
+                        expected_game[0x67BB] = 1
+                        final_status = add16_flags(product, 6)
+                    break
+
+                if draw_index >= len(draw_widths):
+                    raise AssertionError(
+                        f"0x72a8 {name}: missing modeled draw width"
+                    )
+                current_pointer = (dictionary_base + current) & 0xFFFF
+                current_x = read_u16(expected_game, 0x27D1)
+                draw_width = draw_widths[draw_index]
+                expected_calls.append(
+                    {
+                        "call": "draw",
+                        "text": [dictionary_segment, current_pointer],
+                        "x": current_x,
+                        "y": y,
+                        "ax": (current & 0xFF00) | 0x00EF,
+                        "width": draw_width,
+                        "return": [0x72FB, 0],
+                    }
+                )
+                write_u16(expected_game, 0x27CD, draw_width)
+                draw_index += 1
+                cursor = (cursor + 2) & 0xFFFF
+                next_offset = menu_by_offset[cursor]
+                next_first = dictionary_before[next_offset]
+                if next_first in b".,:!?":
+                    write_u16(
+                        expected_game,
+                        0x27D1,
+                        (read_u16(expected_game, 0x27D1) + draw_width)
+                        & 0xFFFF,
+                    )
+                else:
+                    x = (
+                        read_u16(expected_game, 0x27D1) + draw_width + 6
+                    ) & 0xFFFF
+                    write_u16(expected_game, 0x27D1, x)
+                    if measure_index >= len(measure_widths):
+                        raise AssertionError(
+                            f"0x72a8 {name}: missing modeled width result"
+                        )
+                    measured = measure_widths[measure_index]
+                    expected_calls.append(
+                        {
+                            "call": "width",
+                            "text": [dictionary_segment, next_offset],
+                            "font": 1,
+                            "bx": (draw_width + 6) & 0xFFFF,
+                            "y": y,
+                            "result": measured,
+                            "return": [0x732E, 0],
+                        }
+                    )
+                    measure_index += 1
+                    layout_sum = (x + measured) & 0xFFFF
+                    signed_layout_sum = (
+                        layout_sum
+                        if layout_sum < 0x8000
+                        else layout_sum - 0x10000
+                    )
+                    if signed_layout_sum >= 300:
+                        write_u16(expected_game, 0x27D1, 10)
+                        y = (y + 8) & 0xFFFF
+
+                if cursor >= read_u16(expected_game, 0x27D3):
+                    current_hold = read_u16(expected_game, 0x0B35)
+                    final_status = logic_flags(current_hold, 16)
+                    if current_hold == 0:
+                        old_end = read_u16(expected_game, 0x27D3)
+                        write_u16(
+                            expected_game,
+                            0x27D3,
+                            (old_end + 2) & 0xFFFF,
+                        )
+                        write_u16(expected_game, 0x0B35, delay)
+                        final_status = add16_flags(old_end, 2)
+                    break
+
+            if draw_index != len(draw_widths):
+                raise AssertionError(
+                    f"0x72a8 {name}: unused modeled draw widths"
+                )
+            if measure_index != len(measure_widths):
+                raise AssertionError(
+                    f"0x72a8 {name}: unused modeled width results"
+                )
+
+        initial_flags = 0x0ED7 | (0x0400 if case_index == 13 else 0)
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": initial_data_segment,
+            "es": 0xC000,
+            "fs": 0xD000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        actual_calls: list[dict[str, object]] = []
+        actual_draw_index = 0
+        actual_measure_index = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal actual_draw_index, actual_measure_index
+            if address == draw_entry:
+                stack_pointer = machine.reg_read(UC_X86_REG_SP)
+                width = draw_widths[actual_draw_index]
+                actual_calls.append(
+                    {
+                        "call": "draw",
+                        "text": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_DX),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "width": width,
+                        "return": list(
+                            struct.unpack(
+                                "<HH",
+                                machine.mem_read(
+                                    stack_segment * 16 + stack_pointer, 4
+                                ),
+                            )
+                        ),
+                    }
+                )
+                machine.mem_write(
+                    game_segment * 16 + 0x27CD,
+                    struct.pack("<H", width),
+                )
+                actual_draw_index += 1
+            elif address == width_entry:
+                stack_pointer = machine.reg_read(UC_X86_REG_SP)
+                result = measure_widths[actual_measure_index]
+                actual_calls.append(
+                    {
+                        "call": "width",
+                        "text": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "font": machine.reg_read(UC_X86_REG_AX),
+                        "bx": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_DX),
+                        "result": result,
+                        "return": list(
+                            struct.unpack(
+                                "<HH",
+                                machine.mem_read(
+                                    stack_segment * 16 + stack_pointer, 4
+                                ),
+                            )
+                        ),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, result)
+                actual_measure_index += 1
+
+        memory = [
+            (0x0299, 0x05DE, b"\xCB"),
+            (0x0299, 0x013D, b"\xCB"),
+            (game_segment, 0, bytes(game_before)),
+            (menu_segment, 0, bytes(menu_before)),
+            (dictionary_segment, 0, bytes(dictionary_before)),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        if split_data:
+            memory.append((control_segment, 0, bytes(control_before)))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=2000,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x72a8 {name}: calls={actual_calls!r}, "
+                f"expected={expected_calls!r}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            raise AssertionError(f"0x72a8 {name}: game segment differs")
+        if split_data:
+            actual_control = bytes(
+                machine.mem_read(control_segment * 16, 0x10000)
+            )
+            if actual_control != bytes(expected_control):
+                raise AssertionError(
+                    f"0x72a8 {name}: initial DS control segment differs"
+                )
+        if bytes(machine.mem_read(menu_segment * 16, 0x10000)) != bytes(
+            menu_before
+        ):
+            raise AssertionError(f"0x72a8 {name}: menu segment changed")
+        if bytes(
+            machine.mem_read(dictionary_segment * 16, 0x10000)
+        ) != bytes(dictionary_before):
+            raise AssertionError(f"0x72a8 {name}: dictionary segment changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        if entered:
+            expected_registers["eax"] &= 0xFFFF
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x72a8 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        expected_flags = merge_status_flags(initial_flags, final_status)
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if (actual_flags & 0x0ED7) != (expected_flags & 0x0ED7):
+            raise AssertionError(
+                f"0x72a8 {name}: flags={actual_flags:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x72a8 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "split_data_segments": split_data,
+                "gates": {"defer": defer, "ready": ready, "owner": owner},
+                "menu": {
+                    "pointer": [menu_segment, menu_start],
+                    "words": menu_words,
+                    "end_before": menu_end,
+                    "end_after": read_u16(expected_game, 0x27D3),
+                },
+                "dictionary": [dictionary_segment, dictionary_base],
+                "calls": actual_calls,
+                "x_after": read_u16(expected_game, 0x27D1),
+                "hold_after": read_u16(expected_game, 0x0B35),
+                "complete_after": expected_game[0x67BB],
+                "eax_after": machine.reg_read(UC_X86_REG_EAX),
+                "flags_after": actual_flags & 0x0ED7,
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -62720,6 +63333,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_7259_natural.json",
         ship_3d_presentable_name_list_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_72a8_natural.json",
+        dlg_menu_words_inline_reveal_step_vectors(),
         args.check,
     )
     update_vector(

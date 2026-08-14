@@ -1135,6 +1135,42 @@ binary uses BP and ES; full-source integration also relies on the shipped
 SS=DS=GS data group and clear DF. These are narrow ABI/placement boundaries,
 not missing logic in the recovered C loop.
 
+Inline menu reveal step `0x0072A8` redraws the currently visible prefix of the
+concept-menu word-offset list. It enters when `DS:0x67B0` bit zero is set, or
+when `DS:0x67BC` is ready and `DS:0x679A` names `0x67B0`. It resets x to 10,
+loads the far menu pointer from `DS:0x674A`, and draws words from the DIC at
+y=8/color `0xEF`. The next word is deliberately peeked before the unsigned
+cursor-versus-`GS:0x27D3` boundary test. Punctuation removes the six-pixel gap;
+other words use the main-font width helper and a signed comparison against 300
+to decide whether the next word begins at x=10 on the following eight-pixel
+row.
+
+When the visible boundary is reached, a zero `GS:0x0B35` countdown advances
+`GS:0x27D3` by one word and reloads the selected delay from `GS:0x0ACA`. A zero
+or `0xFFFF` word instead completes the list when neither hold gate is set: the
+routine stores `(GS:0x27CF * (GS:0x0ACA >> 1) + 6) mod 65536` as the final hold
+and sets `GS:0x67BB`. The assembly also has a precise segmented quirk: current
+words use `(DIC base offset + word offset) mod 65536`, but lookahead and width
+measurement use the raw next offset in the same segment. The candidate keeps
+that behavior with ordinary 16-bit `MK_FP`/`FP_SEG`/`FP_OFF` expressions.
+
+Sixteen patched-helper vectors cover both entry gates, owner mismatch, both
+sentinels, duplicate completion, wrapped hold arithmetic, reveal pacing,
+punctuation at and inside the boundary, signed row wrap and signed overflow,
+an early sentinel, unsigned menu-cursor wrap, nonzero-DIC-base asymmetry, and a
+split initial-DS/GS case. They prove both helper ABIs and order, every state
+write, source immutability, path-specific upper-EAX clearing, preservation of
+all other registers and segments, final flags, stack integrity, and far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+one-function candidate warning-free to 90 instructions/278 bytes versus the
+original 83/243, with 84.34 percent mnemonic-multiset overlap and no inline
+assembly. Size (`-os`) and time (`-ot`) optimization produce larger 288- and
+291-byte bodies. The retained full-source invariants are the shipped DS=GS data
+group and zero-offset DIC image. Direct replacement additionally needs the
+original ES menu cursor, ambient dictionary DS and restoration, stale AH color
+input, active-path upper-EAX clearing, and exact register/flag envelope.
+
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
 `0xFFFF`; post-match addition wrap; and optional-increment wrap and signed
