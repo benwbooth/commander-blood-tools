@@ -50783,6 +50783,742 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_handler_5_vectors() -> list[dict[str, object]]:
+    entry = 0x8082
+    presentation_helper_entry = 0x7E1C
+    page_flip_entry = 0x954A
+    sound_clip_entry = 0xB2CD  # Runtime 0B1B:011D.
+    ship_reset_entry = 0x8C96
+    entity_transition_entry = 0x3BD1  # Runtime 0299:1241.
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    cases = [
+        {
+            "name": "ui_gate_clear",
+            "ui": 0x00,
+            "active": 0,
+            "line_flags": 0x0A,
+        },
+        {
+            "name": "ui_unrelated_bit_20",
+            "ui": 0x20,
+            "active": 0,
+            "line_flags": 0x0A,
+        },
+        {
+            "name": "line_not_ready_no_toggle",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x00,
+        },
+        {
+            "name": "line_not_ready_toggle_on",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x02,
+            "view": 0,
+        },
+        {
+            "name": "line_not_ready_toggle_off",
+            "ui": 0x14,
+            "active": 0,
+            "line_flags": 0x02,
+            "view": 1,
+        },
+        {
+            "name": "active_primary_blocker",
+            "ui": 0x10,
+            "active": 1,
+            "line_flags": 0xA8,
+            "primary_blocker": 0x80,
+        },
+        {
+            "name": "ready_secondary_blocker",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x0A,
+            "secondary_blocker": 1,
+        },
+        {
+            "name": "helper_incomplete_reads_updated_frame",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 7,
+            "helper_frame": 6,
+            "helper_complete": False,
+        },
+        {
+            "name": "helper_complete_toggle_on",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 5,
+            "helper_complete": True,
+            "view": 0,
+        },
+        {
+            "name": "active_helper_complete_toggle_off",
+            "ui": 0x14,
+            "active": 1,
+            "line_flags": 0x04,
+            "frame": 5,
+            "helper_complete": True,
+            "view": 1,
+        },
+        {
+            "name": "frame_seven_incomplete_page_no_toggle",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 6,
+            "helper_frame": 7,
+            "helper_complete": False,
+            "view": 0,
+            "page_result": 0x0015,
+        },
+        {
+            "name": "frame_seven_incomplete_page_toggle",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 6,
+            "helper_frame": 7,
+            "helper_complete": False,
+            "view": 0,
+            "page_result": 0x0012,
+        },
+        {
+            "name": "frame_seven_incomplete_view_active",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 7,
+            "helper_complete": False,
+            "view": 1,
+            "page_result": 0x0012,
+        },
+        {
+            "name": "frame_seven_complete_page_then_toggle",
+            "ui": 0x10,
+            "active": 0,
+            "line_flags": 0x08,
+            "frame": 6,
+            "helper_frame": 7,
+            "helper_complete": True,
+            "view": 0,
+            "page_result": 0x0012,
+        },
+    ]
+    expected_hash = "d2dccfb97b5916a7adb8d2c01f3cda90ac7e142b984f489e297dec099d68eb50"
+    if hashlib.sha256(EXE[entry : entry + 184]).hexdigest() != expected_hash:
+        raise AssertionError("0x8082: recovered 184-byte body changed")
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui_before = int(case["ui"])
+        active_before = int(case["active"])
+        line_flags_before = int(case["line_flags"])
+        primary_blocker = int(case.get("primary_blocker", 0))
+        secondary_blocker = int(case.get("secondary_blocker", 0))
+        helper_complete = bool(case.get("helper_complete", False))
+        frame_before = int(case.get("frame", 5))
+        helper_frame = int(case.get("helper_frame", frame_before))
+        view_before = int(case.get("view", 0xA0))
+        page_result = int(case.get("page_result", 0x0015))
+        panel_before = (0x60 + case_index) & 0xFF
+        view_state_before = (0x30 + case_index) & 0xFF
+        background_before = (0x90 + case_index) & 0xFF
+        selected_before = (0x4100 + case_index * 0x101) & 0xFFFF
+        presentation_before = (0x5200 + case_index * 0x101) & 0xFFFF
+        mouse_before = (0x70 + case_index) & 0xFF
+        line_before = struct.pack(
+            "<BBHHHH10sHH",
+            line_flags_before,
+            0xA0 + case_index,
+            0x1100 + case_index,
+            0x2200 + case_index,
+            0x3300 + case_index,
+            frame_before,
+            bytes((0x50 + case_index + i) & 0xFF for i in range(10)),
+            0x6600 + case_index,
+            0x7700 + case_index,
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        memory = [
+            (0, presentation_helper_entry, b"\xc3"),
+            (0, page_flip_entry, b"\xcb"),
+            (0, sound_clip_entry, b"\xcb"),
+            (0, ship_reset_entry, b"\xcb"),
+            (0, entity_transition_entry, b"\xcb"),
+            (0, return_address, b"\xcc"),
+            (data_segment, 0x2793, bytes([ui_before])),
+            (data_segment, 0x278E, bytes([active_before])),
+            (data_segment, 0x278C, bytes([panel_before])),
+            (data_segment, 0x2A93, bytes([primary_blocker])),
+            (data_segment, 0x2A7B, bytes([secondary_blocker])),
+            (data_segment, 0x278A, bytes([view_before])),
+            (data_segment, 0x278B, bytes([view_state_before])),
+            (data_segment, 0x27D9, bytes([background_before])),
+            (data_segment, 0x27BF, struct.pack("<H", selected_before)),
+            (data_segment, 0x0A32, struct.pack("<H", presentation_before)),
+            (data_segment, 0x0A3E, bytes([mouse_before])),
+            (stack_segment, line_offset, line_before),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x278E, b"\xa5"),
+            (game_segment, 0x278C, b"\x69"),
+            (game_segment, 0x2A93, b"\x96"),
+            (game_segment, 0x2A7B, b"\x87"),
+            (game_segment, 0x278A, b"\x78"),
+            (game_segment, 0x278B, b"\x3c"),
+            (game_segment, 0x27D9, b"\xc3"),
+            (game_segment, 0x27BF, b"\xf0\x0f"),
+            (game_segment, 0x0A32, b"\x55\xaa"),
+            (game_segment, 0x0A3E, b"\x12"),
+            (stack_segment, 0x2793, b"\x34"),
+            (stack_segment, 0x278E, b"\x56"),
+            (stack_segment, 0x278C, b"\x78"),
+            (stack_segment, 0x2A93, b"\x9a"),
+            (stack_segment, 0x2A7B, b"\xbc"),
+            (stack_segment, 0x278A, b"\xde"),
+            (stack_segment, 0x278B, b"\xf0"),
+            (stack_segment, 0x27D9, b"\x21"),
+            (stack_segment, 0x27BF, b"\x43\x65"),
+            (stack_segment, 0x0A32, b"\x87\xa9"),
+            (stack_segment, 0x0A3E, b"\xcb"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        flags_before = ((0x0AD7 + case_index * 0x81) & 0x0FFF) & ~0x100
+        final_entity_flags = ((0x0853 + case_index * 0x91) & 0x0FFF) & ~0x100
+        page_bx = (0xC100 + case_index) & 0xFFFF
+        ship_bx = (0xD200 + case_index) & 0xFFFF
+        ship_dx = (0xE300 + case_index) & 0xFFFF
+        sound_ax_clobber = (0xF400 + case_index) & 0xFFFF
+        initial = {
+            "eax": 0xA1A1BE00 | ((0x40 + case_index) & 0xFF),
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        calls = []
+
+        def read_byte(machine: Uc, offset: int) -> int:
+            return machine.mem_read(data_segment * 16 + offset, 1)[0]
+
+        def read_word(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+
+        def read_line_flags(machine: Uc) -> int:
+            return machine.mem_read(stack_segment * 16 + line_offset, 1)[0]
+
+        def read_line_frame(machine: Uc) -> int:
+            return struct.unpack(
+                "<H",
+                machine.mem_read(stack_segment * 16 + line_offset + 8, 2),
+            )[0]
+
+        def capture_state(machine: Uc) -> dict[str, int]:
+            return {
+                "line_flags": read_line_flags(machine),
+                "line_frame": read_line_frame(machine),
+                "ui": read_byte(machine, 0x2793),
+                "active": read_byte(machine, 0x278E),
+                "panel": read_byte(machine, 0x278C),
+                "view": read_byte(machine, 0x278A),
+                "view_state": read_byte(machine, 0x278B),
+                "background": read_byte(machine, 0x27D9),
+                "selected": read_word(machine, 0x27BF),
+                "presentation": read_word(machine, 0x0A32),
+                "mouse": read_byte(machine, 0x0A3E),
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == entity_transition_entry:
+                object_id = machine.reg_read(UC_X86_REG_AX)
+                calls.append(
+                    {
+                        "kind": "entity_flag_state_transition",
+                        "object_id": object_id,
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                if object_id == 4:
+                    machine.reg_write(UC_X86_REG_EFLAGS, final_entity_flags)
+            elif address == presentation_helper_entry:
+                calls.append(
+                    {
+                        "kind": "presentation_line_helper",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                machine.mem_write(
+                    stack_segment * 16 + line_offset + 8,
+                    struct.pack("<H", helper_frame),
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags & ~1) | int(helper_complete),
+                )
+            elif address == page_flip_entry:
+                calls.append(
+                    {
+                        "kind": "page_flip",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, page_result)
+                machine.reg_write(UC_X86_REG_BX, page_bx)
+            elif address == sound_clip_entry:
+                calls.append(
+                    {
+                        "kind": "snd_play_clip",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, sound_ax_clobber)
+            elif address == ship_reset_entry:
+                calls.append(
+                    {
+                        "kind": "ship_3d_hud_palette_snapshot_and_camera_reset",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        **capture_state(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_BX, ship_bx)
+                machine.reg_write(UC_X86_REG_DX, ship_dx)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        ui_gate = (ui_before & 0x10) != 0
+        active_gate = (active_before & 1) != 0
+        line_flags_marked = line_flags_before | 1
+        ready = (line_flags_marked & 0x08) != 0
+        main_path = ui_gate and (active_gate or ready)
+        blocker_value = primary_blocker | secondary_blocker
+        blocked = main_path and blocker_value != 0
+        helper_called = main_path and not blocked
+        frame_seven = helper_called and helper_frame == 7
+        page_called = frame_seven and (view_before & 1) == 0
+        sound_called = frame_seven
+        if not ui_gate:
+            transition_value = 0
+        elif not active_gate and not ready:
+            transition_value = line_flags_marked
+        elif blocked:
+            transition_value = 0
+        elif helper_complete:
+            transition_value = 7
+        elif page_called:
+            transition_value = page_result & 0xFF
+        else:
+            transition_value = 0
+        tail_transition = ui_gate and not blocked and (transition_value & 2) != 0
+        ship_reset_called = tail_transition and ((view_before ^ 1) & 1) == 0
+
+        line_at_helper = line_flags_before if active_gate else line_flags_marked
+        initial_state = {
+            "line_flags": line_at_helper,
+            "line_frame": frame_before,
+            "ui": ui_before,
+            "active": active_before,
+            "panel": panel_before,
+            "view": view_before,
+            "view_state": view_state_before,
+            "background": background_before,
+            "selected": selected_before,
+            "presentation": presentation_before,
+            "mouse": mouse_before,
+        }
+        expected_calls = []
+        if helper_called:
+            expected_calls.append(
+                {
+                    "kind": "entity_flag_state_transition",
+                    "object_id": 0,
+                    "cs": 0x0299,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    **initial_state,
+                }
+            )
+            helper_state = {
+                **initial_state,
+                "selected": 0,
+                "presentation": 10,
+                "mouse": 0,
+            }
+            expected_calls.append(
+                {
+                    "kind": "presentation_line_helper",
+                    "cs": 0,
+                    "ax": 0,
+                    "bp": line_offset,
+                    "sp": 0xFEFE,
+                    **helper_state,
+                }
+            )
+            frame_state = {**helper_state, "line_frame": helper_frame}
+            if page_called:
+                expected_calls.append(
+                    {
+                        "kind": "page_flip",
+                        "cs": 0,
+                        "bp": line_offset,
+                        "sp": 0xFEFA,
+                        **frame_state,
+                    }
+                )
+            if sound_called:
+                expected_calls.append(
+                    {
+                        "kind": "snd_play_clip",
+                        "cs": 0x0B1B,
+                        "ax": 3,
+                        "bp": line_offset,
+                        "sp": 0xFEF8,
+                        **frame_state,
+                    }
+                )
+        ui_after_frame = ui_before | (4 if sound_called else 0)
+        active_after_helper = 0 if helper_called and helper_complete else active_before
+        line_after_helper = 7 if helper_called and helper_complete else line_at_helper
+        if ship_reset_called:
+            expected_calls.append(
+                {
+                    "kind": "ship_3d_hud_palette_snapshot_and_camera_reset",
+                    "cs": 0,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    "line_flags": line_after_helper,
+                    "line_frame": helper_frame if helper_called else frame_before,
+                    "ui": ui_after_frame & 0xFB,
+                    "active": active_after_helper,
+                    "panel": panel_before,
+                    "view": view_before ^ 1,
+                    "view_state": 8 if sound_called else view_state_before,
+                    "background": background_before,
+                    "selected": 0 if helper_called else selected_before,
+                    "presentation": 10 if helper_called else presentation_before,
+                    "mouse": 0 if helper_called else mouse_before,
+                }
+            )
+        if tail_transition:
+            toggled_view = view_before ^ 1
+            tail_ui = ui_after_frame & 0xFB
+            if (toggled_view & 1) != 0:
+                tail_ui |= 4
+            expected_calls.append(
+                {
+                    "kind": "entity_flag_state_transition",
+                    "object_id": 4,
+                    "cs": 0x0299,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    "line_flags": 1,
+                    "line_frame": helper_frame if helper_called else frame_before,
+                    "ui": tail_ui,
+                    "active": active_after_helper,
+                    "panel": 0,
+                    "view": toggled_view,
+                    "view_state": 8 if sound_called else view_state_before,
+                    "background": 1 if ship_reset_called else background_before,
+                    "selected": 0 if helper_called else selected_before,
+                    "presentation": 10 if helper_called else presentation_before,
+                    "mouse": 0 if helper_called else mouse_before,
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x8082 {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_line_flags = line_flags_before
+        expected_line_frame = frame_before
+        expected_ui = ui_before
+        expected_active = active_before
+        expected_panel = panel_before
+        expected_view = view_before
+        expected_view_state = view_state_before
+        expected_background = background_before
+        expected_selected = selected_before
+        expected_presentation = presentation_before
+        expected_mouse = mouse_before
+        if ui_gate and not active_gate:
+            expected_line_flags = line_flags_marked
+        if blocked:
+            expected_active = 1
+            expected_panel = 0
+        elif helper_called:
+            expected_line_frame = helper_frame
+            expected_selected = 0
+            expected_presentation = 10
+            expected_mouse = 0
+            if sound_called:
+                expected_view_state = 8
+                expected_ui |= 4
+            if helper_complete:
+                expected_active = 0
+                expected_line_flags = 7
+        if tail_transition:
+            expected_view ^= 1
+            expected_ui &= 0xFB
+            if (expected_view & 1) != 0:
+                expected_ui |= 4
+            else:
+                expected_background = 1
+            expected_panel = 0
+            expected_line_flags = 1
+
+        expected_line = bytearray(line_before)
+        expected_line[0] = expected_line_flags
+        expected_line[8:10] = struct.pack("<H", expected_line_frame)
+        actual_line = bytes(
+            machine.mem_read(stack_segment * 16 + line_offset, len(line_before))
+        )
+        if actual_line != bytes(expected_line):
+            raise AssertionError(
+                f"0x8082 {name}: line={actual_line.hex()}, "
+                f"expected={bytes(expected_line).hex()}"
+            )
+
+        expected_state = {
+            "ui": expected_ui,
+            "active": expected_active,
+            "panel": expected_panel,
+            "view": expected_view,
+            "view_state": expected_view_state,
+            "background": expected_background,
+            "selected": expected_selected,
+            "presentation": expected_presentation,
+            "mouse": expected_mouse,
+        }
+        actual_state = {
+            "ui": read_byte(machine, 0x2793),
+            "active": read_byte(machine, 0x278E),
+            "panel": read_byte(machine, 0x278C),
+            "view": read_byte(machine, 0x278A),
+            "view_state": read_byte(machine, 0x278B),
+            "background": read_byte(machine, 0x27D9),
+            "selected": read_word(machine, 0x27BF),
+            "presentation": read_word(machine, 0x0A32),
+            "mouse": read_byte(machine, 0x0A3E),
+        }
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x8082 {name}: state={actual_state}, expected={expected_state}"
+            )
+
+        immutable = (
+            (data_segment, 0x2A93, bytes([primary_blocker])),
+            (data_segment, 0x2A7B, bytes([secondary_blocker])),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x278E, b"\xa5"),
+            (game_segment, 0x278C, b"\x69"),
+            (game_segment, 0x2A93, b"\x96"),
+            (game_segment, 0x2A7B, b"\x87"),
+            (game_segment, 0x278A, b"\x78"),
+            (game_segment, 0x278B, b"\x3c"),
+            (game_segment, 0x27D9, b"\xc3"),
+            (game_segment, 0x27BF, b"\xf0\x0f"),
+            (game_segment, 0x0A32, b"\x55\xaa"),
+            (game_segment, 0x0A3E, b"\x12"),
+            (stack_segment, 0x2793, b"\x34"),
+            (stack_segment, 0x278E, b"\x56"),
+            (stack_segment, 0x278C, b"\x78"),
+            (stack_segment, 0x2A93, b"\x9a"),
+            (stack_segment, 0x2A7B, b"\xbc"),
+            (stack_segment, 0x278A, b"\xde"),
+            (stack_segment, 0x278B, b"\xf0"),
+            (stack_segment, 0x27D9, b"\x21"),
+            (stack_segment, 0x27BF, b"\x43\x65"),
+            (stack_segment, 0x0A32, b"\x87\xa9"),
+            (stack_segment, 0x0A3E, b"\xcb"),
+        )
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8082 {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if ui_gate and not active_gate:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFFFF00
+            ) | line_flags_marked
+        if main_path:
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFFFF00
+            ) | blocker_value
+        if helper_called:
+            expected_registers["eax"] = initial["eax"] & 0xFFFF0000
+        if page_called:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | page_result
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | page_bx
+        if helper_called and helper_complete:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFFFF00
+            ) | 7
+        if ship_reset_called:
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | ship_bx
+            expected_registers["edx"] = (
+                initial["edx"] & 0xFFFF0000
+            ) | ship_dx
+        if tail_transition:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 4
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8082 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8082 {name}: return changed CS")
+
+        if tail_transition:
+            expected_flags = {
+                "cf": bool(final_entity_flags & 1),
+                "pf": bool(final_entity_flags & 4),
+                "af": bool(final_entity_flags & 0x10),
+                "zf": bool(final_entity_flags & 0x40),
+                "sf": bool(final_entity_flags & 0x80),
+                "of": bool(final_entity_flags & 0x800),
+            }
+        elif blocked:
+            test_value = blocker_value & 0xFF
+            expected_flags = {
+                "cf": False,
+                "pf": test_value.bit_count() % 2 == 0,
+                "zf": test_value == 0,
+                "sf": bool(test_value & 0x80),
+                "of": False,
+            }
+        elif ui_gate:
+            test_value = transition_value & 2
+            expected_flags = {
+                "cf": False,
+                "pf": test_value.bit_count() % 2 == 0,
+                "zf": test_value == 0,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            test_value = ui_before & 0x10
+            expected_flags = {
+                "cf": False,
+                "pf": test_value.bit_count() % 2 == 0,
+                "zf": test_value == 0,
+                "sf": False,
+                "of": False,
+            }
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "af": 0x10,
+            "zf": 0x40,
+            "sf": 0x80,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x8082 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x8082 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "ui_before": ui_before,
+                "ui_after": expected_ui,
+                "active_before": active_before,
+                "active_after": expected_active,
+                "line_flags_before": line_flags_before,
+                "line_flags_after": expected_line_flags,
+                "frame_before": frame_before,
+                "frame_after_helper": helper_frame if helper_called else frame_before,
+                "blocker_value": blocker_value if main_path else None,
+                "line_helper_called": helper_called,
+                "line_helper_completed": helper_called and helper_complete,
+                "page_flip_called": page_called,
+                "page_flip_result": page_result if page_called else None,
+                "sound_clip": 3 if sound_called else None,
+                "view_before": view_before,
+                "view_after": expected_view,
+                "ship_reset_called": ship_reset_called,
+                "entity_transitions": [
+                    call["object_id"]
+                    for call in calls
+                    if call["kind"] == "entity_flag_state_transition"
+                ],
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -66679,6 +67415,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_81fb_natural.json",
         nav_actor_handler_4_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8082_natural.json",
+        nav_actor_handler_5_vectors(),
         args.check,
     )
     update_vector(

@@ -4728,6 +4728,37 @@ resource/DOS adapters that preserve the recovered result conventions. Direct
 replacement additionally needs the original helper register ABIs and exact
 register/flag envelope.
 
+## BLOODPRG navigation actor handler 5 candidate
+
+`0x008082` owns the fifth navigation actor's presentation and camera-view
+transition. It gates on UI bit `0x10`, marks an inactive line present, and can
+take the shared transition tail immediately when the line's bit `0x02` is set.
+Otherwise either actor blocker publishes the active/panel state and returns.
+
+The presentation path transitions entity zero, clears the selected location,
+selects presentation state ten, clears primary mouse input, and steps the line.
+Frame seven optionally calls `page_flip`, always plays clip three, sets camera
+view state eight, and requests redraw. Crucially, these effects happen before a
+completed line replaces the transition byte and line flags with seven. On an
+incomplete line, bit `0x02` from `page_flip`'s low-byte result can still enter
+the shared tail. That tail toggles the camera view, updates redraw state, resets
+the HUD palette/camera when leaving the view, and transitions entity four.
+
+Fourteen patched-helper vectors cover both UI bits, inactive and active entry,
+both blockers, the line shortcut, helper frame mutation, complete and
+incomplete results, page-return values with and without bit `0x02`, frame-seven
+sound ordering, and both view-toggle directions. They prove helper call state,
+every named write, SS line ownership versus DS globals, registers, flags,
+stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 63 instructions/201 bytes versus the original
+55/184, with 89.09 percent mnemonic-multiset overlap and no inline assembly.
+The source uses an explicit line pointer and ordinary Boolean completion;
+direct replacement still needs the original inherited-`BP` entry, carry held
+through `PUSHF`/`POPF`, AX preservation around clip playback, near-call/far-
+return placement adapters, and the original register/flag envelope.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
