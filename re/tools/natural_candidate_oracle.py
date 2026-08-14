@@ -35413,6 +35413,354 @@ def ship_3d_nav_source_list_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_token_advance_vectors() -> list[dict[str, object]]:
+    entry = 0x62B6
+    body_size = 131
+    body_hash = "842c4deffde9b5b7b2a580569f372312d12238562730ca49ce23f5d062ea68d2"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x62b6: recovered 131-byte body changed")
+
+    descriptor_table = EXE[0x14338 : 0x14338 + 0xC0]
+    if len(descriptor_table) != 0xC0:
+        raise AssertionError("0x62b6: incomplete opcode descriptor window")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "mode_zero_fixed_length",
+            "start": 0x1000,
+            "script": [0xA2, 0x11, 0x22],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1003,
+            "mode_after": 0,
+        },
+        {
+            "name": "mode_one_selects_second_length",
+            "start": 0x1100,
+            "script": [0xA5, 0x11, 0x22, 0x33],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x1102,
+            "mode_after": 1,
+        },
+        {
+            "name": "a0_sentinel_sets_mode",
+            "start": 0x1200,
+            "script": [0xA0, 0x11, 0x22],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1203,
+            "mode_after": 1,
+        },
+        {
+            "name": "a1_sentinel_clears_mode",
+            "start": 0x1300,
+            "script": [0xA1],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x1301,
+            "mode_after": 0,
+        },
+        {
+            "name": "fd_sentinel_without_prefix",
+            "start": 0x1400,
+            "script": [0xAE, 0x22, 0x33, 0x44, 0x55],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1405,
+            "mode_after": 0,
+        },
+        {
+            "name": "fd_sentinel_consumes_a1_prefix",
+            "start": 0x1500,
+            "script": [0xAE, 0xA1, 0x22, 0x33, 0x44, 0x55],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x1506,
+            "mode_after": 1,
+        },
+        {
+            "name": "fb_sentinel_without_prefix",
+            "start": 0x1600,
+            "script": [0xA3, 0x22, 0x33],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x1603,
+            "mode_after": 1,
+        },
+        {
+            "name": "fb_sentinel_consumes_a1_prefix",
+            "start": 0x1700,
+            "script": [0xA3, 0xA1, 0x22, 0x33],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1704,
+            "mode_after": 0,
+        },
+        {
+            "name": "fb_sentinel_scans_when_block_flag_is_set",
+            "start": 0x1800,
+            "script": [0xA3, 0x12, 0x34, 0x00, 0x00, 0x7E],
+            "mode": 0,
+            "scan_flags": 1,
+            "final": 0x1805,
+            "mode_after": 0,
+            "special_call": [0x0000, 0x1801],
+        },
+        {
+            "name": "zero_length_token_stops_after_zero_word",
+            "start": 0x1900,
+            "script": [0xA8, 0x00, 0x00, 0x7E],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1903,
+            "mode_after": 0,
+            "special_call": [0x0000, 0x1901],
+        },
+        {
+            "name": "zero_length_token_consumes_optional_zero",
+            "start": 0x1A00,
+            "script": [0xAC, 0x00, 0x00, 0x00, 0x7E],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1A04,
+            "mode_after": 0,
+            "special_call": [0x0000, 0x1A01],
+        },
+        {
+            "name": "a6_uses_header_and_word_list_layout",
+            "start": 0x1B00,
+            "script": [0xA6, 1, 2, 3, 4, 5, 0x00, 0x00],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1B08,
+            "mode_after": 0,
+            "a6_terminal": True,
+        },
+        {
+            "name": "a6_word_list_wraps_at_segment_end",
+            "start": 0xFFF8,
+            "script": [0xA6, 1, 2, 3, 4, 5, 0x34, 0x12, 0x00, 0x00],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x0002,
+            "mode_after": 1,
+            "a6_terminal": True,
+        },
+        {
+            "name": "mode_one_out_of_table_tail_zero_length",
+            "start": 0x1C00,
+            "script": [0xDD, 0x44, 0x00, 0x00, 0x7E],
+            "mode": 1,
+            "scan_flags": 0,
+            "final": 0x1C04,
+            "mode_after": 1,
+            "special_call": [0x0000, 0x1C01],
+        },
+        {
+            "name": "e4_reads_zero_descriptor_past_real_entries",
+            "start": 0x1D00,
+            "script": [0xE4, 0x00, 0x00, 0x7E],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x1D03,
+            "mode_after": 0,
+            "special_call": [0x0000, 0x1D01],
+        },
+        {
+            "name": "ff_length_sign_extends_after_decrement",
+            "start": 0x0000,
+            "script": [0xE8],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0xFFFF,
+            "mode_after": 1,
+        },
+        {
+            "name": "fixed_length_wraps_at_segment_end",
+            "start": 0xFFFE,
+            "script": [0xA2, 0x11, 0x22],
+            "mode": 0,
+            "scan_flags": 0,
+            "final": 0x0001,
+            "mode_after": 0,
+        },
+    ]
+
+    script_segment = 0x3000
+    game_segment = 0x5000
+    stack_segment = 0x7000
+    vectors: list[dict[str, object]] = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        start = int(case["start"])
+        script_bytes = bytes(case["script"])
+        mode = int(case["mode"])
+        scan_flags = int(case["scan_flags"])
+
+        script_before = bytearray(
+            (offset * 5 + (offset >> 8) * 7 + case_index * 11 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 17 + case_index * 19 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 23 + (offset >> 8) * 29 + case_index * 31 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        for byte_index, value in enumerate(script_bytes):
+            script_before[(start + byte_index) & 0xFFFF] = value
+
+        stack_before[0x6F18 : 0x6F18 + len(descriptor_table)] = descriptor_table
+        script_before[0x6F18 : 0x6F18 + len(descriptor_table)] = bytes(
+            value ^ 0x5A for value in descriptor_table
+        )
+        game_before[0x6F18 : 0x6F18 + len(descriptor_table)] = bytes(
+            value ^ 0xA5 for value in descriptor_table
+        )
+        game_before[0x67AD] = mode
+        game_before[0x67B2] = scan_flags
+        script_before[0x67AD] = mode ^ 1
+        script_before[0x67B2] = scan_flags ^ 1
+        stack_before[0x67AD] = mode ^ 0x7F
+        stack_before[0x67B2] = scan_flags ^ 0x80
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xF800,
+            "ds": script_segment,
+            "es": 0x1000,
+            "fs": 0x9000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        expected_stack = bytearray(stack_before)
+        struct.pack_into("<H", expected_stack, 0xF7FE, initial["eax"] & 0xFFFF)
+        struct.pack_into("<H", expected_stack, 0xF7FC, initial["ebx"] & 0xFFFF)
+        struct.pack_into("<H", expected_stack, 0xF7FA, initial["ebp"] & 0xFFFF)
+        if "special_call" in case:
+            struct.pack_into("<H", expected_stack, 0xF7F8, 0x632E)
+
+        special_calls: list[list[int]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x632B:
+                special_calls.append(
+                    [
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_SI),
+                    ]
+                )
+
+        machine = execute(
+            entry,
+            0x6338,
+            initial,
+            [
+                (script_segment, 0, bytes(script_before)),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=2000,
+        )
+
+        expected_calls = []
+        if "special_call" in case:
+            expected_calls = [list(case["special_call"])]
+        if special_calls != expected_calls:
+            raise AssertionError(
+                f"0x62b6 {name}: special calls={special_calls}, "
+                f"expected={expected_calls}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["esi"] = (
+            initial["esi"] & 0xFFFF0000
+        ) | int(case["final"])
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x62b6 {name}: {register}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        game_after = bytearray(game_before)
+        game_after[0x67AD] = int(case["mode_after"])
+        if bytes(machine.mem_read(script_segment * 16, 0x10000)) != bytes(
+            script_before
+        ):
+            raise AssertionError(f"0x62b6 {name}: script segment changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_after
+        ):
+            raise AssertionError(f"0x62b6 {name}: game segment differs")
+        if bytes(machine.mem_read(stack_segment * 16, 0x10000)) != bytes(
+            expected_stack
+        ):
+            raise AssertionError(f"0x62b6 {name}: stack segment differs")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if bool(case.get("a6_terminal", False)):
+            expected_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+        else:
+            first_cursor = (start + 1) & 0xFFFF
+            step = (int(case["final"]) - first_cursor) & 0xFFFF
+            expected_flags = add16_flags(first_cursor, step)
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if not bool(case.get("a6_terminal", False)):
+            actual_flags["af"] = bool(flags & 0x0010)
+        comparable_expected = {
+            key: value for key, value in expected_flags.items() if key in actual_flags
+        }
+        if actual_flags != comparable_expected:
+            raise AssertionError(
+                f"0x62b6 {name}: flags={actual_flags}, "
+                f"expected={comparable_expected}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "opcode": script_bytes[0],
+                "start_offset": start,
+                "query_mode_before": mode,
+                "block_scan_flags": scan_flags,
+                "special_call": expected_calls[0] if expected_calls else None,
+                "query_mode_after": int(case["mode_after"]),
+                "final_offset": int(case["final"]),
+                "defined_flags": actual_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_token_special_vectors() -> list[dict[str, object]]:
     data_segment = 0x4400
     cases = [
@@ -81810,6 +82158,9 @@ def main() -> int:
         VECTOR_ROOT / "func_624b_natural.json",
         ship_3d_nav_source_list_build_vectors(),
         args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_62b6_natural.json", vm_token_advance_vectors(), args.check
     )
     update_vector(
         VECTOR_ROOT / "func_6293_natural.json", vm_token_special_vectors(), args.check

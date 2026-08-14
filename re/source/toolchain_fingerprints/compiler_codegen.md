@@ -5609,6 +5609,38 @@ needs the original resolver's simultaneous AX plus conditional DS:SI result,
 the enabled path's upper-register clearing and BP residue, and path-specific
 flags.
 
+## BLOODPRG VM token-advance candidate
+
+`0x0062B6` consumes one opcode from the far script cursor in `DS:SI` while its
+descriptor pointer is based at `SS:0x6F18`; shipped execution has `SS=GS`, but
+the script keeps a floating DS. The first 52 pairs are the intended A0..D3
+table. There is no bound check, so D4..FF read 44 adjacent pairs. Those reads
+are observable and load-bearing, including the zero descriptors used by later
+script bytes.
+
+The signed second descriptor byte either selects the current query-mode length
+or controls decoding. `0xFF` sets mode one, `0xFE` clears it, `0xFD` consumes
+an optional inline A1, and `0xFB` does the same unless block-scan bit zero is
+set, in which case the token uses zero-word termination. Other zero lengths
+call `0x006293`. A6 instead skips its five-byte header and scans words through
+the terminating zero. The final length-minus-one adjustment is sign-extended,
+which makes an observed `0xFF` length move SI backward by two after the opcode.
+
+Seventeen direct original-binary vectors cover both fixed modes, all four
+sentinels and optional-prefix variants, block-scan diversion, both variable
+forms, DD/E4 extended-window reads, signed and ordinary cursor wrap, helper
+calls, split DS/GS/SS ownership, exact memory effects, register preservation,
+flags, stack, and near return. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) emits one warning-free 74-instruction/170-byte function
+versus 60/131 original, with 85.00 percent mnemonic-multiset overlap and 70.00
+percent ordered mnemonic overlap. The candidate is one natural typed C
+function with no inline assembly or register-state facade.
+
+Full-source integration requires `SS=GS`, a 96-pair observable descriptor
+window, query mode constrained to zero or one, and the direct DS:SI helper
+contract. Direct binary replacement additionally needs the original compact
+SS:BP allocation, AX/BX/BP save envelope, and path-specific terminal flags.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

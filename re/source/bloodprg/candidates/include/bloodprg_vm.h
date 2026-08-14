@@ -18,6 +18,10 @@ typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
 
 #define BLOODPRG_VM_RESOURCE_COUNT 5u
+#define BLOODPRG_VM_OPCODE_MIN 0xa0u
+#define BLOODPRG_VM_OPCODE_WINDOW_COUNT 0x60u
+#define BLOODPRG_VM_TEXT_OPCODE 0xa6u
+#define BLOODPRG_VM_OPTION_PREFIX 0xa1u
 
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
@@ -108,10 +112,14 @@ extern volatile cb_u8 CB_GAME_DATA
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
 extern volatile cb_u8 vm_presentation_word_choice_active; /* DS:0x27D7 */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_query_mode_gs;                    /* explicit GS:0x67AD alias */
 extern volatile cb_u16 vm_query_mode_word;   /* GS:0x67AD; includes 0x67AE */
 extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_block_scan_flags_gs;              /* explicit GS:0x67B2 alias */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 CB_GAME_DATA vm_presentation_start_lock; /* GS:0x67B7 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
@@ -190,6 +198,18 @@ typedef struct bloodprg_vm_record_triple {
     cb_u16 related;
     cb_u16 value;
 } bloodprg_vm_record_triple;
+
+typedef struct bloodprg_vm_opcode_descriptor {
+    cb_u8 mode_zero_length;
+    cb_i8 mode_one_length_or_control;
+} bloodprg_vm_opcode_descriptor;
+
+typedef char bloodprg_vm_opcode_descriptor_size_must_be_2[
+        sizeof(bloodprg_vm_opcode_descriptor) == 2 ? 1 : -1];
+
+/* The binary reads this through SS:BP; the shipped runtime has SS=GS. */
+extern const bloodprg_vm_opcode_descriptor CB_GAME_DATA
+        vm_opcode_descriptors[BLOODPRG_VM_OPCODE_WINDOW_COUNT];
 
 typedef struct bloodprg_value_node {
     cb_u16 value;

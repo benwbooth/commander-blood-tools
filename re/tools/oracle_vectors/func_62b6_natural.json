@@ -1,0 +1,321 @@
+[
+  {
+    "name": "mode_zero_fixed_length",
+    "opcode": 162,
+    "start_offset": 4096,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 4099,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "mode_one_selects_second_length",
+    "opcode": 165,
+    "start_offset": 4352,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 4354,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a0_sentinel_sets_mode",
+    "opcode": 160,
+    "start_offset": 4608,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 4611,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a1_sentinel_clears_mode",
+    "opcode": 161,
+    "start_offset": 4864,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 4865,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fd_sentinel_without_prefix",
+    "opcode": 174,
+    "start_offset": 5120,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 5125,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fd_sentinel_consumes_a1_prefix",
+    "opcode": 174,
+    "start_offset": 5376,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 5382,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fb_sentinel_without_prefix",
+    "opcode": 163,
+    "start_offset": 5632,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 5635,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fb_sentinel_consumes_a1_prefix",
+    "opcode": 163,
+    "start_offset": 5888,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 5892,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fb_sentinel_scans_when_block_flag_is_set",
+    "opcode": 163,
+    "start_offset": 6144,
+    "query_mode_before": 0,
+    "block_scan_flags": 1,
+    "special_call": [
+      0,
+      6145
+    ],
+    "query_mode_after": 0,
+    "final_offset": 6149,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "zero_length_token_stops_after_zero_word",
+    "opcode": 168,
+    "start_offset": 6400,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": [
+      0,
+      6401
+    ],
+    "query_mode_after": 0,
+    "final_offset": 6403,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "zero_length_token_consumes_optional_zero",
+    "opcode": 172,
+    "start_offset": 6656,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": [
+      0,
+      6657
+    ],
+    "query_mode_after": 0,
+    "final_offset": 6660,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a6_uses_header_and_word_list_layout",
+    "opcode": 166,
+    "start_offset": 6912,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 6920,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "a6_word_list_wraps_at_segment_end",
+    "opcode": 166,
+    "start_offset": 65528,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 2,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_one_out_of_table_tail_zero_length",
+    "opcode": 221,
+    "start_offset": 7168,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": [
+      0,
+      7169
+    ],
+    "query_mode_after": 1,
+    "final_offset": 7172,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "e4_reads_zero_descriptor_past_real_entries",
+    "opcode": 228,
+    "start_offset": 7424,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": [
+      0,
+      7425
+    ],
+    "query_mode_after": 0,
+    "final_offset": 7427,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "ff_length_sign_extends_after_decrement",
+    "opcode": 232,
+    "start_offset": 0,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 65535,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "fixed_length_wraps_at_segment_end",
+    "opcode": 162,
+    "start_offset": 65534,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 0,
+    "final_offset": 1,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": true
+    }
+  }
+]
