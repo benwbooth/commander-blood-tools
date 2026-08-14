@@ -198,6 +198,370 @@ def sub16_flags(left: int, right: int) -> dict[str, bool]:
     }
 
 
+def bloodprg_entry_vectors() -> list[dict[str, object]]:
+    entry = 0x0600
+    return_address = 0xF600
+    expected_hash = "cfdfc610f110ef623fe97e8ea7355a154add5103fac5b60e379aa72d78d35b08"
+    if hashlib.sha256(EXE[entry : entry + 241]).hexdigest() != expected_hash:
+        raise AssertionError("0x0600: recovered 241-byte body changed")
+
+    cases = (
+        ("cpu_rejected_before_memory_setup", False, 0xFFFF),
+        ("one_paragraph_below_minimum", True, 0x7886),
+        ("exact_minimum_succeeds", True, 0x7887),
+        ("largest_dos_block_is_owned_and_released", True, 0xFFFF),
+    )
+    game_segment = 0x0CE2
+    resource_segment = 0x0BBF
+    psp_segment = 0xFFF0
+    stack_pointer = 0x7E78
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helper_targets = {
+        0x0CCB: ("cpu_386_or_newer", True),
+        0x0D61: ("print_string_dos", True),
+        0x06F1: ("startup_command_line_parse", False),
+        0x0CEF: ("mouse_reset_hide", True),
+        0x27D3: ("cmos_rtc_read", True),
+        0x0BFF: ("install_ctrl_break_handler", True),
+        0x079C: ("install_timer_isr_hook", True),
+        0x0C26: ("vga_mode_x_initialize", True),
+        0x0B32: ("detect_cdrom", False),
+        0x0D4A: ("mouse_set_ranges", True),
+        0x0B42: ("vga_retrace_phase_calibrate", True),
+        0x099F: ("extended_memory_backends_init", True),
+        0x08B0: ("bloodprg_main", True),
+        0x0A99: ("extended_memory_backends_release", True),
+        0x07EA: ("restore_timer_isr_hook", True),
+        0x0CC0: ("set_video_mode_saved", True),
+    }
+    success_events = [
+        "cpu_386_or_newer",
+        "dos_resize_program_block",
+        "dos_largest_block_query",
+        "dos_allocate_largest_block",
+        "startup_command_line_parse",
+        "mouse_reset_hide",
+        "cmos_rtc_read",
+        "install_ctrl_break_handler",
+        "install_timer_isr_hook",
+        "vga_mode_x_initialize",
+        "detect_cdrom",
+        "mouse_set_ranges",
+        "mouse_position_set",
+        "vga_retrace_phase_calibrate",
+        "extended_memory_backends_init",
+        "port_write",
+        "port_write",
+        "port_write",
+        "bloodprg_main",
+        "extended_memory_backends_release",
+        "restore_timer_isr_hook",
+        "set_video_mode_saved",
+        "dos_free_block",
+        "dos_terminate",
+    ]
+    vectors = []
+
+    for case_index, (name, cpu_ok, largest_paragraphs) in enumerate(cases):
+        allocated_segment = 0x7000 + case_index * 0x0100
+        initial_pool_segment = 0x3400 + case_index
+        initial_free_bytes = 0xA5A50000 + case_index
+        initial_pool_end = 0x5600 + case_index
+        initial_reserved = 0x7800 + case_index
+        events: list[dict[str, object]] = []
+        allocation_calls = 0
+
+        data_before = bytearray(0x10000)
+        data_before[0:14] = b"386 minimum !\0"
+        memory_text = b"Not enough memory (570Ko min) !\0"
+        data_before[0x000E : 0x000E + len(memory_text)] = memory_text
+        struct.pack_into("<HH", data_before, 0x0A42, 0, initial_pool_segment)
+        struct.pack_into("<I", data_before, 0x0A46, initial_free_bytes)
+        struct.pack_into("<H", data_before, 0x0A6A, initial_pool_end)
+        struct.pack_into("<H", data_before, 0x0AF0, initial_reserved)
+        data_before[stack_pointer : stack_pointer + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+
+        command_tail = b"/S16 /WRI=C:\\SAVE"
+        psp_before = bytearray(0x0100)
+        psp_before[0x80] = len(command_tail)
+        psp_before[0x81 : 0x81 + len(command_tail)] = command_tail
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": 0x9100,
+            "ds": 0x2100,
+            "es": psp_segment,
+            "fs": 0x2300,
+            "gs": 0x2400,
+            "ss": 0x2500,
+            "flags": 0x0202,
+        }
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def return_frame(machine: Uc, far_return: bool) -> list[int]:
+            current_sp = machine.reg_read(UC_X86_REG_SP)
+            count = 2 if far_return else 1
+            return list(
+                struct.unpack(
+                    "<" + "H" * count,
+                    machine.mem_read(game_segment * 16 + current_sp, count * 2),
+                )
+            )
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            target = helper_targets.get(address)
+            if target is None:
+                return
+            helper_name, far_return = target
+            event: dict[str, object] = {
+                "event": helper_name,
+                "return_frame": return_frame(machine, far_return),
+            }
+            if helper_name == "cpu_386_or_newer":
+                machine.reg_write(UC_X86_REG_AX, 1 if cpu_ok else 0)
+            elif helper_name == "print_string_dos":
+                string_segment = machine.reg_read(UC_X86_REG_DS)
+                string_offset = machine.reg_read(UC_X86_REG_SI)
+                raw = bytes(machine.mem_read(string_segment * 16 + string_offset, 64))
+                event["text"] = raw.split(b"\0", 1)[0].decode("ascii")
+            elif helper_name == "startup_command_line_parse":
+                event["command_tail"] = [
+                    machine.reg_read(UC_X86_REG_ES),
+                    0x0080,
+                ]
+            elif helper_name == "mouse_set_ranges":
+                event["ranges"] = [
+                    machine.reg_read(UC_X86_REG_AX),
+                    machine.reg_read(UC_X86_REG_BX),
+                    machine.reg_read(UC_X86_REG_CX),
+                    machine.reg_read(UC_X86_REG_DX),
+                ]
+            events.append(event)
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal allocation_calls
+            function = machine.reg_read(UC_X86_REG_AX)
+            if number == 0x33:
+                events.append(
+                    {
+                        "event": "mouse_position_set",
+                        "function": function,
+                        "position": [
+                            machine.reg_read(UC_X86_REG_CX),
+                            machine.reg_read(UC_X86_REG_DX),
+                        ],
+                    }
+                )
+                return
+            if number != 0x21:
+                raise AssertionError(f"0x0600 {name}: unexpected INT {number:#x}")
+            if function == 0x4A00:
+                events.append(
+                    {
+                        "event": "dos_resize_program_block",
+                        "segment": machine.reg_read(UC_X86_REG_ES),
+                        "paragraphs": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+                set_carry(machine, False)
+            elif function == 0x4800:
+                allocation_calls += 1
+                if allocation_calls == 1:
+                    events.append(
+                        {
+                            "event": "dos_largest_block_query",
+                            "request": machine.reg_read(UC_X86_REG_BX),
+                            "largest": largest_paragraphs,
+                        }
+                    )
+                    machine.reg_write(UC_X86_REG_AX, 8)
+                    machine.reg_write(UC_X86_REG_BX, largest_paragraphs)
+                    set_carry(machine, True)
+                elif allocation_calls == 2:
+                    events.append(
+                        {
+                            "event": "dos_allocate_largest_block",
+                            "paragraphs": machine.reg_read(UC_X86_REG_BX),
+                            "segment": allocated_segment,
+                        }
+                    )
+                    machine.reg_write(UC_X86_REG_AX, allocated_segment)
+                    set_carry(machine, False)
+                else:
+                    raise AssertionError(f"0x0600 {name}: extra DOS allocation")
+            elif function == 0x4900:
+                events.append(
+                    {
+                        "event": "dos_free_block",
+                        "segment": machine.reg_read(UC_X86_REG_ES),
+                    }
+                )
+                set_carry(machine, False)
+            elif function == 0x4C00:
+                events.append({"event": "dos_terminate", "status": 0})
+                machine.reg_write(UC_X86_REG_CS, 0)
+                machine.reg_write(UC_X86_REG_IP, return_address)
+            else:
+                raise AssertionError(
+                    f"0x0600 {name}: unexpected DOS function {function:#x}"
+                )
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            events.append(
+                {
+                    "event": "port_write",
+                    "port": port,
+                    "size": size,
+                    "value": value,
+                }
+            )
+
+        code_patches = [
+            (0, address, b"\xcb" if far_return else b"\xc3")
+            for address, (_helper_name, far_return) in helper_targets.items()
+        ]
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            code_patches
+            + [
+                (0, return_address, b"\xcc"),
+                (game_segment, 0, bytes(data_before)),
+                (psp_segment, 0, bytes(psp_before)),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            output_handler=output_port,
+            instruction_count=1000,
+        )
+
+        actual_names = [str(event["event"]) for event in events]
+        if not cpu_ok:
+            expected_names = ["cpu_386_or_newer", "print_string_dos", "dos_terminate"]
+        elif largest_paragraphs < 0x7887:
+            expected_names = [
+                "cpu_386_or_newer",
+                "dos_resize_program_block",
+                "dos_largest_block_query",
+                "print_string_dos",
+                "dos_free_block",
+                "dos_terminate",
+            ]
+        else:
+            expected_names = success_events
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x0600 {name}: events={actual_names}, expected={expected_names}"
+            )
+
+        print_events = [event for event in events if event["event"] == "print_string_dos"]
+        if not cpu_ok and print_events[0]["text"] != "386 minimum !":
+            raise AssertionError(f"0x0600 {name}: wrong CPU error text")
+        if cpu_ok and largest_paragraphs < 0x7887:
+            if print_events[0]["text"] != "Not enough memory (570Ko min) !":
+                raise AssertionError(f"0x0600 {name}: wrong memory error text")
+
+        resize_events = [event for event in events if event["event"] == "dos_resize_program_block"]
+        if cpu_ok and resize_events != [
+            {
+                "event": "dos_resize_program_block",
+                "segment": psp_segment,
+                "paragraphs": 0x14DA,
+            }
+        ]:
+            raise AssertionError(f"0x0600 {name}: resize={resize_events}")
+
+        free_events = [event for event in events if event["event"] == "dos_free_block"]
+        expected_free_segment = (
+            allocated_segment if largest_paragraphs >= 0x7887 else initial_pool_segment
+        )
+        if cpu_ok and free_events != [
+            {"event": "dos_free_block", "segment": expected_free_segment}
+        ]:
+            raise AssertionError(f"0x0600 {name}: free={free_events}")
+        if not cpu_ok and free_events:
+            raise AssertionError(f"0x0600 {name}: CPU rejection freed memory")
+
+        port_events = [event for event in events if event["event"] == "port_write"]
+        expected_ports = (
+            [(0x43, 0xB6), (0x42, 0x9C), (0x42, 0x2E)]
+            if cpu_ok and largest_paragraphs >= 0x7887
+            else []
+        )
+        actual_ports = [(int(event["port"]), int(event["value"])) for event in port_events]
+        if actual_ports != expected_ports or any(event["size"] != 1 for event in port_events):
+            raise AssertionError(f"0x0600 {name}: PIT writes={port_events}")
+
+        data_after = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        actual_pool = list(struct.unpack_from("<HH", data_after, 0x0A42))
+        actual_free_bytes = struct.unpack_from("<I", data_after, 0x0A46)[0]
+        actual_pool_end = struct.unpack_from("<H", data_after, 0x0A6A)[0]
+        actual_reserved = struct.unpack_from("<H", data_after, 0x0AF0)[0]
+        if not cpu_ok:
+            expected_data = ([0, initial_pool_segment], initial_free_bytes,
+                             initial_pool_end, initial_reserved)
+        elif largest_paragraphs < 0x7887:
+            expected_data = ([0, initial_pool_segment], largest_paragraphs << 4,
+                             initial_pool_end, initial_reserved)
+        else:
+            expected_data = ([0, allocated_segment], largest_paragraphs << 4,
+                             allocated_segment, 0x0B29)
+        actual_data = (actual_pool, actual_free_bytes, actual_pool_end, actual_reserved)
+        if actual_data != expected_data:
+            raise AssertionError(
+                f"0x0600 {name}: startup data={actual_data}, expected={expected_data}"
+            )
+
+        expected_segments = {
+            "ds": game_segment,
+            "ss": game_segment,
+            "es": psp_segment if not cpu_ok else expected_free_segment,
+            "fs": resource_segment if cpu_ok else initial["fs"],
+            "gs": game_segment if cpu_ok else initial["gs"],
+        }
+        for register, expected in expected_segments.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x0600 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != stack_pointer:
+            raise AssertionError(f"0x0600 {name}: stack pointer changed")
+        if data_after[stack_pointer : stack_pointer + len(stack_sentinel)] != stack_sentinel:
+            raise AssertionError(f"0x0600 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "largest_paragraphs": largest_paragraphs if cpu_ok else None,
+                "free_bytes": actual_free_bytes,
+                "pool": actual_pool,
+                "pool_end_segment": actual_pool_end,
+                "reserved_word_0af0": actual_reserved,
+                "events": events,
+                "final_segments": expected_segments,
+                "final_sp": machine.reg_read(UC_X86_REG_SP),
+            }
+        )
+    return vectors
+
+
 def cmos_rtc_read_vectors() -> list[dict[str, object]]:
     vectors = []
     for seconds in (0x00, 0x01, 0x09, 0x10, 0x59, 0x80, 0xFE, 0xFF):
@@ -86049,6 +86413,11 @@ def main() -> int:
     args = parser.parse_args()
 
     VECTOR_ROOT.mkdir(parents=True, exist_ok=True)
+    update_vector(
+        VECTOR_ROOT / "func_0600_natural.json",
+        bloodprg_entry_vectors(),
+        args.check,
+    )
     update_vector(
         VECTOR_ROOT / "func_06f1_natural.json",
         startup_command_line_parse_vectors(),

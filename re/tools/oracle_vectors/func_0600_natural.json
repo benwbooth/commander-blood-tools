@@ -1,0 +1,462 @@
+[
+  {
+    "name": "cpu_rejected_before_memory_setup",
+    "largest_paragraphs": null,
+    "free_bytes": 2779054080,
+    "pool": [
+      0,
+      13312
+    ],
+    "pool_end_segment": 22016,
+    "reserved_word_0af0": 30720,
+    "events": [
+      {
+        "event": "cpu_386_or_newer",
+        "return_frame": [
+          1552,
+          0
+        ]
+      },
+      {
+        "event": "print_string_dos",
+        "return_frame": [
+          1563,
+          0
+        ],
+        "text": "386 minimum !"
+      },
+      {
+        "event": "dos_terminate",
+        "status": 0
+      }
+    ],
+    "final_segments": {
+      "ds": 3298,
+      "ss": 3298,
+      "es": 65520,
+      "fs": 8960,
+      "gs": 9216
+    },
+    "final_sp": 32376
+  },
+  {
+    "name": "one_paragraph_below_minimum",
+    "largest_paragraphs": 30854,
+    "free_bytes": 493664,
+    "pool": [
+      0,
+      13313
+    ],
+    "pool_end_segment": 22017,
+    "reserved_word_0af0": 30721,
+    "events": [
+      {
+        "event": "cpu_386_or_newer",
+        "return_frame": [
+          1552,
+          0
+        ]
+      },
+      {
+        "event": "dos_resize_program_block",
+        "segment": 65520,
+        "paragraphs": 5338
+      },
+      {
+        "event": "dos_largest_block_query",
+        "request": 65535,
+        "largest": 30854
+      },
+      {
+        "event": "print_string_dos",
+        "return_frame": [
+          1645,
+          0
+        ],
+        "text": "Not enough memory (570Ko min) !"
+      },
+      {
+        "event": "dos_free_block",
+        "segment": 13313
+      },
+      {
+        "event": "dos_terminate",
+        "status": 0
+      }
+    ],
+    "final_segments": {
+      "ds": 3298,
+      "ss": 3298,
+      "es": 13313,
+      "fs": 3007,
+      "gs": 3298
+    },
+    "final_sp": 32376
+  },
+  {
+    "name": "exact_minimum_succeeds",
+    "largest_paragraphs": 30855,
+    "free_bytes": 493680,
+    "pool": [
+      0,
+      29184
+    ],
+    "pool_end_segment": 29184,
+    "reserved_word_0af0": 2857,
+    "events": [
+      {
+        "event": "cpu_386_or_newer",
+        "return_frame": [
+          1552,
+          0
+        ]
+      },
+      {
+        "event": "dos_resize_program_block",
+        "segment": 65520,
+        "paragraphs": 5338
+      },
+      {
+        "event": "dos_largest_block_query",
+        "request": 65535,
+        "largest": 30855
+      },
+      {
+        "event": "dos_allocate_largest_block",
+        "paragraphs": 30855,
+        "segment": 29184
+      },
+      {
+        "event": "startup_command_line_parse",
+        "return_frame": [
+          1673
+        ],
+        "command_tail": [
+          65520,
+          128
+        ]
+      },
+      {
+        "event": "mouse_reset_hide",
+        "return_frame": [
+          1677,
+          0
+        ]
+      },
+      {
+        "event": "cmos_rtc_read",
+        "return_frame": [
+          1682,
+          0
+        ]
+      },
+      {
+        "event": "install_ctrl_break_handler",
+        "return_frame": [
+          1686,
+          0
+        ]
+      },
+      {
+        "event": "install_timer_isr_hook",
+        "return_frame": [
+          1690,
+          0
+        ]
+      },
+      {
+        "event": "vga_mode_x_initialize",
+        "return_frame": [
+          1694,
+          0
+        ]
+      },
+      {
+        "event": "detect_cdrom",
+        "return_frame": [
+          1697
+        ]
+      },
+      {
+        "event": "mouse_set_ranges",
+        "return_frame": [
+          1713,
+          0
+        ],
+        "ranges": [
+          0,
+          3000,
+          0,
+          200
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "vga_retrace_phase_calibrate",
+        "return_frame": [
+          1728,
+          0
+        ]
+      },
+      {
+        "event": "extended_memory_backends_init",
+        "return_frame": [
+          1732,
+          0
+        ]
+      },
+      {
+        "event": "port_write",
+        "port": 67,
+        "size": 1,
+        "value": 182
+      },
+      {
+        "event": "port_write",
+        "port": 66,
+        "size": 1,
+        "value": 156
+      },
+      {
+        "event": "port_write",
+        "port": 66,
+        "size": 1,
+        "value": 46
+      },
+      {
+        "event": "bloodprg_main",
+        "return_frame": [
+          1749,
+          0
+        ]
+      },
+      {
+        "event": "extended_memory_backends_release",
+        "return_frame": [
+          1753,
+          0
+        ]
+      },
+      {
+        "event": "restore_timer_isr_hook",
+        "return_frame": [
+          1757,
+          0
+        ]
+      },
+      {
+        "event": "set_video_mode_saved",
+        "return_frame": [
+          1761,
+          0
+        ]
+      },
+      {
+        "event": "dos_free_block",
+        "segment": 29184
+      },
+      {
+        "event": "dos_terminate",
+        "status": 0
+      }
+    ],
+    "final_segments": {
+      "ds": 3298,
+      "ss": 3298,
+      "es": 29184,
+      "fs": 3007,
+      "gs": 3298
+    },
+    "final_sp": 32376
+  },
+  {
+    "name": "largest_dos_block_is_owned_and_released",
+    "largest_paragraphs": 65535,
+    "free_bytes": 1048560,
+    "pool": [
+      0,
+      29440
+    ],
+    "pool_end_segment": 29440,
+    "reserved_word_0af0": 2857,
+    "events": [
+      {
+        "event": "cpu_386_or_newer",
+        "return_frame": [
+          1552,
+          0
+        ]
+      },
+      {
+        "event": "dos_resize_program_block",
+        "segment": 65520,
+        "paragraphs": 5338
+      },
+      {
+        "event": "dos_largest_block_query",
+        "request": 65535,
+        "largest": 65535
+      },
+      {
+        "event": "dos_allocate_largest_block",
+        "paragraphs": 65535,
+        "segment": 29440
+      },
+      {
+        "event": "startup_command_line_parse",
+        "return_frame": [
+          1673
+        ],
+        "command_tail": [
+          65520,
+          128
+        ]
+      },
+      {
+        "event": "mouse_reset_hide",
+        "return_frame": [
+          1677,
+          0
+        ]
+      },
+      {
+        "event": "cmos_rtc_read",
+        "return_frame": [
+          1682,
+          0
+        ]
+      },
+      {
+        "event": "install_ctrl_break_handler",
+        "return_frame": [
+          1686,
+          0
+        ]
+      },
+      {
+        "event": "install_timer_isr_hook",
+        "return_frame": [
+          1690,
+          0
+        ]
+      },
+      {
+        "event": "vga_mode_x_initialize",
+        "return_frame": [
+          1694,
+          0
+        ]
+      },
+      {
+        "event": "detect_cdrom",
+        "return_frame": [
+          1697
+        ]
+      },
+      {
+        "event": "mouse_set_ranges",
+        "return_frame": [
+          1713,
+          0
+        ],
+        "ranges": [
+          0,
+          3000,
+          0,
+          200
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "vga_retrace_phase_calibrate",
+        "return_frame": [
+          1728,
+          0
+        ]
+      },
+      {
+        "event": "extended_memory_backends_init",
+        "return_frame": [
+          1732,
+          0
+        ]
+      },
+      {
+        "event": "port_write",
+        "port": 67,
+        "size": 1,
+        "value": 182
+      },
+      {
+        "event": "port_write",
+        "port": 66,
+        "size": 1,
+        "value": 156
+      },
+      {
+        "event": "port_write",
+        "port": 66,
+        "size": 1,
+        "value": 46
+      },
+      {
+        "event": "bloodprg_main",
+        "return_frame": [
+          1749,
+          0
+        ]
+      },
+      {
+        "event": "extended_memory_backends_release",
+        "return_frame": [
+          1753,
+          0
+        ]
+      },
+      {
+        "event": "restore_timer_isr_hook",
+        "return_frame": [
+          1757,
+          0
+        ]
+      },
+      {
+        "event": "set_video_mode_saved",
+        "return_frame": [
+          1761,
+          0
+        ]
+      },
+      {
+        "event": "dos_free_block",
+        "segment": 29440
+      },
+      {
+        "event": "dos_terminate",
+        "status": 0
+      }
+    ],
+    "final_segments": {
+      "ds": 3298,
+      "ss": 3298,
+      "es": 29440,
+      "fs": 3007,
+      "gs": 3298
+    },
+    "final_sp": 32376
+  }
+]

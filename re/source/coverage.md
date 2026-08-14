@@ -4,14 +4,14 @@ Current measured coverage:
 
 | module | indexed routines | natural-C candidates | missing |
 | --- | ---: | ---: | ---: |
-| `bloodprg` | 318 | 312 | 6 |
+| `bloodprg` | 318 | 313 | 5 |
 | `xdb_amer` | 27 | 27 | 0 |
 | `xdb_croolis` | 25 | 25 | 0 |
 | `xdb_manu3` | 12 | 12 | 0 |
 | `xdb_scrut` | 25 | 25 | 0 |
-| total | 407 | 401 | 6 |
+| total | 407 | 402 | 5 |
 
-Overall candidate coverage is 401 of 407 indexed routines, or 98.53 percent.
+Overall candidate coverage is 402 of 407 indexed routines, or 98.77 percent.
 All current candidates point at indexed routines.
 
 Generate the live report, including the missing routine list, with:

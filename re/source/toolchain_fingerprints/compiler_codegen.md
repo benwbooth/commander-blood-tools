@@ -5916,6 +5916,30 @@ Direct binary replacement would additionally need the original inherited-BP
 context, segment transitions, full-EAX zero at the panorama helper, selective
 callee residue, preserve-all envelope, and path-specific terminal flags.
 
+## BLOODPRG MZ entry at 0x000600
+
+The 241-byte process bootstrap is not an ordinary compiler-created function.
+It installs the shipped data/stack segment and stack pointer, rejects CPUs
+older than a 386, resizes the PSP-owned block, queries and allocates the largest
+remaining DOS block, initializes the game segments, runs all hardware and
+memory subsystems, calls the primary game owner at `0x000EB0`, tears everything
+down, frees the block, and terminates through DOS.
+
+Four patched-boundary vectors execute the untouched original bytes. They prove
+the CPU-rejection path, one paragraph below the `0x00078870`-byte minimum, the
+exact accepted minimum, and a maximum-sized block. The vectors cover the exact
+PSP resize, both French error strings, arena pointer/counters, command tail,
+all helper frames and ordering, mouse and PIT values, main dispatch, cleanup,
+segment state, stack integrity, and both DOS termination paths.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural
+coordinator warning-free to 122 instructions/400 bytes versus 96/241 original,
+with 79.17 percent mnemonic-multiset overlap and 56.25 percent ordered mnemonic
+overlap. It contains no inline assembly or register-state facade. Full
+executable integration must provide the loader-owned relocated `DS=SS=GS`,
+`FS=0x0BBF`, `SP=0x7E78`, and PSP `ES` state through linker/startup machinery;
+standard C cannot safely replace its own live stack.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
