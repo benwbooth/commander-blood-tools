@@ -4104,6 +4104,29 @@ share the original data segment; drop-in replacement still needs the original
 preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
 contract for the implicit mode table and palette destination.
 
+## BLOODPRG save-slot name-editor candidate
+
+`0x001DD8` is the save-slot name editor and selected-row renderer. It reads the
+translated key byte at `DS:0x0B15`, accepts digits and lowercase letters while
+the current length's low byte is not 14, replaces the prior character with a
+space on Backspace, and commits exactly 16 edit-buffer bytes on nonempty Enter.
+The commit path returns carry set without drawing. Every other path redraws the
+selected row and inset square-caps name, using only the low byte of the slot
+index for the 11-pixel row pitch.
+
+Ten direct vectors cover empty input and Enter, commit, accepted digit and
+lowercase input, the length cap, uppercase and other rejection, both Backspace
+paths, and high-byte slot-index truncation. They prove DS versus ES writes,
+graphics arguments and order, carry, complete register and segment
+preservation, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 69 instructions/177 bytes versus the original
+63/133, with 84.13 percent mnemonic-multiset overlap. No inline assembly is
+used. Full-source integration converts the carry result to an ordinary `int`
+and binds the named objects to one data segment; drop-in replacement still
+needs the carry, BP-height, preserve-all, and shared-segment adapters.
+
 ## BLOODPRG line-zero presentation-loop candidate
 
 `0x001EC1` is the modal scene-line-zero loop. It clears the current display band

@@ -6,8 +6,8 @@
 ; seg_off: 008b:0f28
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: flag_gated_b15
-; label_comment: flag-gated routine: si=0x273b; al=[0xb15]; test/branch. Gates on the 0xb15 state byte (a mode/enable flag)
+; label: save_slot_name_edit_step
+; label_comment: Save-slot name editor and row renderer. Reads the translated input byte at DS:0x0B15, commits the 16-byte DS:0x273B edit buffer to ES:[DS:0x2734] on nonempty Enter and returns carry set, accepts only digits/lowercase below the 14-character limit, and erases with Backspace. Non-commit paths redraw the selected row using 0299:0CDC and 0299:0176 and return carry clear. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001dd8_save_slot_name_edit_step.c and re/tools/oracle_vectors/func_1dd8_natural.json
 ; byte_count: 133
 ; boundary: cfg_blocks_15_terminals_3
 ; terminal: jmp 0x1e27:1, jmp 0x1e55:1, ret:1

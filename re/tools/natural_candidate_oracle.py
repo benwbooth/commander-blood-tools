@@ -52115,6 +52115,240 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def save_slot_name_edit_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1DD8
+    return_address = 0xF580
+    expected_hash = "3a1706e8bcaac3b07eb0b174ee8eb810ee35f9798ad785e5d49db82a04889a98"
+    if hashlib.sha256(EXE[entry : entry + 133]).hexdigest() != expected_hash:
+        raise AssertionError("0x1dd8: recovered 133-byte body changed")
+
+    cases = [
+        {"name": "no_key", "key": 0, "length": 3, "selected": 2},
+        {"name": "enter_empty", "key": 0x0D, "length": 0, "selected": 1},
+        {
+            "name": "enter_commits_sixteen_bytes",
+            "key": 0x0D,
+            "length": 5,
+            "selected": 4,
+            "commits": True,
+        },
+        {"name": "digit_appends", "key": ord("7"), "length": 3},
+        {"name": "lowercase_appends", "key": ord("z"), "length": 13},
+        {"name": "length_fourteen_rejects", "key": ord("a"), "length": 14},
+        {"name": "uppercase_rejects", "key": ord("Q"), "length": 4},
+        {"name": "backspace_erases", "key": 8, "length": 4},
+        {"name": "backspace_empty", "key": 8, "length": 0},
+        {
+            "name": "selected_index_uses_low_byte",
+            "key": 0x1B,
+            "length": 5,
+            "selected": 0x0102,
+            "row_x": 0xFFF9,
+            "row_width": 0x8123,
+        },
+    ]
+    data_segment = 0x2000
+    destination_segment = 0x3000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    active_name_offset = 0x4100
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    initial_edit = bytearray(b"alpha beta      ")
+    if len(initial_edit) != 16:
+        raise AssertionError("0x1dd8: test edit buffer must be 16 bytes")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        key = int(case["key"])
+        length = int(case["length"])
+        selected = int(case.get("selected", 3))
+        row_x = int(case.get("row_x", 0x0032))
+        row_width = int(case.get("row_width", 0x008C))
+        commits = bool(case.get("commits", False))
+        calls: list[dict[str, object]] = []
+
+        data = bytearray(0x10000)
+        destination = bytearray([0xA5]) * 0x10000
+        data[0x0B15] = key
+        data[0x272E : 0x2730] = struct.pack("<H", length)
+        data[0x2732 : 0x2734] = struct.pack("<H", selected)
+        data[0x2734 : 0x2736] = struct.pack("<H", active_name_offset)
+        data[0x273B : 0x274B] = initial_edit
+        data[0x2AAB : 0x2AAD] = struct.pack("<H", row_x)
+        data[0x2AAF : 0x2AB1] = struct.pack("<H", row_width)
+        destination[active_name_offset : active_name_offset + 16] = bytes(
+            [0x6D]
+        ) * 16
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": destination_segment,
+            "fs": 0x4000,
+            "gs": 0x5000,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x366C:
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_fill",
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            elif address == 0x2B06:
+                calls.append(
+                    {
+                        "call": "square_caps_text_draw_display",
+                        "text_segment": machine.reg_read(UC_X86_REG_DS),
+                        "text_offset": machine.reg_read(UC_X86_REG_SI),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_DX),
+                        "color": machine.reg_read(UC_X86_REG_AX) & 0xFF,
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x366C, b"\xCB"),
+                (0, 0x2B06, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (destination_segment, 0, bytes(destination)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=200,
+        )
+
+        expected_data = bytearray(data)
+        expected_destination = bytearray(destination)
+        if commits:
+            expected_destination[
+                active_name_offset : active_name_offset + 16
+            ] = initial_edit
+            expected_calls: list[dict[str, object]] = []
+        else:
+            if (
+                (ord("0") <= key <= ord("9") or ord("a") <= key <= ord("z"))
+                and (length & 0xFF) != 14
+            ):
+                expected_data[(0x273B + length) & 0xFFFF] = key
+            elif key == 8 and length != 0:
+                expected_data[(0x273B + length - 1) & 0xFFFF] = ord(" ")
+            row_y = ((selected & 0xFF) * 11 + 39) & 0xFFFF
+            expected_calls = [
+                {
+                    "call": "framebuffer_rect_fill",
+                    "color": 0x00E8,
+                    "x": row_x,
+                    "y": row_y,
+                    "width": row_width,
+                    "height": 10,
+                },
+                {
+                    "call": "square_caps_text_draw_display",
+                    "text_segment": data_segment,
+                    "text_offset": 0x273B,
+                    "x": (row_x + 10) & 0xFFFF,
+                    "y": (row_y + 1) & 0xFFFF,
+                    "color": 0xEF,
+                },
+            ]
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x1dd8 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            raise AssertionError(f"0x1dd8 {name}: unexpected DS mutation")
+        actual_destination = bytes(
+            machine.mem_read(destination_segment * 16, 0x10000)
+        )
+        if actual_destination != bytes(expected_destination):
+            raise AssertionError(f"0x1dd8 {name}: unexpected ES mutation")
+        for register in (
+            "eax",
+            "ebx",
+            "ecx",
+            "edx",
+            "esi",
+            "edi",
+            "ebp",
+            "ds",
+            "es",
+            "fs",
+            "gs",
+        ):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x1dd8 {name}: changed {register}")
+        carry = bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+        if carry != commits:
+            raise AssertionError(
+                f"0x1dd8 {name}: carry={carry}, expected={commits}"
+            )
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x1dd8 {name}: near return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x1dd8 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "key": key,
+                "name_length": length,
+                "selected_index": selected,
+                "committed": commits,
+                "edit_buffer_hex": actual_data[0x273B:0x274B].hex(),
+                "active_name_hex": actual_destination[
+                    active_name_offset : active_name_offset + 16
+                ].hex(),
+                "calls": calls,
+                "carry": carry,
+                "preserved_registers": [
+                    "eax",
+                    "ebx",
+                    "ecx",
+                    "edx",
+                    "esi",
+                    "edi",
+                    "ebp",
+                    "ds",
+                    "es",
+                    "fs",
+                    "gs",
+                ],
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def input_action_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x210E
     return_address = 0xF500
@@ -58543,6 +58777,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1ec1_natural.json",
         presentation_line_zero_run_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1dd8_natural.json",
+        save_slot_name_edit_step_vectors(),
         args.check,
     )
     update_vector(

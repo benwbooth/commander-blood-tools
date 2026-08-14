@@ -1,0 +1,405 @@
+[
+  {
+    "name": "no_key",
+    "key": 0,
+    "name_length": 3,
+    "selected_index": 2,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 61,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 62,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "enter_empty",
+    "key": 13,
+    "name_length": 0,
+    "selected_index": 1,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 50,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 51,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "enter_commits_sixteen_bytes",
+    "key": 13,
+    "name_length": 5,
+    "selected_index": 4,
+    "committed": true,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "616c7068612062657461202020202020",
+    "calls": [],
+    "carry": true,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "digit_appends",
+    "key": 55,
+    "name_length": 3,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c7037612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "lowercase_appends",
+    "key": 122,
+    "name_length": 13,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c70686120626574612020207a2020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "length_fourteen_rejects",
+    "key": 97,
+    "name_length": 14,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "uppercase_rejects",
+    "key": 81,
+    "name_length": 4,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "backspace_erases",
+    "key": 8,
+    "name_length": 4,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c7020612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "backspace_empty",
+    "key": 8,
+    "name_length": 0,
+    "selected_index": 3,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 50,
+        "y": 72,
+        "width": 140,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 60,
+        "y": 73,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  },
+  {
+    "name": "selected_index_uses_low_byte",
+    "key": 27,
+    "name_length": 5,
+    "selected_index": 258,
+    "committed": false,
+    "edit_buffer_hex": "616c7068612062657461202020202020",
+    "active_name_hex": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+    "calls": [
+      {
+        "call": "framebuffer_rect_fill",
+        "color": 232,
+        "x": 65529,
+        "y": 61,
+        "width": 33059,
+        "height": 10
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "text_segment": 8192,
+        "text_offset": 10043,
+        "x": 3,
+        "y": 62,
+        "color": 239
+      }
+    ],
+    "carry": false,
+    "preserved_registers": [
+      "eax",
+      "ebx",
+      "ecx",
+      "edx",
+      "esi",
+      "edi",
+      "ebp",
+      "ds",
+      "es",
+      "fs",
+      "gs"
+    ],
+    "return": "near"
+  }
+]
