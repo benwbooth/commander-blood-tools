@@ -41,7 +41,7 @@ typedef struct bloodprg_resource_descriptor {
 
 typedef struct bloodprg_resource_index_entry {
     bloodprg_resource_descriptor CB_NEAR *descriptor;
-    cb_u16 secondary_resource_id;
+    volatile char CB_NEAR *image_path;
 } bloodprg_resource_index_entry;
 
 typedef struct bloodprg_dos_dta {

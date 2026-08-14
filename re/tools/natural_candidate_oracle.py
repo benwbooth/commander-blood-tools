@@ -52115,6 +52115,584 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def dlg_line_id_scene_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x9D10
+    return_address = 0xF700
+    expected_hash = "f29d509a5222b601da2df320823ffeccac6ae4231ab2e16cffe6a9892e791ae2"
+    if hashlib.sha256(EXE[entry : entry + 579]).hexdigest() != expected_hash:
+        raise AssertionError("0x9d10: recovered 579-byte body changed")
+
+    cases = [
+        {"name": "negative_line_exits", "line": 0xFFFF},
+        {
+            "name": "scruter_jo_record_arms_overlay",
+            "line": 0x001D,
+            "scene_gate": 1,
+            "record_related": 0x4567,
+            "named_scruter": 0x4567,
+            "displayed": 0x001D,
+        },
+        {
+            "name": "armed_overlay_triggers_on_next_line",
+            "line": 5,
+            "alien_armed": 1,
+        },
+        {
+            "name": "new_image_loads_and_copies_palette",
+            "line": 2,
+            "image_path": 0x1234,
+            "cached_path": 0x2222,
+            "mode_slot": 0,
+        },
+        {
+            "name": "missing_image_clears_back_buffer_band",
+            "line": 0,
+            "image_path": 0xFFFF,
+            "cached_path": 0x2222,
+        },
+        {
+            "name": "banked_line_builds_black_remap",
+            "line": 8,
+            "image_path": 0x1234,
+            "cached_path": 0x1234,
+            "xms_handle": 1,
+            "ems_handle": 0xFFFF,
+            "sequence_active": 1,
+            "displayed": 7,
+            "mode_slot": 8,
+        },
+        {
+            "name": "unbanked_line_honors_first_eight_mode_slots",
+            "line": 8,
+            "image_path": 0x1234,
+            "cached_path": 0x1234,
+            "xms_handle": 0xFFFF,
+            "ems_handle": 0xFFFF,
+            "displayed": 8,
+            "mode_slot": 7,
+        },
+        {
+            "name": "active_dispatch_blocked",
+            "line": 3,
+            "presentation_gate": 1,
+            "dispatch_blocked": 1,
+        },
+        {
+            "name": "active_line_five_teardown",
+            "line": 5,
+            "presentation_gate": 1,
+            "queue_ready": False,
+            "ship_flags": 8,
+            "alien_armed": 1,
+            "finale": 1,
+        },
+        {
+            "name": "ready_line_27_resets_transition",
+            "line": 0x27,
+            "presentation_gate": 1,
+            "queue_ready": True,
+            "entry_metric": 0x24,
+            "read_index": 0x10,
+        },
+        {
+            "name": "ready_ship_line_arms_depth_opening",
+            "line": 3,
+            "presentation_gate": 1,
+            "queue_ready": True,
+            "ship_flags": 8,
+            "entry_metric": 0x18,
+            "read_index": 0x10,
+        },
+    ]
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    caller_es_segment = 0x4000
+    object_segment = 0x5000
+    back_buffer_segment = 0x6000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    record_offset = 0x3456
+    back_buffer_offset = 0x7100
+    link_target_offset = 0x4A40
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    palette_source = bytes((index * 29 + 7) & 0xFF for index in range(0xC0))
+    vectors = []
+
+    def write8(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset] = value & 0xFF
+
+    def write16(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset : offset + 2] = struct.pack("<H", value & 0xFFFF)
+
+    def write32(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset : offset + 4] = struct.pack("<I", value & 0xFFFFFFFF)
+
+    def read8(memory: bytearray, offset: int) -> int:
+        return memory[offset]
+
+    def read16(memory: bytearray, offset: int) -> int:
+        return struct.unpack("<H", memory[offset : offset + 2])[0]
+
+    def stack_word(machine: Uc, index: int = 0) -> int:
+        sp = machine.reg_read(UC_X86_REG_SP)
+        return struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + sp + index * 2, 2)
+        )[0]
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        line = int(case["line"])
+        presentation_gate = int(case.get("presentation_gate", 0))
+        scene_gate = int(case.get("scene_gate", 0))
+        alien_armed = int(case.get("alien_armed", 0))
+        image_path = int(case.get("image_path", 0x1234))
+        cached_path = int(case.get("cached_path", image_path))
+        sequence_active = int(case.get("sequence_active", 0))
+        displayed = int(case.get("displayed", line))
+        ship_flags = int(case.get("ship_flags", 0))
+        xms_handle = int(case.get("xms_handle", 0xFFFF))
+        ems_handle = int(case.get("ems_handle", 0xFFFF))
+        entry_metric = int(case.get("entry_metric", 0x3333))
+        read_index = int(case.get("read_index", 0x1111))
+        queue_ready = bool(case.get("queue_ready", True))
+        calls: list[dict[str, object]] = []
+
+        data = bytearray(0x10000)
+        decoy = bytearray([0xCC]) * 0x10000
+        caller_es = bytearray(0x10000)
+        object_heap = bytearray(0x10000)
+        back_buffer = bytearray([0x6D]) * 0x10000
+
+        write8(data, 0x0DB8, 0x7A)
+        write16(data, 0x6788, line)
+        write8(data, 0x1FB2, presentation_gate)
+        write8(data, 0x274F, scene_gate)
+        write8(data, 0x0AE3, alien_armed)
+        write8(data, 0x0AE4, 0x55)
+        write32(data, 0x6724, (object_segment << 16) | 0x1111)
+        write16(data, 0x675E, record_offset)
+        write16(data, 0x6760, int(case.get("named_scruter", 0x7777)))
+        write16(
+            object_heap,
+            record_offset + 2,
+            int(case.get("record_related", 0x6666)),
+        )
+        write16(data, 0x1FB5 + line * 4 if line < 0x80 else 0x1FB5, 0x2468)
+        if line < 0x80:
+            write16(data, 0x1FB5 + line * 4 + 2, image_path)
+        write16(data, 0x1FA3, cached_path)
+        write8(data, 0x5B53, 0x66)
+        write8(data, 0x5B57, 0x77)
+        write32(data, 0x5229, (back_buffer_segment << 16) | back_buffer_offset)
+        write8(data, 0x0AE1, 0x88)
+        write16(data, 0x1FA7, 0x0035)
+        write16(data, 0x5239, 0x1111)
+        write16(data, 0x523B, 0x2222)
+        write8(data, 0x0DB9, 9)
+        write8(data, 0x0DBB, 0x0B)
+        write8(data, 0x0DBD, 0x0D)
+        write8(data, 0x0DBC, 0x0C)
+        write8(data, 0x67AA, 0xA3)
+        write16(data, 0x0A56, xms_handle)
+        write16(data, 0x0A58, ems_handle)
+        write8(data, 0x252A, sequence_active)
+        write16(data, 0x678A, displayed)
+        write8(data, 0x252D, int(case.get("dispatch_blocked", 0)))
+        write16(data, 0x24F3, ship_flags)
+        write8(data, 0x27D8, 0x44)
+        write8(data, 0x67BD, int(case.get("finale", 0)))
+        write8(data, 0x0B13, 0x33)
+        write16(data, 0x0DAF, entry_metric)
+        write16(data, 0x0D60, read_index)
+        write16(data, 0x524F, 0x7777)
+        write8(data, 0x252F, 0x22)
+        write8(data, 0x2531, 0x33)
+        data[0x53D1 : 0x53D1 + len(palette_source)] = palette_source
+        caller_es[0x59D1 : 0x59D1 + len(palette_source)] = bytes([0xA5]) * len(
+            palette_source
+        )
+        mode_slot = case.get("mode_slot")
+        caller_es[0x0DBE : 0x0DC7] = bytes([0xE0 + index for index in range(9)])
+        if mode_slot is not None:
+            caller_es[0x0DBE + int(mode_slot)] = line & 0xFF
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD0000 | link_target_offset,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": caller_es_segment,
+            "fs": 0x7000,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x25FD:
+                calls.append(
+                    {
+                        "call": "pbm_image_load_and_decode",
+                        "path_segment": machine.reg_read(UC_X86_REG_DS),
+                        "path_offset": machine.reg_read(UC_X86_REG_SI),
+                        "buffer_segment": machine.reg_read(UC_X86_REG_ES),
+                        "buffer_offset": machine.reg_read(UC_X86_REG_DI),
+                        "palette_refresh": machine.mem_read(
+                            data_segment * 16 + 0x5B53, 1
+                        )[0],
+                        "transparent_zero": machine.mem_read(
+                            data_segment * 16 + 0x5B57, 1
+                        )[0],
+                        "force_directory": machine.mem_read(
+                            data_segment * 16 + 0x0AE1, 1
+                        )[0],
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                return
+            if address == 0x37BF:
+                calls.append(
+                    {
+                        "call": "back_buffer_fill",
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                        "top": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x5239, 2)
+                        )[0],
+                        "bottom": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x523B, 2)
+                        )[0],
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                return
+            if address == 0xA15F:
+                calls.append(
+                    {
+                        "call": "resource_load_sequence",
+                        "line": machine.reg_read(UC_X86_REG_AX),
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                return
+            if address == 0x1CE0:
+                calls.append(
+                    {
+                        "call": "palette_blend_remap_table_build",
+                        "negative_percent": machine.reg_read(UC_X86_REG_AX),
+                        "red": machine.reg_read(UC_X86_REG_BX),
+                        "green": machine.reg_read(UC_X86_REG_CX),
+                        "blue": machine.reg_read(UC_X86_REG_DX),
+                        "table_segment": machine.reg_read(UC_X86_REG_ES),
+                        "table_offset": machine.reg_read(UC_X86_REG_DI),
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                return
+            if address == 0xA1B4:
+                calls.append(
+                    {
+                        "call": "ems_resource_flush",
+                        "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                return
+            if address == 0xA40B:
+                calls.append(
+                    {
+                        "call": "list_d8c_state_le_one",
+                        "result": queue_ready,
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    flags | 0x40 if queue_ready else flags & ~0x40,
+                )
+                return
+            if address == 0x377B:
+                calls.append(
+                    {
+                        "call": "blit_fill_row_5221",
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                        "top": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x5239, 2)
+                        )[0],
+                        "bottom": struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x523B, 2)
+                        )[0],
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x25FD, b"\xCB"),
+                (0, 0x37BF, b"\xCB"),
+                (0, 0x1CE0, b"\xCB"),
+                (0, 0xA15F, b"\xC3"),
+                (0, 0xA1B4, b"\xC3"),
+                (0, 0xA40B, b"\xC3"),
+                (0, 0x377B, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (decoy_segment, 0, bytes(decoy)),
+                (caller_es_segment, 0, bytes(caller_es)),
+                (object_segment, 0, bytes(object_heap)),
+                (back_buffer_segment, 0, bytes(back_buffer)),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=1500,
+        )
+
+        expected_data = bytearray(data)
+        expected_es = bytearray(caller_es)
+        expected_calls: list[dict[str, object]] = []
+        write8(expected_data, 0x0DB8, 0)
+
+        if line < 0x8000:
+            if presentation_gate & 1 == 0:
+                early_exit = False
+                if line == 0x001D:
+                    armed = int(
+                        int(case.get("record_related", 0x6666))
+                        == int(case.get("named_scruter", 0x7777))
+                    )
+                    write8(expected_data, 0x0AE3, armed)
+                elif alien_armed & 1:
+                    write8(expected_data, 0x0AE4, 1)
+                    early_exit = True
+
+                if not early_exit:
+                    if scene_gate & 1 == 0:
+                        if image_path == 0xFFFF:
+                            write16(expected_data, 0x1FA3, 0xFFFF)
+                        elif image_path != cached_path:
+                            write16(expected_data, 0x1FA3, image_path)
+                            expected_calls.append(
+                                {
+                                    "call": "pbm_image_load_and_decode",
+                                    "path_segment": data_segment,
+                                    "path_offset": image_path,
+                                    "buffer_segment": back_buffer_segment,
+                                    "buffer_offset": back_buffer_offset,
+                                    "palette_refresh": 1,
+                                    "transparent_zero": 1,
+                                    "force_directory": 1,
+                                    "return_ip": 0x9D9A,
+                                    "return_cs": 0,
+                                }
+                            )
+                            write8(expected_data, 0x0AE1, 0)
+                            write8(expected_data, 0x5B53, 0)
+                            write8(expected_data, 0x5B57, 0)
+                            expected_es[0x59D1 : 0x59D1 + len(palette_source)] = (
+                                palette_source
+                            )
+                        if read16(expected_data, 0x1FA3) == 0xFFFF:
+                            expected_calls.append(
+                                {
+                                    "call": "back_buffer_fill",
+                                    "color": 0,
+                                    "top": 0x0035,
+                                    "bottom": 0x00B7,
+                                    "return_ip": 0x9DDA,
+                                    "return_cs": 0,
+                                }
+                            )
+                            write16(expected_data, 0x5239, 0)
+                            write16(expected_data, 0x523B, 200)
+
+                    write8(expected_data, 0x1FB2, 1)
+                    write8(expected_data, 0x0DB9, 0)
+                    write8(expected_data, 0x0DBB, 0)
+                    write8(expected_data, 0x0DBD, 0)
+                    if line & 0xFF in caller_es[0x0DBE : 0x0DC6]:
+                        write8(expected_data, 0x0DBD, 1)
+                    if line in (2, 7):
+                        write8(expected_data, 0x0DB9, 1)
+                    elif line in (0, 1, 3, 4, 5, 6, 0x29, 0x2A, 0x2B, 0x2C):
+                        write8(expected_data, 0x67AA, read8(expected_data, 0x67AA) | 2)
+                        write8(expected_data, 0x0DBB, 1)
+                    write8(expected_data, 0x0DBC, 0)
+                    if line == 8 and (xms_handle + ems_handle) & 0xFFFF != 0xFFFE:
+                        write8(expected_data, 0x0DBC, 1)
+                    expected_calls.append(
+                        {
+                            "call": "resource_load_sequence",
+                            "line": line,
+                            "return_ip": 0x9E76,
+                        }
+                    )
+                    if (sequence_active | scene_gate) != 0 and displayed != line:
+                        write16(expected_data, 0x678A, line)
+                        expected_calls.append(
+                            {
+                                "call": "palette_blend_remap_table_build",
+                                "negative_percent": 0xFFCE,
+                                "red": 0,
+                                "green": 0,
+                                "blue": 0,
+                                "table_segment": caller_es_segment,
+                                "table_offset": 0x5F11,
+                                "return_ip": 0x9EA0,
+                                "return_cs": 0,
+                            }
+                        )
+            elif int(case.get("dispatch_blocked", 0)) & 1 == 0:
+                expected_calls.extend(
+                    [
+                        {
+                            "call": "ems_resource_flush",
+                            "link_target_offset": link_target_offset,
+                            "return_ip": 0x9EAF,
+                        },
+                        {
+                            "call": "list_d8c_state_le_one",
+                            "result": queue_ready,
+                            "return_ip": 0x9EB2,
+                        },
+                    ]
+                )
+                if not queue_ready:
+                    if ship_flags & 8:
+                        write8(expected_data, 0x27D8, 1)
+                    if line == 5:
+                        expected_calls.append(
+                            {
+                                "call": "blit_fill_row_5221",
+                                "color": 0,
+                                "top": 0x0023,
+                                "bottom": 0x00A5,
+                                "return_ip": 0x9EDA,
+                                "return_cs": 0,
+                            }
+                        )
+                        write16(expected_data, 0x5239, 0)
+                        write16(expected_data, 0x523B, 200)
+                    write8(expected_data, 0x0AE4, int((alien_armed & 1) != 0))
+                    write8(
+                        expected_data,
+                        0x0B13,
+                        int((int(case.get("finale", 0)) & 1) != 0),
+                    )
+                    write8(expected_data, 0x1FB2, 0)
+                    write16(expected_data, 0x678A, line)
+                    write16(expected_data, 0x6788, 0xFFFF)
+                    write8(expected_data, 0x67AA, read8(expected_data, 0x67AA) & 0xFD)
+                elif line == 0x27:
+                    if (entry_metric - read_index) & 0xFFFF == 0x14:
+                        write16(expected_data, 0x524F, 0)
+                elif ship_flags & 8 and (entry_metric - read_index) & 0xFFFF == 8:
+                    write8(expected_data, 0x252F, 1)
+                    write8(expected_data, 0x2531, 6)
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x9d10 {name}: DS:{mismatch:#06x}={actual_data[mismatch]:#04x}, "
+                f"expected={expected_data[mismatch]:#04x}"
+            )
+        actual_es = bytes(machine.mem_read(caller_es_segment * 16, 0x10000))
+        if actual_es != bytes(expected_es):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(zip(actual_es, expected_es))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x9d10 {name}: ES:{mismatch:#06x}={actual_es[mismatch]:#04x}, "
+                f"expected={expected_es[mismatch]:#04x}"
+            )
+        for segment, expected_memory, label in (
+            (decoy_segment, decoy, "GS decoy"),
+            (object_segment, object_heap, "object heap"),
+            (back_buffer_segment, back_buffer, "back buffer"),
+        ):
+            actual_memory = bytes(machine.mem_read(segment * 16, 0x10000))
+            if actual_memory != bytes(expected_memory):
+                raise AssertionError(f"0x9d10 {name}: changed {label}")
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x9d10 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        for register in ("eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(
+                    f"0x9d10 {name}: {register}={actual:#x}, "
+                    f"expected={initial[register]:#x}"
+                )
+        for register in ("ds", "es", "fs", "gs", "ss"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(
+                    f"0x9d10 {name}: {register}={actual:#x}, "
+                    f"expected={initial[register]:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 4:
+            raise AssertionError(f"0x9d10 {name}: far return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 4, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9d10 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "line": line,
+                "presentation_gate": presentation_gate,
+                "scene_gate": scene_gate,
+                "calls": calls,
+                "result": {
+                    "active_line": read16(expected_data, 0x6788),
+                    "displayed_line": read16(expected_data, 0x678A),
+                    "presentation_gate": read8(expected_data, 0x1FB2),
+                    "alien_overlay_armed": read8(expected_data, 0x0AE3),
+                    "temp_snd_trigger": read8(expected_data, 0x0AE4),
+                    "draw_via_back_buffer": read8(expected_data, 0x0DB9),
+                    "skip_back_buffer_present": read8(expected_data, 0x0DBB),
+                    "source_is_banked": read8(expected_data, 0x0DBC),
+                    "unclamped_row_count": read8(expected_data, 0x0DBD),
+                    "request_flags": read8(expected_data, 0x67AA),
+                    "depth_opening": read8(expected_data, 0x252F),
+                    "depth_step": read8(expected_data, 0x2531),
+                },
+                "preserved_registers": True,
+                "caller_es_palette_copy": actual_es[
+                    0x59D1 : 0x59D1 + len(palette_source)
+                ].hex(),
+            }
+        )
+
+    return vectors
+
+
 def resource_load_sequence_vectors() -> list[dict[str, object]]:
     entry = 0xA15F
     return_address = 0xF180
@@ -57450,6 +58028,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9d10_natural.json",
+        dlg_line_id_scene_dispatch_vectors(),
         args.check,
     )
     update_vector(

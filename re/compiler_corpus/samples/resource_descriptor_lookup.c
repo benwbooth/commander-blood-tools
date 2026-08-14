@@ -19,7 +19,7 @@ typedef struct resource_descriptor_probe {
 
 typedef struct resource_index_entry_probe {
     resource_descriptor_probe NEAR *descriptor;
-    u16 secondary_resource_id;
+    volatile char NEAR *image_path;
 } resource_index_entry_probe;
 
 extern volatile resource_index_entry_probe resource_index_probe[];

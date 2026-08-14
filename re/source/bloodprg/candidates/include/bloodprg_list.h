@@ -46,6 +46,7 @@ extern volatile cb_u8 resource_draw_via_back_buffer; /* GS:0x0DB9 */
 extern volatile cb_u8 resource_decode_rectangular; /* GS:0x0DBA */
 extern volatile cb_u8 resource_skip_back_buffer_present; /* GS:0x0DBB */
 extern volatile cb_u8 resource_unclamped_row_count; /* GS:0x0DBD */
+extern const cb_u8 presentation_unclamped_line_ids[9]; /* caller ES:0x0DBE */
 extern volatile cb_u16 resource_vertical_offset;   /* GS:0x1FA7 */
 extern volatile cb_u16 timer_tick_count;          /* DS:0x0B29 */
 extern volatile cb_u16 list_d8c_audio_phase;      /* DS:0x0C41 */

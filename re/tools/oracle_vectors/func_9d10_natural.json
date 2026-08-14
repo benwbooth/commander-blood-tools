@@ -1,0 +1,357 @@
+[
+  {
+    "name": "negative_line_exits",
+    "line": 65535,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [],
+    "result": {
+      "active_line": 65535,
+      "displayed_line": 65535,
+      "presentation_gate": 0,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "scruter_jo_record_arms_overlay",
+    "line": 29,
+    "presentation_gate": 0,
+    "scene_gate": 1,
+    "calls": [
+      {
+        "call": "resource_load_sequence",
+        "line": 29,
+        "return_ip": 40566
+      }
+    ],
+    "result": {
+      "active_line": 29,
+      "displayed_line": 29,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 1,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 0,
+      "skip_back_buffer_present": 0,
+      "source_is_banked": 0,
+      "unclamped_row_count": 0,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "armed_overlay_triggers_on_next_line",
+    "line": 5,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [],
+    "result": {
+      "active_line": 5,
+      "displayed_line": 5,
+      "presentation_gate": 0,
+      "alien_overlay_armed": 1,
+      "temp_snd_trigger": 1,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "new_image_loads_and_copies_palette",
+    "line": 2,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "pbm_image_load_and_decode",
+        "path_segment": 8192,
+        "path_offset": 4660,
+        "buffer_segment": 24576,
+        "buffer_offset": 28928,
+        "palette_refresh": 1,
+        "transparent_zero": 1,
+        "force_directory": 1,
+        "return_ip": 40346,
+        "return_cs": 0
+      },
+      {
+        "call": "resource_load_sequence",
+        "line": 2,
+        "return_ip": 40566
+      }
+    ],
+    "result": {
+      "active_line": 2,
+      "displayed_line": 2,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 1,
+      "skip_back_buffer_present": 0,
+      "source_is_banked": 0,
+      "unclamped_row_count": 1,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "0724415e7b98b5d2ef0c294663809dbad7f4112e4b6885a2bfdcf91633506d8aa7c4e1fe1b3855728facc9e603203d5a7794b1ceeb0825425f7c99b6d3f00d2a4764819ebbd8f5122f4c6986a3c0ddfa1734516e8ba8c5e2ff1c39567390adcae704213e5b7895b2cfec092643607d9ab7d4f10e2b4865829fbcd9f613304d6a87a4c1defb1835526f8ca9c6e3001d3a577491aecbe805223f5c7996b3d0ed0a2744617e9bb8d5f20f2c496683a0bddaf714314e6b88a5c2dffc193653708daa"
+  },
+  {
+    "name": "missing_image_clears_back_buffer_band",
+    "line": 0,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "back_buffer_fill",
+        "color": 0,
+        "top": 53,
+        "bottom": 183,
+        "return_ip": 40410,
+        "return_cs": 0
+      },
+      {
+        "call": "resource_load_sequence",
+        "line": 0,
+        "return_ip": 40566
+      }
+    ],
+    "result": {
+      "active_line": 0,
+      "displayed_line": 0,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 0,
+      "skip_back_buffer_present": 1,
+      "source_is_banked": 0,
+      "unclamped_row_count": 0,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "banked_line_builds_black_remap",
+    "line": 8,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "resource_load_sequence",
+        "line": 8,
+        "return_ip": 40566
+      },
+      {
+        "call": "palette_blend_remap_table_build",
+        "negative_percent": 65486,
+        "red": 0,
+        "green": 0,
+        "blue": 0,
+        "table_segment": 16384,
+        "table_offset": 24337,
+        "return_ip": 40608,
+        "return_cs": 0
+      }
+    ],
+    "result": {
+      "active_line": 8,
+      "displayed_line": 8,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 0,
+      "skip_back_buffer_present": 0,
+      "source_is_banked": 1,
+      "unclamped_row_count": 0,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "unbanked_line_honors_first_eight_mode_slots",
+    "line": 8,
+    "presentation_gate": 0,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "resource_load_sequence",
+        "line": 8,
+        "return_ip": 40566
+      }
+    ],
+    "result": {
+      "active_line": 8,
+      "displayed_line": 8,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 0,
+      "skip_back_buffer_present": 0,
+      "source_is_banked": 0,
+      "unclamped_row_count": 1,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "active_dispatch_blocked",
+    "line": 3,
+    "presentation_gate": 1,
+    "scene_gate": 0,
+    "calls": [],
+    "result": {
+      "active_line": 3,
+      "displayed_line": 3,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "active_line_five_teardown",
+    "line": 5,
+    "presentation_gate": 1,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "ems_resource_flush",
+        "link_target_offset": 19008,
+        "return_ip": 40623
+      },
+      {
+        "call": "list_d8c_state_le_one",
+        "result": false,
+        "return_ip": 40626
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "top": 35,
+        "bottom": 165,
+        "return_ip": 40666,
+        "return_cs": 0
+      }
+    ],
+    "result": {
+      "active_line": 65535,
+      "displayed_line": 5,
+      "presentation_gate": 0,
+      "alien_overlay_armed": 1,
+      "temp_snd_trigger": 1,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 161,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "ready_line_27_resets_transition",
+    "line": 39,
+    "presentation_gate": 1,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "ems_resource_flush",
+        "link_target_offset": 19008,
+        "return_ip": 40623
+      },
+      {
+        "call": "list_d8c_state_le_one",
+        "result": true,
+        "return_ip": 40626
+      }
+    ],
+    "result": {
+      "active_line": 39,
+      "displayed_line": 39,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 163,
+      "depth_opening": 34,
+      "depth_step": 51
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  },
+  {
+    "name": "ready_ship_line_arms_depth_opening",
+    "line": 3,
+    "presentation_gate": 1,
+    "scene_gate": 0,
+    "calls": [
+      {
+        "call": "ems_resource_flush",
+        "link_target_offset": 19008,
+        "return_ip": 40623
+      },
+      {
+        "call": "list_d8c_state_le_one",
+        "result": true,
+        "return_ip": 40626
+      }
+    ],
+    "result": {
+      "active_line": 3,
+      "displayed_line": 3,
+      "presentation_gate": 1,
+      "alien_overlay_armed": 0,
+      "temp_snd_trigger": 85,
+      "draw_via_back_buffer": 9,
+      "skip_back_buffer_present": 11,
+      "source_is_banked": 12,
+      "unclamped_row_count": 13,
+      "request_flags": 163,
+      "depth_opening": 1,
+      "depth_step": 6
+    },
+    "preserved_registers": true,
+    "caller_es_palette_copy": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+  }
+]

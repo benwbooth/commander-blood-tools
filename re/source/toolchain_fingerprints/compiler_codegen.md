@@ -4075,6 +4075,35 @@ natural loader reserves an ordinary far-pointer C-to-C name for a source
 rebuild. Binding the natural unpack implementation under that name is an
 explicit future link step, not another assembly routine or a hidden emulator.
 
+## BLOODPRG scene-line dispatcher candidate
+
+`0x009D10` is the complete start/update coordinator for the active scene line at
+`DS:0x6788`. On scene start it detects the special Scruter_Jo-linked C4 record,
+selects and caches the near PBM pathname from the four-byte resource index,
+loads a changed image, mirrors 192 palette bytes, configures the D8C presentation
+flags, starts `resource_load_sequence`, and conditionally builds the 50-percent
+black remap. On later updates it services `ems_resource_flush`, then either
+tears the presentation down or advances the line-0x27 and ship-depth transition
+state. The natural candidate expresses that as one C function over typed records,
+pointers, globals, `memcpy`, and direct calls.
+
+Eleven patched-callee vectors cover the signed-negative exit, Scruter_Jo match,
+armed-overlay early trigger, changed and missing image paths, both line-8 storage
+modes, the unusual rule where a match in the ninth mode-table byte is treated
+like no match, blocked active dispatch, line-five teardown, line-0x27 completion,
+and ship-depth opening. They verify exact helper order and arguments, PBM gates,
+the 192-byte `DS:0x53D1` to caller-`ES:0x59D1` copy, inherited BP forwarding,
+all named state, segment isolation, complete register preservation, stack, and
+far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual candidate
+warning-free to 195 instructions/680 bytes versus the original 180/579, with
+79.4 percent mnemonic-multiset overlap. No inline assembly is used. A complete
+source rebuild can use the ordinary C function directly once the named globals
+share the original data segment; drop-in replacement still needs the original
+preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
+contract for the implicit mode table and palette destination.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

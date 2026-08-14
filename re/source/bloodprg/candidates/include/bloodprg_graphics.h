@@ -79,8 +79,9 @@ extern volatile cb_i16 CB_GAME_DATA graphics_clip_left; /* GS:0x5235 */
 extern volatile cb_i16 CB_GAME_DATA graphics_clip_right; /* GS:0x5237 */
 extern volatile cb_u8 CB_GAME_DATA
         graphics_span_remap_enabled; /* GS:0x5B56 */
-extern const cb_u8 CB_GAME_DATA
+extern volatile cb_u8 CB_GAME_DATA
         graphics_span_remap_table[256]; /* GS:0x5F11 */
+extern cb_u32 presentation_palette_dwords[0x30]; /* caller ES:0x59D1 */
 extern const cb_u8 square_caps_character_map[]; /* GS:0x7362 */
 extern const cb_u8 square_caps_advance_table[]; /* GS:0x7412 */
 extern const cb_u8 CB_GAME_DATA

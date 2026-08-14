@@ -38,7 +38,8 @@ extern volatile char vm_text_buffer[];       /* GS:0x0E18 */
 extern volatile cb_i16 vm_text_selector;     /* GS:0x1FAB */
 extern volatile cb_u8 vm_text_menu_pending;  /* GS:0x1FB3 */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
-extern volatile cb_u16 vm_presentation_actor_record; /* GS:0x1FA3 */
+extern volatile char CB_NEAR * volatile
+        vm_loaded_scene_image_path; /* DS:0x1FA3 */
 extern volatile cb_u16 vm_text_menu_end;     /* GS:0x27D3 */
 extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
 extern volatile cb_u16 CB_GAME_DATA vm_text_reveal_phase; /* GS:0x5E65 */
@@ -64,6 +65,9 @@ extern volatile cb_u16 vm_branch_a;          /* GS:0x6782 */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
+extern volatile cb_u16 vm_displayed_line;    /* DS:0x678A */
+extern volatile cb_u16 vm_presentation_primary_c4_record; /* DS:0x675E */
+extern volatile cb_u16 vm_named_scruter_jo_object; /* DS:0x6760 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
 extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
@@ -83,6 +87,9 @@ extern volatile cb_u16 vm_state_words[];     /* SS:0x6ADE here; SS=GS at runtime
 extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtime */
 extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; runtime SS=DS */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
+
+void CB_FAR dlg_line_id_scene_dispatch(
+        cb_u16 link_target_offset); /* 0x009D10 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u

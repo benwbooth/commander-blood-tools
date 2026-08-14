@@ -26,7 +26,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_a8_load_string(
         vm_active_line = 7;
         vm_presentation_request_flags |= 2u;
         vm_c2_presentation_gate = 0;
-        vm_presentation_actor_record = 0xffffu;
+        vm_loaded_scene_image_path = (volatile char CB_NEAR *)0xffffu;
         vm_dialog_gate_0b3b = 0;
     }
 
