@@ -1,0 +1,633 @@
+[
+  {
+    "name": "presentation_inactive",
+    "active": 164,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "presentation_active",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "word_choice_gate_inactive",
+    "active": 1,
+    "word_choice_gate_before": 164,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "word_choice_gate",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "request_bit_one_blocks",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 166,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "request_busy",
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "empty_word_list",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "empty_list",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_zero_initializes_and_opens",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 0,
+    "phase_after": 1,
+    "tick_before": 53,
+    "tick_after": 1,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 1,
+        "phase": 1,
+        "tick": 0,
+        "total": 4,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35268,
+          0
+        ],
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9549,
+        "tick": 0,
+        "total": 4,
+        "phase": 1,
+        "sp": 65266,
+        "return": [
+          35304,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "opening_incomplete",
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_one_opening_incomplete",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 1,
+    "phase_after": 1,
+    "tick_before": 2,
+    "tick_after": 3,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9549,
+        "tick": 2,
+        "total": 4,
+        "phase": 1,
+        "sp": 65266,
+        "return": [
+          35304,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "opening_incomplete",
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_one_complete_then_signed_negative",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 1,
+    "phase_after": 2,
+    "tick_before": 4,
+    "tick_after": 4,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9549,
+        "tick": 4,
+        "total": 4,
+        "phase": 1,
+        "sp": 65266,
+        "return": [
+          35304,
+          0
+        ],
+        "complete": true
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 233,
+        "phase": 2,
+        "tick": 4,
+        "total": 4,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35322,
+          0
+        ],
+        "result": 32768
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "negative_selection",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_two_no_selection",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 233,
+        "phase": 2,
+        "tick": 53,
+        "total": 70,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35322,
+          0
+        ],
+        "result": 65535
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "negative_selection",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_two_selects_second_word",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 3,
+    "tick_before": 53,
+    "tick_after": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 233,
+        "phase": 2,
+        "tick": 53,
+        "total": 70,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35322,
+          0
+        ],
+        "result": 1
+      }
+    ],
+    "selected_word": 48879,
+    "published_word": 9320,
+    "status": "selected",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_two_positive_index_wraps",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 3,
+    "tick_before": 53,
+    "tick_after": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 233,
+        "phase": 2,
+        "tick": 53,
+        "total": 70,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35322,
+          0
+        ],
+        "result": 32767
+      }
+    ],
+    "selected_word": 51966,
+    "published_word": 9320,
+    "status": "selected",
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_three_closing_incomplete",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 3,
+    "phase_after": 3,
+    "tick_before": 1,
+    "tick_after": 2,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 9549,
+        "target": 10923,
+        "tick": 1,
+        "total": 4,
+        "phase": 3,
+        "sp": 65268,
+        "return": [
+          35357,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "closing_incomplete",
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_three_closing_complete",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 3,
+    "phase_after": 0,
+    "tick_before": 4,
+    "tick_after": 4,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 9549,
+        "target": 10923,
+        "tick": 4,
+        "total": 4,
+        "phase": 3,
+        "sp": 65268,
+        "return": [
+          35357,
+          0
+        ],
+        "complete": true
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 4951,
+    "status": "complete",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_seven_uses_closing_path",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 7,
+    "phase_after": 0,
+    "tick_before": 4,
+    "tick_after": 4,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 9549,
+        "target": 10923,
+        "tick": 4,
+        "total": 4,
+        "phase": 7,
+        "sp": 65268,
+        "return": [
+          35357,
+          0
+        ],
+        "complete": true
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 4951,
+    "status": "complete",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_four_completes_both_directions",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 4,
+    "phase_after": 0,
+    "tick_before": 4,
+    "tick_after": 4,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9549,
+        "tick": 4,
+        "total": 4,
+        "phase": 4,
+        "sp": 65266,
+        "return": [
+          35304,
+          0
+        ],
+        "complete": true
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 9549,
+        "target": 10923,
+        "tick": 4,
+        "total": 4,
+        "phase": 5,
+        "sp": 65268,
+        "return": [
+          35357,
+          0
+        ],
+        "complete": true
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 4951,
+    "status": "complete",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "phase_eight_reinitializes_low_three_bits",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 8,
+    "phase_after": 9,
+    "tick_before": 53,
+    "tick_after": 1,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 1,
+        "phase": 9,
+        "tick": 0,
+        "total": 4,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35268,
+          0
+        ],
+        "result": 9320
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9549,
+        "tick": 0,
+        "total": 4,
+        "phase": 9,
+        "sp": 65266,
+        "return": [
+          35304,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "opening_incomplete",
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "dic_segment_and_direction_are_preserved",
+    "active": 1,
+    "word_choice_gate_before": 1,
+    "request_flags_before": 161,
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 53,
+    "tick_after": 53,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items_segment": 12288,
+        "items_offset": 26616,
+        "string_segment": 20480,
+        "editing": 233,
+        "phase": 2,
+        "tick": 53,
+        "total": 70,
+        "rect": [
+          24833,
+          25090,
+          25347,
+          25604
+        ],
+        "sp": 65268,
+        "return": [
+          35322,
+          0
+        ],
+        "result": 65535
+      }
+    ],
+    "selected_word": 4951,
+    "published_word": 9320,
+    "status": "negative_selection",
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  }
+]

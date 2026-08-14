@@ -98,6 +98,7 @@ extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_request_flags_gs; /* explicit GS:0x67AA alias */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
+extern volatile cb_u8 vm_presentation_word_choice_active; /* DS:0x27D7 */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
 extern volatile cb_u16 vm_query_mode_word;   /* GS:0x67AD; includes 0x67AE */
 extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
@@ -106,10 +107,12 @@ extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
+extern volatile cb_u8 vm_presentation_word_choice_phase; /* DS:0x67BA alias */
 extern volatile cb_u8 vm_dialogue_hold_complete; /* GS:0x67BB */
 extern volatile cb_u8 vm_presentation_hold_ready; /* GS:0x67BC */
 extern volatile cb_u8 vm_finale_requested;   /* GS:0x67BD */
 extern volatile cb_u16 vm_presentation_word_buffer[]; /* SS:0x67F8 here; SS=GS */
+extern volatile cb_u16 vm_presentation_selected_word; /* DS:0x6796 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_word_buffer_gs[]; /* explicit GS:0x67F8 alias */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
@@ -129,6 +132,7 @@ void CB_NEAR presentation_line_zero_run(
 void CB_NEAR presentation_line_one_stream_run(
         cb_u16 link_target_offset); /* 0x001F10 */
 void CB_FAR dlg_menu_words_inline_reveal_step(void); /* 0x0072A8 */
+void CB_FAR presentation_ready_gate(void); /* 0x008963 */
 
 #define BLOODPRG_VM_DIRECTORY_ACTIVE_KIND 0x0001u
 #define BLOODPRG_VM_OBJECT_IN_PLAY_FLAG 0x02u
@@ -199,6 +203,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 
 #if defined(__WATCOMC__)
 #pragma aux dlg_menu_words_inline_reveal_step modify exact []
+#pragma aux presentation_ready_gate modify exact [ax es]
 #pragma aux object_heap_access modify exact []
 #pragma aux active_object_list_build modify exact []
 #pragma aux nav_chart_list_build value [ax] modify exact [ax]

@@ -3795,6 +3795,571 @@ def ship_3d_target_record_select_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_ready_gate_vectors() -> list[dict[str, object]]:
+    entry = 0x8963
+    return_address = 0xF963
+    expected_hash = "d32b63e352178f5e4f668594a96cce5d350b1ae048f3aeb10c374d327a41ccee"
+    if hashlib.sha256(EXE[entry : entry + 235]).hexdigest() != expected_hash:
+        raise AssertionError("0x8963: recovered 235-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "presentation_inactive", "active": 0xA4},
+        {"name": "word_choice_gate_inactive", "choice_gate": 0xA4},
+        {"name": "request_bit_one_blocks", "request_flags": 0xA6},
+        {"name": "empty_word_list", "words": [0, 0xFFFF]},
+        {
+            "name": "phase_zero_initializes_and_opens",
+            "phase": 0,
+            "tick": 0x35,
+            "total": 0x46,
+            "widget_results": [0x7777],
+            "prepass_rect": [0x1234, 0x2345, 0x3456, 0x4567],
+        },
+        {
+            "name": "phase_one_opening_incomplete",
+            "phase": 1,
+            "tick": 2,
+            "total": 4,
+        },
+        {
+            "name": "phase_one_complete_then_signed_negative",
+            "phase": 1,
+            "tick": 4,
+            "total": 4,
+            "widget_results": [0x8000],
+        },
+        {
+            "name": "phase_two_no_selection",
+            "phase": 2,
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "phase_two_selects_second_word",
+            "phase": 2,
+            "words": [0x1111, 0xBEEF, 0],
+            "widget_results": [1],
+        },
+        {
+            "name": "phase_two_positive_index_wraps",
+            "phase": 2,
+            "wrapped_word": 0xCAFE,
+            "widget_results": [0x7FFF],
+        },
+        {
+            "name": "phase_three_closing_incomplete",
+            "phase": 3,
+            "tick": 1,
+            "total": 4,
+        },
+        {
+            "name": "phase_three_closing_complete",
+            "phase": 3,
+            "tick": 4,
+            "total": 4,
+        },
+        {
+            "name": "phase_seven_uses_closing_path",
+            "phase": 7,
+            "tick": 4,
+            "total": 4,
+        },
+        {
+            "name": "phase_four_completes_both_directions",
+            "phase": 4,
+            "tick": 4,
+            "total": 4,
+        },
+        {
+            "name": "phase_eight_reinitializes_low_three_bits",
+            "phase": 8,
+            "widget_results": [0x2468],
+        },
+        {
+            "name": "dic_segment_and_direction_are_preserved",
+            "phase": 2,
+            "flags": 0x0ED7,
+            "widget_results": [0xFFFF],
+        },
+    ]
+    data_segment = 0x3000
+    label_segment = 0x5000
+    extra_segment = 0x7000
+    game_segment = 0x9000
+    stack_segment = 0xB000
+    caller_sp = 0xFF00
+    widget_entry = 0x8428
+    interpolation_entry = 0x185D
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def write_word(image: bytearray, offset: int, value: int) -> None:
+        image[offset & 0xFFFF] = value & 0xFF
+        image[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def read_word(image: bytes | bytearray, offset: int) -> int:
+        return image[offset & 0xFFFF] | (
+            image[(offset + 1) & 0xFFFF] << 8
+        )
+
+    def logic_flags(value: int, bits: int) -> dict[str, bool]:
+        result = value & ((1 << bits) - 1)
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & (1 << (bits - 1))),
+            "of": False,
+        }
+
+    def inc8_flags(value: int, carry: bool) -> dict[str, bool]:
+        result = (value + 1) & 0xFF
+        return {
+            "cf": carry,
+            "pf": result.bit_count() % 2 == 0,
+            "af": ((value ^ 1 ^ result) & 0x10) != 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": value == 0x7F,
+        }
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        active = int(case.get("active", 1))
+        choice_gate = int(case.get("choice_gate", 1))
+        request_flags = int(case.get("request_flags", 0xA1))
+        words = [int(value) for value in case.get(
+            "words", [0x1111, 0x2222, 0]
+        )]
+        phase = int(case.get("phase", 2))
+        tick = int(case.get("tick", 0x35))
+        total = int(case.get("total", 0x46))
+        widget_results = [
+            int(value) for value in case.get("widget_results", [])
+        ]
+        prepass_rect = [
+            int(value) for value in case.get(
+                "prepass_rect", [0x1111, 0x2222, 0x3333, 0x4444]
+            )
+        ]
+
+        data = bytearray(
+            (index * 11 + case_index * 29 + 3) & 0xFF
+            for index in range(0x10000)
+        )
+        labels = bytes(
+            (index * 13 + case_index * 37 + 5) & 0xFF
+            for index in range(0x10000)
+        )
+        game = bytes(
+            (index * 7 + case_index * 31 + 9) & 0xFF
+            for index in range(0x10000)
+        )
+        extra = bytes(
+            (index * 17 + case_index * 19 + 11) & 0xFF
+            for index in range(0x10000)
+        )
+        data[0x67AC] = active
+        data[0x27D7] = choice_gate
+        data[0x67AA] = request_flags
+        data[0x67BA] = phase
+        data[0x2793] = 0xA9
+        data[0x0ADC] = 0xB3
+        write_word(data, 0x0AC6, 0xC4D5)
+        data[0x0ADD] = 0xD7
+        data[0x0ADB] = tick
+        data[0x0ADA] = total
+        data[0x27E6] = 0xE9
+        data[0x6796 : 0x6798] = struct.pack("<H", 0x1357)
+        data[0x6762 : 0x6764] = struct.pack("<H", 0x2468)
+        data[0x67B0] = 0x37
+        data[0x5E64] = 0x49
+        data[0x67BB] = 0x5B
+        data[0x6728 : 0x672C] = struct.pack(
+            "<HH", 0x3141, label_segment
+        )
+        for index, value in enumerate(words):
+            write_word(data, 0x67F8 + index * 2, value)
+        if "wrapped_word" in case:
+            write_word(data, 0x67F6, int(case["wrapped_word"]))
+        data[0x2AAB : 0x2AB3] = struct.pack(
+            "<HHHH", 0x6101, 0x6202, 0x6303, 0x6404
+        )
+        data[0x254D : 0x2555] = struct.pack(
+            "<HHHH", 0x7101, 0x7202, 0x7303, 0x7404
+        )
+
+        expected = bytearray(data)
+        expected_calls: list[dict[str, object]] = []
+        expected_phase = phase
+        final_status = ""
+
+        gate_tests = (
+            (active, 1, "presentation_active"),
+            (choice_gate, 1, "word_choice_gate"),
+            (request_flags, 2, "request_busy"),
+        )
+        blocked = False
+        for value, mask, gate_name in gate_tests:
+            result = value & mask
+            if (gate_name != "request_busy" and result == 0) or (
+                gate_name == "request_busy" and result != 0
+            ):
+                expected_flags = logic_flags(result, 8)
+                final_status = gate_name
+                blocked = True
+                break
+        if not blocked and words[0] == 0:
+            expected_flags = sub16_flags(0, 0)
+            final_status = "empty_list"
+            blocked = True
+
+        widget_index = 0
+        returned = blocked
+        if not returned and (expected_phase & 7) == 0:
+            expected[0x2793] |= 4
+            expected_phase = (expected_phase + 1) & 0xFF
+            expected[0x67BA] = expected_phase
+            expected[0x0ADC] = 0
+            write_word(expected, 0x0AC6, 225)
+            expected[0x0ADD] = 0
+            expected[0x0ADB] = 0
+            expected[0x0ADA] = 4
+            expected[0x27E6] = 1
+            rect_before = list(struct.unpack("<4H", expected[0x2AAB:0x2AB3]))
+            expected_calls.append(
+                {
+                    "call": "list_widget_layout_unified",
+                    "items_segment": data_segment,
+                    "items_offset": 0x67F8,
+                    "string_segment": label_segment,
+                    "editing": 1,
+                    "phase": expected_phase,
+                    "tick": 0,
+                    "total": 4,
+                    "rect": rect_before,
+                    "sp": caller_sp - 12,
+                    "return": [0x89C4, 0],
+                    "result": widget_results[widget_index],
+                }
+            )
+            widget_index += 1
+            expected[0x2AAB : 0x2AB3] = struct.pack(
+                "<4H", *prepass_rect
+            )
+            expected[0x27E6] = 0
+            write_word(expected, 0x254D, prepass_rect[0])
+            write_word(expected, 0x2551, prepass_rect[2])
+
+        if not returned and (expected_phase & 2) == 0:
+            current = expected[0x0ADB]
+            limit = expected[0x0ADA]
+            complete = current == limit
+            expected_calls.append(
+                {
+                    "call": "framebuffer_rect_interpolate_and_remap_step",
+                    "source": 0x2AAB,
+                    "target": 0x254D,
+                    "tick": current,
+                    "total": limit,
+                    "phase": expected_phase,
+                    "sp": caller_sp - 14,
+                    "return": [0x89E8, 0],
+                    "complete": complete,
+                }
+            )
+            if complete:
+                expected_phase = (expected_phase + 1) & 0xFF
+                expected[0x67BA] = expected_phase
+            else:
+                expected[0x0ADB] = (current + 1) & 0xFF
+                expected_flags = {"cf": False}
+                final_status = "opening_incomplete"
+                returned = True
+
+        if not returned and (expected_phase & 1) == 0:
+            result = widget_results[widget_index]
+            expected_calls.append(
+                {
+                    "call": "list_widget_layout_unified",
+                    "items_segment": data_segment,
+                    "items_offset": 0x67F8,
+                    "string_segment": label_segment,
+                    "editing": expected[0x27E6],
+                    "phase": expected_phase,
+                    "tick": expected[0x0ADB],
+                    "total": expected[0x0ADA],
+                    "rect": list(struct.unpack(
+                        "<4H", expected[0x2AAB:0x2AB3]
+                    )),
+                    "sp": caller_sp - 12,
+                    "return": [0x89FA, 0],
+                    "result": result,
+                }
+            )
+            widget_index += 1
+            if result & 0x8000:
+                expected_flags = logic_flags(result, 16)
+                final_status = "negative_selection"
+            else:
+                doubled = (result << 1) & 0xFFFF
+                selected_offset = (0x67F8 + doubled) & 0xFFFF
+                selected = read_word(expected, selected_offset)
+                write_word(expected, 0x6796, selected)
+                expected[0x0ADB] = 0
+                phase_before_increment = expected_phase
+                expected_phase = (expected_phase + 1) & 0xFF
+                expected[0x67BA] = expected_phase
+                carry = add16_flags(0x67F8, doubled)["cf"]
+                expected_flags = inc8_flags(phase_before_increment, carry)
+                final_status = "selected"
+            returned = True
+
+        if not returned:
+            current = expected[0x0ADB]
+            limit = expected[0x0ADA]
+            complete = current == limit
+            expected_calls.append(
+                {
+                    "call": "framebuffer_rect_interpolate_and_remap_step",
+                    "source": 0x254D,
+                    "target": 0x2AAB,
+                    "tick": current,
+                    "total": limit,
+                    "phase": expected_phase,
+                    "sp": caller_sp - 12,
+                    "return": [0x8A1D, 0],
+                    "complete": complete,
+                }
+            )
+            if complete:
+                selected = read_word(expected, 0x6796)
+                write_word(expected, 0x6762, selected)
+                expected[0x27D7] = 0
+                expected[0x67B0] = 0
+                expected[0x5E64] = 0
+                expected[0x67BB] = 0
+                expected[0x67BA] = 0
+                write_word(expected, 0x67F8, 0)
+                expected[0x67AA] &= 0xFE
+                expected_flags = logic_flags(expected[0x67AA], 8)
+                final_status = "complete"
+            else:
+                expected[0x0ADB] = (current + 1) & 0xFF
+                expected_flags = {"cf": False}
+                final_status = "closing_incomplete"
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7600,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": int(case.get("flags", 0x02D7)),
+        }
+        calls: list[dict[str, object]] = []
+        actual_widget_index = 0
+
+        def call_return(machine: Uc) -> list[int]:
+            sp = machine.reg_read(UC_X86_REG_SP)
+            ss = machine.reg_read(UC_X86_REG_SS)
+            return_ip, return_cs = struct.unpack(
+                "<HH", machine.mem_read(ss * 16 + sp, 4)
+            )
+            return [return_ip, return_cs]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal actual_widget_index
+            if address == widget_entry:
+                result = widget_results[actual_widget_index]
+                calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items_segment": machine.reg_read(UC_X86_REG_DS),
+                        "items_offset": machine.reg_read(UC_X86_REG_SI),
+                        "string_segment": machine.reg_read(UC_X86_REG_ES),
+                        "editing": machine.mem_read(
+                            data_segment * 16 + 0x27E6, 1
+                        )[0],
+                        "phase": machine.mem_read(
+                            data_segment * 16 + 0x67BA, 1
+                        )[0],
+                        "tick": machine.mem_read(
+                            data_segment * 16 + 0x0ADB, 1
+                        )[0],
+                        "total": machine.mem_read(
+                            data_segment * 16 + 0x0ADA, 1
+                        )[0],
+                        "rect": list(struct.unpack(
+                            "<4H",
+                            machine.mem_read(
+                                data_segment * 16 + 0x2AAB, 8
+                            ),
+                        )),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "return": call_return(machine),
+                        "result": result,
+                    }
+                )
+                if call_return(machine)[0] == 0x89C4:
+                    machine.mem_write(
+                        data_segment * 16 + 0x2AAB,
+                        struct.pack("<4H", *prepass_rect),
+                    )
+                actual_widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == interpolation_entry:
+                current = machine.mem_read(
+                    data_segment * 16 + 0x0ADB, 1
+                )[0]
+                limit = machine.mem_read(
+                    data_segment * 16 + 0x0ADA, 1
+                )[0]
+                complete = current == limit
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_interpolate_and_remap_step",
+                        "source": machine.reg_read(UC_X86_REG_SI),
+                        "target": machine.reg_read(UC_X86_REG_DI),
+                        "tick": current,
+                        "total": limit,
+                        "phase": machine.mem_read(
+                            data_segment * 16 + 0x67BA, 1
+                        )[0],
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "return": call_return(machine),
+                        "complete": complete,
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if complete:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(
+                        data_segment * 16 + 0x0ADB,
+                        bytes([(current + 1) & 0xFF]),
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, widget_entry, b"\xCB"),
+                (0, interpolation_entry, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (label_segment, 0, labels),
+                (extra_segment, 0, extra),
+                (game_segment, 0, game),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<HH", return_address, 0) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=260,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x8963 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        if actual_widget_index != len(widget_results):
+            raise AssertionError(f"0x8963 {name}: unused widget result")
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected):
+            mismatch = next(
+                index
+                for index, (actual, expected_byte) in enumerate(
+                    zip(actual_data, expected)
+                )
+                if actual != expected_byte
+            )
+            raise AssertionError(
+                f"0x8963 {name}: data[{mismatch:#06x}]="
+                f"{actual_data[mismatch]:#04x}, expected={expected[mismatch]:#04x}"
+            )
+        for segment, before, label in (
+            (label_segment, labels, "DIC"),
+            (extra_segment, extra, "ES"),
+            (game_segment, game, "GS"),
+        ):
+            actual = bytes(machine.mem_read(segment * 16, len(before)))
+            if actual != before:
+                raise AssertionError(f"0x8963 {name}: {label} segment changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x8963 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x8963 {name}: caller stack changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag])
+            for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x8963 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != bool(initial["flags"] & 0x0400):
+            raise AssertionError(f"0x8963 {name}: direction flag changed")
+        if EXE[0x8A4D] != 0xCB:
+            raise AssertionError("0x8963: expected far RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "active": active,
+                "word_choice_gate_before": choice_gate,
+                "request_flags_before": request_flags,
+                "phase_before": phase,
+                "phase_after": expected[0x67BA],
+                "tick_before": tick,
+                "tick_after": expected[0x0ADB],
+                "calls": calls,
+                "selected_word": read_word(expected, 0x6796),
+                "published_word": read_word(expected, 0x6762),
+                "status": final_status,
+                "defined_flags": expected_flags,
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def nav_kind2_target_list_build_vectors() -> list[dict[str, object]]:
     entry = 0x71CF
     return_address = 0xF1CF
@@ -78097,6 +78662,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b2bb_natural.json",
         ship_3d_target_record_select_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8963_natural.json",
+        presentation_ready_gate_vectors(),
         args.check,
     )
     update_vector(

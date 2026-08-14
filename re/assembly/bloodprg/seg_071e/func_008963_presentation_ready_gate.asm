@@ -7,7 +7,8 @@
 ; group: seg_071e
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: presentation_ready_gate
-; label_comment: presentation-ready gate: test [0x67ac]&1 (presentation active) and [0x27d7]&1 -> branch. Guards the dialogue/presentation update when the subsystem is ready
+; label_comment: four-stage presentation word-choice coordinator: gates DS:0x67F8, lays it out using the DIC segment, animates open, captures a signed selection, animates closed, then publishes DS:0x6762 and clears presentation state
+; natural_c: re/source/bloodprg/candidates/seg_071e/func_008963_presentation_ready_gate.c
 ; incoming: call@0x0012a8->071e:1183
 ; byte_count: 235
 ; boundary: cfg_blocks_15_terminals_2

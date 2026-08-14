@@ -149,6 +149,8 @@ extern volatile cb_u8 presentation_choice_phase; /* DS:0x259C */
 extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
 extern volatile cb_i16 nav_choice_animation_target_rect[4]; /* DS:0x253D */
 extern volatile cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
+extern volatile bloodprg_rect_i16
+        presentation_word_choice_target_rect; /* DS:0x254D */
 extern volatile cb_i16 presentation_choice_current_rect[4]; /* DS:0x2AAB */
 extern volatile cb_u16 list_widget_label_widths[]; /* DS:0x2AB3 */
 extern const cb_u8 CB_GAME_DATA list_widget_cancel_label[]; /* GS:0x0174 */

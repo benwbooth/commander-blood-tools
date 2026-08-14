@@ -1897,6 +1897,26 @@ exact: the near-pointer Watcom pragma supplies the correct AX/SI call arguments,
 but Watcom emits 14 instructions/40 bytes versus 10/36 because it preserves ES
 and splits the return; Turbo C emits 14 instructions with stack arguments.
 
+Presentation word chooser `0x008963` is a four-stage far coordinator over the
+DS:0x67F8 word list. Sixteen direct vectors prove the four entry gates,
+query-only list layout and callback-mutated target rectangle, incomplete and
+complete opening, signed selection with 16-bit wrapped indexing, incomplete and
+complete closing, terminal publication and cleanup, full-byte phase values 4,
+7, and 8, split DIC/list segment ownership, inherited DF, preservation, stack,
+and far return.
+
+The natural candidate keeps the stages as ordinary typed C. A narrow Watcom
+pragma adapter supplies the list offset in SI and the DIC string segment in ES
+for the recovered list-widget call; the function body contains no inline
+assembly. Open Watcom `-3 -os -s -mm -we` compiles it warning-free to 88
+instructions/267 bytes versus 71/235 original, with 88.73 percent mnemonic-
+multiset overlap. The generated body preserves BX/CX/DX/SI/DI and emits the
+correct two interpolation directions, signed result test, target-rectangle
+field copies, and terminal stores. It clobbers AX and ES, however, while the
+original preserves every register and segment, so direct binary replacement
+still requires the original AX/ES and path-flag envelope even though the
+full-source C contract is explicit and equivalent.
+
 Back-buffer row copy `0x00933A` takes x, row, and width in BX/CX/DX and loads
 the source/destination far-pointer segments from GS:0x0ABC and GS:0x5229. Twelve
 direct vectors prove zero, partial, full-row, and 64 KiB-wrapped copies; GS
