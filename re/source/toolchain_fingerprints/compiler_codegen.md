@@ -105,6 +105,23 @@ preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
 `SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
 and register ABI boundary, not an exact compiler match.
 
+For `0x00A1F3`, four direct vectors enter through the actual eight-word save
+frame created by `0x00A1B4`. They prove both values of resource flag bit 7,
+DS ownership against a GS decoy, the inherited BP link-target offset and
+`0x00A1FE` return address at the refill call, post-call latch clearing, callee
+AX and flags, exact restoration of BP/DX/CX/BX/DI/ES/SI/DS, unchanged frame
+bytes, and the final return to the parent caller. This establishes that A1F3 is
+a shared early-return tail, not a conventional independently callable helper.
+
+The natural candidate contains only the logical latch-call-reset operation and
+exposes BP as a typed argument. It has no register model, memory emulator,
+inline assembly, or simulated unwind. Open Watcom `-3 -ox -mh` emits 10
+instructions and 26 bytes versus the complete assembly tail's 14/25. The probe
+has a 14.29 percent instruction LCS, 50 percent mnemonic-sequence and multiset
+overlap, and 21.43 percent byte-line LCS. A structured C recovery of A1B4 must
+return immediately after this helper; encoding A1B4's POP/RET sequence inside
+the helper would violate the C call model and obscure the recovered logic.
+
 For `0x00A20C`, seven direct cases cover an existing active entry, an empty
 queue, ordinary incomplete/exact/excess extents, the `0x6D6D` link-marker
 bypass, both storage-segment choices, and far-pointer offset wrap. The patched
@@ -2866,6 +2883,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
 | `list_d8c_refill` | huge, `-ox`, register | 91/180 | 0.0220 | 0.6484 | 0.0879 |
 | `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |

@@ -6,6 +6,8 @@
 ; seg_off: 0971:04e3
 ; group: seg_0971
 ; provenance: recursive_graph
+; label: list_d8c_refill_with_rollover_latch
+; label_comment: shared early-return tail of ems_resource_flush 0x00a1b4. Publishes resource flag bit 7 through DS:0x0dac while 0x00a2ab refills the queue, clears the latch, then restores the parent routine's saved frame and returns directly to its caller. Natural C callers must call the recovered helper and then return instead of reproducing this nonlocal unwind.
 ; byte_count: 25
 ; boundary: cfg_blocks_1_terminals_1
 ; terminal: ret:1

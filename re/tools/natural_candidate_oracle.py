@@ -52115,6 +52115,178 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_refill_with_rollover_latch_vectors() -> list[dict[str, object]]:
+    entry = 0xA1F3
+    return_address = 0xF200
+    expected_hash = "ce4c66a90382dcf5f5d1ff6bcc40e3e2a06fe251f52e1ead67a2f5453be23004"
+    if hashlib.sha256(EXE[entry : entry + 25]).hexdigest() != expected_hash:
+        raise AssertionError("0xa1f3: recovered 25-byte shared tail changed")
+
+    cases = [
+        ("flags_clear", 0x0000, 0x0100, 0x9001),
+        ("low_bits_only", 0x127F, 0x2345, 0xA102),
+        ("rollover_bit_only", 0x3480, 0x7FFE, 0xB203),
+        ("all_low_bits", 0xABFF, 0xFFFF, 0xC304),
+    ]
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    stack_segment = 0x9000
+    stack_offset = 0xFEE0
+    callee_flags = 0x0AD7
+    vectors = []
+
+    for case_index, (name, resource_flags, link_target, callee_ax) in enumerate(cases):
+        saved = {
+            "bp": (0x1101 + case_index) & 0xFFFF,
+            "dx": (0x2202 + case_index) & 0xFFFF,
+            "cx": (0x3303 + case_index) & 0xFFFF,
+            "bx": (0x4404 + case_index) & 0xFFFF,
+            "di": (0x5505 + case_index) & 0xFFFF,
+            "es": (0x6606 + case_index) & 0xFFFF,
+            "si": (0x7707 + case_index) & 0xFFFF,
+            "ds": data_segment,
+        }
+        frame = struct.pack(
+            "<9H",
+            saved["bp"],
+            saved["dx"],
+            saved["cx"],
+            saved["bx"],
+            saved["di"],
+            saved["es"],
+            saved["si"],
+            saved["ds"],
+            return_address,
+        )
+        observed_calls: list[dict[str, int | str]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0xA2AB:
+                return
+            sp = machine.reg_read(UC_X86_REG_SP)
+            call_return = struct.unpack(
+                "<H", machine.mem_read(stack_segment * 16 + sp, 2)
+            )[0]
+            latch = machine.mem_read(data_segment * 16 + 0x0DAC, 1)[0]
+            observed_calls.append(
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                    "rollover_latch": latch,
+                    "return_ip": call_return,
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, callee_ax)
+            machine.reg_write(UC_X86_REG_BX, 0xDEAD)
+            machine.reg_write(UC_X86_REG_CX, 0xBEEF)
+            machine.reg_write(UC_X86_REG_DX, 0xCAFE)
+            machine.reg_write(UC_X86_REG_SI, 0xD00D)
+            machine.reg_write(UC_X86_REG_DI, 0xF00D)
+            machine.reg_write(UC_X86_REG_BP, 0xBAD0)
+            machine.reg_write(UC_X86_REG_ES, 0x7777)
+            machine.reg_write(UC_X86_REG_EFLAGS, callee_flags)
+            machine.mem_write(data_segment * 16 + 0x0DAC, b"\x5a")
+
+        initial = {
+            "eax": 0xA5A50000 | case_index,
+            "ebx": 0xB6B61234,
+            "ecx": 0xC7C72345,
+            "edx": 0xD8D83456,
+            "esi": 0xE9E94567,
+            "edi": 0xFAFA5678,
+            "ebp": 0xABCD0000 | link_target,
+            "sp": stack_offset,
+            "ds": data_segment,
+            "es": 0x5000,
+            "fs": 0x6000,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0xA2AB, b"\xC3"),
+                (data_segment, 0x0D76, struct.pack("<H", resource_flags)),
+                (data_segment, 0x0DAC, b"\xa5"),
+                (decoy_segment, 0x0D76, b"\x80\xff"),
+                (decoy_segment, 0x0DAC, b"\x3c"),
+                (stack_segment, stack_offset, frame),
+            ],
+            code_handler=capture,
+        )
+
+        expected_calls = [
+            {
+                "call": "list_d8c_refill",
+                "link_target_offset": link_target,
+                "rollover_latch": resource_flags & 0x80,
+                "return_ip": 0xA1FE,
+            }
+        ]
+        if observed_calls != expected_calls:
+            raise AssertionError(
+                f"0xa1f3 {name}: calls={observed_calls}, expected={expected_calls}"
+            )
+        final_latch = machine.mem_read(data_segment * 16 + 0x0DAC, 1)[0]
+        if final_latch != 0:
+            raise AssertionError(f"0xa1f3 {name}: rollover latch was not cleared")
+        if machine.mem_read(decoy_segment * 16 + 0x0DAC, 1) != b"\x3c":
+            raise AssertionError(f"0xa1f3 {name}: GS decoy latch changed")
+        if machine.mem_read(data_segment * 16 + 0x0D76, 2) != struct.pack(
+            "<H", resource_flags
+        ):
+            raise AssertionError(f"0xa1f3 {name}: resource flags changed")
+        if machine.mem_read(stack_segment * 16 + stack_offset, len(frame)) != frame:
+            raise AssertionError(f"0xa1f3 {name}: saved frame bytes changed")
+        if machine.reg_read(UC_X86_REG_SP) != stack_offset + len(frame):
+            raise AssertionError(f"0xa1f3 {name}: parent frame was not unwound")
+
+        expected_registers = {
+            "ax": callee_ax,
+            "bx": saved["bx"],
+            "cx": saved["cx"],
+            "dx": saved["dx"],
+            "si": saved["si"],
+            "di": saved["di"],
+            "bp": saved["bp"],
+            "ds": saved["ds"],
+            "es": saved["es"],
+            "fs": initial["fs"],
+            "gs": initial["gs"],
+            "ss": initial["ss"],
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xa1f3 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if actual_flags & 0x0CD7 != callee_flags & 0x0CD7:
+            raise AssertionError(f"0xa1f3 {name}: callee flags were not preserved")
+
+        vectors.append(
+            {
+                "name": name,
+                "resource_flags": resource_flags,
+                "link_target_offset": link_target,
+                "latch_during_call": resource_flags & 0x80,
+                "latch_after_return": final_latch,
+                "calls": observed_calls,
+                "restored_registers": saved,
+                "result_ax": callee_ax,
+                "result_flags": actual_flags & 0x0CD7,
+                "result_sp": machine.reg_read(UC_X86_REG_SP),
+            }
+        )
+
+    return vectors
+
+
 def list_d8c_refill_vectors() -> list[dict[str, object]]:
     entry = 0xA2AB
     routine_start = 0xA291
@@ -56529,6 +56701,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a1f3_natural.json",
+        list_d8c_refill_with_rollover_latch_vectors(),
         args.check,
     )
     update_vector(

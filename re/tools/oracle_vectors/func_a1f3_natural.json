@@ -1,0 +1,114 @@
+[
+  {
+    "name": "flags_clear",
+    "resource_flags": 0,
+    "link_target_offset": 256,
+    "latch_during_call": 0,
+    "latch_after_return": 0,
+    "calls": [
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 256,
+        "rollover_latch": 0,
+        "return_ip": 41470
+      }
+    ],
+    "restored_registers": {
+      "bp": 4353,
+      "dx": 8706,
+      "cx": 13059,
+      "bx": 17412,
+      "di": 21765,
+      "es": 26118,
+      "si": 30471,
+      "ds": 8192
+    },
+    "result_ax": 36865,
+    "result_flags": 2263,
+    "result_sp": 65266
+  },
+  {
+    "name": "low_bits_only",
+    "resource_flags": 4735,
+    "link_target_offset": 9029,
+    "latch_during_call": 0,
+    "latch_after_return": 0,
+    "calls": [
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 9029,
+        "rollover_latch": 0,
+        "return_ip": 41470
+      }
+    ],
+    "restored_registers": {
+      "bp": 4354,
+      "dx": 8707,
+      "cx": 13060,
+      "bx": 17413,
+      "di": 21766,
+      "es": 26119,
+      "si": 30472,
+      "ds": 8192
+    },
+    "result_ax": 41218,
+    "result_flags": 2263,
+    "result_sp": 65266
+  },
+  {
+    "name": "rollover_bit_only",
+    "resource_flags": 13440,
+    "link_target_offset": 32766,
+    "latch_during_call": 128,
+    "latch_after_return": 0,
+    "calls": [
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 32766,
+        "rollover_latch": 128,
+        "return_ip": 41470
+      }
+    ],
+    "restored_registers": {
+      "bp": 4355,
+      "dx": 8708,
+      "cx": 13061,
+      "bx": 17414,
+      "di": 21767,
+      "es": 26120,
+      "si": 30473,
+      "ds": 8192
+    },
+    "result_ax": 45571,
+    "result_flags": 2263,
+    "result_sp": 65266
+  },
+  {
+    "name": "all_low_bits",
+    "resource_flags": 44031,
+    "link_target_offset": 65535,
+    "latch_during_call": 128,
+    "latch_after_return": 0,
+    "calls": [
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 65535,
+        "rollover_latch": 128,
+        "return_ip": 41470
+      }
+    ],
+    "restored_registers": {
+      "bp": 4356,
+      "dx": 8709,
+      "cx": 13062,
+      "bx": 17415,
+      "di": 21768,
+      "es": 26121,
+      "si": 30474,
+      "ds": 8192
+    },
+    "result_ax": 49924,
+    "result_flags": 2263,
+    "result_sp": 65266
+  }
+]
