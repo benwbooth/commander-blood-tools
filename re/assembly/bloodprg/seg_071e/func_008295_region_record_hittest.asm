@@ -7,7 +7,7 @@
 ; group: seg_071e
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: region_record_hittest
-; label_comment: DECODED: region record = {flag@+0, ..., rect@+8: x,y,w,h i16} in RING-space cursor coords ([0xA2A]/[0xA2C]); hit = x>=rx && x<=rx+w && y>=ry && y<=ry+h, gated on mouse-enable [0xA3E]&1. The console hit-region system is fully decoded (scanner 0x82C3 + record format + coordinate space) — port hit-tests validatable against live per-state tables via REGIONDUMP || ALSO RECORDED as `flag_gated_compare_a3e`: flag-gated compare: test byte [0xa3e],1; if clear skip to 0x82c0, else ax=[0xa2a]; cmp ax,[bp] (compare the 0xa2a value/counter against a caller argument). Conditional value check gated on the 0xa3e enable bit || MERGED 2026-07-25 (#186): one address, several names, folded by union.
+; label_comment: consumes an SS:BP {x,y,width,height} signed rectangle in cursor coordinates, gated by DS:0x0a3e bit 0, and returns an inclusive hit in carry. ui_region_31_poll 0x82c3 repeatedly passes SS:0x65fa; other callers pass independent rectangles.
 ; incoming: call@0x001528->071e:0ab5
 ; incoming: call@0x001538->071e:0ab5
 ; byte_count: 46

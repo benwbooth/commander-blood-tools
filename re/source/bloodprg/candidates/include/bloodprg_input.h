@@ -37,11 +37,13 @@ cb_u16 CB_NEAR mouse_button_edges_update(void); /* 0x001FBC */
 void CB_NEAR mouse_hit_test(const bloodprg_rect_i16 CB_NEAR *rect,
         volatile cb_u8 CB_NEAR *flags); /* 0x008269 */
 int CB_FAR region_record_hittest(
-        const bloodprg_rect_i16 CB_NEAR *rect); /* 0x008295 */
+        const volatile bloodprg_rect_i16 CB_NEAR *rect); /* 0x008295 */
+cb_i16 CB_FAR ui_region_31_poll(void);           /* 0x0082C3 */
 void CB_FAR input_action_dispatch(void);        /* 0x00210E */
 
 #if defined(__WATCOMC__)
 #pragma aux mouse_button_edges_update value [ax] modify exact [ax]
+#pragma aux ui_region_31_poll value [ax] modify exact [ax]
 #endif
 
 #endif

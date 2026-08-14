@@ -1,6 +1,7 @@
 #include "../include/bloodprg_input.h"
 
-int CB_FAR region_record_hittest(const bloodprg_rect_i16 CB_NEAR *rect)
+int CB_FAR region_record_hittest(
+        const volatile bloodprg_rect_i16 CB_NEAR *rect)
 {
     if ((mouse_primary_pressed & BLOODPRG_MOUSE_BUTTON_PRIMARY) == 0) {
         return 0;

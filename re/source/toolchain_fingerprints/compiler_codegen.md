@@ -4135,6 +4135,31 @@ typed far pointer mapped to the original `DS:DX` ABI. Full-source integration
 uses named segmented data; direct replacement still needs the fixed FS/GS data
 placement.
 
+## BLOODPRG entity-slot-31 poll candidate
+
+`0x0082C3` is not the general UI-region table scanner described by its old
+label. It initializes AX to 31, but every loop iteration reloads BP with
+`0x65F2`, tests the same entity slot 31 flag, and passes the same rectangle at
+`SS:0x65FA` to `region_record_hittest`. On a miss, the binary subtracts 0x28
+from BP, decrements AX, and branches back to the instruction that reloads BP.
+It therefore polls one volatile region up to 32 times and returns the remaining
+attempt count on a hit, or -1 after all misses.
+
+Six direct vectors cover a disabled slot, an immediate signed-coordinate hit,
+32 repeated misses, mouse enable on the third helper call, slot enable on the
+fifth loop iteration, and a permanently closed mouse gate. They prove that the
+rectangle pointer never advances, later hits return 29 and 27, every enabled
+miss calls the helper again, the hit result remains in carry, state is read
+through the shipped shared DS/SS data group rather than a GS decoy, and all
+registers except result AX are preserved through the far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the natural volatile
+retry loop warning-free to 27 instructions/50 bytes versus the original 18/37,
+with 77.78 percent mnemonic-multiset overlap and no inline assembly. The C body
+intentionally omits the dead pointer subtraction. Full-source integration uses
+the typed entity table directly; exact replacement additionally needs the
+callee's inherited `SS:BP` rectangle pointer and carry-return convention.
+
 ## BLOODPRG confirmation-dialog candidate
 
 `0x0014CA` is the complete `ARE_YOU_SURE?` modal. When `DS:0x0B13` bit one

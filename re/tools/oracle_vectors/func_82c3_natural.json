@@ -1,0 +1,835 @@
+[
+  {
+    "name": "disabled_for_all_attempts",
+    "mouse": [
+      0,
+      0
+    ],
+    "primary": 1,
+    "initial_flags": 42494,
+    "rect": [
+      -20,
+      -10,
+      40,
+      20
+    ],
+    "flags_on_iteration": null,
+    "primary_on_call": null,
+    "result": -1,
+    "iterations": 32,
+    "calls": [],
+    "carry": false,
+    "table_sha256": "7638d45c22ddf2e7ad88c05226de68c73e2aa77c0979d134e71d115b55920e76",
+    "return": "far"
+  },
+  {
+    "name": "immediate_signed_hit",
+    "mouse": [
+      -100,
+      123
+    ],
+    "primary": 1,
+    "initial_flags": 42241,
+    "rect": [
+      -120,
+      100,
+      40,
+      30
+    ],
+    "flags_on_iteration": null,
+    "primary_on_call": null,
+    "result": 31,
+    "iterations": 1,
+    "calls": [
+      {
+        "attempts_remaining": 31,
+        "rect_offset": 26106,
+        "rect": [
+          -120,
+          100,
+          40,
+          30
+        ]
+      }
+    ],
+    "carry": true,
+    "table_sha256": "41c7a070dfd67d9c1d2b6d64421b0fb53872e3f956f20ac0a4b1c6ca1b146329",
+    "return": "far"
+  },
+  {
+    "name": "same_region_misses_32_times",
+    "mouse": [
+      0,
+      0
+    ],
+    "primary": 1,
+    "initial_flags": 1,
+    "rect": [
+      100,
+      100,
+      5,
+      5
+    ],
+    "flags_on_iteration": null,
+    "primary_on_call": null,
+    "result": -1,
+    "iterations": 32,
+    "calls": [
+      {
+        "attempts_remaining": 31,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 30,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 29,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 28,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 27,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 26,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 25,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 24,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 23,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 22,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 21,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 20,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 19,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 18,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 17,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 16,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 15,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 14,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 13,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 12,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 11,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 10,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 9,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 8,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 7,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 6,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 5,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 4,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 3,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 2,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 1,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      },
+      {
+        "attempts_remaining": 0,
+        "rect_offset": 26106,
+        "rect": [
+          100,
+          100,
+          5,
+          5
+        ]
+      }
+    ],
+    "carry": false,
+    "table_sha256": "0ba2b2d6b128a2280a531495cb90a6380af81e274bd27212c1fbb42ca52d9bd2",
+    "return": "far"
+  },
+  {
+    "name": "mouse_enabled_on_third_call",
+    "mouse": [
+      0,
+      0
+    ],
+    "primary": 0,
+    "initial_flags": 32513,
+    "rect": [
+      -10,
+      -10,
+      20,
+      20
+    ],
+    "flags_on_iteration": null,
+    "primary_on_call": 3,
+    "result": 29,
+    "iterations": 3,
+    "calls": [
+      {
+        "attempts_remaining": 31,
+        "rect_offset": 26106,
+        "rect": [
+          -10,
+          -10,
+          20,
+          20
+        ]
+      },
+      {
+        "attempts_remaining": 30,
+        "rect_offset": 26106,
+        "rect": [
+          -10,
+          -10,
+          20,
+          20
+        ]
+      },
+      {
+        "attempts_remaining": 29,
+        "rect_offset": 26106,
+        "rect": [
+          -10,
+          -10,
+          20,
+          20
+        ]
+      }
+    ],
+    "carry": true,
+    "table_sha256": "6eb2411b2bbfa494bb96ffa728cf37d5b671e3787e41ec7b86743898039612db",
+    "return": "far"
+  },
+  {
+    "name": "region_enabled_on_fifth_iteration",
+    "mouse": [
+      0,
+      0
+    ],
+    "primary": 1,
+    "initial_flags": 22014,
+    "rect": [
+      -20,
+      -20,
+      40,
+      40
+    ],
+    "flags_on_iteration": 5,
+    "primary_on_call": null,
+    "result": 27,
+    "iterations": 5,
+    "calls": [
+      {
+        "attempts_remaining": 27,
+        "rect_offset": 26106,
+        "rect": [
+          -20,
+          -20,
+          40,
+          40
+        ]
+      }
+    ],
+    "carry": true,
+    "table_sha256": "0e6fafede0bfb38f33d51ac10779910751b8ddb0336b1e3a0f2c1e6764c28924",
+    "return": "far"
+  },
+  {
+    "name": "mouse_gate_blocks_all_calls",
+    "mouse": [
+      0,
+      0
+    ],
+    "primary": 0,
+    "initial_flags": 1,
+    "rect": [
+      -1,
+      -1,
+      2,
+      2
+    ],
+    "flags_on_iteration": null,
+    "primary_on_call": null,
+    "result": -1,
+    "iterations": 32,
+    "calls": [
+      {
+        "attempts_remaining": 31,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 30,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 29,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 28,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 27,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 26,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 25,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 24,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 23,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 22,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 21,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 20,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 19,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 18,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 17,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 16,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 15,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 14,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 13,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 12,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 11,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 10,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 9,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 8,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 7,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 6,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 5,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 4,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 3,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 2,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 1,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      },
+      {
+        "attempts_remaining": 0,
+        "rect_offset": 26106,
+        "rect": [
+          -1,
+          -1,
+          2,
+          2
+        ]
+      }
+    ],
+    "carry": false,
+    "table_sha256": "19d9be0eacd277b768669a76aaa10220afd7faa9f1d6380fd14650012c07b8e9",
+    "return": "far"
+  }
+]

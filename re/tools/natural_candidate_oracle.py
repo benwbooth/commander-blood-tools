@@ -2324,6 +2324,282 @@ def error_overlay_draw_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ui_region_31_poll_vectors() -> list[dict[str, object]]:
+    entry = 0x82C3
+    return_address = 0xFC23
+    expected_hash = "ed06b04960c68f21312006c2f4dfbf201f6e6200e202d110e8cad963d288bbff"
+    if hashlib.sha256(EXE[entry : entry + 37]).hexdigest() != expected_hash:
+        raise AssertionError("0x82c3: recovered 37-byte body changed")
+
+    cases = (
+        {
+            "name": "disabled_for_all_attempts",
+            "flags": 0xA5FE,
+            "rect": (-20, -10, 40, 20),
+            "mouse": (0, 0),
+            "primary": 1,
+            "expected": -1,
+            "expected_calls": 0,
+            "expected_iterations": 32,
+        },
+        {
+            "name": "immediate_signed_hit",
+            "flags": 0xA501,
+            "rect": (-120, 100, 40, 30),
+            "mouse": (-100, 123),
+            "primary": 1,
+            "expected": 31,
+            "expected_calls": 1,
+            "expected_iterations": 1,
+        },
+        {
+            "name": "same_region_misses_32_times",
+            "flags": 0x0001,
+            "rect": (100, 100, 5, 5),
+            "mouse": (0, 0),
+            "primary": 1,
+            "expected": -1,
+            "expected_calls": 32,
+            "expected_iterations": 32,
+        },
+        {
+            "name": "mouse_enabled_on_third_call",
+            "flags": 0x7F01,
+            "rect": (-10, -10, 20, 20),
+            "mouse": (0, 0),
+            "primary": 0,
+            "primary_on_call": 3,
+            "expected": 29,
+            "expected_calls": 3,
+            "expected_iterations": 3,
+        },
+        {
+            "name": "region_enabled_on_fifth_iteration",
+            "flags": 0x55FE,
+            "rect": (-20, -20, 40, 40),
+            "mouse": (0, 0),
+            "primary": 1,
+            "flags_on_iteration": 5,
+            "expected": 27,
+            "expected_calls": 1,
+            "expected_iterations": 5,
+        },
+        {
+            "name": "mouse_gate_blocks_all_calls",
+            "flags": 0x0001,
+            "rect": (-1, -1, 2, 2),
+            "mouse": (0, 0),
+            "primary": 0,
+            "expected": -1,
+            "expected_calls": 32,
+            "expected_iterations": 32,
+        },
+    )
+    game_segment = 0x6400
+    decoy_segment = 0x8000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("87a55a963cc37869")
+    table_offset = 0x6212
+    record_size = 0x20
+    vectors = []
+
+    def signed_word(value: int) -> int:
+        return value & 0xFFFF
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        mouse_x, mouse_y = (int(value) for value in case["mouse"])
+        primary = int(case["primary"])
+        flags = int(case["flags"])
+        rect = tuple(int(value) for value in case["rect"])
+        expected = int(case["expected"])
+        expected_calls = int(case["expected_calls"])
+        expected_iterations = int(case["expected_iterations"])
+        primary_on_call = int(case.get("primary_on_call", 0))
+        flags_on_iteration = int(case.get("flags_on_iteration", 0))
+
+        game_before = bytearray(
+            (offset * 29 + (offset >> 8) * 13 + case_index * 17 + 0x4D)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        for region_id in range(32):
+            record_offset = table_offset + region_id * record_size
+            game_before[record_offset : record_offset + record_size] = bytes(
+                (region_id * 19 + byte_index * 23 + case_index * 11) & 0xFF
+                for byte_index in range(record_size)
+            )
+            struct.pack_into("<H", game_before, record_offset, 0xA5FE)
+        record_offset = table_offset + 31 * record_size
+        rect_offset = record_offset + 8
+        struct.pack_into("<H", game_before, record_offset, flags & 0xFFFF)
+        struct.pack_into(
+            "<HHHH",
+            game_before,
+            rect_offset,
+            *(signed_word(value) for value in rect),
+        )
+        struct.pack_into("<H", game_before, 0x0A2A, signed_word(mouse_x))
+        struct.pack_into("<H", game_before, 0x0A2C, signed_word(mouse_y))
+        game_before[0x0A3E] = primary
+        game_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        decoy_before = bytes(
+            (offset * 7 + case_index * 31 + 0xB3) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": game_segment,
+            "es": 0x5100,
+            "fs": 0x5300,
+            "gs": decoy_segment,
+            "ss": game_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, object]] = []
+        iterations = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal iterations
+            if address == 0x82C8:
+                iterations += 1
+                if flags_on_iteration == iterations:
+                    machine.mem_write(
+                        game_segment * 16 + record_offset,
+                        struct.pack("<H", flags | 1),
+                    )
+                return
+            if address != 0x8295:
+                return
+            call_number = len(calls) + 1
+            if primary_on_call == call_number:
+                machine.mem_write(game_segment * 16 + 0x0A3E, b"\x01")
+            actual_rect_offset = machine.reg_read(UC_X86_REG_BP)
+            actual_rect = struct.unpack(
+                "<hhhh",
+                machine.mem_read(game_segment * 16 + actual_rect_offset, 8),
+            )
+            calls.append(
+                {
+                    "attempts_remaining": machine.reg_read(UC_X86_REG_AX),
+                    "rect_offset": actual_rect_offset,
+                    "rect": list(actual_rect),
+                }
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0, bytes(game_before)),
+                (decoy_segment, 0, decoy_before),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        if len(calls) != expected_calls:
+            raise AssertionError(
+                f"0x82c3 {name}: calls={len(calls)}, expected={expected_calls}"
+            )
+        if iterations != expected_iterations:
+            raise AssertionError(
+                f"0x82c3 {name}: iterations={iterations}, "
+                f"expected={expected_iterations}"
+            )
+        if any(int(call["rect_offset"]) != rect_offset for call in calls):
+            raise AssertionError(f"0x82c3 {name}: rectangle pointer advanced")
+        expected_call_start = (
+            32 - flags_on_iteration if flags_on_iteration else 31
+        )
+        expected_attempt_values = list(
+            range(expected_call_start, expected_call_start - expected_calls, -1)
+        )
+        actual_attempt_values = [
+            int(call["attempts_remaining"]) for call in calls
+        ]
+        if actual_attempt_values != expected_attempt_values:
+            raise AssertionError(
+                f"0x82c3 {name}: attempts={actual_attempt_values}, "
+                f"expected={expected_attempt_values}"
+            )
+        actual_result = machine.reg_read(UC_X86_REG_AX)
+        expected_result = expected & 0xFFFF
+        if actual_result != expected_result:
+            raise AssertionError(
+                f"0x82c3 {name}: ax={actual_result:#x}, "
+                f"expected={expected_result:#x}"
+            )
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_result
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x82c3 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        carry = bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+        if carry != (expected >= 0):
+            raise AssertionError(f"0x82c3 {name}: carry={carry}")
+        expected_game = bytearray(game_before)
+        if primary_on_call:
+            expected_game[0x0A3E] = 1
+        if flags_on_iteration:
+            struct.pack_into("<H", expected_game, record_offset, flags | 1)
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if (
+            actual_game[:0xFE00] != bytes(expected_game[:0xFE00])
+            or actual_game[caller_sp + 4 :] != bytes(expected_game[caller_sp + 4 :])
+        ):
+            raise AssertionError(f"0x82c3 {name}: non-stack game memory changed")
+        if bytes(machine.mem_read(decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x82c3 {name}: GS decoy memory changed")
+        if bytes(
+            machine.mem_read(
+                game_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x82c3 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "mouse": [mouse_x, mouse_y],
+                "primary": primary,
+                "initial_flags": flags,
+                "rect": list(rect),
+                "flags_on_iteration": flags_on_iteration or None,
+                "primary_on_call": primary_on_call or None,
+                "result": expected,
+                "iterations": iterations,
+                "calls": calls,
+                "carry": carry,
+                "table_sha256": hashlib.sha256(
+                    game_before[table_offset : table_offset + 32 * record_size]
+                ).hexdigest(),
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -61413,6 +61689,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_0d75_natural.json",
         error_overlay_draw_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_82c3_natural.json",
+        ui_region_31_poll_vectors(),
         args.check,
     )
     update_vector(

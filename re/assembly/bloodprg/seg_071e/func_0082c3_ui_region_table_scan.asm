@@ -6,8 +6,8 @@
 ; seg_off: 071e:0ae3
 ; group: seg_071e
 ; provenance: recursive_graph
-; label: ui_region_table_scan
-; label_comment: the console's clickable-REGION scanner (returns a region id; 0x1F = the region selecting pose 0xC) — the hit-region table system behind the pose selectors and click dispatch. Selector contexts: 9 @0x7911 = region-enter edge ([0x27EA]); 0xC @0x7962 = region 0x1F hover; 0xE @0x7BEA = post-0x971-call state. Remaining sites sweep mechanically against this scanner's region ids || MERGED 2026-07-25 (audit-fixes #130), also recorded as: UI clickable-region table scan: bp=0x65f2; iterate 8-byte records (bl=[bp]; bp+=8); ax=0x1f (count). Walks the table of clickable UI regions/buttons at 0x65f2
+; label: ui_region_31_poll
+; label_comment: polls entity slot 31 at DS:0x65f2 up to 32 times; each iteration reloads the same slot, gates on flags bit 0, and far-calls region_record_hittest for the rectangle at SS:0x65fa. Returns AX=31 for an immediate hit, the remaining-attempt value for a later hit, or -1 after all attempts. The earlier table-scan label was disproved by direct execution.
 ; byte_count: 37
 ; boundary: cfg_blocks_6_terminals_1
 ; terminal: retf:1
