@@ -183,6 +183,8 @@ extern volatile cb_u16 vm_profile_cursor;     /* GS:0x6730 */
 extern volatile cb_u16 vm_subtitle_wrap_marker; /* GS:0x6732 */
 extern volatile cb_u16 vm_profile_record_word; /* GS:0x6734 */
 extern volatile cb_u16 vm_c1_related_operand; /* GS:0x6736 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_c1_related_operand_gs;             /* explicit GS:0x6736 alias */
 extern volatile cb_u16 vm_profile_word_6766;  /* GS:0x6766 */
 extern volatile cb_u16 vm_profile_word_676e;  /* GS:0x676E */
 extern volatile cb_u16 vm_profile_word_6786;  /* GS:0x6786 */
@@ -374,6 +376,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux vm_op_cd_state_gated parm [si] value [si] modify exact [ax bx cx dx si bp]
 #pragma aux vm_op_b7_record_op parm [si] value [si] modify exact [ax bx cx dx si es]
 #pragma aux vm_op_b8_record_readwrite parm [si] value [si] modify exact [ax bx si es]
+#pragma aux vm_op_c1_record_state parm [si] value [si] modify exact [ax bx cx dx si bp es]
 #pragma aux vm_op_c2_record_full parm [si] value [si] modify exact [ax bx dx si bp es]
 #pragma aux vm_op_c3_state_record parm [si] value [si] modify exact [ax bx dx si bp es]
 #pragma aux vm_op_c4_actor parm [si] value [si] modify exact [ax bx cx dx si bp es]
@@ -476,6 +479,8 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_b7_record_op(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006AA7 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_b8_record_readwrite(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006B06 */
+const cb_u8 CB_NEAR *CB_NEAR vm_op_c1_record_state(
+    const cb_u8 CB_NEAR *script_bytes);       /* 0x006B4C */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c2_record_full(
     const cb_u8 CB_NEAR *script_bytes);       /* 0x006E34 */
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c3_state_record(

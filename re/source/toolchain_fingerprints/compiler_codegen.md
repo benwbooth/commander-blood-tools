@@ -6062,6 +6062,42 @@ inline assembly or register-state facade. Full-source integration requires the
 shipped record and `GAME_DATA` segment contracts; direct replacement also needs
 the recovered helper ABIs and an explicit policy for the original C2 defect.
 
+## BLOODPRG VM opcode-C1 handler at 0x006B4C
+
+The 306-byte near handler consumes an optional A1 inversion prefix, a record
+offset, and an operand offset. Query mode compares either the requested C1 slot
+directly or, for operands one and two, follows the owning object's selector
+`0x11` link and the target's selector `0x13` slot. Set mode requires an active
+owner, optionally redirects a nonzero-distance operand-one/two request through
+selector `0x11`, and writes `{0x00C1, operand, 2}` only into an empty slot.
+Kind-`0x10` targets first rebuild and scan the recursive navigation-source list:
+kind one tests operand flag `0x02`, while kind two calls the carry-return object
+bitset helper with the post-`LODSW` source-list cursor.
+
+Direct execution exposed two machine-state details that a high-level rewrite
+must decide explicitly. The handler clears only `DL`, so the position-distance
+call receives the A1 flag in its low byte while inheriting incoming `DH`.
+Natural C passes the semantic zero-extended flag. More seriously, successful
+queries and an exhausted navigation-source list jump directly to the `POP DI`
+at `0x006C7C`, skipping the saved `SI` and `DS`. Seven vectors stop before that
+instruction and prove intact `{SI, DS, DI, return}` frames; the natural source
+returns normally instead of reproducing the shipped stack corruption.
+
+Twenty-one patched-helper vectors execute the untouched original body. They
+cover direct and resolved query truth tables, A1 inversion, owner-active and
+empty-slot guards, zero/nonzero distance, successful and rejected redirects,
+zero selector-`0x11` behavior, unknown/kind-one/kind-two source records, bitset
+rejection and acceptance, exhausted lists, occupied destinations, script wrap,
+exact helper order and arguments, segmented ownership, normal stack integrity,
+and both defective epilogues. Open Watcom 1.9 medium (`-3 -os -s -mm -we`)
+compiles the warning-free natural C89 function to 153 instructions/428 bytes
+versus 118/306 original, with 83.90 percent mnemonic-multiset overlap and 72.88
+percent ordered mnemonic overlap. It uses no inline assembly or register-state
+facade. Full-source integration requires `GAME_DATA` placement, the shipped
+`SS == GS` source-buffer alias, and the record-segment helper contracts; direct
+replacement also needs adapters for the carry-return bit test and original
+register allocation plus an explicit compatibility policy for the defects.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

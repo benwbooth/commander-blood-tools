@@ -1,0 +1,645 @@
+[
+  {
+    "name": "query_direct_exact_pass_owner_activity_irrelevant",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "ca111eea9e32d5f400a95911522e8f94339ab565beba2a38a9b6e9cb0404035c"
+  },
+  {
+    "name": "query_direct_kind_mismatch_branches",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "branch",
+        "script": 20516,
+        "result": 24881
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": null,
+    "record_sha256": "318592593fb8a4b930acdd62dcc7394f73b6c9a807bdffcaeb565c7f4acfede2"
+  },
+  {
+    "name": "query_direct_related_mismatch_inverted_passes",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "1575ef3f986619cef8c2ddb98c4c44b8f9f9cb21e0af36f14754e9af14a19eae"
+  },
+  {
+    "name": "query_direct_exact_inverted_branches",
+    "query_mode_before": 3,
+    "inverted": true,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "branch",
+        "script": 20581,
+        "result": 24979
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": null,
+    "record_sha256": "fbada7a9f7e27d1bba1ab747cfeace7a1602a05b85fd181d179ea67c1bb38878"
+  },
+  {
+    "name": "query_operand_one_direct_c1_skips_resolution",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 1,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "163ccb5948423c5ed78d7f09c5a53180fddd8868a9e8d90245afd1a6b1502487"
+  },
+  {
+    "name": "query_operand_two_resolves_exact_slot",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 2,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 2,
+        "result": 32
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "1e38bc953e5a8c73341d7f69697bee6dee4a3103bd93795aa92581fcc8fd7c96"
+  },
+  {
+    "name": "query_resolved_zero_destination_field_branches",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 1,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 1,
+        "result": 32
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 0,
+        "result": 0
+      },
+      {
+        "name": "branch",
+        "script": 20676,
+        "result": 25126
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": null,
+    "record_sha256": "3ebabeef2487123ccc79b72eab2a73031d659e3f2ee5d362e6674f908cc3b3bd"
+  },
+  {
+    "name": "query_resolved_mismatch_inverted_passes_with_negative_field",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 2,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 2,
+        "result": 65520
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 44964,
+        "result": 48
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "c3909f9f62f60cff7fef2ab6394a8d64ac47b03825f6a8df89b055586df354e5"
+  },
+  {
+    "name": "set_inactive_owner_branches",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "branch",
+        "script": 20740,
+        "result": 25224
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": null,
+    "record_sha256": "744e138f1a1a769de6a30f2eb073ac395c350d899e0177f1917d3cd66c3d0461"
+  },
+  {
+    "name": "set_direct_empty_record_writes_triple",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 8192,
+    "record_sha256": "38081471606ac64309ea5c91822f0ce7db789e7c16c6a9556a1e68ef3e7c229e"
+  },
+  {
+    "name": "set_direct_occupied_record_branches",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "branch",
+        "script": 20804,
+        "result": 25322
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 8192,
+    "record_sha256": "3f1d55ca1f4193f4bc46a9835b695753be03a2814c2f91a41b3b12a1e3c5d206"
+  },
+  {
+    "name": "set_operand_one_zero_distance_uses_requested_record",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 1,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "distance",
+        "first": 1,
+        "second": 6144,
+        "compare": 17664,
+        "result": 0
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 8192,
+    "record_sha256": "50ee0fb4cf69580d95d42bd99066fbf73e3f7f2bf146abf5586175b770f72cc4"
+  },
+  {
+    "name": "set_distance_redirect_wrong_kind_branches",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 2,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "distance",
+        "first": 2,
+        "second": 6144,
+        "compare": 17664,
+        "result": 9
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 64,
+        "result": 32
+      },
+      {
+        "name": "branch",
+        "script": 20868,
+        "result": 25420
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": null,
+    "record_sha256": "d4d7262a1bfca1eac0bd53a87d0b7b9019f4e6e9ddeb9db50c2f6e6645d49a84"
+  },
+  {
+    "name": "set_zero_parent_field_follows_kind_word_as_pointer",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 1,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "distance",
+        "first": 1,
+        "second": 6144,
+        "compare": 17664,
+        "result": 3
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 64,
+        "result": 0
+      },
+      {
+        "name": "source_list",
+        "target": 64,
+        "output": 26758,
+        "entries": [
+          16384
+        ]
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "branch",
+        "script": 20900,
+        "result": 25469
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 112,
+    "record_sha256": "4cc2e5527d76a140fc50be86303c24a22c69573cd9e8ef11ebd131891937851f"
+  },
+  {
+    "name": "set_nav_empty_list_reaches_shipped_epilogue_defect",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "source_list",
+        "target": 6144,
+        "output": 26758,
+        "entries": []
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "afaa63e1c8c8c071b89b0538ea62016e346c465298883d09c1a25e9ebad4d05b"
+  },
+  {
+    "name": "set_nav_skips_unknown_then_accepts_kind_one_flag",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "source_list",
+        "target": 6144,
+        "output": 26758,
+        "entries": [
+          16384,
+          16416
+        ]
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "branch",
+        "script": 20964,
+        "result": 25567
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 6192,
+    "record_sha256": "e4d622d00728ca90b16f1f9b85024450322f5c73be8a93f5bcd0fa2914fc3ef1"
+  },
+  {
+    "name": "set_nav_kind_one_flag_missing_exhausts_list",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "source_list",
+        "target": 6144,
+        "output": 26758,
+        "entries": [
+          16448
+        ]
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": true,
+    "destination_offset": null,
+    "record_sha256": "b98b378a7e9b93d389147572e5c1b365d2578b8f137eb19ad6301cb738ffd8de"
+  },
+  {
+    "name": "set_nav_kind_two_reject_then_accept",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "source_list",
+        "target": 6144,
+        "output": 26758,
+        "entries": [
+          16480,
+          16512
+        ]
+      },
+      {
+        "name": "bit_test",
+        "object": 13398,
+        "source": 16480,
+        "cursor": 26760,
+        "result": false
+      },
+      {
+        "name": "bit_test",
+        "object": 13398,
+        "source": 16512,
+        "cursor": 26762,
+        "result": true
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "branch",
+        "script": 21028,
+        "result": 25665
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 6192,
+    "record_sha256": "f4a46639f0e0c7b9399105c688d0d8a955b72b4e4af55a54a3fb9991acb0d47a"
+  },
+  {
+    "name": "set_nav_accepted_destination_occupied_branches",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "source_list",
+        "target": 6144,
+        "output": 26758,
+        "entries": [
+          16544
+        ]
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "branch",
+        "script": 21060,
+        "result": 25714
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 6192,
+    "record_sha256": "4001fe647db2e75d12233b532ea3a5ecf5f66383e7d32007bf654aa48551128d"
+  },
+  {
+    "name": "set_a1_distance_inherits_dh_and_redirects",
+    "query_mode_before": 2,
+    "inverted": true,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 2,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      },
+      {
+        "name": "distance",
+        "first": 2,
+        "second": 6144,
+        "compare": 17665,
+        "result": 1
+      },
+      {
+        "name": "field",
+        "selector": 17,
+        "kind": 64,
+        "result": 32
+      },
+      {
+        "name": "source_list",
+        "target": 10240,
+        "output": 26758,
+        "entries": [
+          16576
+        ]
+      },
+      {
+        "name": "bit_test",
+        "object": 2,
+        "source": 16576,
+        "cursor": 26760,
+        "result": true
+      },
+      {
+        "name": "field",
+        "selector": 19,
+        "kind": 16,
+        "result": 48
+      },
+      {
+        "name": "branch",
+        "script": 21093,
+        "result": 25763
+      }
+    ],
+    "branch_failed": true,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 10288,
+    "record_sha256": "466cc6020f32b58d68e729e90b6d124f5404bd225b8f0801409a964adcecda5c"
+  },
+  {
+    "name": "set_direct_script_cursor_wraps",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_offset": 8192,
+    "owner_offset": 6144,
+    "operand": 13398,
+    "calls": [
+      {
+        "name": "lookup",
+        "threshold": 8192,
+        "owner": 6144
+      }
+    ],
+    "branch_failed": false,
+    "stopped_before_unrestored_frame": false,
+    "destination_offset": 8192,
+    "record_sha256": "1eaedb30e2058f7dae697be5d16d108ecc5e238d844d6f6c64da0153a322446b"
+  }
+]

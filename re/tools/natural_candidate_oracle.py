@@ -11056,6 +11056,514 @@ def record_action_ladder_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_c1_record_state_vectors() -> list[dict[str, object]]:
+    entry = 0x6B4C
+    body_size = 306
+    body_hash = "47d60246bcb856e4fb2483f3358c78183bec65e07d1d14f9f2bb35142d521651"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x6b4c: recovered 306-byte body changed")
+    if EXE[0x6C7C] != 0x5F or EXE[0x6C7D] != 0xC3:
+        raise AssertionError("0x6b4c: expected POP DI / near RET boundary")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "query_direct_exact_pass_owner_activity_irrelevant",
+            "query": 1, "owner_flags": 0, "record_kind": 0xC1,
+            "record_related": 0x3456, "operand": 0x3456,
+        },
+        {
+            "name": "query_direct_kind_mismatch_branches",
+            "query": 1, "record_kind": 0xC3,
+            "record_related": 0x3456, "operand": 0x3456,
+        },
+        {
+            "name": "query_direct_related_mismatch_inverted_passes",
+            "query": 1, "inverted": True, "record_kind": 0xC1,
+            "record_related": 0x7777, "operand": 0x3456,
+        },
+        {
+            "name": "query_direct_exact_inverted_branches",
+            "query": 3, "inverted": True, "record_kind": 0xC1,
+            "record_related": 0x3456, "operand": 0x3456,
+        },
+        {
+            "name": "query_operand_one_direct_c1_skips_resolution",
+            "query": 1, "operand": 1, "record_kind": 0xC1,
+            "record_related": 1,
+        },
+        {
+            "name": "query_operand_two_resolves_exact_slot",
+            "query": 1, "operand": 2, "record_kind": 0,
+            "target_kind": 0x10, "destination_kind": 0xC1,
+            "destination_related": 2,
+        },
+        {
+            "name": "query_resolved_zero_destination_field_branches",
+            "query": 1, "operand": 1, "record_kind": 0,
+            "target_kind": 0x40, "destination_field": 0,
+        },
+        {
+            "name": "query_resolved_mismatch_inverted_passes_with_negative_field",
+            "query": 1, "inverted": True, "operand": 2,
+            "record_kind": 0, "query_parent_field": 0xFFF0,
+            "target_offset": 0x17F0, "target_kind": 0x10,
+            "destination_kind": 0xC3,
+        },
+        {
+            "name": "set_inactive_owner_branches",
+            "query": 0, "owner_flags": 0, "record_kind": 0,
+        },
+        {
+            "name": "set_direct_empty_record_writes_triple",
+            "query": 0, "record_kind": 0,
+        },
+        {
+            "name": "set_direct_occupied_record_branches",
+            "query": 0, "record_kind": 0xC4,
+        },
+        {
+            "name": "set_operand_one_zero_distance_uses_requested_record",
+            "query": 0, "operand": 1, "record_kind": 0,
+            "owner_kind": 0x40, "distance": 0,
+        },
+        {
+            "name": "set_distance_redirect_wrong_kind_branches",
+            "query": 0, "operand": 2, "record_kind": 0,
+            "owner_kind": 0x40, "distance": 9, "target_kind": 0x80,
+        },
+        {
+            "name": "set_zero_parent_field_follows_kind_word_as_pointer",
+            "query": 0, "operand": 1, "record_kind": 0,
+            "owner_kind": 0x40, "distance": 3, "parent_field": 0,
+            "target_offset": 0x40, "target_kind": 0x10,
+            "operand_flags": 2, "sources": [(0x4000, 1, False)],
+        },
+        {
+            "name": "set_nav_empty_list_reaches_shipped_epilogue_defect",
+            "query": 0, "record_kind": 0, "owner_kind": 0x10,
+            "sources": [],
+        },
+        {
+            "name": "set_nav_skips_unknown_then_accepts_kind_one_flag",
+            "query": 0, "record_kind": 0, "owner_kind": 0x10,
+            "operand_flags": 2,
+            "sources": [(0x4000, 0x80, False), (0x4020, 1, False)],
+        },
+        {
+            "name": "set_nav_kind_one_flag_missing_exhausts_list",
+            "query": 0, "record_kind": 0, "owner_kind": 0x10,
+            "operand_flags": 0, "sources": [(0x4040, 1, False)],
+        },
+        {
+            "name": "set_nav_kind_two_reject_then_accept",
+            "query": 0, "record_kind": 0, "owner_kind": 0x10,
+            "sources": [(0x4060, 2, False), (0x4080, 2, True)],
+        },
+        {
+            "name": "set_nav_accepted_destination_occupied_branches",
+            "query": 0, "record_kind": 0, "owner_kind": 0x10,
+            "operand_flags": 2, "destination_kind": 0xC4,
+            "sources": [(0x40A0, 1, False)],
+        },
+        {
+            "name": "set_a1_distance_inherits_dh_and_redirects",
+            "query": 2, "inverted": True, "operand": 2,
+            "record_kind": 0, "owner_kind": 0x40, "distance": 1,
+            "target_kind": 0x10, "sources": [(0x40C0, 2, True)],
+        },
+        {
+            "name": "set_direct_script_cursor_wraps",
+            "query": 0, "record_kind": 0, "start": 0xFFFC,
+        },
+    ]
+
+    script_segment = 0x2400
+    record_segment = 0x5200
+    extra_segment = 0x6800
+    game_segment = 0x9000
+    owner_offset = 0x1800
+    record_offset_default = 0x2000
+    target_offset_default = 0x2800
+    source_list_offset = 0x6886
+    caller_sp = 0xFF00
+    return_address = 0xF64C
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helpers = {
+        0x6023: "field", 0x6034: "lookup", 0x60DD: "distance",
+        0x6210: "bit_test", 0x624B: "source_list", 0x6462: "branch",
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        image[offset & 0xFFFF] = value & 0xFF
+        image[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def get_word(image: bytearray, offset: int) -> int:
+        return image[offset & 0xFFFF] | (image[(offset + 1) & 0xFFFF] << 8)
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        query = int(case["query"])
+        query_path = bool(query & 1)
+        inverted = bool(case.get("inverted", False))
+        operand = int(case.get("operand", 0x3456))
+        record_offset = int(case.get("record_offset", record_offset_default))
+        target_offset = int(case.get("target_offset", target_offset_default))
+        owner_kind = int(case.get("owner_kind", 0x40))
+        owner_flags = int(case.get("owner_flags", 1))
+        record_kind = int(case.get("record_kind", 0))
+        record_related = int(case.get("record_related", 0x7777))
+        destination_field = int(case.get("destination_field", 0x30))
+        destination_kind = int(case.get("destination_kind", 0))
+        destination_related = int(case.get("destination_related", 0x8888))
+        parent_field = int(case.get("parent_field", 0x20))
+        query_parent_field = int(case.get("query_parent_field", 0x20))
+        distance = int(case.get("distance", 0))
+        sources = list(case.get("sources", []))
+        start = int(case.get("start", 0x5000 + case_index * 0x20))
+        prefix = b"\xa1" if inverted else b""
+        script = prefix + struct.pack("<HH", record_offset, operand)
+        final_script = (start + len(script)) & 0xFFFF
+        branch_cursor = (0x6100 + case_index * 0x31) & 0xFFFF
+
+        game_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        script_before = bytearray(
+            (offset * 29 + case_index * 31 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 37 + case_index * 41 + 0x97) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        put_word(game_before, 0x6724, 0x1234)
+        put_word(game_before, 0x6726, record_segment)
+        game_before[0x67AD] = query
+        put_word(game_before, 0x6736, 0xA536)
+        game_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        for byte_index, byte in enumerate(script):
+            script_before[(start + byte_index) & 0xFFFF] = byte
+
+        put_word(record_before, owner_offset, owner_kind)
+        record_before[(owner_offset + 2) & 0xFFFF] = owner_flags
+        put_word(record_before, record_offset, record_kind)
+        put_word(record_before, record_offset + 2, record_related)
+        put_word(record_before, record_offset + 4, 0x9999)
+        record_before[(operand + 2) & 0xFFFF] = int(
+            case.get("operand_flags", 0)
+        )
+
+        resolving_query = (
+            query_path and operand in (1, 2) and record_kind != 0xC1
+        )
+        if resolving_query:
+            put_word(record_before, owner_offset + query_parent_field, target_offset)
+            put_word(record_before, target_offset, int(case.get("target_kind", 0x10)))
+            put_word(record_before, target_offset + destination_field, destination_kind)
+            put_word(record_before, target_offset + destination_field + 2,
+                     destination_related)
+        elif not query_path and operand in (1, 2) and distance != 0:
+            put_word(record_before, owner_offset + parent_field, target_offset)
+            put_word(record_before, target_offset, int(case.get("target_kind", 0x10)))
+
+        for source_offset, source_kind, _bit_result in sources:
+            put_word(record_before, int(source_offset), int(source_kind))
+
+        expected_game = bytearray(game_before)
+        expected_record = bytearray(record_before)
+        put_word(expected_game, 0x6736, operand)
+        expected_calls: list[dict[str, object]] = [
+            {"name": "lookup", "threshold": record_offset, "owner": owner_offset}
+        ]
+        branch_failed = False
+        defect_boundary = False
+        destination_offset: int | None = None
+
+        def model_field(selector: int, kind: int, result: int) -> int:
+            expected_calls.append({
+                "name": "field", "selector": selector, "kind": kind,
+                "result": result & 0xFFFF,
+            })
+            return result & 0xFFFF
+
+        if query_path:
+            if resolving_query:
+                field = model_field(0x11, operand, query_parent_field)
+                resolved_target = get_word(expected_record, owner_offset + field)
+                resolved_kind = get_word(expected_record, resolved_target)
+                field = model_field(0x13, resolved_kind, destination_field)
+                matches = field != 0 and (
+                    get_word(expected_record, resolved_target + field) == 0xC1
+                    and get_word(expected_record, resolved_target + field + 2)
+                    == operand
+                )
+            else:
+                matches = record_kind == 0xC1 and record_related == operand
+            branch_failed = matches == inverted
+            defect_boundary = not branch_failed
+        else:
+            if (owner_flags & 1) == 0:
+                branch_failed = True
+            else:
+                resolved_target = owner_offset
+                resolved_kind = owner_kind
+                if operand in (1, 2):
+                    expected_calls.append({
+                        "name": "distance", "first": operand,
+                        "second": owner_offset,
+                        "compare": 0x4500 | int(inverted), "result": distance,
+                    })
+                    if distance != 0:
+                        field = model_field(0x11, owner_kind, parent_field)
+                        resolved_target = get_word(expected_record, owner_offset + field)
+                        resolved_kind = get_word(expected_record, resolved_target)
+                        if resolved_kind != 0x10:
+                            branch_failed = True
+
+                if not branch_failed and resolved_kind == 0x10:
+                    expected_calls.append({
+                        "name": "source_list", "target": resolved_target,
+                        "output": source_list_offset,
+                        "entries": [int(item[0]) for item in sources],
+                    })
+                    for source_index, source_item in enumerate(sources):
+                        source_offset, source_kind, bit_result = source_item
+                        if int(source_kind) == 2:
+                            expected_calls.append({
+                                "name": "bit_test", "object": operand,
+                                "source": int(source_offset),
+                                "cursor": (source_list_offset
+                                           + 2 * (source_index + 1)) & 0xFFFF,
+                                "result": bool(bit_result),
+                            })
+                            accepted = bool(bit_result)
+                        elif int(source_kind) == 1:
+                            accepted = bool(
+                                expected_record[(operand + 2) & 0xFFFF] & 2
+                            )
+                        else:
+                            accepted = False
+                        if accepted:
+                            field = model_field(0x13, 0x10, destination_field)
+                            destination_offset = (resolved_target + field) & 0xFFFF
+                            break
+                    else:
+                        defect_boundary = True
+                elif not branch_failed:
+                    destination_offset = record_offset
+
+                if destination_offset is not None:
+                    if get_word(expected_record, destination_offset) != 0:
+                        branch_failed = True
+                    else:
+                        put_word(expected_record, destination_offset, 0xC1)
+                        put_word(expected_record, destination_offset + 2, operand)
+                        put_word(expected_record, destination_offset + 4, 2)
+
+        if branch_failed:
+            expected_calls.append({
+                "name": "branch", "script": final_script,
+                "result": branch_cursor,
+            })
+
+        if any(call["name"] == "source_list" for call in expected_calls):
+            cursor = source_list_offset
+            for source_item in sources:
+                put_word(expected_game, cursor, int(source_item[0]))
+                cursor = (cursor + 2) & 0xFFFF
+            put_word(expected_game, cursor, 0xFFFF)
+
+        initial = {
+            "eax": 0xA1A1BEEF, "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456, "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start, "edi": 0xF6F66789,
+            "ebp": 0x9797789A, "sp": caller_sp,
+            "ds": script_segment, "es": extra_segment, "fs": 0x7C00,
+            "gs": game_segment, "ss": game_segment, "flags": 0x0AD7,
+        }
+        memory = [
+            (0, return_address, b"\xCC"),
+            (script_segment, 0, bytes(script_before)),
+            (record_segment, 0, bytes(record_before)),
+            (extra_segment, 0, extra_before),
+            (game_segment, 0, bytes(game_before)),
+            (0, 0x6023, b"\xC3"), (0, 0x6034, b"\xC3"),
+            (0, 0x60DD, b"\xC3"), (0, 0x6210, b"\xC3"),
+            (0, 0x624B, b"\xCB"), (0, 0x6462, b"\xC3"),
+        ]
+        calls: list[dict[str, object]] = []
+        bit_results = iter(
+            bool(source_item[2]) for source_item in sources
+            if int(source_item[1]) == 2
+        )
+
+        def field_result(selector: int, kind: int) -> int:
+            if selector == 0x11:
+                return query_parent_field if query_path else parent_field
+            if selector == 0x13:
+                return destination_field
+            raise AssertionError(
+                f"0x6b4c {name}: unexpected field {selector:#x}/{kind:#x}"
+            )
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            if helper == "lookup":
+                calls.append({
+                    "name": helper, "threshold": machine.reg_read(UC_X86_REG_AX),
+                    "owner": owner_offset,
+                })
+                machine.reg_write(UC_X86_REG_AX, owner_offset)
+            elif helper == "field":
+                selector = machine.reg_read(UC_X86_REG_AX)
+                kind = machine.reg_read(UC_X86_REG_BX)
+                result = field_result(selector, kind)
+                calls.append({
+                    "name": helper, "selector": selector, "kind": kind,
+                    "result": result & 0xFFFF,
+                })
+                machine.reg_write(UC_X86_REG_AX, result & 0xFFFF)
+            elif helper == "distance":
+                calls.append({
+                    "name": helper, "first": machine.reg_read(UC_X86_REG_SI),
+                    "second": machine.reg_read(UC_X86_REG_DI),
+                    "compare": machine.reg_read(UC_X86_REG_DX),
+                    "result": distance,
+                })
+                if machine.reg_read(UC_X86_REG_DS) != record_segment \
+                        or machine.reg_read(UC_X86_REG_ES) != record_segment:
+                    raise AssertionError(f"0x6b4c {name}: distance segment mismatch")
+                machine.reg_write(UC_X86_REG_AX, distance)
+            elif helper == "source_list":
+                output = machine.reg_read(UC_X86_REG_BP)
+                target = machine.reg_read(UC_X86_REG_DI)
+                calls.append({
+                    "name": helper, "target": target, "output": output,
+                    "entries": [int(item[0]) for item in sources],
+                })
+                if machine.reg_read(UC_X86_REG_ES) != record_segment:
+                    raise AssertionError(f"0x6b4c {name}: source-list ES mismatch")
+                cursor = output
+                for source_item in sources:
+                    machine.mem_write(game_segment * 16 + cursor,
+                                      struct.pack("<H", int(source_item[0])))
+                    cursor = (cursor + 2) & 0xFFFF
+                machine.mem_write(game_segment * 16 + cursor,
+                                  struct.pack("<H", 0xFFFF))
+                machine.reg_write(UC_X86_REG_BP, cursor)
+            elif helper == "bit_test":
+                result = next(bit_results)
+                calls.append({
+                    "name": helper, "object": machine.reg_read(UC_X86_REG_AX),
+                    "source": machine.reg_read(UC_X86_REG_BX),
+                    "cursor": machine.reg_read(UC_X86_REG_SI),
+                    "result": result,
+                })
+                if machine.reg_read(UC_X86_REG_DS) != game_segment:
+                    raise AssertionError(f"0x6b4c {name}: bit-test DS mismatch")
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(UC_X86_REG_EFLAGS,
+                                  flags | 1 if result else flags & ~1)
+            else:
+                calls.append({
+                    "name": helper, "script": machine.reg_read(UC_X86_REG_SI),
+                    "result": branch_cursor,
+                })
+                if machine.reg_read(UC_X86_REG_DS) != script_segment:
+                    raise AssertionError(f"0x6b4c {name}: branch DS mismatch")
+                machine.reg_write(UC_X86_REG_SI, branch_cursor)
+
+        stop_address = 0x6C7C if defect_boundary else return_address
+        machine = execute(entry, stop_address, initial, memory,
+                          code_handler=capture, instruction_count=2000)
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x6b4c {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual_record = bytes(machine.mem_read(record_segment * 16, 0x10000))
+        if actual_record != bytes(expected_record):
+            mismatch = next(
+                index for index, pair in enumerate(zip(actual_record, expected_record))
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x6b4c {name}: record differs at {mismatch:#x}: "
+                f"{actual_record[mismatch]:#x} != {expected_record[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0xF000))
+        if actual_game != bytes(expected_game[:0xF000]):
+            mismatch = next(
+                index for index, pair in enumerate(
+                    zip(actual_game, expected_game[:0xF000])
+                ) if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0x6b4c {name}: game differs at {mismatch:#x}: "
+                f"{actual_game[mismatch]:#x} != {expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x6b4c {name}: incoming ES decoy changed")
+
+        if defect_boundary:
+            expected_sp = caller_sp - 6
+            if machine.reg_read(UC_X86_REG_SP) != expected_sp:
+                raise AssertionError(f"0x6b4c {name}: defect-boundary SP changed")
+            saved_frame = struct.pack(
+                "<HHHH", final_script, script_segment,
+                initial["edi"] & 0xFFFF, return_address,
+            )
+            actual_frame = bytes(machine.mem_read(
+                game_segment * 16 + expected_sp, len(saved_frame)
+            ))
+            if actual_frame != saved_frame:
+                raise AssertionError(f"0x6b4c {name}: saved frame changed")
+        else:
+            expected_si = branch_cursor if branch_failed else final_script
+            expected_registers = {
+                "esi": (initial["esi"] & 0xFFFF0000) | expected_si,
+                "edi": initial["edi"],
+                "edx": (initial["edx"] & 0xFFFFFF00) | int(inverted),
+                "sp": caller_sp + 2, "ds": script_segment,
+                "es": record_segment, "fs": initial["fs"],
+                "gs": game_segment, "ss": game_segment,
+            }
+            for register, expected in expected_registers.items():
+                actual = machine.reg_read(REGISTERS[register])
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x6b4c {name}: {register}={actual:#x}, expected={expected:#x}"
+                    )
+            actual_sentinel = bytes(machine.mem_read(
+                game_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            ))
+            if actual_sentinel != stack_sentinel:
+                raise AssertionError(f"0x6b4c {name}: stack sentinel changed")
+
+        vectors.append({
+            "name": name, "query_mode_before": query, "inverted": inverted,
+            "record_offset": record_offset, "owner_offset": owner_offset,
+            "operand": operand, "calls": calls,
+            "branch_failed": branch_failed,
+            "stopped_before_unrestored_frame": defect_boundary,
+            "destination_offset": destination_offset,
+            "record_sha256": hashlib.sha256(expected_record).hexdigest(),
+        })
+
+    return vectors
+
+
 def vm_state_processor_vectors() -> list[dict[str, object]]:
     game_segment = 0x2C00
     record_segment = 0x5000
@@ -89842,6 +90350,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6b06_natural.json",
         vm_b8_record_pair_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6b4c_natural.json",
+        vm_c1_record_state_vectors(),
         args.check,
     )
     update_vector(
