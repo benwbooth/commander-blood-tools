@@ -1084,6 +1084,35 @@ the helper's inherited BP cursor, fixed segmented placement, and the addr32
 high-half convention remain integration boundaries around the recovered C
 algorithm.
 
+VM state-record processor `0x00713D` takes only the segment from the far record
+pointer at `GS:0x6724`, walks the far directory at `GS:0x672C` while each
+entry-kind low byte equals one, and writes candidate offsets provisionally to
+`SS:0x24FB`. Candidates must have activity bit zero set, any kind bit in
+`0x0098`, and differ from the arche offset at `GS:0x6752`. Kind-`0x80`
+candidates follow an absolute selector-`0x11` parent link and require the
+linked record to be active with any kind bit in `0x0018`. The effective
+record's selector-`0x0B` dword position must equal the arche position before
+the output cursor advances; the final store overwrites any rejected
+provisional slot with zero.
+
+Sixteen direct vectors execute the unmodified original body with the real
+`0x6023` field-offset helper. They cover empty, direct-match, inactive,
+wrong-kind, arche-excluded, position-mismatch, every linked-record guard,
+rejected-then-accepted provisional writes, low-byte directory gating, wrapped
+directory and record fields, split GS/ES/SS ownership, helper calls, immutable
+input, every register and segment, final flags, inherited DF, stack ownership,
+and far return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the natural one-function
+candidate warning-free to 87 instructions/215 bytes versus the original
+62/146, with 93.55 percent mnemonic-multiset overlap and no inline assembly.
+The source explicitly rebinds field offsets returned by the near helper to the
+record segment and relies on the shipped `SS == GS` alias for its output.
+Watcom `__saveregs` preserves DS and ES but the generated body clobbers AX,
+whereas the original preserves it. Direct binary replacement therefore needs
+a narrow AX-preservation adapter; the sole real caller at `0x00B0C7` does not
+consume AX after the call.
+
 Kind-2 navigation target-list builder `0x0071CF` first rebuilds the active
 object list, then walks its exact `0xFFFF`-terminated offsets. It excludes the
 Honk record at `GS:0x6754` and the radio/menu record at `GS:0x6756`, looks up

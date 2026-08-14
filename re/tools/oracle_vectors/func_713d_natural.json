@@ -1,0 +1,610 @@
+[
+  {
+    "name": "empty_directory",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6144,
+    "processed_entries": [],
+    "output": [],
+    "provisional_writes": [],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "direct_kind8_match",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6272,
+    "processed_entries": [
+      4096
+    ],
+    "output": [
+      4096
+    ],
+    "provisional_writes": [
+      [
+        4096,
+        0,
+        4096
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4096
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "direct_kind10_match",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6400,
+    "processed_entries": [
+      4128
+    ],
+    "output": [
+      4128
+    ],
+    "provisional_writes": [
+      [
+        4128,
+        0,
+        4128
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        16,
+        4128
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "inactive_direct_rejected",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6528,
+    "processed_entries": [
+      4160
+    ],
+    "output": [],
+    "provisional_writes": [],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind_mask_miss_rejected",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6656,
+    "processed_entries": [
+      4192
+    ],
+    "output": [],
+    "provisional_writes": [],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "arche_entry_excluded",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6784,
+    "processed_entries": [
+      12288
+    ],
+    "output": [],
+    "provisional_writes": [],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "direct_position_mismatch",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 6912,
+    "processed_entries": [
+      4224
+    ],
+    "output": [],
+    "provisional_writes": [
+      [
+        4224,
+        0,
+        4224
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4224
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind80_linked_kind8_match",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7040,
+    "processed_entries": [
+      4256
+    ],
+    "output": [
+      4256
+    ],
+    "provisional_writes": [
+      [
+        4256,
+        0,
+        4256
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        17,
+        128,
+        4256
+      ],
+      [
+        11,
+        8,
+        14336
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind80_linked_inactive_rejected",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7168,
+    "processed_entries": [
+      4288
+    ],
+    "output": [],
+    "provisional_writes": [
+      [
+        4288,
+        0,
+        4288
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        17,
+        128,
+        4288
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind80_linked_kind_miss_rejected",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7296,
+    "processed_entries": [
+      4320
+    ],
+    "output": [],
+    "provisional_writes": [
+      [
+        4320,
+        0,
+        4320
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        17,
+        128,
+        4320
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "rejected_provisional_then_accepted",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7424,
+    "processed_entries": [
+      4352,
+      4384
+    ],
+    "output": [
+      4384
+    ],
+    "provisional_writes": [
+      [
+        4352,
+        0,
+        4352
+      ],
+      [
+        4384,
+        0,
+        4384
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4352
+      ],
+      [
+        11,
+        16,
+        4384
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "next_low_byte_zero_stops",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7552,
+    "processed_entries": [
+      4416
+    ],
+    "output": [
+      4416
+    ],
+    "provisional_writes": [
+      [
+        4416,
+        0,
+        4416
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4416
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "next_low_byte_one_ignores_high_byte",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 7680,
+    "processed_entries": [
+      4480,
+      4512
+    ],
+    "output": [
+      4480,
+      4512
+    ],
+    "provisional_writes": [
+      [
+        4480,
+        0,
+        4480
+      ],
+      [
+        4512,
+        1,
+        4512
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4480
+      ],
+      [
+        11,
+        8,
+        4512
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "record_pointer_offset_ignored_and_position_offset_wrap",
+    "record_pointer_offset_ignored": 17185,
+    "directory_pointer_offset": 7808,
+    "processed_entries": [
+      65532
+    ],
+    "output": [
+      65532
+    ],
+    "provisional_writes": [
+      [
+        65532,
+        0,
+        65532
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        65532
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "directory_pointer_and_sentinel_wrap",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 65520,
+    "processed_entries": [
+      4544
+    ],
+    "output": [
+      4544
+    ],
+    "provisional_writes": [
+      [
+        4544,
+        0,
+        4544
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4544
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  },
+  {
+    "name": "reverse_direction_preserved",
+    "record_pointer_offset_ignored": 9320,
+    "directory_pointer_offset": 8064,
+    "processed_entries": [
+      4576
+    ],
+    "output": [
+      4576
+    ],
+    "provisional_writes": [
+      [
+        4576,
+        0,
+        4576
+      ]
+    ],
+    "field_helper_calls": [
+      [
+        11,
+        8,
+        12288
+      ],
+      [
+        11,
+        8,
+        4576
+      ]
+    ],
+    "output_segment": 53248,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "far"
+  }
+]

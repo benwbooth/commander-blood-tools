@@ -2907,6 +2907,394 @@ def ship_3d_navigation_candidate_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_arche_position_match_list_build_vectors() -> list[dict[str, object]]:
+    entry = 0x713D
+    return_address = 0xF13D
+    game_segment = 0x3000
+    record_segment = 0x5000
+    directory_segment = 0x7000
+    data_segment = 0x9000
+    extra_segment = 0xB000
+    stack_segment = 0xD000
+    output_offset = 0x24FB
+    arche_offset = 0x3000
+    arche_position = (100, 200)
+    cases = [
+        {"name": "empty_directory", "entries": []},
+        {
+            "name": "direct_kind8_match",
+            "entries": [{"offset": 0x1000, "kind": 8, "flags": 1,
+                         "position": arche_position}],
+        },
+        {
+            "name": "direct_kind10_match",
+            "entries": [{"offset": 0x1020, "kind": 0x10, "flags": 0x81,
+                         "position": arche_position}],
+        },
+        {
+            "name": "inactive_direct_rejected",
+            "entries": [{"offset": 0x1040, "kind": 8, "flags": 0,
+                         "position": arche_position}],
+        },
+        {
+            "name": "kind_mask_miss_rejected",
+            "entries": [{"offset": 0x1060, "kind": 2, "flags": 1,
+                         "position": arche_position}],
+        },
+        {
+            "name": "arche_entry_excluded",
+            "entries": [{"offset": arche_offset, "kind": 8, "flags": 1,
+                         "position": arche_position}],
+        },
+        {
+            "name": "direct_position_mismatch",
+            "entries": [{"offset": 0x1080, "kind": 8, "flags": 1,
+                         "position": (101, 200)}],
+        },
+        {
+            "name": "kind80_linked_kind8_match",
+            "entries": [{"offset": 0x10A0, "kind": 0x80, "flags": 1,
+                         "link": 0x3800}],
+            "linked": {0x3800: {"kind": 8, "flags": 1,
+                                 "position": arche_position}},
+        },
+        {
+            "name": "kind80_linked_inactive_rejected",
+            "entries": [{"offset": 0x10C0, "kind": 0x80, "flags": 1,
+                         "link": 0x3820}],
+            "linked": {0x3820: {"kind": 8, "flags": 0,
+                                 "position": arche_position}},
+        },
+        {
+            "name": "kind80_linked_kind_miss_rejected",
+            "entries": [{"offset": 0x10E0, "kind": 0x80, "flags": 1,
+                         "link": 0x3840}],
+            "linked": {0x3840: {"kind": 0x20, "flags": 1,
+                                 "position": arche_position}},
+        },
+        {
+            "name": "rejected_provisional_then_accepted",
+            "entries": [
+                {"offset": 0x1100, "kind": 8, "flags": 1,
+                 "position": (99, 200)},
+                {"offset": 0x1120, "kind": 0x10, "flags": 1,
+                 "position": arche_position, "directory_kind": 1},
+            ],
+        },
+        {
+            "name": "next_low_byte_zero_stops",
+            "entries": [
+                {"offset": 0x1140, "kind": 8, "flags": 1,
+                 "position": arche_position},
+                {"offset": 0x1160, "kind": 8, "flags": 1,
+                 "position": arche_position, "directory_kind": 0x0100},
+            ],
+        },
+        {
+            "name": "next_low_byte_one_ignores_high_byte",
+            "entries": [
+                {"offset": 0x1180, "kind": 8, "flags": 1,
+                 "position": arche_position},
+                {"offset": 0x11A0, "kind": 8, "flags": 1,
+                 "position": arche_position, "directory_kind": 0xAB01},
+            ],
+        },
+        {
+            "name": "record_pointer_offset_ignored_and_position_offset_wrap",
+            "record_base": 0x4321,
+            "entries": [{"offset": 0xFFFC, "kind": 8, "flags": 1,
+                         "position": arche_position}],
+        },
+        {
+            "name": "directory_pointer_and_sentinel_wrap",
+            "directory_base": 0xFFF0,
+            "entries": [{"offset": 0x11C0, "kind": 8, "flags": 1,
+                         "position": arche_position}],
+        },
+        {
+            "name": "reverse_direction_preserved",
+            "flags_word": 0x0ED7,
+            "entries": [{"offset": 0x11E0, "kind": 8, "flags": 1,
+                         "position": arche_position}],
+        },
+    ]
+    vectors = []
+
+    def write_wrapped(image: bytearray, offset: int, payload: bytes) -> None:
+        for index, value in enumerate(payload):
+            image[(offset + index) & 0xFFFF] = value
+
+    def read_wrapped(image: bytes | bytearray, offset: int, size: int) -> bytes:
+        return bytes(image[(offset + index) & 0xFFFF] for index in range(size))
+
+    def write_record(
+        image: bytearray,
+        offset: int,
+        kind: int,
+        flags: int,
+        position: tuple[int, int] | None = None,
+        link: int | None = None,
+    ) -> None:
+        write_wrapped(image, offset, struct.pack("<H", kind))
+        write_wrapped(image, offset + 2, bytes([flags]))
+        if position is not None:
+            write_wrapped(image, offset + 4, struct.pack("<HH", *position))
+        if link is not None:
+            write_wrapped(image, offset + 6, struct.pack("<H", link))
+
+    def sub_flags_8(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": result.bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        entries = list(case["entries"])
+        linked = dict(case.get("linked", {}))
+        directory_base = int(case.get("directory_base", 0x1800 + case_index * 0x80))
+        record_base = int(case.get("record_base", 0x2468))
+        sentinel_kind = int(case.get("sentinel_kind", 0xA500))
+        game_before = bytearray((index * 7 + case_index * 19) & 0xFF for index in range(0x10000))
+        record_before = bytearray((index * 11 + case_index * 23) & 0xFF for index in range(0x10000))
+        directory_before = bytearray((index * 13 + case_index * 29) & 0xFF for index in range(0x10000))
+        stack_before = bytearray((index * 17 + case_index * 31) & 0xFF for index in range(0x10000))
+        data_before = bytes((index * 3 + case_index * 37) & 0xFF for index in range(0x10000))
+
+        write_wrapped(game_before, 0x6724, struct.pack("<HH", record_base, record_segment))
+        write_wrapped(game_before, 0x672C, struct.pack("<HH", directory_base, directory_segment))
+        write_wrapped(game_before, 0x6752, struct.pack("<H", arche_offset))
+        game_before[0x6E13] = 4  # selector 0x0b, kind bit 3
+        game_before[0x6E14] = 4  # selector 0x0b, kind bit 4
+        game_before[0x6E77] = 6  # selector 0x11, kind bit 7
+        write_record(record_before, arche_offset, 8, 1, arche_position)
+
+        directory_image = bytearray()
+        for entry_index, item in enumerate(entries):
+            directory_kind = int(item.get("directory_kind", 1))
+            directory_image.extend(bytes([0x41 + entry_index]) * 16)
+            directory_image.extend(struct.pack("<HH", int(item["offset"]), directory_kind))
+            write_record(
+                record_before,
+                int(item["offset"]),
+                int(item["kind"]),
+                int(item["flags"]),
+                tuple(item["position"]) if "position" in item else None,
+                int(item["link"]) if "link" in item else None,
+            )
+        directory_image.extend(b"SENTINEL-ENTRY!!"[:16])
+        directory_image.extend(struct.pack("<HH", 0xDEAD, sentinel_kind))
+        write_wrapped(directory_before, directory_base, bytes(directory_image))
+        for offset_value, item_value in linked.items():
+            item = dict(item_value)
+            write_record(
+                record_before,
+                int(offset_value),
+                int(item["kind"]),
+                int(item["flags"]),
+                tuple(item["position"]) if "position" in item else None,
+            )
+
+        expected_output = []
+        expected_provisional = []
+        expected_helper_calls = [(0x000B, 8, arche_offset)]
+        processed_entries = []
+        continue_scan = bool(entries) and (int(entries[0].get("directory_kind", 1)) & 0xFF) == 1
+        for entry_index, item in enumerate(entries):
+            if entry_index != 0:
+                continue_scan = continue_scan and (
+                    int(item.get("directory_kind", 1)) & 0xFF
+                ) == 1
+            if not continue_scan:
+                break
+            offset_value = int(item["offset"])
+            kind = int(item["kind"])
+            object_flags = int(item["flags"])
+            processed_entries.append(offset_value)
+            if (object_flags & 1) == 0 or (kind & 0x0098) == 0 or offset_value == arche_offset:
+                continue
+            expected_provisional.append((offset_value, len(expected_output)))
+            effective_offset = offset_value
+            effective_kind = kind
+            if kind & 0x0080:
+                expected_helper_calls.append((0x0011, 0x0080, offset_value))
+                effective_offset = int(item["link"])
+                linked_item = dict(linked[effective_offset])
+                effective_kind = int(linked_item["kind"])
+                if (int(linked_item["flags"]) & 1) == 0 or (effective_kind & 0x0018) == 0:
+                    continue
+            expected_helper_calls.append((0x000B, effective_kind, effective_offset))
+            position = (
+                tuple(dict(linked[effective_offset])["position"])
+                if effective_offset in linked
+                else tuple(item["position"])
+            )
+            if position == arche_position:
+                expected_output.append(offset_value)
+
+        stack_expected = bytearray(stack_before)
+        for index, value in enumerate(expected_output + [0]):
+            write_wrapped(stack_expected, output_offset + index * 2, struct.pack("<H", value))
+        write_wrapped(stack_before, 0xFF00, struct.pack("<HH", return_address, 0))
+        write_wrapped(stack_expected, 0xFF00, struct.pack("<HH", return_address, 0))
+        game_decoy_before = read_wrapped(game_before, output_offset, 24)
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xF000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": int(case.get("flags_word", 0x0AD7)),
+        }
+        helper_calls = []
+        provisional_writes = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6023:
+                helper_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+            elif address == 0x7189:
+                bp_value = machine.reg_read(UC_X86_REG_BP)
+                provisional_writes.append(
+                    (
+                        machine.reg_read(UC_X86_REG_SI),
+                        (bp_value - output_offset) // 2,
+                        struct.unpack(
+                            "<H",
+                            machine.mem_read(stack_segment * 16 + bp_value, 2),
+                        )[0],
+                    )
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (game_segment, 0, bytes(game_before)),
+                (record_segment, 0, bytes(record_before)),
+                (directory_segment, 0, bytes(directory_before)),
+                (data_segment, 0, data_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+        )
+
+        if helper_calls != expected_helper_calls:
+            raise AssertionError(
+                f"0x713d {name}: helpers={helper_calls}, expected={expected_helper_calls}"
+            )
+        expected_provisional_writes = [
+            (offset_value, output_index, offset_value)
+            for offset_value, output_index in expected_provisional
+        ]
+        if provisional_writes != expected_provisional_writes:
+            raise AssertionError(
+                f"0x713d {name}: provisional={provisional_writes}, "
+                f"expected={expected_provisional_writes}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = (initial["sp"] + 4) & 0xFFFF
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x713d {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        actual_stack = bytes(machine.mem_read(stack_segment * 16, 0x10000))
+        if (
+            actual_stack[:0xFE00] != bytes(stack_expected[:0xFE00])
+            or actual_stack[0xFF04:] != bytes(stack_expected[0xFF04:])
+        ):
+            mismatch = next(
+                index
+                for index in list(range(0xFE00)) + list(range(0xFF04, 0x10000))
+                if actual_stack[index] != stack_expected[index]
+            )
+            raise AssertionError(
+                f"0x713d {name}: caller-owned stack changed at {mismatch:#x}: "
+                f"{actual_stack[mismatch]:#x} != {stack_expected[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(game_before):
+            raise AssertionError(f"0x713d {name}: game data changed")
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(record_before):
+            raise AssertionError(f"0x713d {name}: record data changed")
+        if bytes(machine.mem_read(directory_segment * 16, 0x10000)) != bytes(directory_before):
+            raise AssertionError(f"0x713d {name}: directory changed")
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != data_before:
+            raise AssertionError(f"0x713d {name}: DS decoy changed")
+        if read_wrapped(
+            bytes(machine.mem_read(game_segment * 16, 0x10000)), output_offset, 24
+        ) != game_decoy_before:
+            raise AssertionError(f"0x713d {name}: GS output decoy changed")
+
+        final_low = (
+            int(entries[len(processed_entries)].get("directory_kind", sentinel_kind)) & 0xFF
+            if len(processed_entries) < len(entries)
+            else sentinel_kind & 0xFF
+        )
+        expected_flags = sub_flags_8(final_low, 1)
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x713d {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != bool(initial["flags"] & 0x0400):
+            raise AssertionError(f"0x713d {name}: direction flag changed")
+        if EXE[0x71CE] != 0xCB:
+            raise AssertionError("0x713d: expected far RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "record_pointer_offset_ignored": record_base,
+                "directory_pointer_offset": directory_base,
+                "processed_entries": processed_entries,
+                "output": expected_output,
+                "provisional_writes": [list(item) for item in provisional_writes],
+                "field_helper_calls": [list(item) for item in helper_calls],
+                "output_segment": stack_segment,
+                "defined_flags": expected_flags,
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def nav_kind2_target_list_build_vectors() -> list[dict[str, object]]:
     entry = 0x71CF
     return_address = 0xF1CF
@@ -77199,6 +77587,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_70ee_natural.json",
         ship_3d_navigation_candidate_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_713d_natural.json",
+        ship_3d_arche_position_match_list_build_vectors(),
         args.check,
     )
     update_vector(

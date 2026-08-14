@@ -7,7 +7,8 @@
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: vm_state_record_processor
-; label_comment: VM state-record processor: lds si,gs:[0x6724] (object/line-record state table); les di,gs:[0x672c] (lookup); bp=0x24fb (dispatch base); si=gs:[0x6752]. Walks/processes the state records - part of the per-frame VM presentation update
+; label_comment: builds the zero-terminated SS:0x24FB list of active kind-mask 0x0098 records whose selector-0x0B position matches the arche record; kind-0x80 candidates are validated through their selector-0x11 parent link
+; natural_c: re/source/bloodprg/candidates/seg_04da/func_00713d_vm_state_record_processor.c
 ; incoming: call@0x00b0c7->04da:1d9d
 ; byte_count: 146
 ; boundary: cfg_blocks_12_terminals_2

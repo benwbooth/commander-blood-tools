@@ -148,6 +148,8 @@ extern volatile bridge_panorama_station_record CB_GAME_DATA
 extern volatile cb_u16 CB_GAME_DATA ship_3d_nav_source_offsets[];
 /* Original BP writes SS:0x250B; the shipped data group has SS == DS == GS. */
 extern volatile cb_u16 ship_3d_presentable_name_offsets[];
+/* Original output uses SS:0x24FB; the shipped runtime has SS == GS. */
+extern volatile cb_u16 CB_GAME_DATA vm_arche_position_match_offsets[];
 /* Filter output is SS/DS:0x2B53 under the shipped SS=DS=GS data-group alias. */
 extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
 
@@ -160,6 +162,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
  * output cursor; an integration adapter must translate the binary's BP ABI. */
 #pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
 #pragma aux ship_3d_navigation_candidate_build parm [es di] modify exact [bx di es]
+#pragma aux vm_state_record_processor modify exact [ax]
 #pragma aux ship_3d_presentable_name_list_build parm [es di] value [bp] modify exact [bp]
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
@@ -192,6 +195,7 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
 void CB_FAR ship_3d_navigation_candidate_build(
         const volatile bloodprg_vm_object_header CB_FAR *target);
                                                 /* 0x0070EE */
+void CB_SAVE_REGS CB_FAR vm_state_record_processor(void); /* 0x00713D */
 volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
         const volatile bloodprg_vm_object_header CB_FAR *target);
                                                 /* 0x007259 */
