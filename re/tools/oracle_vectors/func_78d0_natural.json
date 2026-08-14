@@ -1,0 +1,422 @@
+[
+  {
+    "name": "ui_gate_clear",
+    "ui": 0,
+    "selected_rect": "none",
+    "point": [
+      0,
+      0
+    ],
+    "inside": null,
+    "mode_before": 0,
+    "mode_after": 0,
+    "presentation_before": 12544,
+    "presentation_after": 12544,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_unrelated_bit_20",
+    "ui": 32,
+    "selected_rect": "none",
+    "point": [
+      0,
+      0
+    ],
+    "inside": null,
+    "mode_before": 0,
+    "mode_after": 0,
+    "presentation_before": 12801,
+    "presentation_after": 12801,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_10_inside_inactive",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      70
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 13058,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_10_inside_active_high_bits",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      70
+    ],
+    "inside": true,
+    "mode_before": 161,
+    "mode_after": 161,
+    "presentation_before": 13315,
+    "presentation_after": 13315,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_10_inside_high_bit_only",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      70
+    ],
+    "inside": true,
+    "mode_before": 128,
+    "mode_after": 1,
+    "presentation_before": 13572,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_outside_inactive_high_bit",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      99,
+      70
+    ],
+    "inside": false,
+    "mode_before": 128,
+    "mode_after": 128,
+    "presentation_before": 13829,
+    "presentation_after": 13829,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_outside_active",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      99,
+      70
+    ],
+    "inside": false,
+    "mode_before": 161,
+    "mode_after": 0,
+    "presentation_before": 14086,
+    "presentation_after": 26642,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_boundary_inclusive",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      130,
+      70
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 14343,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_outside_active",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      131,
+      70
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 14600,
+    "presentation_after": 27160,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "top_boundary_inclusive",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      60
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 14857,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "bottom_boundary_inclusive",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      80
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 15114,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "bottom_outside_active",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      110,
+      81
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 15371,
+    "presentation_after": 27937,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_40_uses_second_inside",
+    "ui": 64,
+    "selected_rect": "second",
+    "point": [
+      -100,
+      -40
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 15628,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_50_prefers_second",
+    "ui": 80,
+    "selected_rect": "second",
+    "point": [
+      -100,
+      -40
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 15885,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_10_ignores_second",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      -100,
+      -40
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 16142,
+    "presentation_after": 28714,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "mode_40_ignores_first",
+    "ui": 64,
+    "selected_rect": "second",
+    "point": [
+      110,
+      70
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 16399,
+    "presentation_after": 28973,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_subtract_wrap_outside",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      -32768,
+      0
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 16656,
+    "presentation_after": 29232,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_min_plus_one_inside",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      -32767,
+      0
+    ],
+    "inside": true,
+    "mode_before": 0,
+    "mode_after": 1,
+    "presentation_before": 16913,
+    "presentation_after": 9,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_vertical_subtract_wrap_outside",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      0,
+      -32768
+    ],
+    "inside": false,
+    "mode_before": 1,
+    "mode_after": 0,
+    "presentation_before": 17170,
+    "presentation_after": 29750,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "outside_restores_full_previous_state",
+    "ui": 16,
+    "selected_rect": "first",
+    "point": [
+      200,
+      200
+    ],
+    "inside": false,
+    "mode_before": 255,
+    "mode_after": 0,
+    "presentation_before": 17427,
+    "presentation_after": 48879,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

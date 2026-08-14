@@ -80,6 +80,8 @@ extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
 extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */
 extern volatile cb_u8 presentation_mode_flag_27e0; /* DS:0x27E0 */
 extern volatile cb_u8 presentation_mode_flag_27e1; /* DS:0x27E1 */
+extern volatile cb_u8 presentation_mode_active; /* DS:0x27EA */
+extern volatile cb_u16 presentation_mode_previous_state; /* DS:0x0A36 */
 extern volatile cb_u8 presentation_choice_active; /* DS:0x259B */
 extern volatile cb_u8 presentation_choice_phase; /* DS:0x259C */
 extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
@@ -106,6 +108,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
 void CB_NEAR nav_actor_slot_update_loop(void); /* 0x007D7B */
+void CB_NEAR presentation_mode_dispatch(void); /* 0x0078D0 */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_0(

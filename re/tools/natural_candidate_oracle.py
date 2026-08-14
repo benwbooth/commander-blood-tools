@@ -50783,6 +50783,289 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def presentation_mode_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x78D0
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    first_rect_offset = 0x2A27
+    second_rect_offset = 0x2A57
+    return_address = 0x6F00
+    default_first = (100, 60, 30, 20)
+    default_second = (-120, -50, 40, 30)
+    cases = [
+        {"name": "ui_gate_clear", "ui": 0x00},
+        {"name": "ui_unrelated_bit_20", "ui": 0x20},
+        {"name": "mode_10_inside_inactive", "ui": 0x10, "point": (110, 70)},
+        {
+            "name": "mode_10_inside_active_high_bits",
+            "ui": 0x10,
+            "point": (110, 70),
+            "mode": 0xA1,
+        },
+        {
+            "name": "mode_10_inside_high_bit_only",
+            "ui": 0x10,
+            "point": (110, 70),
+            "mode": 0x80,
+        },
+        {
+            "name": "left_outside_inactive_high_bit",
+            "ui": 0x10,
+            "point": (99, 70),
+            "mode": 0x80,
+        },
+        {
+            "name": "left_outside_active",
+            "ui": 0x10,
+            "point": (99, 70),
+            "mode": 0xA1,
+        },
+        {"name": "right_boundary_inclusive", "ui": 0x10, "point": (130, 70)},
+        {
+            "name": "right_outside_active",
+            "ui": 0x10,
+            "point": (131, 70),
+            "mode": 1,
+        },
+        {"name": "top_boundary_inclusive", "ui": 0x10, "point": (110, 60)},
+        {"name": "bottom_boundary_inclusive", "ui": 0x10, "point": (110, 80)},
+        {
+            "name": "bottom_outside_active",
+            "ui": 0x10,
+            "point": (110, 81),
+            "mode": 1,
+        },
+        {"name": "mode_40_uses_second_inside", "ui": 0x40, "point": (-100, -40)},
+        {"name": "mode_50_prefers_second", "ui": 0x50, "point": (-100, -40)},
+        {
+            "name": "mode_10_ignores_second",
+            "ui": 0x10,
+            "point": (-100, -40),
+            "mode": 1,
+        },
+        {
+            "name": "mode_40_ignores_first",
+            "ui": 0x40,
+            "point": (110, 70),
+            "mode": 1,
+        },
+        {
+            "name": "signed_subtract_wrap_outside",
+            "ui": 0x10,
+            "point": (-32768, 0),
+            "first": (-32768, -10, 1, 20),
+            "mode": 1,
+        },
+        {
+            "name": "signed_min_plus_one_inside",
+            "ui": 0x10,
+            "point": (-32767, 0),
+            "first": (-32768, -10, 1, 20),
+        },
+        {
+            "name": "signed_vertical_subtract_wrap_outside",
+            "ui": 0x10,
+            "point": (0, -32768),
+            "first": (-10, -32768, 20, 1),
+            "mode": 1,
+        },
+        {
+            "name": "outside_restores_full_previous_state",
+            "ui": 0x10,
+            "point": (200, 200),
+            "mode": 0xFF,
+            "previous_state": 0xBEEF,
+        },
+    ]
+    expected_hash = "c11749b0dc63915df07f9f78ffd4ae84dd79e06a576f05b5bd72707a38c919b9"
+    if hashlib.sha256(EXE[entry : entry + 93]).hexdigest() != expected_hash:
+        raise AssertionError("0x78d0: recovered 93-byte body changed")
+
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def logic_flags(value: int) -> dict[str, bool]:
+        value &= 0xFF
+        return {
+            "cf": False,
+            "pf": value.bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & 0x80),
+            "of": False,
+        }
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        ui_before = int(case["ui"])
+        point_x, point_y = tuple(case.get("point", (0, 0)))
+        first_rect = tuple(case.get("first", default_first))
+        second_rect = tuple(case.get("second", default_second))
+        mode_before = int(case.get("mode", 0))
+        presentation_before = (0x3100 + case_index * 0x0101) & 0xFFFF
+        previous_state = int(
+            case.get("previous_state", (0x6200 + case_index * 0x0103) & 0xFFFF)
+        )
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x2793] = ui_before
+        struct.pack_into("<h", data_before, 0x0A2A, i16(point_x))
+        struct.pack_into("<h", data_before, 0x0A2C, i16(point_y))
+        data_before[0x27EA] = mode_before
+        struct.pack_into("<H", data_before, 0x0A32, presentation_before)
+        struct.pack_into("<H", data_before, 0x0A36, previous_state)
+
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 31 + 0x67)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        first_bytes = struct.pack("<hhhh", *(i16(value) for value in first_rect))
+        second_bytes = struct.pack("<hhhh", *(i16(value) for value in second_rect))
+        stack_before[first_rect_offset : first_rect_offset + 8] = first_bytes
+        stack_before[second_rect_offset : second_rect_offset + 8] = second_bytes
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_before[0xFF00 : 0xFF08] = struct.pack("<H", return_address) + stack_sentinel
+        game_before = bytes(
+            (offset * 11 + case_index * 41 + 0xA3) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A1BE00 | ((0x40 + case_index) & 0xFF),
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            instruction_count=300,
+        )
+
+        mode_after = mode_before
+        presentation_after = presentation_before
+        expected_eax = initial["eax"]
+        inside: bool | None = None
+        selected_rect = "none"
+        if (ui_before & 0x50) != 0:
+            rect = second_rect if (ui_before & 0x40) != 0 else first_rect
+            selected_rect = "second" if (ui_before & 0x40) != 0 else "first"
+            left, top, width, height = (u16(value) for value in rect)
+            x = u16(point_x)
+            y = u16(point_y)
+            ax = x
+            if i16(ax) < i16(left):
+                inside = False
+            else:
+                ax = u16(ax - width)
+                if i16(ax) > i16(left):
+                    inside = False
+                else:
+                    ax = y
+                    if i16(ax) < i16(top):
+                        inside = False
+                    else:
+                        ax = u16(ax - height)
+                        inside = i16(ax) <= i16(top)
+            expected_eax = (expected_eax & 0xFFFF0000) | ax
+            if inside:
+                if (mode_before & 1) == 0:
+                    mode_after = 1
+                    presentation_after = 9
+            elif (mode_before & 1) != 0:
+                mode_after = 0
+                presentation_after = previous_state
+                expected_eax = (expected_eax & 0xFFFF0000) | previous_state
+            terminal_flags = logic_flags(mode_before & 1)
+        else:
+            terminal_flags = logic_flags(ui_before & 0x50)
+
+        expected_data = bytearray(data_before)
+        expected_data[0x27EA] = mode_after
+        struct.pack_into("<H", expected_data, 0x0A32, presentation_after)
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_data, expected_data))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x78d0 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, expected={expected_data[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x78d0 {name}: GS decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + first_rect_offset, 8)) != first_bytes:
+            raise AssertionError(f"0x78d0 {name}: first rectangle changed")
+        if bytes(machine.mem_read(stack_segment * 16 + second_rect_offset, 8)) != second_bytes:
+            raise AssertionError(f"0x78d0 {name}: second rectangle changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x78d0 {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = expected_eax
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x78d0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x78d0 {name}: return changed CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x78d0 {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append({
+            "name": name,
+            "ui": ui_before,
+            "selected_rect": selected_rect,
+            "point": [point_x, point_y],
+            "inside": inside,
+            "mode_before": mode_before,
+            "mode_after": mode_after,
+            "presentation_before": presentation_before,
+            "presentation_after": presentation_after,
+            "defined_flags": terminal_flags,
+        })
+    return vectors
+
+
 def nav_actor_slot_update_loop_vectors() -> list[dict[str, object]]:
     entry = 0x7D7B
     mouse_hit_entry = 0x8269
@@ -69011,6 +69294,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77a9_natural.json",
         music_voc_name_patcher_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_78d0_natural.json",
+        presentation_mode_dispatch_vectors(),
         args.check,
     )
     update_vector(

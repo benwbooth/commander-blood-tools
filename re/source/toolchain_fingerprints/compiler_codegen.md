@@ -4728,6 +4728,31 @@ resource/DOS adapters that preserve the recovered result conventions. Direct
 replacement additionally needs the original helper register ABIs and exact
 register/flag envelope.
 
+## BLOODPRG presentation mode dispatch candidate
+
+`0x0078D0` selects the hit rectangle embedded in navigation actor slot zero for
+UI mode `0x10`, or slot two whenever mode bit `0x40` is present. It performs
+inclusive signed 16-bit containment tests using the original subtract-then-
+compare form, including wrapping subtraction at the signed limits.
+
+An inside point sets mode byte `0x27EA` exactly to one and presentation state
+`0x0A32` to nine only when mode bit zero was previously clear. An outside point
+clears the mode byte and restores the full prior state from `0x0A36` only when
+bit zero was set; unrelated high mode bits alone are preserved outside.
+
+Twenty direct vectors cover both UI gates, rectangle precedence, every edge and
+one-past edge, horizontal and vertical subtraction wrap, active/high-bit state,
+activation, deactivation, and full prior-state restoration. They prove SS slot
+versus DS/GS ownership, AX residue, register preservation, final flags, stack
+integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 33 instructions and exactly 93 bytes, versus 31/93 in
+the original, with 96.77 percent mnemonic-multiset overlap and no inline
+assembly. The generated comparisons and branches match the original shape;
+direct replacement only needs BP rather than BX rectangle allocation and the
+original shared epilogue.
+
 ## BLOODPRG navigation actor slot update loop candidate
 
 `0x007D7B` first combines nine low-byte busy sources. Only the low byte of the
