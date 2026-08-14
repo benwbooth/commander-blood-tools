@@ -4192,6 +4192,42 @@ through SS in this model. Source integration requires the shipped `SS == DS`
 layout and a narrow adapter from the explicit far request pointer to MANU3's
 inherited-`BP` entry ABI.
 
+## BLOODPRG loading-screen and write-directory preparation candidate
+
+`0x0016A7` is a complete startup coordinator, not only a palette wrapper. It
+uploads the 768-byte bridge palette, clears the display band, draws `LOADING`
+at `(130,96)`, temporarily redirects the draw framebuffer to the screen buffer,
+and converts the chunky display buffer to planar VGA memory before restoring
+the original draw target.
+
+It then creates the configured WRI directory, derives its zero-based drive from
+the leading letter, saves the current drive and directory, and builds source
+and destination path prefixes in the two 32-byte scratch buffers at
+`DS:0x01FA` and `DS:0x021A`. The fixed table at `DS:0x0259` contains 125
+16-byte records from `descript.des` through `script5.deb`, including two
+consecutive `bappel.spr` records. Every record first calls the write-directory
+entry helper and runs DOS FindFirst with attributes `0x18`. Carry clear skips
+the file; carry set means the writable copy is absent and invokes
+`startup_resource_file_copy` from the saved launch-directory path.
+
+Five direct vectors execute all 125 probes per case. They cover root and
+nonroot launch paths, source and destination trailing separators, ignored
+mkdir and current-directory errors, no missing files, selected missing files,
+both duplicate records, and the final table record. They prove every graphics
+argument and far frame, framebuffer restoration, exact drive/path state,
+missing-only copy paths, final segments, stack integrity, and near return. A
+split-stack vector proves that the source separator check and write at
+`0x1729/0x172F` use inherited `SS:BP`, producing `C:\\DIRdescript.des` when
+SS differs; the shipped runtime therefore requires `SS == DS` here.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 131 instructions/369 bytes versus the original
+95/228, with 69.47 percent mnemonic-multiset overlap and no inline assembly.
+The source uses ordinary DOS APIs, typed buffers, and graphics/resource calls.
+Whole-source integration needs fixed data placement and the shipped SS/DS
+layout; direct replacement additionally needs narrow direct-interrupt and
+helper-ABI adapters.
+
 ## BLOODPRG presentation-choice transition candidate
 
 `0x001AD3` coordinates the modal presentation-choice list and its rectangle

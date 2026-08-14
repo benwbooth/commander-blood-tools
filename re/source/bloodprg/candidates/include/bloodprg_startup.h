@@ -19,6 +19,11 @@ extern char startup_write_directory[
         BLOODPRG_WRITE_DIRECTORY_CAPACITY];         /* game data:0x01BA */
 extern char startup_original_directory[
         BLOODPRG_WRITE_DIRECTORY_CAPACITY];         /* game data:0x01DA */
+extern char startup_original_file_path[
+        BLOODPRG_WRITE_DIRECTORY_CAPACITY];         /* game data:0x01FA */
+extern char startup_write_file_path[
+        BLOODPRG_WRITE_DIRECTORY_CAPACITY];         /* game data:0x021A */
+extern const cb_u8 startup_loading_text[];           /* game data:0x0159 */
 extern volatile cb_u8 CB_GAME_DATA startup_write_directory_active; /* GS:0x0AE0 */
 extern char startup_transient_paths[4][16];          /* game data:0x0DD7 */
 extern volatile cb_u8 CB_GAME_DATA startup_audio_driver_id; /* GS:0x0C3B */
@@ -28,6 +33,7 @@ void CB_NEAR startup_command_line_parse(
         const bloodprg_command_tail CB_FAR *command_tail); /* 0x0006F1 */
 void CB_NEAR startup_option_apply(char *token);             /* 0x000726 */
 void CB_NEAR startup_transient_files_delete(void);          /* 0x00147F */
+void CB_NEAR startup_loading_screen_and_write_directory_prepare(void); /* 0x0016A7 */
 void CB_FAR startup_write_directory_enter(void);            /* 0x0027C3 */
 void CB_FAR startup_original_directory_restore(void);       /* 0x0027E9 */
 

@@ -1,0 +1,461 @@
+[
+  {
+    "case": "root_launch_all_files_already_present",
+    "graphics_calls": [
+      {
+        "call": "vga_palette_write",
+        "source": [
+          12288,
+          23384
+        ],
+        "palette_sha256": "c327ae75f38d46171009692c91967d0946a3e26bd74e63ed9f3734e51b9b56f7",
+        "return_frame": [
+          5813,
+          0
+        ]
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "return_frame": [
+          5820,
+          0
+        ]
+      },
+      {
+        "call": "font8x8_text_draw_display",
+        "text": "LOADING",
+        "x": 130,
+        "y": 96,
+        "color_and_limit": 65519,
+        "return_frame": [
+          5838,
+          0
+        ]
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source": [
+          20480,
+          256
+        ],
+        "draw_pointer": [
+          13107,
+          40960
+        ],
+        "eax": 0,
+        "return_frame": [
+          5864,
+          0
+        ]
+      }
+    ],
+    "mkdir_success": true,
+    "getcwd_success": true,
+    "write_drive": 3,
+    "original_drive": 2,
+    "original_directory": "C:\\",
+    "find_count": 125,
+    "find_sequence_sha256": "b2be3912e6a3e4caceddac513d07b63b6e606691de757decbf8b72eee4e521b4",
+    "directory_enter_count": 125,
+    "missing_indices": [],
+    "copies": [],
+    "final_source_path": "C:\\",
+    "final_destination_path": "D:\\SAVE\\",
+    "final_segments": {
+      "ds": 12288,
+      "es": 12288,
+      "fs": 8960,
+      "gs": 12288,
+      "ss": 12288
+    },
+    "final_sp": 65282
+  },
+  {
+    "case": "nonroot_selected_files_are_copied",
+    "graphics_calls": [
+      {
+        "call": "vga_palette_write",
+        "source": [
+          12288,
+          23384
+        ],
+        "palette_sha256": "f29b4706c8aae28d873673fee6f1b47e3408162a86b9cb621f4ab6c7c8dcbe35",
+        "return_frame": [
+          5813,
+          0
+        ]
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "return_frame": [
+          5820,
+          0
+        ]
+      },
+      {
+        "call": "font8x8_text_draw_display",
+        "text": "LOADING",
+        "x": 130,
+        "y": 96,
+        "color_and_limit": 65519,
+        "return_frame": [
+          5838,
+          0
+        ]
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source": [
+          20480,
+          256
+        ],
+        "draw_pointer": [
+          13107,
+          40960
+        ],
+        "eax": 0,
+        "return_frame": [
+          5864,
+          0
+        ]
+      }
+    ],
+    "mkdir_success": false,
+    "getcwd_success": true,
+    "write_drive": 4,
+    "original_drive": 6,
+    "original_directory": "G:\\GAMES\\BLOOD",
+    "find_count": 125,
+    "find_sequence_sha256": "b2be3912e6a3e4caceddac513d07b63b6e606691de757decbf8b72eee4e521b4",
+    "directory_enter_count": 125,
+    "missing_indices": [
+      0,
+      6,
+      7,
+      124
+    ],
+    "copies": [
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "G:\\GAMES\\BLOOD\\descript.des",
+        "destination_path": "E:\\WRITABLE\\descript.des"
+      },
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "G:\\GAMES\\BLOOD\\bappel.spr",
+        "destination_path": "E:\\WRITABLE\\bappel.spr"
+      },
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "G:\\GAMES\\BLOOD\\bappel.spr",
+        "destination_path": "E:\\WRITABLE\\bappel.spr"
+      },
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "G:\\GAMES\\BLOOD\\script5.deb",
+        "destination_path": "E:\\WRITABLE\\script5.deb"
+      }
+    ],
+    "final_source_path": "G:\\GAMES\\BLOOD\\script5.deb",
+    "final_destination_path": "E:\\WRITABLE\\script5.deb",
+    "final_segments": {
+      "ds": 12288,
+      "es": 12288,
+      "fs": 8960,
+      "gs": 12288,
+      "ss": 12288
+    },
+    "final_sp": 65282
+  },
+  {
+    "case": "getcwd_failure_is_ignored",
+    "graphics_calls": [
+      {
+        "call": "vga_palette_write",
+        "source": [
+          12288,
+          23384
+        ],
+        "palette_sha256": "1eedd3c73e1445f159072c12a720fc4dc9279d8565bdb921fd9f5210228b58bf",
+        "return_frame": [
+          5813,
+          0
+        ]
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "return_frame": [
+          5820,
+          0
+        ]
+      },
+      {
+        "call": "font8x8_text_draw_display",
+        "text": "LOADING",
+        "x": 130,
+        "y": 96,
+        "color_and_limit": 65519,
+        "return_frame": [
+          5838,
+          0
+        ]
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source": [
+          20480,
+          256
+        ],
+        "draw_pointer": [
+          13107,
+          40960
+        ],
+        "eax": 0,
+        "return_frame": [
+          5864,
+          0
+        ]
+      }
+    ],
+    "mkdir_success": true,
+    "getcwd_success": false,
+    "write_drive": 0,
+    "original_drive": 25,
+    "original_directory": "Z:\\",
+    "find_count": 125,
+    "find_sequence_sha256": "b2be3912e6a3e4caceddac513d07b63b6e606691de757decbf8b72eee4e521b4",
+    "directory_enter_count": 125,
+    "missing_indices": [
+      42
+    ],
+    "copies": [
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "Z:\\jumell.ext",
+        "destination_path": "A:\\jumell.ext"
+      }
+    ],
+    "final_source_path": "Z:\\jumell.ext",
+    "final_destination_path": "A:\\jumell.ext",
+    "final_segments": {
+      "ds": 12288,
+      "es": 12288,
+      "fs": 8960,
+      "gs": 12288,
+      "ss": 12288
+    },
+    "final_sp": 65282
+  },
+  {
+    "case": "trailing_directory_separator_is_preserved",
+    "graphics_calls": [
+      {
+        "call": "vga_palette_write",
+        "source": [
+          12288,
+          23384
+        ],
+        "palette_sha256": "d440ada835669767f000262211676011bdedb70010ea8c6dc98bb8dcc072f627",
+        "return_frame": [
+          5813,
+          0
+        ]
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "return_frame": [
+          5820,
+          0
+        ]
+      },
+      {
+        "call": "font8x8_text_draw_display",
+        "text": "LOADING",
+        "x": 130,
+        "y": 96,
+        "color_and_limit": 65519,
+        "return_frame": [
+          5838,
+          0
+        ]
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source": [
+          20480,
+          256
+        ],
+        "draw_pointer": [
+          13107,
+          40960
+        ],
+        "eax": 0,
+        "return_frame": [
+          5864,
+          0
+        ]
+      }
+    ],
+    "mkdir_success": true,
+    "getcwd_success": true,
+    "write_drive": 2,
+    "original_drive": 2,
+    "original_directory": "C:\\GAMES\\",
+    "find_count": 125,
+    "find_sequence_sha256": "b2be3912e6a3e4caceddac513d07b63b6e606691de757decbf8b72eee4e521b4",
+    "directory_enter_count": 125,
+    "missing_indices": [
+      100
+    ],
+    "copies": [
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "C:\\GAMES\\script1.cod",
+        "destination_path": "C:\\OUT\\script1.cod"
+      }
+    ],
+    "final_source_path": "C:\\GAMES\\script1.cod",
+    "final_destination_path": "C:\\OUT\\script1.cod",
+    "final_segments": {
+      "ds": 12288,
+      "es": 12288,
+      "fs": 8960,
+      "gs": 12288,
+      "ss": 12288
+    },
+    "final_sp": 65282
+  },
+  {
+    "case": "source_separator_uses_inherited_ss",
+    "graphics_calls": [
+      {
+        "call": "vga_palette_write",
+        "source": [
+          12288,
+          23384
+        ],
+        "palette_sha256": "37285b114b90e6a24ecc1853aa1c5ba44d4a46c593a67873cdd94811b4d65a00",
+        "return_frame": [
+          5813,
+          0
+        ]
+      },
+      {
+        "call": "blit_fill_row_5221",
+        "color": 0,
+        "return_frame": [
+          5820,
+          0
+        ]
+      },
+      {
+        "call": "font8x8_text_draw_display",
+        "text": "LOADING",
+        "x": 130,
+        "y": 96,
+        "color_and_limit": 65519,
+        "return_frame": [
+          5838,
+          0
+        ]
+      },
+      {
+        "call": "chunky_to_planar_framebuffer",
+        "source": [
+          20480,
+          256
+        ],
+        "draw_pointer": [
+          13107,
+          40960
+        ],
+        "eax": 0,
+        "return_frame": [
+          5864,
+          0
+        ]
+      }
+    ],
+    "mkdir_success": true,
+    "getcwd_success": true,
+    "write_drive": 3,
+    "original_drive": 2,
+    "original_directory": "C:\\DIR",
+    "find_count": 125,
+    "find_sequence_sha256": "b2be3912e6a3e4caceddac513d07b63b6e606691de757decbf8b72eee4e521b4",
+    "directory_enter_count": 125,
+    "missing_indices": [
+      0
+    ],
+    "copies": [
+      {
+        "source_pointer": [
+          12288,
+          506
+        ],
+        "destination_pointer": [
+          12288,
+          538
+        ],
+        "source_path": "C:\\DIRdescript.des",
+        "destination_path": "D:\\SAVE\\descript.des"
+      }
+    ],
+    "final_source_path": "C:\\DIRdescript.des",
+    "final_destination_path": "D:\\SAVE\\descript.des",
+    "final_segments": {
+      "ds": 12288,
+      "es": 12288,
+      "fs": 8960,
+      "gs": 12288,
+      "ss": 36864
+    },
+    "final_sp": 65282
+  }
+]

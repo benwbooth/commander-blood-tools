@@ -52115,6 +52115,514 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def startup_loading_screen_and_write_directory_prepare_vectors() -> list[dict[str, object]]:
+    entry = 0x16A7
+    return_address = 0xF6A7
+    expected_hash = "01da4bafc1ea757304d8e6d9f3498949e7a06568d2442a01d6411b83a94a374c"
+    if hashlib.sha256(EXE[entry : entry + 228]).hexdigest() != expected_hash:
+        raise AssertionError("0x16a7: recovered 228-byte body changed")
+
+    data_file_offset = 0xD420
+    name_table_offset = 0x0259
+    name_record_count = 125
+    name_table = EXE[
+        data_file_offset + name_table_offset :
+        data_file_offset + name_table_offset + (name_record_count + 1) * 16
+    ]
+    names = [
+        name_table[index * 16 : (index + 1) * 16].split(b"\0", 1)[0]
+        for index in range(name_record_count)
+    ]
+    if (
+        len(name_table) != (name_record_count + 1) * 16
+        or name_table[name_record_count * 16] != 0
+        or names[:8] != [
+            b"descript.des",
+            b"tb.big",
+            b"orx.fd",
+            b"chart.fd",
+            b"frigo.fd",
+            b"blood.sav",
+            b"bappel.spr",
+            b"bappel.spr",
+        ]
+        or names[-5:] != [
+            b"script5.cod",
+            b"script5.bas",
+            b"script5.var",
+            b"script5.dic",
+            b"script5.deb",
+        ]
+    ):
+        raise AssertionError("0x16a7: startup resource filename table changed")
+
+    cases = [
+        {
+            "name": "root_launch_all_files_already_present",
+            "write_directory": "D:\\SAVE\\",
+            "original_drive": 2,
+            "current_directory": "",
+            "missing_indices": [],
+            "mkdir_success": True,
+            "getcwd_success": True,
+        },
+        {
+            "name": "nonroot_selected_files_are_copied",
+            "write_directory": "E:\\WRITABLE",
+            "original_drive": 6,
+            "current_directory": "GAMES\\BLOOD",
+            "missing_indices": [0, 6, 7, 124],
+            "mkdir_success": False,
+            "getcwd_success": True,
+        },
+        {
+            "name": "getcwd_failure_is_ignored",
+            "write_directory": "A:\\",
+            "original_drive": 25,
+            "current_directory": "IGNORED",
+            "missing_indices": [42],
+            "mkdir_success": True,
+            "getcwd_success": False,
+        },
+        {
+            "name": "trailing_directory_separator_is_preserved",
+            "write_directory": "C:\\OUT",
+            "original_drive": 2,
+            "current_directory": "GAMES\\",
+            "missing_indices": [100],
+            "mkdir_success": True,
+            "getcwd_success": True,
+        },
+        {
+            "name": "source_separator_uses_inherited_ss",
+            "write_directory": "D:\\SAVE",
+            "original_drive": 2,
+            "current_directory": "DIR",
+            "missing_indices": [0],
+            "mkdir_success": True,
+            "getcwd_success": True,
+            "split_stack": True,
+        },
+    ]
+
+    game_segment = 0x3000
+    split_stack_segment = 0x9000
+    display_segment = 0x5000
+    display_offset = 0x0100
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helper_targets = {
+        0x02990: "vga_palette_write",
+        0x0377B: "blit_fill_row_5221",
+        0x02A66: "font8x8_text_draw_display",
+        0x038CE: "chunky_to_planar_framebuffer",
+        0x021C3: "startup_write_directory_enter",
+        0x0220F: "startup_resource_file_copy",
+    }
+    vectors = []
+
+    def read_c_string(machine: Uc, segment: int, offset: int) -> str:
+        raw = bytes(machine.mem_read(segment * 16 + offset, 128))
+        return raw.split(b"\0", 1)[0].decode("ascii")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        write_directory = str(case["write_directory"])
+        original_drive = int(case["original_drive"])
+        current_directory = str(case["current_directory"])
+        missing_indices = [int(value) for value in case["missing_indices"]]
+        missing_set = set(missing_indices)
+        mkdir_success = bool(case["mkdir_success"])
+        getcwd_success = bool(case["getcwd_success"])
+        split_stack = bool(case.get("split_stack", False))
+        stack_segment = split_stack_segment if split_stack else game_segment
+
+        data_before = bytearray(0x10000)
+        palette = bytes(
+            (index * 17 + case_index * 29 + 3) & 0x3F
+            for index in range(768)
+        )
+        data_before[0x0159 : 0x0161] = b"LOADING\0"
+        data_before[0x01BA : 0x01BA + len(write_directory) + 1] = (
+            write_directory.encode("ascii") + b"\0"
+        )
+        data_before[
+            name_table_offset : name_table_offset + len(name_table)
+        ] = name_table
+        data_before[0x5B58 : 0x5B58 + len(palette)] = palette
+        struct.pack_into("<HH", data_before, 0x5219, 0x2222, 0x4000)
+        struct.pack_into("<HH", data_before, 0x521D, 0x3333, 0xA000)
+        struct.pack_into(
+            "<HH", data_before, 0x5221, display_offset, display_segment
+        )
+        data_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+
+        stack_before = bytearray(0x10000)
+        if split_stack:
+            stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+                struct.pack("<H", return_address) + stack_sentinel
+            )
+            # BP will point at DS:0x0200. This SS byte makes the original
+            # separator test succeed even though DS:0x01FF contains 'R'.
+            stack_before[0x01FF] = ord("\\")
+
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": 0x2100,
+            "es": 0x2200,
+            "fs": 0x2300,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        graphics_calls: list[dict[str, object]] = []
+        enter_offsets: list[int] = []
+        copies: list[dict[str, object]] = []
+        dos_calls: list[dict[str, object]] = []
+        find_names: list[str] = []
+
+        def return_frame(machine: Uc) -> list[int]:
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            return list(
+                struct.unpack(
+                    "<HH",
+                    machine.mem_read(stack_segment * 16 + stack_pointer, 4),
+                )
+            )
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            callee = helper_targets.get(address)
+            if callee is None:
+                return
+            if machine.reg_read(UC_X86_REG_ES) != game_segment:
+                raise AssertionError(f"0x16a7 {name}: {callee} ES differs")
+
+            if callee == "vga_palette_write":
+                source_segment = machine.reg_read(UC_X86_REG_DS)
+                source_offset = machine.reg_read(UC_X86_REG_SI)
+                call = {
+                    "call": callee,
+                    "source": [source_segment, source_offset],
+                    "palette_sha256": hashlib.sha256(
+                        bytes(
+                            machine.mem_read(
+                                source_segment * 16 + source_offset, 768
+                            )
+                        )
+                    ).hexdigest(),
+                    "return_frame": return_frame(machine),
+                }
+                graphics_calls.append(call)
+            elif callee == "blit_fill_row_5221":
+                graphics_calls.append(
+                    {
+                        "call": callee,
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                        "return_frame": return_frame(machine),
+                    }
+                )
+            elif callee == "font8x8_text_draw_display":
+                graphics_calls.append(
+                    {
+                        "call": callee,
+                        "text": read_c_string(
+                            machine,
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ),
+                        "x": machine.reg_read(UC_X86_REG_AX),
+                        "y": machine.reg_read(UC_X86_REG_BX),
+                        "color_and_limit": machine.reg_read(UC_X86_REG_DX),
+                        "return_frame": return_frame(machine),
+                    }
+                )
+            elif callee == "chunky_to_planar_framebuffer":
+                draw_pointer = list(
+                    struct.unpack(
+                        "<HH",
+                        machine.mem_read(game_segment * 16 + 0x5219, 4),
+                    )
+                )
+                graphics_calls.append(
+                    {
+                        "call": callee,
+                        "source": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "draw_pointer": draw_pointer,
+                        "eax": machine.reg_read(UC_X86_REG_EAX),
+                        "return_frame": return_frame(machine),
+                    }
+                )
+            elif callee == "startup_write_directory_enter":
+                enter_offsets.append(machine.reg_read(UC_X86_REG_SI))
+            else:
+                copies.append(
+                    {
+                        "source_pointer": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "destination_pointer": [
+                            machine.reg_read(UC_X86_REG_ES),
+                            machine.reg_read(UC_X86_REG_DI),
+                        ],
+                        "source_path": read_c_string(
+                            machine,
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ),
+                        "destination_path": read_c_string(
+                            machine,
+                            machine.reg_read(UC_X86_REG_ES),
+                            machine.reg_read(UC_X86_REG_DI),
+                        ),
+                    }
+                )
+
+        def set_carry(machine: Uc, carry: bool) -> None:
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            machine.reg_write(
+                UC_X86_REG_EFLAGS,
+                (flags | 1) if carry else (flags & ~1),
+            )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x21:
+                raise AssertionError(f"0x16a7 {name}: interrupt {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x39:
+                path = read_c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_DX),
+                )
+                dos_calls.append(
+                    {"call": "mkdir", "path": path, "success": mkdir_success}
+                )
+                machine.reg_write(UC_X86_REG_AX, 0 if mkdir_success else 3)
+                set_carry(machine, not mkdir_success)
+            elif function == 0x19:
+                dos_calls.append({"call": "get_drive"})
+                machine.reg_write(UC_X86_REG_AL, original_drive)
+                set_carry(machine, False)
+            elif function == 0x47:
+                destination_segment = machine.reg_read(UC_X86_REG_DS)
+                destination_offset = machine.reg_read(UC_X86_REG_SI)
+                dos_calls.append(
+                    {
+                        "call": "get_current_directory",
+                        "drive": machine.reg_read(UC_X86_REG_DX) & 0xFF,
+                        "destination": [destination_segment, destination_offset],
+                        "success": getcwd_success,
+                    }
+                )
+                if getcwd_success:
+                    machine.mem_write(
+                        destination_segment * 16 + destination_offset,
+                        current_directory.encode("ascii") + b"\0",
+                    )
+                    machine.reg_write(UC_X86_REG_AX, 0)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 15)
+                set_carry(machine, not getcwd_success)
+            elif function == 0x4E:
+                filename = read_c_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_DX),
+                )
+                find_index = len(find_names)
+                find_names.append(filename)
+                if machine.reg_read(UC_X86_REG_CX) != 0x18:
+                    raise AssertionError(f"0x16a7 {name}: find attributes differ")
+                missing = find_index in missing_set
+                machine.reg_write(UC_X86_REG_AX, 2 if missing else 0)
+                set_carry(machine, missing)
+            else:
+                raise AssertionError(
+                    f"0x16a7 {name}: unexpected DOS function {function:#x}"
+                )
+
+        memory = [
+            (0, return_address, b"\xCC"),
+            *[(address >> 4, address & 0xF, b"\xCB") for address in helper_targets],
+            (game_segment, 0, bytes(data_before)),
+            (display_segment, display_offset, bytes(32)),
+        ]
+        if split_stack:
+            memory.append((stack_segment, 0, bytes(stack_before)))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=20000,
+        )
+
+        expected_graphics = [
+            {
+                "call": "vga_palette_write",
+                "source": [game_segment, 0x5B58],
+                "palette_sha256": hashlib.sha256(palette).hexdigest(),
+                "return_frame": [0x16B5, 0],
+            },
+            {
+                "call": "blit_fill_row_5221",
+                "color": 0,
+                "return_frame": [0x16BC, 0],
+            },
+            {
+                "call": "font8x8_text_draw_display",
+                "text": "LOADING",
+                "x": 130,
+                "y": 96,
+                "color_and_limit": 0xFFEF,
+                "return_frame": [0x16CE, 0],
+            },
+            {
+                "call": "chunky_to_planar_framebuffer",
+                "source": [display_segment, display_offset],
+                "draw_pointer": [0x3333, 0xA000],
+                "eax": 0,
+                "return_frame": [0x16E8, 0],
+            },
+        ]
+        if graphics_calls != expected_graphics:
+            raise AssertionError(
+                f"0x16a7 {name}: graphics calls={graphics_calls!r}"
+            )
+        expected_offsets = [name_table_offset + index * 16 for index in range(125)]
+        if enter_offsets != expected_offsets:
+            raise AssertionError(f"0x16a7 {name}: directory-entry calls differ")
+        decoded_find_names = [value.decode("ascii") for value in names]
+        if find_names != decoded_find_names:
+            raise AssertionError(f"0x16a7 {name}: find sequence differs")
+        if dos_calls != [
+            {"call": "mkdir", "path": write_directory, "success": mkdir_success},
+            {"call": "get_drive"},
+            {
+                "call": "get_current_directory",
+                "drive": original_drive + 1,
+                "destination": [game_segment, 0x01DD],
+                "success": getcwd_success,
+            },
+        ]:
+            raise AssertionError(f"0x16a7 {name}: setup DOS calls={dos_calls!r}")
+
+        original_directory = chr(ord("A") + original_drive) + ":\\"
+        if getcwd_success:
+            original_directory += current_directory
+        source_prefix = original_directory
+        if not split_stack and not source_prefix.endswith("\\"):
+            source_prefix += "\\"
+        destination_prefix = write_directory
+        if not destination_prefix.endswith("\\"):
+            destination_prefix += "\\"
+        if split_stack:
+            source_prefix = original_directory
+
+        expected_copies = []
+        for missing_index in missing_indices:
+            filename = decoded_find_names[missing_index]
+            expected_copies.append(
+                {
+                    "source_pointer": [game_segment, 0x01FA],
+                    "destination_pointer": [game_segment, 0x021A],
+                    "source_path": source_prefix + filename,
+                    "destination_path": destination_prefix + filename,
+                }
+            )
+        if copies != expected_copies:
+            raise AssertionError(
+                f"0x16a7 {name}: copies={copies!r}, expected={expected_copies!r}"
+            )
+
+        actual_data = bytes(machine.mem_read(game_segment * 16, 0xB000))
+        if struct.unpack_from("<HH", actual_data, 0x5219) != (0x2222, 0x4000):
+            raise AssertionError(f"0x16a7 {name}: draw framebuffer not restored")
+        if actual_data[0x01B8] != ord(write_directory[0]) - ord("A"):
+            raise AssertionError(f"0x16a7 {name}: write drive differs")
+        if actual_data[0x01B9] != original_drive:
+            raise AssertionError(f"0x16a7 {name}: original drive differs")
+        actual_original = actual_data[0x01DA : 0x01FA].split(b"\0", 1)[0]
+        if actual_original.decode("ascii") != original_directory:
+            raise AssertionError(f"0x16a7 {name}: original directory differs")
+        final_source_path = actual_data[0x01FA : 0x021A].split(b"\0", 1)[0]
+        final_destination_path = actual_data[0x021A : 0x023A].split(b"\0", 1)[0]
+        expected_final_source = (
+            expected_copies[-1]["source_path"] if expected_copies else source_prefix
+        )
+        expected_final_destination = (
+            expected_copies[-1]["destination_path"]
+            if expected_copies
+            else destination_prefix
+        )
+        if final_source_path.decode("ascii") != expected_final_source:
+            raise AssertionError(f"0x16a7 {name}: final source path differs")
+        if final_destination_path.decode("ascii") != expected_final_destination:
+            raise AssertionError(f"0x16a7 {name}: final destination path differs")
+
+        expected_registers = {
+            "ds": game_segment,
+            "es": game_segment,
+            "gs": game_segment,
+            "fs": initial["fs"],
+            "ss": stack_segment,
+            "sp": caller_sp + 2,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x16a7 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x16a7 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "case": name,
+                "graphics_calls": graphics_calls,
+                "mkdir_success": mkdir_success,
+                "getcwd_success": getcwd_success,
+                "write_drive": actual_data[0x01B8],
+                "original_drive": actual_data[0x01B9],
+                "original_directory": actual_original.decode("ascii"),
+                "find_count": len(find_names),
+                "find_sequence_sha256": hashlib.sha256(
+                    b"\0".join(names)
+                ).hexdigest(),
+                "directory_enter_count": len(enter_offsets),
+                "missing_indices": missing_indices,
+                "copies": copies,
+                "final_source_path": final_source_path.decode("ascii"),
+                "final_destination_path": final_destination_path.decode("ascii"),
+                "final_segments": {
+                    register: machine.reg_read(REGISTERS[register])
+                    for register in ("ds", "es", "fs", "gs", "ss")
+                },
+                "final_sp": machine.reg_read(UC_X86_REG_SP),
+            }
+        )
+    return vectors
+
+
 def manu3_hand_frame_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x1610
     return_address = 0xF610
@@ -60893,6 +61401,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1610_natural.json",
         manu3_hand_frame_dispatch_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_16a7_natural.json",
+        startup_loading_screen_and_write_directory_prepare_vectors(),
         args.check,
     )
     update_vector(

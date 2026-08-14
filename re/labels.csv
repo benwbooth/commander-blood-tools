@@ -549,7 +549,7 @@
 "0x002EAF","accumulate32_loop","32-bit accumulate loop: add ecx,eax; cmp ecx,edx; jl. Running 32-bit sum with an upper-bound compare (fixed-point / offset accumulation)"
 "0x002F60","clear_regs_setup","register-clear setup: xor eax,eax; ebx=eax; bx=si. Zero-extends si into ebx and clears eax before a 32-bit computation"
 "0x0006F1","mem_seg_setup_es8","memory segment setup: si=0; ax=es; ax+=8. Advances a segment value by 8 paragraphs (skips a segment header / MCB) during allocation"
-"0x0016A7","palette_upload_wrapper","palette upload: ds=es=gs; si=0x5b58 (game_palette_dac_buffer); lcall 0x299:0 -> vga_palette_write 0x2f90, which rep-outsb 768 bytes to the VGA DAC. Pushes the current game palette to hardware"
+"0x0016A7","startup_loading_screen_and_write_directory_prepare","Draws the LOADING screen, snapshots the launch drive and directory, creates and enters the configured WRI directory, then probes the fixed 125-name writable-resource table and copies each missing file from its launch-directory path. The source-path separator check at 0x1729 is SS:BP and therefore relies on the shipped SS=DS layout"
 "0x001AD3","flag_gated_259b","flag-gated routine: test byte [0x259b],1; if clear skip to 0x1b4a, else si=0x259d. Branches on the 0x259b enable bit and points at the 0x259d parameter block"
 "0x001EC1","far_call_wrapper_299_deb","far-call wrapper: xor ax,ax; lcall 0x299:0xdeb; xor ax,ax. Thin wrapper invoking the 0x299:0xdeb far routine with a zero argument"
 "0x001F10","seg_setup_clear_ax","segment setup: ds=es=gs; xor ax,ax. Rebases DS/ES to the work arena and zeroes ax before a data operation"

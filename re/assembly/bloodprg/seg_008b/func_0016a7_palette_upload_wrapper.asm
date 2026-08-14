@@ -6,8 +6,8 @@
 ; seg_off: 008b:07f7
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: palette_upload_wrapper
-; label_comment: palette upload: ds=es=gs; si=0x5b58 (game_palette_dac_buffer); lcall 0x299:0 -> vga_palette_write 0x2f90, which rep-outsb 768 bytes to the VGA DAC. Pushes the current game palette to hardware
+; label: startup_loading_screen_and_write_directory_prepare
+; label_comment: Draws the LOADING screen, snapshots the launch drive and directory, creates and enters the configured WRI directory, then probes the fixed 125-name writable-resource table and copies each missing file from its launch-directory path. The source-path separator check at 0x1729 is SS:BP and therefore relies on the shipped SS=DS layout
 ; byte_count: 228
 ; boundary: cfg_blocks_17_terminals_1
 ; terminal: ret:1
