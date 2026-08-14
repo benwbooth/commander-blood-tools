@@ -42,6 +42,9 @@ extern volatile cb_u16 nav_actor_presentation_state; /* DS:0x0A32 */
 extern volatile cb_u16 nav_actor_ship_depth_offset; /* DS:0x2527 */
 extern volatile cb_i16 nav_actor_zoom_counter; /* DS:0x2B93 */
 extern volatile cb_u8 nav_actor_completion_latch; /* DS:0x27E5 */
+extern volatile cb_u16 nav_target_presentation_state; /* DS:0x0A34 */
+extern volatile cb_u8 nav_actor_transition_phase; /* DS:0x2792 */
+extern volatile cb_u16 nav_kind100_target_record; /* DS:0x27D5 */
 extern volatile cb_u8 nav_camera_view_active; /* DS:0x278A */
 extern volatile cb_u8 nav_camera_view_state; /* DS:0x278B */
 extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
@@ -80,6 +83,8 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 
 int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
+void CB_NEAR nav_actor_handler_1(
+        volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_2(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00813A */
 void CB_NEAR nav_actor_handler_3(

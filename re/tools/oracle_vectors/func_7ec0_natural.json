@@ -1,0 +1,548 @@
+[
+  {
+    "name": "ui_gate_clear",
+    "ui_before": 0,
+    "ui_after": 0,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 8704,
+    "line_resource_after": 8704,
+    "target_kind": null,
+    "target_record_after": 30464,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 21760,
+    "deferred_link_after": 26112,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_unrelated_bit_20",
+    "ui_before": 32,
+    "ui_after": 32,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 8961,
+    "line_resource_after": 8961,
+    "target_kind": null,
+    "target_record_after": 30721,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 22017,
+    "deferred_link_after": 26369,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "actor_one_busy_high_bit",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 9218,
+    "line_resource_after": 9218,
+    "target_kind": null,
+    "target_record_after": 30978,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 22274,
+    "deferred_link_after": 26626,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "present_not_ready_idle",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 1,
+    "line_flags_after": 1,
+    "line_resource_before": 9475,
+    "line_resource_after": 9475,
+    "target_kind": null,
+    "target_record_after": 31235,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 22531,
+    "deferred_link_after": 26883,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_panel_second_incomplete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 1,
+    "line_resource_before": 9732,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 31492,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 22788,
+    "deferred_link_after": 27140,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_actor_five_second_complete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 1,
+    "line_flags_after": 0,
+    "line_resource_before": 9989,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 31749,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "deferred_type_after": 23045,
+    "deferred_link_after": 27397,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "present_ready_first_incomplete_idle",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 10246,
+    "line_resource_after": 10246,
+    "target_kind": null,
+    "target_record_after": 32006,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 23302,
+    "deferred_link_after": 27654,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_first_complete_idle",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 10503,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 32263,
+    "helper_results": [
+      true,
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 198,
+    "deferred_link_after": 32263,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_panel_two_incomplete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 9,
+    "line_resource_before": 10760,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 32520,
+    "helper_results": [
+      false,
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 23816,
+    "deferred_link_after": 28168,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "present_ready_panel_two_complete",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 11017,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 32777,
+    "helper_results": [
+      true,
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "deferred_type_after": 198,
+    "deferred_link_after": 32777,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "present_ready_helper_arms_actor_five",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 9,
+    "line_flags_after": 0,
+    "line_resource_before": 11274,
+    "line_resource_after": 21,
+    "target_kind": null,
+    "target_record_after": 33034,
+    "helper_results": [
+      false,
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "deferred_type_after": 24330,
+    "deferred_link_after": 28682,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": false,
+      "of": true
+    }
+  },
+  {
+    "name": "absent_exact_kind_required",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 11531,
+    "line_resource_after": 11531,
+    "target_kind": 257,
+    "target_record_after": 33291,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 24587,
+    "deferred_link_after": 28939,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_kind100_inactive",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 11788,
+    "line_resource_after": 11788,
+    "target_kind": 256,
+    "target_record_after": 19724,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 24844,
+    "deferred_link_after": 29196,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_loaded_helper_incomplete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 4,
+    "line_flags_after": 4,
+    "line_resource_before": 12045,
+    "line_resource_after": 12045,
+    "target_kind": 256,
+    "target_record_after": 19981,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 25101,
+    "deferred_link_after": 29453,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_loaded_helper_complete_idle",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 4,
+    "line_flags_after": 1,
+    "line_resource_before": 12302,
+    "line_resource_after": 19,
+    "target_kind": 256,
+    "target_record_after": 20238,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 25358,
+    "deferred_link_after": 29710,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_loaded_unrelated_state_bits",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 4,
+    "line_flags_after": 1,
+    "line_resource_before": 12559,
+    "line_resource_after": 19,
+    "target_kind": 256,
+    "target_record_after": 20495,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 25615,
+    "deferred_link_after": 29967,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_unloaded_actor_five_busy",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 12816,
+    "line_resource_after": 12816,
+    "target_kind": 256,
+    "target_record_after": 20752,
+    "helper_results": [],
+    "call_sequence": [],
+    "deferred_type_after": 25872,
+    "deferred_link_after": 30224,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_unloaded_incomplete",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 13073,
+    "line_resource_after": 21,
+    "target_kind": 256,
+    "target_record_after": 21009,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 26129,
+    "deferred_link_after": 30481,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": true,
+      "of": true
+    }
+  },
+  {
+    "name": "absent_unloaded_complete_idle",
+    "ui_before": 16,
+    "ui_after": 20,
+    "line_flags_before": 0,
+    "line_flags_after": 1,
+    "line_resource_before": 13330,
+    "line_resource_after": 19,
+    "target_kind": 256,
+    "target_record_after": 21266,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 26386,
+    "deferred_link_after": 30738,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_unloaded_helper_arms_panel",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 0,
+    "line_flags_after": 0,
+    "line_resource_before": 13587,
+    "line_resource_after": 21,
+    "target_kind": 256,
+    "target_record_after": 21523,
+    "helper_results": [
+      true
+    ],
+    "call_sequence": [
+      "entity_flag_state_transition",
+      "snd_play_clip",
+      "presentation_line_helper",
+      "entity_flag_state_transition"
+    ],
+    "deferred_type_after": 26643,
+    "deferred_link_after": 30995,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "absent_wrapped_arche_link",
+    "ui_before": 16,
+    "ui_after": 16,
+    "line_flags_before": 4,
+    "line_flags_after": 4,
+    "line_resource_before": 13844,
+    "line_resource_after": 13844,
+    "target_kind": 256,
+    "target_record_after": 32768,
+    "helper_results": [
+      false
+    ],
+    "call_sequence": [
+      "presentation_line_helper"
+    ],
+    "deferred_type_after": 26900,
+    "deferred_link_after": 31252,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": true
+    }
+  }
+]

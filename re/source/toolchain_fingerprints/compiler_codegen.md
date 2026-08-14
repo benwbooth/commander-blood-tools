@@ -4728,6 +4728,38 @@ resource/DOS adapters that preserve the recovered result conventions. Direct
 replacement additionally needs the original helper register ABIs and exact
 register/flag envelope.
 
+## BLOODPRG navigation actor handler 1 candidate
+
+`0x007EC0` coordinates two related presentation passes. A present, ready line
+first runs in presentation state eleven. Completion publishes deferred record
+type `0xC6`, copies the current kind-`0x0100` target link, clears the transition
+phase and line state, and jumps directly to retargeting. An incomplete first
+pass only retargets when either the location panel or actor five is active.
+
+The absent-line path treats the segment word of `vm_record_base` as an object
+heap. It reads the arche object's absolute `+0x16` link, requires the linked
+object's kind to equal `0x0100`, and publishes that offset before testing the
+reverse/view gate. Loaded lines proceed directly; unloaded lines additionally
+require actor five to be inactive, transition entity four, select resource
+`0x15`, and play clip five. The common second pass either resets the line after
+another entity-four transition or publishes line one, redraw, and resource
+`0x13`.
+
+Twenty-one patched-helper vectors cover all gates, both passes, complete and
+incomplete combinations, helper-written intermediate state, unrelated high
+state bits, exact-kind rejection, a wrapped arche `+0x16` read, loaded and
+unloaded paths, and both final outcomes. They prove call order and state,
+absolute heap ownership, SS line ownership, all named writes, registers, flags,
+stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 73 instructions/229 bytes versus the original
+64/220, with 92.19 percent mnemonic-multiset overlap and no inline assembly.
+Its generated code directly loads the heap segment into `ES`, reads
+`ES:[SI+0x16]`, and compares `ES:[SI]` with `0x0100`. Direct replacement still
+needs the inherited-`BP` actor input, carry-valued helper result, original
+temporary register allocation, and exact call preservation and final flags.
+
 ## BLOODPRG navigation actor handler 5 candidate
 
 `0x008082` owns the fifth navigation actor's presentation and camera-view
