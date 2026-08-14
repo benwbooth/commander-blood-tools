@@ -24,6 +24,7 @@
 
 pub mod audio;
 pub mod bas_vm;
+pub mod bloodscript;
 pub mod vm_drive;
 pub mod bloodprg;
 pub mod bloodsav;

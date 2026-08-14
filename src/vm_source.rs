@@ -207,7 +207,19 @@ fn disassemble_bas(
 
     while cursor < image.len() {
         let recognized = bas_menu_at(image, cursor, dictionary)
-            .map(|(end, labels)| (end, format!("MENU {}", labels.join(" | "))))
+            .map(|(end, labels)| {
+                (
+                    end,
+                    format!(
+                        "MENU {}",
+                        labels
+                            .iter()
+                            .map(|(_, label)| label.as_str())
+                            .collect::<Vec<_>>()
+                            .join(" | ")
+                    ),
+                )
+            })
             .or_else(|| {
                 bas_text_at(image, cursor, dictionary)
                     .map(|(end, token)| (end, token_comment(&token, dictionary)))
@@ -239,11 +251,11 @@ fn disassemble_bas(
     Ok((semantic_spans, semantic_bytes, raw_bytes))
 }
 
-fn bas_menu_at(
+pub(crate) fn bas_menu_at(
     image: &[u8],
     offset: usize,
     dictionary: &HashMap<u16, String>,
-) -> Option<(usize, Vec<String>)> {
+) -> Option<(usize, Vec<(u16, String)>)> {
     if image.get(offset) != Some(&0xA3) {
         return None;
     }
@@ -259,7 +271,7 @@ fn bas_menu_at(
         if !(2..=16).contains(&label.len()) || label.contains(' ') {
             return None;
         }
-        labels.push(label.clone());
+        labels.push((word, label.clone()));
         if labels.len() > 128 {
             return None;
         }
@@ -267,7 +279,7 @@ fn bas_menu_at(
     None
 }
 
-fn bas_text_at(
+pub(crate) fn bas_text_at(
     image: &[u8],
     offset: usize,
     dictionary: &HashMap<u16, String>,
@@ -296,7 +308,7 @@ fn bas_text_at(
     (image.get(offset..end) == Some(encoded.as_slice())).then_some((end, token))
 }
 
-fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) -> String {
+pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) -> String {
     match token {
         VmToken::Text {
             line_index,

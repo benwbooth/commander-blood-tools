@@ -1,0 +1,8 @@
+; BloodScript typed VM source
+; format: bloodscript-ir-v1
+; image: BAS
+; size: 0x00000020
+
+00000000: RAW AA AC 50 0A 00 00 A3 57 0A 00 00 ; BAS structure
+0000000B: TEXT 082A FF 61 80 - - 0900 00F0 04E9 059F FFFF 0A5D ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
+0000001F: RAW FF ; BAS structure

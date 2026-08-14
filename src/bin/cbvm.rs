@@ -1,11 +1,12 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use commander_blood_tools::bloodscript;
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>"
     );
     std::process::exit(2);
 }
@@ -41,6 +42,34 @@ fn write_disassembly(
     Ok(listing)
 }
 
+fn write_bloodscript(
+    kind: ImageKind,
+    image_path: &Path,
+    dictionary_path: &Path,
+    output_path: &Path,
+) -> Result<bloodscript::Decompilation> {
+    let image = std::fs::read(image_path)
+        .with_context(|| format!("reading VM image {}", image_path.display()))?;
+    let dictionary = read_dictionary(dictionary_path)?;
+    let source = bloodscript::decompile(kind, &image, &dictionary)?;
+    let rebuilt = bloodscript::compile(&source.source)?;
+    if rebuilt != image {
+        bail!(
+            "internal BloodScript round-trip failure for {}",
+            image_path.display()
+        );
+    }
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(output_path, &source.source)
+        .with_context(|| format!("writing {}", output_path.display()))?;
+    Ok(source)
+}
+
 fn main() -> Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
@@ -74,6 +103,19 @@ fn main() -> Result<()> {
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("wrote {}: {} byte(s)", output.display(), image.len());
         }
+        Some("compile-bloodscript") => {
+            let source = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            let text = std::fs::read_to_string(&source)
+                .with_context(|| format!("reading {}", source.display()))?;
+            let image = bloodscript::compile(&text)?;
+            std::fs::write(&output, &image)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("wrote {}: {} byte(s)", output.display(), image.len());
+        }
         Some("decompile-bundle") => {
             let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
             let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
@@ -97,6 +139,39 @@ fn main() -> Result<()> {
                     manifest.push_str(&format!(
                         "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\tbyte_exact\n",
                         listing.semantic_spans, listing.semantic_bytes, listing.raw_bytes
+                    ));
+                    println!("verified {} -> {}", image.display(), output.display());
+                }
+            }
+            std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("decompile-bloodscript") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from(
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\troundtrip\n",
+            );
+            for script in 1..=5 {
+                let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
+                for (extension, kind) in [("COD", ImageKind::Cod), ("BAS", ImageKind::Bas)] {
+                    let image = game_dir.join(format!("SCRIPT{script}.{extension}"));
+                    let output = output_dir.join(format!(
+                        "script{script}.{}.blood",
+                        extension.to_ascii_lowercase()
+                    ));
+                    let source = write_bloodscript(kind, &image, &dictionary, &output)?;
+                    let input_bytes = std::fs::metadata(&image)?.len();
+                    manifest.push_str(&format!(
+                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
+                        source.typed_statements,
+                        source.typed_bytes,
+                        source.generic_op_statements,
+                        source.generic_op_bytes,
+                        source.raw_bytes
                     ));
                     println!("verified {} -> {}", image.display(), output.display());
                 }

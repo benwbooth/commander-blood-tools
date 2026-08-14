@@ -1,0 +1,627 @@
+; BloodScript typed VM source
+; format: bloodscript-ir-v1
+; image: BAS
+; size: 0x00003FB8
+
+00000000: RAW AA AC 01 00 1C 02 ; BAS structure
+00000006: MENU 1062 2A4C 2A52 2A56 0086 2A5D 2A68 2A71 2A7E 2A86 2A8B ; bye_bye | peace | war | prison | planet | television | politics | reproduction | science | race | consumerism
+0000001F: TEXT 01B2 05 40 80 - - 016F 0257 01BE 01CF FFFF 0001 ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "What you want ?"
+00000033: TEXT 01B2 02 41 80 - - 0B6B 0422 0274 0E25 0E25 00DC 10F1 0019 0FAA 0019 FFFF 1062 ; TEXT line=0x01B2 voice=0x02 flags=0x41,0x80 "Me not say bye bye , INSULT ... SWEAR ..."
+00000053: TEXT 01B2 02 40 80 - - 0B6B 2911 09CB 0553 0A8A 0B31 2A97 FFFF 2A5D ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Me watch TV : good night viewers"
+0000006D: TEXT 01B2 00 40 80 - - 2A9F 00FD 2AA6 00DC 0010 0224 0095 2AAE 2AB4 00DC 2ABA 2AC1 0095 15A6 0019 FFFF 2A5D ; TEXT line=0x01B2 voice=0x00 flags=0x40,0x80 "Vortex of Fortune , me like . Light shine , vortex spin . Nice ..."
+00000097: TEXT 01B2 01 40 80 - - 2AC6 0B55 0C26 00DC 0010 2ACB 2ACB 0095 0B6B 0224 2ACF 012F 2ACB 0019 FFFF 2A5D ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "Aaah Tina Burner , me cry cry . Me like songs to cry ..."
+000000BF: TEXT 01B2 0C 40 80 - - 0B6B 0224 2AD5 FFFF 2A68 ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Me like muscles"
+000000D1: TEXT 01B2 0B 40 80 - - 2ADD 2AE2 2561 2A68 FFFF 2A68 ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Riot police nice politics"
+000000E5: TEXT 01B2 0A 40 80 - - 2AE9 2561 2A68 FFFF 2A68 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "War nice politics"
+000000F7: TEXT 01B2 08 40 80 - - 2AED 2AF3 024B 2AF9 2AF9 00DC 2B00 11A7 2B00 2B03 FFFF 2A68 ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "Polly ticks ! funny funny , ah ha ah yaeurghhh..."
+00000117: TEXT 01B2 08 00 80 - - 2B10 00DC 0257 0422 0001 2A71 0095 0B6B 0777 2B18 0019 ; TEXT line=0x01B2 voice=0x08 flags=0x00,0x80 "Ooouuuh , you not talk reproduction . Me go red ..."
+00000135: TEXT 01B2 0A 40 80 - - 2B1C 00DC 2B29 2B2D 024B 2B33 11A7 11A7 11A7 2B3C 00DC 14A3 14A3 14A3 0267 0019 FFFF 2A71 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "Reproduction , hot babes ! ahhhhaha ha ha ha aaaaahh , laugh laugh laugh swear ..."
+00000161: TEXT 01B2 01 40 80 - - 0B6B 0422 0936 2A7E 0095 2B44 FFFF 2A7E ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "Me not know science . Complicated"
+00000179: TEXT 01B2 09 40 80 - - 2B50 0866 036A 2B58 2B5E 0095 0B6B 2B65 0F1D 2A7E 0095 0B6B 2B6E 2A7E FFFF 2A7E ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "Science be for sissy brains . Me stronger than science . Me squash science"
+000001A1: TEXT 01B2 0C 40 80 - - 2B50 00DC 2A7E 0095 01BA 2B75 024B 0B6B 0422 0224 024B FFFF 2A7E ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Science , science . You obsessed ! Me not like !"
+000001C3: TEXT 01B2 02 40 80 - - 1A3A 2039 2B7E 0669 FFFF 2A8B ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Trump tail smoke much"
+000001D7: TEXT 01B2 07 40 80 - - 0B6B 0224 2B84 0095 2B8C 2B91 2B91 2B91 2B91 2B94 0095 0758 0866 2B84 0095 0F9F 0FAA 0019 FFFF 2A8B ; TEXT line=0x01B2 voice=0x07 flags=0x40,0x80 "Me like consume . Rata ta ta ta ta tata . That be consume . LAUGH SWEAR ..."
+00000207: TEXT 01B2 0C 40 80 - - 01BA 0866 2A8B 1043 FFFF 2A8B ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "You be consumerism ...."
+0000021B: RAW AC 86 00 BC 03 ; BAS structure
+00000220: MENU 0001 232C 22BD 1C75 1D75 2B99 1C6F 0F08 2BA4 ; talk | corpo | magnus | vista | erazor | trashlando | tumul | pterra | Eden
+00000235: TEXT 01B2 06 40 80 - - 0B6B 0936 2BA9 0019 FFFF 0086 ; TEXT line=0x01B2 voice=0x06 flags=0x40,0x80 "Me know planets ..."
+00000249: TEXT 01B2 05 40 80 - - 0B6B 0224 2BB1 2BA9 00DC 2BB9 2BC1 14A3 14A3 0019 FFFF 0086 ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "Me like destroy planets , booomm! Swear laugh laugh ..."
+00000269: TEXT 01B2 01 40 80 - - 2BC7 03C5 0086 0095 2BCD 2BD2 0095 0B6B 0422 0224 2BD2 0095 2BDC 0010 0862 0019 FFFF 232C ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "Corpo big planet . Much strangers . Me not like strangers . Make me mad ..."
+00000295: TEXT 01B2 06 40 80 - - 0B6B 2BE1 2BD2 0019 2BE7 2B91 2B91 2B91 2BEA 2BF0 0267 FFFF 232C ; TEXT line=0x01B2 voice=0x06 flags=0x40,0x80 "Me splat strangers ... Ra ta ta ta ta... Laugh swear"
+000002B7: TEXT 01B2 06 40 80 - - 2BCD 23F3 004D 2BF6 0095 2BFD 2C04 024B FFFF 22BD ; TEXT line=0x01B2 voice=0x06 flags=0x40,0x80 "Much creatures on Magnus . Migrax yuk !"
+000002D3: TEXT 01B2 0B 40 80 - - 0B6B 066E 22C4 0095 0B6B 0422 0224 0001 0169 2C08 0095 0B6B 12A5 2C10 024B FFFF 1C75 ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Me hate SCRUT . Me not like talk about scruter . Me break things !"
+000002FD: TEXT 01B2 02 40 80 - - 2C17 12EA 00DC 027E 024B 027E 024B 027E 024B 027E 024B 027E 024B 2BC1 0019 01BA 14A3 024B FFFF 1D75 ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Erazor everybody , Ha ! Ha ! Ha ! Ha ! Ha ! Swear ... You laugh !"
+0000032D: TEXT 01B2 0A 40 80 - - 01BA 0315 2C1E 0019 01BA 01BE 0898 2434 02E7 0634 0B00 01CF 2BF0 0019 2C23 0142 2C28 2C30 0019 FFFF 2B99 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "You have cold ... You want my finger in your nose ? Laugh ... Mean and moronic laughter ..."
+0000035F: TEXT 01B2 0B 40 80 - - 07C2 0019 01BA 0274 07C2 01CF FFFF 1C6F ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Tumul ... You say Tumul ?"
+00000377: TEXT 01B2 08 40 80 - - 01BA 08B6 0010 2C39 00DC 0422 2561 0095 2C3D 00CC 2BC1 2C47 0019 FFFF 0F08 ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "You call me rat , not nice . aaahhhggd .. Swear insult ..."
+0000039D: TEXT 01B2 06 41 80 - - 0B6B 0315 0E09 004D 0086 2BA4 0019 2BC1 0019 FFFF 2BA4 ; TEXT line=0x01B2 voice=0x06 flags=0x41,0x80 "Me have friends on planet Eden ... Swear ..."
+000003BB: RAW AC 86 2A 26 06 ; BAS structure
+000003C0: MENU 1062 0001 1ABB 1AC1 2C4E 2C54 1AC9 2C5A 225B ; bye_bye | talk | izwal | croolis | sinox | tromp | migrax | buggol | ondoyant
+000003D5: TEXT 01B2 03 40 80 - - 2C61 23E6 00BC 2C68 00DC 2C04 0019 FFFF 1ABB ; TEXT line=0x01B2 voice=0x03 flags=0x40,0x80 "Izwals small with trunks , yuk ..."
+000003EF: TEXT 01B2 04 40 80 - - 2C6F 00DC 0010 2C75 00DC 0010 0BC0 0095 249E FFFF 1ABB ; TEXT line=0x01B2 voice=0x04 flags=0x40,0x80 "Izwal , me spalt , me eat . Yummy"
+0000040D: TEXT 01B2 05 40 80 - - 0B6B 0422 01BE 0001 0095 2C6F 0422 2C7B FFFF 1ABB ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "Me not want talk . Izwal not interesting"
+00000429: TEXT 01B2 0B 40 80 - - 0B6B 0224 2C6F 2C87 02E7 2C8E 2C95 2659 0095 2C9E FFFF 1ABB ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Me like Izwal boiled in liquid nitrogen soup . Slurp"
+00000449: TEXT 01B2 09 40 80 - - 2C61 23E6 0095 02EA 08A0 0019 FFFF 1ABB ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "Izwals small . No money ..."
+00000461: TEXT 01B2 08 40 80 - - 2C61 0422 0224 08A0 0095 0FFA 0866 076B 0019 FFFF 1ABB ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "Izwals not like money . Them be stupid ..."
+0000047F: TEXT 01B2 0C 40 80 - - 2C61 005A 23E6 0095 2BCD 2CA4 0019 FFFF 2CAA ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Izwals too small . Much bones ..."
+00000499: TEXT 01B2 04 40 80 - - 2C6F 2C87 2CB0 0422 26DC FFFF 2CB9 ; TEXT line=0x01B2 voice=0x04 flags=0x40,0x80 "Izwal boiled longtime not bad"
+000004AF: TEXT 01B2 09 40 80 - - 0B6B 0224 2C6F 27DE 00BC 1816 02E7 2C8E 2C95 271F FFFF 1ABB ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "Me like Izwal stuffed with mercury in liquid nitrogen sauce"
+000004CF: TEXT 01B2 0C 40 80 - - 0B6B 03C5 224C FFFF 1AC1 ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Me big Croolis"
+000004E1: TEXT 01B2 08 40 80 - - 0B6B 0224 0010 00DC 01CA 01CA 01CA FFFF 1AC1 ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "Me like me , kiss kiss kiss"
+000004FB: TEXT 01B2 0A 40 80 - - 224C 2CC0 2CC7 00DC 2C04 0019 FFFF 1AC1 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "Croolis Vareux stink , yuk ..."
+00000513: TEXT 01B2 0C 40 80 - - 0B6B 0224 2BE1 224C 2CC0 FFFF 1AC1 ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Me like splat Croolis Vareux"
+00000529: TEXT 01B2 05 40 80 - - 224C 2CCD 024B 0952 024B 11EA 024B 0952 024B 11EA 024B FFFF 1AC1 ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "Croolis oh ! Hee ! Ho ! Hee ! Ho !"
+0000054B: TEXT 01B2 01 40 80 - - 2CD0 03C5 2CD6 00DC 03C5 2CDD 02ED 2CE4 FFFF 2C4E ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "Sinox big worker , big brain, no muscle"
+00000567: TEXT 01B2 00 40 80 - - 2CD0 0AA7 0019 FFFF 2C4E ; TEXT line=0x01B2 voice=0x00 flags=0x40,0x80 "Sinox smart ..."
+00000579: TEXT 01B2 04 40 80 - - 0B6B 0224 2B7E 1A3A 2039 FFFF 2C54 ; TEXT line=0x01B2 voice=0x04 flags=0x40,0x80 "Me like smoke Trump tail"
+0000058F: TEXT 01B2 09 40 80 - - 1A3A 2039 2CEB 0A8A 0095 15A6 036A 2CF1 2CF6 2CFD FFFF 2C54 ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "Trump tail smell good . Nice for head before battle"
+000005AF: TEXT 01B2 01 40 80 - - 2BFD 0A8A 2D04 036A 2ACB FFFF 1AC9 ; TEXT line=0x01B2 voice=0x01 flags=0x40,0x80 "Migrax good music for cry"
+000005C5: TEXT 01B2 03 40 80 - - 2BFD 0224 2D0A 08A0 FFFF 1AC9 ; TEXT line=0x01B2 voice=0x03 flags=0x40,0x80 "Migrax like earn money"
+000005D9: TEXT 01B2 05 40 80 - - 1CBC 03C5 1CC3 00DC 2C04 FFFF 2C5A ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "Buggol big democracy , yuk"
+000005EF: TEXT 01B2 08 40 80 - - 2D0F 225B 1356 224C 01AF 2D15 FFFF 225B ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "Oooh! ondoyant make Croolis knees tremble"
+00000607: TEXT 01B2 09 40 80 - - 08AC 158D 2561 0095 0B6B 0224 0095 2C9E 0019 FFFF 225B ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "ondoyants very nice . Me like . Slurp ..."
+00000625: RAW AC 4C 2A E5 07 ; BAS structure
+0000062A: MENU 1062 0001 0A8F 2D1D ; bye_bye | talk | friend | art
+00000635: TEXT 01B2 09 40 80 - - 01BA 0001 0095 0B6B 0422 101B 0019 FFFF 2A4C ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "You talk . Me not understand ..."
+0000064F: TEXT 01B2 0A 40 80 - - 01BA 0001 2D21 2D29 0019 0FAA 0019 10F1 0019 0B6B 0422 101B FFFF 2A4C ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "You talk strange language ... SWEAR ... INSULT ... Me not understand"
+00000673: TEXT 01B2 02 40 80 - - 2D32 2D39 2D42 01CF 0F9F 0F9F 0FAA 0F9F 0019 FFFF 2A4C ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Little bleeding pieces ? LAUGH LAUGH SWEAR LAUGH ..."
+00000691: TEXT 01B2 08 40 80 - - 01BA 0001 0095 0B6B 0422 2D49 FFFF 2A4C ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "You talk . Me not listen"
+000006A9: TEXT 01B2 0C 40 80 - - 2D50 012F 2D42 0019 0F9F 0F9F 0FAA 0F9F FFFF 2A4C ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Smash to pieces ... LAUGH LAUGH SWEAR LAUGH"
+000006C5: TEXT 01B2 0B 40 80 - - 2D56 00FD 1452 0019 14A3 14A3 14A3 0267 2ACB 14A3 0019 FFFF 2A4C ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Piece of meat ... laugh laugh laugh swear cry laugh ..."
+000006E7: TEXT 01B2 0A 40 80 - - 01BA 0274 1D54 01CF FFFF 2A4C ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "You say something ?"
+000006FB: TEXT 01B2 0B 40 80 - - 01BA 2D5C FFFF 2A4C ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "You bigmouth"
+0000070B: TEXT 01B2 08 48 80 - - 0B6B 01BE 2D65 0010 0095 0E21 0E25 1207 0019 FFFF 2A4C ; TEXT line=0x01B2 voice=0x08 flags=0x48,0x80 "Me want relieve me . Bye bye stranger ..."
+00000729: RAW C0 8C 13 F5 C1 01 00 ; BAS structure
+00000730: TEXT 01B2 0A 40 80 - - 0B6B 0422 0A8F 0095 0B6B 066E 0257 0095 0B6B 066E 0630 0019 0FAA 10F1 0019 FFFF 0A8F ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "Me not friend . Me hate you . Me hate all ... SWEAR INSULT ..."
+0000075A: TEXT 01B2 06 40 80 - - 2D6D 00DC 2C04 0095 027E 024B 027E 024B 2D74 0019 01BA 0422 14A3 01CF FFFF 0A8F ; TEXT line=0x01B2 voice=0x06 flags=0x40,0x80 "Friend , yuk . Ha ! Ha ! Ahhhh ... You not laugh ?"
+00000782: TEXT 01B2 05 41 80 - - 2D6D 024B 2D7A 2D7A 027E 033F FFFF 0A8F ; TEXT line=0x01B2 voice=0x05 flags=0x41,0x80 "Friend ! Ha! Ha! Ha !!!"
+0000079A: TEXT 01B2 02 40 80 - - 0B6B 0224 2D1D 00FD 2A52 0095 15A6 2561 0095 2D7E 0630 089B 0019 FFFF 2D1D ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Me like art of war . Nice nice . Splat all time ..."
+000007C0: TEXT 01B2 0B 40 80 - - 2D84 00DC 2D1D 0095 01BA 0866 2B58 0019 2D84 0019 0FAA 0FAA FFFF 2D1D ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Art , art . You be sissy ... Art ... SWEAR SWEAR"
+000007E4: RAW AC 52 2A 02 0A ; BAS structure
+000007E9: MENU 1062 0001 2CFD 2D88 0FBC ; bye_bye | talk | battle | enemy | treasure
+000007F6: TEXT 01B2 0B 40 80 - - 065B 0095 2AE9 2561 2D8E 0019 2D7E 00DC 2D99 0630 0019 0B6B 0224 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Ah . War nice discipline ... Splat , kill all ... Me like ..."
+0000081E: TEXT 01B2 0C 40 80 - - 2D9E 00DC 03C5 11BE 0095 2DA3 00DC 2DAB 00DC 2D99 2D99 0095 2D74 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Ahhh , big fun . Explode , burn , kill kill . Ahhhh ..."
+00000846: TEXT 01B2 02 40 80 - - 2BCD 0CD2 00DC 2DB0 00DC 2DBB 0095 2DC3 012F 224C 2DC9 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "Much noise , explosions , screams . Music to Croolis ear ..."
+0000086A: TEXT 01B2 0A 40 80 - - 01BA 0001 0A8A 0095 0B6B 0224 0132 0257 0019 0FAA 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "You talk good . Me like hear you ... SWEAR ..."
+0000088C: TEXT 01B2 0C 40 80 - - 2D9E 00DC 2A52 2561 2D8E 0095 2D7E 0669 2D88 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0C flags=0x40,0x80 "Ahhh , war nice discipline . Splat much enemy"
+000008AA: TEXT 01B2 02 40 80 - - 2AE9 2561 0BC9 0553 12A5 00DC 2DCD 00DC 2DD3 2B6E FFFF 2A52 ; TEXT line=0x01B2 voice=0x02 flags=0x40,0x80 "War nice party : break , shoot , kill, squash"
+000008CA: TEXT 01B2 0B 40 80 - - 2DD9 00DC 2DDF 2DEA 2DF0 2D99 0630 0095 2AC6 00DC 0010 0224 0019 10F1 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Noise , explosion, pain, fear, kill all . Aaah , me like ... INSULT"
+000008F2: TEXT 01B2 0A 40 80 - - 0B6B 01BE 2BE1 0257 0095 2BF0 14A3 0267 0095 10F1 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x0A flags=0x40,0x80 "Me want splat you . Laugh laugh swear . INSULT ..."
+00000914: TEXT 01B2 09 40 80 - - 01BA 2DF6 0010 0095 2DFD 26C7 0125 0095 2E03 0019 FFFF 2A52 ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "You excite me . Mouth water now . Aaahrgghhhhh ..."
+00000934: TEXT 01B2 09 40 80 - - 0B6B 03C5 2E10 00DC 0A8F 0095 0B6B 03C5 224C 2E18 0019 01BA 09EA 0010 0019 FFFF 2CFD ; TEXT line=0x01B2 voice=0x09 flags=0x40,0x80 "Me big warrior , friend . Me big Croolis chief ... You help me ..."
+0000095E: TEXT 01B2 0B 40 80 - - 0B6B 0224 2B6E 0634 2CF1 0019 0F9F 0F9F 0019 10F1 0019 0FAA 0019 FFFF 2CFD ; TEXT line=0x01B2 voice=0x0B flags=0x40,0x80 "Me like squash your head ... LAUGH LAUGH ... INSULT ... SWEAR ..."
+00000984: TEXT 01B2 09 41 80 - - 0B6B 2BB1 0142 2BE1 2D88 0019 0B6B 0224 2D88 00DC 0A8F 0019 FFFF 2D88 ; TEXT line=0x01B2 voice=0x09 flags=0x41,0x80 "Me destroy and splat enemy ... Me like enemy , friend ..."
+000009A8: TEXT 01B2 08 40 80 - - 01BA 0001 0FBC 0019 0FBC 0092 02E7 00B2 0F51 FFFF 0FBC ; TEXT line=0x01B2 voice=0x08 flags=0x40,0x80 "You talk treasure ... treasure is in the mummy"
+000009C6: TEXT 01B2 05 48 80 - - 2E1E 1337 0936 0FBC 2983 0019 FFFF 0FBC ; TEXT line=0x01B2 voice=0x05 flags=0x48,0x80 "Mummy alone know treasure exist ..."
+000009DE: RAW C0 72 13 F5 C1 01 00 ; BAS structure
+000009E5: TEXT 01B2 09 41 80 - - 0B6B 01BE 1086 0095 01BA 09EA 0010 0019 FFFF 2A56 ; TEXT line=0x01B2 voice=0x09 flags=0x41,0x80 "Me want escape . You help me ..."
+00000A01: RAW AC 67 0F 00 00 ; BAS structure
+00000A06: MENU 1062 0001 2E24 ; bye_bye | talk | secret
+00000A0F: TEXT 01B2 04 40 80 - - 0B6B 2E2B 0019 FFFF 0F67 ; TEXT line=0x01B2 voice=0x04 flags=0x40,0x80 "Me trust ..."
+00000A21: TEXT 01B2 05 40 80 - - 109C 024B 01BA 0936 0FBC 02D6 FFFF 2E24 ; TEXT line=0x01B2 voice=0x05 flags=0x40,0x80 "Treasure ! You know treasure ???"
+00000A39: TEXT 01B2 06 48 80 - - 0B6B 0605 0257 093B 0FBC 0866 102B 0257 0FB0 0010 0F6F FFFF 2E24 ; TEXT line=0x01B2 voice=0x06 flags=0x48,0x80 "Me tell you where treasure be if you bring me SPLATCH"
+00000A5B: RAW C0 74 13 F5 C1 01 00 AA AC 06 00 FA 0A ; BAS structure
+00000A68: MENU 1062 0001 2E31 ; bye_bye | talk | say_nothing
+00000A71: TEXT 0242 00 40 80 - - 016F 0010 0B25 036A 0257 01CF FFFF 2E31 ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "What me do for you ?"
+00000A89: TEXT 0242 05 40 80 - - 0B6B 23E6 0095 2E3D 08B6 0010 23E6 0B3B 0019 FFFF 2E31 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Me small . Friends call me small Yoko ..."
+00000AA7: TEXT 0242 0C 00 80 - - 01BA 0BC4 0151 2E45 09C8 2E4A 0095 01BA 0866 2E51 0095 ; TEXT line=0x0242 voice=0x0C flags=0x00,0x80 "You come from sky, by heaven . You be extrarondestrial ."
+00000AC5: TEXT 0242 00 00 80 - - 2E62 0151 2E6B 00DC 0010 2512 0257 0019 ; TEXT line=0x0242 voice=0x00 flags=0x00,0x80 "Stranger from sky , me greet you ..."
+00000ADD: TEXT 0242 0C 00 80 - - 0B6B 2D49 0257 00DC 1207 0151 2E6B 0095 1544 0019 ; TEXT line=0x0242 voice=0x0C flags=0x00,0x80 "Me listen you , stranger from sky . Welcome ..."
+00000AF9: RAW AC 01 00 26 0B ; BAS structure
+00000AFE: MENU 1062 2A86 2D1D 2A68 2A71 2A7E 2A8B ; bye_bye | race | art | politics | reproduction | science | consumerism
+00000B0F: TEXT 0242 05 40 80 - - 016F 0257 01BE 0936 01CF FFFF 0001 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "What you want know ?"
+00000B25: RAW AC 86 2A B4 0B ; BAS structure
+00000B2A: MENU 1062 0001 2C6F 2E6F 224C 2CD0 2E77 2BFD 1CBC 225B 2E7D ; bye_bye | talk | Izwal | Slimers | Croolis | Sinox | Tromp | Migrax | Buggol | ondoyant | Tubular_brain
+00000B43: TEXT 0242 0B 40 80 - - 2E8B 00FD 09D7 2E93 0257 00DC 0A8F 0019 FFFF 2A86 ; TEXT line=0x0242 voice=0x0B flags=0x40,0x80 "Peoples of universe interest you , friend ..."
+00000B5F: TEXT 0242 01 40 80 - - 01BA 0224 0001 00FD 2E9C 02E7 09D7 0019 FFFF 2A86 ; TEXT line=0x0242 voice=0x01 flags=0x40,0x80 "You like talk of races in universe ..."
+00000B7B: TEXT 0242 0E 40 80 - - 01BA 0224 0898 2561 27D8 01CF FFFF 2A86 ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "You like my nice trunk ?"
+00000B93: TEXT 0242 02 40 80 - - 2EA2 0E89 00DC 11F5 02E7 09D7 00DC 0669 2E9C 0019 FFFF 2A86 ; TEXT line=0x0242 voice=0x02 flags=0x40,0x80 "Out there , far in universe , much races ..."
+00000BB3: RAW AC 6F 2C F4 0D ; BAS structure
+00000BB8: MENU 1062 0001 2A86 2A4C 0B3B 1488 0086 2D49 0224 ; bye_bye | talk | race | peace | Yoko | Maxxon | planet | listen | like
+00000BCD: TEXT 0242 0A 40 80 - - 2C61 0866 18F1 2EA6 014A 0019 FFFF 2A4C ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Izwals be great pacifist people ..."
+00000BE5: TEXT 0242 10 40 80 - - 0B6B 158D 2EAF 00FD 2A52 0019 FFFF 2A4C ; TEXT line=0x0242 voice=0x10 flags=0x40,0x80 "Me very frightened of war ..."
+00000BFD: TEXT 0242 00 40 80 - - 0B6B 23E6 2C6F 0019 FFFF 0B3B ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Me small Izwal ..."
+00000C11: TEXT 0242 01 40 80 - - 01BA 0936 0898 00C7 0095 FFFF 0B3B ; TEXT line=0x0242 voice=0x01 flags=0x40,0x80 "You know my name ."
+00000C27: TEXT 0242 08 40 80 - - 0B3B 2561 00C7 0095 0B6B 0224 0898 00C7 0019 FFFF 0B3B ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "Yoko nice name . Me like my name ..."
+00000C45: TEXT 0242 0A 40 80 - - 01AC 2EBA 0866 1488 0095 2EC1 0866 18F1 2EC4 0019 FFFF 1488 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "My father be Maxxon . He be great astrophysicist ..."
+00000C65: TEXT 0242 0C 40 80 - - 01AC 2EBA 0936 0669 2C10 0095 2EC1 0866 0AA7 0019 FFFF 1488 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "My father know much things . He be smart ..."
+00000C85: TEXT 0242 0C 40 80 - - 2EC1 0866 03C5 0142 2ED3 0019 FFFF 1488 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "He be big and strong ..."
+00000C9D: TEXT 0242 02 40 80 - - 2C61 2EDA 0086 115C 0019 FFFF 0086 ; TEXT line=0x0242 voice=0x02 flags=0x40,0x80 "Izwals live planet RONDO ..."
+00000CB3: TEXT 0242 00 40 80 - - 0B6B 0224 2EDF 004D 0086 2EE5 FFFF 0086 ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Me like house on planet Rondo..."
+00000CCB: TEXT 0242 08 40 80 - - 01BA 12CD 004D 0086 2EEE 0095 FFFF 0086 ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "You welcome on planet Rondo ."
+00000CE3: TEXT 0242 0C 40 80 - - 2EF4 2EEE 2561 2561 2561 0019 FFFF 0086 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Planet Rondo nice nice nice ..."
+00000CFB: TEXT 0242 06 40 80 - - 2C61 0936 2D49 0019 FFFF 2D49 ; TEXT line=0x0242 voice=0x06 flags=0x40,0x80 "Izwals know listen ..."
+00000D0F: TEXT 0242 0A 40 80 - - 0B6B 0224 0001 012F 0257 0095 0B6B 2D49 00DC 0A8F 0019 FFFF 2D49 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me like talk to you . Me listen , friend ..."
+00000D31: TEXT 0242 00 40 80 - - 0B6B 0315 03C5 2EFB 012F 2D49 0A8A 0019 FFFF 2D49 ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Me have big ears to listen good ..."
+00000D4D: TEXT 0242 0A 40 80 - - 0B6B 0224 151E 2C10 0095 2C61 0866 2F00 0019 FFFF 0224 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me like beautiful things . Izwals be poets ..."
+00000D6B: TEXT 0242 05 40 80 - - 2C61 0224 0BC0 0A8A 2C10 0019 FFFF 0224 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Izwals like eat good things ..."
+00000D83: TEXT 0242 0E 40 80 - - 0B6B 0866 2F06 00BC 2F0A 0019 FFFF 0224 ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "Me be shy with females ..."
+00000D9B: TEXT 0242 00 40 80 - - 2C61 0866 18F1 2EA6 014A 0019 FFFF 2C6F ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Izwals be great pacifist people ..."
+00000DB3: TEXT 0242 00 40 80 - - 0B3B 0142 1488 0866 2C61 0019 FFFF 2C6F ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Yoko and Maxxon be Izwals ..."
+00000DCB: TEXT 0242 0E 40 80 - - 2C61 0936 2D49 0019 FFFF 2C6F ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "Izwals know listen ..."
+00000DDF: TEXT 0242 0E 40 80 - - 2C61 0224 2F12 0019 FFFF 2C6F ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "Izwals like play ..."
+00000DF3: RAW AC 4C 22 FD 0E ; BAS structure
+00000DF8: MENU 1062 0001 2A86 2A52 0A9C 2395 2F17 ; bye_bye | talk | race | war | news | brain | fear
+00000E09: TEXT 0242 09 48 80 - - 2AE9 0866 03C5 0B5F 0095 2F1C 0866 0A8A 102B 02ED 2A52 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x09 flags=0x48,0x80 "War be big problem . Life be good if no war ..."
+00000E2D: RAW C0 8E 13 F5 C1 01 00 ; BAS structure
+00000E34: TEXT 0242 10 40 80 - - 224C 0224 03C5 2AD5 00DC 2F21 0142 2561 2F0A 0019 FFFF 0A9C ; TEXT line=0x0242 voice=0x10 flags=0x40,0x80 "Croolis like big muscles , weapons and nice females ..."
+00000E54: TEXT 0242 0A 40 80 - - 224C 0315 23E6 2395 0142 03C5 2AD5 0019 FFFF 2395 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Croolis have small brain and big muscles ..."
+00000E70: TEXT 0242 09 40 80 - - 224C 12C6 0866 2F29 036A 2F30 00FD 09D7 0019 FFFF 2395 ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "Croolis always be danger for balance of universe ..."
+00000E8E: TEXT 0242 10 40 80 - - 07D9 0A8F 00DC 0010 2F38 0095 224C 2F3F 05F3 0229 2A52 0529 0019 FFFF 2F17 ; TEXT line=0x0242 voice=0x10 flags=0x40,0x80 "Yes friend , me afraid . Croolis cruel, them think war only ..."
+00000EB4: TEXT 0242 07 40 80 - - 224C 2395 03C5 0224 2CF1 00FD 2F46 0095 14A3 14A3 0019 2ACB 0019 14A3 14A3 0019 FFFF 224C ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "Croolis brain big like head of pin . laugh laugh ... cry ... laugh laugh ..."
+00000EE0: TEXT 0242 05 40 80 - - 224C 0866 26DC 00DC 076B 0142 2F4A 0019 FFFF 224C ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Croolis be bad , stupid and violent ..."
+00000EFC: RAW AC D0 2C 85 0F ; BAS structure
+00000F01: MENU 1062 0001 2A86 0224 2A7E 0A9C 2A5D ; bye_bye | talk | race | like | science | news | television
+00000F12: TEXT 0242 0B 40 80 - - 2CD0 0224 2F52 2F5D 0019 FFFF 0224 ; TEXT line=0x0242 voice=0x0B flags=0x40,0x80 "Sinox like technology gadgets ..."
+00000F28: TEXT 0242 05 40 80 - - 2CD0 0224 2F52 0095 07E8 2B5E 0019 FFFF 2A7E ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Sinox like technology . Big brains ..."
+00000F42: TEXT 0242 03 40 80 - - 0B6B 0422 101B 2CD0 0019 FFFF 0A9C ; TEXT line=0x0242 voice=0x03 flags=0x40,0x80 "Me not understand Sinox ..."
+00000F58: TEXT 0242 07 40 80 - - 0B6B 0911 2CD0 2F65 004D 09CB 0095 2F6E 0019 14A3 14A3 00CC 2ACB 00CC 14A3 0095 FFFF 2A5D ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "Me see Sinox programs on TV . Funny ... laugh laugh .. cry .. laugh ."
+00000F84: RAW AC 77 2E E3 0F ; BAS structure
+00000F89: MENU 1062 0001 2A86 0936 27D8 ; bye_bye | talk | race | know | trunk
+00000F96: TEXT 0242 04 40 80 - - 0B6B 0422 0936 2F74 0019 FFFF 0936 ; TEXT line=0x0242 voice=0x04 flags=0x40,0x80 "Me not know Trumps ..."
+00000FAC: TEXT 0242 0E 40 80 - - 2F7B 2561 2F83 0019 FFFF 27D8 ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "Trumpet nice instrument ..."
+00000FC0: TEXT 0242 06 40 80 - - 0B6B 0422 2B7E 1A3A 1EC9 0095 2F8E 26DC 036A 2F91 0019 FFFF 2E77 ; TEXT line=0x0242 voice=0x06 flags=0x40,0x80 "Me not smoke Trump tails . So bad for health ..."
+00000FE2: RAW AC FD 2B 57 10 ; BAS structure
+00000FE7: MENU 1062 0001 2A86 2395 08A0 ; bye_bye | talk | race | brain | money
+00000FF4: TEXT 0242 09 40 80 - - 2BFD 03C5 076B 0095 FFFF 2395 ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "Migrax big stupid ."
+00001008: TEXT 0242 0B 40 80 - - 2BFD 0224 005A 0669 08A0 0095 FFFF 08A0 ; TEXT line=0x0242 voice=0x0B flags=0x40,0x80 "Migrax like too much money ."
+00001020: TEXT 0242 0B 40 80 - - 0FFA 0224 048C 0095 2F98 2FA0 0019 FFFF 08A0 ; TEXT line=0x0242 voice=0x0B flags=0x40,0x80 "Them like business . Nothing free ..."
+0000103A: TEXT 0242 0C 40 80 - - 20EC 0866 24DF 0095 0B6B 0224 2D04 0095 FFFF 2BFD ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Migrators be cool . Me like music ."
+00001056: RAW AC BC 1C 0D 11 ; BAS structure
+0000105B: MENU 1062 0001 2A86 2FA5 2FAE 0A9C 2A68 ; bye_bye | talk | race | election | president | news | politics
+0000106C: TEXT 0242 05 40 80 - - 2FB8 0866 2FC0 0095 11A2 2FCA 0095 FFFF 2A68 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Buggols be democrats . Good example ."
+00001086: TEXT 0242 05 40 80 - - 0B6B 0132 0669 0169 1CBC 1CC3 0095 FFFF 2A68 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Me hear much about Buggol democracy ."
+000010A0: TEXT 0242 0A 40 80 - - 1CBC 1CC3 03C5 24F3 0095 2FD2 2FDC 0019 FFFF 2FA5 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Buggol democracy big idea . Permanent elections ..."
+000010BC: TEXT 0242 0A 40 80 - - 1CBC 2FE6 0BE9 0A86 2FF1 03EE 1C11 0019 FFFF 2FAE ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Buggol presidents last one hour or two ..."
+000010D8: TEXT 0242 09 40 80 - - 2FF6 01F9 0911 1CBC 0095 2EF4 2FFD 012F 2BD2 0095 FFFF 0A9C ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "Nobody can see Buggol . Planet forbidden to strangers ."
+000010F8: TEXT 0242 10 40 80 - - 1CBC 0866 2D21 3007 FFFF 0A9C ; TEXT line=0x0242 voice=0x10 flags=0x40,0x80 "Buggol be strange race..."
+0000110C: RAW AC 5B 22 CD 11 ; BAS structure
+00001111: MENU 1062 0001 2A86 300F 0A9C 3017 ; bye_bye | talk | race | emotion | news | feeling
+00001120: TEXT 0242 06 40 80 - - 08AC 0866 158D 2D21 0095 0FFA 301F 0010 0019 FFFF 0A9C ; TEXT line=0x0242 voice=0x06 flags=0x40,0x80 "ondoyants be very strange . Them intimidate me ..."
+0000113E: TEXT 0242 07 40 80 - - 302A 0274 08AC 0422 2983 00DC 08AC 0866 3031 0019 FFFF 0A9C ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "Father say ondoyants not exist , ondoyants be legend ..."
+0000115E: TEXT 0242 0E 40 80 - - 0B6B 0315 01AF 0630 01B5 0019 FFFF 300F ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "Me have knees all weak ..."
+00001176: TEXT 0242 0E 40 80 - - 08AC 03C5 300F 0019 FFFF 3017 ; TEXT line=0x0242 voice=0x0E flags=0x40,0x80 "ondoyants big emotion ..."
+0000118A: TEXT 0242 07 40 80 - - 3038 2F0A 0866 03C5 0B5F 0095 0B6B 0630 1337 0019 303C 2ACB 0019 FFFF 225B ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "Ah, females be big problem . Me all alone ... Cry cry ..."
+000011B0: TEXT 0242 0B 40 80 - - 0B6B 01BE 225B 00BC 0010 00DC 0A8F 0019 FFFF 225B ; TEXT line=0x0242 voice=0x0B flags=0x40,0x80 "Me want ondoyant with me , friend ..."
+000011CC: RAW AC 7D 2E 19 12 ; BAS structure
+000011D1: MENU 1062 0001 0A9C ; bye_bye | talk | news
+000011DA: TEXT 0242 03 41 80 - - 0B6B 0422 0936 1955 3040 0019 FFFF 0A9C ; TEXT line=0x0242 voice=0x03 flags=0x41,0x80 "Me not know those beings ..."
+000011F2: TEXT 0242 0C 40 80 - - 155B 2D21 00C7 0019 FFFF 2E7D ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Tubular strange name ..."
+00001206: TEXT 0242 09 41 80 - - 0F2B 0936 0019 FFFF 2E7D ; TEXT line=0x0242 voice=0x09 flags=0x41,0x80 "Not know ..."
+00001218: RAW AC 6F 2E 02 13 ; BAS structure
+0000121D: MENU 1062 0001 2A40 ; bye_bye | talk | information
+00001226: TEXT 0242 09 40 80 - - 2E6F 0866 2D21 014A 0095 07E8 188A 0866 03C5 18F7 0095 2EC1 0866 18FE 004D 0086 194F 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "Slimers be strange people . Big Yolk be big Slimer . He be buried on planet Vista ..."
+00001256: TEXT 0242 0A 40 80 - - 0B6B 0224 2E6F 0095 0FFA 0866 2561 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me like Slimers . Them be nice ..."
+00001272: TEXT 0242 0B 42 80 - - 3047 00FD 18F1 3050 0866 09E3 3055 0095 305E 00BC 1FDC 2810 00FD 18F1 3050 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x0B flags=0x42,0x80 "Portrait of great YOLK be famous painting . Painted with yellow blood of great YOLK ..."
+0000129E: TEXT 0242 09 42 80 - - 0B6B 3066 306C 3072 00FD 18F1 3050 004D 0086 307C 15CC 194F 0866 0BDE 0A17 00FD 09D7 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x09 flags=0x42,0x80 "Me dream visit mausoleum of great YOLK on planet VISTA, but Vista be other end of universe ..."
+000012CE: TEXT 0242 02 42 80 - - 01BA 0001 0669 00DC 0A8F 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x02 flags=0x42,0x80 "You talk much , friend ..."
+000012E6: TEXT 0242 05 48 80 - - 0B6B 0866 113C 0019 FFFF 2A40 ; TEXT line=0x0242 voice=0x05 flags=0x48,0x80 "Me be thirsty ..."
+000012FA: RAW C0 72 13 F5 C1 01 00 AC 1D 2D DA 13 ; BAS structure
+00001306: MENU 1062 0001 2D04 3055 2A71 3083 ; bye_bye | talk | music | painting | reproduction | book
+00001315: TEXT 0242 0A 40 80 - - 0B6B 0224 2D04 0095 01BA 0936 3088 1A40 20EC 01CF FFFF 2D04 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me like music . You know group called Migrators ?"
+00001335: TEXT 0242 0C 40 80 - - 308E 1356 03C5 3098 0095 0F2B 0132 0229 024B FFFF 2D04 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "MIGRATORS make big sound . Not hear think !"
+00001353: TEXT 0242 05 40 80 - - 0B6B 1629 1575 309E 004D 2D1D 0019 FFFF 3083 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Me already read books on art ..."
+0000136D: TEXT 0242 0A 40 80 - - 0B6B 0132 00FD 1B6E 1B73 00DC 18F1 30A4 0019 FFFF 3055 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me hear of Jeph d'Ulikan , great artist ..."
+0000138B: TEXT 0242 05 40 80 - - 3047 00FD 18A5 188A 0866 03C5 30AB FFFF 3055 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Portrait of Great Yolk be big painting..."
+000013A5: TEXT 0242 0A 40 80 - - 0B6B 0422 0224 30B7 0095 0B6B 30C5 30CC 0019 FFFF 2A71 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me not like reproductions . Me prefer originals ..."
+000013C3: TEXT 0242 0A 40 80 - - 0B6B 0224 30D6 30DC 0019 FFFF 2D1D ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me like color blue ..."
+000013D9: RAW AC 68 2A A6 14 ; BAS structure
+000013DE: MENU 1062 0001 2A4C 2A52 30E1 ; bye_bye | talk | peace | war | weapon
+000013EB: TEXT 0242 0A 41 80 - - 30E8 2C61 0224 20C5 0019 FFFF 2A4C ; TEXT line=0x0242 voice=0x0A flags=0x41,0x80 "Us Izwals like Peace ..."
+00001401: TEXT 0242 00 40 80 - - 0B6B 066E 2A52 00DC 0A8F 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x00 flags=0x40,0x80 "Me hate war , friend ..."
+00001419: TEXT 0242 05 40 80 - - 2AE9 0866 0224 30EB 0095 0D85 30F1 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "War be like death . It frighten ..."
+00001435: TEXT 0242 05 40 80 - - 224C 0866 30FA 02E7 2A52 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Croolis be expert in war ..."
+0000144D: TEXT 0242 04 41 80 - - 3101 2F21 0422 3108 0329 0019 FFFF 30E1 ; TEXT line=0x0242 voice=0x04 flags=0x41,0x80 "Deadly weapons not allowed here ..."
+00001465: TEXT 0242 05 40 80 - - 065B 00DC 2A68 0019 0B6B 0422 101B 0019 FFFF 2A68 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Ah , politics ... Me not understand ..."
+00001481: TEXT 0242 03 40 80 - - 3110 12C6 29EC 012F 2A52 0095 3119 0422 01BE 28E0 0278 0019 FFFF 2A68 ; TEXT line=0x0242 voice=0x03 flags=0x40,0x80 "Politics always leads to war . People not want same thing ..."
+000014A5: RAW AC 4C 2A 2C 15 ; BAS structure
+000014AA: MENU 1062 0001 1E00 ; bye_bye | talk | family
+000014B3: TEXT 0242 05 40 80 - - 2C61 0224 2A4C 00FD 1E00 0019 FFFF 1E00 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Izwals like peace of family ..."
+000014CB: TEXT 0242 04 40 80 - - 2AE9 2D99 0898 1E00 00DC 0A8F 0019 FFFF 1E00 ; TEXT line=0x0242 voice=0x04 flags=0x40,0x80 "War kill my family , friend ..."
+000014E5: TEXT 0242 05 40 80 - - 01BA 0A8F 0095 0B6B 0936 0257 0224 2A4C 0019 FFFF 2A4C ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "You friend . Me know you like peace ..."
+00001503: TEXT 0242 0A 40 80 - - 0B6B 01BE 3120 169E 004D 3125 00FD 312D 0095 0758 0866 0529 3134 0019 FFFF 2A4C ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Me want base life on respect of others . That be only law ..."
+0000152B: RAW AC 52 2A BE 15 ; BAS structure
+00001530: MENU 1062 0001 2A4C 3138 313E ; bye_bye | talk | peace | slave | power
+0000153D: TEXT 0242 0C 40 80 - - 0B6B 0422 01BE 0866 3144 0095 314B 1356 3144 0019 FFFF 3138 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Me not want be slaves . POWER make slaves ..."
+0000155D: TEXT 0242 02 40 80 - - 314B 1356 014A 3151 0019 FFFF 313E ; TEXT line=0x0242 voice=0x02 flags=0x40,0x80 "POWER make people crazy ..."
+00001573: TEXT 0242 03 41 80 - - 0B6B 0422 0224 314B 0019 FFFF 313E ; TEXT line=0x0242 voice=0x03 flags=0x41,0x80 "Me not like POWER ..."
+00001589: TEXT 0242 07 40 80 - - 2AE9 2D99 0898 1E00 0019 108D 0019 108D 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "War kill my family ... CRY ... CRY ..."
+000015A7: TEXT 0242 09 40 80 - - 2AE9 0866 158D 076B 0019 FFFF 2A52 ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "War be very stupid ..."
+000015BD: RAW AC 71 2A FE 16 ; BAS structure
+000015C2: MENU 1062 0001 14A3 24F3 3157 ; bye_bye | talk | laugh | idea | female
+000015CF: TEXT 0242 08 40 80 - - 0952 315E 315E 315E 0019 FFFF 2A71 ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "Hee hee hee hee ..."
+000015E5: TEXT 0242 0D 40 80 - - 2B1C 0866 03C5 3162 3134 0019 FFFF 2A71 ; TEXT line=0x0242 voice=0x0D flags=0x40,0x80 "Reproduction be big universal law ..."
+000015FD: TEXT 0242 05 40 80 - - 0B6B 08CB 0E84 3157 2C6F 0A86 0B2D 0019 FFFF 24F3 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Me hope meet female Izwal one day ..."
+00001619: TEXT 0242 04 40 80 - - 0B6B 005A 23E6 0229 2A71 0019 FFFF 24F3 ; TEXT line=0x0242 voice=0x04 flags=0x40,0x80 "Me too small think reproduction ..."
+00001631: TEXT 0242 08 40 80 - - 316C 0315 2AF9 012F 1863 00DC 315E 315E 315E 024B FFFF 14A3 ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "Murffalos have funny to reproduce , hee hee hee !"
+00001651: TEXT 0242 07 40 80 - - 0952 024B 0952 024B 0952 024B 0952 024B 0952 024B FFFF 14A3 ; TEXT line=0x0242 voice=0x07 flags=0x40,0x80 "Hee ! Hee ! Hee ! Hee ! Hee !"
+00001671: TEXT 0242 08 40 80 - - 027E 024B 027E 024B 027E 024B 027E 024B 027E 024B FFFF 14A3 ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "Ha ! Ha ! Ha ! Ha ! Ha !"
+00001691: TEXT 0242 05 40 80 - - 11EA 024B 11EA 024B 11EA 024B 11EA 024B FFFF 14A3 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Ho ! Ho ! Ho ! Ho !"
+000016AD: TEXT 0242 08 40 80 - - 3176 0224 2A71 00DC 315E 315E 315E 033F FFFF 3157 ; TEXT line=0x0242 voice=0x08 flags=0x40,0x80 "Females like reproduction , hee hee hee !!!"
+000016C9: TEXT 0242 0A 40 80 - - 2B1C 0866 317E 0278 0019 FFFF 3157 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Reproduction be wonderful thing ..."
+000016DF: TEXT 0242 0D 40 80 - - 01BA 0224 2A71 0095 01BA 0001 0669 0169 0019 FFFF 3157 ; TEXT line=0x0242 voice=0x0D flags=0x40,0x80 "You like reproduction . You talk much about ..."
+000016FD: RAW AC 7E 2A D2 17 ; BAS structure
+00001702: MENU 1062 0001 30E1 ; bye_bye | talk | weapon
+0000170B: TEXT 0242 05 40 80 - - 0B6B 0422 0224 2F21 00DC 0A8F 0019 FFFF 30E1 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Me not like weapons , friend ..."
+00001725: TEXT 0242 04 40 80 - - 2B50 0EBF 0866 036A 2A4C 00DC 0422 2A52 0019 FFFF 30E1 ; TEXT line=0x0242 voice=0x04 flags=0x40,0x80 "Science must be for peace , not war ..."
+00001743: TEXT 0242 06 40 80 - - 0B6B 0224 3188 3190 00BC 0898 2EBA 1488 0019 FFFF 30E1 ; TEXT line=0x0242 voice=0x06 flags=0x40,0x80 "Me like observe stars with my father Maxxon ..."
+00001761: TEXT 0242 07 41 80 - - 0B6B 0422 01BE 0001 00FD 2F21 00DC 0A8F 0019 FFFF 2F21 ; TEXT line=0x0242 voice=0x07 flags=0x41,0x80 "Me not want talk of weapons , friend ..."
+0000177F: TEXT 0242 09 40 80 - - 3196 26DC 31A4 0095 31A9 31AE 0142 1351 0019 102E 0866 31B3 0019 FFFF 2A7E ; TEXT line=0x0242 voice=0x09 flags=0x40,0x80 "Radioactivity bad evil . Kill slow and sure ... BIONIUM be radioactive ..."
+000017A5: TEXT 0242 0C 40 80 - - 224C 0936 31BF 2A7E 0019 FFFF 2A7E ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Croolis know military science ..."
+000017BB: TEXT 0242 0A 40 80 - - 2CD0 0224 2A7E 0142 31C8 FFFF 2A7E ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Sinox like science and technology..."
+000017D1: RAW AC 8B 2A 00 00 ; BAS structure
+000017D6: MENU 1062 0001 31D6 ; bye_bye | talk | food
+000017DF: TEXT 0242 0A 40 80 - - 31DB 0866 31E0 0095 09B0 31E8 0866 08D0 00FD 31D6 0019 FFFF 2A8B ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Food be capital . Our body be made of food ..."
+00001801: TEXT 0242 0C 40 80 - - 2C61 0224 2561 31ED 0019 FFFF 31D6 ; TEXT line=0x0242 voice=0x0C flags=0x40,0x80 "Izwals like nice wine ..."
+00001817: TEXT 0242 0A 40 80 - - 31F2 0C67 31ED 31F7 0019 FFFF 31D6 ; TEXT line=0x0242 voice=0x0A flags=0x40,0x80 "Very old wine expensive ..."
+0000182D: TEXT 0242 05 40 80 - - 3201 0A8A 00BC 1439 3206 0019 FFFF 31D6 ; TEXT line=0x0242 voice=0x05 flags=0x40,0x80 "Wine good with murffalo cheese ..."
+00001845: TEXT 0242 03 40 80 - - 0B6B 0422 0224 2B7E 1A3A 2039 0095 320D 0142 26DC 0019 FFFF 31D6 ; TEXT line=0x0242 voice=0x03 flags=0x40,0x80 "Me not like smoke Trump tail . Evil and bad ..."
+00001867: TEXT 0242 03 01 80 - - 0019 ; TEXT line=0x0242 voice=0x03 flags=0x01,0x80 "..."
+00001871: RAW AA AC 01 00 FB 18 ; BAS structure
+00001877: MENU 1062 3212 321F 322C 3239 2F12 3243 3247 09EA ; bye_bye | optimization | consultation | explanations | calm_down | play | win | lose | help
+0000188C: TEXT 08BA FF 61 80 - - 0165 012F 2F12 01CF FFFF 2F12 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "How to play ?"
+000018A0: TEXT 08BA FF 61 80 - - 01BA 1435 031A 0019 FFFF 0001 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "You got it ..."
+000018B4: TEXT 08BA FF 63 80 - - 324C 3254 325C 00C1 3265 326D 00DC 00A3 0095 3276 013D 02E7 1483 0019 FFFF 3243 ; TEXT line=0x08BA voice=0xFF flags=0x63,0x80 "Winning entails adopting a no-lose strategy , Commander . Bear that in mind ..."
+000018DC: TEXT 08BA FF 61 80 - - 016F 1152 0257 0224 012F 327B 00DC 00A3 01CF FFFF 3212 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "What would you like to optimize , Commander ?"
+000018FA: RAW AC 12 2F F5 1A ; BAS structure
+000018FF: MENU 0001 1587 3284 328B ; talk | click | dialog | fair_play
+0000190A: TEXT 08BA FF 60 80 - - 00CF 00B2 0AE0 3295 012F 2F12 00DC 00A3 0095 0CC8 0CCD 3299 024B FFFF 1587 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "That's the best way to play , Commander . Just keep clickin' !"
+00001930: TEXT 08BA FF 60 80 - - 1418 32A2 0010 0E54 00C1 32A8 2B29 32AF 00DC 1D08 32B7 FFFF 1587 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Something tells me you're a pretty hot clicker , eh ?!!"
+00001952: TEXT 08BA FF 60 80 - - 049C 0257 0936 32BB 089B 0257 1587 00DC 0199 0A21 00C1 01C3 32C1 024B 32C8 013D 11BE 01CF FFFF 1587 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Did you know every time you click , I feel a little tingle ! Isn't that fun ?"
+00001982: TEXT 08BA FF 60 80 - - 00DE 0257 1587 00DC 0199 0C42 05A2 32CE 0041 0E5B 32D2 0019 0199 0B25 1D54 0169 031A 024B FFFF 1587 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "When you click , I don't just sit around looking handsome ... I do something about it !"
+000019B2: TEXT 08BA FF 61 80 - - 32DB 0019 FFFF 1587 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Click ..."
+000019C2: TEXT 08BA FF 60 80 - - 0956 3284 00DC 05A2 1587 004D 00B2 0305 32E1 0019 32E6 00B2 32EC 012F 04BD 00DC 0634 04C2 32F1 0019 FFFF 3284 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "To dialog , just click on the word list ... Leave the rest to OLGA , your onboard translator ..."
+000019F6: TEXT 08BA FF 60 80 - - 0426 042C 2458 00B2 32FC 32F1 3304 0095 0C48 00C1 0973 0142 00C1 330D 024B FFFF 3284 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob put the instant translator together . He's a guy and a half !"
+00001A20: TEXT 08BA FF 60 80 - - 05E9 00DC 0634 04C2 32F1 00DC 3312 32BB 2D29 02E7 00B2 09D7 024B 02B3 3318 02E7 331D 00DC 0224 0010 00DC 0529 0215 3327 248C 0095 FFFF 3284 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Olga , your onboard translator , knows every language in the universe ! She's paid in megawatts , like me , only she gets more ."
+00001A60: TEXT 08BA FF 61 80 - - 0BA6 3284 0019 FFFF 3284 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Let's dialog ..."
+00001A72: TEXT 08BA FF 60 80 - - 332C 2F12 0092 3331 02E7 00B2 333B 3347 0553 0B87 334F 00DC 2F12 3357 024B FFFF 328B ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Fair play is inscribed in the Traveller's Charter : Whatever happens , play fair !"
+00001A9C: TEXT 08BA FF 60 80 - - 335C 00DC 3243 00DC 3243 0095 099C 0B25 00B2 3360 12C6 0315 012F 3247 01CF FFFF 336A ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Win , win , win . Why do the computers always have to lose ?"
+00001AC6: TEXT 08BA FF 60 80 - - 2939 00DC 00A3 0019 01BA 3372 0224 00C1 3357 2F12 0973 0095 0D12 0605 0426 042C 0019 FFFF 328B ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "OK , Commander ... You seem like a fair play guy . I'll tell Cap'n Bob ..."
+00001AF4: RAW AC 43 32 71 1C ; BAS structure
+00001AF9: MENU 0001 3377 3381 338A 3392 ; talk | willpower | strength | bravery | pride
+00001B06: TEXT 08BA FF 60 80 - - 3398 0718 00C1 33A2 00DC 00A3 0095 0426 042C 3312 1DF9 1435 031A 0019 FFFF 3377 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Willpower makes a winner , Commander . Cap'n Bob knows you've got it ..."
+00001B2E: TEXT 08BA FF 60 80 - - 05D0 00DC 07A0 0257 1587 004D 3398 0095 05D5 1A8C 0422 0430 012F 04A0 0326 158D 11F5 00DC 00A3 0019 FFFF 3377 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Okay , so you click on Willpower . Now that's not going to get us very far , Commander ..."
+00001B62: TEXT 08BA FF 60 80 - - 17CC 33A9 012F 0634 1597 024B 01BA 0C42 01BE 012F 33AE 0645 01C3 33B4 00DC 0125 0B25 0257 01CF FFFF 3381 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Be kind to your mouse ! You don't want to crush her little buttons , now do you ?"
+00001B94: TEXT 08BA FF 60 80 - - 3038 33BC 024B 0199 33C4 0634 33CB 00DC 00A3 0095 01BA 1297 0985 33D8 00BC 0634 33DE 2434 024B FFFF 338A ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Ah, Bravery ! I admire your fearlessness , Commander . You take such risks with your index finger !"
+00001BC6: TEXT 08BA FF 61 80 - - 33E4 2971 055C 33EC 0553 0D85 0D88 0224 0257 05A2 33F6 004D 33BC 0095 FFFF 338A ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Onboard computer HONK reporting : It looks like you just clicked on Bravery ."
+00001BEE: TEXT 08BA FF 60 80 - - 0165 0169 33FE 02C5 00C1 01C3 3406 01CF FFFF 3392 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "How about sitting up a little straighter ?"
+00001C0A: TEXT 08BA FF 60 80 - - 01E3 3411 00DC 1732 01BA 0936 0665 012F 1356 3360 3125 0257 024B FFFF 3392 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I'm impressed , Commander. You know how to make computers respect you !"
+00001C30: TEXT 08BA FF 60 80 - - 0199 341B 00C1 3422 00FD 3428 02E7 00B2 3431 3433 00FD 0634 343A 00D6 3442 0095 0D12 05A2 023B 0257 00C1 01C3 344D 00FD 3452 0019 FFFF 3392 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I detect a speck of contempt in the B cortex of your brain's right hemisphere . I'll just give you a little shot of adrenal ..."
+00001C70: RAW AC 47 32 5B 1E ; BAS structure
+00001C75: MENU 0001 2F17 345A 3463 346C 12A5 2ACB ; talk | fear | weakness | complain | anger | break | cry
+00001C86: TEXT 08BA FF 60 80 - - 0450 3472 347A 012F 3247 00DC 00A3 0095 18EB 0B25 0257 347F 01CF FFFF 3247 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "There's several ways to lose , Commander . Which do you choose ?"
+00001CAC: TEXT 08BA FF 62 80 - - 07A3 01E3 0329 00BC 3486 00AD 0010 0019 055C 00DC 0634 04C2 348B 0095 FFFF 2F17 ; TEXT line=0x08BA voice=0xFF flags=0x62,0x80 "Commander, I'm here with you. It's me ... HONK , your onboard bioconsciousness ."
+00001CD4: TEXT 08BA FF 60 80 - - 01E3 0430 012F 349C 0257 00C1 01C3 34A2 00DC 00A3 0095 34A7 0095 FFFF 2F17 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I'm going to sing you a little song , Commander . Relax ."
+00001CFA: TEXT 08BA FF 60 80 - - 34AD 0092 34B3 0019 006C 34C2 0092 34C7 0019 FFFF 2F17 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Night is fa-aa-aa-lling ... The moon is re-e-ed ..."
+00001D18: TEXT 08BA FF 60 80 - - 006C 34CF 0092 34D4 34E1 0634 34E7 0095 34F1 00DC 00A3 0095 024D 0092 00BC 0257 0019 FFFF 2F17 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The wolf is ho-ow-owling under your be-e-e-ed . Easy , Commander . Honk is with you ..."
+00001D46: TEXT 08BA FF 60 80 - - 07E8 2ED3 34F6 0056 100E 3501 024B FFFF 2F17 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Big strong Commanders are never scared !"
+00001D60: TEXT 08BA FF 60 80 - - 01BA 0CA0 00C1 21EE 0019 0C9B 004D 00DC 00A3 0019 13CC 0C42 3508 0019 00AD 07A0 3510 024B FFFF 345A ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You need a drink ... Come on , Commander ... Please don't blubber ... It's so embarrassing !"
+00001D90: TEXT 08BA FF 60 80 - - 0CC8 351D 0634 2971 0142 3523 0D9A 0095 04B5 00C1 09A0 00C3 169E 0BF9 024B 0ACC 0D12 12C6 0866 0329 0019 FFFF 345A ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Just reset your computer and start over . there's a whole new life waiting ! And I'll always be here ..."
+00001DC6: TEXT 08BA FF 60 80 - - 01BA 0936 03E5 01CF 0D12 09EA 0257 3529 0450 00C1 352E 036A 0257 004D 00B2 3537 0095 0DAC 00C1 0729 0019 FFFF 345A ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You know what ? I'll help you !... There's a surprise for you on the map . Take a look ..."
+00001DFC: TEXT 08BA FF 60 80 - - 0758 353B 0B25 0CB8 0A8A 00DC 001D FFFF 3463 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "That won't do any good , Commander..."
+00001E16: TEXT 08BA FF 60 80 - - 01E3 0430 012F 3541 02C5 0426 0680 FFFF 346C ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I'm going to wake up Cap'n Bob..."
+00001E30: TEXT 08BA FF 61 80 - - 2153 0019 FFFF 12A5 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Ouch ..."
+00001E40: TEXT 08BA FF 60 80 - - 3546 0866 05A2 3554 3559 00DC 001D FFFF 2ACB ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Everything'll be just fine afterwards , Commander..."
+00001E5A: RAW AC EA 09 81 21 ; BAS structure
+00001E5F: MENU 0001 3564 12A5 356F 357D 3588 3590 3595 359E ; talk | switch_off | break | endless_lives | disjoncter | contest | tips | presents | messages
+00001E74: TEXT 08BA FF 61 80 - - 35A7 0879 30FA 35AC 00DC 00A3 01CF FFFF 09EA ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Need some expert guidance , Commander ?"
+00001E8E: TEXT 08BA FF 60 80 - - 0956 35B5 00DC 0257 01F9 12C6 35C0 00B2 35C5 05BB 00FD 00B2 313E 35CA 0019 FFFF 3564 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "To disconnect , you can always pull the plug out of the power point ..."
+00001EB8: TEXT 08BA FF 60 80 - - 01E3 112E 00DC 15CC 35D0 013D 048C 02E7 35D6 00DC 35DB 0010 0092 02ED 35E9 35F0 0019 FFFF 3564 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I'm sorry , but since that business in 2001 , disconnecting me is no longer possible ..."
+00001EE6: TEXT 08BA FF 60 80 - - 099C 0422 01CF 1E42 0199 01F9 35F9 0634 2971 0142 3606 0634 1592 360B 024B 0019 027E 024B 027E 024B 027E 024B FFFF 12A5 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Why not ? Well, I can reinitialize your computer and wipe your hard disk ! ... Ha ! Ha ! Ha !"
+00001F1E: TEXT 08BA FF 61 80 - - 3610 05BB 00DC 00A3 0019 FFFF 12A5 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Chill out , Commander ..."
+00001F34: TEXT 08BA FF 60 80 - - 0165 075D 031A 0A21 012F 0866 3616 00DC 00A3 01CF FFFF 356F ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "How does it feel to be eternal , Commander ?"
+00001F54: TEXT 08BA FF 60 80 - - 05D0 024B 01BA 361E 0095 3622 362A 0151 12E4 0019 0D1D 0257 0A21 3630 0125 01CF FFFF 356F ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Okay ! You won . Endless lives from today ... Do you feel happier now ?"
+00001F80: TEXT 08BA FF 20 80 - - 3638 02C0 07A0 363B 012F 0257 01CF ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "Is this so important to you ?"
+00001F96: TEXT 08BA FF 20 80 - - 05D0 0019 0019 0019 0019 0019 0019 0019 0019 0019 0019 0019 0019 3645 024B ; TEXT line=0x08BA voice=0xFF flags=0x20,0x80 "Okay ... ... ... ... ... ... ... ... ... ... ... ... KRUIKK !"
+00001FBC: TEXT 08BA FF 60 80 - - 1748 0056 00B2 364C 00DC 3656 0095 0AEC 3661 0E89 0056 3666 012F 0866 361E 024B 32DB 004D 366D FFFF 3588 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Here are the questions , contestant . You'll note there are prizes to be won ! Click on \"CONTEST\""
+00001FEE: TEXT 08BA FF 60 80 - - 3677 0588 0553 1848 0092 0426 042C 01CF 0019 0019 32DB 004D 366D FFFF 3588 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "First question : Who is Cap'n Bob ? ... ... Click on \"CONTEST\""
+00002014: TEXT 08BA FF 60 80 - - 367D 3681 0019 230D 0588 0553 016F 3686 01F9 0866 361E 02E7 02C0 3588 01CF 32DB 004D 366D FFFF 3588 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Too late ... next question : What prize can be won in this contest ? Click on \"CONTEST\""
+00002044: TEXT 08BA FF 60 80 - - 368C 3691 3695 369B 033F 0932 01E3 2F38 00B2 2033 0A86 19C5 36A0 02F7 24DA 1587 004D 366D 08FD 0095 FFFF 3588 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "YES! HOW 'BOUT THAT !!! But I'm afraid the first one was wrong. Don't ever click on \"CONTEST\" again ."
+00002078: TEXT 08BA FF 60 80 - - 0E11 00DC 15CC 3590 0056 0529 36A7 0529 00B2 36B1 36B8 0019 FFFF 3590 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Sorry , but tips are only available only the neural channel ..."
+0000209C: TEXT 08BA FF 60 80 - - 0956 3243 0A14 36C0 3686 00DC 32DB 004D 366D FFFF 3595 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "To win an amazing prize , Click on \"CONTEST\""
+000020BA: TEXT 08BA FF 60 80 - - 241F 0E54 03A6 36C8 36D2 359E 0D9A 00B2 36B1 36B8 00DC 1C9D 00B2 36D9 36E5 36EF FFFF 359E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "If you're getting uninvited PIRATE messages over the neural channel , contact the CYBERSQUAD, extension 453765"
+000020E6: TEXT 08BA FF 60 80 - - 2446 359E 0D9A 00B2 36B1 36B8 0056 36F6 1D5E 00B2 3134 0019 FFFF 359E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cybernetic messages over the neural channel are strictly against the law ..."
+0000210A: TEXT 08BA FF 60 80 - - 0822 3700 00FD 00B2 36B1 36B8 07E3 0866 3706 0095 FFFF 359E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "All users of the neural channel will be prosecuted ."
+0000212A: TEXT 08BA FF 60 80 - - 006C 3711 00FD 02C0 3719 371E 0630 3726 036A 36B1 36B8 3735 3744 09C8 2F12 00FD 05EE 3719 0019 FFFF 359E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The authors of this game decline all responsibility for neural channel communications occasioned by play of said game ..."
+0000215C: TEXT 08BA FF 60 80 - - 01BA 05A2 33F6 004D 00B2 0305 374F 0095 10E7 012F 0777 033F FFFF 0E4C ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You just clicked on the word \"message\" . Way to go !!!"
+00002180: RAW AC 12 32 4B 24 ; BAS structure
+00002185: MENU 0001 3759 375F 3769 1597 3772 377B 3782 2D04 3788 ; talk | speed | telephone | keyboard | mouse | joystick | screen | CDROM | music | sounds
+0000219C: TEXT 08BA FF 60 80 - - 01BA 01BE 012F 3759 02C5 0634 2971 01CF 02EA 378F 00DC 0D12 05A2 3797 00B2 379E 0095 04B2 00DC 0257 22D9 01BE 012F 37A8 02A7 00C1 37AD 00FD 37B4 0019 FFFF 3759 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You want to speed up your computer ? No prob... , I'll just double the frequency . Uh , you may want to move back a couple of yards ..."
+000021E4: TEXT 08BA FF 60 80 - - 04B2 2CCD 0019 1387 2971 0611 1297 031A 0019 00AD 0169 012F 37BA 0019 37C2 37CC 080C 37D2 057B 040F 37D5 0019 04E1 0602 0488 033F FFFF 3759 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Uh oh ... Your computer can't take it ... It's about to implode ... DANGER... THROW YOUR PC OUT THE WINDOW ... DO IT NOW !!!"
+00002224: TEXT 08BA FF 60 80 - - 37DC 024B 0869 00C1 37E1 28E5 0019 0199 37E7 012F 37EF 00B2 0B2D 00CC 01BA 37F4 2853 012F 37FA 013D 012F 0426 042C 00DC 1281 0257 0911 0A7C 0019 FFFF 3759 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Phew ! You're a lucky person ... I managed to save the day .. You might care to mention that to Cap'n Bob , when you see him ..."
+0000226A: TEXT 08BA FF 60 80 - - 0956 3802 00B2 0262 3809 00FD 0634 04C2 25EC 00DC 380E 0634 3813 00BC 00C1 3820 00FD 3825 0095 1A16 382E 3836 00DC 3843 384C 22D9 0866 3855 0019 FFFF 375F ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "To modify the ring tone of your onboard phone , stab your loudspeakers with a pair of scissors . For further modification , repeated stabbing may be necessary ..."
+000022B0: TEXT 08BA FF 60 80 - - 0956 327B 0634 3769 00DC 385F 05BB 3865 386C 00BC 00BC 0CB8 3871 387C 0019 FFFF 3769 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "To optimize your keyboard , gouge out excess keys with with any commercial screwdriver ..."
+000022DA: TEXT 08BA FF 60 80 - - 1A16 00C1 248C 3888 1597 00DC 05A2 3890 00B2 01C3 1597 3898 00BC 00C1 389D 38A5 0095 1247 38A9 FFFF 1597 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "For a more playful mouse , just replace the little mouse ball with a 6-sided die . Thanks Honk!!!"
+0000230C: TEXT 08BA FF 60 80 - - 0417 0092 00C1 1E00 3719 00DC 00A3 033F 38B1 013D 38B5 01C3 3772 02A7 093B 031A 38BB 0151 024B FFFF 3772 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "This is a family game , Commander !!! Put that nasty little joystick back where it came from !"
+0000233E: TEXT 08BA FF 60 80 - - 1A16 38C0 30D6 0142 38C8 00DC 38D1 004D 0634 38D6 0142 3606 05F3 004D 38DE 0A0B 0095 241F 2961 0D88 280A 00DC 1A8C 38E7 0257 0056 34E1 38EF 0151 38F6 38FC 3904 0019 FFFF 377B ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "For sharper color and contrast , spit on your glasses and wipe them on somebody else . If everything looks green , that's because you are under attack from alien vampire cabbages ..."
+0000238C: TEXT 08BA FF 60 80 - - 2F8E 0634 3782 0092 3295 005A 31AE 0019 016F 01F9 0199 0274 01CF 0019 18DC 089B 00DC 390D 00C1 3911 391A 03EE 1F1E 0A14 391E 3927 1043 FFFF 3782 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "So your CDROM is way too slow ... What can I say ? ... Next time , buy a circular saw or maybe an electric toothbrush ...."
+000023CE: TEXT 08BA FF 60 80 - - 01BA 066E 00B2 2D04 024B 0758 3932 0596 012F 3938 0095 0CC8 20E8 393C 3945 3949 0142 394F 0D9A 00B2 3954 0095 00CF 24C3 00DC 041C 031A 01CF FFFF 2D04 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You hate the music ! That one's easy to fix . Just hit \"CONTROL ALT DEL\", and flip over the CD . That's better , isn't it ?"
+00002412: TEXT 08BA FF 60 80 - - 3957 0224 01E3 395D 00C1 0639 02E7 0634 3098 3965 033F 1C99 396A 031A 3972 1592 0019 0D85 397A 036A 0010 0019 FFFF 3788 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Seems like I'm sensing a fault in your sound card !!! Try hitting it awfully hard ... It works for me ..."
+0000244A: RAW AC 1F 32 7B 24 ; BAS structure
+0000244F: MENU 0001 3980 3988 ; talk | therapy | graphology
+00002458: TEXT 08BA FF 61 80 - - 016F 33A9 00FD 321F 0211 0257 0315 02E7 1483 00DC 3993 FFFF 321F ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "What kind of consultation did you have in mind , Commander?"
+0000247A: RAW AC 80 39 DF 27 ; BAS structure
+0000247F: MENU 0001 399E 39A2 39AC 39B6 39C3 39CA 093B 1281 03E5 0665 39CE ; talk | ego | super_ego | under_ego | end_of_month | libido | who | where | when | what | how | why
+0000249A: TEXT 08BA FF 60 80 - - 0406 2FA0 39D2 39E0 0019 00CF 00C1 2408 02E7 00C1 39E8 0FB6 00DC 00A3 0095 FFFF 3980 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "A free psychotherapy session ... That's a once in a lifetime offer , Commander ."
+000024C4: TEXT 08BA FF 61 80 - - 34A7 0019 39F1 02C5 1955 2AD5 0019 39F8 00B2 2033 0278 013D 3A00 0634 2CF1 0553 FFFF 3980 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Relax ... Loosen up those muscles ... Choose the first thing that enters your head :"
+000024F0: TEXT 08BA FF 60 80 - - 3A07 0169 3A0D 07A3 0142 1427 0A21 24C3 0019 0C7E 0634 3A11 3A1A 012F 05E9 00B2 32F1 0019 FFFF 39B6 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Think about me, Commander, and you'll feel better ... let your thoughts stray to Olga the translator ..."
+00002520: TEXT 08BA FF 60 80 - - 006C 0A17 00FD 0A86 3A20 0092 07A0 3A26 3A2C 012F 00B2 3523 00FD 12F4 00DC 00A3 0019 FFFF 39B6 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The end of one month is so often close to the start of another , Commander ..."
+0000254E: TEXT 08BA FF 60 80 - - 11A2 0019 34A7 0019 32DB 004D 3A32 0488 024B FFFF 39B6 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Good ... Relax ... Click on anything... NOW !"
+0000256C: TEXT 08BA FF 60 80 - - 027E 024B 027E 024B 0758 19C5 0634 3797 0E8F 0019 0869 0422 00B2 0529 0A86 00DC 00A3 0095 0A74 0911 3A3E 3A44 0095 2EC1 01F9 09EA 0257 00BC 013D 0019 FFFF 39A2 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Ha ! Ha ! That was your double talking ... You're not the only one , Commander . Go see Super ZEN . He can help you with that ..."
+000025B4: TEXT 08BA FF 60 80 - - 01BA 0229 0E54 3A48 00C1 28E5 00DC 15CC 2826 0CD8 00DC 04B5 00C1 01C3 3A4E 00DC 00D6 01CF 0019 FFFF 39A2 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You think you're quite a person , but deep down , there's a little child , right ? ..."
+000025E6: TEXT 08BA FF 60 80 - - 0450 00C1 3A54 02E7 0257 00DC 00A3 0019 FFFF 39A2 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "There's a rebel in you , Commander ..."
+00002602: TEXT 08BA FF 60 80 - - 3A5A 0019 0AEC 100E 04A0 00B2 3A62 05BB 0019 01BA 05A2 3A69 0426 042C 0019 FFFF 39AC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Careful ... You'll never get the stains out ... You just ask Cap'n Bob ..."
+0000262C: TEXT 08BA FF 60 80 - - 1200 3A6D 00C1 3A76 3A2C 012F 3A7C 0095 3A82 0019 FFFF 399E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You've attained a state close to PRANA . Congratulations ..."
+0000264C: TEXT 08BA FF 60 80 - - 07D9 00DC 0257 09E0 01E3 3411 00DC 00A3 0019 FFFF 399E ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Yes , you !! I'm impressed , Commander ..."
+0000266A: TEXT 08BA FF 60 80 - - 01E3 395D 2D21 3A92 02E7 00B2 3431 3433 00FD 0634 00D6 3442 0019 FFFF 39C3 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "I'm sensing strange pulsions in the B cortex of your right hemisphere ..."
+00002690: TEXT 08BA FF 60 80 - - 07A3 3A9B 0092 00C1 3AA4 3AAD 012F 3AB3 0095 2F8E 13D3 3ABA 0019 000C 3ABF 042C 0866 0A14 2FCA 0019 FFFF 39C3 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Commander, chastity is a stepping stone to wisdom . So stay calm ... Let cap'n Bob be an example ..."
+000026C4: TEXT 08BA FF 60 80 - - 0E33 14F2 01F9 0866 3AC5 0142 3ACA 0095 099C 0422 2911 0879 09CB 01CF FFFF 39C3 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Space travel can be long and lonely . Why not watch some TV ?"
+000026EC: TEXT 08BA FF 61 80 - - 159D 024B 006C 08AC 0019 FFFF 39C3 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Ahh ! The ondoyants ..."
+00002702: TEXT 08BA FF 60 80 - - 05D5 1A8C 00C1 3AD1 3AD9 0019 18D6 00B2 1A93 0092 012F 0866 0687 03CE 00B2 0A17 00FD 02C0 3AE0 0019 FFFF 39CA ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Now that's a serious matter ... Maybe the answer is to be found at the end of this adventure ..."
+00002736: TEXT 08BA FF 60 80 - - 006C 3AEA 00FD 3AFA 3B00 0718 0257 3B07 00DC 00A3 0019 FFFF 39CA ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The cyberloneliness of cheap memory makes you dizzy , Commander ..."
+00002758: TEXT 08BA FF 61 80 - - 3B0D 0E89 0019 FFFF 093B ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Over there ..."
+0000276A: TEXT 08BA FF 61 80 - - 3B12 00DC 02ED 3B1B FFFF 1281 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Tomorrow , no doubt..."
+0000277E: TEXT 08BA FF 61 80 - - 00CF 00C1 1F24 0A86 00DC 00A3 0019 FFFF 03E5 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "That's a tough one , Commander ..."
+00002798: TEXT 08BA FF 61 80 - - 159D 024B 0165 01CF 006C 1A93 0092 3B24 0257 00DC 00A3 0095 FFFF 0665 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Ahh ! How ? The answer is within you , Commander ."
+000027BC: TEXT 08BA FF 61 80 - - 00AD 3B2B 0553 3B33 033F 0ACC 0C42 3A69 3B3B 03E5 3B44 FFFF 39CE ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "It's obvious : BECAUSE !!! And don't ask \"Because what ?\""
+000027DE: RAW AC 39 32 3D 29 ; BAS structure
+000027E3: MENU 0001 0A86 1C11 05C4 1C15 2358 1C1A 29D1 1C1E 3B47 ; talk | one | two | three | four | five | six | seven | eight | nine
+000027FA: TEXT 08BA FF 60 80 - - 0165 0169 00C1 3B4C 3B53 02E7 1483 313E 01CF 39F8 00C1 25F2 0095 0450 0529 0A86 00D6 0A86 0019 FFFF 3239 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "How about a simple exercise in mind power ? Choose a number . There's only one right one ..."
+0000282C: TEXT 08BA FF 60 80 - - 0977 0430 012F 3B5C 1859 3304 0095 01BA 3523 00DC 00A3 0019 FFFF 3239 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "We're going to count murffalos together . You start , Commander ..."
+00002850: TEXT 08BA FF 60 80 - - 3B62 12BE 3B6C 024B 01BA 37E1 28E5 024B 39F8 00C1 25F2 3B77 286A 0142 3B7F 0019 FFFF 3239 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Pranayama through numerology ! You lucky person ! Choose a number between ten and twenty ..."
+0000287C: TEXT 08BA FF 61 80 - - 3B86 0634 377B 3B8E 00DC 00A3 0019 0165 005E 3B98 0B25 0257 0911 01CF FFFF 3239 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Observe your screen carefully , Commander ... How many numbers do you see ?"
+000028A4: TEXT 08BA FF 61 80 - - 1C24 FFFF 0A86 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "One"
+000028B2: TEXT 08BA FF 61 80 - - 3BA0 FFFF 1C11 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Two"
+000028C0: TEXT 08BA FF 61 80 - - 3BA4 FFFF 05C4 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Three"
+000028CE: TEXT 08BA FF 61 80 - - 3BAA FFFF 1C15 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Four"
+000028DC: TEXT 08BA FF 61 80 - - 3BAF FFFF 2358 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Five"
+000028EA: TEXT 08BA FF 61 80 - - 3BB4 FFFF 1C1A ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Six"
+000028F8: TEXT 08BA FF 61 80 - - 3BB8 FFFF 29D1 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Seven"
+00002906: TEXT 08BA FF 61 80 - - 3BBE FFFF 1C1E ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Eight"
+00002914: TEXT 08BA FF 61 80 - - 3BC4 0019 3BC9 07D4 00DC 28AB 0019 0199 3BCE 0E54 3A48 3BD4 0125 1043 FFFF 3B47 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Nine ... GOOD WORK , COMMANDER ... I sense you're quite relaxed now ...."
+0000293C: RAW AC 2C 32 00 00 ; BAS structure
+00002941: MENU 1062 0001 2810 1CE0 024D 0708 3BDC 3BDF 05E9 3BE4 3BED ; bye_bye | talk | blood | Bob_Morlock | Honk | Ark | Ma | Orxx | Olga | Big_Bang | Black_holes
+0000295A: TEXT 08BA FF 61 80 - - 3BF9 0169 056C 02E7 3C06 00DC 00A3 01CF FFFF 322C ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Explanations about anything in particular , Commander ?"
+00002976: TEXT 08BA FF 61 80 - - 099C 00DC 0E54 00A3 3C11 1732 0869 00B2 3C18 00FD 02C0 0174 0019 FFFF 2810 ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "Why , you're Commander Blood, Commander. You're the hero of this story ..."
+0000299C: TEXT 08BA FF 60 80 - - 0426 042C 0092 1158 3C1D 0095 2EC1 3C24 0326 0630 0019 FFFF 1CE0 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob is our master . He built us all ..."
+000029BE: TEXT 08BA FF 60 80 - - 0426 042C 0092 158D 158D 0C67 00DC 00A3 0095 3B0D 3C2A 2933 0C67 0019 FFFF 1CE0 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob is very very old , Commander . Over 800,000 years old ..."
+000029E6: TEXT 08BA FF 60 80 - - 0426 042C 3C32 0010 012F 341B 3C3D 147D 22A7 0056 1158 3C43 012F 00B2 03D1 03F1 0019 FFFF 1CE0 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob programmed me to detect black holes which are our gateway to the BIG BANG ..."
+00002A14: TEXT 08BA FF 60 80 - - 0426 042C 0092 158D 158D 3C4B 0095 2EC1 0A10 00C1 3C57 00DC 05A2 0224 0257 0095 01E3 00C1 0C2D 0019 FFFF 1CE0 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob is very very intelligent . He has a biobrain , just like you . I'm a cybernetic ..."
+00002A48: TEXT 08BA FF 61 80 - - 0199 3C60 04F6 3C65 00DC 28AB 0019 FFFF 024D ; TEXT line=0x08BA voice=0xFF flags=0x61,0x80 "I HEAR AND OBEY , COMMANDER ..."
+00002A62: TEXT 08BA FF 60 80 - - 006C 17BC 0092 1158 3C6A 00DC 3C24 09C8 0C2D 3C71 3C77 012F 3C81 3C88 FFFF 0708 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The ARK is our vessel , built by cybernetic units belonging to KANARY CORP."
+00002A8A: TEXT 08BA FF 60 80 - - 00AD 3A48 00C1 0772 024B 057F 0315 3C8E 3C91 093B 00E3 01F9 3C9B 3CA2 03EE 3CA9 0019 FFFF 0708 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "It's quite a ship ! We have 16 CRYOBOXES where we can stock aliens or merchandise ..."
+00002AB8: TEXT 08BA FF 60 80 - - 006C 0708 0092 3CB5 00BC 00B2 1500 3CBE 3CC3 02E7 00B2 3CCA 09D7 0019 FFFF 0708 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The Ark is equipped with the fastest warp drives in the entire universe ..."
+00002AE0: TEXT 08BA FF 60 80 - - 006C 0708 0092 3CB5 00BC 0A14 3CD1 3CD6 1A40 3CDC 0019 006C 3CDF 0056 36C0 3CE4 0019 FFFF 0708 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The Ark is equipped with an ORXX layer called MA ... The Orrx are amazing missiles ..."
+00002B0E: TEXT 08BA FF 60 80 - - 0822 04C2 3CED 0315 0458 3CF6 0095 057F 0315 00B2 375F 00DC 00C1 3D00 0142 3D0B 09CB 0019 FFFF 0708 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "All onboard comforts have been provided . We have the telephone , a restaurant and widescreen TV ..."
+00002B3E: TEXT 08BA FF 60 80 - - 3CDC 0092 0A86 00FD 3D16 3D1F 00DC 00C1 33A9 00FD 11F9 3D2B 00DC 3D31 0109 09C8 0426 042C 0019 FFFF 3BDC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "MA is one of nature's curiosities , a kind of space whale , genetically altered by Cap'n Bob ..."
+00002B70: TEXT 08BA FF 60 80 - - 3CDC 3D3D 0645 3D42 02E7 00B2 3D47 3D4C 006C 3D42 3D52 0753 3CD1 0019 FFFF 3BDC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "MA lays her eggs in the PRAM ZONE. The eggs hatch into ORXX ..."
+00002B98: TEXT 08BA FF 60 80 - - 3CDC 0092 00C1 3D58 1379 00DC 00A3 0095 031D 0092 158D 3D58 012F 2D04 0019 FFFF 3CDC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "MA is a sensitive being , Commander . She is very sensitive to music ..."
+00002BC2: TEXT 08BA FF 60 80 - - 3CDC 3D62 0529 3D67 3D71 0019 FFFF 3BDC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "MA eats only synthetic strawberries ..."
+00002BDA: TEXT 08BA FF 60 80 - - 0426 042C 3D7E 3D67 3D71 0095 2EC1 3D84 05F3 00BC 09EA 0151 00B2 3C81 3D8E FFFF 3BDC ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Cap'n Bob loves synthetic strawberries . He perfected them with help from the KANARY geneticists."
+00002C04: TEXT 08BA FF 60 80 - - 3BDF 0056 3D9B 3DA2 3CE4 0095 1247 012F 05F3 00DC 0E54 12C6 3DA9 3DB3 0019 FFFF 3BDF ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Orxx are LIVING guided missiles . Thanks to them , you're always perfectly safe ..."
+00002C2E: TEXT 08BA FF 60 80 - - 01BA 3DB8 0A14 3BDF 12BE 3DBE 3DC5 12BE 27D4 3DCC 0D85 3DD2 004D 2BA9 036A 0257 0019 FFFF 3BDF ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "You guide an Orxx through space, seeing through its eyes. It lands on planets for you ..."
+00002C5C: TEXT 08BA FF 60 80 - - 241F 04B5 0CB8 2F29 00DC 00B2 3BDF 0092 3DD8 0019 0F2B 0257 024B 0869 3DB3 02E7 3DE2 0019 FFFF 3BDF ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "If there's any danger , the Orxx is destroyed ... Not you ! You're safe in orbit ..."
+00002C8C: TEXT 08BA FF 60 80 - - 3A07 00FD 3BDF 0293 0634 3DE8 0095 057F 3284 12BE 05F3 00BC 00B2 3CA2 0095 3DF8 3DFE 0056 3E08 09C8 3E13 00B2 04C2 32F1 0019 FFFF 3BDF ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Think of Orxx as your representatives . We dialog through them with the aliens . Alien languages are translated by Olgo, the onboard translator ..."
+00002CCA: TEXT 08BA FF 60 80 - - 006C 3BDF 0056 0A86 00FD 0426 3E19 1D8E 3E1F 0019 FFFF 3BDF ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The Orxx are one of Cap'n Bob's finest creations ..."
+00002CEA: TEXT 08BA FF 60 80 - - 05E9 0092 1158 0C2D 32F1 0095 031D 3312 0630 00B2 3DFE 02E7 00B2 09D7 0019 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Olga is our cybernetic translator . She knows all the languages in the universe ..."
+00002D14: TEXT 08BA FF 60 80 - - 05E9 0092 158D 0F77 3318 02E7 3E29 0095 2487 0F1D 0010 00DC 00A3 0019 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Olga is very highly paid in MEGAWATTS . More than me , Commander ..."
+00002D3C: TEXT 08BA FF 60 80 - - 05E9 3E33 3E3E 0305 036A 0305 0095 031D 3E45 2853 036A 38B5 2D29 0019 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Olga translates almost word for word . She doesn't care for nasty language ..."
+00002D64: TEXT 08BA FF 60 80 - - 17C0 0274 056C 26DC 0169 05E9 00DC 00A3 0095 02B3 158D 3E4D 0019 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Never say anything bad about Olga , Commander . She's very touchy ..."
+00002D8A: TEXT 08BA FF 40 80 - - 0555 055C 25B1 050B 3E54 3E59 3E5D 3E63 2886 3E69 05E9 1043 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x40,0x80 "MISTER HONK CAN JUST SHUT HIS LYING MOUTH ..... SIGNED Olga ...."
+00002DAE: TEXT 08BA FF 60 80 - - 0B37 03E5 0199 037E 00DC 00A3 0019 0199 0252 0257 0019 FFFF 05E9 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "See what I mean , Commander ... I told you ..."
+00002DD0: TEXT 08BA FF 60 80 - - 006C 03D1 03F1 0092 0A86 00FD 0426 3E19 3E70 00DC 00A3 0095 2EC1 3E7B 00B2 03D1 03F1 07E3 09EA 0A7C 101B 00B2 09D7 0019 1631 1707 3E45 3E82 0A7C 0019 FFFF 3BE4 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "The BIG BANG is one of Cap'n Bob's inventions , Commander . He thinks the BIG BANG will help him understand the universe ... Old age doesn't suit him ..."
+00002E18: TEXT 08BA FF 60 80 - - 01AC 3E87 0605 0010 00B2 03D1 03F1 0092 3E94 00DC 00A3 0095 0199 0229 0AD0 00C1 3E99 3EA2 3EA8 012F 3EB1 0326 0019 FFFF 3BE4 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "My calculations tell me the BIG BANG is fake , Commander . I think it's a deformed prism designed to fool us ..."
+00002E52: TEXT 08BA FF 60 80 - - 07A3 05A2 3B77 0257 0142 0010 00DC 0199 0229 207E 3EB6 3EBE 042C 0A10 12F4 24F3 02E7 1483 0019 FFFF 3BE4 ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Commander, just between you and me , I think ol' Buzzard Man Bob has another idea in mind ..."
+00002E84: TEXT 08BA FF 60 80 - - 1477 147D 0056 36C0 3EC2 22A7 11F9 05BB 089B 0142 3ECA 11F9 0019 FFFF 3BED ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Black holes are amazing devices which space out time and temporise space ..."
+00002EAA: TEXT 08BA FF 60 80 - - 241F 00E3 14F2 12BE 00C1 3C3D 3ED4 00DC 00E3 0056 1351 012F 3ED9 3EE2 0142 3EE6 3EEC 00DC 00A3 0019 FFFF 3BED ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "If we travel through a black hole , we are sure to discover NEW and WEIRD UNIVERSES , Commander ..."
+00002EDE: TEXT 08BA FF 60 80 - - 016F 3EF6 3EFB 3C3D 147D 0092 0A14 3F02 3F0D 00DC 00A3 0019 FFFF 3BED ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "What lies beyond black holes is an unfathomed mystery , Commander ..."
+00002F02: TEXT 08BA FF 60 80 - - 00A3 00DC 0199 0A21 3B07 0630 00FD 00C1 3F15 0019 FFFF 3BED ; TEXT line=0x08BA voice=0xFF flags=0x60,0x80 "Commander , I feel dizzy all of a sudden ..."
+00002F22: TEXT 08BA FF 21 80 - - 07D9 024B 00A3 0019 ; TEXT line=0x08BA voice=0xFF flags=0x21,0x80 "Yes ! Commander ..."
+00002F32: RAW AA AC 1C 3F 1D 30 ; BAS structure
+00002F38: MENU 1062 0001 3F24 ; bye_bye | talk | not_talk
+00002F41: TEXT 01FA 02 40 80 - - 01AC 00C7 3F2D 0B6B 03C5 3F32 2395 FFFF 3F24 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "My name Hom. Me big tube brain"
+00002F5B: TEXT 01FA 01 42 80 - - 3F37 1207 03E5 0257 3F3E FFFF 0001 ; TEXT line=0x01FA voice=0x01 flags=0x42,0x80 "Ooooh! stranger what you want?"
+00002F71: TEXT 01FA 00 42 80 - - 3F44 01BA 2D21 3F4C 01BA 0936 3F5A FFFF 0001 ; TEXT line=0x01FA voice=0x00 flags=0x42,0x80 "Oooooh! You strange intelligence. You know talk?"
+00002F8B: TEXT 01FA 03 42 80 - - 2E62 0151 3F60 0B6B 0274 3F65 3F68 FFFF 0001 ; TEXT line=0x01FA voice=0x03 flags=0x42,0x80 "Stranger from sky. Me say hi there..."
+00002FA5: TEXT 01FA 04 42 80 - - 0B6B 3F71 0D43 32D2 3F78 FFFF 0001 ; TEXT line=0x01FA voice=0x04 flags=0x42,0x80 "Me salute you, handsome stranger..."
+00002FBB: TEXT 01FA 06 40 80 - - 01BA 02ED 3F84 FFFF 3F24 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "You no tongue?"
+00002FCD: TEXT 01FA 07 40 80 - - 01BA 3F8C 0010 0224 3F94 FFFF 0001 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "You tongue, me like conversation"
+00002FE3: TEXT 01FA 08 40 80 - - 01BA 3FA2 FFFF 3F24 ; TEXT line=0x01FA voice=0x08 flags=0x40,0x80 "You dumb..."
+00002FF3: TEXT 01FA 0B 40 80 - - 01BA 2300 0DA5 FFFF 3F24 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "You deaf too..."
+00003005: TEXT 01FA 06 48 80 - - 0B6B 3FAA 0E21 148F FFFF 3F24 ; TEXT line=0x01FA voice=0x06 flags=0x48,0x80 "Me tired. Bye bye..."
+00003019: RAW C9 34 02 AC 01 00 C9 30 ; BAS structure
+00003021: MENU 1062 2A86 0086 2A7E 2A68 2D1D 3FB1 ; bye_bye | race | planet | science | politics | art | consumption
+00003032: TEXT 01FA 02 00 80 - - 016F 0257 01BE 3FBD 3FC3 ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "What you want know, friend..."
+00003044: TEXT 01FA 05 40 80 - - 3FCD 03C5 3FD2 3FC3 FFFF 2A86 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Race big subect, friend..."
+00003058: TEXT 01FA 07 40 80 - - 2B50 03C5 3FDA FFFF 2A7E ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Science big subject"
+0000306A: TEXT 01FA 06 40 80 - - 3FE2 0B6B 0936 0086 FFFF 0086 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Planet. Me know planet"
+0000307E: TEXT 01FA 07 40 80 - - 01BA 3FEA 3FF5 FFFF 2A68 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "You interested politics..."
+00003090: TEXT 01FA 05 40 80 - - 0B6B 0936 4001 4008 FFFF 2A68 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Me know plenty people..."
+000030A4: TEXT 01FA 0A 40 80 - - 0B6B 0224 4012 FFFF 2D1D ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me like artists..."
+000030B6: TEXT 01FA 0A 40 80 - - 401D 03C5 11BE FFFF 3FB1 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Consumerism big fun"
+000030C8: RAW AC 86 2A 07 31 ; BAS structure
+000030CD: MENU 0001 1062 1ABB 1AC1 1AB4 4029 2C4E 2C5A 1AC9 225B ; talk | bye_bye | izwal | croolis | slimer | tubular_brain | sinox | buggol | migrax | ondoyant
+000030E4: TEXT 01FA 01 02 80 - - 3FCD 03C5 4037 4044 404B 4053 ; TEXT line=0x01FA voice=0x01 flags=0x02,0x80 "Race big metaphysical thing. Natural magic"
+000030F8: TEXT 01FA 00 02 80 - - 3FCD 4059 405F ; TEXT line=0x01FA voice=0x00 flags=0x02,0x80 "Race heavy mystery..."
+00003106: RAW AC BB 1A 48 33 ; BAS structure
+0000310B: MENU 1062 2A86 0001 0086 406A 31D6 2A7E ; bye_bye | race | talk | planet | intelligence | food | science
+0000311C: TEXT 01FA 05 40 80 - - 2C6F 23E6 4077 31F2 407E FFFF 406A ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwal small brain. Very nice."
+00003132: TEXT 01FA 06 40 80 - - 4084 1ABB 4091 31F2 4099 409F 2395 FFFF 406A ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Intelligence izwal lively. Very noisy primitive brain"
+0000314C: TEXT 01FA 06 40 80 - - 40A9 406A 40B2 40B7 2395 03C5 40BC FFFF 406A ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Neuronal intelligence yuk. Tube brain big progress"
+00003166: TEXT 01FA 00 40 80 - - 40C5 40CF 1BD0 40D7 0D9A 40E0 40E8 40EE 1BD5 40FC FFFF 406A ; TEXT line=0x01FA voice=0x00 flags=0x40,0x80 "Calculate 4234543 plus 67754355 over 4533555 minus 4234557.94508 equals 0."
+00003186: TEXT 01FA 03 40 80 - - 4100 410E 4117 367D 411E 036A 0D43 4126 FFFF 406A ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Intelligence, entropy, power. Too complex for you, friend."
+000031A2: TEXT 01FA 07 40 80 - - 412E 1569 4133 00BC 4139 14A9 0422 0224 4133 FFFF 31D6 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "They catch flies with trunk. Hom not like flies"
+000031C0: TEXT 01FA 08 40 80 - - 2C61 0224 0A8A 4140 412E 4146 414F FFFF 31D6 ; TEXT line=0x01FA voice=0x08 flags=0x40,0x80 "Izwals like good food. They delicate stomach"
+000031DA: TEXT 01FA 09 40 80 - - 0199 0BC0 4157 31D6 FFFF 31D6 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "I eat spiritual food"
+000031EE: TEXT 01FA 0A 40 80 - - 01BA 12C6 0001 4140 01BA 4161 4168 FFFF 31D6 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "You always talk food. You hungry maybe..."
+00003208: TEXT 01FA 00 48 80 - - 05D5 0257 1356 0010 4171 0199 0777 4179 0E21 417E 3FC3 FFFF 31D6 ; TEXT line=0x01FA voice=0x00 flags=0x48,0x80 "Now you make me hungry. I go eat. Bye bye, friend..."
+0000322A: RAW C9 34 02 ; BAS structure
+0000322D: TEXT 01FA 0D 40 80 - - 2C61 0224 4183 0224 3190 FFFF 2A7E ; TEXT line=0x01FA voice=0x0D flags=0x40,0x80 "Izwals like astronomy, like stars"
+00003243: TEXT 01FA 0B 40 80 - - 2C6F 23E6 418E 03C5 4197 FFFF 2A7E ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Izwal small science, big telescope"
+00003259: TEXT 01FA 0C 40 80 - - 412E 41A2 41A8 11F9 41AD 14A3 41B6 FFFF 2A7E ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "They build wood space ships... laugh laugh..."
+00003273: TEXT 01FA 07 40 80 - - 0B6B 0224 2C6F 41BF 41C8 14A3 41B6 FFFF 2A7E ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Me like Izwal science. Funny... laugh laugh..."
+0000328D: TEXT 01FA 06 40 80 - - 2B50 418E 0257 0001 2A7E 0630 41D1 FFFF 2A7E ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Science science, you talk science all time.."
+000032A7: TEXT 01FA 05 40 80 - - 412E 2EDA 004D 41D8 2EF4 00C7 2EEE FFFF 0086 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "They live on planet. Planet name Rondo"
+000032C1: TEXT 01FA 03 40 80 - - 2C6F 0086 00C7 41E0 15A6 FFFF 0086 1D7C ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Izwal planet name Rondo. Nice"
+000032D9: TEXT 01FA 05 40 80 - - 2C6F 22CA 41E7 41ED 0041 41E0 15A6 FFFF 0086 1D7C ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwal palace wood. Built around Rondo. Nice"
+000032F5: TEXT 01FA 05 40 80 - - 2C6F 0224 349C 09C8 0086 41F3 FFFF 41F9 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwal like sing by planet light"
+0000330D: TEXT 01FA 02 40 80 - - 2C6F 2EDF 41FE 4205 4212 15CC 0422 4218 FFFF 41F9 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Izwal house funny. Complicated. Nice, but not practical..."
+00003329: TEXT 01FA 09 02 80 - - 0B6B 4225 1264 2561 ; TEXT line=0x01FA voice=0x09 flags=0x02,0x80 "Me like, they nice"
+00003339: TEXT 01FA 0A 02 80 - - 412E 422B 4230 ; TEXT line=0x01FA voice=0x0A flags=0x02,0x80 "They soft fur..."
+00003347: RAW AC C1 1A B0 34 ; BAS structure
+0000334C: MENU 1062 2A86 2A52 2A7E 41F9 14AD 0086 ; bye_bye | race | war | science | info | joke | planet
+0000335D: TEXT 01FA 06 40 80 - - 0B6B 0422 0224 4237 0F2B 0224 41AD FFFF 2A52 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Me not like war. Not like ships..."
+00003377: TEXT 01FA 06 40 80 - - 30E8 155B 1563 423C 224C FFFF 2A52 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Us Tubular Brain despise Croolis"
+0000338D: TEXT 01FA 03 40 80 - - 2AE9 4244 424D 224C FFFF 2A52 ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "War favorite sport Croolis"
+000033A1: TEXT 01FA 07 40 80 - - 224C 0936 2CE4 418E 05F3 2CE4 2395 FFFF 2A52 2A7E ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Croolis know muscle science, them muscle brain"
+000033BD: TEXT 01FA 0A 40 80 - - 224C 037E FFFF 2A52 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Croolis mean"
+000033CD: TEXT 01FA 04 40 80 - - 224C 2F3F 4253 4259 14A3 41B6 FFFF 14AD ; TEXT line=0x01FA voice=0x04 flags=0x40,0x80 "Croolis cruel, fool, drool, laugh laugh..."
+000033E5: TEXT 01FA 03 40 80 - - 224C 4260 4266 14A3 14A3 14A3 2ACB 14A3 FFFF 14AD ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Croolis crude crude... laugh laugh laugh cry laugh"
+00003401: TEXT 01FA 02 40 80 - - 01BA 0224 14A3 FFFF 14AD ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "You like laugh"
+00003413: TEXT 01FA 07 40 80 - - 224C 426F 03C5 4277 093B 2395 427F FFFF 41F9 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Croolis stupid, big muscle, where brain go?"
+0000342D: TEXT 01FA 09 40 80 - - 224C 0086 4283 FFFF 41F9 0086 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Croolis planet Mastachok"
+00003441: TEXT 01FA 0A 40 80 - - 428D 07A3 0010 4291 1281 0911 429D FFFF 41F9 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Oh, Commander, me hallucinate when see violence"
+0000345B: TEXT 01FA 0B 40 80 - - 4283 0866 3C3D 41D8 42A6 00FD 147D FFFF 0086 1C81 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Mastachok be black planet. Full of holes"
+00003477: TEXT 01FA 0E 40 80 - - 224C 0224 42AB 42B1 2D99 169E FFFF 0086 1C81 ; TEXT line=0x01FA voice=0x0E flags=0x40,0x80 "Croolis like smash planets, kill life"
+00003491: TEXT 01FA 0B 40 80 - - 224C 066E 42BA 38D1 004D 42C1 42C7 42CC FFFF 0086 1C81 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Croolis hate peace, spit on life. Hate nature"
+000034AF: RAW AC B4 1A 96 36 ; BAS structure
+000034B4: MENU 1062 2A86 0086 2A7E 2A68 191E 41F9 ; bye_bye | race | planet | science | politics | yolk | info
+000034C5: TEXT 01FA 10 40 80 - - 18F7 2D21 42D3 0B6B 42DE 0936 18F1 188A FFFF 191E ; TEXT line=0x01FA voice=0x10 flags=0x40,0x80 "Slimer strange creatures. Me personally know great Yolk"
+000034E1: TEXT 01FA 0B 40 80 - - 188A 03C5 42E9 18F1 42F2 0B6B 3125 FFFF 191E ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Yolk big thinker, great master. Me respect"
+000034FB: TEXT 01FA 02 40 80 - - 188A 42FA 3125 3B77 4301 188A 19C5 03C5 0A8F FFFF 2A68 191E ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Yolk invent respect between races. Yolk was big friend"
+0000351B: TEXT 01FA 01 40 80 - - 188A 4308 430D 4314 2A7E FFFF 2A7E 191E ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Yolk lots ideas, mental science"
+00003533: TEXT 01FA 03 40 80 - - 188A 18FE 02E7 03C5 431B 0086 194F FFFF 0086 191E ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Yolk buried in big mausoleum, planet Vista"
+0000354F: TEXT 01FA 05 40 80 - - 18F7 0422 0777 0656 FFFF 41F9 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Slimer not go away"
+00003563: TEXT 01FA 01 40 80 - - 3047 00FD 18F1 18AB 09E3 30AB FFFF 41F9 2D1D ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Portrait of great Yolk, famous painting..."
+0000357D: TEXT 01FA 05 40 80 - - 2E6F 2EDA 2D21 4326 0086 432E FFFF 41F9 0086 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Slimers live strange houses, planet Ekatomb"
+00003597: TEXT 01FA 06 40 80 - - 2E6F 0A8A 0142 2E6F 26DC 0BCF FFFF 41F9 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Slimers good and Slimers bad also"
+000035AF: TEXT 01FA 05 40 80 - - 18F7 0086 00C7 4336 433F 41D8 4346 FFFF 0086 22B5 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Slimer planet name Ekatomb. Exotic planet. Nice..."
+000035CB: TEXT 01FA 09 40 80 - - 18F7 0224 434E 4352 FFFF 0086 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Slimer like low gravity."
+000035DF: TEXT 01FA 0A 40 80 - - 0B6B 0224 435B 18F7 41D8 15A6 FFFF 0086 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me like exotic Slimer planet. Nice"
+000035F7: TEXT 01FA 07 40 80 - - 027E 11A7 11A7 11A7 18F7 41BF 01BA 4362 01BA 0422 0936 4368 436F 4374 4378 FFFF 2A7E ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Ha ha ha ha Slimer science. You joke. You not know Doctor Otto Von Smile?"
+00003621: TEXT 01FA 05 40 80 - - 2E6F 01BE 2EDA 437F 051A 4388 FFFF 2A7E ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Slimers want live forever. Afraid oldness"
+00003639: TEXT 01FA 0A 40 80 - - 2E6F 0BC0 4390 4394 439E 439E 43A2 FFFF 2A7E ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Slimers eat lot vitamins, ho ho ho..."
+00003653: TEXT 01FA 0B 40 80 - - 18F7 2A68 43A8 412E 01BE 2EDA 43B0 FFFF 2A68 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Slimer politics simple. They want live forever..."
+0000366D: TEXT 01FA 0B 40 80 - - 2E6F 43BB 2A86 FFFF 2A86 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Slimers weird race"
+0000367F: TEXT 01FA 10 40 80 - - 2E6F 43C1 0151 11F9 43C8 FFFF 2A86 ; TEXT line=0x01FA voice=0x10 flags=0x40,0x80 "Slimers evolve from space jellyfish"
+00003695: RAW AC 29 40 16 37 ; BAS structure
+0000369A: MENU 1062 2395 41F9 ; bye_bye | brain | info
+000036A3: TEXT 01FA 01 40 80 - - 155B 1563 0229 43D2 FFFF 2395 ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Tubular Brain think good."
+000036B7: TEXT 01FA 00 40 80 - - 40B7 2395 43D8 01BA 0422 43E1 FFFF 2395 ; TEXT line=0x01FA voice=0x00 flags=0x40,0x80 "Tube brain complex. You not understand."
+000036CF: TEXT 01FA 03 40 80 - - 43ED 43F3 11F5 02E7 3DBE 43FC 1483 4404 FFFF 2395 ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Tubes resonate far in space, capture mind force"
+000036EB: TEXT 01FA 0B 40 80 - - 0B6B 03C5 155B 440A FFFF 41F9 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Me big Tubular Brain."
+000036FF: TEXT 01FA 0D 40 80 - - 155B 1563 0866 4411 2A86 FFFF 41F9 ; TEXT line=0x01FA voice=0x0D flags=0x40,0x80 "Tubular Brain be superior race"
+00003715: RAW AC 4E 2C A0 37 ; BAS structure
+0000371A: MENU 1062 2A86 2A7E 2F52 41F9 ; bye_bye | race | science | technology | info
+00003727: TEXT 01FA 05 40 80 - - 2CD0 1592 441A 07E8 03C5 2F52 FFFF 2F52 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Sinox hard workers. Big big technology"
+0000373F: TEXT 01FA 09 40 80 - - 2CD0 41A2 4423 442E 2C4E 0224 08A0 FFFF 41F9 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Sinox build computers, machines, sinox like money"
+00003759: TEXT 01FA 0A 40 80 - - 2CD0 2A7E 4438 443D 02E7 09D7 FFFF 2A7E ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Sinox science most powerful in universe"
+00003771: TEXT 01FA 02 40 80 - - 2CD0 01BE 4446 4117 01BA 444C FFFF 2A86 2C4E ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Sinox want total power. You careful"
+0000378B: TEXT 01FA 05 40 80 - - 2CD0 443D 014A FFFF 2A86 2C4E ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Sinox powerful people"
+0000379F: RAW AC C9 1A 26 38 ; BAS structure
+000037A4: MENU 1062 2A86 0001 41F9 1859 ; bye_bye | race | talk | info | murffalos
+000037B1: TEXT 01FA 06 40 80 - - 2BFD 0422 0669 02E7 2395 FFFF 41F9 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Migrax not much in brain"
+000037C7: TEXT 01FA 0B 40 80 - - 2BFD 0224 4390 4454 445B 4460 445B 4465 446A FFFF 41F9 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Migrax like lot money. Sell dad. Sell mom. Bad"
+000037E5: TEXT 01FA 0E 40 80 - - 2BFD 0BC0 1859 2C87 02E7 446E 4477 FFFF 1859 ; TEXT line=0x01FA voice=0x0E flags=0x40,0x80 "Migrax eat murffalos boiled in mercury. Ugh..."
+000037FF: TEXT 01FA 07 40 80 - - 2BFD 0001 005A 447E FFFF 0001 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Migrax talk too much..."
+00003813: TEXT 01FA 06 40 80 - - 01BA 0224 3F5A FFFF 0001 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "You like talk?"
+00003825: RAW AC 5A 2C 60 38 ; BAS structure
+0000382A: MENU 1062 2A86 2A68 41F9 14AD ; bye_bye | race | politics | info | joke
+00003837: TEXT 01FA 05 40 80 - - 4486 1CBC 4490 FFFF 2A68 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Democracy Buggol wise"
+00003849: TEXT 01FA 03 40 80 - - 0B6B 0422 24DA 0911 4495 FFFF 2A86 ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Me not ever see Buggol..."
+0000385F: RAW AC 5B 22 C0 38 ; BAS structure
+00003864: MENU 1062 0001 41F9 2A71 3FB1 ; bye_bye | talk | info | reproduction | consumption
+00003871: TEXT 01FA 01 40 80 - - 449F 44A7 0257 0422 0274 0985 44B1 FFFF 41F9 ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Ahhhhh! ondoyant, you not say such word..."
+0000388B: TEXT 01FA 03 40 80 - - 44B9 0630 44BF 03C5 44C5 03C5 44CC FFFF 2A71 ; TEXT line=0x01FA voice=0x03 flags=0x40,0x80 "Love, all time, big magic, big hot..."
+000038A5: TEXT 01FA 0B 40 80 - - 14A9 44D3 14A9 0422 44DC 2ACB 44E7 FFFF 2A71 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Hom eternal. Hom not reproduce, cry cry..."
+000038BF: RAW AC 59 18 4C 39 ; BAS structure
+000038C4: MENU 1062 0086 2A71 3FB1 41F9 ; bye_bye | planet | reproduction | consumption | info
+000038D1: TEXT 01FA 02 40 80 - - 316C 0866 23F3 00BC 44EE FFFF 41F9 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Murffalos be creatures with horn."
+000038E7: TEXT 01FA 05 40 80 - - 316C 44F4 44FB 264B FFFF 3FB1 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Murffalos tender meat. Tasty"
+000038FB: TEXT 01FA 09 40 80 - - 1162 390D 0A43 4501 004D 0086 2378 FFFF 0086 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Can buy frozen murffallos on planet Moskito"
+00003915: TEXT 01FA 09 40 80 - - 316C 450C 012F 450F 1C24 02E7 451A 4522 4525 FFFF 2A71 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Murffalos 13 to reproduce. One in middle, 12 surround"
+00003933: TEXT 01FA 05 40 80 - - 316C 23E6 23E6 4077 452E 2561 FFFF 3FB1 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Murffalos small small brain. Meat nice"
+0000394B: RAW AC 86 00 F6 3A ; BAS structure
+00003950: MENU 1062 0001 1D75 1C81 1C6F 1D7C 22EA 4533 4539 ; bye_bye | talk | erazor | mastachok | tumul | rondo | cyberock | troma | attrox
+00003965: TEXT 01FA 05 40 80 - - 15A6 2CD0 0086 FFFF 1F47 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Nice Sinox planet"
+00003977: TEXT 01FA 09 40 80 - - 0B6B 0422 24DA 0866 012F 4540 FFFF 1F47 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Me not ever be to Venusia"
+0000398F: TEXT 01FA 07 40 80 - - 0B6B 3BCE 4548 446A 4551 FFFF 1D75 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Me sense badness. Bad vibe"
+000039A5: TEXT 01FA 08 40 80 - - 2C17 18F7 41D8 4556 127A 2EDA 0E89 FFFF 1D75 ; TEXT line=0x01FA voice=0x08 flags=0x40,0x80 "Erazor Slimer planet. Weird doctor live there"
+000039BF: TEXT 01FA 0E 40 80 - - 4283 224C 41D8 455C 02ED 0A8A FFFF 1C81 ; TEXT line=0x01FA voice=0x0E flags=0x40,0x80 "Mastachok Croolis planet. Vibe no good"
+000039D7: TEXT 01FA 0F 40 80 - - 0B6B 0422 0224 4283 FFFF 1C81 ; TEXT line=0x01FA voice=0x0F flags=0x40,0x80 "Me not like Mastachok"
+000039EB: TEXT 01FA 09 40 80 - - 2EF4 00FD 4561 15A6 FFFF 1C6F ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Planet of Patagos. Nice"
+000039FF: TEXT 01FA 0A 40 80 - - 07C2 3DE2 1DA8 456A 233B FFFF 1C6F ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Tumul orbit round sun Gladis"
+00003A15: TEXT 01FA 02 40 80 - - 456E 4574 FFFF 1D7C ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Round planet..."
+00003A25: TEXT 01FA 05 40 80 - - 2C61 2EDA 3F68 FFFF 1D7C ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwals live there..."
+00003A37: TEXT 01FA 05 40 80 - - 07E8 457E 4584 03C5 458D FFFF 22EA ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Big cyber college, big culture..."
+00003A4D: TEXT 01FA 0A 40 80 - - 15FA 0866 0996 036A 03C5 4598 FFFF 22EA ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Cyberock be place for big knowledge"
+00003A65: TEXT 01FA 05 40 80 - - 45A2 2A52 1D5E 45AA 45B2 07E8 2F29 FFFF 4533 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Problem war against Scorps. Insects. Big danger"
+00003A7F: TEXT 01FA 0A 40 80 - - 45BB 45C1 4574 FFFF 4533 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Troma cursed planet..."
+00003A91: TEXT 01FA 06 40 80 - - 07E8 11BE 45C8 45CE 0A8A 45D5 45DC 45DC FFFF 4539 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Big fun town. Money, good times, wink wink"
+00003AAD: TEXT 01FA 05 40 80 - - 2BA4 2BFD 0086 FFFF 45E1 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Eden Migrax planet"
+00003ABF: TEXT 01FA 0A 40 80 - - 0B6B 3BCE 45E6 3FC3 FFFF 45E1 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me sense Eden, friend..."
+00003AD3: TEXT 01FA 02 03 80 - - 0E40 45EC 45F5 45FE 4605 ; TEXT line=0x01FA voice=0x02 flags=0x03,0x80 "Stars explode, bigbang, plasma boom!!!"
+00003AE5: TEXT 01FA 00 03 80 - - 460D 4613 461B 4620 ; TEXT line=0x01FA voice=0x00 flags=0x03,0x80 "Heat, fusion, sun. Bang!"
+00003AF5: RAW AC 5D 2A 82 3B ; BAS structure
+00003AFA: MENU 1062 41F9 3FB1 2A68 ; bye_bye | info | consumption | politics
+00003B05: TEXT 01FA 0E 43 80 - - 0B6B 3F2D 0B6B 03C5 4626 4637 463E FFFF 2A5D ; TEXT line=0x01FA voice=0x0E flags=0x43,0x80 "Me Hom. Me big power.Television inside head..."
+00003B1F: TEXT 01FA 0D 40 80 - - 4646 0422 0A8A 036A 4651 FFFF 2A5D ; TEXT line=0x01FA voice=0x0D flags=0x40,0x80 "Television not good for reproduction..."
+00003B35: TEXT 01FA 03 43 80 - - 4646 0A8A 41F9 036A 01B5 2395 FFFF 41F9 ; TEXT line=0x01FA voice=0x03 flags=0x43,0x80 "Television good info for weak brain"
+00003B4D: TEXT 01FA 06 40 80 - - 0B6B 0422 2911 4661 466D 02ED 0A8A FFFF 41F9 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Me not watch television. Programs no good"
+00003B67: TEXT 01FA 06 40 80 - - 4676 467C 12C6 390D 248C 0142 248C FFFF 3FB1 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Watch television, always buy more and more"
+00003B81: RAW AC 88 46 FE 3B ; BAS structure
+00003B86: MENU 1062 0001 41F9 3055 ; bye_bye | talk | info | painting
+00003B91: TEXT 01FA 05 40 80 - - 0B6B 0224 3055 FFFF 41F9 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Me like painting"
+00003BA3: TEXT 01FA 0A 40 80 - - 0B6B 0224 2D1D 4140 0ACC 1859 1802 2C87 02E7 1816 FFFF 41F9 ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Me like art food. And murffalos liver boiled in mercury"
+00003BC3: TEXT 01FA 09 40 80 - - 1B6E 1B73 03C5 468D 03C5 4695 01BA 1575 3A11 00FD 469F FFFF 41F9 ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "Jeph d'Ulikan big artist, big thoughts. You read thoughts of Jeph."
+00003BE5: TEXT 01FA 05 40 80 - - 3047 18F1 46A5 18A5 46AB 46B5 FFFF 3055 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Portrait great Yolk. Great painting. Famous"
+00003BFD: RAW AC 4C 2A 6E 3C ; BAS structure
+00003C02: MENU 1062 2A68 46BC 1ABB ; bye_bye | politics | friendship | izwal
+00003C0D: TEXT 01FA 01 40 80 - - 20C5 0A8A 46C7 0B6B 0224 FFFF 46CD ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Peace good idea. Me like"
+00003C23: TEXT 01FA 0A 40 80 - - 46CD 46D8 46DE 4301 0B6B 4225 3FC3 FFFF 46BC ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Friendship among peoples, races. Me like, friend..."
+00003C3D: TEXT 01FA 05 40 80 - - 2C6F 46E7 46ED 46F2 412E 0422 2F4A FFFF 1ABB ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwal weak. Like peace. They not violent"
+00003C57: TEXT 01FA 0A 40 80 - - 20C5 1356 1483 46F9 4706 FFFF 2A4C ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Peace make mind connections. Progress"
+00003C6D: RAW AC 52 2A C0 3C ; BAS structure
+00003C72: MENU 1062 2A68 1AC1 ; bye_bye | politics | croolis
+00003C7B: TEXT 01FA 06 40 80 - - 224C 0224 470F 0224 2D99 FFFF 1AC1 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Croolis like fight, like kill"
+00003C91: TEXT 01FA 06 40 80 - - 2AE9 4716 471E 4727 472D 38A5 FFFF 2A52 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "War stupid. Destroy, hate, die, die"
+00003CA9: TEXT 01FA 0E 40 80 - - 099C 4732 4738 473C 4742 FFFF 2A52 ; TEXT line=0x01FA voice=0x0E flags=0x40,0x80 "Why hate? Lot hate. Why?"
+00003CBF: RAW AC 68 2A 4E 3D ; BAS structure
+00003CC4: MENU 1062 2A86 1CC3 2A5D 14AD 2A4C 2A52 ; bye_bye | race | democracy | television | joke | peace | war
+00003CD5: TEXT 01FA 0B 40 80 - - 4486 4747 4752 0086 03C5 1CC3 FFFF 1CC3 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Democracy important. Cyborg planet big democracy"
+00003CED: TEXT 01FA 0C 40 80 - - 3110 26DC 4759 0B6B 30C5 08AC FFFF 2A86 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Politics bad vibe. Me prefer ondoyants"
+00003D05: TEXT 01FA 01 40 80 - - 4646 03C5 475F 4117 4769 4776 FFFF 2A5D ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Television big political power. Fascination. Lie"
+00003D1D: TEXT 01FA 10 40 80 - - 2AED 477A 14A3 14A3 14A3 FFFF 14AD ; TEXT line=0x01FA voice=0x10 flags=0x40,0x80 "Polly ticks... laugh laugh laugh"
+00003D33: TEXT 01FA 0C 40 80 - - 3110 03C5 4783 478D 4794 26DC 479B FFFF 2A68 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Politics big business, money, power, bad vibe..."
+00003D4D: RAW AC 71 2A A6 3D ; BAS structure
+00003D52: MENU 1062 2A86 1B9F 225B 41F9 14AD ; bye_bye | race | hom | ondoyant | info | joke
+00003D61: TEXT 01FA 0D 40 80 - - 0F2B 0936 47A3 14A9 0422 450F 14A9 3616 FFFF 1B9F ; TEXT line=0x01FA voice=0x0D flags=0x40,0x80 "Not know reproduction. Hom not reproduce. Hom eternal"
+00003D7D: TEXT 01FA 09 40 80 - - 08AC 0224 2A71 FFFF 225B ; TEXT line=0x01FA voice=0x09 flags=0x40,0x80 "ondoyants like reproduction"
+00003D8F: TEXT 01FA 0A 40 80 - - 2B1C 14A9 47B1 07E8 47BC FFFF 14AD ; TEXT line=0x01FA voice=0x0A flags=0x40,0x80 "Reproduction Hom forbidden. Big copyright..."
+00003DA5: RAW AC 7E 2A BC 3E ; BAS structure
+00003DAA: MENU 1062 0001 2A86 0086 09D7 41F9 47C9 1483 ; bye_bye | talk | race | planet | universe | info | origin | mind
+00003DBD: TEXT 01FA 01 40 80 - - 14A9 47D0 47D8 101B 1D95 FFFF 09D7 ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Hom detect, sense, understand universe."
+00003DD3: TEXT 01FA 02 40 80 - - 47DF 47E8 00BC 23E6 47EF FFFF 09D7 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Universe filled with small creatures..."
+00003DE9: TEXT 01FA 07 40 80 - - 14A9 03C5 1483 4117 0B6B 0936 0D43 47FC FFFF 41F9 ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Hom big mind power. Me know you, stranger."
+00003E05: TEXT 01FA 05 40 80 - - 2C6F 0224 3066 418E 4806 FFFF 2A86 ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Izwal like dream science, astronomy."
+00003E1B: TEXT 01FA 02 40 80 - - 01BA 01BE 0936 47C9 1D95 FFFF 47C9 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "You want know origin universe."
+00003E31: TEXT 01FA 0B 40 80 - - 4811 09D7 03C5 4818 481E FFFF 47C9 09D7 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Origin universe big major mystery."
+00003E49: TEXT 01FA 0C 40 80 - - 0B6B 0936 47C9 2045 0B6B 4827 0422 4830 FFFF 47C9 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Me know origin universe? Me promised not tell."
+00003E65: TEXT 01FA 0B 40 80 - - 47DF 0315 4836 2BA9 FFFF 09D7 0086 ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Universe have billions planets"
+00003E7B: TEXT 01FA 02 40 80 - - 483F 248C 03C5 0F1D 09D7 FFFF 1483 ; TEXT line=0x01FA voice=0x02 flags=0x40,0x80 "Mind more big than universe"
+00003E91: TEXT 01FA 01 40 80 - - 07E8 4794 4818 4844 484C FFFF 1483 ; TEXT line=0x01FA voice=0x01 flags=0x40,0x80 "Big power, major wisdom, beauty..."
+00003EA7: TEXT 01FA 07 40 80 - - 0B6B 0224 4856 485D FFFF 2A7E ; TEXT line=0x01FA voice=0x07 flags=0x40,0x80 "Me like crunch numbers."
+00003EBB: RAW AC 66 48 2A 3F ; BAS structure
+00003EC0: MENU 1062 0001 2C4E 31D6 ; bye_bye | talk | sinox | food
+00003ECB: TEXT 01FA 05 40 80 - - 2CD0 41A2 3F65 4873 4878 FFFF 2C4E ; TEXT line=0x01FA voice=0x05 flags=0x40,0x80 "Sinox build hi tech products"
+00003EE1: TEXT 01FA 06 40 80 - - 31DB 03C5 4881 316C 03C5 488A FFFF 31D6 ; TEXT line=0x01FA voice=0x06 flags=0x40,0x80 "Food big problem. Murffalos big solution"
+00003EF9: TEXT 01FA 0A 41 80 - - 0B6B 0422 03C5 4893 0B6B 0BC0 1483 489D 3FC3 FFFF 31D6 ; TEXT line=0x01FA voice=0x0A flags=0x41,0x80 "Me not big consumer. Me eat mind food, friend..."
+00003F17: TEXT 01FA 02 00 80 - - 01BA 01BE 0001 48A3 0A8F ; TEXT line=0x01FA voice=0x02 flags=0x00,0x80 "You want talk consumption, friend"
+00003F29: RAW AC AD 14 00 00 ; BAS structure
+00003F2E: MENU 1062 0001 2A86 0086 41F9 14A3 ; bye_bye | talk | race | planet | info | laugh
+00003F3D: TEXT 01FA 0C 40 80 - - 14A9 0422 0224 48B0 48B8 48B8 48BF 48B8 48B8 14A3 FFFF 14A3 ; TEXT line=0x01FA voice=0x0C flags=0x40,0x80 "Hom not like joke... laugh, laugh, cry, laugh, laugh, laugh"
+00003F5D: TEXT 01FA 0B 40 80 - - 2C6F 41A2 48C4 48B8 14A3 FFFF 1ABB 14AD ; TEXT line=0x01FA voice=0x0B flags=0x40,0x80 "Izwal build telescope, laugh, laugh"
+00003F75: TEXT 01FA 10 40 80 - - 0B6B 0BC0 2C6F 48CF 48DA 48B8 48B8 48BF 48B8 14A3 FFFF 14AD ; TEXT line=0x01FA voice=0x10 flags=0x40,0x80 "Me eat Izwal telescope. Telesteak, laugh, laugh, cry, laugh, laugh"
+00003F95: TEXT 01FA 0B 00 80 - - 01BA 01BE 0010 48E5 ; TEXT line=0x01FA voice=0x0B flags=0x00,0x80 "You want me sing?"
+00003FA5: TEXT 01FA 02 03 80 - - 01BA 0001 0630 44BF 3FC3 ; TEXT line=0x01FA voice=0x02 flags=0x03,0x80 "You talk all time, friend..."
+00003FB7: RAW FF ; BAS structure
