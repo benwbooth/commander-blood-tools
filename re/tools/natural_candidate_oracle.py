@@ -54956,6 +54956,423 @@ def ship_3d_navigation_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def name_area_palette_effect_update_vectors() -> list[dict[str, object]]:
+    entry = 0x8BAB
+    body_size = 235
+    body_hash = "6d470b4ca2cd6f54bcec1b05dd688dc0ee0bfc6119dbf7818b57a4eaed884375"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x8bab: recovered 235-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "inactive_high_bits_do_not_enter", "active": 0x80},
+        {
+            "name": "restart_uses_initial_sequence",
+            "active": 1,
+            "restart": 0x81,
+            "sequence_operation": 0,
+            "sequence_frames": 2,
+        },
+        {"name": "operation_zero_collapses_to_e0", "active": 1, "operation": 0},
+        {"name": "operation_one_collapses_to_ef", "active": 1, "operation": 1},
+        {"name": "operation_two_cycles_palette", "active": 1, "operation": 2},
+        {"name": "operation_three_darkens_palette", "active": 1, "operation": 3},
+        {"name": "higher_operation_uses_darken_path", "active": 1, "operation": 7},
+        {
+            "name": "zero_count_selects_first_random_sequence",
+            "active": 1,
+            "operation": 0,
+            "frames": 0,
+            "random_result": 0,
+            "sequence_operation": 2,
+            "sequence_frames": 3,
+        },
+        {
+            "name": "zero_count_selects_last_random_sequence",
+            "active": 1,
+            "operation": 0,
+            "frames": 0,
+            "random_result": 8,
+            "sequence_operation": 1,
+            "sequence_frames": 1,
+        },
+        {
+            "name": "gs_operation_controls_framebuffer_pass",
+            "active": 1,
+            "operation": 0,
+            "render_operation": 2,
+        },
+        {
+            "name": "packed_width_uses_low_byte_and_full_stride",
+            "active": 1,
+            "operation": 3,
+            "width": 0x0103,
+            "height": 2,
+            "x": 2,
+            "y": 0,
+        },
+        {
+            "name": "packed_y_uses_byte_swap_row_address",
+            "active": 1,
+            "operation": 1,
+            "width": 2,
+            "height": 1,
+            "x": 5,
+            "y": 0x0102,
+        },
+    ]
+
+    data_segment = 0x3000
+    game_segment = 0x5000
+    extra_segment = 0x7000
+    stack_segment = 0x9000
+    framebuffer_segment = 0xB000
+    framebuffer_offset = 0x0100
+    caller_sp = 0xFF00
+    return_address = 0xF200
+    current_frame_offset = 0x3800
+    sequence_offsets = [0x3000 + index * 0x40 for index in range(10)]
+    prng_entry = 0x01CE * 16 + 0x0B02
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    source_pixels = [0xDF, 0xE0, 0xE1, 0xEE, 0xEF, 0xF0]
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_frame(
+        image: bytearray,
+        offset: int,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+    ) -> None:
+        struct.pack_into("<HHHH", image, offset, x, y, width, height)
+
+    def transform(value: int, operation: int) -> int:
+        palette_index = value ^ 0xE0
+        if operation <= 1:
+            if palette_index <= 0x0F:
+                return 0xE0 if operation == 0 else 0xEF
+        elif operation == 2:
+            if palette_index < 0x0F and palette_index != 0x0E:
+                return 0xE0 + ((palette_index + 2) & 0x0F)
+        elif palette_index <= 0x0F:
+            return 0xE0 + max(0, palette_index - 1)
+        return value
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        active = int(case.get("active", 0)) & 0xFF
+        restart = int(case.get("restart", 0)) & 0xFF
+        operation = int(case.get("operation", 3)) & 0xFF
+        frames = int(case.get("frames", 2)) & 0xFF
+        sequence_operation = int(case.get("sequence_operation", operation)) & 0xFF
+        sequence_frames = int(case.get("sequence_frames", 2)) & 0xFF
+        random_result = case.get("random_result")
+        default_render_operation = (
+            sequence_operation
+            if (restart & 1) != 0 or random_result is not None
+            else operation
+        )
+        render_operation = int(
+            case.get("render_operation", default_render_operation)
+        ) & 0xFF
+        width = int(case.get("width", 6)) & 0xFFFF
+        height = int(case.get("height", 2)) & 0xFFFF
+        x = int(case.get("x", 3)) & 0xFFFF
+        y = int(case.get("y", 2)) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 17 + (offset >> 8) * 29 + case_index * 31 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        framebuffer_before = bytearray(
+            (offset * 19 + (offset >> 8) * 31 + case_index * 37 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 23 + (offset >> 8) * 41 + case_index * 43 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x27E8] = active
+        data_before[0x27E9] = restart
+        put_word(data_before, 0x27ED, current_frame_offset)
+        put_word(data_before, 0x27EF, operation | (frames << 8))
+        game_before[0x27EF] = render_operation
+        for index, sequence_offset in enumerate(sequence_offsets):
+            put_word(data_before, 0x27F1 + index * 2, sequence_offset)
+            selected = (
+                (restart & 1) != 0 and index == 0
+            ) or (
+                random_result is not None and index == int(random_result) + 1
+            )
+            header_operation = sequence_operation if selected else (index + 4)
+            header_frames = sequence_frames if selected else (index + 5)
+            put_word(
+                data_before,
+                sequence_offset,
+                header_operation | ((header_frames & 0xFF) << 8),
+            )
+            put_frame(
+                data_before,
+                sequence_offset + 2,
+                x,
+                y,
+                width,
+                height,
+            )
+        put_frame(data_before, current_frame_offset, x, y, width, height)
+        struct.pack_into(
+            "<HH",
+            data_before,
+            0x5221,
+            framebuffer_offset,
+            framebuffer_segment,
+        )
+        struct.pack_into(
+            "<HH",
+            game_before,
+            0x5221,
+            0x7777,
+            0xD000,
+        )
+
+        low_width = width & 0xFF
+        row_advance = (low_width + 320 - width) & 0xFFFF
+        packed_y = (((y & 0xFF) << 8) | (y >> 8)) + (y << 6)
+        first_row = (framebuffer_offset + x + packed_y) & 0xFFFF
+        for row in range(height):
+            row_offset = (first_row + row * row_advance) & 0xFFFF
+            for column in range(low_width):
+                framebuffer_before[(row_offset + column) & 0xFFFF] = (
+                    source_pixels[column % len(source_pixels)]
+                )
+
+        data_expected = bytearray(data_before)
+        framebuffer_expected = bytearray(framebuffer_before)
+        expected_calls: list[dict[str, int]] = []
+        control_after = operation | (frames << 8)
+        frame_offset = current_frame_offset
+        if active & 1:
+            if restart & 1:
+                data_expected[0x27E9] = 0
+                frame_offset = sequence_offsets[0] + 2
+                control_after = sequence_operation | (sequence_frames << 8)
+                put_word(data_expected, 0x27ED, frame_offset)
+                put_word(data_expected, 0x27EF, control_after)
+            if (control_after >> 8) == 0:
+                if random_result is None:
+                    raise AssertionError(f"0x8bab {name}: missing PRNG result")
+                selected_index = int(random_result) + 1
+                frame_offset = sequence_offsets[selected_index] + 2
+                control_after = sequence_operation | (sequence_frames << 8)
+                put_word(data_expected, 0x27ED, frame_offset)
+                put_word(data_expected, 0x27EF, control_after)
+                expected_calls.append(
+                    {"modulus": 9, "result": int(random_result)}
+                )
+            control_after = (
+                (control_after & 0x00FF)
+                | ((((control_after >> 8) - 1) & 0xFF) << 8)
+            )
+            put_word(data_expected, 0x27EF, control_after)
+            put_word(data_expected, 0x27ED, frame_offset + 8)
+            for row in range(height):
+                row_offset = (first_row + row * row_advance) & 0xFFFF
+                for column in range(low_width):
+                    pixel_offset = (row_offset + column) & 0xFFFF
+                    framebuffer_expected[pixel_offset] = transform(
+                        framebuffer_expected[pixel_offset], render_operation
+                    )
+
+        stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xD000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, int]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != prng_entry:
+                return
+            if random_result is None:
+                raise AssertionError(f"0x8bab {name}: unexpected PRNG call")
+            calls.append(
+                {
+                    "modulus": machine.reg_read(UC_X86_REG_AX),
+                    "result": int(random_result),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+            machine.reg_write(UC_X86_REG_AX, int(random_result))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, prng_entry, b"\xCB"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (extra_segment, 0, extra_before),
+                (framebuffer_segment, 0, bytes(framebuffer_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=200000,
+        )
+
+        compact_calls = [
+            {"modulus": call["modulus"], "result": call["result"]}
+            for call in calls
+        ]
+        if compact_calls != expected_calls:
+            raise AssertionError(
+                f"0x8bab {name}: PRNG calls={calls}, expected={expected_calls}"
+            )
+        if calls:
+            call = calls[0]
+            if (call["ds"], call["si"], call["sp"]) != (
+                data_segment,
+                current_frame_offset,
+                caller_sp - 20,
+            ):
+                raise AssertionError(f"0x8bab {name}: PRNG call frame differs")
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_data, data_expected)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x8bab {name}: DS differs at {mismatch:#x}: "
+                f"{actual_data[mismatch]:#x} != {data_expected[mismatch]:#x}"
+            )
+        actual_framebuffer = bytes(
+            machine.mem_read(framebuffer_segment * 16, 0x10000)
+        )
+        if actual_framebuffer != bytes(framebuffer_expected):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_framebuffer, framebuffer_expected)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x8bab {name}: framebuffer differs at {mismatch:#x}: "
+                f"{actual_framebuffer[mismatch]:#x} != "
+                f"{framebuffer_expected[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            game_before
+        ):
+            raise AssertionError(f"0x8bab {name}: GS changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x8bab {name}: incoming ES changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 2
+        if active & 1:
+            last_value = source_pixels[(low_width - 1) % len(source_pixels)]
+            last_index = last_value ^ 0xE0
+            if render_operation <= 1:
+                expected_ax = (height & 0xFF00) | last_index
+            elif render_operation == 2:
+                if last_index < 0x0F and last_index != 0x0E:
+                    last_index = (last_index + 2) & 0x0F
+                    expected_ax = (
+                        ((0xE0 + last_index) & 0xFF) << 8
+                    ) | last_index
+                else:
+                    expected_ax = 0xE000 | last_index
+            elif last_index <= 0x0F:
+                lowered_index = (last_index - 1) & 0xFF
+                expected_ax = (
+                    (0xE0 << 8) | lowered_index
+                    if last_index == 0
+                    else (((0xE0 + lowered_index) & 0xFF) << 8)
+                    | lowered_index
+                )
+            else:
+                expected_ax = 0xE000 | last_index
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | expected_ax
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8bab {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8bab {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 2,
+                len(stack_sentinel),
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x8bab {name}: caller stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "active": active,
+                "restart": restart,
+                "control_before": operation | (frames << 8),
+                "control_after": control_after,
+                "render_operation": render_operation,
+                "frame": [x, y, width, height],
+                "row_advance": row_advance,
+                "calls": calls,
+                "data_sha256": hashlib.sha256(data_expected).hexdigest(),
+                "framebuffer_sha256": hashlib.sha256(
+                    framebuffer_expected
+                ).hexdigest(),
+                "registers_after": {
+                    register_name: machine.reg_read(register)
+                    for register_name, register in REGISTERS.items()
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
     entry = 0x93F5
     body_size = 283
@@ -84484,6 +84901,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_886c_natural.json",
         nav_choice_handler_4_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8bab_natural.json",
+        name_area_palette_effect_update_vectors(),
         args.check,
     )
     update_vector(

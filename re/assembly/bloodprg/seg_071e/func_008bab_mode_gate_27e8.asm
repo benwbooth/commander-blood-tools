@@ -6,8 +6,8 @@
 ; seg_off: 071e:13cb
 ; group: seg_071e
 ; provenance: recursive_graph
-; label: mode_gate_27e8
-; label_comment: dual-mode gate: test [0x27e8]&1 and [0x27e9]&1 -> branch. A per-frame mode/state gate for a screen-flow transition
+; label: name_area_palette_effect_update
+; label_comment: Parsed-name-area palette animation. DS:0x27F1 holds ten near pointers to packed streams; each stream starts with {operation:u8, frame_count:u8}, followed by {x,y,width,height} words. The initial stream is deterministic, later streams use blood_prng_next(9)+1, and operations collapse, brighten, cycle, or darken palette indices 0xE0..0xEF in GS:[0x5221]. Natural C and direct vectors: func_008bab_name_area_palette_effect_update.c and func_8bab_natural.json
 ; byte_count: 235
 ; boundary: cfg_blocks_24_terminals_3
 ; terminal: jmp 0x8c8d:2, ret:1

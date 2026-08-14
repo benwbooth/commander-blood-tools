@@ -5759,6 +5759,33 @@ window, query mode constrained to zero or one, and the direct DS:SI helper
 contract. Direct binary replacement additionally needs the original compact
 SS:BP allocation, AX/BX/BP save envelope, and path-specific terminal flags.
 
+## Name-area palette effect update at 0x008BAB
+
+The old `mode_gate_27e8` label hid a complete parsed-name palette animation.
+The static DS image proves that `DS:0x27F1` contains ten near stream pointers.
+Each stream starts with a packed operation/countdown word and then stores
+eight-byte `{x,y,width,height}` frames. Sequence zero is the deterministic
+opening; an expired countdown selects sequences one through nine with
+`blood_prng_next(9)+1`.
+
+Twelve direct vectors execute the untouched 235-byte body. They cover the
+inactive and restart gates, both random-selection endpoints, operations zero
+and one collapsing palette indices to `0xE0`/`0xEF`, operation two cycling the
+interior indices, the default darkening operation, and the exact packed frame
+addressing. The latter includes the assembly's low-byte pixel width, full-word
+row skip, and byte-swap-plus-shift row calculation. Split DS, GS, incoming ES,
+framebuffer, and stack segments prove state ownership, the explicit GS
+operation read after DS becomes the framebuffer segment, the PRNG call frame,
+all preserved registers, AX residue, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one natural typed C
+function warning-free to 115 instructions versus 116/235 original, with 77.59
+percent mnemonic-multiset overlap and 62.93 percent ordered mnemonic overlap.
+There is no inline assembly or register-state facade. Full-source integration
+uses the shipped DS=GS alias and valid nonzero frame records; direct binary
+replacement would additionally need the original segment switch, save
+envelope, AX residue, and terminal flags.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

@@ -77,7 +77,7 @@ void CB_FAR bridge_render_frame(cb_u16 scene_link_target)
     }
 
     sprite_slot_dirty_range_render(1u, 19u);
-    mode_gate_27e8();
+    name_area_palette_effect_update();
     nav_state_gate();
     nav_choice_dispatch();
     if ((nav_actor_completion_latch & BRIDGE_COMPLETION_FLAG) != 0u) {

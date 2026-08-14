@@ -59,6 +59,35 @@ typedef struct bloodprg_nav_wipe_point {
     cb_i16 y;
 } bloodprg_nav_wipe_point;
 
+typedef union bloodprg_name_area_effect_control {
+    cb_u16 word;
+    struct {
+        cb_u8 operation;
+        cb_u8 frames_remaining;
+    } fields;
+} bloodprg_name_area_effect_control;
+
+typedef struct bloodprg_name_area_effect_frame {
+    cb_u16 x;
+    cb_u16 y;
+    cb_u16 width;
+    cb_u16 height;
+} bloodprg_name_area_effect_frame;
+
+typedef struct bloodprg_name_area_effect_sequence {
+    bloodprg_name_area_effect_control control;
+    bloodprg_name_area_effect_frame frames[1];
+} bloodprg_name_area_effect_sequence;
+
+extern volatile cb_u8 name_area_effect_active_ds; /* DS:0x27E8 */
+extern volatile cb_u8 name_area_effect_restart; /* DS:0x27E9 */
+extern const bloodprg_name_area_effect_frame CB_NEAR
+        *name_area_effect_frame_cursor; /* DS:0x27ED */
+extern volatile bloodprg_name_area_effect_control
+        name_area_effect_control; /* DS:0x27EF */
+extern const bloodprg_name_area_effect_sequence CB_NEAR
+        *name_area_effect_sequences[10]; /* DS:0x27F1 */
+
 typedef struct bloodprg_nav_wipe_span {
     cb_u16 left;
     cb_u16 width;
@@ -78,6 +107,10 @@ typedef char bloodprg_nav_chart_arche_size_must_be_36[
         sizeof(bloodprg_nav_chart_arche) == 36 ? 1 : -1];
 typedef char bloodprg_nav_wipe_point_size_must_be_4[
         sizeof(bloodprg_nav_wipe_point) == 4 ? 1 : -1];
+typedef char bloodprg_name_area_effect_control_size_must_be_2[
+        sizeof(bloodprg_name_area_effect_control) == 2 ? 1 : -1];
+typedef char bloodprg_name_area_effect_frame_size_must_be_8[
+        sizeof(bloodprg_name_area_effect_frame) == 8 ? 1 : -1];
 typedef char bloodprg_nav_wipe_span_size_must_be_4[
         sizeof(bloodprg_nav_wipe_span) == 4 ? 1 : -1];
 
@@ -180,6 +213,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux nav_chart_object_pick \
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
 #pragma aux nav_center_wipe_span_table_build parm [si]
+#pragma aux name_area_palette_effect_update modify exact [ax]
 #endif
 
 int CB_NEAR presentation_line_helper(
@@ -198,7 +232,7 @@ void CB_NEAR nav_camera_state_check(void); /* 0x008CCE */
 void CB_NEAR entity_draw_full(
         const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
         /* 0x009240 */
-void CB_NEAR mode_gate_27e8(void); /* 0x008BAB */
+void CB_NEAR name_area_palette_effect_update(void); /* 0x008BAB */
 void CB_NEAR nav_state_gate(void); /* 0x0082E8 */
 void CB_NEAR nav_choice_dispatch(void); /* 0x0085E2 */
 void CB_NEAR nav_actor_handler_1(
