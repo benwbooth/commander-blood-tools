@@ -52115,6 +52115,368 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ems_resource_flush_vectors() -> list[dict[str, object]]:
+    entry = 0xA1B4
+    normal_return = 0xF300
+    expected_hash = "40c7a6d363d6cebf8c0a8bf5918ec51f867652c93f859d5663c1ee419ee36a97"
+    if hashlib.sha256(EXE[entry : entry + 88]).hexdigest() != expected_hash:
+        raise AssertionError("0xa1b4: recovered 88-byte body changed")
+
+    cases = [
+        {
+            "name": "no_file_handle",
+            "banked": 0,
+            "handle": 0,
+            "flags": 0x1200,
+        },
+        {
+            "name": "retry_twice_then_not_due",
+            "banked": 1,
+            "handle": 0,
+            "flags": 0x1280,
+            "ready": [False, False, True],
+            "due": [False],
+        },
+        {
+            "name": "banked_due_without_palette",
+            "banked": 3,
+            "handle": 0,
+            "flags": 0x3480,
+            "ready": [True],
+            "due": [True],
+        },
+        {
+            "name": "file_due_with_palette",
+            "banked": 0,
+            "handle": 0x0033,
+            "flags": 0x5600,
+            "palette": 0x1234,
+            "ready": [True],
+            "due": [True],
+        },
+        {
+            "name": "malformed_nonbanked_high_bit_call",
+            "banked": 0,
+            "handle": 0x0033,
+            "flags": 0x7880,
+            "malformed": True,
+        },
+    ]
+    data_segment = 0x2000
+    decoy_segment = 0x3000
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helper_flags = 0x0AD7
+    vectors = []
+
+    def stack_word(machine: Uc, index: int = 0) -> int:
+        sp = machine.reg_read(UC_X86_REG_SP)
+        return struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + sp + index * 2, 2)
+        )[0]
+
+    def set_result_carry(machine: Uc, carry: bool) -> None:
+        result_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS,
+            result_flags | 1 if carry else result_flags & ~1,
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        banked = int(case["banked"])
+        handle = int(case["handle"])
+        flags = int(case["flags"])
+        palette = int(case.get("palette", 0xFFFF))
+        malformed = bool(case.get("malformed", False))
+        ready_responses = [bool(value) for value in case.get("ready", [])]
+        due_responses = [bool(value) for value in case.get("due", [])]
+        link_target = (0x4100 + case_index * 0x111) & 0xFFFF
+        calls: list[dict[str, object]] = []
+        ready_index = 0
+        due_index = 0
+        refill_index = 0
+        last_refill_ax: int | None = None
+
+        initial = {
+            "eax": 0xA5A50000 | (0x0100 + case_index),
+            "ebx": 0xB6B61234,
+            "ecx": 0xC7C72345,
+            "edx": 0xD8D83456,
+            "esi": 0xE9E94567,
+            "edi": 0xFAFA5678,
+            "ebp": 0xABCD0000 | link_target,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x5000,
+            "fs": 0x6000,
+            "gs": decoy_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal ready_index, due_index, refill_index, last_refill_ax
+            if address == 0xA20C:
+                if ready_index >= len(ready_responses):
+                    raise AssertionError(f"0xa1b4 {name}: unexpected ready call")
+                ready = ready_responses[ready_index]
+                ready_index += 1
+                calls.append(
+                    {
+                        "call": "list_d8c_activate_ready",
+                        "ready": ready,
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0x2000 + ready_index)
+                set_result_carry(machine, not ready)
+                return
+            if address == 0xA240:
+                if due_index >= len(due_responses):
+                    raise AssertionError(f"0xa1b4 {name}: unexpected due call")
+                due = due_responses[due_index]
+                due_index += 1
+                calls.append(
+                    {
+                        "call": "list_d8c_advance_due",
+                        "due": due,
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0x2400 + due_index)
+                set_result_carry(machine, not due)
+                return
+            if address == 0xA2AB:
+                latch = machine.mem_read(data_segment * 16 + 0x0DAC, 1)[0]
+                return_ip = stack_word(machine)
+                calls.append(
+                    {
+                        "call": "list_d8c_refill",
+                        "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                        "rollover_latch": latch,
+                        "return_ip": return_ip,
+                    }
+                )
+                last_refill_ax = 0xA200 + refill_index
+                refill_index += 1
+                machine.reg_write(UC_X86_REG_AX, last_refill_ax)
+                machine.reg_write(UC_X86_REG_EFLAGS, helper_flags)
+                if return_ip == 0xA1FE:
+                    machine.mem_write(data_segment * 16 + 0x0DAC, b"\x5a")
+                return
+            if address == 0xA778:
+                calls.append(
+                    {
+                        "call": "list_d8c_palette_blocks_apply",
+                        "palette_offset": palette,
+                        "return_ip": stack_word(machine),
+                    }
+                )
+                return
+            if address == 0xA41A:
+                calls.append(
+                    {
+                        "call": "list_d8c_active_present",
+                        "return_ip": stack_word(machine),
+                        "return_cs": stack_word(machine, 1),
+                    }
+                )
+                return
+            if address == 0xA3D0:
+                calls.append(
+                    {"call": "queue_d8c_consume", "return_ip": stack_word(machine)}
+                )
+                return
+            if address == 0xA1F3:
+                calls.append(
+                    {
+                        "call": "refill_shared_tail_entry",
+                        "stack_top": stack_word(machine),
+                    }
+                )
+
+        stop_address = data_segment if malformed else normal_return
+        machine = execute(
+            entry,
+            stop_address,
+            initial,
+            [
+                (0, normal_return, b"\xCC"),
+                (0, 0xA20C, b"\xC3"),
+                (0, 0xA240, b"\xC3"),
+                (0, 0xA2AB, b"\xC3"),
+                (0, 0xA778, b"\xC3"),
+                (0, 0xA41A, b"\xCB"),
+                (0, 0xA3D0, b"\xC3"),
+                (data_segment, 0x0D5B, struct.pack("<H", handle)),
+                (data_segment, 0x0D76, struct.pack("<H", flags)),
+                (data_segment, 0x0D9E, struct.pack("<H", palette)),
+                (data_segment, 0x0DAC, b"\xa5"),
+                (data_segment, 0x0DBC, bytes([banked])),
+                (decoy_segment, 0x0D5B, b"\xff\xff"),
+                (decoy_segment, 0x0D76, b"\x80\xff"),
+                (decoy_segment, 0x0D9E, b"\x00\x00"),
+                (decoy_segment, 0x0DAC, b"\x3c"),
+                (decoy_segment, 0x0DBC, b"\x01"),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", normal_return) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=500,
+        )
+
+        if ready_index != len(ready_responses) or due_index != len(due_responses):
+            raise AssertionError(f"0xa1b4 {name}: helper responses remain")
+        if name == "no_file_handle":
+            expected_calls: list[dict[str, object]] = []
+        elif name == "retry_twice_then_not_due":
+            expected_calls = [
+                {"call": "list_d8c_activate_ready", "ready": False, "return_ip": 0xA1D7},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0xA5,
+                    "return_ip": 0xA1DC,
+                },
+                {"call": "list_d8c_activate_ready", "ready": False, "return_ip": 0xA1D7},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0xA5,
+                    "return_ip": 0xA1DC,
+                },
+                {"call": "list_d8c_activate_ready", "ready": True, "return_ip": 0xA1D7},
+                {"call": "list_d8c_advance_due", "due": False, "return_ip": 0xA1E1},
+                {"call": "refill_shared_tail_entry", "stack_top": link_target},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0x80,
+                    "return_ip": 0xA1FE,
+                },
+            ]
+        elif name == "banked_due_without_palette":
+            expected_calls = [
+                {"call": "list_d8c_activate_ready", "ready": True, "return_ip": 0xA1D7},
+                {"call": "list_d8c_advance_due", "due": True, "return_ip": 0xA1E1},
+                {"call": "list_d8c_active_present", "return_ip": 0xA1F0, "return_cs": 0},
+                {"call": "queue_d8c_consume", "return_ip": 0xA1F3},
+                {"call": "refill_shared_tail_entry", "stack_top": link_target},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0x80,
+                    "return_ip": 0xA1FE,
+                },
+            ]
+        elif name == "file_due_with_palette":
+            expected_calls = [
+                {"call": "list_d8c_activate_ready", "ready": True, "return_ip": 0xA1D7},
+                {"call": "list_d8c_advance_due", "due": True, "return_ip": 0xA1E1},
+                {
+                    "call": "list_d8c_palette_blocks_apply",
+                    "palette_offset": palette,
+                    "return_ip": 0xA1EC,
+                },
+                {"call": "list_d8c_active_present", "return_ip": 0xA1F0, "return_cs": 0},
+                {"call": "queue_d8c_consume", "return_ip": 0xA1F3},
+                {"call": "refill_shared_tail_entry", "stack_top": link_target},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0,
+                    "return_ip": 0xA1FE,
+                },
+            ]
+        else:
+            expected_calls = [
+                {"call": "refill_shared_tail_entry", "stack_top": 0xA1D4},
+                {
+                    "call": "list_d8c_refill",
+                    "link_target_offset": link_target,
+                    "rollover_latch": 0x80,
+                    "return_ip": 0xA1FE,
+                },
+            ]
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0xa1b4 {name}: calls={calls}, expected={expected_calls}"
+            )
+        final_latch = machine.mem_read(data_segment * 16 + 0x0DAC, 1)[0]
+        if final_latch != 0:
+            raise AssertionError(f"0xa1b4 {name}: rollover latch was not cleared")
+        if machine.mem_read(decoy_segment * 16 + 0x0DAC, 1) != b"\x3c":
+            raise AssertionError(f"0xa1b4 {name}: GS decoy latch changed")
+
+        if malformed:
+            expected_shifted = {
+                "bp": 0xA1D4,
+                "dx": link_target,
+                "cx": initial["edx"] & 0xFFFF,
+                "bx": initial["ecx"] & 0xFFFF,
+                "di": initial["ebx"] & 0xFFFF,
+                "es": initial["edi"] & 0xFFFF,
+                "si": initial["es"],
+                "ds": initial["esi"] & 0xFFFF,
+            }
+            for register, expected in expected_shifted.items():
+                actual = machine.reg_read(REGISTERS[register])
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xa1b4 {name}: {register}={actual:#x}, expected={expected:#x}"
+                    )
+            if machine.reg_read(UC_X86_REG_SP) != caller_sp:
+                raise AssertionError(f"0xa1b4 {name}: malformed SP differs")
+            escaped_to = stop_address
+        else:
+            initial_key = {
+                "bx": "ebx",
+                "cx": "ecx",
+                "dx": "edx",
+                "si": "esi",
+                "di": "edi",
+                "bp": "ebp",
+            }
+            for register in ("bx", "cx", "dx", "si", "di", "bp", "ds", "es", "fs", "gs", "ss"):
+                expected = initial[initial_key.get(register, register)] & 0xFFFF
+                actual = machine.reg_read(REGISTERS[register])
+                if actual != expected:
+                    raise AssertionError(
+                        f"0xa1b4 {name}: {register}={actual:#x}, expected={expected:#x}"
+                    )
+            if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+                raise AssertionError(f"0xa1b4 {name}: caller stack not restored")
+            if machine.mem_read(
+                stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            ) != stack_sentinel:
+                raise AssertionError(f"0xa1b4 {name}: stack sentinel changed")
+            escaped_to = normal_return
+
+        vectors.append(
+            {
+                "name": name,
+                "banked_mode": banked,
+                "file_handle": handle,
+                "resource_flags": flags,
+                "palette_offset": palette,
+                "link_target_offset": link_target,
+                "calls": calls,
+                "malformed_call_frame": malformed,
+                "escaped_to": escaped_to,
+                "result_ax": machine.reg_read(UC_X86_REG_AX),
+                "result_sp": machine.reg_read(UC_X86_REG_SP),
+                "rollover_latch": final_latch,
+            }
+        )
+
+    return vectors
+
+
 def list_d8c_refill_with_rollover_latch_vectors() -> list[dict[str, object]]:
     entry = 0xA1F3
     return_address = 0xF200
@@ -56701,6 +57063,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a1b4_natural.json",
+        ems_resource_flush_vectors(),
         args.check,
     )
     update_vector(

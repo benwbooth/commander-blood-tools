@@ -60,6 +60,8 @@ int CB_NEAR list_d8c_activate_ready(void);      /* 0x00A20C */
 int CB_NEAR list_d8c_advance_due(void);         /* 0x00A240 */
 void CB_NEAR list_d8c_refill_with_rollover_latch(
         cb_u16 link_target_offset);              /* 0x00A1F3 */
+void CB_NEAR ems_resource_flush(
+        cb_u16 link_target_offset);              /* 0x00A1B4 */
 void CB_NEAR list_d8c_activate_entry(cb_u16 entry_extent,
         volatile cb_u16 CB_FAR *entry,
         cb_u16 storage_segment);                /* 0x00A552 */

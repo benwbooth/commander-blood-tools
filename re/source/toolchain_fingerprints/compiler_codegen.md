@@ -105,6 +105,28 @@ preserves ES, and leaves CX/DI clobbered. Turbo C 2.01 medium calls its far
 `SCOPY@` runtime. This is a verified fixed-size copy with a confirmed segment
 and register ABI boundary, not an exact compiler match.
 
+For `0x00A1B4`, five direct coordinator vectors prove the presentation-queue
+service flow. They cover the nonbanked zero-handle exit, two refill retries
+before activation, both timing outcomes, optional palette application, the far
+active-present call, queue consumption, and the shared latch/refill return.
+They verify exact helper order and near/far frames, inherited BP, DS/GS state,
+the parent register-save envelope, stack restoration, and final latch clear.
+The fifth case directly executes the nonbanked/high-flag branch at `0x00A1D1`:
+its `CALL 0x00A1F3` adds an unmatched return word, so A1F3 pops `0xA1D4` as BP,
+shifts every saved register, and returns through the saved DS value. All 45
+shipped resource descriptors initialize their low flag byte to zero; this is
+an invalid-state edge, not a usable call convention.
+
+The natural candidate is a structured retry loop with typed Boolean helper
+results and an explicit link-target argument. It has no register model, memory
+emulator, inline assembly, or nonlocal unwind. On the malformed edge it performs
+the apparent intended latch helper and returns safely. Open Watcom `-3 -ox -mh`
+compiles it warning-free to 33 instructions and exactly 88 bytes, versus 38
+instructions and 88 bytes in the binary. The probe has a 13.16 percent
+instruction and byte-line LCS, 42.11 percent mnemonic-sequence LCS, and 60.53
+percent mnemonic-multiset overlap. Exact integration still needs carry-result
+adapters for the ready/due helpers and the far presentation call boundary.
+
 For `0x00A1F3`, four direct vectors enter through the actual eight-word save
 frame created by `0x00A1B4`. They prove both values of resource flag bit 7,
 DS ownership against a GS decoy, the inherited BP link-target offset and
@@ -112,6 +134,8 @@ DS ownership against a GS decoy, the inherited BP link-target offset and
 AX and flags, exact restoration of BP/DX/CX/BX/DI/ES/SI/DS, unchanged frame
 bytes, and the final return to the parent caller. This establishes that A1F3 is
 a shared early-return tail, not a conventional independently callable helper.
+The valid entries are the A1E1 jump and A1F3 fallthrough; A1B4's A1D1 call is
+the separately proven malformed edge described above.
 
 The natural candidate contains only the logical latch-call-reset operation and
 exposes BP as a typed argument. It has no register model, memory emulator,
@@ -2883,6 +2907,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
 | `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
 | `list_d8c_refill` | huge, `-ox`, register | 91/180 | 0.0220 | 0.6484 | 0.0879 |
 | `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |

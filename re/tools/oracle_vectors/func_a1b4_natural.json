@@ -1,0 +1,191 @@
+[
+  {
+    "name": "no_file_handle",
+    "banked_mode": 0,
+    "file_handle": 0,
+    "resource_flags": 4608,
+    "palette_offset": 65535,
+    "link_target_offset": 16640,
+    "calls": [],
+    "malformed_call_frame": false,
+    "escaped_to": 62208,
+    "result_ax": 256,
+    "result_sp": 65282,
+    "rollover_latch": 0
+  },
+  {
+    "name": "retry_twice_then_not_due",
+    "banked_mode": 1,
+    "file_handle": 0,
+    "resource_flags": 4736,
+    "palette_offset": 65535,
+    "link_target_offset": 16913,
+    "calls": [
+      {
+        "call": "list_d8c_activate_ready",
+        "ready": false,
+        "return_ip": 41431
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 16913,
+        "rollover_latch": 165,
+        "return_ip": 41436
+      },
+      {
+        "call": "list_d8c_activate_ready",
+        "ready": false,
+        "return_ip": 41431
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 16913,
+        "rollover_latch": 165,
+        "return_ip": 41436
+      },
+      {
+        "call": "list_d8c_activate_ready",
+        "ready": true,
+        "return_ip": 41431
+      },
+      {
+        "call": "list_d8c_advance_due",
+        "due": false,
+        "return_ip": 41441
+      },
+      {
+        "call": "refill_shared_tail_entry",
+        "stack_top": 16913
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 16913,
+        "rollover_latch": 128,
+        "return_ip": 41470
+      }
+    ],
+    "malformed_call_frame": false,
+    "escaped_to": 62208,
+    "result_ax": 41474,
+    "result_sp": 65282,
+    "rollover_latch": 0
+  },
+  {
+    "name": "banked_due_without_palette",
+    "banked_mode": 3,
+    "file_handle": 0,
+    "resource_flags": 13440,
+    "palette_offset": 65535,
+    "link_target_offset": 17186,
+    "calls": [
+      {
+        "call": "list_d8c_activate_ready",
+        "ready": true,
+        "return_ip": 41431
+      },
+      {
+        "call": "list_d8c_advance_due",
+        "due": true,
+        "return_ip": 41441
+      },
+      {
+        "call": "list_d8c_active_present",
+        "return_ip": 41456,
+        "return_cs": 0
+      },
+      {
+        "call": "queue_d8c_consume",
+        "return_ip": 41459
+      },
+      {
+        "call": "refill_shared_tail_entry",
+        "stack_top": 17186
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 17186,
+        "rollover_latch": 128,
+        "return_ip": 41470
+      }
+    ],
+    "malformed_call_frame": false,
+    "escaped_to": 62208,
+    "result_ax": 41472,
+    "result_sp": 65282,
+    "rollover_latch": 0
+  },
+  {
+    "name": "file_due_with_palette",
+    "banked_mode": 0,
+    "file_handle": 51,
+    "resource_flags": 22016,
+    "palette_offset": 4660,
+    "link_target_offset": 17459,
+    "calls": [
+      {
+        "call": "list_d8c_activate_ready",
+        "ready": true,
+        "return_ip": 41431
+      },
+      {
+        "call": "list_d8c_advance_due",
+        "due": true,
+        "return_ip": 41441
+      },
+      {
+        "call": "list_d8c_palette_blocks_apply",
+        "palette_offset": 4660,
+        "return_ip": 41452
+      },
+      {
+        "call": "list_d8c_active_present",
+        "return_ip": 41456,
+        "return_cs": 0
+      },
+      {
+        "call": "queue_d8c_consume",
+        "return_ip": 41459
+      },
+      {
+        "call": "refill_shared_tail_entry",
+        "stack_top": 17459
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 17459,
+        "rollover_latch": 0,
+        "return_ip": 41470
+      }
+    ],
+    "malformed_call_frame": false,
+    "escaped_to": 62208,
+    "result_ax": 41472,
+    "result_sp": 65282,
+    "rollover_latch": 0
+  },
+  {
+    "name": "malformed_nonbanked_high_bit_call",
+    "banked_mode": 0,
+    "file_handle": 51,
+    "resource_flags": 30848,
+    "palette_offset": 65535,
+    "link_target_offset": 17732,
+    "calls": [
+      {
+        "call": "refill_shared_tail_entry",
+        "stack_top": 41428
+      },
+      {
+        "call": "list_d8c_refill",
+        "link_target_offset": 17732,
+        "rollover_latch": 128,
+        "return_ip": 41470
+      }
+    ],
+    "malformed_call_frame": true,
+    "escaped_to": 8192,
+    "result_ax": 41472,
+    "result_sp": 65280,
+    "rollover_latch": 0
+  }
+]

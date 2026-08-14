@@ -7,7 +7,7 @@
 ; group: seg_0971
 ; provenance: recursive_graph
 ; label: ems_resource_flush
-; label_comment: EMS-banked resource flush/reload (2 calls): gated on [0xdbc]&1 and file handle [0xd5b]!=0; flushes/reloads the banked resource data. Part of the gs:0xd8c banked-resource management
+; label_comment: service one presentation-queue frame. Reject an unavailable nonbanked source, refill and retry until an entry activates, gate it on the audio/software clock, optionally apply palette records, present and consume the entry, then enter the shared 0x00a1f3 latch/refill return tail. The CALL 0x00a1f3 at 0x00a1d1 supplies an extra return word and corrupts that tail's parent-frame unwind; direct execution records it as a dead/invalid-state edge, while the natural C recovery performs the intended helper call followed by return.
 ; byte_count: 88
 ; boundary: cfg_blocks_12_terminals_2
 ; terminal: jmp 0xa1bc:1, ret:1
