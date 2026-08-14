@@ -2011,6 +2011,31 @@ group and an ordinary Boolean result from the line helper. Direct replacement
 additionally needs BP input, carry-result adaptation, the AX sound argument,
 `REP MOVSD` lowering, and the original register/flag envelope.
 
+Navigation actor handler 3 at `0x00817E` accepts only UI bit `0x40`, marks its
+SS:BP line present, and requires line bit three before publishing presentation
+state 13. With mode bit zero set, a signed zoom counter below 100 is replaced
+with 106; an active presentation queue is finalized at that point. Mouse state
+is then cleared and the line helper is stepped. Completion transitions entity
+four, resets the line to state one, and, when the prior mode was inactive,
+replaces the complete mode byte with one and requests a redraw. The common tail
+latches a loaded line while mode bit zero is active.
+
+Ten direct vectors isolate the three already recovered helper boundaries. They
+prove rejection of UI bit `0x80`, line readiness, the 99/100 threshold and
+signed `-1` case, counter publication before finalization, mouse clearing before
+the line call, incomplete and complete carry results, entity-call ordering,
+mode preservation versus exact replacement, redraw and completion-latch
+behavior, SS/DS ownership against decoys, call frames, registers, flags, stack,
+and near return.
+
+Open Watcom `-3 -os -s -mh -we` compiles the natural explicit-near candidate
+warning-free to 40 instructions/132 bytes versus the original 34/125, with
+88.24 percent mnemonic-multiset overlap and no inline assembly. Full-source
+integration needs shared `SS == DS` data and a normal Boolean line-helper
+result. Direct replacement additionally needs BP input, carry-result and far
+helper adapters, the AX entity argument, and the original register/flag
+envelope.
+
 Byte-parser opcode-08 handler `0x0076BA` is a six-byte leaf: LODSW consumes one
 little-endian word from DS:SI, a GS-qualified store writes it to offset 0x1FA5,
 and RET preserves all incoming status flags. Eight direct vectors prove aligned

@@ -49983,6 +49983,401 @@ def nav_actor_handler_2_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_handler_3_vectors() -> list[dict[str, object]]:
+    entry = 0x817E
+    presentation_helper_entry = 0x7E1C
+    presentation_finalize_entry = 0x9953  # Runtime 0971:0243.
+    entity_transition_entry = 0x3BD1  # Runtime 0299:1241.
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    line_offset = 0x6200
+    return_address = 0x6F00
+    cases = [
+        ("ui_gate_clear", 0x00, 0x01, 0x0C, 120, 1, False),
+        ("ui_bit_80_is_unrelated", 0x80, 0x01, 0x08, 99, 1, True),
+        ("line_not_ready_mode_clear", 0x40, 0x00, 0x04, 88, 1, False),
+        ("line_not_ready_sets_latch", 0x40, 0x03, 0x04, 88, 1, False),
+        ("in_progress_mode_clear", 0x40, 0x00, 0x08, 50, 1, False),
+        ("in_progress_zoom_without_queue", 0x40, 0x01, 0x0C, 99, 0, False),
+        ("in_progress_negative_zoom_with_queue", 0x40, 0x01, 0x08, 0xFFFF, 1, False),
+        ("zoom_threshold_not_rewritten", 0x40, 0x01, 0x08, 100, 1, False),
+        ("complete_mode_already_set", 0x40, 0xA3, 0x0C, 120, 1, True),
+        ("complete_mode_replaced", 0x40, 0xA2, 0x08, 120, 1, True),
+    ]
+    expected_hash = "65408f79c2031a8c3137a107deed6e6416e5ac4fcfb69de418b7bcd06668fe4b"
+    if hashlib.sha256(EXE[entry : entry + 125]).hexdigest() != expected_hash:
+        raise AssertionError("0x817e: recovered 125-byte body changed")
+
+    vectors = []
+    for case_index, (
+        name,
+        ui_before,
+        mode_before,
+        line_flags_before,
+        zoom_before,
+        queue_before,
+        helper_complete,
+    ) in enumerate(cases):
+        presentation_state_before = 0x3100 + case_index
+        mouse_primary_before = 0x40 + case_index
+        mouse_pending_before = 0x60 + case_index
+        latch_before = 0x80 + case_index
+        line_before = struct.pack(
+            "<BBHHHH10sHH",
+            line_flags_before,
+            0xA0 + case_index,
+            0x1100 + case_index,
+            0x2200 + case_index,
+            0x3300 + case_index,
+            0x4400 + case_index,
+            bytes((0x50 + case_index + i) & 0xFF for i in range(10)),
+            0x6600 + case_index,
+            0x7700 + case_index,
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        memory = [
+            (0, presentation_helper_entry, b"\xc3"),
+            (0, presentation_finalize_entry, b"\xcb"),
+            (0, entity_transition_entry, b"\xcb"),
+            (0, return_address, b"\xcc"),
+            (data_segment, 0x2793, bytes([ui_before])),
+            (data_segment, 0x27E1, bytes([mode_before])),
+            (data_segment, 0x2B93, struct.pack("<H", zoom_before)),
+            (data_segment, 0x1FB2, bytes([queue_before])),
+            (
+                data_segment,
+                0x0A32,
+                struct.pack("<H", presentation_state_before),
+            ),
+            (data_segment, 0x0A3E, bytes([mouse_primary_before])),
+            (data_segment, 0x0A40, bytes([mouse_pending_before])),
+            (data_segment, 0x27E5, bytes([latch_before])),
+            (stack_segment, line_offset, line_before),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x27E1, b"\xa5"),
+            (game_segment, 0x2B93, b"\x69\x96"),
+            (game_segment, 0x1FB2, b"\x87"),
+            (game_segment, 0x0A32, b"\x78\x87"),
+            (game_segment, 0x0A3E, b"\x3c"),
+            (game_segment, 0x0A40, b"\xc3"),
+            (game_segment, 0x27E5, b"\xf0"),
+            (stack_segment, 0x2793, b"\x0f"),
+            (stack_segment, 0x27E1, b"\x55"),
+            (stack_segment, 0x2B93, b"\xaa\x55"),
+            (stack_segment, 0x1FB2, b"\x96"),
+            (stack_segment, 0x0A32, b"\x12\x34"),
+            (stack_segment, 0x0A3E, b"\x56"),
+            (stack_segment, 0x0A40, b"\x78"),
+            (stack_segment, 0x27E5, b"\x9a"),
+            (
+                stack_segment,
+                0xFF00,
+                struct.pack("<H", return_address) + stack_sentinel,
+            ),
+        ]
+        flags_before = ((0x0AD7 + case_index * 0x81) & 0x0FFF) & ~0x100
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | line_offset,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": flags_before,
+        }
+        calls = []
+
+        def read_line_flags(machine: Uc) -> int:
+            return machine.mem_read(stack_segment * 16 + line_offset, 1)[0]
+
+        def read_word(machine: Uc, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(data_segment * 16 + offset, 2)
+            )[0]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == presentation_finalize_entry:
+                calls.append(
+                    {
+                        "kind": "presentation_update_1fb2",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "zoom": read_word(machine, 0x2B93),
+                        "queue": machine.mem_read(
+                            data_segment * 16 + 0x1FB2, 1
+                        )[0],
+                        "mouse": (
+                            machine.mem_read(data_segment * 16 + 0x0A3E, 1)[0],
+                            machine.mem_read(data_segment * 16 + 0x0A40, 1)[0],
+                        ),
+                    }
+                )
+            elif address == presentation_helper_entry:
+                calls.append(
+                    {
+                        "kind": "presentation_line_helper",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "line_flags": read_line_flags(machine),
+                        "presentation_state": read_word(machine, 0x0A32),
+                        "zoom": read_word(machine, 0x2B93),
+                        "mouse": (
+                            machine.mem_read(data_segment * 16 + 0x0A3E, 1)[0],
+                            machine.mem_read(data_segment * 16 + 0x0A40, 1)[0],
+                        ),
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags & ~1) | int(helper_complete),
+                )
+            elif address == entity_transition_entry:
+                calls.append(
+                    {
+                        "kind": "entity_flag_state_transition",
+                        "cs": machine.reg_read(UC_X86_REG_CS),
+                        "ax": machine.reg_read(UC_X86_REG_AX),
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "line_flags": read_line_flags(machine),
+                        "mode": machine.mem_read(
+                            data_segment * 16 + 0x27E1, 1
+                        )[0],
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+        )
+
+        ui_gate = (ui_before & 0x40) != 0
+        line_flags_after_or = line_flags_before | 1
+        helper_called = ui_gate and (line_flags_after_or & 0x08) != 0
+        zoom_signed = zoom_before if zoom_before < 0x8000 else zoom_before - 0x10000
+        zoom_rewritten = (
+            helper_called and (mode_before & 1) != 0 and zoom_signed < 100
+        )
+        finalizer_called = zoom_rewritten and (queue_before & 1) != 0
+        completed = helper_called and helper_complete
+        expected_calls = []
+        expected_ax_after_line = (initial["eax"] & 0xFF00) | line_flags_after_or
+        if finalizer_called:
+            expected_calls.append(
+                {
+                    "kind": "presentation_update_1fb2",
+                    "cs": 0x0971,
+                    "ax": expected_ax_after_line,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    "zoom": 106,
+                    "queue": queue_before,
+                    "mouse": (mouse_primary_before, mouse_pending_before),
+                }
+            )
+        if helper_called:
+            expected_calls.append(
+                {
+                    "kind": "presentation_line_helper",
+                    "cs": 0,
+                    "bp": line_offset,
+                    "sp": 0xFEFE,
+                    "line_flags": line_flags_after_or,
+                    "presentation_state": 13,
+                    "zoom": 106 if zoom_rewritten else zoom_before,
+                    "mouse": (0, 0),
+                }
+            )
+        if completed:
+            expected_calls.append(
+                {
+                    "kind": "entity_flag_state_transition",
+                    "cs": 0x0299,
+                    "ax": 4,
+                    "bp": line_offset,
+                    "sp": 0xFEFC,
+                    "line_flags": line_flags_after_or,
+                    "mode": mode_before,
+                }
+            )
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x817e {name}: calls={calls}, expected={expected_calls}"
+            )
+
+        expected_line_flags = line_flags_before
+        if ui_gate:
+            expected_line_flags = line_flags_after_or
+        if completed:
+            expected_line_flags = 1
+        expected_mode = mode_before
+        expected_ui = ui_before
+        if completed and (mode_before & 1) == 0:
+            expected_mode = 1
+            expected_ui |= 4
+        expected_zoom = 106 if zoom_rewritten else zoom_before
+        expected_presentation_state = (
+            13 if helper_called else presentation_state_before
+        )
+        expected_mouse = (
+            (0, 0)
+            if helper_called
+            else (mouse_primary_before, mouse_pending_before)
+        )
+        latch_set = (
+            ui_gate
+            and (expected_mode & 1) != 0
+            and (expected_line_flags & 4) != 0
+        )
+        expected_latch = 1 if latch_set else latch_before
+
+        expected_line = bytes([expected_line_flags]) + line_before[1:]
+        actual_line = bytes(
+            machine.mem_read(stack_segment * 16 + line_offset, len(line_before))
+        )
+        if actual_line != expected_line:
+            raise AssertionError(
+                f"0x817e {name}: line={actual_line.hex()}, "
+                f"expected={expected_line.hex()}"
+            )
+        actual_state = {
+            "ui": machine.mem_read(data_segment * 16 + 0x2793, 1)[0],
+            "mode": machine.mem_read(data_segment * 16 + 0x27E1, 1)[0],
+            "zoom": read_word(machine, 0x2B93),
+            "presentation_state": read_word(machine, 0x0A32),
+            "mouse": (
+                machine.mem_read(data_segment * 16 + 0x0A3E, 1)[0],
+                machine.mem_read(data_segment * 16 + 0x0A40, 1)[0],
+            ),
+            "latch": machine.mem_read(data_segment * 16 + 0x27E5, 1)[0],
+        }
+        expected_state = {
+            "ui": expected_ui,
+            "mode": expected_mode,
+            "zoom": expected_zoom,
+            "presentation_state": expected_presentation_state,
+            "mouse": expected_mouse,
+            "latch": expected_latch,
+        }
+        if actual_state != expected_state:
+            raise AssertionError(
+                f"0x817e {name}: state={actual_state}, expected={expected_state}"
+            )
+
+        immutable = (
+            (data_segment, 0x1FB2, bytes([queue_before])),
+            (data_segment, line_offset, bytes([0xCC]) * len(line_before)),
+            (extra_segment, line_offset, bytes([0xDD]) * len(line_before)),
+            (game_segment, line_offset, bytes([0xEE]) * len(line_before)),
+            (game_segment, 0x2793, b"\x5a"),
+            (game_segment, 0x27E1, b"\xa5"),
+            (game_segment, 0x2B93, b"\x69\x96"),
+            (game_segment, 0x1FB2, b"\x87"),
+            (game_segment, 0x0A32, b"\x78\x87"),
+            (game_segment, 0x0A3E, b"\x3c"),
+            (game_segment, 0x0A40, b"\xc3"),
+            (game_segment, 0x27E5, b"\xf0"),
+            (stack_segment, 0x2793, b"\x0f"),
+            (stack_segment, 0x27E1, b"\x55"),
+            (stack_segment, 0x2B93, b"\xaa\x55"),
+            (stack_segment, 0x1FB2, b"\x96"),
+            (stack_segment, 0x0A32, b"\x12\x34"),
+            (stack_segment, 0x0A3E, b"\x56"),
+            (stack_segment, 0x0A40, b"\x78"),
+            (stack_segment, 0x27E5, b"\x9a"),
+        )
+        for segment, offset, expected in immutable:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(
+                    f"0x817e {name}: immutable {segment:#x}:{offset:#x} changed"
+                )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if ui_gate:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFFFF00
+            ) | line_flags_after_or
+        if completed:
+            expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 4
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x817e {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x817e {name}: return changed CS")
+
+        if not ui_gate:
+            test_value = ui_before & 0x40
+        elif (expected_mode & 1) == 0:
+            test_value = 0
+        else:
+            test_value = expected_line_flags & 4
+        expected_flags = {
+            "cf": False,
+            "pf": (test_value & 0xFF).bit_count() % 2 == 0,
+            "zf": test_value == 0,
+            "sf": False,
+            "of": False,
+        }
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x817e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x817e {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "ui_before": ui_before,
+                "ui_after": expected_ui,
+                "mode_before": mode_before,
+                "mode_after": expected_mode,
+                "line_flags_before": line_flags_before,
+                "line_flags_after": expected_line_flags,
+                "zoom_before": zoom_before,
+                "zoom_after": expected_zoom,
+                "presentation_finalizer_called": finalizer_called,
+                "line_helper_called": helper_called,
+                "line_helper_completed": completed,
+                "entity_transition_id": 4 if completed else None,
+                "mouse_after": list(expected_mouse),
+                "completion_latch_after": expected_latch,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def presentation_line_helper_vectors() -> list[dict[str, object]]:
     entry = 0x7E1C
     resource_loader_entry = 0x24BB  # Runtime 01CE:07DB.
@@ -65869,6 +66264,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_813a_natural.json",
         nav_actor_handler_2_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_817e_natural.json",
+        nav_actor_handler_3_vectors(),
         args.check,
     )
     update_vector(

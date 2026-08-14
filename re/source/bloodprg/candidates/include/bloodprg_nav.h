@@ -39,6 +39,8 @@ extern volatile char nav_radio_snd_path[];    /* DS:0x0D16 */
 extern volatile cb_u8 nav_presentation_reverse; /* DS:0x27E4 */
 extern volatile cb_u16 nav_actor_presentation_state; /* DS:0x0A32 */
 extern volatile cb_u16 nav_actor_ship_depth_offset; /* DS:0x2527 */
+extern volatile cb_i16 nav_actor_zoom_counter; /* DS:0x2B93 */
+extern volatile cb_u8 nav_actor_completion_latch; /* DS:0x27E5 */
 extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
 /* The shipped dispatcher keeps ES equal to DS for this destination. */
 extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */
@@ -71,6 +73,8 @@ int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
 void CB_NEAR nav_actor_handler_2(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00813A */
+void CB_NEAR nav_actor_handler_3(
+        volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x00817E */
 cb_i16 CB_FAR list_widget_layout_unified(
         const cb_u16 CB_NEAR *items); /* 0x008428 */
 void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */

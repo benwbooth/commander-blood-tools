@@ -1,0 +1,272 @@
+[
+  {
+    "name": "ui_gate_clear",
+    "ui_before": 0,
+    "ui_after": 0,
+    "mode_before": 1,
+    "mode_after": 1,
+    "line_flags_before": 12,
+    "line_flags_after": 12,
+    "zoom_before": 120,
+    "zoom_after": 120,
+    "presentation_finalizer_called": false,
+    "line_helper_called": false,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      64,
+      96
+    ],
+    "completion_latch_after": 128,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "ui_bit_80_is_unrelated",
+    "ui_before": 128,
+    "ui_after": 128,
+    "mode_before": 1,
+    "mode_after": 1,
+    "line_flags_before": 8,
+    "line_flags_after": 8,
+    "zoom_before": 99,
+    "zoom_after": 99,
+    "presentation_finalizer_called": false,
+    "line_helper_called": false,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      65,
+      97
+    ],
+    "completion_latch_after": 129,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "line_not_ready_mode_clear",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 0,
+    "mode_after": 0,
+    "line_flags_before": 4,
+    "line_flags_after": 5,
+    "zoom_before": 88,
+    "zoom_after": 88,
+    "presentation_finalizer_called": false,
+    "line_helper_called": false,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      66,
+      98
+    ],
+    "completion_latch_after": 130,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "line_not_ready_sets_latch",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 3,
+    "mode_after": 3,
+    "line_flags_before": 4,
+    "line_flags_after": 5,
+    "zoom_before": 88,
+    "zoom_after": 88,
+    "presentation_finalizer_called": false,
+    "line_helper_called": false,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      67,
+      99
+    ],
+    "completion_latch_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "in_progress_mode_clear",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 0,
+    "mode_after": 0,
+    "line_flags_before": 8,
+    "line_flags_after": 9,
+    "zoom_before": 50,
+    "zoom_after": 50,
+    "presentation_finalizer_called": false,
+    "line_helper_called": true,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 132,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "in_progress_zoom_without_queue",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 1,
+    "mode_after": 1,
+    "line_flags_before": 12,
+    "line_flags_after": 13,
+    "zoom_before": 99,
+    "zoom_after": 106,
+    "presentation_finalizer_called": false,
+    "line_helper_called": true,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 1,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "in_progress_negative_zoom_with_queue",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 1,
+    "mode_after": 1,
+    "line_flags_before": 8,
+    "line_flags_after": 9,
+    "zoom_before": 65535,
+    "zoom_after": 106,
+    "presentation_finalizer_called": true,
+    "line_helper_called": true,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 134,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "zoom_threshold_not_rewritten",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 1,
+    "mode_after": 1,
+    "line_flags_before": 8,
+    "line_flags_after": 9,
+    "zoom_before": 100,
+    "zoom_after": 100,
+    "presentation_finalizer_called": false,
+    "line_helper_called": true,
+    "line_helper_completed": false,
+    "entity_transition_id": null,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 135,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "complete_mode_already_set",
+    "ui_before": 64,
+    "ui_after": 64,
+    "mode_before": 163,
+    "mode_after": 163,
+    "line_flags_before": 12,
+    "line_flags_after": 1,
+    "zoom_before": 120,
+    "zoom_after": 120,
+    "presentation_finalizer_called": false,
+    "line_helper_called": true,
+    "line_helper_completed": true,
+    "entity_transition_id": 4,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 136,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "complete_mode_replaced",
+    "ui_before": 64,
+    "ui_after": 68,
+    "mode_before": 162,
+    "mode_after": 1,
+    "line_flags_before": 8,
+    "line_flags_after": 1,
+    "zoom_before": 120,
+    "zoom_after": 120,
+    "presentation_finalizer_called": false,
+    "line_helper_called": true,
+    "line_helper_completed": true,
+    "entity_transition_id": 4,
+    "mouse_after": [
+      0,
+      0
+    ],
+    "completion_latch_after": 137,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]
