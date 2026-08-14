@@ -1,0 +1,315 @@
+; Commander Blood VM assembly
+; format: cbvm-asm-v1
+; image: COD
+; size: 0x00000C0C
+; operands are authoritative; comments are non-semantic
+
+00000000: .byte A9 01 B3 00 ; OP_A9 01 B3 00
+00000004: .byte CE ; OP_CE
+00000005: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+0000000A: .byte AF 32 03 FF FF ; OP_AF 32 03 FF FF
+0000000F: .byte A1 ; OP_A1
+00000010: .byte A6 72 08 FF 00 80 0C 00 16 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
+0000001C: .byte A6 72 08 FF 00 80 1C 00 22 00 27 00 2E 00 32 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today CHEF BRONKO has laid on for you :"
+0000002C: .byte 37 00 3A 00 3E 00 42 00 00 00 ; continuation
+00000036: .byte A6 72 08 FF 00 80 44 00 4A 00 53 00 58 00 65 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Tasty MURFFALO soup Bronko-style ."
+00000046: .byte 00 00 ; continuation
+00000048: .byte A6 72 08 FF 00 80 4A 00 67 00 58 00 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "MURFFALO kidneys Bronko-style ."
+00000058: .byte A6 72 08 FF 00 80 4A 00 6F 00 79 00 7E 00 86 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "MURFFALO hamburger with Bar-B-Q recycled-oil dip ."
+00000068: .byte 93 00 65 00 00 00 ; continuation
+0000006E: .byte A6 72 08 FF 00 80 97 00 9E 00 AC 00 B0 00 65 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Smooth MURFFALO-chip ice cream ."
+0000007E: .byte 00 00 ; continuation
+00000080: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+0000008C: .byte A6 72 08 FF 00 80 C5 00 CA 00 D1 00 D6 00 DA 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Chef Bronko says ... Burping's bad manners ! ..."
+0000009C: .byte E4 00 E8 00 F0 00 D6 00 00 00 ; continuation
+000000A6: .byte A6 72 08 FF 08 80 F2 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x80 "stop"
+000000B0: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+000000B3: .byte A9 01 63 01 ; OP_A9 01 63 01
+000000B7: .byte CE ; OP_CE
+000000B8: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+000000BD: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+000000C3: .byte A1 ; OP_A1
+000000C4: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
+000000CE: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
+000000DC: .byte A6 72 08 FF 00 80 0B 01 53 00 12 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
+000000EC: .byte A6 72 08 FF 00 80 1D 01 26 01 2C 01 2F 01 37 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER belly in slobber sauce ."
+000000FC: .byte 65 00 00 00 ; continuation
+00000100: .byte A6 72 08 FF 00 80 3D 01 45 01 79 00 4A 00 4D 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Jellied URTIKAN with MURFFALO bone marrow ."
+00000110: .byte 52 01 65 00 00 00 ; continuation
+00000116: .byte A6 72 08 FF 00 80 59 01 5E 01 62 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK eye pie ."
+00000126: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+00000132: .byte A6 72 08 FF 00 80 66 01 6A 01 D1 00 D6 00 6F 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't eat with your mouth full ! ..."
+00000142: .byte 75 01 79 00 79 01 7E 01 84 01 F0 00 D6 00 00 00 ; continuation
+00000152: .byte A6 72 08 FF 08 90 89 01 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "Stop"
+0000015C: .byte AB 00 B4 00 ; OP_AB 00 B4 00
+00000160: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+00000163: .byte A9 01 0D 02 ; OP_A9 01 0D 02
+00000167: .byte CE ; OP_CE
+00000168: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+0000016D: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+00000173: .byte A1 ; OP_A1
+00000174: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
+0000017E: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
+0000018C: .byte A6 72 08 FF 00 80 0B 01 53 00 12 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
+0000019C: .byte A6 72 08 FF 00 80 1D 01 8E 01 94 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER snout stew ."
+000001AC: .byte A6 72 08 FF 00 80 45 01 99 01 2C 01 4A 00 9F 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN seeds in MURFFALO venom ."
+000001BC: .byte 65 00 00 00 ; continuation
+000001C0: .byte A6 72 08 FF 00 80 59 01 A5 01 AB 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK juice dessert ."
+000001D0: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+000001DC: .byte A6 72 08 FF 00 80 66 01 6A 01 D1 00 D6 00 6F 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Don't talk with your mouth open ! ..."
+000001EC: .byte 01 00 79 00 79 01 7E 01 B3 01 F0 00 D6 00 00 00 ; continuation
+000001FC: .byte A6 72 08 FF 08 90 F2 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
+00000206: .byte AB 00 64 01 ; OP_AB 00 64 01
+0000020A: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+0000020D: .byte A9 01 B9 02 ; OP_A9 01 B9 02
+00000211: .byte CE ; OP_CE
+00000212: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+00000218: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+0000021D: .byte A1 ; OP_A1
+0000021E: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
+00000228: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
+00000236: .byte A6 72 08 FF 00 80 0B 01 53 00 12 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "PLASMA soup HONK-style ."
+00000246: .byte A6 72 08 FF 00 80 1D 01 B8 01 2C 01 BD 01 37 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER feet in emulsive sauce ."
+00000256: .byte 65 00 00 00 ; continuation
+0000025A: .byte A6 72 08 FF 00 80 45 01 C6 01 2C 01 4A 00 CD 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN leaves in MURFFALO sweat ."
+0000026A: .byte 65 00 00 00 ; continuation
+0000026E: .byte A6 72 08 FF 00 80 59 01 D3 01 AB 01 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK flake dessert ."
+0000027E: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+0000028A: .byte A6 72 08 FF 00 80 66 01 6A 01 D1 00 D6 00 D9 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
+0000029A: .byte E2 01 E9 01 F0 01 F4 01 FE 01 D6 00 00 00 ; continuation
+000002A8: .byte A6 72 08 FF 08 90 F2 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
+000002B2: .byte AB 00 0E 02 ; OP_AB 00 0E 02
+000002B6: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+000002B9: .byte A9 01 6D 03 ; OP_A9 01 6D 03
+000002BD: .byte CE ; OP_CE
+000002BE: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+000002C3: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+000002C9: .byte A1 ; OP_A1
+000002CA: .byte A6 72 08 FF 00 80 F7 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"MENU\""
+000002D4: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
+000002E2: .byte A6 72 08 FF 00 80 12 01 0B 01 53 00 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "HONK-style PLASMA soup ."
+000002F2: .byte A6 72 08 FF 00 80 1D 01 08 02 0E 02 10 02 2C 01 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER brain , stewed in its own juice ."
+00000302: .byte 17 02 1B 02 A5 01 65 00 00 00 ; continuation
+0000030C: .byte A6 72 08 FF 00 80 45 01 1F 02 0E 02 25 02 79 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN trunk , stuffed with MURFFALO liver ."
+0000031C: .byte 4A 00 2D 02 65 00 00 00 ; continuation
+00000324: .byte A6 72 08 FF 00 80 59 01 33 02 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "GLOK dee-lite ."
+00000332: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+0000033E: .byte A6 72 08 FF 00 80 66 01 6A 01 D1 00 D6 00 3C 02 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... Plenty more in the kitchen ! ..."
+0000034E: .byte 43 02 2C 01 48 02 4C 02 F0 00 D6 00 00 00 ; continuation
+0000035C: .byte A6 72 08 FF 08 90 F2 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0x90 "stop"
+00000366: .byte AB 00 BA 02 ; OP_AB 00 BA 02
+0000036A: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+0000036D: .byte A9 01 29 04 ; OP_A9 01 29 04
+00000371: .byte CE ; OP_CE
+00000372: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
+00000377: .byte AF A1 32 03 FF FF ; OP_AF A1 32 03 FF FF
+0000037D: .byte A1 ; OP_A1
+0000037E: .byte A6 72 08 FF 00 80 0C 00 16 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "\"IMPROVED MENU\""
+0000038A: .byte A6 72 08 FF 00 80 FE 00 06 01 42 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Today's fare :"
+00000398: .byte A6 72 08 FF 00 80 54 02 59 02 0B 01 12 01 65 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Soup of PLASMA HONK-style ."
+000003A8: .byte 00 00 ; continuation
+000003AA: .byte A6 72 08 FF 00 80 1D 01 5C 02 2C 01 63 02 69 02 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "WRIGGLER hearts in green blood coagulate ."
+000003BA: .byte 6F 02 65 00 00 00 ; continuation
+000003C0: .byte A6 72 08 FF 00 80 45 01 79 02 0E 02 7F 02 84 02 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "URTIKAN roots , deep fried in recycled oil ."
+000003D0: .byte 2C 01 8A 02 93 02 65 00 00 00 ; continuation
+000003DA: .byte A6 72 08 FF 00 80 97 02 59 01 9F 02 65 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Candied GLOK tongue ."
+000003EA: .byte A6 72 08 FF 00 80 B6 00 BF 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "Recycled water"
+000003F6: .byte A6 72 08 FF 00 80 66 01 6A 01 D1 00 D6 00 A6 02 ; TEXT line=0x0872 voice=0xFF flags=0x00,0x80 "The chef says ... You eat what you are ! ..."
+00000406: .byte 75 01 AA 02 3E 00 AF 02 F0 00 D6 00 00 00 ; continuation
+00000414: .byte A6 72 08 FF 08 A0 F2 00 00 00 ; TEXT line=0x0872 voice=0xFF flags=0x08,0xA0 "stop"
+0000041E: .byte AB 00 6E 03 ; OP_AB 00 6E 03
+00000422: .byte AB 01 2A 04 ; OP_AB 01 2A 04
+00000426: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
+00000429: .byte A9 00 46 04 ; OP_A9 00 46 04
+0000042D: .byte A1 ; OP_A1
+0000042E: .byte AB 01 B4 00 ; OP_AB 01 B4 00
+00000432: .byte AB 01 64 01 ; OP_AB 01 64 01
+00000436: .byte AB 01 0E 02 ; OP_AB 01 0E 02
+0000043A: .byte AB 01 BA 02 ; OP_AB 01 BA 02
+0000043E: .byte AB 01 6E 03 ; OP_AB 01 6E 03
+00000442: .byte AB 00 2A 04 ; OP_AB 00 2A 04
+00000446: .byte A9 01 53 04 ; OP_A9 01 53 04
+0000044A: .byte A1 ; OP_A1
+0000044B: .byte A5 16 05 00 ; OP_A5 16 05 00
+0000044F: .byte AB 00 47 04 ; OP_AB 00 47 04
+00000453: .byte A9 01 63 04 ; OP_A9 01 63 04
+00000457: .byte A5 16 ; OP_A5 16
+00000459: .byte A1 ; OP_A1
+0000045A: .byte C3 94 05 28 00 ; RECORD_LINK record=0x0594 related=0x0028 inverted=false
+0000045F: .byte AB 00 54 04 ; OP_AB 00 54 04
+00000463: .byte A9 01 1D 06 ; OP_A9 01 1D 06
+00000467: .byte CE ; OP_CE
+00000468: .byte C4 94 05 28 00 ; ACTOR record=0x0594 related=0x0028 inverted=false
+0000046D: .byte A1 ; OP_A1
+0000046E: .byte A6 5A 05 FF 08 80 A6 02 B3 02 48 02 B9 02 BF 02 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "You found the right button . So far so good ..."
+0000047E: .byte 65 00 C6 02 C9 02 CD 02 D0 02 D6 00 00 00 ; continuation
+0000048C: .byte BC A0 05 D5 02 ; OP_BC A0 05 D5 02
+00000491: .byte A6 5A 05 FF 10 80 CE 04 DA 02 E0 02 E7 02 ED 02 ; TEXT line=0x055A voice=0xFF flags=0x10,0x80 "Click quick, Cap'n Bob is waiting ..."
+000004A1: .byte F1 02 F4 02 D6 00 FF FF FC 02 09 03 00 00 ; continuation
+000004AF: .byte A0 C6 04 ; OP_A0 C6 04
+000004B2: .byte A3 09 03 ; OP_A3 09 03
+000004B5: .byte A1 ; OP_A1
+000004B6: .byte A6 5A 05 FF 08 A0 0E 03 00 00 ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "GAME"
+000004C0: .byte D2 02 ; RUN_PROFILE operand=0x02 profile=0x0001
+000004C2: .byte CF ; OP_CF
+000004C3: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
+000004C6: .byte A0 CE 04 ; OP_A0 CE 04
+000004C9: .byte A3 FC 02 ; OP_A3 FC 02
+000004CC: .byte A1 ; OP_A1
+000004CD: .byte CF ; OP_CF
+000004CE: .byte A6 5A 05 FF 00 80 A6 02 13 03 17 03 48 02 1E 03 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "You can modify the text speed by clicking on \"OPTION\""
+000004DE: .byte 23 03 29 03 2C 03 37 00 35 03 00 00 ; continuation
+000004EA: .byte A6 5A 05 FF 00 80 A6 02 13 03 3E 03 E7 02 ED 02 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "You can wake Cap'n Bob by clicking on \"CRYOBOX\""
+000004FA: .byte 29 03 2C 03 37 00 43 03 00 00 ; continuation
+00000504: .byte A6 5A 05 FF 00 80 4D 03 50 03 55 03 57 03 5E 03 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Or load a \"Saved Game\" by clicking on \"OPTION\""
+00000514: .byte 29 03 2C 03 37 00 35 03 00 00 ; continuation
+0000051E: .byte A6 5A 05 FF 00 80 66 01 64 03 6B 03 F1 02 48 02 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "The OPTION \"LAST\" is the \"AUTOMATIC PERMANENT SAVE\". If you forget to save, click on \"LAST\"..."
+0000052E: .byte 72 03 7D 03 87 03 8E 03 3E 00 91 03 98 03 9B 03 ; continuation
+0000053E: .byte A2 03 37 00 A8 03 00 00 ; continuation
+00000546: .byte A6 5A 05 FF 00 80 B2 03 B5 03 BB 03 98 03 C0 03 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "We would like to draw your ATTENTION to certain RISKS ..."
+00000556: .byte 79 01 C5 03 98 03 CF 03 D7 03 D6 00 00 00 ; continuation
+00000564: .byte A6 5A 05 FF 00 80 8E 03 3E 00 DD 03 E8 03 F0 03 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "If you experience UNUSUAL SENSATIONS , DIZZINESS or FACIAL DISTORTION ..."
+00000574: .byte 0E 02 FB 03 05 04 08 04 0F 04 D6 00 00 00 ; continuation
+00000582: .byte A6 5A 05 FF 00 80 1A 04 1F 04 D6 00 00 00 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Stay CALM ..."
+00000590: .byte A6 5A 05 FF 00 80 24 04 27 04 2B 04 30 04 55 03 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "It may only be a CRISIS, a SPELL , a CURSE or , at worst , a SCRAMBLED BRAIN ..."
+000005A0: .byte 33 04 55 03 3B 04 0E 02 55 03 41 04 05 04 0E 02 ; continuation
+000005B0: .byte 47 04 4A 04 0E 02 55 03 50 04 5A 04 D6 00 00 00 ; continuation
+000005C0: .byte A6 5A 05 FF 00 80 60 04 63 04 69 04 0E 02 6E 04 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "In which case , write to : SUPER ZEN , end of corridor , CRAZYSTONE planet , BABY1 UNIVERSE ..."
+000005D0: .byte 98 03 42 00 74 04 7A 04 0E 02 7E 04 59 02 82 04 ; continuation
+000005E0: .byte 0E 02 8B 04 96 04 0E 02 9D 04 A3 04 D6 00 00 00 ; continuation
+000005F0: .byte A6 5A 05 FF 00 80 DA 02 AC 04 37 00 B2 04 65 00 ; TEXT line=0x055A voice=0xFF flags=0x00,0x80 "Click quick on \"HONK\" . He has important information for YOU ..."
+00000600: .byte B9 04 2E 00 BC 04 C6 04 3A 00 D2 04 D6 00 00 00 ; continuation
+00000610: .byte A6 5A 05 FF 08 80 D6 00 00 00 ; TEXT line=0x055A voice=0xFF flags=0x08,0x80 "..."
+0000061A: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
+0000061D: .byte A9 01 7D 07 ; OP_A9 01 7D 07
+00000621: .byte CE ; OP_CE
+00000622: .byte C4 64 08 28 00 ; ACTOR record=0x0864 related=0x0028 inverted=false
+00000627: .byte A1 ; OP_A1
+00000628: .byte A6 2A 08 FF 20 80 D6 04 DE 04 48 02 E5 04 0E 02 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Welcome aboard the ARK , Commander . I'm HONK , your trusted computer ..."
+00000638: .byte E9 04 65 00 F3 04 F7 04 0E 02 79 01 FC 04 04 05 ; continuation
+00000648: .byte D6 00 00 00 ; continuation
+0000064C: .byte A6 2A 08 FF 20 80 F3 04 0D 05 98 03 12 05 3E 00 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "I'm here to help you a lot ..."
+0000065C: .byte 55 03 17 05 D6 00 00 00 ; continuation
+00000664: .byte A6 2A 08 FF 20 80 8E 03 48 02 1B 05 21 05 0E 02 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "If the phone rings , just hit the \"RED BUTTON\" in front of you ..."
+00000674: .byte 27 05 2C 05 48 02 30 05 35 05 2C 01 3D 05 59 02 ; continuation
+00000684: .byte 3E 00 D6 00 00 00 ; continuation
+0000068A: .byte A6 2A 08 FF 20 80 E7 02 43 05 48 05 4C 05 54 05 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Cap'n Bob, our revered leader , is cryonized in the CRYOBOX ..."
+0000069A: .byte 0E 02 F1 02 5B 05 2C 01 48 02 65 05 D6 00 00 00 ; continuation
+000006AA: .byte A6 2A 08 FF 20 80 6D 05 70 05 3E 00 13 03 3E 03 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Of course you can wake Cap'n Bob and question him ... But like not too often , okay ? ..."
+000006BA: .byte E7 02 ED 02 77 05 7B 05 84 05 D6 00 88 05 BB 03 ; continuation
+000006CA: .byte 8C 05 90 05 94 05 0E 02 9A 05 9F 05 D6 00 00 00 ; continuation
+000006DA: .byte A6 2A 08 FF 20 80 E7 02 ED 02 A2 05 A8 05 D6 00 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Cap'n Bob knows everything ... That's why he's the boss ..."
+000006EA: .byte B3 05 BA 05 BE 05 48 02 C3 05 D6 00 00 00 ; continuation
+000006F8: .byte A6 2A 08 FF 20 80 C8 05 CC 05 F1 02 D1 05 DB 05 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Our ship is currently surrounded by things called stars ..."
+00000708: .byte 29 03 E6 05 ED 05 F4 05 D6 00 00 00 ; continuation
+00000714: .byte A6 2A 08 FF 20 80 FA 05 0E 02 7F 02 03 06 F1 02 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Remember , deep space is no place for night clubs ! ..."
+00000724: .byte 09 06 0C 06 3A 00 12 06 18 06 F0 00 D6 00 00 00 ; continuation
+00000734: .byte A6 2A 08 FF 20 80 8E 03 3E 00 1E 06 23 06 2E 06 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "If you have questions, I have all the answers ..."
+00000744: .byte 1E 06 30 06 48 02 34 06 D6 00 00 00 ; continuation
+00000750: .byte A6 2A 08 FF 20 80 DA 02 AC 04 37 00 43 03 E7 02 ; TEXT line=0x082A voice=0xFF flags=0x20,0x80 "Click quick on \"CRYOBOX\" Cap'n Bob is waiting ..."
+00000760: .byte ED 02 F1 02 F4 02 D6 00 00 00 ; continuation
+0000076A: .byte A6 2A 08 FF 28 80 3C 06 59 02 40 06 D6 00 00 00 ; TEXT line=0x082A voice=0xFF flags=0x28,0x80 "End of report ..."
+0000077A: .byte C9 64 08 ; RECORD_CLEAR record=0x0864
+0000077D: .byte A9 01 F6 0B ; OP_A9 01 F6 0B
+00000781: .byte D1 ; OP_D1
+00000782: .byte C4 84 00 28 00 ; ACTOR record=0x0084 related=0x0028 inverted=false
+00000787: .byte A1 ; OP_A1
+00000788: .byte A6 4A 00 03 00 80 47 06 4C 06 50 06 65 00 5A 06 ; TEXT line=0x004A voice=0x03 flags=0x00,0x80 "Good day COMMANDER . My name is BOB , BOB MORLOCK ..."
+00000798: .byte 5D 06 F1 02 62 06 0E 02 62 06 66 06 D6 00 00 00 ; continuation
+000007A8: .byte A6 4A 00 01 00 80 8E 03 48 02 1B 05 21 05 0E 02 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "If the phone rings , press the \"RED BUTTON\" on the radio to answer ..."
+000007B8: .byte 6E 06 48 02 30 05 35 05 37 00 48 02 74 06 98 03 ; continuation
+000007C8: .byte 7A 06 D6 00 00 00 ; continuation
+000007CE: .byte A6 4A 00 02 00 80 5A 06 81 06 AF 02 86 06 E9 04 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "My ears are fragile, Commander ..."
+000007DE: .byte D6 00 00 00 ; continuation
+000007E2: .byte A6 4A 00 02 10 80 3D 08 8F 06 3E 00 92 06 97 06 ; TEXT line=0x004A voice=0x02 flags=0x10,0x80 "Do you want me to explain your mission to you , Commander ?"
+000007F2: .byte 98 03 9A 06 79 01 A2 06 98 03 3E 00 0E 02 E9 04 ; continuation
+00000802: .byte 9F 05 FF FF AA 06 09 06 00 00 ; continuation
+0000080C: .byte A0 34 08 ; OP_A0 34 08
+0000080F: .byte A3 09 06 ; OP_A3 09 06
+00000812: .byte A1 ; OP_A1
+00000813: .byte A6 4A 00 06 08 80 F3 04 AE 06 98 03 9A 06 B4 06 ; TEXT line=0x004A voice=0x06 flags=0x08,0x80 "I'm going to explain it all the same ... It's important ..."
+00000823: .byte 30 06 48 02 B7 06 D6 00 BC 06 BC 04 D6 00 00 00 ; continuation
+00000833: .byte CF ; OP_CF
+00000834: .byte A0 3D 08 ; OP_A0 3D 08
+00000837: .byte A3 A1 09 06 ; OP_A3 A1 09 06
+0000083B: .byte A1 ; OP_A1
+0000083C: .byte CF ; OP_CF
+0000083D: .byte A6 4A 00 01 00 80 F3 04 43 02 C1 06 C6 06 CE 06 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "I'm more than 800,000 years old ... I feel ancient , Commander ..."
+0000084D: .byte D4 06 D6 00 2E 06 D8 06 DD 06 0E 02 E9 04 D6 00 ; continuation
+0000085D: .byte 00 00 ; continuation
+0000085F: .byte A6 4A 00 02 00 80 E5 06 DD 06 98 03 E9 06 EC 06 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Too ancient to go looking for adventure . That's where you come in : I DON'T WANT TO DIE STUPID . I WANT TO SEE THE BIG BANG ..."
+0000086F: .byte 3A 00 F4 06 65 00 B3 05 FE 06 3E 00 04 07 2C 01 ; continuation
+0000087F: .byte 42 00 2E 06 09 07 0F 07 14 07 17 07 1B 07 65 00 ; continuation
+0000088F: .byte 2E 06 0F 07 14 07 22 07 26 07 2A 07 2E 07 D6 00 ; continuation
+0000089F: .byte 00 00 ; continuation
+000008A1: .byte A6 4A 00 01 00 80 33 07 CC 05 0E 02 38 07 42 07 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "This ship , specially built for you , is called the ARK . It's a true marvel of technology ."
+000008B1: .byte 3A 00 3E 00 0E 02 F1 02 ED 05 48 02 E5 04 65 00 ; continuation
+000008C1: .byte BC 06 55 03 48 07 4D 07 59 02 54 07 65 00 00 00 ; continuation
+000008D1: .byte A6 4A 00 03 08 A0 5F 07 2C 05 48 02 64 07 6C 07 ; TEXT line=0x004A voice=0x03 flags=0x08,0xA0 "Just hit the \"SPACE\" bar if you've had enough ..."
+000008E1: .byte 70 07 73 07 7A 07 7E 07 D6 00 00 00 ; continuation
+000008ED: .byte A8 61 61 72 63 68 65 31 30 2E 68 6E 6D 00 00 ; OP_A8 61 61 72 63 68 65 31 30 2E 68 6E 6D 00 00
+000008FC: .byte A6 4A 00 FF 08 80 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
+00000904: .byte A8 61 61 72 63 68 65 32 30 2E 68 6E 6D 00 00 ; OP_A8 61 61 72 63 68 65 32 30 2E 68 6E 6D 00 00
+00000913: .byte A6 4A 00 FF 08 80 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
+0000091B: .byte A8 61 61 72 63 68 65 33 30 2E 68 6E 6D 00 00 ; OP_A8 61 61 72 63 68 65 33 30 2E 68 6E 6D 00 00
+0000092A: .byte A6 4A 00 FF 08 80 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 ""
+00000932: .byte A8 61 61 72 63 68 65 34 30 2E 68 6E 6D 00 00 ; OP_A8 61 61 72 63 68 65 34 30 2E 68 6E 6D 00 00
+00000941: .byte A6 4A 00 05 00 80 2E 06 92 06 98 03 85 07 48 02 ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "I want to understand the world and WHERE I COME FROM ... WHY I EXIST ..."
+00000951: .byte 90 07 77 05 96 07 2E 06 9C 07 A2 07 D6 00 A7 07 ; continuation
+00000961: .byte 2E 06 AB 07 D6 00 00 00 ; continuation
+00000969: .byte A6 4A 00 02 00 80 A6 02 77 05 97 06 AF 02 AE 06 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "You and me are going to travel through SPACE and TIME, through BLACK HOLES ..."
+00000979: .byte 98 03 B1 07 B8 07 C0 07 77 05 C6 07 B8 07 CC 07 ; continuation
+00000989: .byte D2 07 D6 00 00 00 ; continuation
+0000098F: .byte A6 4A 00 01 00 80 D8 07 DC 07 55 03 E2 07 CC 07 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "And quite a few BLACK HOLES later , we'll get to the BIG BANG ..."
+0000099F: .byte D2 07 E6 07 0E 02 EC 07 F2 07 98 03 48 02 2A 07 ; continuation
+000009AF: .byte 2E 07 D6 00 00 00 ; continuation
+000009B5: .byte A6 4A 00 02 00 80 66 01 F6 07 FC 07 01 08 30 04 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "The tough part will be finding those BLACK HOLES , Commander ..."
+000009C5: .byte 06 08 0E 08 CC 07 D2 07 0E 02 E9 04 D6 00 00 00 ; continuation
+000009D5: .byte A6 4A 00 01 00 80 B3 05 14 08 CC 07 D2 07 AF 02 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "That's because BLACK HOLES are UNDETECTABLE in the universe . We'll need to make contact with ALIEN BEINGS ..."
+000009E5: .byte 1C 08 2C 01 48 02 29 08 65 00 32 08 38 08 98 03 ; continuation
+000009F5: .byte 3D 08 42 08 79 00 4A 08 50 08 D6 00 00 00 ; continuation
+00000A03: .byte A6 4A 00 04 00 80 A6 02 13 03 57 08 98 03 5E 08 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "You can expect to see bloodchilling WARS and astonishing PHENOMENA..."
+00000A13: .byte 62 08 70 08 77 05 75 08 81 08 00 00 ; continuation
+00000A1F: .byte A6 4A 00 04 00 80 5A 06 8E 08 92 08 2E 06 9B 08 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "My age dictates I sleep through most of it in the CRYOBOX . WAKE ME ONLY IN AN EMERGENCY . My time is very precious ..."
+00000A2F: .byte B8 07 A2 08 59 02 B4 06 2C 01 48 02 65 05 65 00 ; continuation
+00000A3F: .byte A7 08 AC 08 AF 08 B4 08 B7 08 BA 08 65 00 5A 06 ; continuation
+00000A4F: .byte C4 08 F1 02 C9 08 CE 08 D6 00 00 00 ; continuation
+00000A5B: .byte A6 4A 00 02 00 80 2E 06 1E 06 D7 08 3E 00 79 00 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "I have provided you with an ONBOARD COMPUTER called HONK ..."
+00000A6B: .byte E0 08 E3 08 EB 08 ED 05 F7 04 D6 00 00 00 ; continuation
+00000A79: .byte A6 4A 00 02 00 80 D2 04 F4 08 0E 02 F7 04 9F 05 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "YOU THERE , HONK ?"
+00000A89: .byte 00 00 ; continuation
+00000A8B: .byte A6 4A 00 FF 20 80 FA 08 00 09 04 09 E7 02 ED 02 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: Yes sir, Cap'n Bob . Present , willing and able ..."
+00000A9B: .byte 65 00 09 09 0E 02 11 09 77 05 19 09 D6 00 00 00 ; continuation
+00000AAB: .byte A6 4A 00 05 00 80 1E 09 3E 00 23 09 28 09 2B 09 ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "Why, you hunk 'o junk ... YOU WERE ASLEEP !!!"
+00000ABB: .byte D6 00 D2 04 30 09 35 09 3C 09 00 00 ; continuation
+00000AC7: .byte A6 4A 00 FF 20 80 FA 08 40 09 0E 02 E7 02 ED 02 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: No , Cap'n Bob . I was calculating our trajectory to the black hole ! I swear it on my old mother's head !"
+00000AD7: .byte 65 00 2E 06 43 09 47 09 48 05 53 09 98 03 48 02 ; continuation
+00000AE7: .byte 5E 09 64 09 F0 00 2E 06 69 09 B4 06 37 00 6F 09 ; continuation
+00000AF7: .byte D4 06 72 09 7B 09 F0 00 00 00 ; continuation
+00000B01: .byte A6 4A 00 02 00 80 80 09 85 09 8C 09 8F 09 55 03 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "Your mother !! I've a good mind to short-circuit every wire in your lazy carcass ! Keep an eye on him , Commander ..."
+00000B11: .byte D0 02 94 09 98 03 99 09 A7 09 AD 09 2C 01 79 01 ; continuation
+00000B21: .byte B2 09 B7 09 F0 00 BF 09 E0 08 5E 01 37 00 84 05 ; continuation
+00000B31: .byte 0E 02 E9 04 D6 00 00 00 ; continuation
+00000B39: .byte A6 4A 00 05 00 80 C4 09 14 07 C8 09 0E 02 F7 04 ; TEXT line=0x004A voice=0x05 flags=0x00,0x80 "GET TO WORK , HONK !!!"
+00000B49: .byte 3C 09 00 00 ; continuation
+00000B4D: .byte A6 4A 00 FF 20 80 FA 08 CD 09 D2 09 E7 02 ED 02 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "HONK: Sure thing, Cap'n Bob ... I'm crunching numbers as I speak ..."
+00000B5D: .byte D6 00 F3 04 D9 09 E3 09 EB 09 2E 06 EE 09 D6 00 ; continuation
+00000B6D: .byte 00 00 ; continuation
+00000B6F: .byte A6 4A 00 09 00 80 2E 06 F4 09 5E 08 55 03 FA 09 ; TEXT line=0x004A voice=0x09 flags=0x00,0x80 "I can't see a thing ... Feel so weak ..."
+00000B7F: .byte D6 00 00 0A CD 02 05 0A D6 00 00 00 ; continuation
+00000B8B: .byte A6 4A 00 02 00 80 0A 0A D2 04 0D 0A AC 08 0E 02 ; TEXT line=0x004A voice=0x02 flags=0x00,0x80 "IF YOU NEED ME , WAKE ME UP ..."
+00000B9B: .byte A7 08 AC 08 12 0A D6 00 00 00 ; continuation
+00000BA5: .byte A6 4A 00 04 00 80 15 0A 3E 00 E6 07 0E 02 E9 04 ; TEXT line=0x004A voice=0x04 flags=0x00,0x80 "See you later , Commander . Or do I mean earlier ? I'm cryonizing ... Aaaahhhh !"
+00000BB5: .byte 65 00 4D 03 19 0A 2E 06 1C 0A 21 0A 9F 05 F3 04 ; continuation
+00000BC5: .byte 29 0A D6 00 34 0A F0 00 00 00 ; continuation
+00000BCF: .byte A6 4A 00 FF 20 80 66 01 D4 06 3D 0A 46 0A 3A 00 ; TEXT line=0x004A voice=0xFF flags=0x20,0x80 "The old turkey's out for the count ..."
+00000BDF: .byte 48 02 4A 0A D6 00 00 00 ; continuation
+00000BE7: .byte A6 4A 00 FF 08 90 F2 00 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x90 "stop"
+00000BF1: .byte D2 02 ; RUN_PROFILE operand=0x02 profile=0x0001
+00000BF3: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
+00000BF6: .byte A9 01 0B 0C ; OP_A9 01 0B 0C
+00000BFA: .byte BF 60 08 F5 C1 01 00 ; OP_BF 60 08 F5 C1 01 00
+00000C01: .byte BF 80 00 F5 C1 01 00 ; OP_BF 80 00 F5 C1 01 00
+00000C08: .byte A1 ; OP_A1
+00000C09: .byte D2 02 ; RUN_PROFILE operand=0x02 profile=0x0001
+00000C0B: .byte FF ; END

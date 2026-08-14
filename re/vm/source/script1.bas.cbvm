@@ -1,0 +1,10 @@
+; Commander Blood VM assembly
+; format: cbvm-asm-v1
+; image: BAS
+; size: 0x00000020
+; operands are authoritative; comments are non-semantic
+
+00000000: .byte AA AC 50 0A 00 00 A3 57 0A 00 00 ; RAW BAS structure
+0000000B: .byte A6 2A 08 FF 61 80 00 09 F0 00 E9 04 9F 05 FF FF ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
+0000001B: .byte 5D 0A 00 00 ; continuation
+0000001F: .byte FF ; RAW BAS structure

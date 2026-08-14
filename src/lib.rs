@@ -53,6 +53,7 @@ pub mod sprite;
 pub mod tbbig;
 pub mod util;
 pub mod vm;
+pub mod vm_source;
 
 /// 320 — the row stride the game BUILDS rather than stores: `xchg bh,bl`
 /// @`0x9B27` (y*256) plus `shl di,6` @`0x9B29` (y*64), summed by `add di,bx`
@@ -397,4 +398,3 @@ mod tick_rate_tests {
         );
     }
 }
-
