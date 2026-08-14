@@ -55,6 +55,7 @@ extern volatile cb_u8 nav_presentation_reverse; /* DS:0x27E4 */
 extern volatile cb_u16 nav_actor_presentation_state; /* DS:0x0A32 */
 extern volatile cb_u16 nav_actor_ship_depth_offset; /* DS:0x2527 */
 extern volatile cb_i16 nav_actor_zoom_counter; /* DS:0x2B93 */
+extern volatile cb_i16 presentation_box_phase; /* DS:0x2B93 alias */
 extern volatile cb_u8 nav_actor_completion_latch; /* DS:0x27E5 */
 extern volatile cb_u16 nav_target_presentation_state; /* DS:0x0A34 */
 extern volatile cb_u8 nav_actor_transition_phase; /* DS:0x2792 */
@@ -82,7 +83,10 @@ extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */
 extern volatile cb_u8 presentation_mode_flag_27e0; /* DS:0x27E0 */
 extern volatile cb_u8 presentation_mode_flag_27e1; /* DS:0x27E1 */
 extern volatile cb_u8 presentation_mode_active; /* DS:0x27EA */
+extern volatile cb_u8 presentation_completion_audio_pending; /* DS:0x27EB */
 extern volatile cb_u16 presentation_mode_previous_state; /* DS:0x0A36 */
+extern const bloodprg_rect_i16
+        presentation_box_animation_rects[6]; /* DS:0x2B97 */
 extern volatile cb_u8 presentation_choice_active; /* DS:0x259B */
 extern volatile cb_u8 presentation_choice_phase; /* DS:0x259C */
 extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
@@ -103,6 +107,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux list_widget_layout_unified parm [si] value [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_handler_3 modify exact [ax si]
+#pragma aux screen_mode_update parm [ax] modify exact [di es]
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #endif
 
@@ -111,6 +116,8 @@ int CB_NEAR presentation_line_helper(
 void CB_NEAR nav_actor_slot_update_loop(void); /* 0x007D7B */
 void CB_NEAR presentation_mode_dispatch(void); /* 0x0078D0 */
 void CB_NEAR camera_nav_update(void); /* 0x00792D */
+void CB_NEAR screen_mode_update(
+        cb_u16 queued_scene_link_target); /* 0x0079E5; original input BP */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_0(

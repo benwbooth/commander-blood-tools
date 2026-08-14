@@ -46,6 +46,13 @@ extern volatile cb_i16 CB_GAME_DATA
 extern volatile cb_game_char_ptr CB_GAME_DATA byte_parser_stream_0f18_cursor; /* GS:0x0F18 */
 extern volatile cb_u8 CB_GAME_DATA
         byte_parser_stream_segment[]; /* GS-relative byte arena */
+/* Ordinary DS aliases consumed by the presentation controller at 0x0079E5. */
+extern volatile char CB_NEAR * volatile descript_centered_text_cursor; /* DS:0x0F18 */
+extern volatile cb_u8 descript_centered_text_events[]; /* DS:0x0F1A */
+extern volatile char CB_NEAR * volatile descript_text_record_cursor; /* DS:0x131A */
+extern volatile cb_u8 descript_text_record_count; /* DS:0x131E */
+extern volatile cb_u8 descript_text_records_remaining; /* DS:0x131F */
+extern volatile char descript_text_record_table[][16]; /* DS:0x1320 */
 
 #if defined(__WATCOMC__)
 #pragma aux byte_parser_op_01_mark_b16 modify exact []

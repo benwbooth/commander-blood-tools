@@ -51862,6 +51862,784 @@ def list_walk_f18_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def screen_mode_update_vectors() -> list[dict[str, object]]:
+    entry = 0x79E5
+    data_segment = 0x3400
+    game_segment = 0x5000
+    extra_segment = 0x6800
+    stack_segment = 0x8000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    box_rects = [
+        (155, 67, 10, 15),
+        (143, 57, 34, 35),
+        (120, 51, 80, 47),
+        (76, 43, 168, 63),
+        (26, 30, 268, 89),
+        (0, 10, 320, 130),
+    ]
+    helper_entries = {
+        0x3BD1: "entity_flag_state_transition",
+        0xB2CD: "snd_play_clip",
+        0x366C: "framebuffer_rect_fill",
+        0x3545: "composite_draw_a",
+        0x2D9E: "framebuffer_rect_palette_remap",
+        0x3585: "framebuffer_noise_rect",
+        0x6E09: "vm_c2_descript_lookup",
+        0xB59D: "snd_driver_call",
+        0xB7B7: "snd_stream_source_load",
+        0xB5B3: "snd_stream_start",
+        0x9710: "dlg_line_id_scene_dispatch",
+        0x9953: "presentation_update_1fb2",
+        0x7CE8: "list_walk_f18",
+        0x7CB4: "selected_mask_overlay",
+        0x8C96: "ship_3d_hud_palette_snapshot_and_camera_reset",
+    }
+    expected_hash = "3fa1e4fab8d4165c36fc55a7b0541e4304c90a17324f9c78e6f9ecca2e8bbd54"
+    if hashlib.sha256(EXE[entry : entry + 719]).hexdigest() != expected_hash:
+        raise AssertionError("0x79e5: recovered 719-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "inactive", "active": 0},
+        {"name": "inactive_high_bit", "active": 0x80},
+        {"name": "phase_zero_initializes", "phase": 0},
+    ]
+    cases.extend(
+        {"name": f"opening_phase_{phase}", "phase": phase}
+        for phase in range(1, 7)
+    )
+    cases.extend(
+        {"name": f"transition_phase_{phase}", "phase": phase}
+        for phase in range(7, 10)
+    )
+    cases.extend(
+        [
+            {
+                "name": "steady_empty_record",
+                "phase": 10,
+                "selected_empty": True,
+            },
+            {
+                "name": "steady_empty_mouse_high_bit_ignored",
+                "phase": 10,
+                "selected_empty": True,
+                "mouse": 0x80,
+            },
+            {
+                "name": "steady_empty_cycles_selection",
+                "phase": 10,
+                "selected_empty": True,
+                "mouse": 1,
+                "selected": 2,
+            },
+            {
+                "name": "steady_empty_wraps_selection",
+                "phase": 10,
+                "selected_empty": True,
+                "mouse": 1,
+                "selected": 5,
+            },
+            {
+                "name": "steady_empty_reverse_mode_starts_close",
+                "phase": 10,
+                "selected_empty": True,
+                "mouse": 1,
+                "reverse_mode": 1,
+            },
+            {
+                "name": "queued_scene_waits_without_frame",
+                "phase": 0x4321,
+                "queue": 1,
+                "dlg_gates": [1],
+                "dlg_frames": [0],
+            },
+            {
+                "name": "queued_scene_draws_text_and_mask",
+                "phase": 0x4321,
+                "queue": 1,
+                "dlg_gates": [1],
+                "dlg_frames": [1],
+            },
+            {
+                "name": "queued_scene_callback_completes",
+                "phase": 0x4321,
+                "queue": 1,
+                "dlg_gates": [0],
+                "dlg_frames": [0],
+            },
+            {
+                "name": "queued_mouse_cycles_without_dispatch",
+                "phase": 0x4321,
+                "queue": 1,
+                "mouse": 1,
+                "selected": 1,
+            },
+            {
+                "name": "lookup_without_music_or_lines",
+                "phase": 10,
+                "lookup_count": 0,
+                "lookup_music": 0,
+            },
+            {
+                "name": "lookup_music_reload_without_lines",
+                "phase": 10,
+                "lookup_count": 0,
+                "lookup_music": 1,
+            },
+            {
+                "name": "lookup_music_high_bit_ignored",
+                "phase": 10,
+                "lookup_count": 0,
+                "lookup_music": 0x80,
+            },
+            {
+                "name": "lookup_pumps_two_records",
+                "phase": 10,
+                "lookup_count": 2,
+                "dlg_gates": [0, 0],
+                "dlg_frames": [0, 0],
+            },
+            {
+                "name": "lookup_pauses_after_first_record",
+                "phase": 10,
+                "selected": 3,
+                "lookup_count": 2,
+                "dlg_gates": [1],
+                "dlg_frames": [1],
+            },
+            {
+                "name": "phase_100_finishes_and_resets_ship",
+                "phase": 100,
+            },
+            {
+                "name": "phase_100_reverse_mode_sets_variant",
+                "phase": 100,
+                "reverse_mode": 1,
+            },
+        ]
+    )
+    cases.extend(
+        {"name": f"closing_phase_{phase}", "phase": phase}
+        for phase in range(101, 107)
+    )
+
+    def read_word(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def write_word(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    def read_dword(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", memory, offset)[0]
+
+    def write_dword(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", memory, offset, value & 0xFFFFFFFF)
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def read_c_string(memory: bytearray, offset: int) -> bytes:
+        result = bytearray()
+        for _ in range(0x10000):
+            character = memory[offset]
+            result.append(character)
+            offset = (offset + 1) & 0xFFFF
+            if character == 0:
+                return bytes(result)
+        raise AssertionError("0x79e5: unterminated modeled string")
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        active = int(case.get("active", 1))
+        phase = int(case.get("phase", 10)) & 0xFFFF
+        queue = int(case.get("queue", 0))
+        reverse_mode = int(case.get("reverse_mode", 0))
+        mouse = int(case.get("mouse", 0))
+        selected = int(case.get("selected", 0)) & 0xFF
+        selected_empty = bool(case.get("selected_empty", False))
+        lookup_count = int(case.get("lookup_count", 0)) & 0xFF
+        lookup_music = int(case.get("lookup_music", 0)) & 0xFF
+        lookup_result = int(case.get("lookup_result", 1)) & 0xFFFF
+        dlg_gates = [int(value) for value in case.get("dlg_gates", [])]
+        dlg_frames = [int(value) for value in case.get("dlg_frames", [])]
+        link_target_offset = (0x5100 + case_index * 0x17) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 23 + (offset >> 8) * 7 + case_index * 31 + 0x71)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + case_index * 19 + 0xA5) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x27E1] = active
+        data_before[0x1FB2] = queue
+        write_word(data_before, 0x2B93, phase)
+        data_before[0x27E0] = reverse_mode
+        data_before[0x0A3E] = mouse
+        data_before[0x27E3] = selected
+        data_before[0x0DB8] = int(case.get("frame_presented", 0))
+        data_before[0x0BA1] = 0x5A
+        data_before[0x131E] = 0xA7
+        data_before[0x131F] = int(case.get("remaining", 0)) & 0xFF
+        write_word(data_before, 0x131A, 0x7777)
+        write_word(data_before, 0x0F18, 0x8888)
+        write_word(data_before, 0x2793, 0xA55A)
+        write_dword(data_before, 0x5221, 0x24681357)
+        write_dword(data_before, 0x5229, 0x9BDF7531)
+        for index, rect in enumerate(box_rects):
+            struct.pack_into("<hhhh", data_before, 0x2B97 + index * 8, *rect)
+        music_path = b"mu\\xxxxxxxx.voc\0"
+        data_before[0x0D2D : 0x0D2D + len(music_path)] = music_path
+
+        for index in range(6):
+            slot = 0x6CDE + index * 16
+            data_before[slot : slot + 16] = bytes(16)
+            text = (f"SLOT{index}").encode("ascii") + b"\0"
+            data_before[slot : slot + len(text)] = text
+        data_before[0x6CDE] = ord("A")
+        if selected_empty:
+            data_before[0x6CDE + selected * 16] = 0
+
+        table_cursor = (0x1320 + (data_before[0x6CDE] << 7)) & 0xFFFF
+        line_records = (b"FIRST-LINE\0", b"SECOND\0")
+        for index, text in enumerate(line_records):
+            record_offset = (table_cursor + index * 16) & 0xFFFF
+            data_before[record_offset : record_offset + 16] = bytes(16)
+            data_before[record_offset : record_offset + len(text)] = text
+
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 37 + 0x63)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before[caller_sp : caller_sp + 10] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | link_target_offset,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        expected_data = bytearray(data_before)
+        expected_game = bytearray(game_before)
+        expected_calls: list[dict[str, object]] = []
+        expected_di = initial["edi"] & 0xFFFF
+        current_bp = link_target_offset
+        action_taken = False
+        expected_dlg_index = 0
+
+        def pointer_state(memory: bytearray) -> dict[str, int]:
+            return {
+                "display": read_dword(memory, 0x5221),
+                "back": read_dword(memory, 0x5229),
+            }
+
+        def model_rect_call(
+            call: str, color: int, x: int, y: int, width: int, height: int
+        ) -> None:
+            nonlocal current_bp
+            current_bp = height & 0xFFFF
+            expected_calls.append(
+                {
+                    "call": call,
+                    "color": color & 0xFFFF,
+                    "x": x & 0xFFFF,
+                    "y": y & 0xFFFF,
+                    "width": width & 0xFFFF,
+                    "height": height & 0xFFFF,
+                    **pointer_state(expected_data),
+                }
+            )
+
+        def model_remap(x: int, y: int, width: int, height: int) -> None:
+            nonlocal current_bp
+            current_bp = height & 0xFFFF
+            expected_calls.append(
+                {
+                    "call": "framebuffer_rect_palette_remap",
+                    "table_segment": data_segment,
+                    "table_offset": 0x6011,
+                    "x": x & 0xFFFF,
+                    "y": y & 0xFFFF,
+                    "width": width & 0xFFFF,
+                    "height": height & 0xFFFF,
+                    **pointer_state(expected_data),
+                }
+            )
+
+        def model_dispatch() -> str:
+            nonlocal expected_dlg_index
+            if (expected_data[0x0A3E] & 1) != 0:
+                return "action"
+            expected_calls.append(
+                {
+                    "call": "dlg_line_id_scene_dispatch",
+                    "link_target_offset": current_bp,
+                    "active_line": read_word(expected_data, 0x6788),
+                    "queue_before": expected_data[0x1FB2],
+                }
+            )
+            gate_after = (
+                dlg_gates[expected_dlg_index]
+                if expected_dlg_index < len(dlg_gates)
+                else expected_data[0x1FB2]
+            )
+            frame_after = (
+                dlg_frames[expected_dlg_index]
+                if expected_dlg_index < len(dlg_frames)
+                else expected_data[0x0DB8]
+            )
+            expected_dlg_index += 1
+            expected_data[0x1FB2] = gate_after & 0xFF
+            expected_data[0x0DB8] = frame_after & 0xFF
+            if (expected_data[0x1FB2] & 1) == 0:
+                return "pump"
+            if (expected_data[0x0DB8] & 1) != 0:
+                expected_calls.append({"call": "list_walk_f18"})
+                expected_calls.append({"call": "selected_mask_overlay"})
+            return "return"
+
+        def model_pump() -> str:
+            nonlocal expected_di
+            if expected_data[0x131F] == 0:
+                write_word(expected_data, 0x0F18, 0x0F1A)
+                expected_data[0x27D9] = 1
+                write_word(expected_data, 0x2B93, 7)
+                return "return"
+            expected_data[0x131F] = (expected_data[0x131F] - 1) & 0xFF
+            source_offset = read_word(expected_data, 0x131A)
+            write_word(expected_data, 0x131A, source_offset + 16)
+            text = read_c_string(expected_data, source_offset)
+            expected_game[0x209E : 0x209E + len(text)] = text
+            expected_di = (0x209E + len(text)) & 0xFFFF
+            write_word(expected_data, 0x6788, 2)
+            return "dispatch"
+
+        def model_action() -> None:
+            nonlocal action_taken
+            action_taken = True
+            if (expected_data[0x27E0] & 1) != 0:
+                write_word(expected_data, 0x2B93, 106)
+                if (expected_data[0x1FB2] & 1) != 0:
+                    expected_calls.append(
+                        {
+                            "call": "presentation_update_1fb2",
+                            "queue_before": expected_data[0x1FB2],
+                        }
+                    )
+                    expected_data[0x1FB2] = 0
+            else:
+                write_word(expected_data, 0x0A34, 0)
+                write_word(expected_data, 0x0A32, 14)
+                expected_calls.append({"call": "snd_driver_call", "ax": 1})
+                expected_calls.append({"call": "snd_play_clip", "clip": 1})
+                expected_calls.append(
+                    {
+                        "call": "presentation_update_1fb2",
+                        "queue_before": expected_data[0x1FB2],
+                    }
+                )
+                expected_data[0x1FB2] = 0
+                expected_data[0x27E3] = (expected_data[0x27E3] + 1) & 0xFF
+                if expected_data[0x27E3] == 6:
+                    expected_data[0x27E3] = 0
+                write_word(expected_data, 0x2B93, 7)
+
+            saved_display = read_dword(expected_data, 0x5221)
+            write_dword(expected_data, 0x5221, read_dword(expected_data, 0x5229))
+            model_rect_call("framebuffer_rect_fill", 0, 0, 10, 320, 130)
+            write_dword(expected_data, 0x5221, saved_display)
+
+        if (active & 1) != 0:
+            state = "dispatch" if (queue & 1) != 0 else "phase"
+            for _ in range(64):
+                if state == "phase":
+                    signed_phase = signed16(read_word(expected_data, 0x2B93))
+                    if signed_phase == 0:
+                        write_word(expected_data, 0x5E5E, 1)
+                        expected_data[0x27E3] = 0
+                        write_word(expected_data, 0x0A36, 15)
+                        write_word(expected_data, 0x2B93, 1)
+                        expected_calls.append(
+                            {"call": "entity_flag_state_transition", "object_id": 31}
+                        )
+                        expected_calls.append({"call": "snd_play_clip", "clip": 1})
+                        state = "return"
+                    elif signed_phase >= 100:
+                        close_index = signed_phase - 100
+                        if close_index == 0:
+                            write_word(expected_data, 0x1FA7, 0)
+                            expected_data[0x27E1] = 0
+                            expected_data[0x2793] &= 0xFB
+                            write_word(expected_data, 0x2B93, 0)
+                            expected_data[0x27EB] = 1
+                            write_word(expected_data, 0x5E5E, 8)
+                            expected_data[0x27D9] = 1
+                            if (expected_data[0x27E0] & 1) != 0:
+                                expected_data[0x1FB1] = 12
+                                expected_data[0x27E0] = 0
+                            else:
+                                expected_calls.append(
+                                    {
+                                        "call": "ship_3d_hud_palette_snapshot_and_camera_reset"
+                                    }
+                                )
+                            state = "return"
+                        else:
+                            write_word(expected_data, 0x2B93, signed_phase - 1)
+                            rect = box_rects[close_index - 1]
+                            model_rect_call(
+                                "framebuffer_rect_fill", 0xE0, *rect
+                            )
+                            model_rect_call("composite_draw_a", 0xEF, *rect)
+                            state = "return"
+                    elif signed_phase - 1 < 6:
+                        write_word(expected_data, 0x2B93, signed_phase + 1)
+                        rect = box_rects[signed_phase - 1]
+                        model_rect_call("framebuffer_rect_fill", 0xE0, *rect)
+                        model_rect_call("composite_draw_a", 0xEF, *rect)
+                        state = "return"
+                    elif signed_phase - 7 < 3:
+                        write_word(expected_data, 0x2B93, signed_phase + 1)
+                        model_remap(0, 0, 320, 200)
+                        model_rect_call(
+                            "framebuffer_noise_rect", 3, 1, 10, 319, 130
+                        )
+                        state = "return"
+                    else:
+                        model_remap(0, 0, 320, 200)
+                        display = read_dword(expected_data, 0x5221)
+                        back = read_dword(expected_data, 0x5229)
+                        write_dword(expected_data, 0x5221, back)
+                        write_dword(expected_data, 0x5229, display)
+                        model_remap(0, 0, 320, 200)
+                        model_rect_call(
+                            "framebuffer_rect_fill", 0, 0, 0, 320, 140
+                        )
+                        display = read_dword(expected_data, 0x5221)
+                        back = read_dword(expected_data, 0x5229)
+                        write_dword(expected_data, 0x5221, back)
+                        write_dword(expected_data, 0x5229, display)
+                        selected_offset = (
+                            0x6CDE + signed16(expected_data[0x27E3]) * 16
+                        ) & 0xFFFF
+                        if expected_data[selected_offset] == 0:
+                            model_rect_call(
+                                "framebuffer_noise_rect", 3, 1, 10, 319, 130
+                            )
+                            expected_calls.append(
+                                {"call": "selected_mask_overlay"}
+                            )
+                            state = (
+                                "action"
+                                if (expected_data[0x0A3E] & 1) != 0
+                                else "return"
+                            )
+                        else:
+                            expected_di = selected_offset
+                            expected_calls.append(
+                                {
+                                    "call": "vm_c2_descript_lookup",
+                                    "record_segment": game_segment,
+                                    "record_offset": selected_offset,
+                                }
+                            )
+                            expected_data[0x131E] = lookup_count
+                            expected_data[0x0BA1] = lookup_music
+                            if (expected_data[0x0BA1] & 1) != 0:
+                                expected_calls.append(
+                                    {
+                                        "call": "snd_driver_call",
+                                        "ax": lookup_result,
+                                    }
+                                )
+                                expected_calls.append(
+                                    {
+                                        "call": "snd_stream_source_load",
+                                        "path_segment": data_segment,
+                                        "path_offset": 0x0D2D,
+                                    }
+                                )
+                            expected_calls.append({"call": "snd_stream_start"})
+                            first_character = expected_data[0x6CDE]
+                            signed_character = (
+                                first_character - 0x100
+                                if first_character & 0x80
+                                else first_character
+                            )
+                            write_word(
+                                expected_data,
+                                0x131A,
+                                0x1320 + signed_character * 0x80,
+                            )
+                            expected_data[0x131F] = expected_data[0x131E]
+                            write_word(expected_data, 0x1FA7, 10)
+                            write_word(expected_data, 0x131C, 0)
+                            state = "pump"
+                elif state == "dispatch":
+                    state = model_dispatch()
+                elif state == "pump":
+                    state = model_pump()
+                elif state == "action":
+                    model_action()
+                    state = "return"
+                elif state == "return":
+                    break
+            else:
+                raise AssertionError(f"0x79e5 {name}: model did not terminate")
+
+        actual_calls: list[dict[str, object]] = []
+        dlg_index = 0
+
+        def machine_pointer_state(machine: Uc) -> dict[str, int]:
+            return {
+                "display": struct.unpack(
+                    "<I", machine.mem_read(data_segment * 16 + 0x5221, 4)
+                )[0],
+                "back": struct.unpack(
+                    "<I", machine.mem_read(data_segment * 16 + 0x5229, 4)
+                )[0],
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal dlg_index
+            call = helper_entries.get(address)
+            if call is None:
+                return
+            if call in (
+                "framebuffer_rect_fill",
+                "composite_draw_a",
+                "framebuffer_noise_rect",
+            ):
+                actual_calls.append(
+                    {
+                        "call": call,
+                        "color": machine.reg_read(UC_X86_REG_AX),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                        **machine_pointer_state(machine),
+                    }
+                )
+            elif call == "framebuffer_rect_palette_remap":
+                actual_calls.append(
+                    {
+                        "call": call,
+                        "table_segment": machine.reg_read(UC_X86_REG_DS),
+                        "table_offset": machine.reg_read(UC_X86_REG_SI),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "width": machine.reg_read(UC_X86_REG_DX),
+                        "height": machine.reg_read(UC_X86_REG_BP),
+                        **machine_pointer_state(machine),
+                    }
+                )
+            elif call == "entity_flag_state_transition":
+                actual_calls.append(
+                    {"call": call, "object_id": machine.reg_read(UC_X86_REG_AX)}
+                )
+            elif call == "snd_play_clip":
+                actual_calls.append(
+                    {"call": call, "clip": machine.reg_read(UC_X86_REG_AX)}
+                )
+            elif call == "vm_c2_descript_lookup":
+                actual_calls.append(
+                    {
+                        "call": call,
+                        "record_segment": machine.reg_read(UC_X86_REG_ES),
+                        "record_offset": machine.reg_read(UC_X86_REG_DI),
+                    }
+                )
+                machine.mem_write(
+                    data_segment * 16 + 0x131E, bytes((lookup_count,))
+                )
+                machine.mem_write(
+                    data_segment * 16 + 0x0BA1, bytes((lookup_music,))
+                )
+                machine.reg_write(UC_X86_REG_AX, lookup_result)
+            elif call == "snd_driver_call":
+                actual_calls.append(
+                    {"call": call, "ax": machine.reg_read(UC_X86_REG_AX)}
+                )
+            elif call == "snd_stream_source_load":
+                actual_calls.append(
+                    {
+                        "call": call,
+                        "path_segment": machine.reg_read(UC_X86_REG_DS),
+                        "path_offset": machine.reg_read(UC_X86_REG_SI),
+                    }
+                )
+            elif call in (
+                "snd_stream_start",
+                "list_walk_f18",
+                "selected_mask_overlay",
+                "ship_3d_hud_palette_snapshot_and_camera_reset",
+            ):
+                actual_calls.append({"call": call})
+            elif call == "dlg_line_id_scene_dispatch":
+                active_line = struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x6788, 2)
+                )[0]
+                queue_before = machine.mem_read(
+                    data_segment * 16 + 0x1FB2, 1
+                )[0]
+                actual_calls.append(
+                    {
+                        "call": call,
+                        "link_target_offset": machine.reg_read(UC_X86_REG_BP),
+                        "active_line": active_line,
+                        "queue_before": queue_before,
+                    }
+                )
+                gate_after = (
+                    dlg_gates[dlg_index]
+                    if dlg_index < len(dlg_gates)
+                    else queue_before
+                )
+                frame_after = (
+                    dlg_frames[dlg_index]
+                    if dlg_index < len(dlg_frames)
+                    else machine.mem_read(data_segment * 16 + 0x0DB8, 1)[0]
+                )
+                dlg_index += 1
+                machine.mem_write(
+                    data_segment * 16 + 0x1FB2, bytes((gate_after & 0xFF,))
+                )
+                machine.mem_write(
+                    data_segment * 16 + 0x0DB8, bytes((frame_after & 0xFF,))
+                )
+            elif call == "presentation_update_1fb2":
+                queue_before = machine.mem_read(
+                    data_segment * 16 + 0x1FB2, 1
+                )[0]
+                actual_calls.append(
+                    {"call": call, "queue_before": queue_before}
+                )
+                machine.mem_write(data_segment * 16 + 0x1FB2, b"\0")
+
+        stub_memory = [(0, return_address, b"\xCC")]
+        for helper_entry, helper_name in helper_entries.items():
+            far_return = helper_entry not in (0x7CE8, 0x7CB4)
+            stub_memory.append(
+                (0, helper_entry, b"\xCB" if far_return else b"\xC3")
+            )
+        stub_memory.extend(
+            [
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (extra_segment, 0, extra_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ]
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            stub_memory,
+            code_handler=capture,
+            instruction_count=5000,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x79e5 {name}: calls={actual_calls!r}, "
+                f"expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x79e5 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x79e5 {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, "
+                f"expected={expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x79e5 {name}: ES decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 2
+        if (active & 1) != 0:
+            expected_registers["es"] = game_segment
+            expected_registers["edi"] = (
+                initial["edi"] & 0xFFFF0000
+            ) | expected_di
+        if action_taken:
+            expected_registers["eax"] &= 0x0000FFFF
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x79e5 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x79e5 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x79e5 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "active": active,
+                "phase_before": phase,
+                "phase_after": read_word(expected_data, 0x2B93),
+                "queue_after": expected_data[0x1FB2],
+                "selected_before": selected,
+                "selected_after": expected_data[0x27E3],
+                "remaining_records": expected_data[0x131F],
+                "action_taken": action_taken,
+                "calls": expected_calls,
+                "final_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0xFFFF,
+            }
+        )
+    return vectors
+
+
 def nav_actor_slot_update_loop_vectors() -> list[dict[str, object]]:
     entry = 0x7D7B
     mouse_hit_entry = 0x8269
@@ -70100,6 +70878,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_792d_natural.json",
         camera_nav_update_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_79e5_natural.json",
+        screen_mode_update_vectors(),
         args.check,
     )
     update_vector(

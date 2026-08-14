@@ -4781,6 +4781,43 @@ with 87.72 percent overlap. Direct replacement still needs the original
 far-call placement, AX/DS/SI/ES/DI preservation, dword `REP STOSD`/`MOVSD`
 lowering, and exact `CX`/`EAX` and flag residue.
 
+## BLOODPRG presentation montage controller candidate
+
+`0x0079E5` owns the complete presentation-box lifecycle. Phase zero initializes
+the mode and audio; phases 1 through 6 draw the six typed rectangle records;
+phases 7 through 9 remap the full screen and add the 319-by-130 noise region.
+Steady phases remap both framebuffer pages, clear the 140-row montage region,
+then either draw the empty-selection mask or load the selected DESCRIPT record.
+
+The selected-record path conditionally reloads `mu\\xxxxxxxx.voc`, snapshots the
+parser's 16-byte-record count, derives the table cursor from the signed first
+byte of slot zero, and copies each record from DS into `ES=GS:0x209E` before
+dispatching line 2. A callback can leave the queue active, draw centered text
+and the selection mask, clear the queue and continue pumping, or accept input.
+One non-obvious ABI fact is now explicit: dispatch receives the outer `BP`
+before montage setup, but receives `140` after the steady-path fill leaves its
+height in `BP`.
+
+Input either starts phase 106 closing or cycles the six selections, with the
+exact sound/finalizer ordering and a clear of rows 10 through 139 on the back
+buffer. Phases 106 through 101 draw the six rectangles in reverse; phase 100
+publishes all completion state and either selects resource variant 12 or resets
+the ship HUD palette/camera.
+
+Thirty-four patched-helper vectors cover both inactive gate forms, all valid
+opening, transition, closing, and completion phases, queued and callback-driven
+paths, empty and selected records, music bit semantics, two-record completion
+and interruption, both input modes, selection wrap, exact helper state, every
+write, DS/GS ownership, register residue, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the header-integrated
+natural candidate warning-free to 236 instructions/764 bytes versus the
+original 221/719, with 78.73 percent mnemonic-multiset overlap and no inline
+assembly. Full-source integration must supply the outer scene context and map
+the shipped DS=SS=GS aliases. Direct replacement additionally needs the
+original `BP` carry-through, explicit `ES=GS`, register-call lowering,
+preservation of AX/BX/CX/DX/BP/SI, DI/EAX residue, and terminal flags.
+
 ## BLOODPRG centered thresholded text candidate
 
 `0x007CE8` is more specific than its provisional `list_walk_f18` label. It

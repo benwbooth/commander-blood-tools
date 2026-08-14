@@ -135,6 +135,7 @@ extern const cb_u8 CB_GAME_DATA
         subtitle_console_glyphs[]; /* SS:0x71AA */
 extern volatile cb_u16 CB_GAME_DATA
         subtitle_reveal_cursor; /* GS:0x5E58 */
+extern volatile cb_u16 presentation_text_origin_y; /* DS:0x5E5E */
 extern const cb_u8 CB_GAME_DATA
         small_font_character_map[256]; /* GS:0x6FA8 */
 extern const cb_u8 CB_GAME_DATA
