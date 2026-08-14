@@ -5372,6 +5372,404 @@ def vm_flag_test_67b1_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_state_processor_vectors() -> list[dict[str, object]]:
+    game_segment = 0x2C00
+    record_segment = 0x5000
+    directory_segment = 0x7000
+    data_segment = 0x9000
+    stack_segment = 0xB000
+    extra_segment = 0xD000
+    orxx_offset = 0x3000
+    arche_offset = 0x3100
+    cases = [
+        {
+            "name": "first_non_kind2_is_unconditionally_visited",
+            "entries": [
+                {"offset": 0x1000, "kind": 1, "state": 0xA5A5},
+            ],
+        },
+        {
+            "name": "request_bit_one_preserves_miss",
+            "request_flags": 1,
+            "entries": [
+                {"offset": 0x1020, "kind": 2, "state": 0x9234,
+                 "position": (10, 20)},
+            ],
+        },
+        {
+            "name": "request_bit_two_preserves_miss",
+            "request_flags": 2,
+            "entries": [
+                {"offset": 0x1040, "kind": 2, "state": 0x8011,
+                 "position": (11, 21)},
+            ],
+        },
+        {
+            "name": "idle_text_clears_8010",
+            "entries": [
+                {"offset": 0x1060, "kind": 2, "state": 0xFFFF,
+                 "position": (12, 22)},
+            ],
+        },
+        {
+            "name": "active_honk_pair_clears_8010",
+            "text_active": 1,
+            "honk_offset": 0x1080,
+            "current_offset": 0x1080,
+            "entries": [
+                {"offset": 0x1080, "kind": 2, "state": 0xC0F0,
+                 "position": (13, 23)},
+            ],
+        },
+        {
+            "name": "active_honk_mismatch_preserves",
+            "text_active": 1,
+            "honk_offset": 0x10A0,
+            "current_offset": 0x7777,
+            "entries": [
+                {"offset": 0x10A0, "kind": 2, "state": 0xC0F0,
+                 "position": (14, 24)},
+            ],
+        },
+        {
+            "name": "orxx_match_reasserts_bit_10_after_clear",
+            "orxx_position": (15, 25),
+            "entries": [
+                {"offset": 0x10C0, "kind": 2, "state": 0x8000,
+                 "position": (15, 25)},
+            ],
+        },
+        {
+            "name": "arche_fallback_match_sets_bit_10",
+            "request_flags": 3,
+            "arche_position": (16, 26),
+            "entries": [
+                {"offset": 0x10E0, "kind": 2, "state": 0x0021,
+                 "position": (16, 26)},
+            ],
+        },
+        {
+            "name": "orxx_match_skips_arche_lookup",
+            "orxx_position": (17, 27),
+            "arche_position": (17, 27),
+            "entries": [
+                {"offset": 0x1100, "kind": 2, "state": 0,
+                 "position": (17, 27)},
+            ],
+        },
+        {
+            "name": "second_entry_low_byte_one_is_processed",
+            "request_flags": 1,
+            "entries": [
+                {"offset": 0x1120, "kind": 1, "state": 0x1111},
+                {"offset": 0x1140, "kind": 2, "state": 0x8010,
+                 "position": (18, 28), "directory_kind": 0xAB01},
+            ],
+        },
+        {
+            "name": "second_entry_low_byte_zero_stops",
+            "entries": [
+                {"offset": 0x1160, "kind": 1, "state": 0x2222},
+                {"offset": 0x1180, "kind": 2, "state": 0xFFFF,
+                 "position": (19, 29), "directory_kind": 0x0100},
+            ],
+        },
+        {
+            "name": "record_base_offset_ignored_and_record_fields_wrap",
+            "record_base": 0x4321,
+            "entries": [
+                {"offset": 0xFFFA, "kind": 2, "state": 0x8010,
+                 "position": (20, 30)},
+            ],
+        },
+        {
+            "name": "directory_offset_and_sentinel_wrap",
+            "directory_base": 0xFFE0,
+            "entries": [
+                {"offset": 0x11A0, "kind": 2, "state": 0x0010,
+                 "position": (21, 31)},
+            ],
+        },
+        {
+            "name": "reverse_direction_is_preserved",
+            "flags": 0x0ED7,
+            "request_flags": 1,
+            "entries": [
+                {"offset": 0x11C0, "kind": 2, "state": 0x9234,
+                 "position": (22, 32)},
+            ],
+        },
+    ]
+    vectors = []
+
+    def append_wrapped(
+        memory: list[tuple[int, int, bytes]],
+        segment: int,
+        offset: int,
+        payload: bytes,
+    ) -> None:
+        offset &= 0xFFFF
+        first_size = min(len(payload), 0x10000 - offset)
+        if first_size:
+            memory.append((segment, offset, payload[:first_size]))
+        if first_size != len(payload):
+            memory.append((segment, 0, payload[first_size:]))
+
+    def read_wrapped(machine: Uc, segment: int, offset: int, size: int) -> bytes:
+        offset &= 0xFFFF
+        first_size = min(size, 0x10000 - offset)
+        first = bytes(machine.mem_read(segment * 16 + offset, first_size))
+        if first_size == size:
+            return first
+        return first + bytes(machine.mem_read(segment * 16, size - first_size))
+
+    def sub_flags_8(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": result.bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        entries = list(case["entries"])
+        directory_base = int(case.get("directory_base", 0x2000 + case_index * 0x80))
+        record_base = int(case.get("record_base", 0x5555))
+        request_flags = int(case.get("request_flags", 0))
+        text_active = int(case.get("text_active", 0))
+        honk_offset = int(case.get("honk_offset", 0x7777))
+        current_offset = int(case.get("current_offset", 0x8888))
+        orxx_position = tuple(case.get("orxx_position", (0x4000, 0x4001)))
+        arche_position = tuple(case.get("arche_position", (0x5000, 0x5001)))
+        sentinel_kind = int(case.get("sentinel_kind", 0xA500))
+        memory: list[tuple[int, int, bytes]] = []
+
+        record_pointer = struct.pack("<HH", record_base, record_segment)
+        directory_pointer = struct.pack("<HH", directory_base, directory_segment)
+        game_globals = {
+            0x6724: record_pointer,
+            0x672C: directory_pointer,
+            0x6750: struct.pack("<H", orxx_offset),
+            0x6752: struct.pack("<H", arche_offset),
+            0x6754: struct.pack("<H", honk_offset),
+            0x6798: struct.pack("<H", current_offset),
+            0x67AA: bytes([request_flags]),
+            0x5E64: bytes([text_active]),
+        }
+        for offset, payload in game_globals.items():
+            append_wrapped(memory, game_segment, offset, payload)
+
+        field_table = {
+            0x6E71: 0x06,  # selector 0x11, kind bit 1
+            0x6E13: 0x04,  # selector 0x0b, kind bit 3
+        }
+        for offset, value in field_table.items():
+            append_wrapped(memory, game_segment, offset, bytes([value]))
+            append_wrapped(memory, record_segment, offset, bytes([value ^ 0x3F]))
+
+        for decoy_segment, xor_mask in (
+            (data_segment, 0x55),
+            (stack_segment, 0xAA),
+        ):
+            for offset, payload in game_globals.items():
+                decoy = bytes(byte ^ xor_mask for byte in payload)
+                append_wrapped(memory, decoy_segment, offset, decoy)
+
+        directory_image = bytearray()
+        for entry_index, entry in enumerate(entries):
+            directory_kind = int(entry.get("directory_kind", 0x0001))
+            directory_image.extend(bytes([0x41 + entry_index]) * 16)
+            directory_image.extend(struct.pack("<HH", int(entry["offset"]), directory_kind))
+        directory_image.extend(b"SENTINEL-ENTRY!!"[:16])
+        directory_image.extend(struct.pack("<HH", 0xDEAD, sentinel_kind))
+        append_wrapped(memory, directory_segment, directory_base, bytes(directory_image))
+
+        position_objects: dict[int, tuple[int, int]] = {
+            orxx_offset: orxx_position,
+            arche_offset: arche_position,
+        }
+        expected_states: dict[int, int] = {}
+        expected_calls = []
+        processed_entries = []
+        continue_scan = True
+        for entry_index, entry in enumerate(entries):
+            is_processed = entry_index == 0 or continue_scan
+            offset = int(entry["offset"])
+            kind = int(entry["kind"])
+            state_before = int(entry["state"])
+            expected_state = state_before
+            append_wrapped(
+                memory,
+                record_segment,
+                offset,
+                struct.pack("<HH", kind, state_before),
+            )
+            if kind == 2:
+                position_object = (0x4000 + case_index * 0x100 + entry_index * 0x20) & 0xFFFF
+                position = tuple(entry["position"])
+                append_wrapped(
+                    memory,
+                    record_segment,
+                    (offset + 6) & 0xFFFF,
+                    struct.pack("<H", position_object),
+                )
+                position_objects[position_object] = position
+                if is_processed:
+                    if request_flags & 3 == 0 and (
+                        text_active & 1 == 0
+                        or (offset == honk_offset and offset == current_offset)
+                    ):
+                        expected_state &= 0x7FEF
+                    expected_calls.append((offset, expected_state, record_segment))
+                    expected_calls.append((orxx_offset, expected_state, record_segment))
+                    if position != orxx_position:
+                        expected_calls.append((arche_offset, expected_state, record_segment))
+                    if position == orxx_position or position == arche_position:
+                        expected_state |= 0x0010
+            if is_processed:
+                processed_entries.append(offset)
+            expected_states[offset] = expected_state
+            if is_processed:
+                next_kind = (
+                    int(entries[entry_index + 1].get("directory_kind", 1))
+                    if entry_index + 1 < len(entries)
+                    else sentinel_kind
+                )
+                continue_scan = (next_kind & 0xFF) == 1
+
+        for offset, position in position_objects.items():
+            append_wrapped(
+                memory,
+                record_segment,
+                offset,
+                struct.pack("<HHH", 8, int(position[0]), int(position[1])),
+            )
+
+        decoy_record_offset = (record_base + int(entries[0]["offset"])) & 0xFFFF
+        if decoy_record_offset not in expected_states and decoy_record_offset not in position_objects:
+            append_wrapped(
+                memory,
+                record_segment,
+                decoy_record_offset,
+                b"\xfe\xca\xbe\xba",
+            )
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0xE000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": int(case.get("flags", 0x0AD7)),
+        }
+        helper_calls = []
+
+        def capture_helper(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x61A6:
+                helper_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_DS),
+                    )
+                )
+
+        machine = execute(
+            0x5A74,
+            0x5AFC,
+            initial,
+            memory,
+            code_handler=capture_helper,
+        )
+
+        if helper_calls != expected_calls:
+            raise AssertionError(
+                f"0x5a74 {name}: helper calls={helper_calls}, expected={expected_calls}"
+            )
+        for register, expected in initial.items():
+            if register == "flags":
+                continue
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x5a74 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        for entry in entries:
+            offset = int(entry["offset"])
+            actual_kind, actual_state = struct.unpack(
+                "<HH", read_wrapped(machine, record_segment, offset, 4)
+            )
+            expected_state = expected_states.get(offset, int(entry["state"]))
+            if actual_kind != int(entry["kind"]) or actual_state != expected_state:
+                raise AssertionError(
+                    f"0x5a74 {name}: record {offset:#x}="
+                    f"{(actual_kind, actual_state)}, expected="
+                    f"{(int(entry['kind']), expected_state)}"
+                )
+        actual_directory = read_wrapped(
+            machine, directory_segment, directory_base, len(directory_image)
+        )
+        if actual_directory != bytes(directory_image):
+            raise AssertionError(f"0x5a74 {name}: directory changed")
+        for offset, payload in game_globals.items():
+            actual = read_wrapped(machine, game_segment, offset, len(payload))
+            if actual != payload:
+                raise AssertionError(f"0x5a74 {name}: GS:{offset:#x} changed")
+
+        expected_flags = sub_flags_8(sentinel_kind & 0xFF, 1)
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x5a74 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags & 0x0400) != bool(initial["flags"] & 0x0400):
+            raise AssertionError(f"0x5a74 {name}: direction flag changed")
+        if EXE[0x5AFC] != 0xC3:
+            raise AssertionError("0x5a74: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "record_pointer_offset_ignored": record_base,
+                "directory_pointer_offset": directory_base,
+                "request_flags": request_flags,
+                "text_active": text_active,
+                "processed_entries": processed_entries,
+                "state_words_after": {
+                    f"{offset:#06x}": state for offset, state in expected_states.items()
+                },
+                "resolver_calls": [list(call) for call in helper_calls],
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_cod_scan_vectors() -> list[dict[str, object]]:
     entry = 0x739B
     return_address = 0xF39B
@@ -76831,6 +77229,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5791_natural.json",
         vm_flag_test_67b1_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5a74_natural.json",
+        vm_state_processor_vectors(),
         args.check,
     )
     update_vector(

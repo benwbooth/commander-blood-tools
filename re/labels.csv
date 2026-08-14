@@ -431,7 +431,7 @@
 "0x00533C","resource_get_field4","resource-table +4 getter: bx=handle<<3; return eax = fs:[bx+4] (the dword at +4 of the entry - resource size or data offset)"
 "0x005356","resource_clear_flag","resource-table flag clear: bx=handle<<3; and fs:[bx+2],0xfffd (clear bit1 of the entry flags). Resets a resource-state bit"
 "0x005365","resource_is_loaded","resource loaded-check: bx=handle<<3; test fs:[bx+2] bit0 (loaded flag). Returns whether the resource is currently loaded"
-"0x005A74","vm_state_processor","per-run VM state processor (called by vm_run_wrapper 0x55f5): lds si,gs:[0x6724] (state table), les di,gs:[0x672c]+0x10 (lookup); walks the object/line-record state before the exec loop. Prepares/updates the VM state each run"
+"0x005A74","vm_state_processor","walk the 20-byte object directory, update kind-2 state words by request/text gates, and set bit 0x10 when the record's resolved 3D position matches named orxx or fallback arche"
 "0x008A4E","camera_fsm_state_gate","camera-approach FSM gate: test [0x27df]&7 (the DS:0x27DF camera-approach phase, ship3d.rs Ship3dCameraApproach); set [0xa32]=1, clear [0x278a]. Gates on the camera state machine phase"
 "DS:0x65F2","entity_slot_31_flags","flags word of 32-byte entity slot 31; ui_region_31_poll 0x82c3 repeatedly tests bit 0 and hit-tests the slot rectangle at +8"
 "0x009AA4","project_perspective_x","3D->2D perspective projection X (family 0x9aa4/0x9c69): sar eax,7 (val>>7); cdq; idiv ecx (divide by depth); add ax,0xa0 (160 = screen centre x). Projects a transformed 3D x coordinate to screen x. The native project_ship_3d_point X (ship3d.rs)"

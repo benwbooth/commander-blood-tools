@@ -5259,6 +5259,34 @@ the shipped SS=GS placement and clear-DF C ABI. Direct replacement also needs
 the original frameless ES:DI/DS:SI preservation, backward-STOSW behavior, and
 path-specific BX and flags.
 
+## BLOODPRG per-run VM state processor candidate
+
+`0x005A74` uses only the segment half of the record pointer at GS:0x6724, then
+walks the 20-byte far directory at GS:0x672C. The first entry is always visited;
+each next entry runs only when its +0x12 kind low byte equals one. Records whose
+kind is not two are skipped without calling a helper or changing state.
+
+For kind two, the second word is retained unless the low request bits are clear
+and either text is inactive or the record is simultaneously named Honk and the
+current post-update record. That gate clears bits 0x8010. The routine then calls
+the real position resolver for the record and named `orxx`; a dword mismatch
+calls it once more for `arche`. Either coordinate match sets state bit 0x10.
+Fourteen direct vectors execute the shipped body with its real `0x0061A6` and
+`0x006023` callees. They cover all gates and match paths, multiple entries,
+low-byte continuation, absolute and wrapped record offsets, wrapped directory
+termination, pointer-offset handling, exact helper calls, segment ownership,
+immutability, registers, flags, stack, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) plus its native `__saveregs`
+attribute emits one warning-free natural 78-instruction/201-byte function versus
+53/137 original, with 96.23 percent mnemonic-multiset overlap and no inline
+assembly. The generated body correctly loads the floating record DS, keeps the
+directory far, directly calls the recovered resolver, and dereferences all
+returned coordinate offsets under the record segment. Full-source integration
+needs GAME_DATA bound to GS. A direct binary replacement also needs a narrow
+full-EAX preservation adapter; Watcom treats EAX as volatile, while the sole
+real caller does not consume it after this call.
+
 ## BLOODPRG location-panel entity draw candidate
 
 `0x009240` loads entity zero's sprite source extent through the DS alias of the

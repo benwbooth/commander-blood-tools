@@ -1,0 +1,495 @@
+[
+  {
+    "name": "first_non_kind2_is_unconditionally_visited",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8192,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4096
+    ],
+    "state_words_after": {
+      "0x1000": 42405
+    },
+    "resolver_calls": [],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "request_bit_one_preserves_miss",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8320,
+    "request_flags": 1,
+    "text_active": 0,
+    "processed_entries": [
+      4128
+    ],
+    "state_words_after": {
+      "0x1020": 37428
+    },
+    "resolver_calls": [
+      [
+        4128,
+        37428,
+        20480
+      ],
+      [
+        12288,
+        37428,
+        20480
+      ],
+      [
+        12544,
+        37428,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "request_bit_two_preserves_miss",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8448,
+    "request_flags": 2,
+    "text_active": 0,
+    "processed_entries": [
+      4160
+    ],
+    "state_words_after": {
+      "0x1040": 32785
+    },
+    "resolver_calls": [
+      [
+        4160,
+        32785,
+        20480
+      ],
+      [
+        12288,
+        32785,
+        20480
+      ],
+      [
+        12544,
+        32785,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "idle_text_clears_8010",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8576,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4192
+    ],
+    "state_words_after": {
+      "0x1060": 32751
+    },
+    "resolver_calls": [
+      [
+        4192,
+        32751,
+        20480
+      ],
+      [
+        12288,
+        32751,
+        20480
+      ],
+      [
+        12544,
+        32751,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "active_honk_pair_clears_8010",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8704,
+    "request_flags": 0,
+    "text_active": 1,
+    "processed_entries": [
+      4224
+    ],
+    "state_words_after": {
+      "0x1080": 16608
+    },
+    "resolver_calls": [
+      [
+        4224,
+        16608,
+        20480
+      ],
+      [
+        12288,
+        16608,
+        20480
+      ],
+      [
+        12544,
+        16608,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "active_honk_mismatch_preserves",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8832,
+    "request_flags": 0,
+    "text_active": 1,
+    "processed_entries": [
+      4256
+    ],
+    "state_words_after": {
+      "0x10a0": 49392
+    },
+    "resolver_calls": [
+      [
+        4256,
+        49392,
+        20480
+      ],
+      [
+        12288,
+        49392,
+        20480
+      ],
+      [
+        12544,
+        49392,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "orxx_match_reasserts_bit_10_after_clear",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 8960,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4288
+    ],
+    "state_words_after": {
+      "0x10c0": 16
+    },
+    "resolver_calls": [
+      [
+        4288,
+        0,
+        20480
+      ],
+      [
+        12288,
+        0,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "arche_fallback_match_sets_bit_10",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 9088,
+    "request_flags": 3,
+    "text_active": 0,
+    "processed_entries": [
+      4320
+    ],
+    "state_words_after": {
+      "0x10e0": 49
+    },
+    "resolver_calls": [
+      [
+        4320,
+        33,
+        20480
+      ],
+      [
+        12288,
+        33,
+        20480
+      ],
+      [
+        12544,
+        33,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "orxx_match_skips_arche_lookup",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 9216,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4352
+    ],
+    "state_words_after": {
+      "0x1100": 16
+    },
+    "resolver_calls": [
+      [
+        4352,
+        0,
+        20480
+      ],
+      [
+        12288,
+        0,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "second_entry_low_byte_one_is_processed",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 9344,
+    "request_flags": 1,
+    "text_active": 0,
+    "processed_entries": [
+      4384,
+      4416
+    ],
+    "state_words_after": {
+      "0x1120": 4369,
+      "0x1140": 32784
+    },
+    "resolver_calls": [
+      [
+        4416,
+        32784,
+        20480
+      ],
+      [
+        12288,
+        32784,
+        20480
+      ],
+      [
+        12544,
+        32784,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "second_entry_low_byte_zero_stops",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 9472,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4448
+    ],
+    "state_words_after": {
+      "0x1160": 8738,
+      "0x1180": 65535
+    },
+    "resolver_calls": [],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "record_base_offset_ignored_and_record_fields_wrap",
+    "record_pointer_offset_ignored": 17185,
+    "directory_pointer_offset": 9600,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      65530
+    ],
+    "state_words_after": {
+      "0xfffa": 0
+    },
+    "resolver_calls": [
+      [
+        65530,
+        0,
+        20480
+      ],
+      [
+        12288,
+        0,
+        20480
+      ],
+      [
+        12544,
+        0,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_offset_and_sentinel_wrap",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 65504,
+    "request_flags": 0,
+    "text_active": 0,
+    "processed_entries": [
+      4512
+    ],
+    "state_words_after": {
+      "0x11a0": 0
+    },
+    "resolver_calls": [
+      [
+        4512,
+        0,
+        20480
+      ],
+      [
+        12288,
+        0,
+        20480
+      ],
+      [
+        12544,
+        0,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "reverse_direction_is_preserved",
+    "record_pointer_offset_ignored": 21845,
+    "directory_pointer_offset": 9856,
+    "request_flags": 1,
+    "text_active": 0,
+    "processed_entries": [
+      4544
+    ],
+    "state_words_after": {
+      "0x11c0": 37428
+    },
+    "resolver_calls": [
+      [
+        4544,
+        37428,
+        20480
+      ],
+      [
+        12288,
+        37428,
+        20480
+      ],
+      [
+        12544,
+        37428,
+        20480
+      ]
+    ],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  }
+]

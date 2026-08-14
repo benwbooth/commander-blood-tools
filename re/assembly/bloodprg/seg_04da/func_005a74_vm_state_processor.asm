@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_state_processor
-; label_comment: per-run VM state processor (called by vm_run_wrapper 0x55f5): lds si,gs:[0x6724] (state table), les di,gs:[0x672c]+0x10 (lookup); walks the object/line-record state before the exec loop. Prepares/updates the VM state each run
+; label_comment: walk the 20-byte object directory, update kind-2 state words by request/text gates, and set bit 0x10 when the record's resolved 3D position matches named orxx or fallback arche; natural C: re/source/bloodprg/candidates/seg_04da/func_005a74_vm_state_processor.c
 ; byte_count: 137
 ; boundary: cfg_blocks_13_terminals_1
 ; terminal: ret:1
