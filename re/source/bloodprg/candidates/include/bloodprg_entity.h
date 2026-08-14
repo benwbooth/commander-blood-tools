@@ -77,6 +77,8 @@ extern volatile cb_u8 CB_FAR *bloodprg_secondary_buffer; /* GS:0x5229 */
 extern volatile cb_u8 bloodprg_dirty_copy_flags; /* GS:0x5231 */
 extern volatile cb_u8 bloodprg_sprite_remap_5f11[256]; /* GS:0x5F11 */
 extern volatile cb_u8 bloodprg_sprite_remap_6011[256]; /* GS:0x6011 */
+extern volatile cb_u8 CB_GAME_DATA
+        bloodprg_sprite_remap_6011_gs[256]; /* explicit GS:0x6011 alias */
 extern volatile cb_u8 CB_NEAR *bloodprg_selected_sprite_remap; /* GS:0x524B */
 extern volatile cb_u16 bloodprg_rle_stride; /* CS:0x1726 */
 extern volatile cb_u16 bloodprg_rle_left_clip; /* CS:0x1728 */

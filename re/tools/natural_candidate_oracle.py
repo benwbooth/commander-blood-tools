@@ -43218,6 +43218,423 @@ def bridge_steer_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def screen_flags_init_vectors() -> list[dict[str, object]]:
+    entry = 0x959D
+    expected_hash = "7149435d9dd1aa13cc8fcae0692e9f8b70745c16634d981a16c0d143a078d1b2"
+    if hashlib.sha256(EXE[entry : entry + 162]).hexdigest() != expected_hash:
+        raise AssertionError("0x959d: recovered 162-byte body changed")
+
+    data_segment = 0x4400
+    extra_segment = 0x5400
+    game_segment = 0x6800
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    return_address = 0x6F00
+    helpers = {
+        0x981B: ("bridge_panorama_frame_load", 0, 0x981B, False),
+        0x377B: ("blit_fill_row_5221", 0x0299, 0x0DEB, True),
+        0x3AD0: ("entity_object_populate", 0x0299, 0x1140, True),
+        0x954A: ("page_flip", 0, 0x954A, True),
+        0x3BD1: ("entity_flag_state_transition", 0x0299, 0x1241, True),
+        0x1CE0: ("palette_blend_remap_table_build", 0x01CE, 0, True),
+        0x1E2D: ("tint_table_build_banked", 0x01CE, 0x014D, True),
+        0x963F: ("matrix_table_clear_2a1b", 0, 0x963F, True),
+    }
+    cases: list[dict[str, object]] = [
+        {"name": "page_flip_and_matrix", "transition": 0, "mode": 0},
+        {"name": "page_flip_mode_suppresses_matrix", "transition": 0, "mode": 1},
+        {"name": "transition_high_bit_uses_page_flip", "transition": 0x80, "mode": 0},
+        {"name": "panorama_and_matrix", "transition": 1, "mode": 0},
+        {"name": "panorama_low_and_high_bits", "transition": 0x81, "mode": 0x80},
+        {
+            "name": "page_flip_callback_sets_mode",
+            "transition": 0,
+            "mode": 0,
+            "mutation_call": "page_flip",
+            "mode_after": 1,
+        },
+        {
+            "name": "entity_callback_clears_mode",
+            "transition": 0,
+            "mode": 1,
+            "mutation_call": "entity_flag_state_transition",
+            "mode_after": 0,
+        },
+        {
+            "name": "populate_callback_updates_palette_and_mode",
+            "transition": 1,
+            "mode": 0,
+            "mutation_call": "entity_object_populate",
+            "mode_after": 1,
+            "palette_xor": 0xA5,
+        },
+        {
+            "name": "reverse_direction_page_flip_copy",
+            "transition": 0,
+            "mode": 0,
+            "direction": -1,
+        },
+        {
+            "name": "reverse_direction_panorama_copy",
+            "transition": 1,
+            "mode": 0,
+            "direction": -1,
+        },
+    ]
+
+    def word(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def copy_dword(memory: bytearray, source: int) -> bytes:
+        return bytes(memory[(source + index) & 0xFFFF] for index in range(4))
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        transition = int(case["transition"]) & 0xFF
+        mode = int(case["mode"]) & 0xFF
+        direction = int(case.get("direction", 1))
+        frame = (0x1234 + case_index * 0x1111) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 23 + case_index * 31 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytearray(
+            (offset * 29 + (offset >> 8) * 7 + case_index * 19 + 0x65)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 11 + case_index * 37 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x27DA] = transition
+        data_before[0x27E0] = mode
+        struct.pack_into("<H", data_before, 0x2795, frame)
+        expected_data = bytearray(data_before)
+        expected_extra = bytearray(extra_before)
+        expected_data[0x27D9] = 0
+        expected_data[0x5B53] = 1
+        expected_data[0x5B55] = 1
+        expected_data[0x27E5] = 0
+        struct.pack_into("<H", expected_data, 0x5249, 1)
+        transition_path = (transition & 1) != 0
+        if transition_path:
+            expected_data[0x5B57] = 0
+            expected_data[0x5231] = 0
+
+        mutation_call = str(case.get("mutation_call", ""))
+        mode_after = int(case.get("mode_after", mode)) & 0xFF
+        palette_xor = int(case.get("palette_xor", 0)) & 0xFF
+        expected_calls: list[dict[str, object]] = []
+
+        def state_snapshot() -> dict[str, int]:
+            return {
+                "rebuild": expected_data[0x27D9],
+                "palette_refresh": expected_data[0x5B53],
+                "palette_dirty": expected_data[0x5B55],
+                "completion": expected_data[0x27E5],
+                "clip_snapshot": word(expected_data, 0x5249),
+                "transparent_zero": expected_data[0x5B57],
+                "dirty_copy": expected_data[0x5231],
+                "mode": expected_data[0x27E0],
+                "ship_depth": word(expected_data, 0x2527),
+            }
+
+        def add_expected(call: str, **arguments: int) -> None:
+            address, helper = next(
+                (address, helper)
+                for address, helper in helpers.items()
+                if helper[0] == call
+            )
+            _call, cs, ip, far_return = helper
+            expected_calls.append(
+                {
+                    "call": call,
+                    "cs": cs,
+                    "ip": ip,
+                    "sp": 0xFEF0 if far_return else 0xFEF2,
+                    "ds": data_segment,
+                    "es": extra_segment,
+                    "gs": game_segment,
+                    **state_snapshot(),
+                    **arguments,
+                }
+            )
+            if call == mutation_call:
+                expected_data[0x27E0] = mode_after
+                if palette_xor != 0:
+                    for index in range(768):
+                        expected_data[0x5B58 + index] ^= palette_xor
+
+        if transition_path:
+            add_expected("bridge_panorama_frame_load", frame=frame)
+            add_expected("blit_fill_row_5221", color=0)
+            add_expected(
+                "entity_object_populate",
+                object_id=20,
+                resource_id=11,
+                x=0,
+                y=0,
+                frame_index=0,
+            )
+        else:
+            add_expected("page_flip")
+            add_expected("entity_flag_state_transition", object_id=4)
+
+        expected_data[0x5B53] = 0
+        struct.pack_into("<H", expected_data, 0x2527, 0)
+        source = 0x5B58
+        destination = 0x5251
+        for _ in range(0xC0):
+            expected_extra[destination : destination + 4] = copy_dword(
+                expected_data, source
+            )
+            source = (source + direction * 4) & 0xFFFF
+            destination = (destination + direction * 4) & 0xFFFF
+
+        add_expected(
+            "palette_blend_remap_table_build",
+            percent=-50,
+            red=0,
+            green=0,
+            blue=0,
+            table=0x5F11,
+        )
+        add_expected("tint_table_build_banked", bank=0xE0, table=0x6011)
+        matrix_clear = (expected_data[0x27E0] & 1) == 0
+        if matrix_clear:
+            add_expected("matrix_table_clear_2a1b")
+
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before = bytearray(
+            (offset * 7 + case_index * 41 + 0x93) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 10] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202 | (0x0400 if direction < 0 else 0),
+        }
+        actual_calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            call, expected_cs, expected_ip, _far_return = helper
+            event: dict[str, object] = {
+                "call": call,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "rebuild": machine.mem_read(data_segment * 16 + 0x27D9, 1)[0],
+                "palette_refresh": machine.mem_read(
+                    data_segment * 16 + 0x5B53, 1
+                )[0],
+                "palette_dirty": machine.mem_read(
+                    data_segment * 16 + 0x5B55, 1
+                )[0],
+                "completion": machine.mem_read(
+                    data_segment * 16 + 0x27E5, 1
+                )[0],
+                "clip_snapshot": struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x5249, 2)
+                )[0],
+                "transparent_zero": machine.mem_read(
+                    data_segment * 16 + 0x5B57, 1
+                )[0],
+                "dirty_copy": machine.mem_read(
+                    data_segment * 16 + 0x5231, 1
+                )[0],
+                "mode": machine.mem_read(data_segment * 16 + 0x27E0, 1)[0],
+                "ship_depth": struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x2527, 2)
+                )[0],
+            }
+            if event["cs"] != expected_cs or event["ip"] != expected_ip:
+                raise AssertionError(f"0x959d {name}: bad helper transfer {event}")
+            if call == "bridge_panorama_frame_load":
+                event["frame"] = machine.reg_read(UC_X86_REG_AX)
+            elif call == "blit_fill_row_5221":
+                event["color"] = machine.reg_read(UC_X86_REG_AX)
+            elif call == "entity_object_populate":
+                event.update(
+                    {
+                        "object_id": machine.reg_read(UC_X86_REG_AX),
+                        "resource_id": machine.reg_read(UC_X86_REG_DX),
+                        "x": machine.reg_read(UC_X86_REG_BX),
+                        "y": machine.reg_read(UC_X86_REG_CX),
+                        "frame_index": machine.reg_read(UC_X86_REG_BP),
+                    }
+                )
+            elif call == "entity_flag_state_transition":
+                event["object_id"] = machine.reg_read(UC_X86_REG_AX)
+            elif call == "palette_blend_remap_table_build":
+                event.update(
+                    {
+                        "percent": struct.unpack(
+                            "<h", struct.pack("<H", machine.reg_read(UC_X86_REG_AX))
+                        )[0],
+                        "red": machine.reg_read(UC_X86_REG_BX),
+                        "green": machine.reg_read(UC_X86_REG_CX),
+                        "blue": machine.reg_read(UC_X86_REG_DX),
+                        "table": machine.reg_read(UC_X86_REG_DI),
+                    }
+                )
+            elif call == "tint_table_build_banked":
+                event.update(
+                    {
+                        "bank": machine.reg_read(UC_X86_REG_AX),
+                        "table": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+            actual_calls.append(event)
+            if call == mutation_call:
+                machine.mem_write(
+                    data_segment * 16 + 0x27E0, bytes((mode_after,))
+                )
+                if palette_xor != 0:
+                    palette = bytes(
+                        value ^ palette_xor
+                        for value in machine.mem_read(
+                            data_segment * 16 + 0x5B58, 768
+                        )
+                    )
+                    machine.mem_write(data_segment * 16 + 0x5B58, palette)
+
+        stubs = [(0, return_address, b"\xCC")]
+        for helper_entry, (_call, _cs, _ip, far_return) in helpers.items():
+            stubs.append((0, helper_entry, b"\xCB" if far_return else b"\xC3"))
+        stubs.extend(
+            [
+                (data_segment, 0, bytes(data_before)),
+                (extra_segment, 0, bytes(extra_before)),
+                (game_segment, 0, game_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ]
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            stubs,
+            code_handler=capture,
+            instruction_count=600,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x959d {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x959d {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        actual_extra = bytes(machine.mem_read(extra_segment * 16, 0x10000))
+        if actual_extra != bytes(expected_extra):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_extra, expected_extra)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x959d {name}: extra[{mismatch:#x}]={actual_extra[mismatch]:#x}, "
+                f"expected={expected_extra[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x959d {name}: GS decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | 0x00E0
+        expected_registers["sp"] = caller_sp + 2
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x959d {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x959d {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x959d {name}: caller stack changed")
+
+        tested = expected_data[0x27E0] & 1
+        expected_flags = {
+            "cf": False,
+            "pf": tested.bit_count() % 2 == 0,
+            "zf": tested == 0,
+            "sf": False,
+            "of": False,
+            "df": direction < 0,
+        }
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x959d {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "transition": transition,
+                "mode_before": mode,
+                "mode_after": expected_data[0x27E0],
+                "frame": frame,
+                "direction": "forward" if direction > 0 else "backward",
+                "matrix_clear": matrix_clear,
+                "palette_mutated": palette_xor != 0,
+                "calls": expected_calls,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def page_flip_vectors() -> list[dict[str, object]]:
     entry = 0x954A
     expected_hash = "0a61a944d558d1857c447eea7994d4773fcb3597a0e30041fdb6e259936db9c3"
@@ -71904,6 +72321,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_954a_natural.json",
         page_flip_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_959d_natural.json",
+        screen_flags_init_vectors(),
         args.check,
     )
     update_vector(

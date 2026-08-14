@@ -4251,6 +4251,33 @@ pointer as scalar words instead of the binary's EAX plus dword stack slot; the
 unused incoming BX values at the earlier helpers and EAX upper-half result
 remain explicit binary-ABI boundaries.
 
+## BLOODPRG screen-flags initializer candidate
+
+`0x00959D` initializes the bridge/presentation rendering state and then chooses
+one of two scene setup paths from `DS:0x27DA` bit zero. The clear path flips the
+page and transitions entity four. The set path disables transparent/dirty-copy
+flags, loads the current panorama frame, clears the display band, and populates
+entity 20 from resource 11 at `(0,0)`, frame zero.
+
+The common tail clears palette-refresh state and ship depth, copies 768 bytes
+from the panorama palette at `DS:0x5B58` to `ES:0x5251`, builds the 50-percent
+dark remap at `0x5F11`, and builds the console-bank remap at `0x6011` with base
+`0xE0`. Presentation-mode bit zero suppresses the final six-record matrix clear.
+
+Ten patched-helper vectors cover both setup paths, high-bit-only transition and
+mode values, every state store, exact helper order and arguments, helper-driven
+mode and palette mutations, forward and inherited-backward `REP MOVSD`, source
+and destination segment ownership, remap geometry, optional matrix clearing,
+saved registers, AX and flag residue, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
+warning-free to 71 instructions/184 bytes versus the original 58/162, with
+91.38 percent mnemonic-multiset overlap and no inline assembly. The source uses
+typed entity/graphics helpers and `_fmemcpy`; full-source execution relies on
+the normal clear-DF C invariant. Direct replacement additionally needs the
+inherited ES palette destination, BP frame argument, original dword copy, and
+the exact register/flag envelope.
+
 ## BLOODPRG bridge steering candidate
 
 `0x009656` is the bridge's complete per-frame ring-steering state machine. In
