@@ -42791,6 +42791,433 @@ def presentation_mode_bits_update_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def bridge_steer_update_vectors() -> list[dict[str, object]]:
+    entry = 0x9656
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    extra_segment = 0x6800
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    expected_hash = "6fe70e0d16926546ddd268e3b76389d4ac4ba7fb4aa0792ff114be219e8be55f"
+    if hashlib.sha256(EXE[entry : entry + 453]).hexdigest() != expected_hash:
+        raise AssertionError("0x9656: recovered 453-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "idle_centered", "frame": 55, "ring_mouse": 440},
+        {
+            "name": "dead_zone_boundary_31",
+            "frame": 55,
+            "ring_mouse": (110 + 31) * 4,
+        },
+        {"name": "free_turn_forward", "frame": 55, "ring_mouse": 200 * 4},
+        {"name": "free_turn_backward", "frame": 55, "ring_mouse": 20 * 4},
+        {"name": "free_turn_wraps_low", "frame": 170, "ring_mouse": 10 * 4},
+        {
+            "name": "menu_distance_39_waits",
+            "frame": 50,
+            "ring_mouse": 139 * 4,
+            "ui": 0x0004,
+        },
+        {
+            "name": "menu_clamps_forward",
+            "frame": 50,
+            "ring_mouse": 140 * 4,
+            "ui": 0x0004,
+        },
+        {
+            "name": "menu_clamps_backward",
+            "frame": 50,
+            "ring_mouse": 60 * 4,
+            "ui": 0x0004,
+        },
+        {
+            "name": "menu_clamp_wraps_low",
+            "frame": 5,
+            "ring_mouse": 330 * 4,
+            "ui": 0x0004,
+        },
+        {
+            "name": "menu_clamp_wraps_high",
+            "frame": 175,
+            "ring_mouse": 30 * 4,
+            "ui": 0x0004,
+        },
+        {
+            "name": "seek_arrival_centered",
+            "frame": 45,
+            "ring_mouse": 90 * 4,
+            "ui": 0x0008,
+            "seek_target": 90,
+            "seek_initial": 27,
+        },
+        {
+            "name": "seek_arrival_then_mouse_turn",
+            "frame": 45,
+            "ring_mouse": 200 * 4,
+            "ui": 0x0008,
+            "seek_target": 90,
+            "seek_initial": 27,
+        },
+        {
+            "name": "seek_forward_short",
+            "frame": 10,
+            "ring_mouse": 80,
+            "ui": 0x0008,
+            "seek_target": 40,
+        },
+        {
+            "name": "seek_backward_short",
+            "frame": 20,
+            "ring_mouse": 160,
+            "ui": 0x0008,
+            "seek_target": 20,
+        },
+        {
+            "name": "seek_forward_across_wrap",
+            "frame": 175,
+            "ring_mouse": 1400,
+            "ui": 0x0008,
+            "seek_target": 10,
+        },
+        {
+            "name": "seek_backward_across_wrap",
+            "frame": 5,
+            "ring_mouse": 40,
+            "ui": 0x0008,
+            "seek_target": 350,
+        },
+        {
+            "name": "seek_long_forward_memo_and_drag",
+            "frame": 10,
+            "ring_mouse": 200,
+            "last_mouse": 0x0900,
+            "ui": 0x0008,
+            "seek_target": 100,
+        },
+        {
+            "name": "seek_long_backward_existing_memo",
+            "frame": 50,
+            "ring_mouse": 800,
+            "last_mouse": 0x0700,
+            "ui": 0x0008,
+            "seek_target": 20,
+            "seek_initial": 40,
+        },
+        {
+            "name": "seek_high_bit_memo_skips_drag",
+            "frame": 50,
+            "ring_mouse": 800,
+            "last_mouse": 0x0700,
+            "ui": 0x0008,
+            "seek_target": 20,
+            "seek_initial": 0x8000,
+        },
+        {"name": "mouse_low_range_normalization", "frame": 20, "ring_mouse": 100},
+        {"name": "mouse_high_range_normalization", "frame": 20, "ring_mouse": 3000},
+    ]
+
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def i16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    def read_word(memory: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def write_word(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, u16(value))
+
+    def signed_wrap_once(value: int, modulus: int) -> int:
+        value = u16(value)
+        if i16(value) < 0:
+            return u16(value + modulus)
+        if i16(value) >= modulus:
+            return u16(value - modulus)
+        return value
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        frame_before = int(case["frame"]) & 0xFFFF
+        mouse_before = int(case["ring_mouse"]) & 0xFFFF
+        mouse_y = int(case.get("mouse_y", 0x0064)) & 0xFFFF
+        ui_before = int(case.get("ui", 0)) & 0xFFFF
+        seek_target = int(case.get("seek_target", 0xA55A)) & 0xFFFF
+        seek_initial_before = int(case.get("seek_initial", 0)) & 0xFFFF
+        last_mouse_before = int(case.get("last_mouse", 0x1357)) & 0xFFFF
+        entry_context = (0x5100 + case_index * 0x31) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        write_word(data_before, 0x2793, ui_before)
+        write_word(data_before, 0x2795, frame_before)
+        write_word(data_before, 0x2797, 0xA1B2)
+        write_word(data_before, 0x279B, seek_target)
+        write_word(data_before, 0x279D, seek_initial_before)
+        data_before[0x27DB] = 0xA5
+        write_word(data_before, 0x27A7, 0xB3C4)
+        write_word(data_before, 0x2F6D, 0xC5D6)
+        write_word(data_before, 0x0A2A, mouse_before)
+        write_word(data_before, 0x0A2C, mouse_y)
+        write_word(data_before, 0x0A2E, 0xE7F8)
+        write_word(data_before, 0x0A38, last_mouse_before)
+        expected_data = bytearray(data_before)
+
+        frame = frame_before
+        mouse = mouse_before
+        ui = ui_before
+        seek_initial = seek_initial_before
+        last_mouse = last_mouse_before
+        direction = data_before[0x27DB]
+        context = entry_context
+        changed = False
+        menu_clamped = False
+        distance = 0
+        final_dx = mouse_y
+
+        if (ui & 8) != 0:
+            target_frame = seek_target >> 1
+            if frame == target_frame:
+                ui ^= 8
+                seek_initial = 0
+            else:
+                if i16(frame) > i16(target_frame):
+                    distance = u16(frame - target_frame)
+                else:
+                    distance = u16(target_frame - frame)
+                if i16(distance) >= 90:
+                    distance = u16(-(u16(distance - 180)))
+
+                positive_frame = signed_wrap_once(frame + distance, 180)
+                positive_arc = u16(positive_frame * 2)
+                if seek_initial == 0:
+                    seek_initial = distance
+                step = distance >> 1
+                if step == 0:
+                    step = 1
+                drag = u16(distance << 2)
+                direction = 1
+                if positive_arc != seek_target:
+                    direction = 0
+                    step = u16(-step)
+                    drag = u16(-drag)
+                if i16(seek_initial) >= 40:
+                    mouse = u16(mouse + drag)
+                    last_mouse = u16(last_mouse + drag)
+                frame = signed_wrap_once(frame + step, 180)
+                write_word(expected_data, 0x0A2E, 0)
+
+        view_arc = u16(frame * 2)
+        mouse = u16(mouse - 1440)
+        if i16(mouse) < 0:
+            mouse = u16(mouse + 1440)
+        elif i16(mouse) >= 1440:
+            mouse = u16(mouse - 1440)
+        first_warp_x = u16(mouse + 1440)
+        mouse_arc = mouse >> 2
+        write_word(expected_data, 0x2797, mouse_arc)
+
+        warp_calls = [(first_warp_x, mouse_y)]
+        if (ui & 8) != 0:
+            changed = True
+        else:
+            context = view_arc
+            if i16(view_arc) > i16(mouse_arc):
+                distance = u16(view_arc - mouse_arc)
+                final_dx = mouse_arc
+            else:
+                distance = u16(mouse_arc - view_arc)
+                final_dx = view_arc
+            if i16(distance) >= 180:
+                distance = u16(-(u16(distance - 360)))
+
+            if i16(distance) > 31:
+                if (ui & 4) != 0:
+                    if i16(distance) >= 40:
+                        positive_arc = signed_wrap_once(mouse_arc + distance, 360)
+                        if positive_arc == view_arc:
+                            clamped_arc = signed_wrap_once(view_arc - 40, 360)
+                        else:
+                            clamped_arc = signed_wrap_once(view_arc + 40, 360)
+                        context = u16(clamped_arc << 2)
+                        mouse = context
+                        warp_calls.append((u16(mouse + 1440), mouse_y))
+                        menu_clamped = True
+                        final_dx = mouse_y
+                else:
+                    positive_arc = signed_wrap_once(mouse_arc + distance, 360)
+                    final_dx = positive_arc
+                    if positive_arc == view_arc:
+                        direction = 0
+                        mouse_arc = signed_wrap_once(mouse_arc + 30, 360)
+                    else:
+                        direction = 1
+                        mouse_arc = signed_wrap_once(mouse_arc - 30, 360)
+                    frame = mouse_arc >> 1
+                    changed = True
+
+        write_word(expected_data, 0x2793, ui)
+        write_word(expected_data, 0x2795, frame)
+        write_word(expected_data, 0x279D, seek_initial)
+        expected_data[0x27DB] = direction
+        write_word(expected_data, 0x0A38, last_mouse)
+
+        if changed:
+            write_word(expected_data, 0x2F6D, frame)
+            angle_bias = u16(frame * 8 - 160)
+            write_word(expected_data, 0x27A7, angle_bias)
+            mouse &= 0xFFF8
+            final_ax = angle_bias
+        else:
+            angle_bias = read_word(expected_data, 0x27A7)
+            final_ax = 4 if menu_clamped else distance
+
+        mouse = signed_wrap_once(mouse - angle_bias, 1440)
+        write_word(expected_data, 0x0A2A, mouse)
+
+        game_before = bytes(
+            (offset * 23 + case_index * 31 + 0x71) & 0xFF
+            for offset in range(0x10000)
+        )
+        extra_before = bytes(
+            (offset * 11 + case_index * 19 + 0xA5) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before = bytearray(
+            (offset * 7 + case_index * 37 + 0x63) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 12] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | entry_context,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x7400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        actual_warps: list[tuple[int, int]] = []
+
+        def interrupt(machine: Uc, number: int) -> None:
+            if number != 0x33:
+                raise AssertionError(f"0x9656 {name}: interrupt {number:#x}")
+            if machine.reg_read(UC_X86_REG_AX) != 4:
+                raise AssertionError(f"0x9656 {name}: mouse function is not 4")
+            actual_warps.append(
+                (
+                    machine.reg_read(UC_X86_REG_CX),
+                    machine.reg_read(UC_X86_REG_DX),
+                )
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, game_before),
+                (extra_segment, 0, extra_before),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            interrupt_handler=interrupt,
+            instruction_count=2000,
+        )
+
+        if actual_warps != warp_calls:
+            raise AssertionError(
+                f"0x9656 {name}: warps={actual_warps}, expected={warp_calls}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x9656 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x9656 {name}: GS decoy changed")
+        if bytes(machine.mem_read(extra_segment * 16, 0x10000)) != extra_before:
+            raise AssertionError(f"0x9656 {name}: ES decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | final_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | mouse
+        expected_registers["ecx"] = (
+            (initial["ecx"] & 0xFFFF0000) | warp_calls[-1][0]
+        )
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | final_dx
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | context
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9656 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9656 {name}: far return changed CS")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x9656 {name}: caller stack changed")
+
+        carry = bool(machine.reg_read(UC_X86_REG_EFLAGS) & 1)
+        if carry != changed:
+            raise AssertionError(
+                f"0x9656 {name}: carry={carry}, expected changed={changed}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "ui_before": ui_before,
+                "ui_after": ui,
+                "frame_before": frame_before,
+                "frame_after": frame,
+                "mouse_before": mouse_before,
+                "mouse_after": mouse,
+                "seek_target": seek_target,
+                "seek_initial_before": seek_initial_before,
+                "seek_initial_after": seek_initial,
+                "direction_after": direction,
+                "presentation_context_before": entry_context,
+                "presentation_context_after": context,
+                "view_changed": changed,
+                "mouse_warps": [list(warp) for warp in warp_calls],
+                "final_flags": machine.reg_read(UC_X86_REG_EFLAGS) & 0xFFFF,
+            }
+        )
+    return vectors
+
+
 def page_flip_vectors() -> list[dict[str, object]]:
     entry = 0x954A
     expected_hash = "0a61a944d558d1857c447eea7994d4773fcb3597a0e30041fdb6e259936db9c3"
@@ -70958,6 +71385,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_963f_natural.json",
         matrix_table_clear_2a1b_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9656_natural.json",
+        bridge_steer_update_vectors(),
         args.check,
     )
     update_vector(

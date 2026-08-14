@@ -114,7 +114,7 @@ void CB_NEAR scene_transition_step(cb_u16 link_target_offset)
     }
 
     if ((phase & SCENE_TRANSITION_BRIDGE) != 0u) {
-        bridge_steer_update();
+        (void)bridge_steer_update((cb_u16 CB_NEAR *)0);
         record = SCENE_RECORD_AT(vm_scene_record_offset);
         if (record->kind != SCENE_RECORD_PRESENTATION_KIND) {
             if ((vm_c2_presentation_gate & 1u) != 0u) {

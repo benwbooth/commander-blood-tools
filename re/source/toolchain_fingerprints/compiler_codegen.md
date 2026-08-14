@@ -4251,6 +4251,45 @@ pointer as scalar words instead of the binary's EAX plus dword stack slot; the
 unused incoming BX values at the earlier helpers and EAX upper-half result
 remain explicit binary-ABI boundaries.
 
+## BLOODPRG bridge steering candidate
+
+`0x009656` is the bridge's complete per-frame ring-steering state machine. In
+seek mode it halves the target arc into a panorama frame, chooses the shortest
+direction around the 180-frame ring, moves by half the remaining distance with
+a minimum step of one, and memoizes the initial distance. Seeks whose memo is
+at least 40 frames drag both the current cursor ring position and its anchor.
+Arrival clears seek bit `0x08` and the memo before continuing through the same
+mouse-steering logic in that tick.
+
+Outside seek mode, the routine compares the doubled frame with the quartered
+mouse-ring position on a 360-unit arc. Distances through 31 are a dead zone.
+With menu bit `0x04`, distances 32 through 39 wait and larger distances clamp
+the cursor 40 arc units from the view without rotating. Otherwise the view is
+placed 30 arc units behind the cursor. Every call warps DOS mouse function 4
+into the 1440-unit ring; the menu-clamp path performs a second warp.
+
+Changed views synchronize `DS:0x2795` to ship yaw `DS:0x2F6D`, publish
+`frame*8-160` at `DS:0x27A7`, align the ring cursor to eight units, and return
+carry set. Every path then rebases `DS:0x0A2A` into screen coordinates. The
+routine also leaves a transient value in `BP`; `0x0077E0` preserves it across
+the intervening helpers and `0x0079E5` eventually forwards it to the active
+scene dispatcher. The natural API makes that otherwise hidden dataflow an
+explicit optional context pointer and returns the redraw decision as `int`.
+
+Twenty-one direct original-binary vectors cover the exact dead-zone and clamp
+boundaries, both turn and wrap directions, seek arrival plus same-tick
+steering, short and long seeks, memoization and signed-high memo behavior,
+cursor-anchor drag, one and two mouse warps, every state write, DS ownership
+against GS/ES decoys, low-register and context residue, carry, stack integrity,
+and `RETF`.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural DOS C
+candidate warning-free to 230 instructions/642 bytes versus the original
+157/453, with 84.71 percent mnemonic-multiset overlap and no inline assembly.
+Full-source integration uses the explicit Boolean/context contract. Direct
+replacement would still require the original carry and live-`BP` ABI, raw
+`INT 33h` lowering, register residue, and terminal flags.
+
 ## BLOODPRG bridge panorama frame-loader candidate
 
 `0x00981B` consumes the frame in AX and performs four DOS operations on the
@@ -4521,11 +4560,12 @@ and full cleanup. They prove exact helper order and arguments, `BP` forwarding
 to `0x009D10`, all state writes and palette bytes, record and buffer segments,
 preserved registers, stack integrity, and near return.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
-candidate warning-free to 179 instructions/674 bytes versus the original
-155/574, with 84.52 percent mnemonic-multiset overlap and no inline assembly.
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 167 instructions/600 bytes versus the original
+155/574, with 81.29 percent mnemonic-multiset overlap and no inline assembly.
 The source exposes the binary's inherited `BP` link cursor as an ordinary
-parameter and keeps the coordinator in one C function. Full-source integration
+parameter, explicitly ignores the steering routine's unused context output on
+this path, and keeps the coordinator in one C function. Full-source integration
 requires the named state in one DS/GS game-data segment; direct replacement
 also needs the inherited-BP entry adapter and original selective register
 envelope.

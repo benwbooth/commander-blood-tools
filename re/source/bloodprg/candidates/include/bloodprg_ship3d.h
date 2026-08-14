@@ -196,7 +196,12 @@ cb_u16 CB_FAR page_flip(void); /* 0x00954A */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
 void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */
 void CB_FAR ship_3d_hud_palette_snapshot_and_camera_reset(void); /* 0x008C96 */
-void CB_FAR bridge_steer_update(void); /* 0x009656 */
+extern volatile cb_u16 bridge_mouse_arc; /* DS:0x2797 */
+extern volatile cb_u16 bridge_seek_initial_distance; /* DS:0x279D */
+extern volatile cb_u8 bridge_turn_direction; /* DS:0x27DB */
+extern volatile cb_u16 bridge_frame_angle_bias; /* DS:0x27A7 */
+int CB_FAR bridge_steer_update(
+        cb_u16 CB_NEAR *presentation_link_target); /* 0x009656 */
 void CB_FAR alien_overlay_cycle(void); /* 0x00B591 */
 /* Original context is SS:BP and the framebuffer is normalized ES:0. */
 void CB_NEAR ship_3d_plot_point(
