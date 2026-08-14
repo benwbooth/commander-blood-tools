@@ -5759,6 +5759,33 @@ window, query mode constrained to zero or one, and the direct DS:SI helper
 contract. Direct binary replacement additionally needs the original compact
 SS:BP allocation, AX/BX/BP save envelope, and path-specific terminal flags.
 
+## Location info panel dispatch at 0x009083
+
+The 445-byte body is one three-state panel FSM. Opening state bit one resolves
+the selected record's inline name through the 22-byte world-art table at
+`DS:0x2BC7`, loads the matching resource, binds entity zero at the cursor, and
+zooms from the cursor rectangle toward the panel. State zero draws the panel,
+selects the PLANET, SHIP, or BLACK HOLE title from record-kind bits, and lists
+only recursive source records whose kind bit one, active bit zero, and
+life-support counter at `+0x36` all pass. Closing state bit one reverses the
+zoom before clearing the selected and deferred links.
+
+Eleven direct vectors execute the untouched body with patched helpers. They
+cover a second-entry art match, a missing art name, resource/entity arguments,
+the low-byte width scaling, incomplete opening, completed opening's same-frame
+fallthrough into steady drawing, all title choices and precedence, every
+source filter, close triggering, completed cleanup, inherited entity extent
+context, DS/SS/record/frame ownership, stack, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one natural typed C
+function warning-free to 190 instructions/600 bytes versus 136/445 original,
+with 79.41 percent mnemonic-multiset overlap and 63.24 percent ordered mnemonic
+overlap. The function contains no inline assembly or register-state facade.
+Full-source integration requires the shipped `DS=GS=SS` aliases and narrow
+adapters for inherited/register helper contracts; direct binary replacement
+would additionally need the original segment transitions, carry-return helper
+contracts, register residue, and path-specific flags.
+
 ## Name-area palette effect update at 0x008BAB
 
 The old `mode_gate_27e8` label hid a complete parsed-name palette animation.

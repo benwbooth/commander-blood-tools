@@ -63333,6 +63333,564 @@ def nav_chart_object_pick_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def location_info_panel_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x9083
+    body_size = 445
+    body_hash = "290e3acc332846a85d22dd7219164a91efa14d5b024d1e6552a311ec778f12d6"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x9083: recovered 445-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "opening_continues_without_repeating_setup",
+            "state": 1,
+            "scale": 3,
+        },
+        {
+            "name": "opening_completion_enters_steady_state",
+            "state": 1,
+            "scale": 7,
+            "complete": 1,
+        },
+        {
+            "name": "first_open_frame_scans_to_second_art_entry",
+            "state": 1,
+            "scale": 0,
+            "record_name": "TARGET",
+        },
+        {
+            "name": "first_open_frame_tolerates_missing_art_entry",
+            "state": 1,
+            "scale": 0,
+            "record_name": "MISSING",
+        },
+        {
+            "name": "steady_planet_draws_only_eligible_life_support_source",
+            "state": 0,
+            "kind": 0,
+            "sources": [0x2000, 0x2100, 0x2200, 0x2300],
+        },
+        {
+            "name": "steady_ship_selects_ship_title",
+            "state": 0,
+            "kind": 0x0010,
+        },
+        {
+            "name": "steady_black_hole_title_overrides_ship_bit",
+            "state": 0,
+            "kind": 0x0110,
+        },
+        {
+            "name": "unrecognized_state_bits_follow_steady_path",
+            "state": 0x80,
+            "kind": 0,
+        },
+        {
+            "name": "closing_decrements_scale_and_waits",
+            "state": 2,
+            "scale": 5,
+        },
+        {
+            "name": "closing_completion_releases_entity_and_links",
+            "state": 2,
+            "scale": 1,
+            "complete": 1,
+        },
+        {
+            "name": "mouse_close_transition_preserves_current_scale",
+            "state": 0,
+            "scale": 5,
+            "mouse": 1,
+        },
+    ]
+
+    data_segment = 0x3000
+    incoming_es_segment = 0x5000
+    record_segment = 0x7000
+    stack_segment = 0x9000
+    frame_segment = 0xB000
+    caller_sp = 0xFF00
+    return_address = 0xF083
+    selected_offset = 0x1800
+    frame_offset = 0x4400
+    resource_offset = 0x4100
+    source_list_offset = 0x6886
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    helper_entries = {
+        0x1FA4: ("compare", "far"),       # 01CE:02C4
+        0x39C7: ("resource", "far"),      # 0299:1037
+        0x3B4E: ("setter", "far"),        # 0299:11BE
+        0x1CE0: ("palette", "far"),       # 01CE:0000
+        0x9240: ("entity", "near"),
+        0x3E71: ("render", "far"),        # 0299:14E1
+        0x185D: ("interpolate", "far"),   # 008B:0FAD
+        0x2D9E: ("remap", "far"),         # 0299:040E
+        0x2B92: ("text", "far"),          # 0299:0202
+        0x5C4B: ("source_list", "far"),   # 04DA:0EAB
+        0x3BD1: ("transition", "far"),    # 0299:1241
+    }
+    vectors: list[dict[str, object]] = []
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    def put_string(image: bytearray, offset: int, value: str, size: int) -> None:
+        encoded = value.encode("ascii")
+        if len(encoded) >= size:
+            raise AssertionError(f"0x9083: test string {value!r} is too long")
+        image[offset : offset + size] = bytes(size)
+        image[offset : offset + len(encoded)] = encoded
+
+    def read_string(machine: Uc, segment: int, offset: int) -> str:
+        value = bytearray()
+        for index in range(64):
+            character = machine.mem_read(
+                segment * 16 + ((offset + index) & 0xFFFF), 1
+            )[0]
+            if character == 0:
+                return value.decode("ascii")
+            value.append(character)
+        raise AssertionError("0x9083: unterminated helper string")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        state = int(case.get("state", 0)) & 0xFF
+        scale = int(case.get("scale", 4)) & 0xFF
+        complete = bool(case.get("complete", 0))
+        mouse = int(case.get("mouse", 0)) & 0xFF
+        kind = int(case.get("kind", 0)) & 0xFFFF
+        record_name = str(case.get("record_name", "TARGET"))
+        sources = [int(value) for value in case.get("sources", [])]
+
+        data_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 17 + 0x21) & 0xFF
+            for offset in range(0x10000)
+        )
+        incoming_es_before = bytes(
+            (offset * 11 + case_index * 19 + 0x43) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 23 + case_index * 29 + 0x65) & 0xFF
+            for offset in range(0x10000)
+        )
+        frame_before = bytes(
+            (offset * 3 + case_index * 31 + 0x87) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 17 + (offset >> 8) * 37 + case_index * 41 + 0xA9) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x2788] = state
+        data_before[0x2789] = scale
+        data_before[0x278C] = 0x81
+        data_before[0x0A3E] = mouse
+        data_before[0x0ADA] = 8
+        data_before[0x0ADB] = 8 if complete else 3
+        put_word(data_before, 0x0A2A, 123)
+        put_word(data_before, 0x0A2C, 77)
+        put_word(data_before, 0x27BF, selected_offset)
+        put_word(data_before, 0x676A, 0x6A6A)
+        put_word(data_before, 0x6726, record_segment)
+        put_dword(
+            data_before, 0x0A7C, (frame_segment << 16) | resource_offset
+        )
+        put_word(data_before, 0x0AC8, 0x5110)
+        struct.pack_into("<hhhh", data_before, 0x2780, 110, 25, 96, 70)
+        struct.pack_into("<hhhh", data_before, 0x2AAB, 123, 77, 4, 4)
+        data_before[0x2BC7 : 0x2BC7 + 66] = bytes(66)
+        put_string(data_before, 0x2BC7, "OTHER", 16)
+        put_word(data_before, 0x2BD7, 0x0020)
+        put_word(data_before, 0x2BD9, 0x001F)
+        put_string(data_before, 0x2BDD, "TARGET", 16)
+        put_word(data_before, 0x2BED, 0x005E)
+        put_word(data_before, 0x2BEF, 0x001F)
+        put_string(data_before, 0x012E, "PLANET: ", 9)
+        put_string(data_before, 0x0137, "SHIP: ", 7)
+        put_string(data_before, 0x013E, "BLACK HOLE: ", 13)
+        put_string(data_before, 0x014B, "LIFE SUPPORT:", 14)
+
+        put_word(record_before, selected_offset, kind)
+        put_word(record_before, selected_offset + 2, 1)
+        put_string(record_before, selected_offset + 4, record_name, 0x32)
+        put_word(record_before, selected_offset + 0x36, 7)
+        source_names = ["ELIGIBLE", "WRONGKIND", "INACTIVE", "UNSEEN"]
+        source_fields = [
+            (2, 1, 1),
+            (0, 1, 1),
+            (2, 0, 1),
+            (2, 1, 0),
+        ]
+        for source_index, source_offset in enumerate(
+            (0x2000, 0x2100, 0x2200, 0x2300)
+        ):
+            source_kind, source_state, visits = source_fields[source_index]
+            put_word(record_before, source_offset, source_kind)
+            put_word(record_before, source_offset + 2, source_state)
+            put_string(
+                record_before, source_offset + 4, source_names[source_index], 0x32
+            )
+            put_word(record_before, source_offset + 0x36, visits)
+
+        put_word(stack_before, caller_sp, return_address)
+        stack_before[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+        context_offset = 0x7A00
+        put_word(stack_before, context_offset + 4, 0x6200)
+        put_word(stack_before, context_offset + 6, 0xBEEF)
+
+        expected_data = bytearray(data_before)
+        expected_stack = bytearray(stack_before)
+        expected_record = bytes(record_before)
+        expected_names: list[str] = []
+        if state & 1:
+            if scale == 0:
+                comparison_count = 2
+                expected_names.extend(["compare"] * comparison_count)
+                if record_name == "TARGET":
+                    expected_names.extend(["resource", "setter", "palette"])
+                    put_dword(
+                        expected_data,
+                        0x6216,
+                        (frame_segment << 16) | frame_offset,
+                    )
+                    put_word(expected_data, 0x277E, (0x2F * 14) >> 5)
+            expected_names.extend(["entity", "render", "interpolate"])
+            expected_data[0x2789] = (scale + 1) & 0xFF
+            if complete:
+                expected_data[0x2788] = 0
+                expected_names.extend(
+                    [
+                        "render", "remap", "text", "text", "text",
+                        "source_list",
+                    ]
+                )
+                put_word(expected_stack, source_list_offset, 0xFFFF)
+        elif (state & 2) or (mouse & 1):
+            expected_names.extend(["entity", "render", "interpolate"])
+            expected_data[0x2789] = (scale - 1) & 0xFF
+            if mouse & 1:
+                expected_data[0x278C] = 0
+                expected_data[0x2788] = 2
+                expected_data[0x0ADB] = 0
+                expected_data[0x2789] = scale
+            if complete:
+                expected_names.append("transition")
+                expected_data[0x2788] = 0
+                put_word(expected_data, 0x27BF, 0)
+                put_word(expected_data, 0x676A, 0)
+        else:
+            expected_names.extend(
+                ["render", "remap", "text", "text", "text", "source_list"]
+            )
+            if sources:
+                expected_names.append("text")
+            encoded_sources = sources + [0xFFFF]
+            for source_index, source_offset in enumerate(encoded_sources):
+                put_word(
+                    expected_stack,
+                    source_list_offset + source_index * 2,
+                    source_offset,
+                )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | context_offset,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": incoming_es_segment,
+            "fs": 0xD000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        memory = [
+            (0, return_address, b"\xCC"),
+            (data_segment, 0, bytes(data_before)),
+            (incoming_es_segment, 0, incoming_es_before),
+            (record_segment, 0, bytes(record_before)),
+            (frame_segment, 0, frame_before),
+            (frame_segment, frame_offset, struct.pack("<HH", 0x012F, 0x0030)),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        for helper_address, (_helper_name, return_kind) in helper_entries.items():
+            memory.append(
+                (0, helper_address, b"\xCB" if return_kind == "far" else b"\xC3")
+            )
+
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helper_entries.get(address)
+            if helper is None:
+                return
+            helper_name = helper[0]
+            event: dict[str, object] = {
+                "name": helper_name,
+                "ax": machine.reg_read(UC_X86_REG_AX),
+                "bx": machine.reg_read(UC_X86_REG_BX),
+                "cx": machine.reg_read(UC_X86_REG_CX),
+                "dx": machine.reg_read(UC_X86_REG_DX),
+                "si": machine.reg_read(UC_X86_REG_SI),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+            }
+            calls.append(event)
+
+            if helper_name == "compare":
+                left = read_string(machine, int(event["ds"]), int(event["si"]))
+                right = read_string(machine, int(event["es"]), int(event["di"]))
+                event["strings"] = [left, right]
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags | 1) if left == right else (flags & ~1),
+                )
+            elif helper_name == "setter":
+                machine.mem_write(
+                    data_segment * 16 + 0x6216,
+                    struct.pack("<HH", frame_offset, frame_segment),
+                )
+            elif helper_name == "entity":
+                event["comparison_pointer"] = [
+                    struct.unpack_from("<H", stack_before, context_offset + 4)[0],
+                    struct.unpack_from("<H", stack_before, context_offset + 6)[0],
+                ]
+            elif helper_name == "interpolate":
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags | 1) if complete else (flags & ~1),
+                )
+            elif helper_name == "text":
+                text = read_string(machine, int(event["ds"]), int(event["si"]))
+                event["text"] = text
+                width = len(text) * 5
+                put_word(expected_data, 0x27CD, width)
+                machine.mem_write(
+                    data_segment * 16 + 0x27CD, struct.pack("<H", width)
+                )
+            elif helper_name == "source_list":
+                for source_index, source_offset in enumerate(sources + [0xFFFF]):
+                    machine.mem_write(
+                        stack_segment * 16 + source_list_offset + source_index * 2,
+                        struct.pack("<H", source_offset),
+                    )
+
+        try:
+            machine = execute(
+                entry,
+                return_address,
+                initial,
+                memory,
+                code_handler=capture,
+                instruction_count=2000,
+            )
+        except RuntimeError as error:
+            raise RuntimeError(f"0x9083 {name}: {error}") from error
+
+        actual_names = [str(call["name"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x9083 {name}: calls={actual_names}, expected={expected_names}"
+            )
+
+        compare_calls = [call for call in calls if call["name"] == "compare"]
+        if compare_calls:
+            expected_pairs = [["OTHER", record_name], ["TARGET", record_name]]
+            actual_pairs = [call["strings"] for call in compare_calls]
+            if actual_pairs != expected_pairs:
+                raise AssertionError(
+                    f"0x9083 {name}: comparisons={actual_pairs!r}"
+                )
+        resource_calls = [call for call in calls if call["name"] == "resource"]
+        if resource_calls:
+            call = resource_calls[0]
+            actual = (int(call["ax"]), int(call["es"]), int(call["di"]))
+            expected = (0x805E, frame_segment, resource_offset)
+            if actual != expected:
+                raise AssertionError(f"0x9083 {name}: resource ABI={actual}")
+        setter_calls = [call for call in calls if call["name"] == "setter"]
+        if setter_calls:
+            call = setter_calls[0]
+            actual = (
+                int(call["ax"]), int(call["es"]), int(call["di"]),
+                int(call["bx"]), int(call["cx"]), int(call["bp"]),
+            )
+            expected = (0, frame_segment, resource_offset, 123, 77, 0)
+            if actual != expected:
+                raise AssertionError(f"0x9083 {name}: setter ABI={actual}")
+        palette_calls = [call for call in calls if call["name"] == "palette"]
+        if palette_calls:
+            call = palette_calls[0]
+            actual = (
+                int(call["ax"]), int(call["bx"]), int(call["cx"]),
+                int(call["dx"]), int(call["di"]),
+            )
+            if actual != (0xFFCE, 0, 0, 0, 0x5F11):
+                raise AssertionError(f"0x9083 {name}: palette ABI={actual}")
+
+        entity_calls = [call for call in calls if call["name"] == "entity"]
+        for call in entity_calls:
+            if call["comparison_pointer"] != [0x6200, 0xBEEF]:
+                raise AssertionError(f"0x9083 {name}: inherited context changed")
+        render_calls = [call for call in calls if call["name"] == "render"]
+        if render_calls:
+            expected_ranges = [(0, 1)]
+            if state & 1 and complete:
+                expected_ranges.append((0, 0))
+            elif not (state & 3) and not (mouse & 1):
+                expected_ranges = [(0, 0)]
+            actual_ranges = [
+                (int(call["ax"]), int(call["bx"])) for call in render_calls
+            ]
+            if actual_ranges != expected_ranges:
+                raise AssertionError(
+                    f"0x9083 {name}: render ranges={actual_ranges}"
+                )
+        interpolate_calls = [
+            call for call in calls if call["name"] == "interpolate"
+        ]
+        if interpolate_calls:
+            call = interpolate_calls[0]
+            expected_rects = (
+                (0x2AAB, 0x2780)
+                if (state & 2) or (mouse & 1)
+                else (0x2780, 0x2AAB)
+            )
+            actual_rects = (int(call["si"]), int(call["di"]))
+            if actual_rects != expected_rects:
+                raise AssertionError(
+                    f"0x9083 {name}: interpolation rects={actual_rects}"
+                )
+        remap_calls = [call for call in calls if call["name"] == "remap"]
+        if remap_calls:
+            call = remap_calls[0]
+            actual = (
+                int(call["si"]), int(call["bx"]), int(call["cx"]),
+                int(call["dx"]), int(call["bp"]),
+            )
+            if actual != (0x5110, 110, 25, 96, 70):
+                raise AssertionError(f"0x9083 {name}: remap ABI={actual}")
+
+        text_calls = [call for call in calls if call["name"] == "text"]
+        if text_calls:
+            expected_title = "PLANET: "
+            if kind & 0x0010:
+                expected_title = "SHIP: "
+            if kind & 0x0100:
+                expected_title = "BLACK HOLE: "
+            expected_text = [expected_title, record_name, "LIFE SUPPORT:"]
+            if sources:
+                expected_text.append("ELIGIBLE")
+            actual_text = [str(call["text"]) for call in text_calls]
+            if actual_text != expected_text:
+                raise AssertionError(
+                    f"0x9083 {name}: text={actual_text}, expected={expected_text}"
+                )
+            expected_positions = [
+                (110, 25, 0xEE),
+                (110 + len(expected_title) * 5 + 6, 25, 0xEE),
+                (110, 35, 0xEE),
+            ]
+            if sources:
+                expected_positions.append((110, 45, 0xFE))
+            actual_positions = [
+                (int(call["bx"]), int(call["dx"]), int(call["ax"]) & 0xFF)
+                for call in text_calls
+            ]
+            if actual_positions != expected_positions:
+                raise AssertionError(
+                    f"0x9083 {name}: text positions={actual_positions}"
+                )
+        source_calls = [call for call in calls if call["name"] == "source_list"]
+        if source_calls:
+            call = source_calls[0]
+            actual = (int(call["es"]), int(call["di"]), int(call["bp"]))
+            if actual != (record_segment, selected_offset, source_list_offset):
+                raise AssertionError(f"0x9083 {name}: source-list ABI={actual}")
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                index
+                for index, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x9083 {name}: data differs at {mismatch:#x}: "
+                f"{actual_data[mismatch]:#x} != {expected_data[mismatch]:#x}"
+            )
+        actual_stack = bytes(machine.mem_read(stack_segment * 16, 0x10000))
+        source_list_end = source_list_offset + (len(sources) + 1) * 2
+        if actual_stack[source_list_offset:source_list_end] != bytes(
+            expected_stack[source_list_offset:source_list_end]
+        ):
+            raise AssertionError(f"0x9083 {name}: source list differs")
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != expected_record:
+            raise AssertionError(f"0x9083 {name}: record heap changed")
+        if bytes(machine.mem_read(incoming_es_segment * 16, 0x10000)) != incoming_es_before:
+            raise AssertionError(f"0x9083 {name}: incoming ES memory changed")
+
+        expected_registers = {
+            "sp": caller_sp + 2,
+            "ds": data_segment,
+            "fs": initial["fs"],
+            "gs": data_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x9083 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x9083 {name}: near return changed CS")
+        if actual_stack[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] != (
+            stack_sentinel
+        ):
+            raise AssertionError(f"0x9083 {name}: caller stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "state_before": state,
+                "state_after": actual_data[0x2788],
+                "scale_before": scale,
+                "scale_after": actual_data[0x2789],
+                "mouse": mouse,
+                "interpolation_complete": complete,
+                "calls": calls,
+                "data_sha256": hashlib.sha256(actual_data).hexdigest(),
+                "record_sha256": hashlib.sha256(expected_record).hexdigest(),
+                "stack_sha256": hashlib.sha256(actual_stack).hexdigest(),
+                "registers_after": {
+                    register: machine.reg_read(register_id)
+                    for register, register_id in REGISTERS.items()
+                },
+                "return": "near",
+            }
+        )
+    return vectors
+
+
 def entity_draw_full_vectors() -> list[dict[str, object]]:
     entry = 0x9240
     data_segment = 0x4000
@@ -84791,6 +85349,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77e0_natural.json",
         bridge_render_frame_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_9083_natural.json",
+        location_info_panel_dispatch_vectors(),
         args.check,
     )
     update_vector(

@@ -54,6 +54,13 @@ typedef struct bloodprg_nav_chart_arche {
     cb_u16 endpoint_context;
 } bloodprg_nav_chart_arche;
 
+typedef struct bloodprg_location_panel_art_entry {
+    char name[16];
+    cb_u16 resource_id;
+    cb_u16 group;
+    cb_u16 reserved_14;
+} bloodprg_location_panel_art_entry;
+
 typedef struct bloodprg_nav_wipe_point {
     cb_i16 x;
     cb_i16 y;
@@ -105,6 +112,8 @@ typedef char bloodprg_nav_chart_object_size_must_be_32[
         sizeof(bloodprg_nav_chart_object) == 32 ? 1 : -1];
 typedef char bloodprg_nav_chart_arche_size_must_be_36[
         sizeof(bloodprg_nav_chart_arche) == 36 ? 1 : -1];
+typedef char bloodprg_location_panel_art_entry_size_must_be_22[
+        sizeof(bloodprg_location_panel_art_entry) == 22 ? 1 : -1];
 typedef char bloodprg_nav_wipe_point_size_must_be_4[
         sizeof(bloodprg_nav_wipe_point) == 4 ? 1 : -1];
 typedef char bloodprg_name_area_effect_control_size_must_be_2[
@@ -142,9 +151,16 @@ extern volatile cb_u16 nav_location_panel_source_width; /* DS:0x277E */
 extern volatile cb_u16 nav_chart_pick_width; /* DS:0x277A */
 extern volatile cb_u16 nav_chart_pick_height; /* DS:0x277C */
 extern volatile bloodprg_rect_i16 nav_location_panel_target_rect; /* DS:0x2780 */
+extern volatile cb_u8 nav_location_panel_transition_state; /* DS:0x2788 */
 extern volatile cb_u8 nav_location_panel_scale_step; /* DS:0x2789 */
 /* DS:0x2AAB alias shared with presentation_choice_current_rect. */
 extern volatile bloodprg_rect_i16 nav_location_panel_current_rect;
+extern const bloodprg_location_panel_art_entry
+        nav_location_panel_art_table[]; /* DS:0x2BC7 */
+extern const cb_u8 nav_location_panel_planet_label[]; /* DS:0x012E */
+extern const cb_u8 nav_location_panel_ship_label[]; /* DS:0x0137 */
+extern const cb_u8 nav_location_panel_black_hole_label[]; /* DS:0x013E */
+extern const cb_u8 nav_location_panel_life_support_label[]; /* DS:0x014B */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */
@@ -232,6 +248,10 @@ void CB_NEAR nav_camera_state_check(void); /* 0x008CCE */
 void CB_NEAR entity_draw_full(
         const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
         /* 0x009240 */
+/* comparison_extent is the inherited context forwarded to entity_draw_full. */
+void CB_NEAR location_info_panel_dispatch(
+        const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
+        /* 0x009083 */
 void CB_NEAR name_area_palette_effect_update(void); /* 0x008BAB */
 void CB_NEAR nav_state_gate(void); /* 0x0082E8 */
 void CB_NEAR nav_choice_dispatch(void); /* 0x0085E2 */
