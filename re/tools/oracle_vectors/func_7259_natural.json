@@ -1,0 +1,546 @@
+[
+  {
+    "name": "target_only_accepted",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        8,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      260
+    ],
+    "terminator_bp": 9485,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "target_rejected_child_accepted",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      512
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        1,
+        2
+      ],
+      "0x0200": [
+        16,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      516
+    ],
+    "terminator_bp": 9485,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "all_presentable_kind_bits",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320,
+      352
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        8,
+        2
+      ],
+      "0x0120": [
+        16,
+        162
+      ],
+      "0x0140": [
+        128,
+        2
+      ],
+      "0x0160": [
+        152,
+        254
+      ]
+    },
+    "output_name_offsets": [
+      260,
+      292,
+      324,
+      356
+    ],
+    "terminator_bp": 9491,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind_mask_must_be_nonzero",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320,
+      352,
+      384
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        256,
+        2
+      ],
+      "0x0120": [
+        1,
+        2
+      ],
+      "0x0140": [
+        2,
+        2
+      ],
+      "0x0160": [
+        32,
+        2
+      ],
+      "0x0180": [
+        64,
+        2
+      ]
+    },
+    "output_name_offsets": [],
+    "terminator_bp": 9483,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "in_play_bit_two_required",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320,
+      352
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        8,
+        0
+      ],
+      "0x0120": [
+        8,
+        1
+      ],
+      "0x0140": [
+        8,
+        2
+      ],
+      "0x0160": [
+        8,
+        254
+      ]
+    },
+    "output_name_offsets": [
+      324,
+      356
+    ],
+    "terminator_bp": 9487,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "exclude_arche_after_record_tests",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320
+    ],
+    "arche": 288,
+    "objects": {
+      "0x0100": [
+        16,
+        2
+      ],
+      "0x0120": [
+        16,
+        2
+      ],
+      "0x0140": [
+        16,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      260,
+      324
+    ],
+    "terminator_bp": 9487,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "zero_offset_is_valid",
+    "target": [
+      40960,
+      0
+    ],
+    "source": [
+      6
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0000": [
+        128,
+        2
+      ],
+      "0x0006": [
+        8,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      4,
+      10
+    ],
+    "terminator_bp": 9487,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        0
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "target_and_name_offset_wrap",
+    "target": [
+      40960,
+      65534
+    ],
+    "source": [
+      32768
+    ],
+    "arche": 30583,
+    "objects": {
+      "0xfffe": [
+        8,
+        2
+      ],
+      "0x8000": [
+        128,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      2,
+      32772
+    ],
+    "terminator_bp": 9487,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        65534
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "unsigned_source_fffe_is_not_sentinel",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      32768,
+      65534
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        1,
+        2
+      ],
+      "0x8000": [
+        16,
+        2
+      ],
+      "0xfffe": [
+        128,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      32772,
+      2
+    ],
+    "terminator_bp": 9487,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "all_rejected",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320,
+      352
+    ],
+    "arche": 352,
+    "objects": {
+      "0x0100": [
+        0,
+        0
+      ],
+      "0x0120": [
+        8,
+        0
+      ],
+      "0x0140": [
+        2,
+        2
+      ],
+      "0x0160": [
+        16,
+        2
+      ]
+    },
+    "output_name_offsets": [],
+    "terminator_bp": 9483,
+    "direction_flag": false,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "target": [
+      40960,
+      256
+    ],
+    "source": [
+      288,
+      320
+    ],
+    "arche": 30583,
+    "objects": {
+      "0x0100": [
+        8,
+        2
+      ],
+      "0x0120": [
+        16,
+        2
+      ],
+      "0x0140": [
+        128,
+        2
+      ]
+    },
+    "output_name_offsets": [
+      260,
+      292,
+      324
+    ],
+    "terminator_bp": 9489,
+    "direction_flag": true,
+    "helper": {
+      "eax": 2779078656,
+      "ebx": 3065389893,
+      "esi": 3924383352,
+      "ebp": 2882365574,
+      "target": [
+        40960,
+        256
+      ],
+      "ds": 24576,
+      "gs": 24576,
+      "ss": 32768,
+      "return": [
+        29289,
+        0
+      ]
+    },
+    "return": "far"
+  }
+]

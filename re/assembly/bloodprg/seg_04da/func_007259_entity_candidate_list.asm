@@ -6,8 +6,8 @@
 ; seg_off: 04da:1eb9
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
-; label: entity_candidate_list
-; label_comment: builds the PRESENTABLE-OBJECT candidate list: source list @gs:0x6886 (0x624B nav-source build), filtered by flags&0x98 + rec[+2]&2, survivors written to [0x250B]++ — the world/entity selection is LIST-DRIVEN (choice-box rows = candidates; commit picks via +0x16 linkage). NO free-roam mouse hover hit-test exists — consistent with the universal choice-box console model. Port adjustment: on-planet interaction = entity list box, not free clicks || NARROWER EARLIER READING `vm_text_helper_6886`: VM/dialogue helper: ds=ax; bp=0x6886; call 0x624b. Processes dialogue/text state at gs:0x6886 (near the active-line record) || MERGED 2026-07-25 (audit-fixes #133): one address, two names, the shorter describing a prologue or a single facet. Kept because a narrow reading records a true observation; renamed away because it is not what the routine IS.
+; label: ship_3d_presentable_name_list_build
+; label_comment: calls the recursive ES:DI child-list builder into SS:0x6886 after setting DS=GS, then filters the input target first followed by the exact-0xffff-terminated descendants read through DS. A record qualifies when ES:[offset].kind has any 0x0098 bit, byte +2 has bit 0x02, and the offset differs from GS:0x6752. It writes offset+4 name pointers and a 0xffff terminator through SS:BP at 0x250b, returning BP at the terminator while restoring every other register and DS.
 ; incoming: call@0x00b0ee->04da:1eb9
 ; incoming: call@0x00b105->04da:1eb9
 ; byte_count: 79

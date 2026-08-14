@@ -18,6 +18,8 @@
 #define SHIP_3D_FIELD_SELECTOR_PARENT_LINK 0x0011u
 #define SHIP_3D_SOURCE_BITSET_SELECTOR 0x0005u
 #define SHIP_3D_SOURCE_BITSET_KIND 0x0002u
+#define SHIP_3D_PRESENTABLE_KIND_MASK 0x0098u
+#define SHIP_3D_OBJECT_NAME_OFFSET 4u
 #define SHIP_3D_HUD_PALETTE_FIRST 128u
 #define SHIP_3D_HUD_PALETTE_COLORS 64u
 #define SHIP_3D_HUD_PALETTE_BYTES (SHIP_3D_HUD_PALETTE_COLORS * 3u)
@@ -135,6 +137,8 @@ extern volatile bridge_panorama_station_record CB_GAME_DATA
         bridge_panorama_stations[]; /* GS:0x2A1B */
 /* Helper output is SS:0x6886; the filter reads it through DS after DS=GS. */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_nav_source_offsets[];
+/* Original BP writes SS:0x250B; the shipped data group has SS == DS == GS. */
+extern volatile cb_u16 ship_3d_presentable_name_offsets[];
 /* Filter output is SS/DS:0x2B53 under the shipped SS=DS=GS data-group alias. */
 extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
 
@@ -147,6 +151,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
  * output cursor; an integration adapter must translate the binary's BP ABI. */
 #pragma aux ship_3d_nav_source_list_build_full parm [es di] [bx] value [bx] modify exact [bx]
 #pragma aux ship_3d_navigation_candidate_build parm [es di] modify exact [bx di es]
+#pragma aux ship_3d_presentable_name_list_build parm [es di] value [bp] modify exact [bp]
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #pragma aux ship_3d_point_cloud_randomize modify exact [ax cx es]
@@ -176,6 +181,9 @@ cb_u16 CB_NEAR *CB_FAR ship_3d_nav_source_list_build_full(
 void CB_FAR ship_3d_navigation_candidate_build(
         const volatile bloodprg_vm_object_header CB_FAR *target);
                                                 /* 0x0070EE */
+volatile cb_u16 CB_NEAR *CB_FAR ship_3d_presentable_name_list_build(
+        const volatile bloodprg_vm_object_header CB_FAR *target);
+                                                /* 0x007259 */
 void CB_FAR matrix_table_clear_2a1b(void);     /* 0x00963F */
 void CB_FAR ship_3d_projection_matrix_build(void); /* 0x0098B9 */
 void CB_FAR ship_3d_point_cloud_project(void); /* 0x009A10 */

@@ -3242,6 +3242,375 @@ def nav_kind2_target_list_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_presentable_name_list_build_vectors() -> list[dict[str, object]]:
+    entry = 0x7259
+    return_address = 0xF259
+    expected_hash = "09f6be86eda4305af0983636fe5efa9e81bf5037080b272f2b75f96fa2904e24"
+    if hashlib.sha256(EXE[entry : entry + 79]).hexdigest() != expected_hash:
+        raise AssertionError("0x7259: recovered 79-byte body changed")
+
+    cases = (
+        {
+            "name": "target_only_accepted",
+            "target": 0x0100,
+            "source": [],
+            "arche": 0x7777,
+            "objects": {0x0100: (0x0008, 0x02)},
+            "expected": [0x0104],
+        },
+        {
+            "name": "target_rejected_child_accepted",
+            "target": 0x0100,
+            "source": [0x0200],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0001, 0x02),
+                0x0200: (0x0010, 0x02),
+            },
+            "expected": [0x0204],
+        },
+        {
+            "name": "all_presentable_kind_bits",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140, 0x0160],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0008, 0x02),
+                0x0120: (0x0010, 0xA2),
+                0x0140: (0x0080, 0x02),
+                0x0160: (0x0098, 0xFE),
+            },
+            "expected": [0x0104, 0x0124, 0x0144, 0x0164],
+        },
+        {
+            "name": "kind_mask_must_be_nonzero",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140, 0x0160, 0x0180],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0100, 0x02),
+                0x0120: (0x0001, 0x02),
+                0x0140: (0x0002, 0x02),
+                0x0160: (0x0020, 0x02),
+                0x0180: (0x0040, 0x02),
+            },
+            "expected": [],
+        },
+        {
+            "name": "in_play_bit_two_required",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140, 0x0160],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0008, 0x00),
+                0x0120: (0x0008, 0x01),
+                0x0140: (0x0008, 0x02),
+                0x0160: (0x0008, 0xFE),
+            },
+            "expected": [0x0144, 0x0164],
+        },
+        {
+            "name": "exclude_arche_after_record_tests",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140],
+            "arche": 0x0120,
+            "objects": {
+                0x0100: (0x0010, 0x02),
+                0x0120: (0x0010, 0x02),
+                0x0140: (0x0010, 0x02),
+            },
+            "expected": [0x0104, 0x0144],
+        },
+        {
+            "name": "zero_offset_is_valid",
+            "target": 0x0000,
+            "source": [0x0006],
+            "arche": 0x7777,
+            "objects": {
+                0x0000: (0x0080, 0x02),
+                0x0006: (0x0008, 0x02),
+            },
+            "expected": [0x0004, 0x000A],
+        },
+        {
+            "name": "target_and_name_offset_wrap",
+            "target": 0xFFFE,
+            "source": [0x8000],
+            "arche": 0x7777,
+            "objects": {
+                0xFFFE: (0x0008, 0x02),
+                0x8000: (0x0080, 0x02),
+            },
+            "expected": [0x0002, 0x8004],
+        },
+        {
+            "name": "unsigned_source_fffe_is_not_sentinel",
+            "target": 0x0100,
+            "source": [0x8000, 0xFFFE],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0001, 0x02),
+                0x8000: (0x0010, 0x02),
+                0xFFFE: (0x0080, 0x02),
+            },
+            "expected": [0x8004, 0x0002],
+        },
+        {
+            "name": "all_rejected",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140, 0x0160],
+            "arche": 0x0160,
+            "objects": {
+                0x0100: (0x0000, 0x00),
+                0x0120: (0x0008, 0x00),
+                0x0140: (0x0002, 0x02),
+                0x0160: (0x0010, 0x02),
+            },
+            "expected": [],
+        },
+        {
+            "name": "inherited_reverse_direction",
+            "target": 0x0100,
+            "source": [0x0120, 0x0140],
+            "arche": 0x7777,
+            "objects": {
+                0x0100: (0x0008, 0x02),
+                0x0120: (0x0010, 0x02),
+                0x0140: (0x0080, 0x02),
+            },
+            "expected": [0x0104, 0x0124, 0x0144],
+            "direction_flag": True,
+        },
+    )
+    game_segment = 0x6000
+    decoy_segment = 0x5000
+    record_segment = 0xA000
+    output_segment = 0x8000
+    source_offset = 0x6886
+    destination_offset = 0x250B
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("a55a3c87966978c3")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        target_offset = int(case["target"])
+        source = [int(value) for value in case["source"]]
+        arche = int(case["arche"])
+        objects = {
+            int(object_offset): tuple(int(value) for value in values)
+            for object_offset, values in dict(case["objects"]).items()
+        }
+        expected = [int(value) for value in case["expected"]]
+        direction_flag = bool(case.get("direction_flag", False))
+        source_step = -2 if direction_flag else 2
+
+        game_before = bytearray(
+            (offset * 19 + (offset >> 8) * 31 + case_index * 23 + 0x35)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", game_before, 0x6752, arche)
+        for index in range(16):
+            struct.pack_into(
+                "<H", game_before, source_offset + index * 2, 0xD000 + index
+            )
+        expected_game = bytearray(game_before)
+        source_words = source + [0xFFFF]
+        for index, value in enumerate(source_words):
+            struct.pack_into(
+                "<H",
+                expected_game,
+                (source_offset + index * source_step) & 0xFFFF,
+                value,
+            )
+
+        output_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 29 + 0x59)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        for index in range(16):
+            struct.pack_into(
+                "<H", output_before, destination_offset + index * 2, 0xE000 + index
+            )
+        output_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        expected_output = bytearray(output_before)
+        for index, value in enumerate(expected + [0xFFFF]):
+            struct.pack_into(
+                "<H", expected_output, destination_offset + index * 2, value
+            )
+
+        record_before = bytearray(
+            (offset * 11 + (offset >> 8) * 17 + case_index * 37 + 0x69)
+            & 0xFF
+            for offset in range(0x10020)
+        )
+        for object_offset, (kind, flags) in objects.items():
+            struct.pack_into("<H", record_before, object_offset, kind)
+            record_before[(object_offset + 2) & 0xFFFF] = flags
+        decoy_before = bytes(
+            (offset * 5 + case_index * 17 + 0xA7) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": (0xFAFA0000 | target_offset),
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": decoy_segment,
+            "es": record_segment,
+            "fs": 0x7000,
+            "gs": game_segment,
+            "ss": output_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        helper_calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x624B:
+                return
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            helper_calls.append(
+                {
+                    "eax": machine.reg_read(UC_X86_REG_EAX),
+                    "ebx": machine.reg_read(UC_X86_REG_EBX),
+                    "esi": machine.reg_read(UC_X86_REG_ESI),
+                    "ebp": machine.reg_read(UC_X86_REG_EBP),
+                    "target": [
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_DI),
+                    ],
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "gs": machine.reg_read(UC_X86_REG_GS),
+                    "ss": machine.reg_read(UC_X86_REG_SS),
+                    "return": list(
+                        struct.unpack(
+                            "<HH",
+                            machine.mem_read(
+                                output_segment * 16 + stack_pointer, 4
+                            ),
+                        )
+                    ),
+                }
+            )
+            for index, value in enumerate(source_words):
+                machine.mem_write(
+                    game_segment * 16
+                    + ((source_offset + index * source_step) & 0xFFFF),
+                    struct.pack("<H", value),
+                )
+            machine.reg_write(
+                UC_X86_REG_BP, (source_offset + len(source) * 2) & 0xFFFF
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, 0x624B, b"\xCB"),
+                (game_segment, 0, bytes(game_before)),
+                (decoy_segment, 0, decoy_before),
+                (record_segment, 0, bytes(record_before)),
+                (output_segment, 0, bytes(output_before)),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        expected_helper_calls = [
+            {
+                "eax": (initial["eax"] & 0xFFFF0000) | game_segment,
+                "ebx": initial["ebx"],
+                "esi": initial["esi"],
+                "ebp": (initial["ebp"] & 0xFFFF0000) | source_offset,
+                "target": [record_segment, target_offset],
+                "ds": game_segment,
+                "gs": game_segment,
+                "ss": output_segment,
+                "return": [0x7269, 0],
+            }
+        ]
+        if helper_calls != expected_helper_calls:
+            raise AssertionError(
+                f"0x7259 {name}: helper={helper_calls!r}, "
+                f"expected={expected_helper_calls!r}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != bytes(
+            expected_game
+        ):
+            raise AssertionError(f"0x7259 {name}: game segment differs")
+        if bytes(machine.mem_read(decoy_segment * 16, 0x10000)) != decoy_before:
+            raise AssertionError(f"0x7259 {name}: initial DS segment changed")
+        if bytes(
+            machine.mem_read(record_segment * 16, len(record_before))
+        ) != bytes(record_before):
+            raise AssertionError(f"0x7259 {name}: record segment changed")
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if (
+            actual_output[:0xFE00] != bytes(expected_output[:0xFE00])
+            or actual_output[caller_sp + 4 :]
+            != bytes(expected_output[caller_sp + 4 :])
+        ):
+            raise AssertionError(f"0x7259 {name}: output segment differs")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        terminator_bp = (destination_offset + len(expected) * 2) & 0xFFFF
+        expected_registers["ebp"] = (
+            initial["ebp"] & 0xFFFF0000
+        ) | terminator_bp
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x7259 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        expected_flags = (initial["flags"] & ~0x08D5) | 0x0044
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if (actual_flags & 0x0ED7) != (expected_flags & 0x0ED7):
+            raise AssertionError(
+                f"0x7259 {name}: flags={actual_flags:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        if bytes(
+            machine.mem_read(
+                output_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x7259 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "target": [record_segment, target_offset],
+                "source": source,
+                "arche": arche,
+                "objects": {
+                    f"{object_offset:#06x}": [kind, flags]
+                    for object_offset, (kind, flags) in objects.items()
+                },
+                "output_name_offsets": expected,
+                "terminator_bp": terminator_bp,
+                "direction_flag": direction_flag,
+                "helper": helper_calls[0],
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -62346,6 +62715,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_71cf_natural.json",
         nav_kind2_target_list_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7259_natural.json",
+        ship_3d_presentable_name_list_build_vectors(),
         args.check,
     )
     update_vector(

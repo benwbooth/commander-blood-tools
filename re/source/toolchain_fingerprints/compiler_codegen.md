@@ -1110,6 +1110,31 @@ the shipped shared-data, clear-DF, and in-range record-sum invariants explicit;
 direct binary replacement would additionally need the original helper input,
 clobber, full-EAX clearing, and upper-EDI conventions.
 
+Ship 3D presentable-name-list builder `0x007259` calls the recursive source-list
+builder with inherited ES:DI as the target and SS:BP at `0x6886`. It filters the
+target first, then walks the exact `0xFFFF`-terminated descendant offsets. A
+record is accepted when any kind bit in `0x0098` is set, flag bit `0x02` is set,
+and its offset is not the arche record at `GS:0x6752`. Accepted values are not
+record offsets: the routine writes `(offset + 4) mod 65536`, which points to the
+record's inline NUL-terminated name, to `SS:0x250B`, then writes `0xFFFF`. BP
+returns pointing at that output terminator.
+
+Eleven patched-helper vectors cover accepted and rejected targets, every kind
+bit, the nonzero-mask rule, the in-play bit, arche exclusion, zero and unsigned
+high offsets, wrapped name offsets, empty output, and inherited reverse
+direction. They prove helper entry state and ordering, target-first behavior,
+exact sentinel handling, DS/GS/SS/ES ownership, complete output and BP result,
+register and flag effects, stack integrity, and far return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 38 instructions/83 bytes versus the original 36/79,
+with 88.89 percent mnemonic-multiset overlap and no inline assembly. Returning
+the destination terminator naturally exposes the original BP result. Watcom
+uses BX for the recursive helper cursor and DS for record reads, whereas the
+binary uses BP and ES; full-source integration also relies on the shipped
+SS=DS=GS data group and clear DF. These are narrow ABI/placement boundaries,
+not missing logic in the recovered C loop.
+
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
 `0xFFFF`; post-match addition wrap; and optional-increment wrap and signed
