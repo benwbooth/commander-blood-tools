@@ -3295,6 +3295,506 @@ def ship_3d_arche_position_match_list_build_vectors() -> list[dict[str, object]]
     return vectors
 
 
+def ship_3d_target_record_select_vectors() -> list[dict[str, object]]:
+    entry = 0xB2BB
+    return_address = 0xF2BB
+    expected_hash = "dded91c3049c7a8551314c036c3bbe1531ac79264cbcf315d73575e76cb3a887"
+    if hashlib.sha256(EXE[entry : entry + 147]).hexdigest() != expected_hash:
+        raise AssertionError("0xb2bb: recovered 147-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "primary_no_selection_returns_zero",
+            "primary": [0x1204, 0xFFFF],
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "primary_first_name_maps_to_record",
+            "primary": [0x1204, 0xFFFF],
+            "widget_results": [0],
+        },
+        {
+            "name": "primary_second_name_maps_to_record",
+            "primary": [0x1204, 0x2345, 0xFFFF],
+            "widget_results": [1],
+        },
+        {
+            "name": "primary_name_subtraction_wraps",
+            "primary": [0x0002, 0xFFFF],
+            "widget_results": [0],
+        },
+        {
+            "name": "fallback_returns_current_target",
+            "primary": [0xFFFF],
+            "fallback": [0x3333, 0xFFFF],
+            "current_target": 0x4567,
+            "widget_results": [0],
+        },
+        {
+            "name": "fallback_sentinel_arms_opening",
+            "primary": [0xFFFF],
+            "fallback": [0xFFFF],
+            "widget_results": [0],
+        },
+        {
+            "name": "primary_sentinel_arms_opening",
+            "primary": [0x1204, 0xFFFF],
+            "widget_results": [1],
+        },
+        {
+            "name": "zero_first_primary_does_not_fallback",
+            "primary": [0, 0xFFFF],
+            "fallback": [0x3333, 0xFFFF],
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "phase_one_prepass_then_incomplete",
+            "phase": 1,
+            "tick": 7,
+            "total": 6,
+            "widget_results": [0x7777],
+        },
+        {
+            "name": "phase_one_prepass_complete_then_selects",
+            "phase": 1,
+            "tick": 7,
+            "total": 0,
+            "primary": [0x2204, 0xFFFF],
+            "widget_results": [0x7777, 0],
+        },
+        {
+            "name": "phase_two_incomplete_returns_zero",
+            "phase": 2,
+            "tick": 3,
+            "total": 6,
+            "widget_results": [],
+        },
+        {
+            "name": "phase_two_complete_then_selects",
+            "phase": 2,
+            "tick": 6,
+            "total": 6,
+            "primary": [0x3304, 0xFFFF],
+            "widget_results": [0],
+        },
+        {
+            "name": "phase_three_prepass_skips_interpolation",
+            "phase": 3,
+            "tick": 5,
+            "total": 9,
+            "primary": [0x4404, 0xFFFF],
+            "widget_results": [0x7777, 0],
+        },
+        {
+            "name": "phase_ff_prepass_wraps_to_zero",
+            "phase": 0xFF,
+            "tick": 5,
+            "total": 9,
+            "primary": [0x5504, 0xFFFF],
+            "widget_results": [0x7777, 0],
+        },
+        {
+            "name": "selection_8000_wraps_index_to_first",
+            "primary": [0x6604, 0xFFFF],
+            "widget_results": [0x8000],
+        },
+        {
+            "name": "query_byte_is_preserved_without_prepass",
+            "query_mode": 0xA4,
+            "primary": [0x7704, 0xFFFF],
+            "widget_results": [0],
+        },
+        {
+            "name": "fallback_uses_ds_labels_and_preserves_df",
+            "primary": [0xFFFF],
+            "fallback": [0x4100, 0xFFFF],
+            "current_target": 0x8899,
+            "flags": 0x0ED7,
+            "widget_results": [0],
+        },
+    ]
+    data_segment = 0x4400
+    label_segment = 0x6600
+    game_segment = 0x8800
+    stack_segment = 0xA000
+    caller_sp = 0xFF00
+    widget_entry = 0x7E28
+    interpolation_entry = 0x185D
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def write_word(image: bytearray, offset: int, value: int) -> None:
+        image[offset & 0xFFFF] = value & 0xFF
+        image[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def read_word(image: bytes | bytearray, offset: int) -> int:
+        return image[offset & 0xFFFF] | (
+            image[(offset + 1) & 0xFFFF] << 8
+        )
+
+    def logic_flags(value: int, bits: int) -> dict[str, bool]:
+        mask = (1 << bits) - 1
+        result = value & mask
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & (1 << (bits - 1))),
+            "of": False,
+        }
+
+    flag_masks = {
+        "cf": 0x0001,
+        "pf": 0x0004,
+        "af": 0x0010,
+        "zf": 0x0040,
+        "sf": 0x0080,
+        "of": 0x0800,
+    }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        primary = [int(value) for value in case.get(
+            "primary", [0x1204, 0xFFFF]
+        )]
+        fallback = [int(value) for value in case.get(
+            "fallback", [0x3100, 0xFFFF]
+        )]
+        phase = int(case.get("phase", 0))
+        tick = int(case.get("tick", 0x35))
+        total = int(case.get("total", 0x46))
+        query_mode = int(case.get("query_mode", 0))
+        current_target = int(case.get("current_target", 0x2468))
+        widget_results = [
+            int(value) for value in case.get("widget_results", [])
+        ]
+
+        data = bytearray(
+            (index * 11 + case_index * 29) & 0xFF
+            for index in range(0x10000)
+        )
+        game = bytes(
+            (index * 7 + case_index * 31) & 0xFF
+            for index in range(0x10000)
+        )
+        labels = bytes(
+            (index * 13 + case_index * 37) & 0xFF
+            for index in range(0x10000)
+        )
+        write_word(data, 0x6726, label_segment)
+        for index, value in enumerate(primary):
+            write_word(data, 0x250B + index * 2, value)
+        for index, value in enumerate(fallback):
+            write_word(data, 0x2537 + index * 2, value)
+        write_word(data, 0x251B, current_target)
+        data[0x252B] = phase
+        data[0x252C] = 0xC7
+        data[0x252F] = 0xD3
+        data[0x2531] = 0xE5
+        data[0x27E6] = query_mode
+        data[0x0ADB] = tick
+        data[0x0ADA] = total
+        data[0x2AAB : 0x2AB3] = struct.pack(
+            "<HHHH", 0x1111, 0x2222, 0x3333, 0x4444
+        )
+        data[0x2545 : 0x254D] = struct.pack(
+            "<HHHH", 0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD
+        )
+
+        expected = bytearray(data)
+        expected_calls: list[dict[str, object]] = []
+        expected_phase = phase
+        expected_tick = tick
+        expected_query = query_mode
+        expected_fallback = primary[0] == 0xFFFF
+        expected[0x252C] = 1 if expected_fallback else 0
+        items_offset = 0x2537 if expected_fallback else 0x250B
+        string_segment = data_segment if expected_fallback else label_segment
+        items = fallback if expected_fallback else primary
+        widget_index = 0
+        returned_during_transition = False
+        final_status = ""
+        expected_ax = 0
+
+        if expected_phase & 1:
+            expected_calls.append(
+                {
+                    "call": "list_widget_layout_unified",
+                    "items": items_offset,
+                    "items_segment": data_segment,
+                    "string_segment": string_segment,
+                    "query_mode": 1,
+                    "phase": expected_phase,
+                    "tick": expected_tick,
+                    "sp": caller_sp - 10,
+                    "return": [0xB2ED, 0],
+                    "result": widget_results[widget_index],
+                }
+            )
+            widget_index += 1
+            expected_query = 0
+            expected[0x27E6] = 0
+            expected_tick = 0
+            expected[0x0ADB] = 0
+            expected_phase = (expected_phase + 1) & 0xFF
+            expected[0x252B] = expected_phase
+
+        if expected_phase & 2:
+            complete = expected_tick == total
+            expected_calls.append(
+                {
+                    "call": "framebuffer_rect_interpolate_and_remap_step",
+                    "source": 0x2AAB,
+                    "target": 0x2545,
+                    "data_segment": data_segment,
+                    "phase": expected_phase,
+                    "tick": expected_tick,
+                    "total": total,
+                    "sp": caller_sp - 12,
+                    "return": [0xB310, 0],
+                    "complete": complete,
+                }
+            )
+            if complete:
+                expected_phase = 0
+                expected[0x252B] = 0
+            else:
+                expected_tick = (expected_tick + 1) & 0xFF
+                expected[0x0ADB] = expected_tick
+                returned_during_transition = True
+                final_status = "interpolation_carry_clear"
+
+        if not returned_during_transition:
+            result = widget_results[widget_index]
+            expected_calls.append(
+                {
+                    "call": "list_widget_layout_unified",
+                    "items": items_offset,
+                    "items_segment": data_segment,
+                    "string_segment": string_segment,
+                    "query_mode": expected_query,
+                    "phase": expected_phase,
+                    "tick": expected_tick,
+                    "sp": caller_sp - 10,
+                    "return": [0xB31D, 0],
+                    "result": result,
+                }
+            )
+            widget_index += 1
+            if result == 0xFFFF:
+                expected_ax = 0
+                final_status = "xor_zero"
+            else:
+                selected = read_word(
+                    expected, items_offset + ((result << 1) & 0xFFFF)
+                )
+                if selected == 0xFFFF:
+                    expected_ax = 0xFFFF
+                    expected[0x252F] = 1
+                    expected[0x2531] = 6
+                    final_status = "selected_sentinel_cmp"
+                else:
+                    expected_ax = (selected - 4) & 0xFFFF
+                    if expected_fallback:
+                        expected_ax = current_target
+                    final_status = "fallback_test"
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x7200,
+            "fs": 0x7600,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": int(case.get("flags", 0x02D7)),
+        }
+        calls: list[dict[str, object]] = []
+        actual_widget_index = 0
+
+        def call_return(machine: Uc) -> list[int]:
+            sp = machine.reg_read(UC_X86_REG_SP)
+            ss = machine.reg_read(UC_X86_REG_SS)
+            return_ip, return_cs = struct.unpack(
+                "<HH", machine.mem_read(ss * 16 + sp, 4)
+            )
+            return [return_ip, return_cs]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal actual_widget_index
+            if address == widget_entry:
+                result = widget_results[actual_widget_index]
+                calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items": machine.reg_read(UC_X86_REG_SI),
+                        "items_segment": machine.reg_read(UC_X86_REG_DS),
+                        "string_segment": machine.reg_read(UC_X86_REG_ES),
+                        "query_mode": machine.mem_read(
+                            data_segment * 16 + 0x27E6, 1
+                        )[0],
+                        "phase": machine.mem_read(
+                            data_segment * 16 + 0x252B, 1
+                        )[0],
+                        "tick": machine.mem_read(
+                            data_segment * 16 + 0x0ADB, 1
+                        )[0],
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "return": call_return(machine),
+                        "result": result,
+                    }
+                )
+                actual_widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == interpolation_entry:
+                current = machine.mem_read(
+                    data_segment * 16 + 0x0ADB, 1
+                )[0]
+                limit = machine.mem_read(
+                    data_segment * 16 + 0x0ADA, 1
+                )[0]
+                complete = current == limit
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_interpolate_and_remap_step",
+                        "source": machine.reg_read(UC_X86_REG_SI),
+                        "target": machine.reg_read(UC_X86_REG_DI),
+                        "data_segment": machine.reg_read(UC_X86_REG_DS),
+                        "phase": machine.mem_read(
+                            data_segment * 16 + 0x252B, 1
+                        )[0],
+                        "tick": current,
+                        "total": limit,
+                        "sp": machine.reg_read(UC_X86_REG_SP),
+                        "return": call_return(machine),
+                        "complete": complete,
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if complete:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(
+                        data_segment * 16 + 0x0ADB,
+                        bytes([(current + 1) & 0xFF]),
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, widget_entry, b"\xCB"),
+                (0, interpolation_entry, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (label_segment, 0, labels),
+                (game_segment, 0, game),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=180,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0xb2bb {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        if actual_widget_index != len(widget_results):
+            raise AssertionError(f"0xb2bb {name}: unused widget result")
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected):
+            mismatch = next(
+                index
+                for index, (actual, expected_byte) in enumerate(
+                    zip(actual_data, expected)
+                )
+                if actual != expected_byte
+            )
+            raise AssertionError(
+                f"0xb2bb {name}: data[{mismatch:#06x}]="
+                f"{actual_data[mismatch]:#04x}, expected={expected[mismatch]:#04x}"
+            )
+        if bytes(machine.mem_read(label_segment * 16, 0x10000)) != labels:
+            raise AssertionError(f"0xb2bb {name}: label segment changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game:
+            raise AssertionError(f"0xb2bb {name}: GS decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (
+            initial["eax"] & 0xFFFF0000
+        ) | expected_ax
+        expected_registers["sp"] = caller_sp + 2
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0xb2bb {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 2, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0xb2bb {name}: caller stack changed")
+
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        if final_status == "interpolation_carry_clear":
+            expected_flags = {"cf": False}
+        elif final_status == "xor_zero":
+            expected_flags = logic_flags(0, 16)
+        elif final_status == "selected_sentinel_cmp":
+            expected_flags = sub16_flags(0xFFFF, 0xFFFF)
+        else:
+            expected_flags = logic_flags(1 if expected_fallback else 0, 8)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag])
+            for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0xb2bb {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags_after & 0x0400) != bool(initial["flags"] & 0x0400):
+            raise AssertionError(f"0xb2bb {name}: direction flag changed")
+        if EXE[0xB34D] != 0xC3:
+            raise AssertionError("0xb2bb: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "primary": primary,
+                "fallback": fallback,
+                "phase_before": phase,
+                "phase_after": expected[0x252B],
+                "tick_before": tick,
+                "tick_after": expected[0x0ADB],
+                "used_fallback": bool(expected[0x252C]),
+                "calls": calls,
+                "selected_record": expected_ax,
+                "opening_after": expected[0x252F],
+                "depth_step_after": expected[0x2531],
+                "defined_flags": expected_flags,
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def nav_kind2_target_list_build_vectors() -> list[dict[str, object]]:
     entry = 0x71CF
     return_address = 0xF1CF
@@ -77592,6 +78092,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_713d_natural.json",
         ship_3d_arche_position_match_list_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b2bb_natural.json",
+        ship_3d_target_record_select_vectors(),
         args.check,
     )
     update_vector(

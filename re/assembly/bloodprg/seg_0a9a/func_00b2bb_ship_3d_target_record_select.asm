@@ -7,7 +7,8 @@
 ; group: seg_0a9a
 ; provenance: recursive_graph
 ; label: ship_3d_target_record_select
-; label_comment: selects next ship/navigation target record from DS:0x250B or fallback DS:0x2537
+; label_comment: runs the target-list layout/interpolation phases, maps a selected DS:0x250B name offset back to its record, uses DS:0x2537 as a current-target fallback, and arms opening when the selected entry is 0xFFFF
+; natural_c: re/source/bloodprg/candidates/seg_0a9a/func_00b2bb_ship_3d_target_record_select.c
 ; byte_count: 147
 ; boundary: cfg_blocks_14_terminals_3
 ; terminal: jmp 0xb34a:2, ret:1

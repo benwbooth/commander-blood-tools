@@ -115,6 +115,12 @@ extern volatile cb_u16 ship_3d_target_layout_center_x; /* DS:0x0AC6 */
 extern volatile cb_u8 ship_3d_target_layout_preserve_widths; /* DS:0x0ADC */
 extern volatile cb_u8 ship_3d_target_layout_extra_entry; /* DS:0x0ADD */
 extern volatile cb_u8 ship_3d_interpolation_duration; /* DS:0x0ADA */
+extern volatile cb_u16 ship_3d_current_target; /* DS:0x251B */
+extern volatile cb_u8 ship_3d_target_select_phase; /* DS:0x252B */
+extern volatile cb_u8 ship_3d_target_fallback; /* DS:0x252C */
+extern const cb_u16 ship_3d_fallback_target_table[]; /* DS:0x2537 */
+extern const bloodprg_rect_i16
+        ship_3d_target_transition_rect; /* DS:0x2545 */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_b; /* GS:0x2F6D */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_c; /* GS:0x2F6F */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_a; /* GS:0x2F71 */
@@ -173,6 +179,7 @@ extern volatile cb_u16 ship_3d_navigation_candidate_offsets[];
 #pragma aux ship_3d_point_cloud_project modify exact []
 #pragma aux ship_3d_object_sprite_project modify exact []
 #pragma aux ship_3d_plane_band_copy modify exact []
+#pragma aux ship_3d_target_record_select value [ax] modify exact [ax]
 #pragma aux bridge_panorama_frame_load parm [ax] modify exact []
 #pragma aux page_flip value [ax] modify exact [ax bx]
 #pragma aux alien_overlay_cycle modify exact [ax dx si di bp]
@@ -207,6 +214,7 @@ void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
 void CB_NEAR bridge_panorama_frame_load(cb_u16 frame); /* 0x00981B */
 cb_u16 CB_FAR page_flip(void); /* 0x00954A */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
+cb_u16 CB_NEAR ship_3d_target_record_select(void); /* 0x00B2BB */
 void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */
 void CB_FAR ship_3d_hud_palette_snapshot_and_camera_reset(void); /* 0x008C96 */
 extern volatile cb_u16 bridge_mouse_arc; /* DS:0x2797 */

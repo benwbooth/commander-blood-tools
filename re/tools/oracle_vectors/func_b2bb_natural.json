@@ -1,0 +1,831 @@
+[
+  {
+    "name": "primary_no_selection_returns_zero",
+    "primary": [
+      4612,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 65535
+      }
+    ],
+    "selected_record": 0,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "primary_first_name_maps_to_record",
+    "primary": [
+      4612,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 4608,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "primary_second_name_maps_to_record",
+    "primary": [
+      4612,
+      9029,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 1
+      }
+    ],
+    "selected_record": 9025,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "primary_name_subtraction_wraps",
+    "primary": [
+      2,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 65534,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "fallback_returns_current_target",
+    "primary": [
+      65535
+    ],
+    "fallback": [
+      13107,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": true,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9527,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 17767,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "fallback_sentinel_arms_opening",
+    "primary": [
+      65535
+    ],
+    "fallback": [
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": true,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9527,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 65535,
+    "opening_after": 1,
+    "depth_step_after": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "primary_sentinel_arms_opening",
+    "primary": [
+      4612,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 1
+      }
+    ],
+    "selected_record": 65535,
+    "opening_after": 1,
+    "depth_step_after": 6,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "zero_first_primary_does_not_fallback",
+    "primary": [
+      0,
+      65535
+    ],
+    "fallback": [
+      13107,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 65535
+      }
+    ],
+    "selected_record": 0,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_one_prepass_then_incomplete",
+    "primary": [
+      4612,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 1,
+    "phase_after": 2,
+    "tick_before": 7,
+    "tick_after": 1,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 1,
+        "phase": 1,
+        "tick": 7,
+        "sp": 65270,
+        "return": [
+          45805,
+          0
+        ],
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9541,
+        "data_segment": 17408,
+        "phase": 2,
+        "tick": 0,
+        "total": 6,
+        "sp": 65268,
+        "return": [
+          45840,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_record": 0,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_one_prepass_complete_then_selects",
+    "primary": [
+      8708,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 1,
+    "phase_after": 0,
+    "tick_before": 7,
+    "tick_after": 0,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 1,
+        "phase": 1,
+        "tick": 7,
+        "sp": 65270,
+        "return": [
+          45805,
+          0
+        ],
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9541,
+        "data_segment": 17408,
+        "phase": 2,
+        "tick": 0,
+        "total": 0,
+        "sp": 65268,
+        "return": [
+          45840,
+          0
+        ],
+        "complete": true
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 0,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 8704,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_two_incomplete_returns_zero",
+    "primary": [
+      4612,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 2,
+    "phase_after": 2,
+    "tick_before": 3,
+    "tick_after": 4,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9541,
+        "data_segment": 17408,
+        "phase": 2,
+        "tick": 3,
+        "total": 6,
+        "sp": 65268,
+        "return": [
+          45840,
+          0
+        ],
+        "complete": false
+      }
+    ],
+    "selected_record": 0,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_two_complete_then_selects",
+    "primary": [
+      13060,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 2,
+    "phase_after": 0,
+    "tick_before": 6,
+    "tick_after": 6,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9541,
+        "data_segment": 17408,
+        "phase": 2,
+        "tick": 6,
+        "total": 6,
+        "sp": 65268,
+        "return": [
+          45840,
+          0
+        ],
+        "complete": true
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 6,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 13056,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_three_prepass_skips_interpolation",
+    "primary": [
+      17412,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 3,
+    "phase_after": 4,
+    "tick_before": 5,
+    "tick_after": 0,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 1,
+        "phase": 3,
+        "tick": 5,
+        "sp": 65270,
+        "return": [
+          45805,
+          0
+        ],
+        "result": 30583
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 4,
+        "tick": 0,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 17408,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_ff_prepass_wraps_to_zero",
+    "primary": [
+      21764,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 255,
+    "phase_after": 0,
+    "tick_before": 5,
+    "tick_after": 0,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 1,
+        "phase": 255,
+        "tick": 5,
+        "sp": 65270,
+        "return": [
+          45805,
+          0
+        ],
+        "result": 30583
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 0,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 21760,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "selection_8000_wraps_index_to_first",
+    "primary": [
+      26116,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 32768
+      }
+    ],
+    "selected_record": 26112,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "query_byte_is_preserved_without_prepass",
+    "primary": [
+      30468,
+      65535
+    ],
+    "fallback": [
+      12544,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": false,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9483,
+        "items_segment": 17408,
+        "string_segment": 26112,
+        "query_mode": 164,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 30464,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "fallback_uses_ds_labels_and_preserves_df",
+    "primary": [
+      65535
+    ],
+    "fallback": [
+      16640,
+      65535
+    ],
+    "phase_before": 0,
+    "phase_after": 0,
+    "tick_before": 53,
+    "tick_after": 53,
+    "used_fallback": true,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9527,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "query_mode": 0,
+        "phase": 0,
+        "tick": 53,
+        "sp": 65270,
+        "return": [
+          45853,
+          0
+        ],
+        "result": 0
+      }
+    ],
+    "selected_record": 34969,
+    "opening_after": 211,
+    "depth_step_after": 229,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  }
+]

@@ -2268,6 +2268,34 @@ There is no inline assembly in the candidate. DS==GS, SS==GS, the inherited
 comparison pointer, and the original preservation/flag envelope remain explicit
 integration boundaries.
 
+Ship-target selector `0x00B2BB` chooses the primary name-offset list unless its
+first word is exactly `0xFFFF`; only that sentinel selects the fallback list and
+sets the fallback byte. On phase bit zero it brackets a query-only list-widget
+call with the query flag, clears the interpolation tick, and increments the
+complete phase byte. On phase bit one it advances the transition rectangle and
+returns zero until the interpolation helper reports completion. Consequently,
+phase 3 advances to 4 and skips interpolation, while phase `0xFF` wraps to zero
+and also skips it.
+
+The final widget result is doubled with 16-bit wrapping and indexes the selected
+list. A selected `0xFFFF` arms the opening state and returns the sentinel. An
+ordinary primary entry is converted from its name offset to its record offset by
+subtracting four; an ordinary fallback selection returns the current target
+instead. Seventeen patched-helper direct vectors cover primary and fallback
+selection, both sentinel meanings, query and interpolation phases, phase wrap,
+index wrap, split label segments, callback state, registers, flags, stack, and
+near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the warning-free natural
+source to 65 instructions/174 bytes versus 50/147 original, with 92.00 percent
+mnemonic-multiset overlap. Medium model is required here: it keeps near list and
+state pointers under DS while retaining far inter-segment calls. The rejected
+large-model build addressed those near objects through SS and supplied SS as the
+fallback label segment. One narrow pragma adapter installs the explicit label
+segment in ES before the recovered list-widget call; the selection and phase
+logic remains ordinary typed C. A direct binary replacement would additionally
+need the original save envelope and path-specific terminal flags.
+
 Depth-scroll step `0x00B75C` gives opening bit zero precedence over closing bit
 zero. It changes only the low byte of the depth word: opening then compares the
 whole signed word with 0x41, while closing branches directly on the sign flag
