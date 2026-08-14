@@ -1,0 +1,245 @@
+[
+  {
+    "name": "idle_no_selection",
+    "handler": 1,
+    "phase_before": 0,
+    "phase_after": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "targets_after": [
+      4356,
+      65535
+    ],
+    "selected_item_after": 30583,
+    "ui_flags_after": 173,
+    "deferred_type_after": 20817,
+    "deferred_link_after": 25186,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "initialization_waits_for_transition",
+    "handler": 1,
+    "phase_before": 1,
+    "phase_after": 2,
+    "calls": [
+      {
+        "call": "nav_kind2_target_list_build"
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 1,
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 0,
+        "total": 4,
+        "complete": false
+      }
+    ],
+    "targets_after": [
+      4356,
+      8708,
+      65535
+    ],
+    "selected_item_after": 30583,
+    "ui_flags_after": 173,
+    "deferred_type_after": 20817,
+    "deferred_link_after": 25186,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "phase_three_builds_and_selects",
+    "handler": 1,
+    "phase_before": 3,
+    "phase_after": 4,
+    "calls": [
+      {
+        "call": "nav_kind2_target_list_build"
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 1,
+        "result": 30583
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 0,
+        "result": 1
+      },
+      {
+        "call": "snd_bank_loader",
+        "mode": 1,
+        "path_segment": 17408,
+        "path": 3350
+      }
+    ],
+    "targets_after": [
+      4356,
+      8708,
+      65535
+    ],
+    "selected_item_after": 0,
+    "ui_flags_after": 169,
+    "deferred_type_after": 195,
+    "deferred_link_after": 8704,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "complete_transition_no_selection",
+    "handler": 1,
+    "phase_before": 2,
+    "phase_after": 0,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 5,
+        "total": 5,
+        "complete": true
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "targets_after": [
+      13060,
+      65535
+    ],
+    "selected_item_after": 30583,
+    "ui_flags_after": 173,
+    "deferred_type_after": 20817,
+    "deferred_link_after": 25186,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "selected_sentinel_closes",
+    "handler": 1,
+    "phase_before": 0,
+    "phase_after": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 85,
+        "result": 0
+      }
+    ],
+    "targets_after": [
+      65535
+    ],
+    "selected_item_after": 0,
+    "ui_flags_after": 169,
+    "deferred_type_after": 20817,
+    "deferred_link_after": 25186,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "ordinary_target_defers_and_reloads",
+    "handler": 1,
+    "phase_before": 0,
+    "phase_after": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 85,
+        "result": 1
+      },
+      {
+        "call": "snd_bank_loader",
+        "mode": 1,
+        "path_segment": 17408,
+        "path": 3350
+      }
+    ],
+    "targets_after": [
+      4373,
+      8742,
+      65535
+    ],
+    "selected_item_after": 0,
+    "ui_flags_after": 169,
+    "deferred_type_after": 195,
+    "deferred_link_after": 8738,
+    "render_flag_after": 102,
+    "return": "near"
+  },
+  {
+    "name": "record_name_offset_wraps",
+    "handler": 1,
+    "phase_before": 3,
+    "phase_after": 4,
+    "calls": [
+      {
+        "call": "nav_kind2_target_list_build"
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 1,
+        "result": 4660
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 11027,
+        "items_segment": 17408,
+        "string_segment": 20992,
+        "editing": 0,
+        "result": 0
+      },
+      {
+        "call": "snd_bank_loader",
+        "mode": 1,
+        "path_segment": 17408,
+        "path": 3350
+      }
+    ],
+    "targets_after": [
+      1,
+      65535
+    ],
+    "selected_item_after": 0,
+    "ui_flags_after": 169,
+    "deferred_type_after": 195,
+    "deferred_link_after": 65533,
+    "render_flag_after": 102,
+    "return": "near"
+  }
+]

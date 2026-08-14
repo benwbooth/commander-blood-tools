@@ -49,6 +49,7 @@ extern bloodprg_snd_clip_callback CB_GAME_DATA
         snd_play_clip_callback; /* GS:0x0AEC */
 extern bloodprg_audio_position_callback audio_position_callback; /* DS:0x0CF3 */
 extern volatile cb_u8 snd_driver_pending_flag; /* DS=GS:0x0BA0 */
+extern volatile cb_u8 voc_tablo2_active; /* DS:0x0BA3 */
 extern volatile cb_u8 snd_music_voc_name_changed; /* DS:0x0BA1 alias */
 extern volatile cb_u8 voc_playback_enabled; /* game data:0x0ADE */
 extern volatile cb_u8 game_mode_0adf; /* game data:0x0ADF */
@@ -71,6 +72,8 @@ extern const volatile char CB_GAME_DATA snd_music_temp_filename[]; /* GS:0x00AE 
 extern const volatile char CB_GAME_DATA snd_voice_temp_filename[]; /* GS:0x00A6 */
 extern volatile char snd_credits_voc_path[]; /* DS:0x0D4B */
 extern volatile char presentation_music_voc_path[]; /* DS:0x0D2D */
+extern volatile cb_u8 voc_tablo2_reset_gate; /* DS:0x0D30 */
+extern volatile char voc_tablo2_path[]; /* DS:0x0D3D */
 extern volatile cb_u8 CB_FAR *CB_GAME_DATA snd_bank_memory; /* GS:0x0BB3 */
 extern volatile bloodprg_snd_clip_descriptor CB_GAME_DATA
         snd_clip_descriptor; /* GS:0x0BAB */

@@ -1,0 +1,484 @@
+[
+  {
+    "name": "negative_selection_preserves_menu",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 65535,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "ui_flags_after": 173,
+    "selected_item_after": 30583,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "transition_incomplete_returns",
+    "phase_before": 2,
+    "phase_after": 2,
+    "selection": null,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 3,
+        "total": 6,
+        "complete": false
+      }
+    ],
+    "ui_flags_after": 173,
+    "selected_item_after": 30583,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "transition_complete_then_negative",
+    "phase_before": 2,
+    "phase_after": 0,
+    "selection": 65535,
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 6,
+        "total": 6,
+        "complete": true
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "ui_flags_after": 173,
+    "selected_item_after": 30583,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "prepass_copies_layout_then_waits",
+    "phase_before": 1,
+    "phase_after": 2,
+    "selection": null,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 1,
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 0,
+        "total": 4,
+        "complete": false
+      }
+    ],
+    "ui_flags_after": 173,
+    "selected_item_after": 30583,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "split_gs_owns_layout_copy",
+    "phase_before": 1,
+    "phase_after": 2,
+    "selection": null,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 11264,
+        "editing": 1,
+        "result": 30583
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9533,
+        "current": 0,
+        "total": 4,
+        "complete": false
+      }
+    ],
+    "ui_flags_after": 173,
+    "selected_item_after": 30583,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "phase_three_uses_advanced_layout_pointer",
+    "phase_before": 3,
+    "phase_after": 4,
+    "selection": 2,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 1,
+        "result": 30583
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 10931,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 0,
+        "result": 2
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      1,
+      55,
+      1
+    ],
+    "return": "near"
+  },
+  {
+    "name": "text_choice",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 0,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 0
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "music_disabled",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 1,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 1
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "music_active_stops",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 1,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 1
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9592,
+    "voc_active_after": 0,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "music_inactive_starts",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 1,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 1
+      },
+      {
+        "call": "snd_stream_source_load",
+        "path_segment": 17408,
+        "path": 3389
+      },
+      {
+        "call": "snd_stream_start"
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 1,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "save_choice",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 2,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 2
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      1,
+      55,
+      1
+    ],
+    "return": "near"
+  },
+  {
+    "name": "load_choice",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 3,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 3
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      1,
+      1
+    ],
+    "return": "near"
+  },
+  {
+    "name": "quit_choice",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 4,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 4
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "choice_five_falls_through",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 5,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 5
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "low_byte_80_falls_through",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 128,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 128
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "low_byte_81_aliases_text",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 129,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 129
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  },
+  {
+    "name": "word_0100_uses_low_zero",
+    "phase_before": 0,
+    "phase_after": 0,
+    "selection": 256,
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9575,
+        "items_segment": 17408,
+        "string_segment": 17408,
+        "editing": 85,
+        "result": 256
+      }
+    ],
+    "ui_flags_after": 169,
+    "selected_item_after": 0,
+    "menu_pointer_after": 9601,
+    "voc_active_after": 82,
+    "motion_after": [
+      54,
+      55,
+      56
+    ],
+    "return": "near"
+  }
+]

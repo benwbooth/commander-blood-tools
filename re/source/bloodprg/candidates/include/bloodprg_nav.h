@@ -49,6 +49,8 @@ extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
 extern volatile cb_u16 nav_pending_record_link; /* DS:0x675A */
 /* SS:0x2B13 in the binary; runtime SS=DS makes this ordinary near data. */
 extern volatile cb_u16 nav_kind2_target_offsets[];
+/* DS:0x6D3E alias used as a zero-skipping, sentinel-terminated contact list. */
+extern volatile cb_u16 nav_contact_slot_words[];
 extern volatile cb_u16 nav_deferred_record_type; /* DS:0x6768 */
 extern volatile cb_u16 nav_deferred_record_link; /* DS:0x676A */
 extern volatile char nav_radio_snd_path[];    /* DS:0x0D16 */
@@ -93,10 +95,16 @@ extern const bloodprg_rect_i16
 extern volatile cb_u8 presentation_choice_active; /* DS:0x259B */
 extern volatile cb_u8 nav_choice_left_motion_active; /* DS:0x2736 */
 extern volatile cb_u8 nav_choice_right_motion_active; /* DS:0x2737 */
+extern volatile cb_u8 nav_choice_motion_active; /* DS:0x2738 */
 extern volatile cb_u8 presentation_choice_phase; /* DS:0x259C */
 extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
-extern const cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
-extern const cb_i16 presentation_choice_current_rect[4]; /* DS:0x2AAB */
+extern volatile cb_i16 nav_choice_animation_target_rect[4]; /* DS:0x253D */
+extern volatile cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
+extern volatile cb_i16 presentation_choice_current_rect[4]; /* DS:0x2AAB */
+extern const cb_u8 CB_NEAR *
+        option_menu_label_pointers[]; /* DS:0x2567 */
+extern const cb_u8 option_menu_music_on_label[]; /* DS:0x2578 */
+extern const cb_u8 option_menu_music_off_label[]; /* DS:0x2581 */
 extern volatile cb_u16 presentation_choice_result; /* DS:0x0ACA */
 extern volatile cb_u8 presentation_list_editing; /* DS:0x27E6 */
 extern volatile cb_u16 confirm_dialog_state; /* DS:0x0A32 */
@@ -149,7 +157,10 @@ cb_i16 CB_FAR list_widget_layout_unified(
 void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */
 void CB_NEAR confirm_dialog_step(void); /* 0x0014CA */
 void CB_NEAR nav_choice_handler_0(void); /* 0x008713 */
+void CB_NEAR nav_choice_handler_1(void); /* 0x00872C */
+void CB_NEAR nav_choice_handler_2(void); /* 0x0087BD */
 void CB_NEAR nav_choice_handler_3(void); /* 0x008848 */
+void CB_NEAR nav_choice_handler_4(void); /* 0x00886C */
 cb_u16 CB_FAR nav_kind2_target_list_build(void); /* 0x0071CF */
 
 #endif

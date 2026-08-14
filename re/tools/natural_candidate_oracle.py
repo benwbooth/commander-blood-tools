@@ -42320,6 +42320,577 @@ def nav_choice_handler_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def nav_choice_target_handler_vectors(entry: int) -> list[dict[str, object]]:
+    configurations = {
+        0x872C: {
+            "byte_count": 145,
+            "hash": "472d17fbac8b5275f1258a655fb63eb38ed3e9f33ca9677c763682b74653ecad",
+            "kind": 1,
+            "cases": [
+                {"name": "idle_no_selection", "phase": 0,
+                 "targets": [0x1104, 0xFFFF], "widget_results": [0xFFFF]},
+                {"name": "initialization_waits_for_transition", "phase": 1,
+                 "total": 4, "builder_targets": [0x1100, 0x2200, 0xFFFF],
+                 "widget_results": [0x7777]},
+                {"name": "phase_three_builds_and_selects", "phase": 3,
+                 "total": 0, "builder_targets": [0x1100, 0x2200, 0xFFFF],
+                 "widget_results": [0x7777, 1]},
+                {"name": "complete_transition_no_selection", "phase": 2,
+                 "current": 5, "total": 5, "targets": [0x3304, 0xFFFF],
+                 "widget_results": [0xFFFF]},
+                {"name": "selected_sentinel_closes", "phase": 0,
+                 "targets": [0xFFFF], "widget_results": [0]},
+                {"name": "ordinary_target_defers_and_reloads", "phase": 0,
+                 "targets": [0x1115, 0x2226, 0xFFFF], "widget_results": [1]},
+                {"name": "record_name_offset_wraps", "phase": 3,
+                 "total": 0, "builder_targets": [0xFFFD, 0xFFFF],
+                 "widget_results": [0x1234, 0]},
+            ],
+        },
+        0x87BD: {
+            "byte_count": 139,
+            "hash": "89ce507699583e0e3478943d422fe598e12703aa2d391fb41da5bb93554da9b5",
+            "kind": 2,
+            "cases": [
+                {"name": "idle_no_selection", "phase": 0,
+                 "targets": [0x1104, 0xFFFF], "widget_results": [0xFFFF]},
+                {"name": "contact_build_skips_zero_and_waits", "phase": 1,
+                 "total": 4, "contacts": [0, 0x1100, 0, 0x2200, 0xFFFF],
+                 "widget_results": [0x7777]},
+                {"name": "phase_three_builds_and_selects", "phase": 3,
+                 "total": 0, "contacts": [0x3300, 0, 0x4400, 0xFFFF],
+                 "widget_results": [0x7777, 1]},
+                {"name": "complete_transition_no_selection", "phase": 2,
+                 "current": 5, "total": 5, "targets": [0x3304, 0xFFFF],
+                 "widget_results": [0xFFFF]},
+                {"name": "selected_sentinel_closes", "phase": 0,
+                 "targets": [0xFFFF], "widget_results": [0]},
+                {"name": "ordinary_contact_requests_render", "phase": 0,
+                 "targets": [0x1115, 0x2226, 0xFFFF], "widget_results": [1]},
+                {"name": "contact_name_offset_wraps", "phase": 3,
+                 "total": 0, "contacts": [0, 0xFFFD, 0, 0xFFFF],
+                 "widget_results": [0x1234, 0]},
+            ],
+        },
+    }
+    if entry not in configurations:
+        raise AssertionError(f"unsupported target handler {entry:#x}")
+    configuration = configurations[entry]
+    byte_count = int(configuration["byte_count"])
+    expected_hash = str(configuration["hash"])
+    kind = int(configuration["kind"])
+    if hashlib.sha256(EXE[entry : entry + byte_count]).hexdigest() != expected_hash:
+        raise AssertionError(f"{entry:#x}: recovered body changed")
+
+    data_segment = 0x4400
+    heap_segment = 0x5200
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    builder_entry = 0x6BCF  # Runtime 04DA:1E2F without the EXE header bias.
+    widget_entry = 0x8428
+    interpolation_entry = 0x185D
+    loader_entry = 0xBA05
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in configuration["cases"]:
+        name = str(case["name"])
+        phase = int(case["phase"])
+        current = int(case.get("current", 7))
+        total = int(case.get("total", 9))
+        targets = [int(value) for value in case.get("targets", [0xA104, 0xFFFF])]
+        contacts = [int(value) for value in case.get("contacts", [0xFFFF])]
+        builder_targets = [int(value) for value in
+                           case.get("builder_targets", [0xA100, 0xFFFF])]
+        widget_results = [int(value) for value in case["widget_results"]]
+        widget_index = 0
+        calls: list[dict[str, object]] = []
+
+        data = bytearray(0x10000)
+        data[0x2565] = phase
+        data[0x0ADB] = current
+        data[0x0ADA] = total
+        data[0x27E6] = 0x55
+        data[0x2793] = 0xAD
+        data[0x2751] = 0x66
+        data[0x2A19 : 0x2A1B] = struct.pack("<H", 0x7777)
+        data[0x6768 : 0x676A] = struct.pack("<H", 0x5151)
+        data[0x676A : 0x676C] = struct.pack("<H", 0x6262)
+        data[0x6726 : 0x6728] = struct.pack("<H", heap_segment)
+        data[0x0D16 : 0x0D26] = b"sn\\radio.snd\0\0\0\0"
+        data[0x253D : 0x2545] = struct.pack("<hhhh", 11, 22, 33, 44)
+        data[0x2AAB : 0x2AB3] = struct.pack("<hhhh", 55, 66, 77, 88)
+        for index, value in enumerate(targets):
+            data[0x2B13 + index * 2 : 0x2B15 + index * 2] = struct.pack("<H", value)
+        for index, value in enumerate(contacts):
+            data[0x6D3E + index * 2 : 0x6D40 + index * 2] = struct.pack("<H", value)
+
+        expected = bytearray(data)
+        expected_calls: list[dict[str, object]] = []
+        expected_targets = list(targets)
+        expected_phase = phase
+        result_index = 0
+        returned_during_transition = False
+
+        if expected_phase & 1:
+            if kind == 1:
+                expected_calls.append({"call": "nav_kind2_target_list_build"})
+                expected_targets = list(builder_targets)
+                expected_targets = [
+                    value if value == 0xFFFF else (value + 4) & 0xFFFF
+                    for value in expected_targets
+                ]
+            else:
+                expected_targets = []
+                for contact in contacts:
+                    if contact == 0:
+                        continue
+                    if contact == 0xFFFF:
+                        expected_targets.append(0xFFFF)
+                        break
+                    expected_targets.append((contact + 4) & 0xFFFF)
+            for index, value in enumerate(expected_targets):
+                expected[0x2B13 + index * 2 : 0x2B15 + index * 2] = struct.pack(
+                    "<H", value
+                )
+            expected[0x0ADB] = 0
+            expected[0x27E6] = 0
+            expected_phase = (expected_phase + 1) & 0xFF
+            expected[0x2565] = expected_phase
+            expected_calls.append(
+                {"call": "list_widget_layout_unified", "items": 0x2B13,
+                 "items_segment": data_segment, "string_segment": heap_segment,
+                 "editing": 1, "result": widget_results[result_index]}
+            )
+            result_index += 1
+
+        if expected_phase & 2:
+            step = expected[0x0ADB]
+            limit = expected[0x0ADA]
+            complete = step == limit
+            expected_calls.append(
+                {"call": "framebuffer_rect_interpolate_and_remap_step",
+                 "source": 0x2AAB, "target": 0x253D, "current": step,
+                 "total": limit, "complete": complete}
+            )
+            if complete:
+                expected_phase = 0
+                expected[0x2565] = 0
+            else:
+                expected[0x0ADB] = (step + 1) & 0xFF
+                returned_during_transition = True
+
+        if not returned_during_transition:
+            result = widget_results[result_index]
+            expected_calls.append(
+                {"call": "list_widget_layout_unified", "items": 0x2B13,
+                 "items_segment": data_segment, "string_segment": heap_segment,
+                 "editing": expected[0x27E6], "result": result}
+            )
+            result_index += 1
+            if result != 0xFFFF:
+                selected = struct.unpack(
+                    "<H", expected[0x2B13 + result * 2 : 0x2B15 + result * 2]
+                )[0]
+                if selected != 0xFFFF:
+                    expected[0x676A : 0x676C] = struct.pack(
+                        "<H", (selected - 4) & 0xFFFF
+                    )
+                    if kind == 1:
+                        expected[0x6768 : 0x676A] = struct.pack("<H", 0x00C3)
+                        expected_calls.append(
+                            {"call": "snd_bank_loader", "mode": 1,
+                             "path_segment": data_segment, "path": 0x0D16}
+                        )
+                    else:
+                        expected[0x2751] = 1
+                expected[0x2A19 : 0x2A1B] = b"\0\0"
+                expected[0x2793] &= 0xFB
+
+        initial = {
+            "eax": 0xA1A1BEEF, "ebx": 0xB2B22345, "ecx": 0xC3C33456,
+            "edx": 0xD4D44567, "esi": 0xE5E55678, "edi": 0xF6F66789,
+            "ebp": 0x9797789A, "sp": caller_sp, "ds": data_segment,
+            "es": data_segment, "fs": 0x5000, "gs": game_segment,
+            "ss": stack_segment, "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal widget_index
+            if address == builder_entry:
+                calls.append({"call": "nav_kind2_target_list_build"})
+                for index, value in enumerate(builder_targets):
+                    machine.mem_write(
+                        data_segment * 16 + 0x2B13 + index * 2, struct.pack("<H", value)
+                    )
+                machine.reg_write(UC_X86_REG_AX, len(builder_targets) - 1)
+            elif address == widget_entry:
+                result = widget_results[widget_index]
+                calls.append(
+                    {"call": "list_widget_layout_unified",
+                     "items": machine.reg_read(UC_X86_REG_SI),
+                     "items_segment": machine.reg_read(UC_X86_REG_DS),
+                     "string_segment": machine.reg_read(UC_X86_REG_ES),
+                     "editing": machine.mem_read(data_segment * 16 + 0x27E6, 1)[0],
+                     "result": result}
+                )
+                widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == interpolation_entry:
+                step = machine.mem_read(data_segment * 16 + 0x0ADB, 1)[0]
+                limit = machine.mem_read(data_segment * 16 + 0x0ADA, 1)[0]
+                complete = step == limit
+                calls.append(
+                    {"call": "framebuffer_rect_interpolate_and_remap_step",
+                     "source": machine.reg_read(UC_X86_REG_SI),
+                     "target": machine.reg_read(UC_X86_REG_DI), "current": step,
+                     "total": limit, "complete": complete}
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if complete:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(data_segment * 16 + 0x0ADB,
+                                      bytes([(step + 1) & 0xFF]))
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif address == loader_entry:
+                calls.append(
+                    {"call": "snd_bank_loader", "mode": machine.reg_read(UC_X86_REG_AX),
+                     "path_segment": machine.reg_read(UC_X86_REG_DS),
+                     "path": machine.reg_read(UC_X86_REG_SI)}
+                )
+
+        machine = execute(
+            entry, return_address, initial,
+            [(0, return_address, b"\xCC"), (0, builder_entry, b"\xCB"),
+             (0, widget_entry, b"\xCB"), (0, interpolation_entry, b"\xCB"),
+             (0, loader_entry, b"\xCB"), (data_segment, 0, bytes(data)),
+             (heap_segment, 0x2B13, bytes.fromhex("a55a69968778")),
+             (game_segment, 0, bytes([0xCC]) * 0x10000),
+             (stack_segment, caller_sp,
+              struct.pack("<H", return_address) + stack_sentinel)],
+            code_handler=capture, instruction_count=300,
+        )
+
+        actual = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual != bytes(expected):
+            for offset, (actual_byte, expected_byte) in enumerate(zip(actual, expected)):
+                if actual_byte != expected_byte:
+                    raise AssertionError(
+                        f"{entry:#x} {name}: data {offset:#x}={actual_byte:#x}, "
+                        f"expected={expected_byte:#x}"
+                    )
+            raise AssertionError(f"{entry:#x} {name}: data length changed")
+        if calls != expected_calls:
+            raise AssertionError(
+                f"{entry:#x} {name}: calls={calls}, expected={expected_calls}"
+            )
+        if widget_index != len(widget_results):
+            raise AssertionError(f"{entry:#x} {name}: unused widget results")
+        for register in ("ebx", "edx", "ebp", "ds", "es", "fs", "gs", "ss"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"{entry:#x} {name}: {register} changed")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"{entry:#x} {name}: stack pointer")
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 2, 8)) != stack_sentinel:
+            raise AssertionError(f"{entry:#x} {name}: stack sentinel changed")
+
+        vectors.append(
+            {"name": name, "handler": kind, "phase_before": phase,
+             "phase_after": expected[0x2565], "calls": calls,
+             "targets_after": expected_targets,
+             "selected_item_after": struct.unpack("<H", expected[0x2A19:0x2A1B])[0],
+             "ui_flags_after": expected[0x2793],
+             "deferred_type_after": struct.unpack("<H", expected[0x6768:0x676A])[0],
+             "deferred_link_after": struct.unpack("<H", expected[0x676A:0x676C])[0],
+             "render_flag_after": expected[0x2751], "return": "near"}
+        )
+    return vectors
+
+
+def nav_choice_handler_4_vectors() -> list[dict[str, object]]:
+    entry = 0x886C
+    expected_hash = "3314f6a97b79e0ccc745d5c06f0710051a6b79fb460dadc37fddcf50733f0e38"
+    if hashlib.sha256(EXE[entry : entry + 247]).hexdigest() != expected_hash:
+        raise AssertionError("0x886c: recovered body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "negative_selection_preserves_menu", "selection": 0xFFFF},
+        {"name": "transition_incomplete_returns", "phase": 2,
+         "current": 3, "total": 6},
+        {"name": "transition_complete_then_negative", "phase": 2,
+         "current": 6, "total": 6, "selection": 0xFFFF},
+        {"name": "prepass_copies_layout_then_waits", "phase": 1, "total": 4},
+        {"name": "split_gs_owns_layout_copy", "phase": 1, "total": 4,
+         "split_gs": True},
+        {"name": "phase_three_uses_advanced_layout_pointer", "phase": 3,
+         "total": 0, "selection": 2},
+        {"name": "text_choice", "selection": 0},
+        {"name": "music_disabled", "selection": 1, "voc_enabled": 0},
+        {"name": "music_active_stops", "selection": 1,
+         "voc_enabled": 1, "voc_active": 1},
+        {"name": "music_inactive_starts", "selection": 1,
+         "voc_enabled": 1, "voc_active": 0},
+        {"name": "save_choice", "selection": 2},
+        {"name": "load_choice", "selection": 3},
+        {"name": "quit_choice", "selection": 4},
+        {"name": "choice_five_falls_through", "selection": 5},
+        {"name": "low_byte_80_falls_through", "selection": 0x0080},
+        {"name": "low_byte_81_aliases_text", "selection": 0x0081},
+        {"name": "word_0100_uses_low_zero", "selection": 0x0100},
+    ]
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    extra_segment = 0x6800
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    widget_entry = 0x8428
+    interpolation_entry = 0x185D
+    source_load_entry = 0xB7B7
+    stream_start_entry = 0xB5B3
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        phase = int(case.get("phase", 0))
+        current = int(case.get("current", 7))
+        total = int(case.get("total", 9))
+        selection = case.get("selection")
+        split_gs = bool(case.get("split_gs", False))
+        gs_segment = game_segment if split_gs else data_segment
+        voc_enabled = int(case.get("voc_enabled", 0xA4))
+        voc_active = int(case.get("voc_active", 0x52))
+        widget_results = [0x7777] if phase & 1 else []
+        phase_after_prepass = (phase + 1) & 0xFF if phase & 1 else phase
+        step_after_prepass = 0 if phase & 1 else current
+        if not (phase_after_prepass & 2 and step_after_prepass != total):
+            widget_results.append(0xFFFF if selection is None else int(selection))
+        widget_index = 0
+        calls: list[dict[str, object]] = []
+
+        data = bytearray(0x10000)
+        game = bytearray([0xCC]) * 0x10000
+        data[0x2565] = phase
+        data[0x0ADB] = current
+        data[0x0ADA] = total
+        data[0x27E6] = 0x55
+        data[0x2793] = 0xAD
+        data[0x2A19 : 0x2A1B] = struct.pack("<H", 0x7777)
+        data[0x259B] = 0x42
+        data[0x259C] = 0x24
+        data[0x2736] = 0x36
+        data[0x2737] = 0x37
+        data[0x2738] = 0x38
+        data[0x0B13] = 0x13
+        data[0x0A3E] = 0x3E
+        data[0x0A40] = 0x40
+        data[0x0ADE] = voc_enabled
+        data[0x0BA0] = 0xA0
+        data[0x0BA3] = voc_active
+        data[0x0D30] = 0xD0
+        data[0x0D3D : 0x0D4D] = b"mu\\tablo2.voc\0\0\0"
+        pointers = [0x2573, 0x2581, 0x258B, 0x2590, 0x2595, 0xFFFF]
+        for index, value in enumerate(pointers):
+            data[0x2567 + index * 2 : 0x2569 + index * 2] = struct.pack("<H", value)
+        current_rect = struct.pack("<hhhh", 11, 22, 33, 44)
+        target_rect = struct.pack("<hhhh", 55, 66, 77, 88)
+        data[0x2AAB : 0x2AB3] = current_rect
+        data[0x25CF : 0x25D7] = target_rect
+        data[0x253D : 0x2545] = struct.pack("<hhhh", 99, 111, 122, 133)
+        if split_gs:
+            game[0x25CF : 0x25D7] = target_rect
+
+        expected_data = bytearray(data)
+        expected_game = bytearray(game)
+        expected_calls: list[dict[str, object]] = []
+        expected_phase = phase
+        items_offset = 0x2567
+        result_index = 0
+        returned_during_transition = False
+
+        if expected_phase & 1:
+            expected_data[0x0ADB] = 0
+            expected_data[0x27E6] = 0
+            expected_phase = (expected_phase + 1) & 0xFF
+            expected_data[0x2565] = expected_phase
+            expected_calls.append(
+                {"call": "list_widget_layout_unified", "items": 0x2567,
+                 "items_segment": data_segment, "string_segment": gs_segment,
+                 "editing": 1, "result": widget_results[result_index]}
+            )
+            result_index += 1
+            if split_gs:
+                expected_game[0x25CF : 0x25D7] = current_rect
+            else:
+                expected_data[0x25CF : 0x25D7] = current_rect
+            items_offset = 0x2AB3
+
+        if expected_phase & 2:
+            step = expected_data[0x0ADB]
+            limit = expected_data[0x0ADA]
+            complete = step == limit
+            expected_calls.append(
+                {"call": "framebuffer_rect_interpolate_and_remap_step",
+                 "source": 0x2AAB, "target": 0x253D, "current": step,
+                 "total": limit, "complete": complete}
+            )
+            if complete:
+                expected_phase = 0
+                expected_data[0x2565] = 0
+            else:
+                expected_data[0x0ADB] = (step + 1) & 0xFF
+                returned_during_transition = True
+
+        if not returned_during_transition:
+            result = widget_results[result_index]
+            expected_calls.append(
+                {"call": "list_widget_layout_unified", "items": items_offset,
+                 "items_segment": data_segment, "string_segment": gs_segment,
+                 "editing": expected_data[0x27E6], "result": result}
+            )
+            result_index += 1
+            if result & 0x8000 == 0:
+                choice = result & 0xFF
+                if choice == 0 or choice > 0x80:
+                    expected_data[0x259B] = 1
+                    expected_data[0x259C] = 1
+                elif choice == 1 and expected_data[0x0ADE] & 1:
+                    if expected_data[0x0BA3] & 1:
+                        expected_data[0x0BA0] = 0
+                        expected_data[0x0BA3] = 0
+                        expected_data[0x2569 : 0x256B] = struct.pack("<H", 0x2578)
+                    else:
+                        expected_data[0x0D30] = 0
+                        expected_data[0x0BA0] = 0
+                        expected_data[0x0BA3] = 1
+                        expected_data[0x2569 : 0x256B] = struct.pack("<H", 0x2581)
+                        expected_calls.extend(
+                            [{"call": "snd_stream_source_load",
+                              "path_segment": data_segment, "path": 0x0D3D},
+                             {"call": "snd_stream_start"}]
+                        )
+                elif choice == 2:
+                    expected_data[0x2738] = 1
+                    expected_data[0x2736] = 1
+                elif choice == 3:
+                    expected_data[0x2738] = 1
+                    expected_data[0x2737] = 1
+                elif choice == 4:
+                    expected_data[0x0B13] = 2
+                    expected_data[0x0A3E] = 0
+                    expected_data[0x0A40] = 0
+                expected_data[0x2A19 : 0x2A1B] = b"\0\0"
+                expected_data[0x2793] &= 0xFB
+
+        initial = {
+            "eax": 0xA1A1BEEF, "ebx": 0xB2B22345, "ecx": 0xC3C33456,
+            "edx": 0xD4D44567, "esi": 0xE5E55678, "edi": 0xF6F66789,
+            "ebp": 0x9797789A, "sp": caller_sp, "ds": data_segment,
+            "es": extra_segment, "fs": 0x5000, "gs": gs_segment,
+            "ss": stack_segment, "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal widget_index
+            if address == widget_entry:
+                result = widget_results[widget_index]
+                calls.append(
+                    {"call": "list_widget_layout_unified",
+                     "items": machine.reg_read(UC_X86_REG_SI),
+                     "items_segment": machine.reg_read(UC_X86_REG_DS),
+                     "string_segment": machine.reg_read(UC_X86_REG_ES),
+                     "editing": machine.mem_read(data_segment * 16 + 0x27E6, 1)[0],
+                     "result": result}
+                )
+                widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == interpolation_entry:
+                step = machine.mem_read(data_segment * 16 + 0x0ADB, 1)[0]
+                limit = machine.mem_read(data_segment * 16 + 0x0ADA, 1)[0]
+                complete = step == limit
+                calls.append(
+                    {"call": "framebuffer_rect_interpolate_and_remap_step",
+                     "source": machine.reg_read(UC_X86_REG_SI),
+                     "target": machine.reg_read(UC_X86_REG_DI), "current": step,
+                     "total": limit, "complete": complete}
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if complete:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(data_segment * 16 + 0x0ADB,
+                                      bytes([(step + 1) & 0xFF]))
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif address == source_load_entry:
+                calls.append(
+                    {"call": "snd_stream_source_load",
+                     "path_segment": machine.reg_read(UC_X86_REG_DS),
+                     "path": machine.reg_read(UC_X86_REG_SI)}
+                )
+            elif address == stream_start_entry:
+                calls.append({"call": "snd_stream_start"})
+
+        memory = [
+            (0, return_address, b"\xCC"), (0, widget_entry, b"\xCB"),
+            (0, interpolation_entry, b"\xCB"), (0, source_load_entry, b"\xCB"),
+            (0, stream_start_entry, b"\xCB"), (data_segment, 0, bytes(data)),
+            (extra_segment, 0x2567, bytes.fromhex("a55a69968778")),
+            (stack_segment, caller_sp,
+             struct.pack("<H", return_address) + stack_sentinel),
+        ]
+        if split_gs:
+            memory.append((game_segment, 0, bytes(game)))
+
+        machine = execute(
+            entry, return_address, initial, memory,
+            code_handler=capture, instruction_count=350,
+        )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            for offset, (actual_byte, expected_byte) in enumerate(
+                zip(actual_data, expected_data)
+            ):
+                if actual_byte != expected_byte:
+                    raise AssertionError(
+                        f"0x886c {name}: data {offset:#x}={actual_byte:#x}, "
+                        f"expected={expected_byte:#x}"
+                    )
+            raise AssertionError(f"0x886c {name}: data length changed")
+        if split_gs:
+            actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+            if actual_game != bytes(expected_game):
+                raise AssertionError(f"0x886c {name}: GS-owned data differs")
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x886c {name}: calls={calls}, expected={expected_calls}"
+            )
+        if widget_index != len(widget_results):
+            raise AssertionError(f"0x886c {name}: unused widget results")
+        for register in ("ebx", "ecx", "edx", "ebp", "ds", "es", "fs", "gs", "ss"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x886c {name}: {register} changed")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x886c {name}: stack pointer")
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 2, 8)) != stack_sentinel:
+            raise AssertionError(f"0x886c {name}: stack sentinel changed")
+
+        vectors.append(
+            {"name": name, "phase_before": phase,
+             "phase_after": expected_data[0x2565], "selection": selection,
+             "calls": calls, "ui_flags_after": expected_data[0x2793],
+             "selected_item_after": struct.unpack("<H", expected_data[0x2A19:0x2A1B])[0],
+             "menu_pointer_after": struct.unpack("<H", expected_data[0x2569:0x256B])[0],
+             "voc_active_after": expected_data[0x0BA3],
+             "motion_after": list(expected_data[0x2736:0x2739]),
+             "return": "near"}
+        )
+    return vectors
+
+
 def nav_choice_dispatch_vectors() -> list[dict[str, object]]:
     entry = 0x85E2
     expected_hash = "38cdc1831a3f2bdbdac9d5b2584fef467fe8dd0186079929b9eeccc514fe5581"
@@ -72709,8 +73280,23 @@ def main() -> int:
         args.check,
     )
     update_vector(
+        VECTOR_ROOT / "func_872c_natural.json",
+        nav_choice_target_handler_vectors(0x872C),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_87bd_natural.json",
+        nav_choice_target_handler_vectors(0x87BD),
+        args.check,
+    )
+    update_vector(
         VECTOR_ROOT / "func_8848_natural.json",
         nav_choice_handler_vectors(0x8848),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_886c_natural.json",
+        nav_choice_handler_4_vectors(),
         args.check,
     )
     update_vector(
