@@ -5173,6 +5173,33 @@ game-valid quotient range of signed byte `IDIV`; a drop-in binary boundary
 would additionally have to recover the ambient `SS:[BP+4]` context and exact
 byte `IDIV`/`IMUL` register behavior.
 
+## BLOODPRG navigation-chart object-picker candidate
+
+`0x0092A3` snapshots the object count from `DS:0x27C1`, then walks that many
+record offsets from `SS:0x2AD3` (the shipped runtime has `SS=DS`). It reads each
+object through the record-table segment already present in `ES`, writes the
+active hit-box dimensions to `DS:0x277A/0x277C`, and performs unsigned inclusive
+16-bit comparisons against the mouse coordinates. The natural API exposes the
+implicit record segment as a normalized typed far pointer instead of relying on
+ambient `ES`.
+
+The default box is 12 by 11, a ship box is 21 by 10, and a black-hole box is 19
+by 12. A black hole whose `+0x14` word differs from `arche+0x22` uses the second
+marker at `+0x1C/+0x1E`; that branch skips the ship-kind test. Consequently, a
+record with both bits uses ship dimensions at its near marker but keeps
+black-hole dimensions at its far marker. The first inclusive hit wins.
+
+Thirteen direct original-binary vectors cover zero count, both inclusive edges,
+first-hit ordering, every kind and endpoint branch, the dual-kind distinction,
+wrapped origins and record fields, scratch results, split SS/DS/ES/GS ownership,
+complete register and segment residue, path flags, stack, and near return. Open
+Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+62-instruction/187-byte function versus 46/151 original, with 80.43 percent
+mnemonic-multiset overlap and no inline assembly. Full-source integration needs
+the shipped SS=DS alias and a normalized zero-offset record base; direct binary
+replacement would additionally need the ambient ES entry, original BP/CX/DI
+allocation, frame-free stack behavior, and terminal CMP/XOR flags.
+
 ## BLOODPRG ship-3D planar band-copy candidate
 
 `0x00B6DD` gates on ship-3D crop bit zero, optionally derives the transition

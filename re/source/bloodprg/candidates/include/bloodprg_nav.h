@@ -36,12 +36,36 @@ typedef struct bloodprg_nav_actor_slot {
     cb_u8 reserved_14[4];
 } bloodprg_nav_actor_slot;
 
+typedef struct bloodprg_nav_chart_point {
+    cb_u16 x;
+    cb_u16 y;
+} bloodprg_nav_chart_point;
+
+typedef struct bloodprg_nav_chart_object {
+    cb_u16 kind;
+    cb_u8 reserved_02[0x12];
+    cb_u16 endpoint_context;
+    cb_u8 reserved_16[2];
+    bloodprg_nav_chart_point marker[2];
+} bloodprg_nav_chart_object;
+
+typedef struct bloodprg_nav_chart_arche {
+    cb_u8 reserved_00[0x22];
+    cb_u16 endpoint_context;
+} bloodprg_nav_chart_arche;
+
 typedef void (CB_NEAR *bloodprg_nav_actor_handler)(
         volatile bloodprg_presentation_line_record CB_NEAR *line);
 typedef void (CB_NEAR *bloodprg_nav_choice_handler)(void);
 
 typedef char bloodprg_nav_actor_slot_size_must_be_24[
         sizeof(bloodprg_nav_actor_slot) == 24 ? 1 : -1];
+typedef char bloodprg_nav_chart_point_size_must_be_4[
+        sizeof(bloodprg_nav_chart_point) == 4 ? 1 : -1];
+typedef char bloodprg_nav_chart_object_size_must_be_32[
+        sizeof(bloodprg_nav_chart_object) == 32 ? 1 : -1];
+typedef char bloodprg_nav_chart_arche_size_must_be_36[
+        sizeof(bloodprg_nav_chart_arche) == 36 ? 1 : -1];
 
 extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
@@ -68,12 +92,15 @@ extern volatile cb_u8 nav_camera_view_state; /* DS:0x278B */
 extern volatile cb_u8 nav_camera_approach_phase; /* DS:0x27DF */
 extern volatile cb_u8 nav_location_panel_active; /* DS:0x278C */
 extern volatile cb_u16 nav_location_panel_source_width; /* DS:0x277E */
+extern volatile cb_u16 nav_chart_pick_width; /* DS:0x277A */
+extern volatile cb_u16 nav_chart_pick_height; /* DS:0x277C */
 extern volatile bloodprg_rect_i16 nav_location_panel_target_rect; /* DS:0x2780 */
 extern volatile cb_u8 nav_location_panel_scale_step; /* DS:0x2789 */
 /* DS:0x2AAB alias shared with presentation_choice_current_rect. */
 extern volatile bloodprg_rect_i16 nav_location_panel_current_rect;
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
+extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
 extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
 extern volatile cb_u8 nav_target_hover_row; /* DS/GS:0x27C7 */
@@ -132,6 +159,8 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux nav_choice_dispatch modify exact [ax di]
 #pragma aux screen_mode_update parm [ax] modify exact [di es]
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
+#pragma aux nav_chart_object_pick \
+        parm [es di] value [ax] modify exact [ax bx cx dx bp di]
 #endif
 
 int CB_NEAR presentation_line_helper(
@@ -175,5 +204,8 @@ void CB_NEAR nav_choice_handler_2(void); /* 0x0087BD */
 void CB_NEAR nav_choice_handler_3(void); /* 0x008848 */
 void CB_NEAR nav_choice_handler_4(void); /* 0x00886C */
 cb_u16 CB_FAR nav_kind2_target_list_build(void); /* 0x0071CF */
+/* record_base normalizes the original implicit ES record-table segment. */
+cb_u16 CB_NEAR nav_chart_object_pick(
+        const volatile cb_u8 CB_FAR *record_base); /* 0x0092A3 */
 
 #endif

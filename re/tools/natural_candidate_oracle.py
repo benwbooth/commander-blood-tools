@@ -53159,6 +53159,426 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_chart_object_pick_vectors() -> list[dict[str, object]]:
+    entry = 0x92A3
+    data_segment = 0x3400
+    record_segment = 0x5200
+    stack_segment = 0x7000
+    game_segment = 0x8800
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    list_offset = 0x2AD3
+    expected_hash = "09e896293459b3d194e3d736028340d9ad032d641d356822be7f3ae36cb60d24"
+    if hashlib.sha256(EXE[entry : entry + 151]).hexdigest() != expected_hash:
+        raise AssertionError("0x92a3: recovered 151-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "empty_list_preserves_scratch",
+            "mouse": (48, 58),
+            "objects": [],
+            "scratch": (0xA55A, 0x5AA5),
+        },
+        {
+            "name": "default_lower_edges_inclusive",
+            "mouse": (48, 58),
+            "objects": [
+                {"offset": 0x1000, "kind": 0, "near": (50, 60)},
+            ],
+        },
+        {
+            "name": "default_upper_edges_inclusive",
+            "mouse": (60, 69),
+            "objects": [
+                {"offset": 0x1100, "kind": 8, "near": (50, 60)},
+            ],
+        },
+        {
+            "name": "first_miss_second_hit",
+            "mouse": (98, 98),
+            "objects": [
+                {"offset": 0x1200, "kind": 8, "near": (20, 20)},
+                {"offset": 0x1300, "kind": 8, "near": (100, 100)},
+            ],
+        },
+        {
+            "name": "first_overlapping_hit_wins",
+            "mouse": (78, 78),
+            "objects": [
+                {"offset": 0x1400, "kind": 8, "near": (80, 80)},
+                {"offset": 0x1500, "kind": 8, "near": (80, 80)},
+            ],
+        },
+        {
+            "name": "ship_wide_far_edge",
+            "mouse": (119, 68),
+            "objects": [
+                {"offset": 0x1600, "kind": 0x10, "near": (100, 60)},
+            ],
+        },
+        {
+            "name": "ship_short_y_rejects",
+            "mouse": (100, 69),
+            "objects": [
+                {"offset": 0x1700, "kind": 0x10, "near": (100, 60)},
+            ],
+        },
+        {
+            "name": "black_hole_near_endpoint",
+            "mouse": (167, 70),
+            "arche_context": 7,
+            "objects": [
+                {
+                    "offset": 0x1800,
+                    "kind": 0x100,
+                    "endpoint_context": 7,
+                    "near": (150, 60),
+                    "far": (250, 90),
+                },
+            ],
+        },
+        {
+            "name": "black_hole_far_endpoint",
+            "mouse": (248, 88),
+            "arche_context": 9,
+            "objects": [
+                {
+                    "offset": 0x1900,
+                    "kind": 0x100,
+                    "endpoint_context": 7,
+                    "near": (150, 60),
+                    "far": (250, 90),
+                },
+            ],
+        },
+        {
+            "name": "both_bits_near_uses_ship_box",
+            "mouse": (69, 120),
+            "arche_context": 7,
+            "objects": [
+                {
+                    "offset": 0x1A00,
+                    "kind": 0x110,
+                    "endpoint_context": 7,
+                    "near": (50, 120),
+                    "far": (200, 150),
+                },
+            ],
+        },
+        {
+            "name": "both_bits_far_keeps_black_hole_box",
+            "mouse": (200, 160),
+            "arche_context": 7,
+            "objects": [
+                {
+                    "offset": 0x1B00,
+                    "kind": 0x110,
+                    "endpoint_context": 8,
+                    "near": (50, 120),
+                    "far": (200, 150),
+                },
+            ],
+        },
+        {
+            "name": "wrapped_origin_rejects_between_wrapped_bounds",
+            "mouse": (0xFFFF, 8),
+            "objects": [
+                {"offset": 0x1C00, "kind": 8, "near": (1, 10)},
+            ],
+        },
+        {
+            "name": "wrapped_object_fields_and_reverse_df",
+            "mouse": (38, 48),
+            "arche_offset": 0xFFF0,
+            "arche_context": 0x1234,
+            "direction": "reverse",
+            "objects": [
+                {
+                    "offset": 0xFFF0,
+                    "kind": 0x100,
+                    "endpoint_context": 0x1234,
+                    "near": (40, 50),
+                    "far": (240, 150),
+                },
+            ],
+        },
+    ]
+
+    def write_word_wrap(memory: bytearray, offset: int, value: int) -> None:
+        memory[offset & 0xFFFF] = value & 0xFF
+        memory[(offset + 1) & 0xFFFF] = (value >> 8) & 0xFF
+
+    def read_word_wrap(memory: bytes | bytearray, offset: int) -> int:
+        return memory[offset & 0xFFFF] | (memory[(offset + 1) & 0xFFFF] << 8)
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        objects = list(case["objects"])
+        mouse_x_value, mouse_y_value = (
+            int(value) & 0xFFFF for value in case["mouse"]
+        )
+        arche_offset = int(case.get("arche_offset", 0x4000)) & 0xFFFF
+        arche_context = int(case.get("arche_context", 0x7777)) & 0xFFFF
+        scratch_before = tuple(
+            int(value) & 0xFFFF
+            for value in case.get("scratch", (0xCCCC, 0xDDDD))
+        )
+        reverse = case.get("direction") == "reverse"
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 7 + case_index * 29 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 37 + 0x53) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 23 + (offset >> 8) * 5 + case_index * 41 + 0x79) & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytes(
+            (offset * 13 + (offset >> 8) * 3 + case_index * 43 + 0x97) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        write_word_wrap(data_before, 0x27C1, len(objects))
+        write_word_wrap(data_before, 0x0A2A, mouse_x_value)
+        write_word_wrap(data_before, 0x0A2C, mouse_y_value)
+        write_word_wrap(data_before, 0x6752, arche_offset)
+        write_word_wrap(data_before, 0x277A, scratch_before[0])
+        write_word_wrap(data_before, 0x277C, scratch_before[1])
+        for index, object_case in enumerate(objects):
+            object_offset = int(object_case["offset"]) & 0xFFFF
+            write_word_wrap(stack_before, list_offset + index * 2, object_offset)
+            write_word_wrap(data_before, list_offset + index * 2, object_offset ^ 0x5555)
+            kind = int(object_case["kind"]) & 0xFFFF
+            endpoint_context = int(
+                object_case.get("endpoint_context", 0xBEEF)
+            ) & 0xFFFF
+            near_x, near_y = (
+                int(value) & 0xFFFF for value in object_case["near"]
+            )
+            far_x, far_y = (
+                int(value) & 0xFFFF
+                for value in object_case.get("far", (0xCAFE, 0xBABE))
+            )
+            write_word_wrap(record_before, object_offset, kind)
+            write_word_wrap(record_before, object_offset + 0x14, endpoint_context)
+            write_word_wrap(record_before, object_offset + 0x18, near_x)
+            write_word_wrap(record_before, object_offset + 0x1A, near_y)
+            write_word_wrap(record_before, object_offset + 0x1C, far_x)
+            write_word_wrap(record_before, object_offset + 0x1E, far_y)
+        write_word_wrap(record_before, arche_offset + 0x22, arche_context)
+        write_word_wrap(stack_before, caller_sp, return_address)
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before[caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)] = (
+            stack_sentinel
+        )
+
+        width, height = scratch_before
+        expected_ax = 0
+        expected_bx = 0x2468
+        expected_cx = len(objects)
+        expected_dx = 0x55AA
+        expected_bp = 0x1357
+        expected_di = 0x789A
+        expected_flags = {
+            "cf": False,
+            "pf": True,
+            "zf": True,
+            "sf": False,
+            "of": False,
+        }
+        hit_offset = 0
+        endpoint_index = 0
+        failure = "empty"
+
+        if objects:
+            expected_ax = mouse_x_value
+            expected_dx = mouse_y_value
+            expected_bp = list_offset
+            for object_index, object_case in enumerate(objects):
+                object_offset = int(object_case["offset"]) & 0xFFFF
+                kind = read_word_wrap(record_before, object_offset)
+                expected_di = (object_offset + 0x18) & 0xFFFF
+                width, height = (0x0C, 0x0B)
+                endpoint_index = 0
+                skip_ship_test = False
+                if kind & 0x100:
+                    width, height = (0x13, 0x0C)
+                    endpoint_context = read_word_wrap(
+                        record_before, object_offset + 0x14
+                    )
+                    if endpoint_context != read_word_wrap(
+                        record_before, arche_offset + 0x22
+                    ):
+                        expected_di = (expected_di + 4) & 0xFFFF
+                        endpoint_index = 1
+                        skip_ship_test = True
+                if not skip_ship_test and kind & 0x10:
+                    width, height = (0x15, 0x0A)
+
+                marker_x = read_word_wrap(record_before, expected_di)
+                left = (marker_x - 2) & 0xFFFF
+                expected_bx = left
+                if mouse_x_value < left:
+                    expected_flags = sub16_flags(mouse_x_value, left)
+                    failure = "x_below"
+                else:
+                    right = (left + width) & 0xFFFF
+                    expected_bx = right
+                    if mouse_x_value > right:
+                        expected_flags = sub16_flags(mouse_x_value, right)
+                        failure = "x_above"
+                    else:
+                        marker_y = read_word_wrap(record_before, expected_di + 2)
+                        top = (marker_y - 2) & 0xFFFF
+                        expected_bx = top
+                        if mouse_y_value < top:
+                            expected_flags = sub16_flags(mouse_y_value, top)
+                            failure = "y_below"
+                        else:
+                            bottom = (top + height) & 0xFFFF
+                            expected_bx = bottom
+                            expected_flags = sub16_flags(mouse_y_value, bottom)
+                            if mouse_y_value <= bottom:
+                                expected_ax = object_offset
+                                expected_cx = len(objects) - object_index
+                                hit_offset = object_offset
+                                failure = "hit"
+                                break
+                            failure = "y_above"
+                expected_bp = (expected_bp + 2) & 0xFFFF
+                expected_cx -= 1
+            else:
+                expected_ax = 0
+                expected_flags = {
+                    "cf": False,
+                    "pf": True,
+                    "zf": True,
+                    "sf": False,
+                    "of": False,
+                }
+
+        expected_data = bytearray(data_before)
+        if objects:
+            write_word_wrap(expected_data, 0x277A, width)
+            write_word_wrap(expected_data, 0x277C, height)
+        expected_flags = {
+            flag: bool(expected_flags[flag])
+            for flag in ("cf", "pf", "zf", "sf", "of")
+        }
+        expected_flags["df"] = reverse
+
+        initial = {
+            "eax": 0xA1A10000 | (0x1111 + case_index),
+            "ebx": 0xB2B22468,
+            "ecx": 0xC3C3369C,
+            "edx": 0xD4D455AA,
+            "esi": 0xE5E56789,
+            "edi": 0xF6F6789A,
+            "ebp": 0x97971357,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": record_segment,
+            "fs": 0x9A00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0602 if reverse else 0x0202,
+        }
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (data_segment, 0, bytes(data_before)),
+                (record_segment, 0, bytes(record_before)),
+                (stack_segment, 0, bytes(stack_before)),
+                (game_segment, 0, game_before),
+            ],
+            instruction_count=500,
+        )
+
+        if bytes(machine.mem_read(data_segment * 16, 0x10000)) != bytes(expected_data):
+            raise AssertionError(f"0x92a3 {name}: DS state mismatch")
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(record_before):
+            raise AssertionError(f"0x92a3 {name}: record memory changed")
+        if bytes(machine.mem_read(stack_segment * 16, 0x10000)) != bytes(stack_before):
+            raise AssertionError(f"0x92a3 {name}: SS list or stack changed")
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x92a3 {name}: GS decoy changed")
+
+        expected_registers = {
+            "eax": (initial["eax"] & 0xFFFF0000) | expected_ax,
+            "ebx": (initial["ebx"] & 0xFFFF0000) | expected_bx,
+            "ecx": (initial["ecx"] & 0xFFFF0000) | expected_cx,
+            "edx": (initial["edx"] & 0xFFFF0000) | expected_dx,
+            "esi": initial["esi"],
+            "edi": (initial["edi"] & 0xFFFF0000) | expected_di,
+            "ebp": (initial["ebp"] & 0xFFFF0000) | expected_bp,
+            "sp": caller_sp + 2,
+            "ds": data_segment,
+            "es": record_segment,
+            "fs": initial["fs"],
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x92a3 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x92a3 {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x92a3 {name}: caller stack changed")
+
+        flag_masks = {
+            "cf": 1,
+            "pf": 4,
+            "zf": 0x40,
+            "sf": 0x80,
+            "df": 0x400,
+            "of": 0x800,
+        }
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x92a3 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "mouse": [mouse_x_value, mouse_y_value],
+                "object_offsets": [
+                    int(object_case["offset"]) & 0xFFFF
+                    for object_case in objects
+                ],
+                "arche_offset": arche_offset,
+                "arche_context": arche_context,
+                "result": hit_offset,
+                "terminal_path": failure,
+                "terminal_endpoint": endpoint_index,
+                "scratch_before": list(scratch_before),
+                "scratch_after": [width, height],
+                "remaining_count": expected_cx,
+                "list_cursor": expected_bp,
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def entity_draw_full_vectors() -> list[dict[str, object]]:
     entry = 0x9240
     data_segment = 0x4000
@@ -74559,6 +74979,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_9240_natural.json",
         entity_draw_full_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_92a3_natural.json",
+        nav_chart_object_pick_vectors(),
         args.check,
     )
     update_vector(

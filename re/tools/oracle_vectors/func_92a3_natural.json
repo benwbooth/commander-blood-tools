@@ -1,0 +1,431 @@
+[
+  {
+    "name": "empty_list_preserves_scratch",
+    "mouse": [
+      48,
+      58
+    ],
+    "object_offsets": [],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 0,
+    "terminal_path": "empty",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      42330,
+      23205
+    ],
+    "scratch_after": [
+      42330,
+      23205
+    ],
+    "remaining_count": 0,
+    "list_cursor": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "default_lower_edges_inclusive",
+    "mouse": [
+      48,
+      58
+    ],
+    "object_offsets": [
+      4096
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 4096,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      12,
+      11
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "default_upper_edges_inclusive",
+    "mouse": [
+      60,
+      69
+    ],
+    "object_offsets": [
+      4352
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 4352,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      12,
+      11
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "first_miss_second_hit",
+    "mouse": [
+      98,
+      98
+    ],
+    "object_offsets": [
+      4608,
+      4864
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 4864,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      12,
+      11
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10965,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "first_overlapping_hit_wins",
+    "mouse": [
+      78,
+      78
+    ],
+    "object_offsets": [
+      5120,
+      5376
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 5120,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      12,
+      11
+    ],
+    "remaining_count": 2,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "ship_wide_far_edge",
+    "mouse": [
+      119,
+      68
+    ],
+    "object_offsets": [
+      5632
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 5632,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      21,
+      10
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "ship_short_y_rejects",
+    "mouse": [
+      100,
+      69
+    ],
+    "object_offsets": [
+      5888
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 0,
+    "terminal_path": "y_above",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      21,
+      10
+    ],
+    "remaining_count": 0,
+    "list_cursor": 10965,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "black_hole_near_endpoint",
+    "mouse": [
+      167,
+      70
+    ],
+    "object_offsets": [
+      6144
+    ],
+    "arche_offset": 16384,
+    "arche_context": 7,
+    "result": 6144,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      19,
+      12
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "black_hole_far_endpoint",
+    "mouse": [
+      248,
+      88
+    ],
+    "object_offsets": [
+      6400
+    ],
+    "arche_offset": 16384,
+    "arche_context": 9,
+    "result": 6400,
+    "terminal_path": "hit",
+    "terminal_endpoint": 1,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      19,
+      12
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "both_bits_near_uses_ship_box",
+    "mouse": [
+      69,
+      120
+    ],
+    "object_offsets": [
+      6656
+    ],
+    "arche_offset": 16384,
+    "arche_context": 7,
+    "result": 6656,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      21,
+      10
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "both_bits_far_keeps_black_hole_box",
+    "mouse": [
+      200,
+      160
+    ],
+    "object_offsets": [
+      6912
+    ],
+    "arche_offset": 16384,
+    "arche_context": 7,
+    "result": 6912,
+    "terminal_path": "hit",
+    "terminal_endpoint": 1,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      19,
+      12
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "wrapped_origin_rejects_between_wrapped_bounds",
+    "mouse": [
+      65535,
+      8
+    ],
+    "object_offsets": [
+      7168
+    ],
+    "arche_offset": 16384,
+    "arche_context": 30583,
+    "result": 0,
+    "terminal_path": "x_above",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      12,
+      11
+    ],
+    "remaining_count": 0,
+    "list_cursor": 10965,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false,
+      "df": false
+    }
+  },
+  {
+    "name": "wrapped_object_fields_and_reverse_df",
+    "mouse": [
+      38,
+      48
+    ],
+    "object_offsets": [
+      65520
+    ],
+    "arche_offset": 65520,
+    "arche_context": 4660,
+    "result": 65520,
+    "terminal_path": "hit",
+    "terminal_endpoint": 0,
+    "scratch_before": [
+      52428,
+      56797
+    ],
+    "scratch_after": [
+      19,
+      12
+    ],
+    "remaining_count": 1,
+    "list_cursor": 10963,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false,
+      "df": true
+    }
+  }
+]
