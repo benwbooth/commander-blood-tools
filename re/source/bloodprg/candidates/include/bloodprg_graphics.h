@@ -363,6 +363,7 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux backbuffer_clear_flags value [ax] modify exact [ax dx]
 #pragma aux page_offset_helper modify exact [ax dx]
 #pragma aux main_loop_hud_refresh modify exact [ax bx cx dx di]
+#pragma aux video_retrace_phase_wait modify exact []
 #pragma aux palette_blend_remap_table_build \
         parm [ax] [bx] [cx] [dx] [di] value [ax] modify exact []
 #pragma aux palette_range_interpolate_ds "palette_range_interpolate_" \

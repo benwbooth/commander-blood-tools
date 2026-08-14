@@ -5070,6 +5070,34 @@ direct replacement still needs the original inherited-`BP` entry, carry held
 through `PUSHF`/`POPF`, AX preservation around clip playback, near-call/far-
 return placement adapters, and the original register/flag envelope.
 
+## BLOODPRG navigation-choice dispatcher candidate
+
+`0x0085E2` owns the five-row bridge navigation menu. Six entry gates suppress
+it: bit zero in the C2 or presentation-active byte, or any nonzero value in the
+left-motion, right-motion, presentation-choice, or sound byte. An existing
+selection bypasses drawing and enters the five-entry CS handler table only when
+UI bit `0x08` is clear.
+
+With no selection, signed bridge frames 40 through 60 produce a moving menu.
+The horizontal bounds shift by eight pixels per frame from frame 45; the Y
+origin grows by the absolute frame distance plus one quarter, while row height
+shrinks by half that quarter. The routine programs five base DAC entries,
+repaints the hovered entry red, and accepts exactly rows zero through four.
+Clicking publishes the selected row, target Y, hold time, layout flags and
+interpolation duration, then plays clip four. Because that same transition ORs
+UI bits `0x0C`, the handler call is deliberately deferred to a later invocation.
+
+Thirty-four direct vectors cover the two bit gates, four whole-byte gates,
+selected-item and UI-busy paths, signed frame and geometry edges, all palette
+writes, every hover/click row, exact activation state and sound ordering, every
+patched near-handler target, segment ownership, registers, flags, and stack.
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural source
+warning-free to 109 instructions/302 bytes versus the original 107/295, with
+80.37 percent mnemonic-multiset overlap and no inline assembly. Direct
+replacement still needs the original byte-sized division, dead `DI -= 15`
+residue, pre-handler phase TEST flags, and exact register envelope; none carries
+additional game-level behavior.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

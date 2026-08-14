@@ -108,6 +108,11 @@ extern volatile cb_u8 ship_3d_hud_init_pending; /* DS:0x2535 */
 extern volatile cb_u8 ship_3d_alien_overlay_armed; /* DS:0x0AE3 */
 extern volatile cb_u8 ship_3d_temp_snd_trigger; /* DS:0x0AE4 */
 extern volatile cb_u8 ship_3d_nav_choice_sound_gate; /* DS:0x0B13 */
+extern volatile cb_u16 ship_3d_nav_choice_target_y; /* DS:0x253F */
+extern volatile cb_u16 ship_3d_target_layout_center_x; /* DS:0x0AC6 */
+extern volatile cb_u8 ship_3d_target_layout_preserve_widths; /* DS:0x0ADC */
+extern volatile cb_u8 ship_3d_target_layout_extra_entry; /* DS:0x0ADD */
+extern volatile cb_u8 ship_3d_interpolation_duration; /* DS:0x0ADA */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_b; /* GS:0x2F6D */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_c; /* GS:0x2F6F */
 extern volatile cb_u16 CB_GAME_DATA ship_3d_projection_angle_a; /* GS:0x2F71 */

@@ -42320,6 +42320,406 @@ def nav_choice_handler_vectors(entry: int) -> list[dict[str, object]]:
     return vectors
 
 
+def nav_choice_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x85E2
+    expected_hash = "38cdc1831a3f2bdbdac9d5b2584fef467fe8dd0186079929b9eeccc514fe5581"
+    if hashlib.sha256(EXE[entry : entry + 295]).hexdigest() != expected_hash:
+        raise AssertionError("0x85e2: recovered 295-byte body changed")
+
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    extra_segment = 0x6800
+    stack_segment = 0x9000
+    return_address = 0x6F00
+    caller_sp = 0xFF00
+    wait_entry = 0x05D7
+    sound_entry = 0xB2CD  # Runtime 0B1B:011D.
+    handler_entries = (0xE100, 0xE120, 0xE140, 0xE160, 0xE180)
+
+    cases: list[dict[str, object]] = [
+        {"name": "c2_bit_zero_blocks", "selection": 1, "c2_gate": 0x01},
+        {"name": "c2_high_bit_ignored", "selection": 1, "c2_gate": 0x80},
+        {"name": "left_motion_whole_byte", "selection": 1, "left_gate": 0x80},
+        {"name": "right_motion_whole_byte", "selection": 1, "right_gate": 0x02},
+        {"name": "menu_whole_byte", "selection": 1, "menu_gate": 0x40},
+        {"name": "sound_whole_byte", "selection": 1, "sound_gate": 0x80},
+        {"name": "presentation_bit_zero_blocks", "selection": 1, "presentation": 0x01},
+        {"name": "presentation_high_bit_ignored", "selection": 1, "presentation": 0x80},
+        {"name": "selected_ui_busy", "selection": 1, "ui": 0xA508},
+        {"name": "selected_1_phase_zero", "selection": 1, "phase": 0x00},
+        {"name": "selected_2_phase_one", "selection": 2, "phase": 0x01},
+        {"name": "selected_3_phase_two", "selection": 3, "phase": 0x02},
+        {"name": "selected_4_phase_three", "selection": 4, "phase": 0x03},
+        {"name": "selected_5_phase_all", "selection": 5, "phase": 0xFF},
+        {"name": "frame_below", "frame": 39},
+        {"name": "frame_above", "frame": 61},
+        {"name": "frame_lower_boundary", "frame": 40, "mouse_x": 217, "mouse_y": 78},
+        {"name": "frame_upper_boundary", "frame": 60, "mouse_x": 167, "mouse_y": 158},
+        {"name": "left_of_menu", "mouse_x": 176, "mouse_y": 72},
+        {"name": "right_of_menu", "mouse_x": 288, "mouse_y": 72},
+        {"name": "left_boundary", "mouse_x": 177, "mouse_y": 72},
+        {"name": "right_boundary", "mouse_x": 287, "mouse_y": 72},
+        {"name": "above_menu", "mouse_x": 200, "mouse_y": 71},
+        {"name": "below_fifth_row", "mouse_x": 200, "mouse_y": 162},
+    ]
+    for row in range(5):
+        cases.append(
+            {
+                "name": f"hover_row_{row}",
+                "mouse_x": 200,
+                "mouse_y": 72 + row * 18,
+            }
+        )
+        cases.append(
+            {
+                "name": f"click_row_{row}",
+                "mouse_x": 200,
+                "mouse_y": 72 + row * 18,
+                "primary": 1,
+                "ui": 0xA502,
+            }
+        )
+
+    def logic_flags_8(value: int) -> dict[str, bool]:
+        result = value & 0xFF
+        return {
+            "cf": False,
+            "pf": result.bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": False,
+        }
+
+    def sub8_flags(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": (left & 0xFF) < (right & 0xFF),
+            "pf": result.bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    vectors = []
+    base_palette = [(0x03C8, 1, 123)] + [
+        write
+        for _ in range(5)
+        for write in ((0x03C9, 1, 16), (0x03C9, 1, 12), (0x03C9, 1, 0))
+    ]
+
+    for case in cases:
+        name = str(case["name"])
+        c2_gate = int(case.get("c2_gate", 0))
+        left_gate = int(case.get("left_gate", 0))
+        right_gate = int(case.get("right_gate", 0))
+        menu_gate = int(case.get("menu_gate", 0))
+        sound_gate = int(case.get("sound_gate", 0))
+        presentation = int(case.get("presentation", 0))
+        selection = int(case.get("selection", 0))
+        phase = int(case.get("phase", 0))
+        ui = int(case.get("ui", 0))
+        frame = int(case.get("frame", 45))
+        mouse_x_value = int(case.get("mouse_x", 200)) & 0xFFFF
+        mouse_y_value = int(case.get("mouse_y", 72)) & 0xFFFF
+        primary = int(case.get("primary", 0))
+
+        data_before = bytearray(0x10000)
+        struct.pack_into("<H", data_before, 0x0A2A, mouse_x_value)
+        struct.pack_into("<H", data_before, 0x0A2C, mouse_y_value)
+        data_before[0x0A3E] = primary
+        data_before[0x0B13] = sound_gate
+        data_before[0x1FB2] = c2_gate
+        data_before[0x253F:0x2541] = b"\x5a\xa5"
+        data_before[0x2565] = phase
+        data_before[0x259B] = menu_gate
+        data_before[0x2736] = left_gate
+        data_before[0x2737] = right_gate
+        data_before[0x67AC] = presentation
+        struct.pack_into("<H", data_before, 0x2793, ui)
+        struct.pack_into("<H", data_before, 0x2795, frame & 0xFFFF)
+        data_before[0x279B:0x279D] = b"\x69\x96"
+        data_before[0x0A32:0x0A34] = b"\x87\x78"
+        data_before[0x0ADA:0x0ADE] = b"\xc3\x3c\xf0\x0f"
+        data_before[0x0AC6:0x0AC8] = b"\x55\xaa"
+        struct.pack_into("<H", data_before, 0x2A19, selection)
+        data_before[0x6F20] = 0x11
+        expected_data = bytearray(data_before)
+
+        expected_calls: list[dict[str, int | str]] = []
+        expected_outputs: list[tuple[int, int, int]] = []
+        final_path = ""
+        di_adjusted = False
+        row: int | None = None
+
+        middle_gate = left_gate | right_gate | menu_gate | sound_gate
+        if c2_gate & 1:
+            final_path = "c2_gate"
+            expected_flags = logic_flags_8(c2_gate & 1)
+        elif middle_gate:
+            final_path = "whole_byte_gate"
+            expected_flags = logic_flags_8(middle_gate)
+        elif presentation & 1:
+            final_path = "presentation_gate"
+            expected_flags = logic_flags_8(presentation & 1)
+        elif selection != 0:
+            if ui & 8:
+                final_path = "ui_busy"
+                expected_flags = logic_flags_8(ui & 8)
+            else:
+                final_path = "handler"
+                expected_flags = logic_flags_8(phase & 1)
+                expected_calls.append(
+                    {
+                        "kind": "handler",
+                        "index": selection - 1,
+                        "ax": 0xBE00,
+                        "cs": 0,
+                        "sp": 0xFEF8,
+                    }
+                )
+                expected_data[0x6F20] = 0xA0 + selection - 1
+        elif frame > 60:
+            final_path = "frame_high"
+            expected_flags = sub16_flags(frame & 0xFFFF, 60)
+        elif frame < 40:
+            final_path = "frame_low"
+            expected_flags = sub16_flags(frame & 0xFFFF, 40)
+        else:
+            expected_calls.append(
+                {
+                    "kind": "video_retrace_phase_wait",
+                    "index": -1,
+                    "ax": frame & 0xFFFF,
+                    "cs": 0,
+                    "sp": 0xFEF6,
+                }
+            )
+            expected_outputs.extend(base_palette)
+            relative = (frame - 45) & 0xFFFF
+            right = (287 - ((relative << 3) & 0xFFFF)) & 0xFFFF
+            left = (right - 110) & 0xFFFF
+
+            def signed16(value: int) -> int:
+                return value - 0x10000 if value & 0x8000 else value
+
+            if signed16(mouse_x_value) > signed16(right):
+                final_path = "x_right"
+                expected_flags = sub16_flags(mouse_x_value, right)
+            elif signed16(left) < 0:
+                final_path = "left_negative"
+                expected_flags = sub16_flags(right, 110)
+            elif signed16(mouse_x_value) < signed16(left):
+                final_path = "x_left"
+                expected_flags = sub16_flags(mouse_x_value, left)
+            else:
+                di_adjusted = True
+                distance = (-relative) & 0xFFFF if relative & 0x8000 else relative
+                quarter = distance >> 2
+                y_origin = (72 + distance + quarter) & 0xFFFF
+                row_height = (18 - ((quarter & 0xFF) >> 1)) & 0xFF
+                y_offset = (mouse_y_value - y_origin) & 0xFFFF
+                if signed16(y_offset) < 0:
+                    final_path = "y_above"
+                    expected_flags = sub16_flags(mouse_y_value, y_origin)
+                else:
+                    row = y_offset // row_height
+                    if row & 0x80 or row >= 5:
+                        final_path = "row_outside"
+                        expected_flags = sub8_flags(row, 5)
+                    else:
+                        expected_outputs.extend(
+                            [
+                                (0x03C8, 1, row + 123),
+                                (0x03C9, 1, 63),
+                                (0x03C9, 1, 0),
+                                (0x03C9, 1, 0),
+                            ]
+                        )
+                        if (primary & 1) == 0:
+                            final_path = "hover"
+                            expected_flags = logic_flags_8(primary & 1)
+                        else:
+                            final_path = "activate"
+                            selected = row + 1
+                            struct.pack_into("<H", expected_data, 0x0A32, 5)
+                            struct.pack_into("<H", expected_data, 0x2A19, selected)
+                            expected_data[0x2793] |= 0x0C
+                            struct.pack_into("<H", expected_data, 0x279B, 90)
+                            expected_data[0x2565] = 1
+                            struct.pack_into(
+                                "<H", expected_data, 0x253F, 80 + row * 18
+                            )
+                            expected_data[0x0ADC] = 1
+                            struct.pack_into("<H", expected_data, 0x0AC6, 100)
+                            expected_data[0x0ADD] = 1
+                            expected_data[0x0ADA] = 10
+                            expected_calls.append(
+                                {
+                                    "kind": "snd_play_clip",
+                                    "index": 4,
+                                    "ax": 4,
+                                    "cs": 0x0B1B,
+                                    "sp": 0xFEF6,
+                                }
+                            )
+                            expected_flags = logic_flags_8(expected_data[0x2793] & 8)
+
+        expected_flags.pop("af", None)
+        stack_sentinel = bytes.fromhex("5aa59669")
+        stack_before = bytearray(0x10000)
+        stack_before[caller_sp : caller_sp + 2] = struct.pack("<H", return_address)
+        stack_before[caller_sp + 2 : caller_sp + 6] = stack_sentinel
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0ED7,
+        }
+        actual_calls: list[dict[str, int | str]] = []
+        outputs: list[tuple[int, int, int]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == wait_entry:
+                kind = "video_retrace_phase_wait"
+                index = -1
+            elif address == sound_entry:
+                kind = "snd_play_clip"
+                index = machine.reg_read(UC_X86_REG_AX)
+            elif address in handler_entries:
+                kind = "handler"
+                index = handler_entries.index(address)
+            else:
+                return
+            actual_calls.append(
+                {
+                    "kind": kind,
+                    "index": index,
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "cs": machine.reg_read(UC_X86_REG_CS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                }
+            )
+
+        def output_port(
+            _machine: Uc, port: int, size: int, value: int
+        ) -> None:
+            outputs.append((port, size, value))
+
+        handler_memory = []
+        for index, handler_entry in enumerate(handler_entries):
+            handler_memory.append(
+                (
+                    0,
+                    handler_entry,
+                    b"\xc6\x06\x20\x6f" + bytes([0xA0 + index]) + b"\xc3",
+                )
+            )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, wait_entry, b"\xcb"),
+                (0, sound_entry, b"\xcb"),
+                (0, 0x0F29, struct.pack("<5H", *handler_entries)),
+                *handler_memory,
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(0x10000)),
+                (extra_segment, 0, bytes(0x10000)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            output_handler=output_port,
+            instruction_count=1000,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x85e2 {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        if outputs != expected_outputs:
+            raise AssertionError(
+                f"0x85e2 {name}: outputs={outputs!r}, expected={expected_outputs!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x85e2 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        for segment, label in ((game_segment, "GS"), (extra_segment, "ES")):
+            if bytes(machine.mem_read(segment * 16, 0x10000)) != bytes(0x10000):
+                raise AssertionError(f"0x85e2 {name}: {label} decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["eax"]
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 2
+        if di_adjusted:
+            expected_registers["edi"] = (
+                initial["edi"] & 0xFFFF0000
+            ) | ((initial["edi"] - 15) & 0xFFFF)
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x85e2 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x85e2 {name}: near return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 2, 4)) != stack_sentinel:
+            raise AssertionError(f"0x85e2 {name}: stack sentinel changed")
+
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x85e2 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        vectors.append(
+            {
+                "name": name,
+                "selection_before": selection,
+                "selection_after": struct.unpack_from("<H", expected_data, 0x2A19)[0],
+                "frame": frame,
+                "mouse": [mouse_x_value, mouse_y_value],
+                "primary": primary,
+                "terminal_path": final_path,
+                "hover_row": row,
+                "calls": expected_calls,
+                "port_writes": [list(write) for write in expected_outputs],
+                "ui_after": struct.unpack_from("<H", expected_data, 0x2793)[0],
+                "target_y_after": struct.unpack_from("<H", expected_data, 0x253F)[0],
+                "di_low_after": machine.reg_read(UC_X86_REG_DI),
+                "ax_low_after": machine.reg_read(UC_X86_REG_AX),
+                "defined_flags": expected_flags,
+            }
+        )
+    return vectors
+
+
 def back_buffer_copy_from_vectors() -> list[dict[str, object]]:
     entry = 0x933A
     expected_hash = "0f0d19e171bb60749bf5523468b18aa2a731b735356689d76ba4f520f8161fc3"
@@ -72296,6 +72696,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_8082_natural.json",
         nav_actor_handler_5_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_85e2_natural.json",
+        nav_choice_dispatch_vectors(),
         args.check,
     )
     update_vector(

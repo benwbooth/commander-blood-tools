@@ -38,6 +38,7 @@ typedef struct bloodprg_nav_actor_slot {
 
 typedef void (CB_NEAR *bloodprg_nav_actor_handler)(
         volatile bloodprg_presentation_line_record CB_NEAR *line);
+typedef void (CB_NEAR *bloodprg_nav_choice_handler)(void);
 
 typedef char bloodprg_nav_actor_slot_size_must_be_24[
         sizeof(bloodprg_nav_actor_slot) == 24 ? 1 : -1];
@@ -77,6 +78,8 @@ extern volatile cb_u8 nav_actor_1_busy; /* DS:0x2A93 */
 extern volatile bloodprg_nav_actor_slot nav_actor_slots[6]; /* SS:0x2A1B */
 extern bloodprg_nav_actor_handler CB_CODE_DATA
         nav_actor_handlers[6]; /* CS:0x06D4 */
+extern bloodprg_nav_choice_handler CB_CODE_DATA
+        nav_choice_handlers[5]; /* CS:0x0F29 */
 extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
 /* The shipped dispatcher keeps ES equal to DS for this destination. */
 extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */
@@ -88,6 +91,8 @@ extern volatile cb_u16 presentation_mode_previous_state; /* DS:0x0A36 */
 extern const bloodprg_rect_i16
         presentation_box_animation_rects[6]; /* DS:0x2B97 */
 extern volatile cb_u8 presentation_choice_active; /* DS:0x259B */
+extern volatile cb_u8 nav_choice_left_motion_active; /* DS:0x2736 */
+extern volatile cb_u8 nav_choice_right_motion_active; /* DS:0x2737 */
 extern volatile cb_u8 presentation_choice_phase; /* DS:0x259C */
 extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
 extern const cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
@@ -107,6 +112,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux list_widget_layout_unified parm [si] value [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_handler_3 modify exact [ax si]
+#pragma aux nav_choice_dispatch modify exact [ax di]
 #pragma aux screen_mode_update parm [ax] modify exact [di es]
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #endif

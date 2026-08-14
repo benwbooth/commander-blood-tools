@@ -1,0 +1,2859 @@
+[
+  {
+    "name": "c2_bit_zero_blocks",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "c2_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48879,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "c2_high_bit_ignored",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 0,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_motion_whole_byte",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "whole_byte_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48768,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "right_motion_whole_byte",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "whole_byte_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48642,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "menu_whole_byte",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "whole_byte_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48704,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "sound_whole_byte",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "whole_byte_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48768,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "presentation_bit_zero_blocks",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "presentation_gate",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "presentation_high_bit_ignored",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 0,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_ui_busy",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "ui_busy",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 42248,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_1_phase_zero",
+    "selection_before": 1,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 0,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_2_phase_one",
+    "selection_before": 2,
+    "selection_after": 2,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 1,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_3_phase_two",
+    "selection_before": 3,
+    "selection_after": 3,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 2,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_4_phase_three",
+    "selection_before": 4,
+    "selection_after": 4,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 3,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_5_phase_all",
+    "selection_before": 5,
+    "selection_after": 5,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "handler",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "handler",
+        "index": 4,
+        "ax": 48640,
+        "cs": 0,
+        "sp": 65272
+      }
+    ],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 48640,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "frame_below",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 39,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "frame_low",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 39,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "frame_above",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 61,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "frame_high",
+    "hover_row": null,
+    "calls": [],
+    "port_writes": [],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 61,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "frame_lower_boundary",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 40,
+    "mouse": [
+      217,
+      78
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 0,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 40,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "frame_upper_boundary",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 60,
+    "mouse": [
+      167,
+      158
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 4,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 60,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        127
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_of_menu",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      176,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "x_left",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 177,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "right_of_menu",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      288,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "x_right",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26505,
+    "ax_low_after": 287,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "left_boundary",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      177,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 0,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "right_boundary",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      287,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 0,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "above_menu",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      71
+    ],
+    "primary": 0,
+    "terminal_path": "y_above",
+    "hover_row": null,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 65535,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "below_fifth_row",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      162
+    ],
+    "primary": 0,
+    "terminal_path": "row_outside",
+    "hover_row": 5,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 5,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hover_row_0",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 0,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "click_row_0",
+    "selection_before": 0,
+    "selection_after": 1,
+    "frame": 45,
+    "mouse": [
+      200,
+      72
+    ],
+    "primary": 1,
+    "terminal_path": "activate",
+    "hover_row": 0,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      },
+      {
+        "kind": "snd_play_clip",
+        "index": 4,
+        "ax": 4,
+        "cs": 2843,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 42254,
+    "target_y_after": 80,
+    "di_low_after": 26490,
+    "ax_low_after": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hover_row_1",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      90
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 1,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        124
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "click_row_1",
+    "selection_before": 0,
+    "selection_after": 2,
+    "frame": 45,
+    "mouse": [
+      200,
+      90
+    ],
+    "primary": 1,
+    "terminal_path": "activate",
+    "hover_row": 1,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      },
+      {
+        "kind": "snd_play_clip",
+        "index": 4,
+        "ax": 4,
+        "cs": 2843,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        124
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 42254,
+    "target_y_after": 98,
+    "di_low_after": 26490,
+    "ax_low_after": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hover_row_2",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      108
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 2,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        125
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "click_row_2",
+    "selection_before": 0,
+    "selection_after": 3,
+    "frame": 45,
+    "mouse": [
+      200,
+      108
+    ],
+    "primary": 1,
+    "terminal_path": "activate",
+    "hover_row": 2,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      },
+      {
+        "kind": "snd_play_clip",
+        "index": 4,
+        "ax": 4,
+        "cs": 2843,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        125
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 42254,
+    "target_y_after": 116,
+    "di_low_after": 26490,
+    "ax_low_after": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hover_row_3",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      126
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 3,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        126
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "click_row_3",
+    "selection_before": 0,
+    "selection_after": 4,
+    "frame": 45,
+    "mouse": [
+      200,
+      126
+    ],
+    "primary": 1,
+    "terminal_path": "activate",
+    "hover_row": 3,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      },
+      {
+        "kind": "snd_play_clip",
+        "index": 4,
+        "ax": 4,
+        "cs": 2843,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        126
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 42254,
+    "target_y_after": 134,
+    "di_low_after": 26490,
+    "ax_low_after": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hover_row_4",
+    "selection_before": 0,
+    "selection_after": 0,
+    "frame": 45,
+    "mouse": [
+      200,
+      144
+    ],
+    "primary": 0,
+    "terminal_path": "hover",
+    "hover_row": 4,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        127
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 0,
+    "target_y_after": 42330,
+    "di_low_after": 26490,
+    "ax_low_after": 0,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "click_row_4",
+    "selection_before": 0,
+    "selection_after": 5,
+    "frame": 45,
+    "mouse": [
+      200,
+      144
+    ],
+    "primary": 1,
+    "terminal_path": "activate",
+    "hover_row": 4,
+    "calls": [
+      {
+        "kind": "video_retrace_phase_wait",
+        "index": -1,
+        "ax": 45,
+        "cs": 0,
+        "sp": 65270
+      },
+      {
+        "kind": "snd_play_clip",
+        "index": 4,
+        "ax": 4,
+        "cs": 2843,
+        "sp": 65270
+      }
+    ],
+    "port_writes": [
+      [
+        968,
+        1,
+        123
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        16
+      ],
+      [
+        969,
+        1,
+        12
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        968,
+        1,
+        127
+      ],
+      [
+        969,
+        1,
+        63
+      ],
+      [
+        969,
+        1,
+        0
+      ],
+      [
+        969,
+        1,
+        0
+      ]
+    ],
+    "ui_after": 42254,
+    "target_y_after": 152,
+    "di_low_after": 26490,
+    "ax_low_after": 4,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]
