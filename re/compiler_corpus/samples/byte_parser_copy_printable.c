@@ -22,11 +22,11 @@ typedef signed char i8;
 extern char GAME_DATA parser_text[];
 
 #if defined(__WATCOMC__)
-#pragma aux byte_parser_copy_printable_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux byte_parser_copy_printable_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR byte_parser_copy_printable_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR byte_parser_copy_printable_probe(
+    const u8 FAR *script_bytes)
 {
     char GAME_DATA *dst;
     u8 ch;

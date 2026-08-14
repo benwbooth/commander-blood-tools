@@ -27,11 +27,11 @@ void FAR snd_bank_loader_probe(u16 mode, const volatile char NEAR *path);
 
 #if defined(__WATCOMC__)
 #pragma aux snd_bank_loader_probe parm [ax] [si] modify exact []
-#pragma aux byte_parser_snd_bank_name_load_probe parm [si] value [si] modify exact [ax bx cx dx si di es]
+#pragma aux byte_parser_snd_bank_name_load_probe parm [ds si] value [ds si] modify exact [ax bx cx dx si di es]
 #endif
 
-const u8 NEAR *NEAR byte_parser_snd_bank_name_load_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR byte_parser_snd_bank_name_load_probe(
+    const u8 FAR *script_bytes)
 {
     char GAME_DATA *dst;
     u8 ch;

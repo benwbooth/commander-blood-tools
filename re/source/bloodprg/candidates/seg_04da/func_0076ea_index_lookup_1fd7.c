@@ -1,7 +1,7 @@
 #include "../include/bloodprg_byte_parser.h"
 
-const cb_u8 CB_NEAR *CB_NEAR index_lookup_1fd7(
-    const cb_u8 CB_NEAR *script_bytes)
+const cb_u8 CB_FAR *CB_NEAR index_lookup_1fd7(
+    const cb_u8 CB_FAR *script_bytes)
 {
     cb_u16 stored_id;
     cb_game_char_ptr dst;

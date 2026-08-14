@@ -4642,6 +4642,476 @@ def vm_cod_scan_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_c2_descript_lookup_vectors() -> list[dict[str, object]]:
+    entry = 0x7409
+    return_address = 0xF409
+    path_helper_entry = 0x2093  # Runtime 01CE:03B3.
+    dispatch_table_offset = 0x217E
+    expected_hash = "5e1f22afd92e9fe529c2d92df7b557c9e07381b64d1d74f413048fdd14cf0376"
+    expected_table = (
+        0x21A2,
+        0x21A9,
+        0x21BE,
+        0x21B7,
+        0x2272,
+        0x2289,
+        0x22E4,
+        0x231A,
+        0x2320,
+        0x2335,
+        0x234A,
+        0x23B4,
+        0x23D6,
+        0x23E8,
+        0x21B0,
+        0x22CF,
+        0x229E,
+        0x2409,
+    )
+    if hashlib.sha256(EXE[entry : entry + 277]).hexdigest() != expected_hash:
+        raise AssertionError("0x7409: recovered 277-byte body changed")
+    dispatch_table = EXE[0x751E : 0x751E + 36]
+    actual_table = struct.unpack("<18H", dispatch_table)
+    if actual_table != expected_table:
+        raise AssertionError(
+            f"0x7409: dispatch table={actual_table}, expected={expected_table}"
+        )
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "open_failure",
+            "records": ((b"TARGET", b"\0"),),
+            "record_name": b"TARGET",
+            "open_error": True,
+            "matched_index": None,
+        },
+        {
+            "name": "no_directory_match_close_error",
+            "records": ((b"ALPHA", b"\0"), (b"BETA", b"\0")),
+            "record_name": b"TARGET",
+            "close_error": True,
+            "matched_index": None,
+        },
+        {
+            "name": "first_match_zero_terminator",
+            "records": ((b"TARGET", b"\0"), (b"LATER", b"\0")),
+            "record_name": b"TARGET",
+            "matched_index": 0,
+        },
+        {
+            "name": "later_match_wrapped_name_ff_terminator",
+            "records": ((b"OTHER", b"\0"), (b"TARGET", b"\xff")),
+            "record_name": b"TARGET",
+            "name_offset": 0xFFFC,
+            "matched_index": 1,
+        },
+        {
+            "name": "real_opcode_01_sets_stop_flag",
+            "records": ((b"TARGET", b"\x01\0"),),
+            "record_name": b"TARGET",
+            "matched_index": 0,
+            "real_handler": 0x01,
+            "expected_handlers": (0x21A2,),
+        },
+        {
+            "name": "real_opcode_08_consumes_word_then_terminates",
+            "records": ((b"TARGET", b"\x08\x34\x12\0"),),
+            "record_name": b"TARGET",
+            "matched_index": 0,
+            "real_handler": 0x08,
+            "expected_handlers": (0x231A,),
+            "expected_word_1fa5": 0x1234,
+        },
+        {
+            "name": "stubbed_two_opcode_dispatch_loop",
+            "records": ((b"TARGET", b"\x05\x06\0"),),
+            "record_name": b"TARGET",
+            "matched_index": 0,
+            "expected_handlers": (0x2272, 0x2289),
+            "stub_stop_after": 2,
+        },
+    ]
+    for opcode, target in enumerate(expected_table, 1):
+        cases.append(
+            {
+                "name": f"dispatch_slot_{opcode:02x}",
+                "records": ((b"TARGET", bytes((opcode, 0))),),
+                "record_name": b"TARGET",
+                "matched_index": 0,
+                "expected_handlers": (target,),
+                "stub_stop_after": 1,
+            }
+        )
+
+    game_segment = 0x3000
+    work_segment = 0x5000
+    input_segment = 0x7000
+    initial_data_segment = 0x8000
+    stack_segment = game_segment  # Shipped runtime invariant: SS == GS.
+    work_offset = 0x4200
+    caller_sp = 0xFEF0
+    file_handle = 0x1357
+    path = b"descript.des\0"
+    stack_sentinel = bytes.fromhex("a55a3cc3966978c3")
+    vectors = []
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, (flags | 1) if carry else (flags & ~1)
+        )
+
+    def write_wrapped(
+        memory: list[tuple[int, int, bytes]], segment: int, offset: int, data: bytes
+    ) -> None:
+        for index, value in enumerate(data):
+            memory.append((segment, (offset + index) & 0xFFFF, bytes((value,))))
+
+    def make_file(records: tuple[tuple[bytes, bytes], ...]) -> tuple[bytes, list[int]]:
+        directory_bytes = 2 + len(records) * 18
+        payload_offset = (directory_bytes + 0x0F) & ~0x0F
+        image = bytearray(payload_offset)
+        struct.pack_into("<H", image, 0, len(records))
+        payload_offsets = []
+        for index, (record_name, payload) in enumerate(records):
+            if len(record_name) >= 16:
+                raise AssertionError(f"0x7409: overlong record name {record_name!r}")
+            entry_offset = 2 + index * 18
+            image[entry_offset : entry_offset + 16] = (
+                record_name + b"\0"
+            ).ljust(16, b"\0")
+            payload_offsets.append(payload_offset)
+            struct.pack_into("<H", image, entry_offset + 16, payload_offset)
+            record_image = struct.pack("<H", len(payload) + 2) + payload
+            image.extend(record_image)
+            payload_offset += len(record_image)
+        return bytes(image), payload_offsets
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        records = tuple(case["records"])
+        record_name = bytes(case["record_name"])
+        input_offset = int(case.get("name_offset", 0x6200 + case_index * 0x20))
+        open_error = bool(case.get("open_error", False))
+        close_error = bool(case.get("close_error", False))
+        matched_index_raw = case.get("matched_index")
+        matched_index = (
+            None if matched_index_raw is None else int(matched_index_raw)
+        )
+        expected_handlers = tuple(
+            int(value) for value in case.get("expected_handlers", ())
+        )
+        real_handler = case.get("real_handler")
+        stub_stop_after = int(case.get("stub_stop_after", 0))
+        selector = (case_index * 17 + 3) & 0xFF
+        file_image, payload_offsets = make_file(records)
+        current_file_offset = 0
+        dos_events: list[dict[str, int | bool]] = []
+        path_calls: list[tuple[int, int, int]] = []
+        handler_calls: list[tuple[int, int, int]] = []
+
+        count_before = 0xCAFE
+        length_before = 0xBEEF
+        word_1fa5_before = 0xA55A
+        initial = {
+            "eax": 0xA1A11230 + case_index,
+            "ebx": 0xB2B22340 + case_index,
+            "ecx": 0xC3C33450 + case_index,
+            "edx": 0xD4D44560 + case_index,
+            "esi": 0xE5E55670 + case_index,
+            "edi": 0xF6F60000 | input_offset,
+            "ebp": 0x97977890 + case_index,
+            "sp": caller_sp,
+            "ds": initial_data_segment,
+            "es": input_segment,
+            "fs": 0x9000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        memory: list[tuple[int, int, bytes]] = [
+            (0, path_helper_entry, b"\xcb"),
+            (0, dispatch_table_offset, dispatch_table),
+            (game_segment, 0x0106, path),
+            (game_segment, 0x0ABC, struct.pack("<HH", work_offset, work_segment)),
+            (game_segment, 0x0AAE, struct.pack("<H", count_before)),
+            (game_segment, 0x0AB0, struct.pack("<H", length_before)),
+            (game_segment, 0x1FA5, struct.pack("<H", word_1fa5_before)),
+            (game_segment, 0x27E8, b"\xa5"),
+            (game_segment, 0x0BA1, b"\x5a"),
+            (game_segment, 0x131E, b"\x69"),
+            (game_segment, 0x1FAD, b"\x11\x11"),
+            (game_segment, 0x131A, b"\x22\x22"),
+            (game_segment, 0x0F18, b"\x33\x33"),
+            (game_segment, 0x1FAF, b"\x44\x44"),
+            (game_segment, 0x0B16, b"\xa4"),
+            (game_segment, 0x6CDE, bytes((selector,))),
+            (game_segment, 0x0F1A, b"\x78\x56"),
+            (work_segment, work_offset, bytes((0xCC,)) * 0x800),
+            (
+                stack_segment,
+                caller_sp,
+                struct.pack("<HH", return_address, 0) + stack_sentinel,
+            ),
+            (0, return_address, b"\xcc"),
+        ]
+        write_wrapped(memory, input_segment, input_offset, record_name + b"\0")
+
+        for target in expected_table:
+            memory.append((0, target, b"\xc3"))
+        if real_handler == 0x01:
+            memory.append((0, 0x21A2, EXE[0x7542 : 0x7549]))
+        elif real_handler == 0x08:
+            memory.append((0, 0x231A, EXE[0x76BA : 0x76C0]))
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address == path_helper_entry:
+                path_calls.append(
+                    (
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_CS),
+                    )
+                )
+                return
+            if address in expected_table:
+                handler_calls.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_DS),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+                if stub_stop_after and len(handler_calls) == stub_stop_after:
+                    machine.mem_write(game_segment * 16 + 0x0B16, b"\1")
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal current_file_offset
+            if number != 0x21:
+                raise AssertionError(f"0x7409 {name}: unexpected INT {number:#x}")
+            function = machine.reg_read(UC_X86_REG_AH)
+            if function == 0x3D:
+                dos_events.append(
+                    {
+                        "function": function,
+                        "ds": machine.reg_read(UC_X86_REG_DS),
+                        "dx": machine.reg_read(UC_X86_REG_DX),
+                        "error": open_error,
+                    }
+                )
+                if open_error:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                    set_carry(machine, True)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, file_handle)
+                    current_file_offset = 0
+                    set_carry(machine, False)
+                return
+            if function == 0x3F:
+                request = machine.reg_read(UC_X86_REG_CX)
+                destination_segment = machine.reg_read(UC_X86_REG_DS)
+                destination_offset = machine.reg_read(UC_X86_REG_DX)
+                transferred = file_image[
+                    current_file_offset : current_file_offset + request
+                ]
+                if transferred:
+                    machine.mem_write(
+                        destination_segment * 16 + destination_offset,
+                        transferred,
+                    )
+                dos_events.append(
+                    {
+                        "function": function,
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "request": request,
+                        "segment": destination_segment,
+                        "offset": destination_offset,
+                        "file_offset": current_file_offset,
+                        "transferred": len(transferred),
+                    }
+                )
+                current_file_offset += len(transferred)
+                machine.reg_write(UC_X86_REG_AX, len(transferred))
+                set_carry(machine, False)
+                return
+            if function == 0x42:
+                seek_offset = (
+                    (machine.reg_read(UC_X86_REG_CX) << 16)
+                    | machine.reg_read(UC_X86_REG_DX)
+                )
+                dos_events.append(
+                    {
+                        "function": function,
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "offset": seek_offset,
+                    }
+                )
+                current_file_offset = seek_offset
+                machine.reg_write(UC_X86_REG_AX, seek_offset & 0xFFFF)
+                machine.reg_write(UC_X86_REG_DX, seek_offset >> 16)
+                set_carry(machine, False)
+                return
+            if function == 0x3E:
+                dos_events.append(
+                    {
+                        "function": function,
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "error": close_error,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 6 if close_error else 0)
+                set_carry(machine, close_error)
+                return
+            raise AssertionError(
+                f"0x7409 {name}: unexpected DOS function {function:#x}"
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=100000,
+        )
+
+        if path_calls != [(game_segment, 0x0106, 0x01CE)]:
+            raise AssertionError(
+                f"0x7409 {name}: path calls={path_calls}, expected game path"
+            )
+        actual_handler_targets = tuple(call[0] for call in handler_calls)
+        if actual_handler_targets != expected_handlers:
+            raise AssertionError(
+                f"0x7409 {name}: handlers={actual_handler_targets}, "
+                f"expected={expected_handlers}"
+            )
+        for _, segment, _ in handler_calls:
+            if segment != work_segment:
+                raise AssertionError(f"0x7409 {name}: handler DS={segment:#x}")
+
+        expected_result = 0 if open_error or matched_index is None else 1
+        if machine.reg_read(UC_X86_REG_EAX) != expected_result:
+            raise AssertionError(
+                f"0x7409 {name}: EAX={machine.reg_read(UC_X86_REG_EAX):#x}, "
+                f"expected={expected_result:#x}"
+            )
+        for register in ("ebx", "ecx", "edx", "esi", "edi", "ebp", "ds", "es", "fs", "gs"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(
+                    f"0x7409 {name}: {register}={actual:#x}, "
+                    f"expected={initial[register]:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 4:
+            raise AssertionError(f"0x7409 {name}: far RET stack mismatch")
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 4, 8)) != stack_sentinel:
+            raise AssertionError(f"0x7409 {name}: stack sentinel changed")
+
+        def game_u16(offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+
+        expected_count = count_before
+        expected_length = length_before
+        if not open_error:
+            if matched_index is None:
+                expected_count = 0
+            else:
+                expected_count = len(records) - matched_index
+                expected_length = len(records[matched_index][1]) + 2
+        expected_flag = 1 if stub_stop_after or real_handler == 0x01 else 0
+        expected_globals = {
+            0x27E8: 0,
+            0x0BA1: 0,
+            0x131E: 0,
+            0x0B16: expected_flag,
+        }
+        for offset, expected in expected_globals.items():
+            actual = machine.mem_read(game_segment * 16 + offset, 1)[0]
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7409 {name}: global {offset:#x}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+        for offset, expected in (
+            (0x1FAD, 0x2154),
+            (0x131A, (0x1320 + (selector << 7)) & 0xFFFF),
+            (0x0F18, 0x0F1A),
+            (0x1FAF, 0x1FDB),
+            (0x0AAE, expected_count),
+            (0x0AB0, expected_length),
+            (0x1FA5, int(case.get("expected_word_1fa5", word_1fa5_before))),
+        ):
+            actual = game_u16(offset)
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7409 {name}: global {offset:#x}={actual:#x}, "
+                    f"expected={expected:#x}"
+                )
+
+        terminator_after = game_u16(0x0F1A)
+        expected_terminator = 0x5678 if open_error else 0xFFFF
+        if terminator_after != expected_terminator:
+            raise AssertionError(
+                f"0x7409 {name}: terminator={terminator_after:#x}, "
+                f"expected={expected_terminator:#x}"
+            )
+        input_after = bytes(
+            machine.mem_read(
+                input_segment * 16 + ((input_offset + index) & 0xFFFF), 1
+            )[0]
+            for index in range(len(record_name) + 1)
+        )
+        if input_after != record_name + b"\0":
+            raise AssertionError(f"0x7409 {name}: record name changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if open_error:
+            actual_logic_flags = {
+                "cf": bool(flags & 0x001),
+                "pf": bool(flags & 0x004),
+                "zf": bool(flags & 0x040),
+                "sf": bool(flags & 0x080),
+                "of": bool(flags & 0x800),
+            }
+            expected_logic_flags = {
+                "cf": False,
+                "pf": True,
+                "zf": True,
+                "sf": False,
+                "of": False,
+            }
+            if actual_logic_flags != expected_logic_flags:
+                raise AssertionError(
+                    f"0x7409 {name}: flags={actual_logic_flags}, "
+                    f"expected={expected_logic_flags}"
+                )
+        elif bool(flags & 1) != close_error:
+            raise AssertionError(f"0x7409 {name}: close carry was not propagated")
+
+        vectors.append(
+            {
+                "name": name,
+                "record_count": len(records),
+                "matched_index": matched_index,
+                "result": expected_result,
+                "path_call": [game_segment, 0x0106],
+                "dos_events": dos_events,
+                "handler_targets": [f"0x{target:04x}" for target in actual_handler_targets],
+                "handler_source_offsets": [call[2] for call in handler_calls],
+                "directory_count_after": expected_count,
+                "record_length_after": expected_length,
+                "stop_flag_after": expected_flag,
+                "stream_terminator_after": expected_terminator,
+                "close_carry": bool(flags & 1),
+                "ss_equals_gs": True,
+            }
+        )
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -63761,6 +64231,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_739b_natural.json",
         vm_cod_scan_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7409_natural.json",
+        vm_c2_descript_lookup_vectors(),
         args.check,
     )
     update_vector(

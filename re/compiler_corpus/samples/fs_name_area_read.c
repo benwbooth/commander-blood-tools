@@ -25,10 +25,10 @@ extern char FS_DATA resource_name_area[];
 extern volatile u8 GAME_DATA name_area_dirty;
 
 #if defined(__WATCOMC__)
-#pragma aux fs_name_area_read_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux fs_name_area_read_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR fs_name_area_read_probe(const u8 NEAR *script_bytes)
+const u8 FAR *NEAR fs_name_area_read_probe(const u8 FAR *script_bytes)
 {
     char FS_DATA *dst;
     u8 ch;

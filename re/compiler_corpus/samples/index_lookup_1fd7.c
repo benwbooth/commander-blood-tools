@@ -36,10 +36,10 @@ void FAR path_build_probe(game_char_ptr path);
 void FAR file_open_probe(game_char_ptr path, far_u8_ptr destination);
 
 #if defined(__WATCOMC__)
-#pragma aux index_lookup_1fd7_probe parm [si] value [si] modify exact [ax si]
+#pragma aux index_lookup_1fd7_probe parm [ds si] value [ds si] modify exact [ax si es]
 #endif
 
-const u8 NEAR *NEAR index_lookup_1fd7_probe(const u8 NEAR *script_bytes)
+const u8 FAR *NEAR index_lookup_1fd7_probe(const u8 FAR *script_bytes)
 {
     u16 stored_id;
     game_char_ptr dst;

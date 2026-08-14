@@ -24,11 +24,11 @@ extern volatile u8 GAME_DATA music_name_unchanged;
 extern volatile u8 GAME_DATA music_name_changed;
 
 #if defined(__WATCOMC__)
-#pragma aux music_voc_name_patcher_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux music_voc_name_patcher_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR music_voc_name_patcher_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR music_voc_name_patcher_probe(
+    const u8 FAR *script_bytes)
 {
     char GAME_DATA *dst;
     u8 ch;

@@ -1791,10 +1791,10 @@ ordinary, high-byte, and segment-wrapped sources; distinct DS, ES, and GS
 ownership; exact state-write order; registers, segments, flags, source
 immutability, and near-return stack behavior.
 
-The corrected candidate returns the advanced SI cursor directly and places the
+The corrected candidate returns the advanced far DS:SI cursor and places the
 destination and state symbols in one named based segment. Open Watcom
-`-3 -ox -mm` compiles it without warnings to 19 instructions/38 bytes versus 8/23
-original; Turbo C 2.01 medium emits 27 instructions. Watcom loads `GAME_DATA`
+`-3 -os -s -mh -we` compiles it without warnings to 33 instructions/79 bytes
+versus 8/23 original. Watcom loads `GAME_DATA`
 into ES, saves BX/DX/ES, emits a scalar indexed copy, and zero-extends the final
 AL through AH before storing the timer. Exact integration needs the original
 ambient ES=GS contract, DI allocation, LODSB/STOSB loop, and GS state accesses.
@@ -1809,10 +1809,10 @@ near return, CF inherited from the stopping test, and the remaining flags from
 the final `DEC SI`. They also narrow `0x00766F` from an incorrect whole-record
 label to its actual name-copy boundary.
 
-The four one-to-one candidates use direct SI results, a signed-byte guard, and
-named based-segment destinations. Open Watcom `-3 -ox -mm` compiles each without
-warnings to 23 instructions/42 bytes versus 11/21 original; Turbo C 2.01 medium
-emits 28 instructions. Watcom retains the signed and unsigned tests, explicit
+The four one-to-one candidates use far DS:SI results, a signed-byte guard, and
+named based-segment destinations. Open Watcom `-3 -os -s -mh -we` compiles each
+without warnings to 43 instructions/103 bytes versus 11/21 original. Watcom
+retains the signed and unsigned tests, explicit
 cursor decrement, and NUL store, but loads `GAME_DATA`, saves BX/DX/ES, and
 uses scalar indexing instead of ambient ES plus LODSB/STOSB.
 
@@ -1824,11 +1824,11 @@ DS:SI=GS:0x0D06, caller restoration of parser DS:SI, path-specific outputs,
 flags, and near return. The real loader body executes its early return in the
 call vectors, so this is not a synthetic call stub.
 
-The one-to-one candidate uses a direct SI result, named based-segment filename,
+The one-to-one candidate uses a far DS:SI result, named based-segment filename,
 path, and gate globals, plus an ordinary far C call. The loader declaration now
-uses its actual AX mode and near-SI path convention. Open Watcom `-3 -ox -mm`
-compiles the candidate without warnings to 26 instructions/62 bytes versus
-22/49 original; Turbo C 2.01 medium emits 41 instructions. Watcom retains the
+uses its actual AX mode and near-SI path convention. Open Watcom
+`-3 -os -s -mh -we` compiles the candidate without warnings to 49
+instructions/129 bytes versus 22/49 original. Watcom retains the
 signed and unsigned stops, explicit cursor decrement, NUL store, bit test,
 mode value, and SI argument. A drop-in build still needs a narrow adapter to
 switch DS to `GAME_DATA` around that call and restore the parser context.
@@ -1894,10 +1894,10 @@ return. `DESCRIPT.DES` contains 448 opcode-07 records using IDs 1, 2, 3, 4,
 and 0xFF, so the corrected high-id behavior is exercised by shipped data.
 
 The one-to-one natural candidate models the complete reachable caller contract
-with direct SI input/result, 16-bit wrapping arithmetic, and volatile
-named-segment cursor pointers. Open Watcom `-3 -ox -mm` compiles it without
-warnings to 35 instructions/82 bytes versus 22/54 original; Turbo C 2.01
-medium emits 63 instructions. Watcom preserves the signed load, equivalent
+with far DS:SI input/result, 16-bit wrapping arithmetic, and volatile
+named-segment cursor pointers. Open Watcom `-3 -os -s -mh -we` compiles it
+without warnings to 73 instructions/194 bytes versus 22/54 original. Watcom
+preserves the signed load, equivalent
 offset arithmetic (`id*16+0x0DC7`), two 16-bit based pointers, copy bounds, and
 unconsumed stop, but saves BX/DX/ES, reloads `GAME_DATA`, and uses scalar
 loads/stores rather than the original ambient ES=GS and string instructions.
@@ -1920,10 +1920,10 @@ enters `01CE:0712` with DS:SI=GS:0x2137; the XMS path enters `01CE:0621` with
 that same path and ES:DI loaded from GS:0x5229. These vectors verify caller ABI
 and cleanup, not the helper bodies' independent behavior.
 
-Open Watcom `-3 -ox -mm` compiles the direct-SI, named-game-data candidate
-without warnings to 44 instructions/117 bytes versus 47/106 original; Turbo C
-2.01 medium emits 72 instructions. Watcom preserves the logic in fewer
-instructions than the original, but its natural far calls pass the path offset
+Open Watcom `-3 -os -s -mh -we` compiles the far-DS:SI, named-game-data
+candidate without warnings to 71 instructions/185 bytes versus 47/106
+original. Watcom preserves the recovered decisions and call order, but its
+natural far calls pass the path offset
 in AX and the destination in CX:BX. Drop-in linkage therefore needs two narrow
 adapters to the game's DS:SI and ES:DI helper conventions. Watcom's 16-bit
 `#pragma aux` also rejects EAX as a clobber name, so the original call-only
@@ -1939,12 +1939,12 @@ Seven vectors for `0x007776` prove aligned and unaligned leading-word copies,
 arbitrary high string bytes, embedded and consumed NUL, both wraps, DS/ES/GS
 ownership, final cursor, outputs, zero-test flags, preservation, and return.
 
-Their one-to-one candidates now return SI directly and use volatile named-data
+Their one-to-one candidates now return far DS:SI cursors and use volatile named-data
 based pointers. The first retains a natural printable loop and fixed slot/count
 updates; the second uses a typed word assignment followed by a do-while byte
-copy. Open Watcom `-3 -ox -mm` compiles them without warnings to 27
-instructions/60 bytes and 23/49 respectively, versus originals of 13/34 and
-8/18. Turbo C 2.01 medium emits 37 and 35 instructions. Watcom preserves the
+copy. Open Watcom `-3 -os -s -mh -we` compiles them without warnings to 49
+instructions/126 bytes and 49/118 respectively, versus originals of 13/34 and
+8/18. Watcom preserves the
 operations but saves BX/DX/ES, loads `GAME_DATA`, and uses scalar loads, stores,
 and pointer additions instead of the original ambient ES=GS and compact
 LODSB/STOSB/MOVSW forms.
@@ -1961,11 +1961,11 @@ byte with one only if changed bit zero is clear at the stop. Eleven vectors
 cover unusual inputs such as backtick and brace, preexisting even and odd
 changed values, source wrap, segment ownership, outputs, flags, and return.
 
-Their one-to-one candidates now consume and return SI directly and use named
-FS/game-data objects. Open Watcom `-3 -ox -mm` compiles the actual candidates
-without warnings to 26 instructions/53 bytes and 38/87 respectively, versus
-originals of 16/33 and 20/52. Turbo C 2.01 medium emits 31 and 47 instructions.
-Watcom preserves the natural operations, but its register saves and named
+Their one-to-one candidates now consume and return far DS:SI cursors and use named
+FS/game-data objects. Open Watcom `-3 -os -s -mh -we` compiles the actual
+candidates without warnings to 46 instructions/114 bytes and 67/179
+respectively, versus originals of 16/33 and 20/52. Watcom preserves the natural
+operations, but its register saves and named
 segment reloads do not reproduce the original ambient ES/GS/FS setup or string
 instruction allocation.
 
@@ -1996,11 +1996,11 @@ and unaligned loads, SI wrap from 0xFFFE, load-before-store order, distinct
 DS/GS ownership against segment decoys, AX/SI outputs, complete status-flag and
 register preservation, source immutability, exact bytes, and near return.
 
-The one-to-one candidate is a post-incremented near-word dereference assigned to
+The one-to-one candidate is a post-incremented far DS:SI word dereference assigned to
 a volatile named based-segment global, with the advanced cursor returned
-directly. Open Watcom `-3 -ox -mm` compiles it without warnings to 10
-instructions/19 bytes versus 3/6 original; Turbo C 2.01 medium emits 14
-instructions. Watcom preserves the C behavior but saves DX/ES, loads the named
+directly. Open Watcom `-3 -os -s -mh -we` compiles it without warnings to 9
+instructions/16 bytes versus 3/6 original. Watcom preserves the C behavior but
+saves DX/ES, loads the named
 segment through them, and emits MOV plus ADD instead of the original ambient
 GS store and LODSW. Fixed GS placement remains the only integration boundary.
 
@@ -4602,6 +4602,31 @@ mnemonic-multiset overlap. Natural C stack-passes the typed callback argument;
 exact linking therefore needs a raw-DL callback adapter, the original
 preserve-all envelope, and verified code-segment table placement. No handler
 identities or table entries are guessed.
+
+## BLOODPRG DESCRIPT lookup and parser dispatcher candidate
+
+`0x007409` resets the byte-parser state, selects and opens `descript.des`, reads
+its packed directory count and 18-byte `{ name[16], offset }` entries, finds the
+requested record, and reads the matching length-prefixed bytecode. Its dispatch
+table maps valid opcodes 1 through 18 one-to-one to the recovered parser
+handlers. Opcode zero, signed-negative `(opcode - 1)`, or marker bit zero ends
+the stream before final cursor termination and file close.
+
+Twenty-five direct vectors exercise the original routine. They cover open
+failure, first/later/no directory match, wrapped input names, mutable remaining
+count, seek/read/close sequencing, zero and `0xFF` termination, real opcode-01
+and opcode-08 handlers, and every dispatch-table slot. Segment decoys prove the
+handlers consume and return a far `DS:SI` cursor. The vectors also verify
+initialization, finalization, result AX, non-AX preservation, close flags, and
+the far return.
+
+Open Watcom 1.9 (`-3 -os -s -mh -we`) compiles the packed-directory candidate
+warning-free to 207 instructions/548 bytes versus the original 111/277, with
+75.68 percent mnemonic-multiset overlap and no inline assembly. Full-source
+integration requires the recovered far `DS:SI` handler declarations, shipped
+`SS == GS` stream storage, fixed data placement, and the valid-opcode invariant.
+Direct replacement additionally needs the original raw DOS flag/error behavior,
+GS-qualified marker stores, and preserve-all allocation.
 
 ## Interpretation
 

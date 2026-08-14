@@ -21,11 +21,11 @@ typedef unsigned int u16;
 extern volatile u16 GAME_DATA parser_word;
 
 #if defined(__WATCOMC__)
-#pragma aux byte_parser_store_word_1fa5_probe parm [si] value [si] modify exact [ax si]
+#pragma aux byte_parser_store_word_1fa5_probe parm [ds si] value [ds si] modify exact [ax si es]
 #endif
 
-const u16 NEAR *NEAR byte_parser_store_word_1fa5_probe(
-    const u16 NEAR *script_words)
+const u16 FAR *NEAR byte_parser_store_word_1fa5_probe(
+    const u16 FAR *script_words)
 {
     parser_word = *script_words++;
     return script_words;

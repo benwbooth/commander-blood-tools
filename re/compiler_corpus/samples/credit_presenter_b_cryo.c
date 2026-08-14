@@ -24,11 +24,11 @@ extern volatile u8 GAME_DATA credit_reveal_active;
 extern volatile u16 GAME_DATA credit_reveal_timer;
 
 #if defined(__WATCOMC__)
-#pragma aux credit_presenter_b_cryo_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux credit_presenter_b_cryo_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR credit_presenter_b_cryo_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR credit_presenter_b_cryo_probe(
+    const u8 FAR *script_bytes)
 {
     char GAME_DATA *dst;
     u8 ch;

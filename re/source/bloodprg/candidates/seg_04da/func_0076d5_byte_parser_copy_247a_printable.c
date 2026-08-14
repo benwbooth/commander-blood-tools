@@ -1,7 +1,7 @@
 #include "../include/bloodprg_byte_parser.h"
 
-const cb_u8 CB_NEAR *CB_NEAR byte_parser_copy_247a_printable(
-    const cb_u8 CB_NEAR *script_bytes)
+const cb_u8 CB_FAR *CB_NEAR byte_parser_copy_247a_printable(
+    const cb_u8 CB_FAR *script_bytes)
 {
     char CB_GAME_DATA *dst;
     cb_u8 ch;

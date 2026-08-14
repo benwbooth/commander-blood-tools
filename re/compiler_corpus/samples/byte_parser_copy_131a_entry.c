@@ -25,11 +25,11 @@ extern volatile game_char_ptr GAME_DATA table_cursor;
 extern volatile u8 GAME_DATA table_count;
 
 #if defined(__WATCOMC__)
-#pragma aux byte_parser_copy_131a_entry_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux byte_parser_copy_131a_entry_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR byte_parser_copy_131a_entry_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR byte_parser_copy_131a_entry_probe(
+    const u8 FAR *script_bytes)
 {
     game_char_ptr dst;
     u8 ch;

@@ -25,17 +25,17 @@ typedef volatile u16 GAME_DATA *game_word_ptr;
 extern volatile game_char_ptr GAME_DATA stream_cursor;
 
 #if defined(__WATCOMC__)
-#pragma aux byte_parser_stream_0f18_append_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux byte_parser_stream_0f18_append_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR byte_parser_stream_0f18_append_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR byte_parser_stream_0f18_append_probe(
+    const u8 FAR *script_bytes)
 {
     game_char_ptr dst;
     u8 ch;
 
     dst = stream_cursor;
-    *(game_word_ptr)dst = *(const u16 NEAR *)script_bytes;
+    *(game_word_ptr)dst = *(const u16 FAR *)script_bytes;
     dst += 2;
     script_bytes += 2;
 

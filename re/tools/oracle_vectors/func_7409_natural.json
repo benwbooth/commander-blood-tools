@@ -1,0 +1,1819 @@
+[
+  {
+    "name": "open_failure",
+    "record_count": 1,
+    "matched_index": null,
+    "result": 0,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": true
+      }
+    ],
+    "handler_targets": [],
+    "handler_source_offsets": [],
+    "directory_count_after": 51966,
+    "record_length_after": 48879,
+    "stop_flag_after": 0,
+    "stream_terminator_after": 22136,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "no_directory_match_close_error",
+    "record_count": 2,
+    "matched_index": null,
+    "result": 0,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 36,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 36
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": true
+      }
+    ],
+    "handler_targets": [],
+    "handler_source_offsets": [],
+    "directory_count_after": 0,
+    "record_length_after": 48879,
+    "stop_flag_after": 0,
+    "stream_terminator_after": 65535,
+    "close_carry": true,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "first_match_zero_terminator",
+    "record_count": 2,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 36,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 36
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 48
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 48,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 1,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 50,
+        "transferred": 1
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [],
+    "handler_source_offsets": [],
+    "directory_count_after": 2,
+    "record_length_after": 3,
+    "stop_flag_after": 0,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "later_match_wrapped_name_ff_terminator",
+    "record_count": 2,
+    "matched_index": 1,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 36,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 36
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 51
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 51,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 1,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 53,
+        "transferred": 1
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [],
+    "handler_source_offsets": [],
+    "directory_count_after": 1,
+    "record_length_after": 3,
+    "stop_flag_after": 0,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "real_opcode_01_sets_stop_flag",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21a2"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "real_opcode_08_consumes_word_then_terminates",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 4,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 4
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x231a"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 6,
+    "stop_flag_after": 0,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "stubbed_two_opcode_dispatch_loop",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 3,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 3
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2272",
+      "0x2289"
+    ],
+    "handler_source_offsets": [
+      16897,
+      16898
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 5,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_01",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21a2"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_02",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21a9"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_03",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21be"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_04",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21b7"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_05",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2272"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_06",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2289"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_07",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x22e4"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_08",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x231a"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_09",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2320"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0a",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2335"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0b",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x234a"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0c",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x23b4"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0d",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x23d6"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0e",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x23e8"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_0f",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x21b0"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_10",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x22cf"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_11",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x229e"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  },
+  {
+    "name": "dispatch_slot_12",
+    "record_count": 1,
+    "matched_index": 0,
+    "result": 1,
+    "path_call": [
+      12288,
+      262
+    ],
+    "dos_events": [
+      {
+        "function": 61,
+        "ds": 12288,
+        "dx": 262,
+        "error": false
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2734,
+        "file_offset": 0,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 18,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 2,
+        "transferred": 18
+      },
+      {
+        "function": 66,
+        "handle": 4951,
+        "offset": 32
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 12288,
+        "offset": 2736,
+        "file_offset": 32,
+        "transferred": 2
+      },
+      {
+        "function": 63,
+        "handle": 4951,
+        "request": 2,
+        "segment": 20480,
+        "offset": 16896,
+        "file_offset": 34,
+        "transferred": 2
+      },
+      {
+        "function": 62,
+        "handle": 4951,
+        "error": false
+      }
+    ],
+    "handler_targets": [
+      "0x2409"
+    ],
+    "handler_source_offsets": [
+      16897
+    ],
+    "directory_count_after": 1,
+    "record_length_after": 4,
+    "stop_flag_after": 1,
+    "stream_terminator_after": 65535,
+    "close_carry": false,
+    "ss_equals_gs": true
+  }
+]

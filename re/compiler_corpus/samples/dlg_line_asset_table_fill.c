@@ -28,11 +28,11 @@ extern volatile game_char_ptr GAME_DATA detail_cursor_global;
 extern volatile game_word_ptr GAME_DATA asset_cursor_global;
 
 #if defined(__WATCOMC__)
-#pragma aux dlg_line_asset_table_fill_probe parm [si] value [si] modify exact [ax si di]
+#pragma aux dlg_line_asset_table_fill_probe parm [ds si] value [ds si] modify exact [ax si di es]
 #endif
 
-const u8 NEAR *NEAR dlg_line_asset_table_fill_probe(
-    const u8 NEAR *script_bytes)
+const u8 FAR *NEAR dlg_line_asset_table_fill_probe(
+    const u8 FAR *script_bytes)
 {
     u16 stored_id;
     game_word_ptr asset_cursor;
