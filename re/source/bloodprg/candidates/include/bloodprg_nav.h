@@ -246,7 +246,8 @@ void CB_NEAR screen_mode_update(
 void CB_FAR bridge_render_frame(
         cb_u16 scene_link_target); /* 0x0077E0; original input BP */
 void CB_NEAR screen_flags_init(void); /* 0x00959D */
-void CB_NEAR camera_fsm_state_gate(void); /* 0x008A4E */
+void CB_NEAR camera_fsm_state_gate(
+        cb_u16 scene_link_target); /* 0x008A4E; original input BP */
 void CB_NEAR nav_camera_state_check(
         const volatile bloodprg_sprite_source_extent CB_FAR *comparison_extent);
         /* 0x008CCE; original context is inherited through SS:BP. */

@@ -178,6 +178,13 @@ extern cb_u32 CB_GAME_DATA ship_3d_hud_palette_stage_dwords[0x30]; /* GS:0x5491 
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_x; /* GS:0x2F65 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_y; /* GS:0x2F67 */
 extern volatile cb_i16 CB_GAME_DATA ship_3d_camera_z; /* GS:0x2F69 */
+extern volatile cb_u16 CB_GAME_DATA
+        ship_3d_camera_z_acceleration; /* DS/GS:0x2F6B */
+extern volatile cb_u16 ship_3d_hyperspace_sequence_index; /* DS:0x1F20 */
+extern const char
+        ship_3d_hyperspace_sequence_names[8][16]; /* DS:0x1F22 */
+extern volatile char CB_GAME_DATA
+        ship_3d_hyperspace_filename_suffix[]; /* ES=GS:0x2106 */
 extern volatile cb_u16 bridge_panorama_file_handle; /* DS:0x0AC4 */
 extern volatile bridge_panorama_directory_entry
         bridge_panorama_directory; /* DS:0x0AD2 */

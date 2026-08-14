@@ -58,7 +58,7 @@ void CB_FAR bridge_render_frame(cb_u16 scene_link_target)
     }
 
     if ((nav_transition_pending & BRIDGE_TRANSITION_FLAG) != 0u) {
-        camera_fsm_state_gate();
+        camera_fsm_state_gate(scene_link_target);
     }
     (void)presentation_mode_bits_update();
     sprite_slot_commit_dirty_range(0u, 31u);

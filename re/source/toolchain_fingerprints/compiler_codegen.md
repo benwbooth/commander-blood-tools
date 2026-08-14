@@ -4972,9 +4972,11 @@ UI bit zero and gives transition-phase bit `0x02` an early scene-dispatch path.
 The main path optionally publishes both presentation states before rebuilding
 screen flags, then calls `bridge_steer_update`. The original steering return is
 carry plus a live `BP` scene context; the natural API represents those values
-as a Boolean and an explicitly updated local. Before the navigation-camera
-pass, the natural caller reads the comparison-extent far pointer at context
-offset `+4`, matching the downstream `SS:[BP+4]` use proved at `0x008CCE`.
+as a Boolean and an explicitly updated local. The same scene context is
+forwarded to the camera FSM, matching its inherited `BP` use at `0x008A4E`.
+Before the navigation-camera pass, the natural caller reads the comparison-
+extent far pointer at context offset `+4`, matching the downstream
+`SS:[BP+4]` use proved at `0x008CCE`.
 
 A changed view selects presentation state two or three at the unsigned mouse-x
 boundary 160 and flips the page. The routine then services transition state,
@@ -4992,7 +4994,7 @@ ranges, dirty-copy ownership, late DS/ES ownership, remap geometry, all writes,
 register and segment residue, defined flags, stack integrity, and `RETF`.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
-warning-free to 88 instructions/257 bytes versus the original 78/240, with
+warning-free to 89 instructions/260 bytes versus the original 78/240, with
 91.03 percent mnemonic-multiset overlap and 80.77 percent ordered mnemonic
 overlap and no inline assembly. Full-source integration uses the explicit
 scene-context contract. Direct replacement still needs adapters for initial
@@ -5816,6 +5818,42 @@ uses the shipped DS=GS alias and valid nonzero frame records; direct binary
 replacement would additionally need the original segment switch, save
 envelope, AX residue, and terminal flags.
 
+## Camera FSM state gate at 0x008A4E
+
+The 349-byte body is the bridge-to-ship camera transition coordinator. A phase
+whose low three bits are zero initializes the transition and enters phase one.
+Phase one subtracts 100 from camera X while a signed comparison remains at or
+above 9,000 and decrements yaw with a signed post-decrement wrap to 180. Phase
+two adds the current Z acceleration under an unsigned 20,000 ceiling, then
+increases acceleration by 100. Phase three resets the cruise pose, copies one
+of the static `hyper_00.hnm` through `hyper_07.hnm` names from DS into the
+`sq\\` filename suffix in ES, publishes line six, and advances the full-word
+rotating index.
+
+Phase four forwards the inherited `BP` scene context to the presentation
+dispatcher. Its callback-updated low gate bit either holds the phase or starts
+the HUD/palette reset sequence. Later phase values ease the wrapped 16-bit Z
+word toward zero with `(-z) >> 2`; steps zero and `0xFFFF` both meet the exact
+terminal threshold and complete the transition.
+
+Fourteen patched-helper vectors execute the untouched original body. They
+cover all phase families, the signed X edge at `0x8000`, both yaw outcomes, the
+unsigned Z ceiling, acceleration order, dirty range 21 through 31, pose reset,
+full-word HNM index wrap, DS source and ES destination ownership, inherited
+scene context, callback-updated presentation gating, helper camera-reset
+visibility, both easing paths and both completion boundaries, render order,
+preserved registers and segments, terminal flags, stack integrity, and near
+return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural
+C state machine warning-free to 127 instructions/386 bytes versus 103/349
+original, with 87.38 percent mnemonic-multiset overlap and 81.55 percent
+ordered mnemonic overlap. It contains no inline assembly or register-state
+facade. Full-source integration requires the shipped `ES=GS` entry state,
+DS/GS data aliases, a clear direction flag, and fixed hyperspace filename
+storage. Direct binary replacement would additionally need the original BP
+parameter, selective save envelope, helper residue, and terminal flags.
+
 ## Navigation camera state check at 0x008CCE
 
 The 949-byte body is the navigation-chart state machine. A zero transition
@@ -5839,7 +5877,7 @@ Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles one warning-free natural
 typed function to 411 instructions/1,275 bytes versus 340/949 original, with
 72.94 percent mnemonic-multiset overlap and 59.71 percent ordered mnemonic
 overlap. It contains no inline assembly or register-state facade. The updated
-medium-model caller remains 88 instructions/257 bytes versus 78/240 original,
+medium-model caller is 89 instructions/260 bytes versus 78/240 original,
 with 91.03 percent multiset and 80.77 percent ordered overlap after making the
 scene-context `+4` extent handoff explicit.
 

@@ -63333,6 +63333,525 @@ def nav_chart_object_pick_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def camera_fsm_state_gate_vectors() -> list[dict[str, object]]:
+    entry = 0x8A4E
+    expected_hash = "a18703e4df1d18484136dad0121e300f341d951bf379e9ffdc7dc35d13421baf"
+    if hashlib.sha256(EXE[entry : entry + 349]).hexdigest() != expected_hash:
+        raise AssertionError("0x8a4e: recovered 349-byte body changed")
+
+    data_segment = 0x4400
+    game_segment = 0x6400
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    return_address = 0x6F00
+    helpers = {
+        0x959D: ("screen_flags_init", 0x0000, 0x959D, False),
+        0x3C40: ("sprite_slot_range_mark_dirty", 0x0299, 0x12B0, True),
+        0x3BD1: ("entity_flag_state_transition", 0x0299, 0x1241, True),
+        0x9710: ("dlg_line_id_scene_dispatch", 0x0971, 0x0000, True),
+        0x8C96: (
+            "ship_3d_hud_palette_snapshot_and_camera_reset",
+            0x0000,
+            0x8C96,
+            True,
+        ),
+        0x377B: ("blit_fill_row_5221", 0x0299, 0x0DEB, True),
+        0x98B9: ("ship_3d_projection_matrix_build", 0x0000, 0x98B9, True),
+        0x9A10: ("ship_3d_point_cloud_project", 0x0000, 0x9A10, True),
+        0x9B98: ("ship_3d_object_sprite_project", 0x0000, 0x9B98, True),
+    }
+    cases: list[dict[str, object]] = [
+        {
+            "name": "phase_zero_initializes_and_moves",
+            "phase": 0,
+            "camera_x": 10000,
+            "camera_z": 0,
+            "acceleration": 0,
+            "angle": 0,
+        },
+        {
+            "name": "phase_one_decrements_angle",
+            "phase": 1,
+            "camera_x": 9000,
+            "camera_z": 0x1234,
+            "angle": 77,
+        },
+        {
+            "name": "phase_one_advances_below_limit",
+            "phase": 1,
+            "camera_x": 8999,
+            "camera_z": 0x2345,
+            "angle": 0x4567,
+        },
+        {
+            "name": "phase_one_signed_high_advances",
+            "phase": 1,
+            "camera_x": 0x8000,
+            "camera_z": 0x3456,
+            "angle": 0x8001,
+        },
+        {
+            "name": "phase_two_accelerates_at_ceiling",
+            "phase": 2,
+            "camera_z": 20000,
+            "acceleration": 0x0123,
+        },
+        {
+            "name": "phase_two_marks_entities_above_ceiling",
+            "phase": 2,
+            "camera_z": 20001,
+            "acceleration": 0x2345,
+        },
+        {
+            "name": "phase_three_selects_wrapped_hyperspace_name",
+            "phase": 3,
+            "sequence_index": 0xFFFF,
+            "camera_x": 0x3456,
+            "camera_z": 0x4567,
+            "angle": 0x5678,
+        },
+        {
+            "name": "phase_four_waits_for_presentation",
+            "phase": 4,
+            "presentation_gate": 0x81,
+            "gate_after_dispatch": 0x81,
+        },
+        {
+            "name": "phase_four_callback_completes",
+            "phase": 4,
+            "presentation_gate": 1,
+            "gate_after_dispatch": 0,
+        },
+        {
+            "name": "phase_four_high_gate_bit_does_not_wait",
+            "phase": 4,
+            "presentation_gate": 0x80,
+        },
+        {
+            "name": "default_eases_wrapped_positive_z",
+            "phase": 5,
+            "camera_z": 30000,
+        },
+        {
+            "name": "default_eases_negative_near_zero",
+            "phase": 0x85,
+            "camera_z": 0xFFFC,
+        },
+        {
+            "name": "default_zero_finishes_transition",
+            "phase": 5,
+            "camera_z": 0,
+        },
+        {
+            "name": "masked_phase_eight_initializes_then_finishes",
+            "phase": 8,
+            "camera_z": 0xFFFF,
+        },
+    ]
+
+    def word(memory: bytearray | bytes, offset: int) -> int:
+        return struct.unpack_from("<H", memory, offset)[0]
+
+    def put_word(memory: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", memory, offset, value & 0xFFFF)
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        phase_before = int(case["phase"]) & 0xFF
+        presentation_before = (0x3100 + case_index * 0x101) & 0xFFFF
+        camera_x_before = int(case.get("camera_x", 10000)) & 0xFFFF
+        camera_y_before = (12000 + case_index * 17) & 0xFFFF
+        camera_z_before = int(case.get("camera_z", 0x1357)) & 0xFFFF
+        acceleration_before = int(case.get("acceleration", 0x2468)) & 0xFFFF
+        angle_before = int(case.get("angle", 0x0033)) & 0xFFFF
+        sequence_index_before = int(case.get("sequence_index", 3)) & 0xFFFF
+        presentation_gate_before = int(case.get("presentation_gate", 0xA0)) & 0xFF
+        active_line_before = (0x5200 + case_index * 0x101) & 0xFFFF
+        ui_before = (0xA581 + case_index * 0x0110) & 0xFFFF
+        transition_before = (0x40 + case_index) & 0xFF
+        camera_active_before = (0x80 + case_index) & 0xFF
+        scene_link_target = (0x7100 + case_index * 0x31) & 0xFFFF
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 23 + case_index * 29 + 0x31)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 11 + (offset >> 8) * 7 + case_index * 37 + 0x53)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        names = [f"hyper_{index:02d}.hnm".encode("ascii") + b"\0" for index in range(8)]
+        for index, sequence_name in enumerate(names):
+            start = 0x1F22 + index * 16
+            data_before[start : start + 16] = bytes(16)
+            data_before[start : start + len(sequence_name)] = sequence_name
+
+        put_word(data_before, 0x0A32, presentation_before)
+        data_before[0x278A] = camera_active_before
+        data_before[0x27DA] = transition_before
+        data_before[0x27DF] = phase_before
+        put_word(data_before, 0x2793, ui_before)
+        put_word(data_before, 0x2F65, camera_x_before)
+        put_word(data_before, 0x2F67, camera_y_before)
+        put_word(data_before, 0x2F69, camera_z_before)
+        put_word(data_before, 0x2F6B, acceleration_before)
+        put_word(data_before, 0x2F71, angle_before)
+        put_word(data_before, 0x1F20, sequence_index_before)
+        data_before[0x1FB2] = presentation_gate_before
+        put_word(data_before, 0x6788, active_line_before)
+        game_before[0x2106 : 0x2116] = bytes(
+            (0xD0 + case_index + index) & 0xFF for index in range(16)
+        )
+
+        expected_data = bytearray(data_before)
+        expected_game = bytearray(game_before)
+        expected_calls: list[dict[str, object]] = []
+
+        def state_snapshot(
+            data: bytearray | bytes, game: bytearray | bytes
+        ) -> dict[str, object]:
+            return {
+                "phase": data[0x27DF],
+                "presentation": word(data, 0x0A32),
+                "camera_active": data[0x278A],
+                "transition": data[0x27DA],
+                "ui": word(data, 0x2793),
+                "camera_x": word(data, 0x2F65),
+                "camera_y": word(data, 0x2F67),
+                "camera_z": word(data, 0x2F69),
+                "acceleration": word(data, 0x2F6B),
+                "angle": word(data, 0x2F71),
+                "sequence_index": word(data, 0x1F20),
+                "presentation_gate": data[0x1FB2],
+                "active_line": word(data, 0x6788),
+                "filename_hex": bytes(game[0x2106 : 0x2116]).hex(),
+            }
+
+        def add_expected(call: str, **arguments: int) -> None:
+            _address, helper = next(
+                (address, helper)
+                for address, helper in helpers.items()
+                if helper[0] == call
+            )
+            _call, cs, ip, far_return = helper
+            event: dict[str, object] = {
+                "call": call,
+                "cs": cs,
+                "ip": ip,
+                "sp": 0xFEF8 if far_return else 0xFEFA,
+                "bp": scene_link_target,
+                "ds": data_segment,
+                "es": game_segment,
+                "gs": game_segment,
+                **state_snapshot(expected_data, expected_game),
+                **arguments,
+            }
+            expected_calls.append(event)
+            if call == "dlg_line_id_scene_dispatch" and "gate_after_dispatch" in case:
+                expected_data[0x1FB2] = int(case["gate_after_dispatch"]) & 0xFF
+            elif call == "ship_3d_hud_palette_snapshot_and_camera_reset":
+                put_word(expected_data, 0x2F65, 10000)
+                put_word(expected_data, 0x2F67, 12000)
+                put_word(expected_data, 0x2F69, 0)
+
+        def increment_phase() -> None:
+            expected_data[0x27DF] = (expected_data[0x27DF] + 1) & 0xFF
+
+        if (expected_data[0x27DF] & 7) == 0:
+            put_word(expected_data, 0x0A32, 1)
+            expected_data[0x278A] = 0
+            expected_data[0x27DA] = 1
+            add_expected("screen_flags_init")
+            increment_phase()
+            put_word(expected_data, 0x2793, word(expected_data, 0x2793) | 4)
+
+        phase = expected_data[0x27DF]
+        render = False
+        if phase == 1:
+            camera_x = word(expected_data, 0x2F65)
+            signed_camera_x = struct.unpack("<h", struct.pack("<H", camera_x))[0]
+            if signed_camera_x >= 9000:
+                put_word(expected_data, 0x2F65, camera_x - 100)
+                angle = (word(expected_data, 0x2F71) - 1) & 0xFFFF
+                if angle & 0x8000:
+                    angle = 180
+                put_word(expected_data, 0x2F71, angle)
+            else:
+                increment_phase()
+            render = True
+        elif phase == 2:
+            camera_z = word(expected_data, 0x2F69)
+            if camera_z <= 20000:
+                put_word(
+                    expected_data,
+                    0x2F69,
+                    camera_z + word(expected_data, 0x2F6B),
+                )
+                put_word(
+                    expected_data,
+                    0x2F6B,
+                    word(expected_data, 0x2F6B) + 100,
+                )
+            else:
+                add_expected(
+                    "sprite_slot_range_mark_dirty",
+                    first_object_id=21,
+                    last_object_id=31,
+                )
+                increment_phase()
+            render = True
+        elif phase == 3:
+            put_word(expected_data, 0x0A32, 0xFFFF)
+            add_expected("entity_flag_state_transition", object_id=4)
+            put_word(expected_data, 0x2F69, 20000)
+            put_word(expected_data, 0x2F71, 0)
+            put_word(expected_data, 0x2F65, 10000)
+            sequence_index = word(expected_data, 0x1F20)
+            source = 0x1F22 + (sequence_index & 7) * 16
+            put_word(expected_data, 0x1F20, sequence_index + 1)
+            destination = 0x2106
+            while True:
+                character = expected_data[source]
+                source += 1
+                expected_game[destination] = character
+                destination += 1
+                if character == 0:
+                    break
+            put_word(expected_data, 0x6788, 6)
+            increment_phase()
+        elif phase == 4:
+            add_expected(
+                "dlg_line_id_scene_dispatch", link_target=scene_link_target
+            )
+            if (expected_data[0x1FB2] & 1) == 0:
+                put_word(expected_data, 0x0A32, 0)
+                add_expected("entity_flag_state_transition", object_id=4)
+                add_expected("ship_3d_hud_palette_snapshot_and_camera_reset")
+                add_expected("screen_flags_init")
+                increment_phase()
+                put_word(expected_data, 0x2F69, 30000)
+        else:
+            camera_z = word(expected_data, 0x2F69)
+            easing_step = ((-camera_z) & 0xFFFF) >> 2
+            if easing_step != 0:
+                put_word(expected_data, 0x2F69, camera_z + easing_step)
+                render = True
+            else:
+                put_word(expected_data, 0x2F6B, 16)
+                put_word(expected_data, 0x2F69, 0)
+                expected_data[0x27DA] = 0
+                expected_data[0x27DF] = 0
+                put_word(expected_data, 0x2793, word(expected_data, 0x2793) & 0xFFFB)
+                add_expected("screen_flags_init")
+                put_word(expected_data, 0x0A32, 1)
+
+        if render:
+            add_expected("blit_fill_row_5221", color=0)
+            add_expected("ship_3d_projection_matrix_build")
+            add_expected("ship_3d_point_cloud_project")
+            add_expected("ship_3d_object_sprite_project")
+
+        stack_sentinel = bytes.fromhex("5aa596698778c33c")
+        stack_before = bytearray(
+            (offset * 7 + case_index * 41 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 10] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x97970000 | scene_link_target,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": game_segment,
+            "fs": 0x7400,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        actual_calls: list[dict[str, object]] = []
+
+        def machine_word(machine: Uc, segment: int, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(segment * 16 + offset, 2)
+            )[0]
+
+        def machine_snapshot(machine: Uc) -> dict[str, object]:
+            return {
+                "phase": machine.mem_read(data_segment * 16 + 0x27DF, 1)[0],
+                "presentation": machine_word(machine, data_segment, 0x0A32),
+                "camera_active": machine.mem_read(
+                    data_segment * 16 + 0x278A, 1
+                )[0],
+                "transition": machine.mem_read(data_segment * 16 + 0x27DA, 1)[0],
+                "ui": machine_word(machine, data_segment, 0x2793),
+                "camera_x": machine_word(machine, data_segment, 0x2F65),
+                "camera_y": machine_word(machine, data_segment, 0x2F67),
+                "camera_z": machine_word(machine, data_segment, 0x2F69),
+                "acceleration": machine_word(machine, data_segment, 0x2F6B),
+                "angle": machine_word(machine, data_segment, 0x2F71),
+                "sequence_index": machine_word(machine, data_segment, 0x1F20),
+                "presentation_gate": machine.mem_read(
+                    data_segment * 16 + 0x1FB2, 1
+                )[0],
+                "active_line": machine_word(machine, data_segment, 0x6788),
+                "filename_hex": bytes(
+                    machine.mem_read(game_segment * 16 + 0x2106, 16)
+                ).hex(),
+            }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            helper = helpers.get(address)
+            if helper is None:
+                return
+            call, expected_cs, expected_ip, _far_return = helper
+            event: dict[str, object] = {
+                "call": call,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                **machine_snapshot(machine),
+            }
+            if event["cs"] != expected_cs or event["ip"] != expected_ip:
+                raise AssertionError(f"0x8a4e {name}: bad helper transfer {event}")
+            if call == "sprite_slot_range_mark_dirty":
+                event["first_object_id"] = machine.reg_read(UC_X86_REG_AX)
+                event["last_object_id"] = machine.reg_read(UC_X86_REG_BX)
+            elif call == "entity_flag_state_transition":
+                event["object_id"] = machine.reg_read(UC_X86_REG_AX)
+            elif call == "dlg_line_id_scene_dispatch":
+                event["link_target"] = machine.reg_read(UC_X86_REG_BP)
+            elif call == "blit_fill_row_5221":
+                event["color"] = machine.reg_read(UC_X86_REG_AX)
+            actual_calls.append(event)
+
+            if call == "dlg_line_id_scene_dispatch" and "gate_after_dispatch" in case:
+                machine.mem_write(
+                    data_segment * 16 + 0x1FB2,
+                    bytes((int(case["gate_after_dispatch"]) & 0xFF,)),
+                )
+            elif call == "ship_3d_hud_palette_snapshot_and_camera_reset":
+                machine.mem_write(
+                    data_segment * 16 + 0x2F65,
+                    struct.pack("<HHH", 10000, 12000, 0),
+                )
+
+        stubs = [(0, return_address, b"\xCC")]
+        for helper_entry, (_call, cs, ip, far_return) in helpers.items():
+            if cs == 0:
+                stubs.append((0, helper_entry, b"\xCB" if far_return else b"\xC3"))
+            else:
+                stubs.append((cs, ip, b"\xCB"))
+        stubs.extend(
+            [
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ]
+        )
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            stubs,
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        if actual_calls != expected_calls:
+            raise AssertionError(
+                f"0x8a4e {name}: calls={actual_calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x8a4e {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x8a4e {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, "
+                f"expected={expected_game[mismatch]:#x}"
+            )
+
+        for register in ("ebx", "ecx", "edx", "ebp", "ds", "es", "fs", "gs", "ss"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(
+                    f"0x8a4e {name}: {register}={actual:#x}, expected={initial[register]:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x8a4e {name}: bad near-return stack")
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8a4e {name}: near return changed CS")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x8a4e {name}: caller stack changed")
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        vectors.append(
+            {
+                "name": name,
+                "initial": {
+                    "phase": phase_before,
+                    "presentation": presentation_before,
+                    "camera_active": camera_active_before,
+                    "transition": transition_before,
+                    "ui": ui_before,
+                    "camera_x": camera_x_before,
+                    "camera_y": camera_y_before,
+                    "camera_z": camera_z_before,
+                    "acceleration": acceleration_before,
+                    "angle": angle_before,
+                    "sequence_index": sequence_index_before,
+                    "presentation_gate": presentation_gate_before,
+                    "active_line": active_line_before,
+                    "scene_link_target": scene_link_target,
+                },
+                "final": state_snapshot(expected_data, expected_game),
+                "calls": expected_calls,
+                "terminal_flags": {
+                    "carry": bool(flags & 0x0001),
+                    "parity": bool(flags & 0x0004),
+                    "zero": bool(flags & 0x0040),
+                    "sign": bool(flags & 0x0080),
+                    "direction": bool(flags & 0x0400),
+                    "overflow": bool(flags & 0x0800),
+                },
+            }
+        )
+    return vectors
+
+
 def nav_camera_state_check_vectors() -> list[dict[str, object]]:
     entry = 0x8CCE
     body_size = 949
@@ -86012,6 +86531,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77e0_natural.json",
         bridge_render_frame_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8a4e_natural.json",
+        camera_fsm_state_gate_vectors(),
         args.check,
     )
     update_vector(
