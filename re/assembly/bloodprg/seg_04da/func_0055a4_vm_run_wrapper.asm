@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target
 ; label: vm_run_wrapper
-; label_comment: prepares script resource far pointers, calls BIOS RTC writers, then enters vm_exec_loop || ALSO RECORDED as `vm_run_wrapper_is_the_per_frame_gameplay`: ARCHITECTURE: the main loop's per-frame update (lcall 0x4da:0x204, gated on [0x27e0]&1) IS vm_run_wrapper 0x55a4 - it resolves the 5 script-profile resources (DS:0x6712->DS:0x671c far ptrs via 0x55d9) then enters vm_exec_loop, gated on VM-active [0x67a8]&1. KEY: gameplay = VM SCRIPT EXECUTION. The object-simulation, combat, and interactions are script opcodes the VM runs each frame over the loaded profile (COD/BAS/VAR/DIC) - NOT a separate native loop. Unifies the decoded subsystems: main loop -> vm_run_wrapper -> vm_exec_loop -> opcodes (A6 text/C1 ship-3d/C4 presentation/D2 profile) -> entity table (0x6212) + render path. The entity accessors are called from VM opcode handlers || MERGED 2026-07-25 (audit-fixes #184): one address under several names, folded by union.
+; label_comment: when DS:0x67a8 bit zero is set, refresh the RTC globals, resolve five SS:0x6712 resource handles into GS:0x671c pointers, run the state pass, and execute the COD opcode stream with skip, yield, and resume control before post-run scans; natural C: re/source/bloodprg/candidates/seg_04da/func_0055a4_vm_run_wrapper.c
 ; incoming: call@0x001083->04da:0204
 ; incoming: call@0x0010de->04da:0204
 ; incoming: call@0x001d05->04da:0204

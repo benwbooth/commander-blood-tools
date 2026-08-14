@@ -6328,6 +6328,663 @@ def dlg_menu_words_inline_reveal_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_run_wrapper_vectors() -> list[dict[str, object]]:
+    entry = 0x55A4
+    return_address = 0xF5A4
+    body_size = 258
+    body_hash = "5b1e8001ff77d92b99b51fd5bd530c42d3fe55c4b6077a81d6d20ca18efedb5e"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x55a4: recovered 258-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "execution_disabled_is_a_noop",
+            "enabled": 0,
+        },
+        {
+            "name": "immediate_end_runs_post_scan",
+            "placements": [(0, [0xFF])],
+            "terminal_cursor": 1,
+        },
+        {
+            "name": "two_handlers_dispatch_in_order",
+            "placements": [(0, [0xA0, 0xA1, 0xFF])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1},
+                {"opcode": 0xA1, "cursor": 2},
+            ],
+            "terminal_cursor": 3,
+        },
+        {
+            "name": "resume_window_stops_at_loop_target",
+            "resume_before": 2,
+            "resume_cursor_before": 0x0100,
+            "loop_target": 0x0102,
+            "placements": [(0x0100, [0xA0, 0xA1, 0xD3])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 0x0101},
+                {"opcode": 0xA1, "cursor": 0x0102},
+            ],
+            "terminal_cursor": 0x0102,
+        },
+        {
+            "name": "resume_state_one_rewinds_to_loop_target",
+            "resume_before": 1,
+            "resume_cursor_before": 0x3333,
+            "loop_target": 0x0200,
+            "placements": [(0, [0xA0, 0xEE]), (0x0200, [0xFF])],
+            "handlers": [{"opcode": 0xA0, "cursor": 1}],
+            "resume_after": 0,
+            "terminal_cursor": 0x0201,
+        },
+        {
+            "name": "skip_count_advances_two_tokens",
+            "placements": [(0, [0xA0, 0x11, 0x22, 0xFF])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "skip": 2},
+            ],
+            "tokens": [
+                {"cursor": 1, "skip": 2, "advance": 1},
+                {"cursor": 2, "skip": 1, "advance": 1},
+            ],
+            "skip_after": 0,
+            "terminal_cursor": 4,
+        },
+        {
+            "name": "skip_high_nibble_alone_does_not_advance",
+            "skip_before": 0x10,
+            "placements": [(0, [0xA0, 0xFF])],
+            "handlers": [{"opcode": 0xA0, "cursor": 1}],
+            "skip_after": 0x10,
+            "terminal_cursor": 2,
+        },
+        {
+            "name": "yield_two_sets_lock_and_clears_skip",
+            "skip_before": 7,
+            "placements": [(0, [0xA0, 0xFF])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "yield": 2},
+            ],
+            "yield_after": 2,
+            "skip_after": 0,
+            "lock_after": 1,
+            "terminal_cursor": 2,
+        },
+        {
+            "name": "yield_three_saves_resume_cursor",
+            "placements": [(0, [0xA0, 0xFF])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "yield": 3},
+            ],
+            "yield_after": 3,
+            "resume_after": 1,
+            "resume_cursor_after": 1,
+            "lock_after": 1,
+            "terminal_cursor": 2,
+        },
+        {
+            "name": "yield_three_arms_resume_hold_immediately",
+            "resume_before": 1,
+            "resume_cursor_before": 0x4444,
+            "loop_target": 1,
+            "placements": [(0, [0xA0, 0xEE])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "yield": 3},
+            ],
+            "yield_after": 3,
+            "resume_after": 2,
+            "resume_cursor_after": 1,
+            "lock_after": 1,
+            "terminal_cursor": 1,
+        },
+        {
+            "name": "yield_one_is_a_coding_error",
+            "placements": [(0, [0xA0])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "yield": 1},
+            ],
+            "yield_after": 1,
+            "lock_after": 1,
+            "error": True,
+            "terminal_cursor": 1,
+        },
+        {
+            "name": "yield_four_is_a_coding_error",
+            "placements": [(0, [0xA0])],
+            "handlers": [
+                {"opcode": 0xA0, "cursor": 1, "yield": 4},
+            ],
+            "yield_after": 4,
+            "lock_after": 1,
+            "error": True,
+            "terminal_cursor": 1,
+        },
+        {
+            "name": "unloaded_handles_retain_previous_pointer",
+            "resources": [
+                {"loaded": True, "segment": 0x3000, "offset": 0},
+                {"loaded": False},
+                {"loaded": True, "segment": 0x3200, "offset": 0},
+                {"loaded": False},
+                {"loaded": True, "segment": 0x3400, "offset": 0},
+            ],
+            "placements": [(0, [0xFF])],
+            "terminal_cursor": 1,
+        },
+        {
+            "name": "script_pointer_offset_wraps",
+            "resources": [
+                {"loaded": True, "segment": 0x3000, "offset": 0xFFFF},
+                {"loaded": True, "segment": 0x3100, "offset": 0},
+                {"loaded": True, "segment": 0x3200, "offset": 0},
+                {"loaded": True, "segment": 0x3300, "offset": 0},
+                {"loaded": True, "segment": 0x3400, "offset": 0},
+            ],
+            "placements": [(0xFFFF, [0xA0]), (0, [0xFF])],
+            "handlers": [{"opcode": 0xA0, "cursor": 0}],
+            "terminal_cursor": 1,
+        },
+    ]
+
+    data_segment = 0x5000
+    game_segment = 0x6000
+    stack_segment = 0x7000
+    caller_sp = 0xF800
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    rtc_time_entry = 0x033B
+    rtc_date_entry = 0x0350
+    resource_entry = 0x4D20
+    error_entry = 0x0775
+    handler_entry = 0xE000
+    decoy_handler_entry = 0xE100
+    vectors: list[dict[str, object]] = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        enabled = int(case.get("enabled", 1))
+        handles = [
+            (0x0100 + case_index * 8 + index) & 0xFFFF
+            for index in range(5)
+        ]
+        resources = [dict(item) for item in case.get("resources", [])]
+        if not resources:
+            resources = [
+                {
+                    "loaded": True,
+                    "segment": 0x3000 + index * 0x0100,
+                    "offset": 0,
+                }
+                for index in range(5)
+            ]
+        if len(resources) != 5:
+            raise AssertionError(f"0x55a4 {name}: expected five resources")
+
+        handlers = [dict(item) for item in case.get("handlers", [])]
+        tokens = [dict(item) for item in case.get("tokens", [])]
+        resume_before = int(case.get("resume_before", 0))
+        resume_cursor_before = int(case.get("resume_cursor_before", 0x2468))
+        loop_target = int(case.get("loop_target", 0x1357))
+        skip_before = int(case.get("skip_before", 0))
+        yield_before = int(case.get("yield_before", 0xA5))
+        lock_before = int(case.get("lock_before", 0))
+        scan_flags_before = int(case.get("scan_flags_before", 0x6D))
+        expected_error = bool(case.get("error", False))
+
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 7 + case_index * 17 + 0x35) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 11 + (offset >> 8) * 19 + case_index * 23 + 0x57) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before = bytearray(
+            (offset * 5 + (offset >> 8) * 29 + case_index * 31 + 0x79) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x67A8] = enabled
+        game_before[0x67A8] = enabled ^ 1
+        game_before[0x67B1] = resume_before
+        game_before[0x67B2] = scan_flags_before
+        game_before[0x67B4] = yield_before
+        game_before[0x67B7] = lock_before
+        game_before[0x67AB] = skip_before
+        struct.pack_into("<H", game_before, 0x6778, loop_target)
+        struct.pack_into("<H", game_before, 0x677A, resume_cursor_before)
+        initial_pointer_bytes = bytes.fromhex(
+            "112233445566778899aabbccddeeff0012345678"
+        )
+        game_before[0x671C : 0x671C + 20] = initial_pointer_bytes
+
+        struct.pack_into("<5H", stack_before, 0x6712, *handles)
+        struct.pack_into(
+            "<5H", game_before, 0x6712, *[value ^ 0xFFFF for value in handles]
+        )
+        struct.pack_into(
+            "<5H", data_before, 0x6712, *[value ^ 0x5555 for value in handles]
+        )
+
+        handler_table = [decoy_handler_entry] * 52
+        for handler in handlers:
+            handler_table[int(handler["opcode"]) - 0xA0] = handler_entry
+        game_before[0x6EB0 : 0x6EB0 + 104] = struct.pack(
+            "<52H", *handler_table
+        )
+
+        stack_before[
+            caller_sp : caller_sp + 4 + len(stack_sentinel)
+        ] = struct.pack("<HH", return_address, 0) + stack_sentinel
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x8000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        memory: list[tuple[int, int, bytes]] = [
+            (0, rtc_time_entry, b"\xCB"),
+            (0, rtc_date_entry, b"\xCB"),
+            (0, resource_entry, b"\xCB"),
+            (0, error_entry, b"\xCB"),
+            (0, 0x5A74, b"\xC3"),
+            (0, 0x5791, b"\xC3"),
+            (0, 0x5816, b"\xC3"),
+            (0, 0x62B6, b"\xC3"),
+            (0, handler_entry, b"\xC3"),
+            (0, decoy_handler_entry, b"\xC3"),
+            (game_segment, 0, bytes(game_before)),
+            (stack_segment, 0, bytes(stack_before)),
+            (data_segment, 0, bytes(data_before)),
+        ]
+        first_segment = int(resources[0].get("segment", data_segment))
+        for placement_offset, placement_bytes in case.get("placements", []):
+            for byte_index, value in enumerate(placement_bytes):
+                memory.append(
+                    (
+                        first_segment,
+                        (int(placement_offset) + byte_index) & 0xFFFF,
+                        bytes([int(value)]),
+                    )
+                )
+
+        calls: list[dict[str, object]] = []
+        resource_call_index = 0
+        handler_call_index = 0
+        token_call_index = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal resource_call_index, handler_call_index, token_call_index
+            if address == rtc_time_entry:
+                calls.append({"call": "rtc_time"})
+            elif address == rtc_date_entry:
+                calls.append({"call": "rtc_date"})
+            elif address == resource_entry:
+                spec = resources[resource_call_index]
+                handle = machine.reg_read(UC_X86_REG_AX)
+                incoming = [
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                ]
+                if bool(spec.get("loaded", False)):
+                    machine.reg_write(UC_X86_REG_DS, int(spec["segment"]))
+                    machine.reg_write(UC_X86_REG_SI, int(spec.get("offset", 0)))
+                    machine.reg_write(UC_X86_REG_AX, 1)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 0)
+                calls.append(
+                    {
+                        "call": "resource",
+                        "handle": handle,
+                        "bp": machine.reg_read(UC_X86_REG_BP),
+                        "incoming": incoming,
+                        "loaded": bool(spec.get("loaded", False)),
+                        "result": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                    }
+                )
+                resource_call_index += 1
+            elif address == 0x5A74:
+                calls.append(
+                    {
+                        "call": "state_processor",
+                        "cursor": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                    }
+                )
+            elif address == handler_entry:
+                if handler_call_index >= len(handlers):
+                    raise AssertionError(f"0x55a4 {name}: extra handler call")
+                spec = handlers[handler_call_index]
+                opcode = 0xA0 + machine.reg_read(UC_X86_REG_BX) // 2
+                cursor = machine.reg_read(UC_X86_REG_SI)
+                if opcode != int(spec["opcode"]) or cursor != int(spec["cursor"]):
+                    raise AssertionError(
+                        f"0x55a4 {name}: handler {(opcode, cursor)}, "
+                        f"expected {(spec['opcode'], spec['cursor'])}"
+                    )
+                machine.mem_write(
+                    game_segment * 16 + 0x67B4,
+                    bytes([int(spec.get("yield", 0)) & 0xFF]),
+                )
+                if "skip" in spec:
+                    machine.mem_write(
+                        game_segment * 16 + 0x67AB,
+                        bytes([int(spec["skip"]) & 0xFF]),
+                    )
+                if "advance" in spec:
+                    machine.reg_write(
+                        UC_X86_REG_SI,
+                        (cursor + int(spec["advance"])) & 0xFFFF,
+                    )
+                calls.append(
+                    {"call": "handler", "opcode": opcode, "cursor": cursor}
+                )
+                handler_call_index += 1
+            elif address == decoy_handler_entry:
+                raise AssertionError(f"0x55a4 {name}: decoy handler dispatched")
+            elif address == 0x62B6:
+                if token_call_index >= len(tokens):
+                    raise AssertionError(f"0x55a4 {name}: extra token call")
+                spec = tokens[token_call_index]
+                cursor = machine.reg_read(UC_X86_REG_SI)
+                skip = machine.mem_read(game_segment * 16 + 0x67AB, 1)[0]
+                if cursor != int(spec["cursor"]) or skip != int(spec["skip"]):
+                    raise AssertionError(
+                        f"0x55a4 {name}: token {(cursor, skip)}, "
+                        f"expected {(spec['cursor'], spec['skip'])}"
+                    )
+                calls.append(
+                    {"call": "token", "cursor": cursor, "skip": skip}
+                )
+                machine.reg_write(
+                    UC_X86_REG_SI,
+                    (cursor + int(spec.get("advance", 1))) & 0xFFFF,
+                )
+                token_call_index += 1
+            elif address == 0x5791:
+                calls.append(
+                    {
+                        "call": "flag_test",
+                        "cursor": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                    }
+                )
+            elif address == 0x5816:
+                calls.append(
+                    {
+                        "call": "presentation_scan",
+                        "cursor": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                    }
+                )
+            elif address == error_entry:
+                calls.append(
+                    {
+                        "call": "error",
+                        "mode": machine.reg_read(UC_X86_REG_AX),
+                        "detail": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_DX),
+                        ],
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=10000,
+        )
+
+        if handler_call_index != len(handlers):
+            raise AssertionError(
+                f"0x55a4 {name}: handlers={handler_call_index}/"
+                f"{len(handlers)} calls={calls} state="
+                f"{machine.reg_read(UC_X86_REG_CS):#x}:"
+                f"{machine.reg_read(UC_X86_REG_IP):#x}"
+            )
+        if token_call_index != len(tokens):
+            raise AssertionError(f"0x55a4 {name}: missing token call")
+        if resource_call_index != (5 if enabled else 0):
+            raise AssertionError(f"0x55a4 {name}: wrong resource-call count")
+
+        expected_resource_calls: list[dict[str, object]] = []
+        modeled_pointer = [data_segment, 0]
+        if enabled:
+            for resource_index, spec in enumerate(resources):
+                incoming_pointer = list(modeled_pointer)
+                if bool(spec.get("loaded", False)):
+                    modeled_pointer = [
+                        int(spec["segment"]),
+                        int(spec.get("offset", 0)),
+                    ]
+                expected_resource_calls.append(
+                    {
+                        "call": "resource",
+                        "handle": handles[resource_index],
+                        "bp": 0x6712 + resource_index * 2,
+                        "incoming": incoming_pointer,
+                        "loaded": bool(spec.get("loaded", False)),
+                        "result": list(modeled_pointer),
+                    }
+                )
+        actual_resource_calls = [
+            call for call in calls if call["call"] == "resource"
+        ]
+        if actual_resource_calls != expected_resource_calls:
+            raise AssertionError(
+                f"0x55a4 {name}: resources={actual_resource_calls}, "
+                f"expected={expected_resource_calls}"
+            )
+
+        flow = []
+        for call in calls:
+            call_name = str(call["call"])
+            if call_name == "handler":
+                flow.append(f"handler:{int(call['opcode']):02x}")
+            else:
+                flow.append(call_name)
+        expected_flow: list[str] = []
+        if enabled:
+            expected_flow = [
+                "rtc_time",
+                "rtc_date",
+                "resource",
+                "resource",
+                "resource",
+                "resource",
+                "resource",
+                "state_processor",
+            ]
+            for handler_index, handler in enumerate(handlers):
+                expected_flow.append(f"handler:{int(handler['opcode']):02x}")
+                if handler_index == 0 and tokens:
+                    expected_flow.extend(["token"] * len(tokens))
+            if expected_error:
+                expected_flow.append("error")
+            else:
+                expected_flow.extend(["flag_test", "presentation_scan"])
+        if flow != expected_flow:
+            raise AssertionError(
+                f"0x55a4 {name}: flow={flow}, expected={expected_flow}"
+            )
+
+        expected_pointers: list[list[int]] = []
+        current_pointer = [data_segment, 0]
+        for spec in resources:
+            if bool(spec.get("loaded", False)):
+                current_pointer = [
+                    int(spec["segment"]),
+                    int(spec.get("offset", 0)),
+                ]
+            expected_pointers.append(list(current_pointer))
+        actual_pointer_bytes = bytes(
+            machine.mem_read(game_segment * 16 + 0x671C, 20)
+        )
+        if enabled:
+            expected_pointer_bytes = b"".join(
+                struct.pack("<HH", pointer[1], pointer[0])
+                for pointer in expected_pointers
+            )
+        else:
+            expected_pointer_bytes = initial_pointer_bytes
+        if actual_pointer_bytes != expected_pointer_bytes:
+            raise AssertionError(f"0x55a4 {name}: resource pointers differ")
+
+        state_after = {
+            "resume": machine.mem_read(game_segment * 16 + 0x67B1, 1)[0],
+            "scan_flags": machine.mem_read(game_segment * 16 + 0x67B2, 1)[0],
+            "yield": machine.mem_read(game_segment * 16 + 0x67B4, 1)[0],
+            "lock": machine.mem_read(game_segment * 16 + 0x67B7, 1)[0],
+            "skip": machine.mem_read(game_segment * 16 + 0x67AB, 1)[0],
+            "resume_cursor": struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + 0x677A, 2)
+            )[0],
+        }
+        expected_state = {
+            "resume": int(case.get("resume_after", resume_before)),
+            "scan_flags": 0 if enabled else scan_flags_before,
+            "yield": int(
+                case.get("yield_after", 0 if handlers else yield_before)
+            ),
+            "lock": int(case.get("lock_after", lock_before)),
+            "skip": int(case.get("skip_after", skip_before)),
+            "resume_cursor": int(
+                case.get("resume_cursor_after", resume_cursor_before)
+            ),
+        }
+        if state_after != expected_state:
+            raise AssertionError(
+                f"0x55a4 {name}: state={state_after}, expected={expected_state}"
+            )
+
+        terminal_cursor = case.get("terminal_cursor")
+        if terminal_cursor is not None:
+            terminal_calls = [
+                call
+                for call in calls
+                if call["call"] in ("flag_test", "presentation_scan", "error")
+            ]
+            expected_terminal = [first_segment, int(terminal_cursor)]
+            for call in terminal_calls:
+                key = "detail" if call["call"] == "error" else "cursor"
+                observed = list(call[key])
+                if call["call"] == "error":
+                    expected_terminal = [first_segment, 0]
+                if observed != expected_terminal:
+                    raise AssertionError(
+                        f"0x55a4 {name}: terminal {call['call']}={observed}, "
+                        f"expected={expected_terminal}"
+                    )
+
+        result = 0xFFFF if expected_error else 0
+        if enabled:
+            expected_registers = {
+                "eax": result,
+                "ebx": initial["ebx"] & 0xFFFF,
+                "ecx": initial["ecx"] & 0xFFFF,
+                "edx": initial["edx"] & 0xFFFF,
+                "esi": initial["esi"] & 0xFFFF,
+                "edi": initial["edi"] & 0xFFFF,
+                "ebp": 0x671C,
+            }
+        else:
+            expected_registers = {
+                "eax": (initial["eax"] & 0xFFFF0000) | result,
+                "ebx": initial["ebx"],
+                "ecx": initial["ecx"],
+                "edx": initial["edx"],
+                "esi": initial["esi"],
+                "edi": initial["edi"],
+                "ebp": initial["ebp"],
+            }
+        expected_registers.update(
+            {
+                "ds": initial["ds"],
+                "es": initial["es"],
+                "fs": initial["fs"],
+                "gs": initial["gs"],
+                "ss": initial["ss"],
+                "sp": caller_sp + 4,
+            }
+        )
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x55a4 {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+
+        status_mask = 0x0CD5
+        expected_status = int(case.get("status_flags", 0x0044))
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        if flags_after & status_mask != expected_status:
+            raise AssertionError(
+                f"0x55a4 {name}: flags={flags_after & status_mask:#x}, "
+                f"expected={expected_status:#x}"
+            )
+
+        if bytes(machine.mem_read(stack_segment * 16 + 0x6712, 10)) != struct.pack(
+            "<5H", *handles
+        ):
+            raise AssertionError(f"0x55a4 {name}: SS resource handles changed")
+        if bytes(machine.mem_read(game_segment * 16 + 0x6712, 10)) != struct.pack(
+            "<5H", *[value ^ 0xFFFF for value in handles]
+        ):
+            raise AssertionError(f"0x55a4 {name}: GS handle decoy changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x6712, 10)) != struct.pack(
+            "<5H", *[value ^ 0x5555 for value in handles]
+        ):
+            raise AssertionError(f"0x55a4 {name}: DS handle decoy changed")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x55a4 {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "enabled": bool(enabled),
+                "resource_handles": handles,
+                "resolved_pointers": expected_pointers if enabled else None,
+                "flow": flow,
+                "state_after": state_after,
+                "terminal_cursor": terminal_cursor,
+                "result": result,
+                "registers_after": expected_registers,
+                "defined_status_flags": expected_status,
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def vm_script_block_scan_vectors() -> list[dict[str, object]]:
     entry = 0x56A6
     body_size = 88
@@ -80657,6 +81314,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_72a8_natural.json",
         dlg_menu_words_inline_reveal_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_55a4_natural.json",
+        vm_run_wrapper_vectors(),
         args.check,
     )
     update_vector(

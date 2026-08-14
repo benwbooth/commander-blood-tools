@@ -5578,6 +5578,37 @@ an optional MOVSB tail rather than the original byte-only REP MOVSB. Direct
 replacement still needs fixed DS placement, exact source/destination segment
 construction, the original preserve-all envelope, and the clear-DF invariant.
 
+## BLOODPRG per-frame VM owner candidate
+
+`0x0055A4` is the far per-frame VM owner. It gates through incoming
+`DS:0x67A8`, calls the RTC time and date writers, reads five handles through
+`SS:BP` at `0x6712`, and resolves them in order. Each returned `DS:SI` is
+stored at `GS:0x671C`; an unloaded handle deliberately retains the preceding
+pointer. It then runs the VM state pass and dispatches the COD stream through
+the A0-based near-handler table at `GS:0x6EB0`.
+
+Fourteen patched-callee original-binary vectors cover the disabled path,
+loaded and unloaded pointer chains, immediate end, two-handler order, low-
+nibble skip gating with full-byte countdown, resume-state-one rewind,
+resume-state-two cursor-window termination, yield-two skip clearing,
+yield-three cursor publication, invalid yields one and four, and 16-bit script
+offset wrap. They also prove RTC/resource/state/token/post-scan order, DS/SS/GS
+ownership against decoys, exact state writes, the mixed 16/32-bit register
+envelope, flags, stack, and far return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
+104-instruction/293-byte function versus 90/258 original, with 84.44 percent
+mnemonic-multiset overlap and 73.33 percent ordered mnemonic overlap. The
+candidate uses natural resource-result structs, far pointers, direct function
+calls, and structured control flow with no inline assembly.
+
+Full-source integration requires the shipped `DS=SS=GS` data layout, clear DF,
+linker aliases between the five-pointer array and the individually named VM
+images, and valid A0-based top-level opcodes. A direct binary replacement also
+needs the original resolver's simultaneous AX plus conditional DS:SI result,
+the enabled path's upper-register clearing and BP residue, and path-specific
+flags.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

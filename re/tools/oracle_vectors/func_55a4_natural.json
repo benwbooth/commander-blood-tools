@@ -1,0 +1,991 @@
+[
+  {
+    "name": "execution_disabled_is_a_noop",
+    "enabled": false,
+    "resource_handles": [
+      256,
+      257,
+      258,
+      259,
+      260
+    ],
+    "resolved_pointers": null,
+    "flow": [],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 109,
+      "yield": 165,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": null,
+    "result": 0,
+    "registers_after": {
+      "eax": 2711683072,
+      "ebx": 2998018885,
+      "ecx": 3284350038,
+      "edx": 3570681191,
+      "esi": 3857012344,
+      "edi": 4143343497,
+      "ebp": 2543286426,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "immediate_end_runs_post_scan",
+    "enabled": true,
+    "resource_handles": [
+      264,
+      265,
+      266,
+      267,
+      268
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 165,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 1,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "two_handlers_dispatch_in_order",
+    "enabled": true,
+    "resource_handles": [
+      272,
+      273,
+      274,
+      275,
+      276
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "handler:a1",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 3,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "resume_window_stops_at_loop_target",
+    "enabled": true,
+    "resource_handles": [
+      280,
+      281,
+      282,
+      283,
+      284
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "handler:a1",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 2,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 256
+    },
+    "terminal_cursor": 258,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "resume_state_one_rewinds_to_loop_target",
+    "enabled": true,
+    "resource_handles": [
+      288,
+      289,
+      290,
+      291,
+      292
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 13107
+    },
+    "terminal_cursor": 513,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "skip_count_advances_two_tokens",
+    "enabled": true,
+    "resource_handles": [
+      296,
+      297,
+      298,
+      299,
+      300
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "token",
+      "token",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 4,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "skip_high_nibble_alone_does_not_advance",
+    "enabled": true,
+    "resource_handles": [
+      304,
+      305,
+      306,
+      307,
+      308
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 16,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 2,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "yield_two_sets_lock_and_clears_skip",
+    "enabled": true,
+    "resource_handles": [
+      312,
+      313,
+      314,
+      315,
+      316
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 2,
+      "lock": 1,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 2,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "yield_three_saves_resume_cursor",
+    "enabled": true,
+    "resource_handles": [
+      320,
+      321,
+      322,
+      323,
+      324
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 1,
+      "scan_flags": 0,
+      "yield": 3,
+      "lock": 1,
+      "skip": 0,
+      "resume_cursor": 1
+    },
+    "terminal_cursor": 2,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "yield_three_arms_resume_hold_immediately",
+    "enabled": true,
+    "resource_handles": [
+      328,
+      329,
+      330,
+      331,
+      332
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 2,
+      "scan_flags": 0,
+      "yield": 3,
+      "lock": 1,
+      "skip": 0,
+      "resume_cursor": 1
+    },
+    "terminal_cursor": 1,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "yield_one_is_a_coding_error",
+    "enabled": true,
+    "resource_handles": [
+      336,
+      337,
+      338,
+      339,
+      340
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "error"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 1,
+      "lock": 1,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 1,
+    "result": 65535,
+    "registers_after": {
+      "eax": 65535,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "yield_four_is_a_coding_error",
+    "enabled": true,
+    "resource_handles": [
+      344,
+      345,
+      346,
+      347,
+      348
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "error"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 4,
+      "lock": 1,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 1,
+    "result": 65535,
+    "registers_after": {
+      "eax": 65535,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "unloaded_handles_retain_previous_pointer",
+    "enabled": true,
+    "resource_handles": [
+      352,
+      353,
+      354,
+      355,
+      356
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        0
+      ],
+      [
+        12288,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 165,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 1,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  },
+  {
+    "name": "script_pointer_offset_wraps",
+    "enabled": true,
+    "resource_handles": [
+      360,
+      361,
+      362,
+      363,
+      364
+    ],
+    "resolved_pointers": [
+      [
+        12288,
+        65535
+      ],
+      [
+        12544,
+        0
+      ],
+      [
+        12800,
+        0
+      ],
+      [
+        13056,
+        0
+      ],
+      [
+        13312,
+        0
+      ]
+    ],
+    "flow": [
+      "rtc_time",
+      "rtc_date",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "resource",
+      "state_processor",
+      "handler:a0",
+      "flag_test",
+      "presentation_scan"
+    ],
+    "state_after": {
+      "resume": 0,
+      "scan_flags": 0,
+      "yield": 0,
+      "lock": 0,
+      "skip": 0,
+      "resume_cursor": 9320
+    },
+    "terminal_cursor": 1,
+    "result": 0,
+    "registers_after": {
+      "eax": 0,
+      "ebx": 9029,
+      "ecx": 13398,
+      "edx": 17767,
+      "esi": 22136,
+      "edi": 26505,
+      "ebp": 26396,
+      "ds": 20480,
+      "es": 18432,
+      "fs": 32768,
+      "gs": 24576,
+      "ss": 28672,
+      "sp": 63492
+    },
+    "defined_status_flags": 68,
+    "return": "far"
+  }
+]

@@ -17,6 +17,8 @@ typedef volatile cb_u8 CB_FAR *bloodprg_vm_image_ptr;
 typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
         bloodprg_vm_image_ptr script_bytes);
 
+#define BLOODPRG_VM_RESOURCE_COUNT 5u
+
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
 extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
@@ -57,6 +59,11 @@ extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u8 CB_FAR * CB_GAME_DATA
         vm_record_base_gs; /* explicit GS:0x6724 alias */
+/* BP addresses this table through SS; the shipped runtime has SS=GS. */
+extern volatile cb_u16 vm_resource_handles[BLOODPRG_VM_RESOURCE_COUNT];
+/* These five pointers alias the individually named 0x671c..0x672f globals. */
+extern bloodprg_vm_image_ptr CB_GAME_DATA
+        vm_resource_images[BLOODPRG_VM_RESOURCE_COUNT];
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_script_image; /* GS:0x671C */
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_code_image; /* GS:0x6720 */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
@@ -80,6 +87,7 @@ extern volatile cb_u16 CB_GAME_DATA vm_pc_saved; /* GS:0x6776 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_post_update_record_offset; /* GS:0x6798 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
+extern volatile cb_u16 CB_GAME_DATA vm_resume_cursor; /* GS:0x677A */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_a; /* GS:0x6782 */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_b; /* GS:0x6784 */
 extern volatile cb_u16 vm_presentation_owner_offset; /* DS:0x679A */
@@ -93,7 +101,7 @@ extern volatile cb_u16 vm_resource_profile_index; /* DS:0x677E */
 extern volatile cb_u16 vm_presentation_primary_c4_record; /* DS:0x675E */
 extern volatile cb_u16 vm_named_scruter_jo_object; /* DS:0x6760 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
-extern volatile cb_u8 vm_execution_enabled; /* GS:0x67A8 */
+extern volatile cb_u8 vm_execution_enabled; /* DS:0x67A8; runtime DS=GS */
 extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_request_flags_gs; /* explicit GS:0x67AA alias */
@@ -105,6 +113,7 @@ extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 vm_block_scan_flags;   /* GS:0x67B2 */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
+extern volatile cb_u8 CB_GAME_DATA vm_presentation_start_lock; /* GS:0x67B7 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
 extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
 extern volatile cb_u8 vm_presentation_word_choice_phase; /* DS:0x67BA alias */
@@ -222,6 +231,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux value_scan_match parm [ax] [ds si] value [ax] modify exact [ax bx]
 #pragma aux vm_flag_test_67b1 value [ax] modify exact [ax bx]
 #pragma aux vm_state_processor modify exact [ax]
+#pragma aux vm_run_wrapper value [ax] modify exact [ax bp]
 #pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_op_a3_collect modify exact []
@@ -287,6 +297,7 @@ void CB_NEAR vm_control_flow(
         const volatile bloodprg_vm_object_header CB_FAR *object,
         cb_u16 code_offset);                     /* 0x0056FE */
 cb_u16 CB_NEAR vm_flag_test_67b1(void);           /* 0x005791 */
+void CB_NEAR presentation_scan(void);              /* 0x005816 */
 void CB_SAVE_REGS CB_NEAR vm_state_processor(void); /* 0x005A74 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
