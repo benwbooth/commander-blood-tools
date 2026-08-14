@@ -1084,6 +1084,32 @@ the helper's inherited BP cursor, fixed segmented placement, and the addr32
 high-half convention remain integration boundaries around the recovered C
 algorithm.
 
+Kind-2 navigation target-list builder `0x0071CF` first rebuilds the active
+object list, then walks its exact `0xFFFF`-terminated offsets. It excludes the
+Honk record at `GS:0x6754` and the radio/menu record at `GS:0x6756`, looks up
+every remaining object through the far record base at `DS:0x6724`, and appends
+only records whose 16-bit kind is exactly 2 to `SS/DS:0x2B13`. The output gets
+its own `0xFFFF` terminator and the accepted count is returned in AX and CX.
+
+Nine patched-helper vectors cover empty, accepted, excluded, wrong-kind,
+flag-independent, zero-offset, unsigned `0x8000`/`0xFFFE`, non-wrapping
+32-bit record-address, and all-rejected lists, plus inherited reverse
+traversal. They prove the helper call state and ordering, stale-source
+replacement, both selection exclusions, exact kind semantics, nonzero record
+bases, DS/GS/SS/ES ownership, complete output and count, register and flag
+effects, stack integrity, and far return. The addr32 lookup proves two binary
+details that ordinary 16-bit far-pointer arithmetic does not express: upper
+EDI must enter zero, and the base-plus-offset sum does not wrap at 64 KiB.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 35 instructions/77 bytes versus the original 33/75,
+with 93.94 percent mnemonic-multiset overlap and no inline assembly. A `huge`
+pointer experiment preserved wider arithmetic but expanded to 114 bytes and a
+`__PIA` runtime call, so it was rejected. The natural candidate instead keeps
+the shipped shared-data, clear-DF, and in-range record-sum invariants explicit;
+direct binary replacement would additionally need the original helper input,
+clobber, full-EAX clearing, and upper-EDI conventions.
+
 VM token scanner `0x006293` has nine direct vectors covering immediate,
 aligned, and unaligned matches; scan-cursor wrap; a word read crossing offset
 `0xFFFF`; post-match addition wrap; and optional-increment wrap and signed

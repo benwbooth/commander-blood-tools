@@ -1,0 +1,342 @@
+[
+  {
+    "name": "empty_active_list",
+    "source": [],
+    "excluded": {
+      "honk": 28672,
+      "menu": 28674
+    },
+    "record_base": [
+      40960,
+      512
+    ],
+    "objects": {},
+    "output": [],
+    "count": 0,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "two_kind2_targets",
+    "source": [
+      16,
+      48
+    ],
+    "excluded": {
+      "honk": 28672,
+      "menu": 28674
+    },
+    "record_base": [
+      40960,
+      256
+    ],
+    "objects": {
+      "0x0010": [
+        2,
+        2
+      ],
+      "0x0030": [
+        2,
+        162
+      ]
+    },
+    "output": [
+      16,
+      48
+    ],
+    "count": 2,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "exclude_honk_and_menu",
+    "source": [
+      32,
+      64,
+      96
+    ],
+    "excluded": {
+      "honk": 32,
+      "menu": 64
+    },
+    "record_base": [
+      40960,
+      768
+    ],
+    "objects": {
+      "0x0020": [
+        2,
+        2
+      ],
+      "0x0040": [
+        2,
+        2
+      ],
+      "0x0060": [
+        2,
+        2
+      ]
+    },
+    "output": [
+      96
+    ],
+    "count": 1,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "kind_must_equal_two",
+    "source": [
+      4,
+      16,
+      32,
+      48
+    ],
+    "excluded": {
+      "honk": 28928,
+      "menu": 28930
+    },
+    "record_base": [
+      40960,
+      291
+    ],
+    "objects": {
+      "0x0004": [
+        1,
+        2
+      ],
+      "0x0010": [
+        258,
+        2
+      ],
+      "0x0020": [
+        2,
+        0
+      ],
+      "0x0030": [
+        2,
+        255
+      ]
+    },
+    "output": [
+      32,
+      48
+    ],
+    "count": 2,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "zero_offset_is_valid",
+    "source": [
+      0,
+      6
+    ],
+    "excluded": {
+      "honk": 29184,
+      "menu": 29186
+    },
+    "record_base": [
+      40960,
+      1024
+    ],
+    "objects": {
+      "0x0000": [
+        2,
+        2
+      ],
+      "0x0006": [
+        2,
+        2
+      ]
+    },
+    "output": [
+      0,
+      6
+    ],
+    "count": 2,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "unsigned_high_offsets_do_not_terminate",
+    "source": [
+      32768,
+      65534
+    ],
+    "excluded": {
+      "honk": 29440,
+      "menu": 29442
+    },
+    "record_base": [
+      40960,
+      0
+    ],
+    "objects": {
+      "0x8000": [
+        2,
+        2
+      ],
+      "0xfffe": [
+        2,
+        2
+      ]
+    },
+    "output": [
+      32768,
+      65534
+    ],
+    "count": 2,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "addr32_record_sum_does_not_wrap",
+    "source": [
+      65534
+    ],
+    "excluded": {
+      "honk": 29520,
+      "menu": 29522
+    },
+    "record_base": [
+      40960,
+      291
+    ],
+    "objects": {
+      "0xfffe": [
+        2,
+        2
+      ]
+    },
+    "output": [
+      65534
+    ],
+    "count": 1,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "all_kinds_rejected",
+    "source": [
+      16,
+      32,
+      48
+    ],
+    "excluded": {
+      "honk": 29696,
+      "menu": 29698
+    },
+    "record_base": [
+      40960,
+      1360
+    ],
+    "objects": {
+      "0x0010": [
+        0,
+        2
+      ],
+      "0x0020": [
+        3,
+        2
+      ],
+      "0x0030": [
+        512,
+        2
+      ]
+    },
+    "output": [],
+    "count": 0,
+    "direction_flag": false,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  },
+  {
+    "name": "inherited_reverse_direction",
+    "source": [
+      16
+    ],
+    "excluded": {
+      "honk": 29952,
+      "menu": 29954
+    },
+    "record_base": [
+      40960,
+      544
+    ],
+    "objects": {
+      "0x0010": [
+        2,
+        2
+      ]
+    },
+    "output": [
+      16
+    ],
+    "count": 1,
+    "direction_flag": true,
+    "helper": {
+      "eax": 0,
+      "cx": 0,
+      "ds": 24576,
+      "gs": 28672,
+      "return_ip": 29148
+    },
+    "return": "far"
+  }
+]

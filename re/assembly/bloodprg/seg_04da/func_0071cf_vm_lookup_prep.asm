@@ -6,8 +6,8 @@
 ; seg_off: 04da:1e2f
 ; group: seg_04da
 ; provenance: relocation_proven_far_transfer_target
-; label: vm_lookup_prep
-; label_comment: VM lookup prep (also 0x721a): call table_672c_process 0x604e; si=0x6a16 (the processed lookup output). Prepares the 0x672c->0x6a16 lookup for VM record resolution
+; label: nav_kind2_target_list_build
+; label_comment: rebuilds the 0xffff-terminated active-object list at DS:0x6a16, excludes GS:0x6754 Honk and GS:0x6756 menu, keeps exact kind-2 records through addr32 ES:[EAX+EDI], writes a 0xffff-terminated target list through SS:BP at 0x2b13, and returns the accepted count in AX and CX. EAX is cleared before the scan; upper EDI must already be zero because LES replaces only DI.
 ; incoming: call@0x00873c->04da:1e2f
 ; byte_count: 75
 ; boundary: cfg_blocks_8_terminals_2

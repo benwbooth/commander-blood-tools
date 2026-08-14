@@ -31,6 +31,8 @@ typedef struct bloodprg_presentation_line_record {
 extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
 extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
+/* SS:0x2B13 in the binary; runtime SS=DS makes this ordinary near data. */
+extern volatile cb_u16 nav_kind2_target_offsets[];
 extern volatile cb_u16 nav_deferred_record_type; /* DS:0x6768 */
 extern volatile cb_u16 nav_deferred_record_link; /* DS:0x676A */
 extern volatile char nav_radio_snd_path[];    /* DS:0x0D16 */
@@ -57,6 +59,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux list_widget_layout_unified parm [si] value [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_handler_3 modify exact [ax si]
+#pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #endif
 
 int CB_NEAR presentation_line_helper(
@@ -67,5 +70,6 @@ void CB_NEAR presentation_choice_transition_step(void); /* 0x001AD3 */
 void CB_NEAR confirm_dialog_step(void); /* 0x0014CA */
 void CB_NEAR nav_choice_handler_0(void); /* 0x008713 */
 void CB_NEAR nav_choice_handler_3(void); /* 0x008848 */
+cb_u16 CB_FAR nav_kind2_target_list_build(void); /* 0x0071CF */
 
 #endif

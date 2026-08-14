@@ -2907,6 +2907,341 @@ def ship_3d_navigation_candidate_build_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_kind2_target_list_build_vectors() -> list[dict[str, object]]:
+    entry = 0x71CF
+    return_address = 0xF1CF
+    expected_hash = "aaf60d2d580ad987ffdbb75dff624f3369cf2c58fc25a5b1abf4a632fba4d1b2"
+    if hashlib.sha256(EXE[entry : entry + 75]).hexdigest() != expected_hash:
+        raise AssertionError("0x71cf: recovered 75-byte body changed")
+
+    cases = (
+        {
+            "name": "empty_active_list",
+            "source": [],
+            "honk": 0x7000,
+            "menu": 0x7002,
+            "record_base": 0x0200,
+            "objects": {},
+            "expected": [],
+        },
+        {
+            "name": "two_kind2_targets",
+            "source": [0x0010, 0x0030],
+            "honk": 0x7000,
+            "menu": 0x7002,
+            "record_base": 0x0100,
+            "objects": {
+                0x0010: (2, 0x02),
+                0x0030: (2, 0xA2),
+            },
+            "expected": [0x0010, 0x0030],
+        },
+        {
+            "name": "exclude_honk_and_menu",
+            "source": [0x0020, 0x0040, 0x0060],
+            "honk": 0x0020,
+            "menu": 0x0040,
+            "record_base": 0x0300,
+            "objects": {
+                0x0020: (2, 0x02),
+                0x0040: (2, 0x02),
+                0x0060: (2, 0x02),
+            },
+            "expected": [0x0060],
+        },
+        {
+            "name": "kind_must_equal_two",
+            "source": [0x0004, 0x0010, 0x0020, 0x0030],
+            "honk": 0x7100,
+            "menu": 0x7102,
+            "record_base": 0x0123,
+            "objects": {
+                0x0004: (1, 0x02),
+                0x0010: (0x0102, 0x02),
+                0x0020: (2, 0x00),
+                0x0030: (2, 0xFF),
+            },
+            "expected": [0x0020, 0x0030],
+        },
+        {
+            "name": "zero_offset_is_valid",
+            "source": [0x0000, 0x0006],
+            "honk": 0x7200,
+            "menu": 0x7202,
+            "record_base": 0x0400,
+            "objects": {
+                0x0000: (2, 0x02),
+                0x0006: (2, 0x02),
+            },
+            "expected": [0x0000, 0x0006],
+        },
+        {
+            "name": "unsigned_high_offsets_do_not_terminate",
+            "source": [0x8000, 0xFFFE],
+            "honk": 0x7300,
+            "menu": 0x7302,
+            "record_base": 0,
+            "objects": {
+                0x8000: (2, 0x02),
+                0xFFFE: (2, 0x02),
+            },
+            "expected": [0x8000, 0xFFFE],
+        },
+        {
+            "name": "addr32_record_sum_does_not_wrap",
+            "source": [0xFFFE],
+            "honk": 0x7350,
+            "menu": 0x7352,
+            "record_base": 0x0123,
+            "objects": {0xFFFE: (2, 0x02)},
+            "expected": [0xFFFE],
+        },
+        {
+            "name": "all_kinds_rejected",
+            "source": [0x0010, 0x0020, 0x0030],
+            "honk": 0x7400,
+            "menu": 0x7402,
+            "record_base": 0x0550,
+            "objects": {
+                0x0010: (0, 0x02),
+                0x0020: (3, 0x02),
+                0x0030: (0x200, 0x02),
+            },
+            "expected": [],
+        },
+        {
+            "name": "inherited_reverse_direction",
+            "source": [0x0010],
+            "honk": 0x7500,
+            "menu": 0x7502,
+            "record_base": 0x0220,
+            "objects": {0x0010: (2, 0x02)},
+            "expected": [0x0010],
+            "direction_flag": True,
+        },
+    )
+    source_segment = 0x6000
+    state_segment = 0x7000
+    output_segment = 0x8000
+    record_segment = 0xA000
+    source_offset = 0x6A16
+    destination_offset = 0x2B13
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5a3ca587966978c3")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        source = [int(value) for value in case["source"]]
+        honk = int(case["honk"])
+        menu = int(case["menu"])
+        record_base = int(case["record_base"])
+        objects = {
+            int(object_offset): tuple(int(value) for value in values)
+            for object_offset, values in dict(case["objects"]).items()
+        }
+        expected = [int(value) for value in case["expected"]]
+        direction_flag = bool(case.get("direction_flag", False))
+        source_step = -2 if direction_flag else 2
+
+        source_before = bytearray(
+            (offset * 19 + (offset >> 8) * 29 + case_index * 23 + 0x41)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into(
+            "<HH", source_before, 0x6724, record_base, record_segment
+        )
+        for index in range(16):
+            struct.pack_into(
+                "<H", source_before, source_offset + index * 2, 0xD000 + index
+            )
+        expected_source = bytearray(source_before)
+        source_words = source + [0xFFFF]
+        for index, value in enumerate(source_words):
+            struct.pack_into(
+                "<H",
+                expected_source,
+                (source_offset + index * source_step) & 0xFFFF,
+                value,
+            )
+
+        state_before = bytearray(
+            (offset * 11 + case_index * 17 + 0xA7) & 0xFF
+            for offset in range(0x10000)
+        )
+        struct.pack_into("<H", state_before, 0x6754, honk)
+        struct.pack_into("<H", state_before, 0x6756, menu)
+
+        output_before = bytearray(
+            (offset * 7 + (offset >> 8) * 13 + case_index * 31 + 0x5D)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        for index in range(16):
+            struct.pack_into(
+                "<H", output_before, destination_offset + index * 2, 0xE000 + index
+            )
+        output_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        expected_output = bytearray(output_before)
+        for index, value in enumerate(expected + [0xFFFF]):
+            struct.pack_into(
+                "<H", expected_output, destination_offset + index * 2, value
+            )
+
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 17 + case_index * 37 + 0x69)
+            & 0xFF
+            for offset in range(0x20020)
+        )
+        for object_offset, (kind, flags) in objects.items():
+            object_address = record_base + object_offset
+            struct.pack_into("<H", record_before, object_address, kind)
+            record_before[object_address + 2] = flags
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0x2468,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": source_segment,
+            "es": 0x5000,
+            "fs": 0x5200,
+            "gs": state_segment,
+            "ss": output_segment,
+            "flags": 0x0202 | (0x0400 if direction_flag else 0),
+        }
+        helper_calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != 0x604E:
+                return
+            stack_pointer = machine.reg_read(UC_X86_REG_SP)
+            helper_calls.append(
+                {
+                    "eax": machine.reg_read(UC_X86_REG_EAX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "gs": machine.reg_read(UC_X86_REG_GS),
+                    "return_ip": struct.unpack(
+                        "<H",
+                        machine.mem_read(
+                            output_segment * 16 + stack_pointer, 2
+                        ),
+                    )[0],
+                }
+            )
+            for index, value in enumerate(source_words):
+                machine.mem_write(
+                    source_segment * 16
+                    + ((source_offset + index * source_step) & 0xFFFF),
+                    struct.pack("<H", value),
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, 0x604E, b"\xC3"),
+                (source_segment, 0, bytes(source_before)),
+                (state_segment, 0, bytes(state_before)),
+                (output_segment, 0, bytes(output_before)),
+                (record_segment, 0, bytes(record_before)),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        expected_helper_calls = [
+            {
+                "eax": 0,
+                "cx": 0,
+                "ds": source_segment,
+                "gs": state_segment,
+                "return_ip": 0x71DC,
+            }
+        ]
+        if helper_calls != expected_helper_calls:
+            raise AssertionError(
+                f"0x71cf {name}: helper={helper_calls!r}, "
+                f"expected={expected_helper_calls!r}"
+            )
+        actual_source = bytes(machine.mem_read(source_segment * 16, 0x10000))
+        if actual_source != bytes(expected_source):
+            raise AssertionError(f"0x71cf {name}: source segment differs")
+        if bytes(machine.mem_read(state_segment * 16, 0x10000)) != bytes(
+            state_before
+        ):
+            raise AssertionError(f"0x71cf {name}: state segment changed")
+        actual_output = bytes(machine.mem_read(output_segment * 16, 0x10000))
+        if (
+            actual_output[:0xFE00] != bytes(expected_output[:0xFE00])
+            or actual_output[caller_sp + 4 :]
+            != bytes(expected_output[caller_sp + 4 :])
+        ):
+            raise AssertionError(f"0x71cf {name}: output segment differs")
+        if bytes(
+            machine.mem_read(record_segment * 16, len(record_before))
+        ) != bytes(record_before):
+            raise AssertionError(f"0x71cf {name}: record segment changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        count = len(expected)
+        expected_registers["eax"] = count
+        expected_registers["ecx"] = (
+            initial["ecx"] & 0xFFFF0000
+        ) | count
+        expected_registers["sp"] = caller_sp + 4
+        for register, expected_value in expected_registers.items():
+            actual_value = machine.reg_read(REGISTERS[register])
+            if actual_value != expected_value:
+                raise AssertionError(
+                    f"0x71cf {name}: {register}={actual_value:#x}, "
+                    f"expected={expected_value:#x}"
+                )
+        expected_flags = (initial["flags"] & ~0x08D5) | 0x0044
+        actual_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        if (actual_flags & 0x0ED7) != (expected_flags & 0x0ED7):
+            raise AssertionError(
+                f"0x71cf {name}: flags={actual_flags:#x}, "
+                f"expected={expected_flags:#x}"
+            )
+        if bytes(
+            machine.mem_read(
+                output_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x71cf {name}: caller stack changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "source": source,
+                "excluded": {"honk": honk, "menu": menu},
+                "record_base": [record_segment, record_base],
+                "objects": {
+                    f"{object_offset:#06x}": [kind, flags]
+                    for object_offset, (kind, flags) in objects.items()
+                },
+                "output": expected,
+                "count": count,
+                "direction_flag": direction_flag,
+                "helper": helper_calls[0],
+                "return": "far",
+            }
+        )
+
+    return vectors
+
+
 def rtc_time_read_vectors() -> list[dict[str, object]]:
     data_segment = 0x2000
     state_segment = 0x2800
@@ -62006,6 +62341,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_70ee_natural.json",
         ship_3d_navigation_candidate_build_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_71cf_natural.json",
+        nav_kind2_target_list_build_vectors(),
         args.check,
     )
     update_vector(
