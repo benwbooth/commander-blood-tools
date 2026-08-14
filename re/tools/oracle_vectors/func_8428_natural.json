@@ -1,0 +1,875 @@
+[
+  {
+    "name": "empty_zero_prepass",
+    "items": [
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      96,
+      120,
+      8
+    ],
+    "widths_head": [
+      36864,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      85,
+      0
+    ],
+    "game_hover_selection": [
+      85,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "extra_sentinel_prepass_double_fill",
+    "items": [
+      65535
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      63,
+      91,
+      75,
+      18
+    ],
+    "widths_head": [
+      55,
+      55,
+      37410,
+      37683
+    ],
+    "calls": [],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      85,
+      0
+    ],
+    "game_hover_selection": [
+      85,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "width_floor_double_fill",
+    "items": [
+      4352,
+      4608,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      85,
+      120,
+      30
+    ],
+    "widths_head": [
+      100,
+      100,
+      100,
+      100
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4608,
+        "mode": 0
+      }
+    ],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      85,
+      0
+    ],
+    "game_hover_selection": [
+      85,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "per_label_widths_preserved",
+    "items": [
+      4352,
+      4608,
+      4864,
+      65535
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      20,
+      79,
+      160,
+      41
+    ],
+    "widths_head": [
+      20,
+      140,
+      80,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4608,
+        "mode": 0
+      },
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4864,
+        "mode": 0
+      }
+    ],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      85,
+      0
+    ],
+    "game_hover_selection": [
+      85,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "active_save_name_substitution",
+    "items": [
+      4608,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      44,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 10043,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 10043,
+        "x": 78,
+        "y": 94,
+        "color": 232
+      }
+    ],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      255,
+      0
+    ],
+    "game_hover_selection": [
+      255,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "width_helper_adds_extra_entry",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      25,
+      55,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      }
+    ],
+    "presentation_states": [
+      1,
+      13124
+    ],
+    "data_hover_selection": [
+      85,
+      0
+    ],
+    "game_hover_selection": [
+      85,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "outside_left_requests_idle",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 85,
+        "y": 94,
+        "color": 232
+      }
+    ],
+    "presentation_states": [
+      0,
+      1
+    ],
+    "data_hover_selection": [
+      255,
+      0
+    ],
+    "game_hover_selection": [
+      255,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "left_top_boundary_hover",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 85,
+        "y": 94,
+        "color": 239
+      }
+    ],
+    "presentation_states": [
+      0,
+      6
+    ],
+    "data_hover_selection": [
+      0,
+      0
+    ],
+    "game_hover_selection": [
+      0,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "right_bottom_boundary_hover",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 85,
+        "y": 94,
+        "color": 239
+      }
+    ],
+    "presentation_states": [
+      6,
+      13124
+    ],
+    "data_hover_selection": [
+      0,
+      0
+    ],
+    "game_hover_selection": [
+      0,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "below_click_band_is_outside",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 85,
+        "y": 94,
+        "color": 232
+      }
+    ],
+    "presentation_states": [
+      0,
+      1
+    ],
+    "data_hover_selection": [
+      255,
+      0
+    ],
+    "game_hover_selection": [
+      255,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "second_row_hover",
+    "items": [
+      4352,
+      4608,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      85,
+      120,
+      30
+    ],
+    "widths_head": [
+      20,
+      80,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4608,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          85,
+          120,
+          30
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 90,
+        "y": 89,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4608,
+        "x": 60,
+        "y": 100,
+        "color": 239
+      }
+    ],
+    "presentation_states": [
+      0,
+      6
+    ],
+    "data_hover_selection": [
+      0,
+      0
+    ],
+    "game_hover_selection": [
+      0,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "second_row_click_active",
+    "items": [
+      4352,
+      4608,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      85,
+      120,
+      30
+    ],
+    "widths_head": [
+      20,
+      80,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4608,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          85,
+          120,
+          30
+        ]
+      },
+      {
+        "call": "snd_play_clip",
+        "segment": 16384,
+        "clip": 0
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 90,
+        "y": 89,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4608,
+        "x": 60,
+        "y": 100,
+        "color": 254
+      }
+    ],
+    "presentation_states": [
+      6,
+      7
+    ],
+    "data_hover_selection": [
+      0,
+      2
+    ],
+    "game_hover_selection": [
+      0,
+      2
+    ],
+    "return_value": 1
+  },
+  {
+    "name": "extra_cancel_row_hover",
+    "items": [
+      4352,
+      65535
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      63,
+      85,
+      75,
+      29
+    ],
+    "widths_head": [
+      20,
+      55,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          63,
+          85,
+          75,
+          29
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 90,
+        "y": 89,
+        "color": 232
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 16384,
+        "offset": 372,
+        "x": 73,
+        "y": 100,
+        "color": 239
+      }
+    ],
+    "presentation_states": [
+      6,
+      13124
+    ],
+    "data_hover_selection": [
+      0,
+      0
+    ],
+    "game_hover_selection": [
+      0,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "remap_mutates_mouse_before_hittest",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": false,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 85,
+        "y": 94,
+        "color": 239
+      }
+    ],
+    "presentation_states": [
+      0,
+      6
+    ],
+    "data_hover_selection": [
+      0,
+      0
+    ],
+    "game_hover_selection": [
+      0,
+      0
+    ],
+    "return_value": -1
+  },
+  {
+    "name": "split_ds_es_gs_ss_ownership",
+    "items": [
+      4352,
+      0
+    ],
+    "label_segment": 24576,
+    "split_game_stack_segments": true,
+    "rect": [
+      40,
+      90,
+      120,
+      19
+    ],
+    "widths_head": [
+      30,
+      37137,
+      37410,
+      37683
+    ],
+    "calls": [
+      {
+        "call": "text_width_dual_font",
+        "segment": 24576,
+        "offset": 4352,
+        "mode": 0
+      },
+      {
+        "call": "framebuffer_rect_palette_remap",
+        "segment": 16384,
+        "remap": 27136,
+        "rect": [
+          40,
+          90,
+          120,
+          19
+        ]
+      },
+      {
+        "call": "snd_play_clip",
+        "segment": 16384,
+        "clip": 0
+      },
+      {
+        "call": "square_caps_text_draw_display",
+        "segment": 24576,
+        "offset": 4352,
+        "x": 65,
+        "y": 94,
+        "color": 232
+      }
+    ],
+    "presentation_states": [
+      0,
+      7
+    ],
+    "data_hover_selection": [
+      1,
+      1
+    ],
+    "game_hover_selection": [
+      2,
+      9
+    ],
+    "return_value": 8
+  }
+]

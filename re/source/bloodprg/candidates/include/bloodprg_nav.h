@@ -71,6 +71,7 @@ extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
 extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
+extern volatile cb_u8 nav_target_hover_row; /* DS/GS:0x27C7 */
 extern volatile cb_u8 nav_target_selection; /* DS:0x27E7 */
 extern volatile cb_u16 nav_console_selected_item; /* DS:0x2A19 */
 extern volatile cb_u16 nav_bridge_seek_target_arc; /* DS:0x279B */
@@ -101,6 +102,8 @@ extern const cb_u16 presentation_choice_items[]; /* DS:0x259D */
 extern volatile cb_i16 nav_choice_animation_target_rect[4]; /* DS:0x253D */
 extern volatile cb_i16 presentation_choice_target_rect[4]; /* DS:0x25CF */
 extern volatile cb_i16 presentation_choice_current_rect[4]; /* DS:0x2AAB */
+extern volatile cb_u16 list_widget_label_widths[]; /* DS:0x2AB3 */
+extern const cb_u8 CB_GAME_DATA list_widget_cancel_label[]; /* GS:0x0174 */
 extern const cb_u8 CB_NEAR *
         option_menu_label_pointers[]; /* DS:0x2567 */
 extern const cb_u8 option_menu_music_on_label[]; /* DS:0x2578 */
@@ -117,7 +120,8 @@ extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
 extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
 #if defined(__WATCOMC__)
-#pragma aux list_widget_layout_unified parm [si] value [ax]
+#pragma aux list_widget_layout_unified \
+        parm [si] value [ax] modify exact [ax]
 #pragma aux nav_choice_handler_0 modify exact [ax]
 #pragma aux nav_choice_handler_3 modify exact [ax si]
 #pragma aux nav_choice_dispatch modify exact [ax di]

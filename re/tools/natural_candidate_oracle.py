@@ -72275,6 +72275,363 @@ def resource_switch_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_widget_layout_unified_vectors() -> list[dict[str, object]]:
+    entry = 0x8428
+    text_width_entry = 0x2ACD  # Runtime 0299:013D.
+    text_draw_entry = 0x2B06  # Runtime 0299:0176.
+    remap_entry = 0x2D9E  # Runtime 0299:040E.
+    sound_entry = 0xB2CD  # Runtime 0B1B:011D.
+    data_segment = 0x4000
+    label_segment = 0x6000
+    split_game_segment = 0x8000
+    split_stack_segment = 0xA000
+    items_offset = 0x6200
+    return_address = 0x6F00
+    caller_sp = 0xFEFC
+    initial_widths = [(0x9000 + index * 0x111) & 0xFFFF for index in range(12)]
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    cases: list[dict[str, object]] = [
+        {"name": "empty_zero_prepass", "items": [0], "editing": 1,
+         "preserve": 1, "expected_rect": [40, 96, 120, 8],
+         "expected_widths": initial_widths[:4], "expected_return": -1},
+        {"name": "extra_sentinel_prepass_double_fill", "items": [0xFFFF],
+         "editing": 1, "extra": 1, "expected_rect": [63, 91, 75, 18],
+         "expected_widths": [55, 55, initial_widths[2], initial_widths[3]],
+         "expected_return": -1},
+        {"name": "width_floor_double_fill", "items": [0x1100, 0x1200, 0],
+         "widths": {0x1100: 20, 0x1200: 80}, "editing": 1,
+         "expected_rect": [40, 85, 120, 30],
+         "expected_widths": [100, 100, 100, 100], "expected_return": -1},
+        {"name": "per_label_widths_preserved",
+         "items": [0x1100, 0x1200, 0x1300, 0xFFFF],
+         "widths": {0x1100: 20, 0x1200: 140, 0x1300: 80},
+         "editing": 1, "preserve": 1, "expected_rect": [20, 79, 160, 41],
+         "expected_widths": [20, 140, 80, initial_widths[3]],
+         "expected_return": -1},
+        {"name": "active_save_name_substitution", "items": [0x1200, 0],
+         "active_name": 0x1200, "widths": {0x273B: 44}, "preserve": 1,
+         "mouse": [0, 0], "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [44, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_draw_offsets": [0x273B]},
+        {"name": "width_helper_adds_extra_entry", "items": [0x1100, 0],
+         "widths": {0x1100: 25}, "editing": 1, "preserve": 1,
+         "width_helper_sets_extra": 1, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [25, 55, initial_widths[2], initial_widths[3]],
+         "expected_return": -1},
+        {"name": "outside_left_requests_idle", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [39, 94],
+         "presentation_state": 5, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_states": [0, 1, 0xFF, 0]},
+        {"name": "left_top_boundary_hover", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [40, 94],
+         "presentation_state": 5, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_states": [0, 6, 0, 0],
+         "expected_colors": [0xEF]},
+        {"name": "right_bottom_boundary_hover", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [160, 104],
+         "presentation_state": 6, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_states": [6, 0x3344, 0, 0],
+         "expected_colors": [0xEF]},
+        {"name": "below_click_band_is_outside", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [100, 105],
+         "presentation_state": 5, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_states": [0, 1, 0xFF, 0]},
+        {"name": "second_row_hover", "items": [0x1100, 0x1200, 0],
+         "widths": {0x1100: 20, 0x1200: 80}, "preserve": 1,
+         "mouse": [100, 100], "presentation_state": 5,
+         "expected_rect": [40, 85, 120, 30],
+         "expected_widths": [20, 80, initial_widths[2], initial_widths[3]],
+         "expected_return": -1, "expected_states": [0, 6, 0, 0],
+         "expected_colors": [0xE8, 0xEF]},
+        {"name": "second_row_click_active", "items": [0x1100, 0x1200, 0],
+         "widths": {0x1100: 20, 0x1200: 80}, "preserve": 1,
+         "mouse": [100, 100], "mouse_pressed": 1, "presentation_state": 6,
+         "expected_rect": [40, 85, 120, 30],
+         "expected_widths": [20, 80, initial_widths[2], initial_widths[3]],
+         "expected_return": 1, "expected_states": [6, 7, 0, 2],
+         "expected_colors": [0xE8, 0xFE], "expect_sound": True},
+        {"name": "extra_cancel_row_hover", "items": [0x1100, 0xFFFF],
+         "widths": {0x1100: 20}, "preserve": 1, "extra": 1,
+         "mouse": [100, 100], "presentation_state": 6,
+         "expected_rect": [63, 85, 75, 29],
+         "expected_widths": [20, 55, initial_widths[2], initial_widths[3]],
+         "expected_return": -1, "expected_states": [6, 0x3344, 0, 0],
+         "expected_colors": [0xE8, 0xEF],
+         "expected_draw_offsets": [0x1100, 0x0174]},
+        {"name": "remap_mutates_mouse_before_hittest", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [0, 0],
+         "remap_mouse": [100, 94], "presentation_state": 5,
+         "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": -1, "expected_states": [0, 6, 0, 0],
+         "expected_colors": [0xEF]},
+        {"name": "split_ds_es_gs_ss_ownership", "items": [0x1100, 0],
+         "widths": {0x1100: 30}, "preserve": 1, "mouse": [100, 94],
+         "mouse_pressed": 1, "presentation_state": 5,
+         "split_segments": True, "game_hover": 3, "game_selection": 9,
+         "stack_width": 70, "expected_rect": [40, 90, 120, 19],
+         "expected_widths": [30, initial_widths[1], initial_widths[2],
+                             initial_widths[3]],
+         "expected_return": 8, "expected_states": [0, 7, 1, 1],
+         "expected_game_states": [2, 9], "expected_colors": [0xE8],
+         "expect_sound": True},
+    ]
+    expected_hash = "6b881bfc221a2deebed1cfebb4a128d4b8442753f415bae68280cab3f6aa1a29"
+    if hashlib.sha256(EXE[entry : entry + 442]).hexdigest() != expected_hash:
+        raise AssertionError("0x8428: recovered 442-byte body changed")
+
+    def signed16(value: int) -> int:
+        value &= 0xFFFF
+        return value - 0x10000 if value & 0x8000 else value
+
+    vectors: list[dict[str, object]] = []
+    for case in cases:
+        name = str(case["name"])
+        split_segments = bool(case.get("split_segments", False))
+        game_segment = split_game_segment if split_segments else data_segment
+        stack_segment = split_stack_segment if split_segments else data_segment
+        items = [int(value) & 0xFFFF for value in case["items"]]
+        widths = {int(key): int(value) for key, value in
+                  dict(case.get("widths", {})).items()}
+        active_name = int(case.get("active_name", 0xF123))
+        center_x = int(case.get("center_x", 100)) & 0xFFFF
+        editing = int(case.get("editing", 0)) & 0xFF
+        preserve = int(case.get("preserve", 0)) & 0xFF
+        extra = int(case.get("extra", 0)) & 0xFF
+        mouse_x, mouse_y = [int(value) & 0xFFFF for value in
+                            case.get("mouse", [0, 0])]
+        mouse_pressed = int(case.get("mouse_pressed", 0)) & 0xFF
+        presentation_state = int(case.get("presentation_state", 1)) & 0xFFFF
+
+        data = bytearray(0x10000)
+        labels = bytearray(0x10000)
+        game = bytearray(0x10000)
+        stack = bytearray(0x10000)
+        for index, value in enumerate(items):
+            struct.pack_into("<H", data, items_offset + index * 2, value)
+        for index, value in enumerate(initial_widths):
+            struct.pack_into("<H", data, 0x2AB3 + index * 2, value)
+        struct.pack_into("<H", labels, 0x2734, active_name)
+        labels[0x273B : 0x274B] = b"EDITED SAVE NAME\0"
+        struct.pack_into("<H", data, 0x0AC8, 0x6A00)
+        struct.pack_into("<H", data, 0x0AC6, center_x)
+        data[0x0ADC] = preserve
+        data[0x0ADD] = extra
+        data[0x27E6] = editing
+        data[0x27E7] = 0x77
+        data[0x27C7] = 0x55
+        struct.pack_into("<H", data, 0x0A2A, mouse_x)
+        struct.pack_into("<H", data, 0x0A2C, mouse_y)
+        data[0x0A3E] = mouse_pressed
+        struct.pack_into("<H", data, 0x0A34, presentation_state)
+        struct.pack_into("<H", data, 0x0A32, 0x3344)
+        data[0x0174 : 0x017B] = b"CANCEL\0"
+        if split_segments:
+            game[0x27C7] = int(case.get("game_hover", 0)) & 0xFF
+            game[0x27E7] = int(case.get("game_selection", 0)) & 0xFF
+            game[0x0A3E] = int(case.get("game_mouse_pressed", 0)) & 0xFF
+            game[0x0ADD] = int(case.get("game_extra", 0)) & 0xFF
+            game[0x0174 : 0x017B] = b"CANCEL\0"
+            struct.pack_into("<H", stack, 0x2AB3,
+                             int(case.get("stack_width", 0)))
+
+        stack_memory = stack if split_segments else data
+        stack_memory[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+        initial = {
+            "eax": 0xA1A1BEEF, "ebx": 0xB2B22345, "ecx": 0xC3C33456,
+            "edx": 0xD4D44567, "esi": 0xE5E50000 | items_offset,
+            "edi": 0xF6F66789, "ebp": 0x9797789A, "sp": caller_sp,
+            "ds": data_segment, "es": label_segment, "fs": 0x7000,
+            "gs": game_segment, "ss": stack_segment, "flags": 0x0203,
+        }
+        calls: list[dict[str, object]] = []
+        width_call_count = 0
+
+        def read_word(machine: Uc, segment: int, offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(segment * 16 + offset, 2)
+            )[0]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal width_call_count
+            if address == text_width_entry:
+                offset = machine.reg_read(UC_X86_REG_SI)
+                calls.append({"call": "text_width_dual_font",
+                              "segment": machine.reg_read(UC_X86_REG_DS),
+                              "offset": offset,
+                              "mode": machine.reg_read(UC_X86_REG_AX)})
+                if offset not in widths:
+                    raise AssertionError(
+                        f"0x8428 {name}: no width configured for {offset:#x}"
+                    )
+                machine.reg_write(UC_X86_REG_AX, widths[offset])
+                width_call_count += 1
+                if width_call_count == 1 and "width_helper_sets_extra" in case:
+                    machine.mem_write(data_segment * 16 + 0x0ADD,
+                                      bytes([int(case["width_helper_sets_extra"]) & 0xFF]))
+            elif address == remap_entry:
+                calls.append({
+                    "call": "framebuffer_rect_palette_remap",
+                    "segment": machine.reg_read(UC_X86_REG_DS),
+                    "remap": machine.reg_read(UC_X86_REG_SI),
+                    "rect": [machine.reg_read(UC_X86_REG_BX),
+                             machine.reg_read(UC_X86_REG_CX),
+                             machine.reg_read(UC_X86_REG_DX),
+                             machine.reg_read(UC_X86_REG_BP)],
+                })
+                if "remap_mouse" in case:
+                    next_x, next_y = [int(value) & 0xFFFF for value in
+                                      case["remap_mouse"]]
+                    machine.mem_write(data_segment * 16 + 0x0A2A,
+                                      struct.pack("<HH", next_x, next_y))
+            elif address == sound_entry:
+                calls.append({"call": "snd_play_clip",
+                              "segment": machine.reg_read(UC_X86_REG_DS),
+                              "clip": signed16(machine.reg_read(UC_X86_REG_AX))})
+            elif address == text_draw_entry:
+                calls.append({
+                    "call": "square_caps_text_draw_display",
+                    "segment": machine.reg_read(UC_X86_REG_DS),
+                    "offset": machine.reg_read(UC_X86_REG_SI),
+                    "x": machine.reg_read(UC_X86_REG_BX),
+                    "y": machine.reg_read(UC_X86_REG_DX),
+                    "color": machine.reg_read(UC_X86_REG_AL),
+                })
+
+        memory: list[tuple[int, int, bytes]] = [
+            (0, text_width_entry, b"\xCB"), (0, text_draw_entry, b"\xCB"),
+            (0, remap_entry, b"\xCB"), (0, sound_entry, b"\xCB"),
+            (0, return_address, b"\xCC"), (data_segment, 0, bytes(data)),
+            (label_segment, 0, bytes(labels)),
+        ]
+        if split_segments:
+            memory.extend([(game_segment, 0, bytes(game)),
+                           (stack_segment, 0, bytes(stack))])
+        machine = execute(entry, return_address, initial, memory,
+                          code_handler=capture, instruction_count=5000)
+
+        rect_words = [read_word(machine, data_segment, 0x2AAB + index * 2)
+                      for index in range(4)]
+        actual_rect = [signed16(rect_words[0]), signed16(rect_words[1]),
+                       rect_words[2], rect_words[3]]
+        if actual_rect != case["expected_rect"]:
+            raise AssertionError(
+                f"0x8428 {name}: rect={actual_rect}, expected={case['expected_rect']}"
+            )
+        actual_widths = [read_word(machine, data_segment, 0x2AB3 + index * 2)
+                         for index in range(4)]
+        if actual_widths != case["expected_widths"]:
+            raise AssertionError(
+                f"0x8428 {name}: widths={actual_widths}, expected={case['expected_widths']}"
+            )
+        result = signed16(machine.reg_read(UC_X86_REG_AX))
+        if result != case["expected_return"]:
+            raise AssertionError(
+                f"0x8428 {name}: result={result}, expected={case['expected_return']}"
+            )
+        data_states = [read_word(machine, data_segment, 0x0A34),
+                       read_word(machine, data_segment, 0x0A32),
+                       machine.mem_read(data_segment * 16 + 0x27C7, 1)[0],
+                       machine.mem_read(data_segment * 16 + 0x27E7, 1)[0]]
+        if "expected_states" in case and data_states != case["expected_states"]:
+            raise AssertionError(
+                f"0x8428 {name}: states={data_states}, expected={case['expected_states']}"
+            )
+        game_states = [machine.mem_read(game_segment * 16 + 0x27C7, 1)[0],
+                       machine.mem_read(game_segment * 16 + 0x27E7, 1)[0]]
+        if ("expected_game_states" in case
+                and game_states != case["expected_game_states"]):
+            raise AssertionError(
+                f"0x8428 {name}: game states={game_states}, "
+                f"expected={case['expected_game_states']}"
+            )
+        draw_calls = [call for call in calls
+                      if call["call"] == "square_caps_text_draw_display"]
+        colors = [int(call["color"]) for call in draw_calls]
+        if "expected_colors" in case and colors != case["expected_colors"]:
+            raise AssertionError(
+                f"0x8428 {name}: colors={colors}, expected={case['expected_colors']}"
+            )
+        draw_offsets = [int(call["offset"]) for call in draw_calls]
+        if ("expected_draw_offsets" in case
+                and draw_offsets != case["expected_draw_offsets"]):
+            raise AssertionError(
+                f"0x8428 {name}: draw offsets={draw_offsets}, "
+                f"expected={case['expected_draw_offsets']}"
+            )
+        sound_calls = [call for call in calls if call["call"] == "snd_play_clip"]
+        expected_sound_count = 1 if case.get("expect_sound", False) else 0
+        if len(sound_calls) != expected_sound_count:
+            raise AssertionError(
+                f"0x8428 {name}: sound calls={sound_calls}, "
+                f"expected count={expected_sound_count}"
+            )
+        width_calls = [call for call in calls
+                       if call["call"] == "text_width_dual_font"]
+        expected_measure_count = sum(1 for value in items
+                                     if value not in (0, 0xFFFF))
+        if len(width_calls) != expected_measure_count:
+            raise AssertionError(
+                f"0x8428 {name}: width calls={len(width_calls)}, "
+                f"expected={expected_measure_count}"
+            )
+        if any(call["segment"] != label_segment or call["mode"] != 0
+               for call in width_calls):
+            raise AssertionError(f"0x8428 {name}: bad width helper ABI")
+        remap_calls = [call for call in calls
+                       if call["call"] == "framebuffer_rect_palette_remap"]
+        if editing:
+            if remap_calls or draw_calls or sound_calls:
+                raise AssertionError(f"0x8428 {name}: prepass performed rendering")
+        else:
+            expected_remap = {
+                "call": "framebuffer_rect_palette_remap",
+                "segment": data_segment, "remap": 0x6A00,
+                "rect": [value & 0xFFFF for value in actual_rect],
+            }
+            if remap_calls != [expected_remap]:
+                raise AssertionError(
+                    f"0x8428 {name}: remap={remap_calls}, expected={expected_remap}"
+                )
+        if bytes(machine.mem_read(stack_segment * 16 + caller_sp + 4,
+                                  len(stack_sentinel))) != stack_sentinel:
+            raise AssertionError(f"0x8428 {name}: caller stack sentinel changed")
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = ((initial["eax"] & 0xFFFF0000)
+                                     | (int(case["expected_return"]) & 0xFFFF))
+        expected_registers["sp"] = (caller_sp + 4) & 0xFFFF
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x8428 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x8428 {name}: far return changed CS")
+        vectors.append({
+            "name": name, "items": items, "label_segment": label_segment,
+            "split_game_stack_segments": split_segments,
+            "rect": actual_rect, "widths_head": actual_widths, "calls": calls,
+            "presentation_states": data_states[:2],
+            "data_hover_selection": data_states[2:],
+            "game_hover_selection": game_states, "return_value": result,
+        })
+    return vectors
+
+
 def update_vector(path: Path, vectors: list[dict[str, object]], check: bool) -> None:
     encoded = json.dumps(vectors, indent=2) + "\n"
     if check:
@@ -73267,6 +73624,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_8082_natural.json",
         nav_actor_handler_5_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_8428_natural.json",
+        list_widget_layout_unified_vectors(),
         args.check,
     )
     update_vector(

@@ -5098,6 +5098,28 @@ replacement still needs the original byte-sized division, dead `DI -= 15`
 residue, pre-handler phase TEST flags, and exact register envelope; none carries
 additional game-level behavior.
 
+## BLOODPRG unified list widget candidate
+
+`0x008428` is the shared option/contact/concept/save-slot list widget. It
+measures square-caps labels from the caller's inherited `ES`, applies the
+100-pixel width floor or 55-pixel CANCEL mode, computes the centered rectangle,
+remaps the box, hit-tests an 11-pixel row grid, and draws centered labels in
+default, hover, or active colors. The non-preserve path retains the original's
+observable doubled width-table overwrite rather than silently correcting it.
+
+Fifteen direct vectors cover both terminators, width modes, the save-edit alias,
+helper mutation visibility, prepass suppression, exact X/Y boundaries, two-row
+selection, click sound order, CANCEL drawing, and split DS/ES/GS/SS ownership.
+They expose the original runtime contract: ordinary state is shared by
+`DS=GS=SS`, while label strings may live in inherited `ES`.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits a single warning-free
+219-instruction/591-byte function versus 172/442 original, with 84.30 percent
+mnemonic-multiset overlap. Three narrow pragma sequences capture inherited `ES`
+and adapt the two `DS:SI` text calls; all list, layout, input, state, and draw
+logic remains natural C. Direct replacement still needs the original byte DIV,
+SS width reads, GS tail, status flags, and preserve-all envelope.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten
