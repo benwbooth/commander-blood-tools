@@ -1,0 +1,695 @@
+[
+  {
+    "name": "inactive",
+    "initial": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 165,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "quicksave_create_failure",
+    "initial": {
+      "save": 164,
+      "load": 178,
+      "quick": 1,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "startup_write_directory_enter"
+      },
+      {
+        "call": "dos_create_truncate",
+        "path_segment": 8192,
+        "path_offset": 10013,
+        "path": "game10.sav",
+        "success": false
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9997,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "quicksave_serializes_all_blocks",
+    "initial": {
+      "save": 0,
+      "load": 0,
+      "quick": 1,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "startup_write_directory_enter"
+      },
+      {
+        "call": "dos_create_truncate",
+        "path_segment": 8192,
+        "path_offset": 10013,
+        "path": "game10.sav",
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 26494,
+        "byte_count": 2,
+        "prefix": "0200"
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 27358,
+        "byte_count": 512,
+        "prefix": "0104070a0d101316"
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 27870,
+        "byte_count": 96,
+        "prefix": "02070c11161b2025"
+      },
+      {
+        "call": "resource_get_field4",
+        "handle": 7
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 12288,
+        "source_offset": 256,
+        "byte_count": 32,
+        "prefix": "030a11181f262d34"
+      },
+      {
+        "call": "vm_patch_stream_build",
+        "result": 6
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 12800,
+        "source_offset": 512,
+        "byte_count": 6,
+        "prefix": "040f1a25303b"
+      },
+      {
+        "call": "dos_close",
+        "handle": 66
+      },
+      {
+        "call": "file_create_and_write",
+        "path_segment": 8192,
+        "path_offset": 252,
+        "source_segment": 8192,
+        "source_offset": 9709,
+        "byte_count": 320
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9997,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "phase_one_initializes_and_advances",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 1,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 1,
+        "result": 4
+      },
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9679,
+        "current": 0,
+        "total": 6
+      }
+    ],
+    "final": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 2,
+      "ui_flags": 165,
+      "selected_index": 0,
+      "active_name": 9709,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "complete_transition_negative_save_selection",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 2,
+      "current": 6,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "framebuffer_rect_interpolate_and_remap_step",
+        "source": 10923,
+        "target": 9679,
+        "current": 6,
+        "total": 6
+      },
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 65535
+      },
+      {
+        "call": "save_slot_name_edit_step",
+        "selection": 65535,
+        "length": 6,
+        "commit": false
+      }
+    ],
+    "final": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 165,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 6,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "save_selection_begins_slot_edit",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 2
+      },
+      {
+        "call": "save_slot_name_edit_step",
+        "selection": 2,
+        "length": 6,
+        "commit": false
+      }
+    ],
+    "final": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 165,
+      "selected_index": 2,
+      "active_name": 9773,
+      "name_length": 6,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "reserved_quicksave_selection_returns",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 9
+      },
+      {
+        "call": "save_slot_name_edit_step",
+        "selection": 9,
+        "length": 6,
+        "commit": false
+      }
+    ],
+    "final": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 165,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 6,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "save_sentinel_closes_menu",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 3
+      },
+      {
+        "call": "save_slot_name_edit_step",
+        "selection": 3,
+        "length": 6,
+        "commit": false
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 3,
+      "active_name": 9773,
+      "name_length": 6,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "name_commit_serializes_selected_slot",
+    "initial": {
+      "save": 1,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 5
+      },
+      {
+        "call": "save_slot_name_edit_step",
+        "selection": 5,
+        "length": 6,
+        "commit": true
+      },
+      {
+        "call": "startup_write_directory_enter"
+      },
+      {
+        "call": "dos_create_truncate",
+        "path_segment": 8192,
+        "path_offset": 9789,
+        "path": "game3.sav",
+        "success": true
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 26494,
+        "byte_count": 2,
+        "prefix": "0200"
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 27358,
+        "byte_count": 512,
+        "prefix": "0104070a0d101316"
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 8192,
+        "source_offset": 27870,
+        "byte_count": 96,
+        "prefix": "02070c11161b2025"
+      },
+      {
+        "call": "resource_get_field4",
+        "handle": 7
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 12288,
+        "source_offset": 256,
+        "byte_count": 32,
+        "prefix": "030a11181f262d34"
+      },
+      {
+        "call": "vm_patch_stream_build",
+        "result": 6
+      },
+      {
+        "call": "dos_write",
+        "handle": 66,
+        "source_segment": 12800,
+        "source_offset": 512,
+        "byte_count": 6,
+        "prefix": "040f1a25303b"
+      },
+      {
+        "call": "dos_close",
+        "handle": 66
+      },
+      {
+        "call": "file_create_and_write",
+        "path_segment": 8192,
+        "path_offset": 252,
+        "source_segment": 8192,
+        "source_offset": 9709,
+        "byte_count": 320
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 6,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "negative_load_selection",
+    "initial": {
+      "save": 0,
+      "load": 1,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 65535
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 1,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 165,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "load_sentinel_closes_after_directory_setup",
+    "initial": {
+      "save": 0,
+      "load": 1,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 4
+      },
+      {
+        "call": "startup_write_directory_enter"
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "load_open_failure_closes_menu",
+    "initial": {
+      "save": 0,
+      "load": 1,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 1
+      },
+      {
+        "call": "startup_write_directory_enter"
+      },
+      {
+        "call": "dos_open_read_only",
+        "path_segment": 8192,
+        "path_offset": 9757,
+        "path": "game2.sav",
+        "success": false
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 30583,
+      "profile_request": 30583,
+      "redraw": 34,
+      "palette_dirty": 51
+    },
+    "return": "near"
+  },
+  {
+    "name": "load_restores_all_blocks_and_rebuilds",
+    "initial": {
+      "save": 0,
+      "load": 1,
+      "quick": 0,
+      "phase": 0,
+      "current": 3,
+      "total": 6
+    },
+    "calls": [
+      {
+        "call": "list_widget_layout_unified",
+        "items": 9687,
+        "editing": 85,
+        "result": 6
+      },
+      {
+        "call": "startup_write_directory_enter"
+      },
+      {
+        "call": "dos_open_read_only",
+        "path_segment": 8192,
+        "path_offset": 9917,
+        "path": "game7.sav",
+        "success": true
+      },
+      {
+        "call": "dos_read",
+        "handle": 67,
+        "destination_segment": 8192,
+        "destination_offset": 26496,
+        "requested": 2,
+        "returned": 2
+      },
+      {
+        "call": "vm_resource_profile_select",
+        "profile": 4
+      },
+      {
+        "call": "vm_run_wrapper",
+        "enabled": 1
+      },
+      {
+        "call": "dos_read",
+        "handle": 67,
+        "destination_segment": 8192,
+        "destination_offset": 27358,
+        "requested": 512,
+        "returned": 512
+      },
+      {
+        "call": "dos_read",
+        "handle": 67,
+        "destination_segment": 8192,
+        "destination_offset": 27870,
+        "requested": 96,
+        "returned": 96
+      },
+      {
+        "call": "resource_get_field4",
+        "handle": 7
+      },
+      {
+        "call": "dos_read",
+        "handle": 67,
+        "destination_segment": 12288,
+        "destination_offset": 256,
+        "requested": 32,
+        "returned": 32
+      },
+      {
+        "call": "dos_read",
+        "handle": 67,
+        "destination_segment": 12800,
+        "destination_offset": 512,
+        "requested": 65535,
+        "returned": 6
+      },
+      {
+        "call": "vm_patch_stream_apply",
+        "byte_count": 6
+      },
+      {
+        "call": "vm_record_state_proc"
+      },
+      {
+        "call": "ship_3d_hud_palette_snapshot_and_camera_reset"
+      },
+      {
+        "call": "dos_close",
+        "handle": 67
+      }
+    ],
+    "final": {
+      "save": 0,
+      "load": 0,
+      "quick": 0,
+      "phase": 0,
+      "ui_flags": 161,
+      "selected_index": 34952,
+      "active_name": 9773,
+      "name_length": 30583,
+      "profile_request": 65535,
+      "redraw": 1,
+      "palette_dirty": 1
+    },
+    "return": "near"
+  }
+]

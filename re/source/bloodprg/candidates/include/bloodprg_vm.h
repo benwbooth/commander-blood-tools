@@ -66,9 +66,12 @@ extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
 extern volatile cb_u16 vm_displayed_line;    /* DS:0x678A */
+extern volatile cb_u16 vm_record_resource_handle; /* DS:0x6716 */
+extern volatile cb_u16 vm_resource_profile_index; /* DS:0x677E */
 extern volatile cb_u16 vm_presentation_primary_c4_record; /* DS:0x675E */
 extern volatile cb_u16 vm_named_scruter_jo_object; /* DS:0x6760 */
 extern volatile cb_i16 vm_script_profile_request; /* GS:0x6780 */
+extern volatile cb_u8 vm_execution_enabled; /* GS:0x67A8 */
 extern volatile cb_u8 vm_presentation_request_flags; /* GS:0x67AA */
 extern volatile cb_u8 vm_presentation_active; /* GS:0x67AC */
 extern volatile cb_u8 vm_query_mode;         /* GS:0x67AD */
@@ -213,6 +216,9 @@ const cb_u8 CB_NEAR *CB_NEAR value_scan_match(cb_u16 value,
         const bloodprg_value_node CB_NEAR *node); /* 0x00577A */
 cb_u16 CB_NEAR vm_patch_stream_apply(cb_u16 byte_count); /* 0x001D74 */
 cb_u16 CB_NEAR vm_patch_stream_build(void);  /* 0x001D94 */
+cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile); /* 0x0053A0 */
+void CB_FAR vm_record_state_proc(void);       /* 0x00555B */
+cb_i16 CB_FAR vm_run_wrapper(void);           /* 0x0055A4 */
 #if defined(__WATCOMC__)
 #pragma aux vm_patch_stream_apply parm [ax] value [ax] modify exact [ax]
 #endif

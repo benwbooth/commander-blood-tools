@@ -52115,6 +52115,713 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def save_load_menu_step_vectors() -> list[dict[str, object]]:
+    entry = 0x1B4B
+    return_address = 0xF570
+    expected_hash = "aac51f24e2f04b7eb02464e61d41a75b61ce0130f9687b5cd5eb3429a7e81dab"
+    if hashlib.sha256(EXE[entry : entry + 553]).hexdigest() != expected_hash:
+        raise AssertionError("0x1b4b: recovered 553-byte body changed")
+
+    cases = [
+        {"name": "inactive", "save": 0, "load": 0, "quick": 0},
+        {
+            "name": "quicksave_create_failure",
+            "save": 0xA4,
+            "load": 0xB2,
+            "quick": 1,
+            "create_success": False,
+        },
+        {
+            "name": "quicksave_serializes_all_blocks",
+            "save": 0,
+            "load": 0,
+            "quick": 1,
+            "create_success": True,
+        },
+        {
+            "name": "phase_one_initializes_and_advances",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "phase": 1,
+            "widget_results": [4],
+        },
+        {
+            "name": "complete_transition_negative_save_selection",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "phase": 2,
+            "current": 6,
+            "total": 6,
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "save_selection_begins_slot_edit",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "widget_results": [2],
+        },
+        {
+            "name": "reserved_quicksave_selection_returns",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "widget_results": [9],
+        },
+        {
+            "name": "save_sentinel_closes_menu",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "widget_results": [3],
+            "sentinel_index": 3,
+        },
+        {
+            "name": "name_commit_serializes_selected_slot",
+            "save": 1,
+            "load": 0,
+            "quick": 0,
+            "widget_results": [5],
+            "name_commit": True,
+            "create_success": True,
+        },
+        {
+            "name": "negative_load_selection",
+            "save": 0,
+            "load": 1,
+            "quick": 0,
+            "widget_results": [0xFFFF],
+        },
+        {
+            "name": "load_sentinel_closes_after_directory_setup",
+            "save": 0,
+            "load": 1,
+            "quick": 0,
+            "widget_results": [4],
+            "sentinel_index": 4,
+        },
+        {
+            "name": "load_open_failure_closes_menu",
+            "save": 0,
+            "load": 1,
+            "quick": 0,
+            "widget_results": [1],
+            "open_success": False,
+        },
+        {
+            "name": "load_restores_all_blocks_and_rebuilds",
+            "save": 0,
+            "load": 1,
+            "quick": 0,
+            "widget_results": [6],
+            "open_success": True,
+        },
+    ]
+    data_segment = 0x2000
+    record_segment = 0x3000
+    record_offset = 0x0100
+    work_segment = 0x3200
+    work_offset = 0x0200
+    stack_segment = 0x9000
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case in cases:
+        name = str(case["name"])
+        save = int(case["save"])
+        load_request = int(case["load"])
+        quick = int(case["quick"])
+        phase = int(case.get("phase", 0))
+        current = int(case.get("current", 3))
+        total = int(case.get("total", 6))
+        widget_results = [int(value) for value in case.get("widget_results", [])]
+        sentinel_index = case.get("sentinel_index")
+        name_commit = bool(case.get("name_commit", False))
+        create_success = bool(case.get("create_success", True))
+        open_success = bool(case.get("open_success", True))
+        calls: list[dict[str, object]] = []
+        widget_index = 0
+        read_index = 0
+
+        data = bytearray(0x10000)
+        data[0x00FC : 0x0106] = b"blood.sav\0"
+        data[0x0161 : 0x0169] = b"LAST\0PAU"
+        item_offsets = [0x25ED + index * 0x20 for index in range(10)]
+        if sentinel_index is not None:
+            item_offsets[int(sentinel_index)] = 0xFFFF
+        for index, value in enumerate(item_offsets + [0xFFFF]):
+            data[0x25D7 + index * 2 : 0x25D9 + index * 2] = struct.pack(
+                "<H", value
+            )
+        for index in range(10):
+            base = 0x25ED + index * 0x20
+            slot_name = f"slot{index + 1}".encode("ascii").ljust(16, b" ")
+            filename = f"game{index + 1}.sav".encode("ascii") + b"\0"
+            data[base : base + 16] = slot_name
+            data[base + 16 : base + 32] = filename.ljust(16, b"\0")
+        data[0x273B : 0x274B] = b"edited name     "
+        data[0x272E : 0x2730] = struct.pack("<H", 0x7777)
+        data[0x2732 : 0x2734] = struct.pack("<H", 0x8888)
+        data[0x2734 : 0x2736] = struct.pack("<H", 0x262D)
+        data[0x2736] = save
+        data[0x2737] = load_request
+        data[0x2738] = phase
+        data[0x2739] = quick
+        data[0x27E6] = 0x55
+        data[0x27D9] = 0x22
+        data[0x2793] = 0xA5
+        data[0x0ADC] = 0x44
+        data[0x0ADB] = current
+        data[0x0ADA] = total
+        data[0x25CF : 0x25D7] = struct.pack("<hhhh", 12, 23, 34, 45)
+        data[0x2AAB : 0x2AB3] = struct.pack("<hhhh", 56, 67, 78, 89)
+        data[0x6716 : 0x6718] = struct.pack("<H", 7)
+        data[0x6724 : 0x6728] = struct.pack(
+            "<HH", record_offset, record_segment
+        )
+        data[0x677E : 0x6780] = struct.pack("<H", 2)
+        data[0x6780 : 0x6782] = struct.pack("<H", 0x7777)
+        data[0x67A8] = 0x66
+        data[0x0ABC : 0x0AC0] = struct.pack(
+            "<HH", work_offset, work_segment
+        )
+        data[0x5B55] = 0x33
+        data[0x6ADE : 0x6CDE] = bytes(
+            (index * 3 + 1) & 0xFF for index in range(0x200)
+        )
+        data[0x6CDE : 0x6D3E] = bytes(
+            (index * 5 + 2) & 0xFF for index in range(0x60)
+        )
+        record_data = bytearray(
+            (index * 7 + 3) & 0xFF for index in range(0x80)
+        )
+        work_data = bytearray(
+            (index * 11 + 4) & 0xFF for index in range(0x40)
+        )
+        load_payloads = [
+            struct.pack("<H", 4),
+            bytes((index * 13 + 5) & 0xFF for index in range(0x200)),
+            bytes((index * 17 + 6) & 0xFF for index in range(0x60)),
+            bytes((index * 19 + 7) & 0xFF for index in range(0x20)),
+            bytes.fromhex("3412aabb7856"),
+        ]
+
+        initial = {
+            "eax": 0xA5A51234,
+            "ebx": 0xB6B62345,
+            "ecx": 0xC7C73456,
+            "edx": 0xD8D84567,
+            "esi": 0xE9E95678,
+            "edi": 0xFAFA6789,
+            "ebp": 0xABCD789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": data_segment,
+            "fs": 0x4000,
+            "gs": data_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal widget_index
+            if address == 0x7E28:
+                result = widget_results[widget_index]
+                calls.append(
+                    {
+                        "call": "list_widget_layout_unified",
+                        "items": machine.reg_read(UC_X86_REG_SI),
+                        "editing": machine.mem_read(
+                            data_segment * 16 + 0x27E6, 1
+                        )[0],
+                        "result": result,
+                    }
+                )
+                if machine.reg_read(UC_X86_REG_DS) != data_segment:
+                    raise AssertionError(f"0x1b4b {name}: list DS")
+                if machine.reg_read(UC_X86_REG_SI) != 0x25D7:
+                    raise AssertionError(f"0x1b4b {name}: list SI")
+                widget_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == 0x1E5D:
+                step = machine.mem_read(data_segment * 16 + 0x0ADB, 1)[0]
+                limit = machine.mem_read(data_segment * 16 + 0x0ADA, 1)[0]
+                calls.append(
+                    {
+                        "call": "framebuffer_rect_interpolate_and_remap_step",
+                        "source": machine.reg_read(UC_X86_REG_SI),
+                        "target": machine.reg_read(UC_X86_REG_DI),
+                        "current": step,
+                        "total": limit,
+                    }
+                )
+                if machine.reg_read(UC_X86_REG_SI) != 0x2AAB:
+                    raise AssertionError(f"0x1b4b {name}: transition SI")
+                if machine.reg_read(UC_X86_REG_DI) != 0x25CF:
+                    raise AssertionError(f"0x1b4b {name}: transition DI")
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if step == limit:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.mem_write(
+                        data_segment * 16 + 0x0ADB,
+                        bytes([(step + 1) & 0xFF]),
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif address == 0x1DD8:
+                calls.append(
+                    {
+                        "call": "save_slot_name_edit_step",
+                        "selection": machine.reg_read(UC_X86_REG_AX),
+                        "length": struct.unpack(
+                            "<H",
+                            machine.mem_read(data_segment * 16 + 0x272E, 2),
+                        )[0],
+                        "commit": name_commit,
+                    }
+                )
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                if name_commit:
+                    active_offset = struct.unpack(
+                        "<H",
+                        machine.mem_read(data_segment * 16 + 0x2734, 2),
+                    )[0]
+                    machine.mem_write(
+                        data_segment * 16 + active_offset,
+                        bytes(machine.mem_read(data_segment * 16 + 0x273B, 16)),
+                    )
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+                else:
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif address == 0x21C3:
+                calls.append({"call": "startup_write_directory_enter"})
+            elif address == 0x4D3C:
+                if machine.reg_read(UC_X86_REG_AX) != 7:
+                    raise AssertionError(f"0x1b4b {name}: resource handle")
+                calls.append({"call": "resource_get_field4", "handle": 7})
+                machine.reg_write(UC_X86_REG_EAX, 0x00010020)
+            elif address == 0x256B:
+                calls.append(
+                    {
+                        "call": "file_create_and_write",
+                        "path_segment": machine.reg_read(UC_X86_REG_DS),
+                        "path_offset": machine.reg_read(UC_X86_REG_SI),
+                        "source_segment": machine.reg_read(UC_X86_REG_ES),
+                        "source_offset": machine.reg_read(UC_X86_REG_DI),
+                        "byte_count": machine.reg_read(UC_X86_REG_EAX),
+                    }
+                )
+            elif address == 0x4DA0:
+                calls.append(
+                    {
+                        "call": "vm_resource_profile_select",
+                        "profile": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0)
+            elif address == 0x4FA4:
+                enabled = machine.mem_read(data_segment * 16 + 0x67A8, 1)[0]
+                calls.append({"call": "vm_run_wrapper", "enabled": enabled})
+                machine.reg_write(UC_X86_REG_AX, 0)
+            elif address == 0x1D94:
+                calls.append({"call": "vm_patch_stream_build", "result": 6})
+                machine.reg_write(UC_X86_REG_AX, 6)
+            elif address == 0x1D74:
+                calls.append(
+                    {
+                        "call": "vm_patch_stream_apply",
+                        "byte_count": machine.reg_read(UC_X86_REG_AX),
+                    }
+                )
+            elif address == 0x4F5B:
+                calls.append({"call": "vm_record_state_proc"})
+            elif address == 0x8696:
+                calls.append(
+                    {
+                        "call": "ship_3d_hud_palette_snapshot_and_camera_reset"
+                    }
+                )
+
+        def interrupt(machine: Uc, number: int) -> None:
+            nonlocal read_index
+            if number != 0x21:
+                raise AssertionError(f"0x1b4b {name}: interrupt {number:#x}")
+            ax = machine.reg_read(UC_X86_REG_AX)
+            ah = (ax >> 8) & 0xFF
+            flags = machine.reg_read(UC_X86_REG_EFLAGS)
+            if ah == 0x3C:
+                path_segment = machine.reg_read(UC_X86_REG_DS)
+                path_offset = machine.reg_read(UC_X86_REG_DX)
+                calls.append(
+                    {
+                        "call": "dos_create_truncate",
+                        "path_segment": path_segment,
+                        "path_offset": path_offset,
+                        "path": bytes(
+                            machine.mem_read(path_segment * 16 + path_offset, 16)
+                        ).split(b"\0", 1)[0].decode("ascii"),
+                        "success": create_success,
+                    }
+                )
+                if create_success:
+                    machine.reg_write(UC_X86_REG_AX, 0x0042)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 5)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+            elif ah == 0x3D:
+                path_segment = machine.reg_read(UC_X86_REG_DS)
+                path_offset = machine.reg_read(UC_X86_REG_DX)
+                calls.append(
+                    {
+                        "call": "dos_open_read_only",
+                        "path_segment": path_segment,
+                        "path_offset": path_offset,
+                        "path": bytes(
+                            machine.mem_read(path_segment * 16 + path_offset, 16)
+                        ).split(b"\0", 1)[0].decode("ascii"),
+                        "success": open_success,
+                    }
+                )
+                if open_success:
+                    machine.reg_write(UC_X86_REG_AX, 0x0043)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+                else:
+                    machine.reg_write(UC_X86_REG_AX, 2)
+                    machine.reg_write(UC_X86_REG_EFLAGS, flags | 1)
+            elif ah == 0x40:
+                source_segment = machine.reg_read(UC_X86_REG_DS)
+                source_offset = machine.reg_read(UC_X86_REG_DX)
+                count = machine.reg_read(UC_X86_REG_CX)
+                calls.append(
+                    {
+                        "call": "dos_write",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "source_segment": source_segment,
+                        "source_offset": source_offset,
+                        "byte_count": count,
+                        "prefix": bytes(
+                            machine.mem_read(
+                                source_segment * 16 + source_offset,
+                                min(count, 8),
+                            )
+                        ).hex(),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, count)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif ah == 0x3F:
+                destination_segment = machine.reg_read(UC_X86_REG_DS)
+                destination_offset = machine.reg_read(UC_X86_REG_DX)
+                requested = machine.reg_read(UC_X86_REG_CX)
+                payload = load_payloads[read_index]
+                if requested != 0xFFFF and len(payload) != requested:
+                    raise AssertionError(
+                        f"0x1b4b {name}: read {read_index} size "
+                        f"{requested:#x} != {len(payload):#x}"
+                    )
+                machine.mem_write(
+                    destination_segment * 16 + destination_offset, payload
+                )
+                calls.append(
+                    {
+                        "call": "dos_read",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                        "destination_segment": destination_segment,
+                        "destination_offset": destination_offset,
+                        "requested": requested,
+                        "returned": len(payload),
+                    }
+                )
+                read_index += 1
+                machine.reg_write(UC_X86_REG_AX, len(payload))
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            elif ah == 0x3E:
+                calls.append(
+                    {
+                        "call": "dos_close",
+                        "handle": machine.reg_read(UC_X86_REG_BX),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0)
+                machine.reg_write(UC_X86_REG_EFLAGS, flags & ~1)
+            else:
+                raise AssertionError(f"0x1b4b {name}: DOS AH={ah:#x}")
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0x7E28, b"\xCB"),
+                (0, 0x1E5D, b"\xCB"),
+                (0, 0x1DD8, b"\xC3"),
+                (0, 0x21C3, b"\xCB"),
+                (0, 0x4D3C, b"\xCB"),
+                (0, 0x256B, b"\xCB"),
+                (0, 0x4DA0, b"\xCB"),
+                (0, 0x4FA4, b"\xCB"),
+                (0, 0x1D94, b"\xC3"),
+                (0, 0x1D74, b"\xC3"),
+                (0, 0x4F5B, b"\xCB"),
+                (0, 0x8696, b"\xCB"),
+                (data_segment, 0, bytes(data)),
+                (record_segment, record_offset, bytes(record_data)),
+                (work_segment, work_offset, bytes(work_data)),
+                (stack_segment, 0x25D7, bytes(data[0x25D7:0x25ED])),
+                (
+                    stack_segment,
+                    caller_sp,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            interrupt_handler=interrupt,
+            code_handler=capture,
+            instruction_count=600,
+        )
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        actual_record = bytes(
+            machine.mem_read(record_segment * 16 + record_offset, len(record_data))
+        )
+        actual_work = bytes(
+            machine.mem_read(work_segment * 16 + work_offset, len(work_data))
+        )
+
+        if name == "inactive":
+            expected_names = []
+        elif name == "quicksave_create_failure":
+            expected_names = [
+                "startup_write_directory_enter",
+                "dos_create_truncate",
+            ]
+        elif name in (
+            "quicksave_serializes_all_blocks",
+            "name_commit_serializes_selected_slot",
+        ):
+            if name_commit:
+                expected_names = [
+                    "list_widget_layout_unified",
+                    "save_slot_name_edit_step",
+                ]
+            else:
+                expected_names = []
+            expected_names += [
+                "startup_write_directory_enter",
+                "dos_create_truncate",
+                "dos_write",
+                "dos_write",
+                "dos_write",
+                "resource_get_field4",
+                "dos_write",
+                "vm_patch_stream_build",
+                "dos_write",
+                "dos_close",
+                "file_create_and_write",
+            ]
+        elif name == "phase_one_initializes_and_advances":
+            expected_names = [
+                "list_widget_layout_unified",
+                "framebuffer_rect_interpolate_and_remap_step",
+            ]
+        elif name == "complete_transition_negative_save_selection":
+            expected_names = [
+                "framebuffer_rect_interpolate_and_remap_step",
+                "list_widget_layout_unified",
+                "save_slot_name_edit_step",
+            ]
+        elif name in (
+            "save_selection_begins_slot_edit",
+            "reserved_quicksave_selection_returns",
+        ):
+            expected_names = [
+                "list_widget_layout_unified",
+                "save_slot_name_edit_step",
+            ]
+        elif name == "save_sentinel_closes_menu":
+            expected_names = [
+                "list_widget_layout_unified",
+                "save_slot_name_edit_step",
+            ]
+        elif name == "negative_load_selection":
+            expected_names = ["list_widget_layout_unified"]
+        elif name == "load_sentinel_closes_after_directory_setup":
+            expected_names = [
+                "list_widget_layout_unified",
+                "startup_write_directory_enter",
+            ]
+        elif name == "load_open_failure_closes_menu":
+            expected_names = [
+                "list_widget_layout_unified",
+                "startup_write_directory_enter",
+                "dos_open_read_only",
+            ]
+        else:
+            expected_names = [
+                "list_widget_layout_unified",
+                "startup_write_directory_enter",
+                "dos_open_read_only",
+                "dos_read",
+                "vm_resource_profile_select",
+                "vm_run_wrapper",
+                "dos_read",
+                "dos_read",
+                "resource_get_field4",
+                "dos_read",
+                "dos_read",
+                "vm_patch_stream_apply",
+                "vm_record_state_proc",
+                "ship_3d_hud_palette_snapshot_and_camera_reset",
+                "dos_close",
+            ]
+        actual_names = [str(call["call"]) for call in calls]
+        if actual_names != expected_names:
+            raise AssertionError(
+                f"0x1b4b {name}: calls={actual_names!r}, "
+                f"expected={expected_names!r}"
+            )
+
+        expected_data = bytearray(data)
+        expected_record = bytearray(record_data)
+        expected_work = bytearray(work_data)
+        if quick & 1:
+            expected_data[0x270D : 0x2715] = b"LAST\0PAU"
+            expected_data[0x2734 : 0x2736] = struct.pack("<H", 0x270D)
+            expected_data[0x2739] = 0
+        if (save | load_request) != 0 and not (quick & 1):
+            expected_data[0x2793] |= 4
+            expected_phase = phase
+            if expected_phase & 1:
+                expected_data[0x27E6] = 0
+                expected_data[0x0ADC] = 0
+                expected_data[0x0ADB] = 0
+                expected_data[0x0ADA] = 6
+                expected_data[0x2734 : 0x2736] = struct.pack("<H", 0x25ED)
+                expected_data[0x2732 : 0x2734] = b"\0\0"
+                expected_data[0x273B : 0x274B] = expected_data[0x25ED : 0x25FD]
+                expected_phase = (expected_phase + 1) & 0xFF
+                expected_data[0x2738] = expected_phase
+            if expected_phase & 2:
+                if expected_data[0x0ADB] == expected_data[0x0ADA]:
+                    expected_data[0x2738] = 0
+                else:
+                    expected_data[0x0ADB] = (
+                        expected_data[0x0ADB] + 1
+                    ) & 0xFF
+
+        if name in (
+            "quicksave_create_failure",
+            "quicksave_serializes_all_blocks",
+            "name_commit_serializes_selected_slot",
+            "save_sentinel_closes_menu",
+            "load_sentinel_closes_after_directory_setup",
+            "load_open_failure_closes_menu",
+            "load_restores_all_blocks_and_rebuilds",
+        ):
+            expected_data[0x2793] &= 0xFB
+            expected_data[0x2736] = 0
+            expected_data[0x2737] = 0
+        if name in (
+            "complete_transition_negative_save_selection",
+            "save_selection_begins_slot_edit",
+            "reserved_quicksave_selection_returns",
+            "save_sentinel_closes_menu",
+            "name_commit_serializes_selected_slot",
+        ):
+            length = 0
+            while expected_data[0x273B + length] not in (0, 0x20):
+                length += 1
+            expected_data[0x272E : 0x2730] = struct.pack("<H", length)
+        if name == "save_selection_begins_slot_edit":
+            expected_data[0x2732 : 0x2734] = struct.pack("<H", 2)
+            expected_data[0x2734 : 0x2736] = struct.pack("<H", 0x262D)
+            expected_data[0x273B : 0x274B] = expected_data[0x262D : 0x263D]
+        if name == "save_sentinel_closes_menu":
+            expected_data[0x2732 : 0x2734] = struct.pack("<H", 3)
+        if name == "name_commit_serializes_selected_slot":
+            active_offset = struct.unpack("<H", data[0x2734:0x2736])[0]
+            expected_data[active_offset : active_offset + 16] = data[0x273B:0x274B]
+        if name == "load_restores_all_blocks_and_rebuilds":
+            expected_data[0x6780 : 0x6782] = b"\xff\xff"
+            expected_data[0x67A8] = 1
+            expected_data[0x6ADE : 0x6CDE] = load_payloads[1]
+            expected_data[0x6CDE : 0x6D3E] = load_payloads[2]
+            expected_record[:0x20] = load_payloads[3]
+            expected_work[: len(load_payloads[4])] = load_payloads[4]
+            expected_data[0x27D9] = 1
+            expected_data[0x5B55] = 1
+
+        if actual_data != bytes(expected_data):
+            for offset, (actual, expected) in enumerate(
+                zip(actual_data, expected_data)
+            ):
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x1b4b {name}: data[{offset:#06x}]="
+                        f"{actual:#04x}, expected={expected:#04x}; "
+                        f"calls={calls!r}; state="
+                        f"{actual_data[0x272e:0x273b].hex()}; items="
+                        f"{actual_data[0x25d7:0x25ed].hex()}"
+                    )
+            raise AssertionError(f"0x1b4b {name}: data length mismatch")
+        if actual_record != bytes(expected_record):
+            raise AssertionError(f"0x1b4b {name}: record block mismatch")
+        if actual_work != bytes(expected_work):
+            raise AssertionError(f"0x1b4b {name}: work block mismatch")
+        for register in ("ds", "es", "fs", "gs"):
+            if machine.reg_read(REGISTERS[register]) != initial[register]:
+                raise AssertionError(f"0x1b4b {name}: changed {register}")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x1b4b {name}: near return stack mismatch")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x1b4b {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "initial": {
+                    "save": save,
+                    "load": load_request,
+                    "quick": quick,
+                    "phase": phase,
+                    "current": current,
+                    "total": total,
+                },
+                "calls": calls,
+                "final": {
+                    "save": actual_data[0x2736],
+                    "load": actual_data[0x2737],
+                    "quick": actual_data[0x2739],
+                    "phase": actual_data[0x2738],
+                    "ui_flags": actual_data[0x2793],
+                    "selected_index": struct.unpack(
+                        "<H", actual_data[0x2732:0x2734]
+                    )[0],
+                    "active_name": struct.unpack(
+                        "<H", actual_data[0x2734:0x2736]
+                    )[0],
+                    "name_length": struct.unpack(
+                        "<H", actual_data[0x272E:0x2730]
+                    )[0],
+                    "profile_request": struct.unpack(
+                        "<H", actual_data[0x6780:0x6782]
+                    )[0],
+                    "redraw": actual_data[0x27D9],
+                    "palette_dirty": actual_data[0x5B55],
+                },
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def presentation_choice_transition_step_vectors() -> list[dict[str, object]]:
     entry = 0x1AD3
     return_address = 0xF560
@@ -59074,6 +59781,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_1ad3_natural.json",
         presentation_choice_transition_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1b4b_natural.json",
+        save_load_menu_step_vectors(),
         args.check,
     )
     update_vector(

@@ -4131,6 +4131,42 @@ source rebuild can use that ordinary Boolean directly once the globals share
 the game data segment. Drop-in replacement additionally needs the list widget's
 `DS:SI` argument and `AX` result ABI plus the original preservation envelope.
 
+## BLOODPRG save/load menu and persistence candidate
+
+`0x001B4B` is the complete save/load coordinator, not a narrow state-snapshot
+helper. It drives the ten-entry `DS:0x25ED` slot directory through the shared
+list widget and name editor, runs the six-step rectangle transition, and
+reserves index nine for the quicksave request. Quicksave copies exactly eight
+bytes beginning at the `LAST` literal, including the following `PAU` bytes
+after its NUL, into slot ten before following the ordinary save path.
+
+The slot file layout is recovered end to end. Save writes the current profile
+word, 512 state bytes at `DS:0x6ADE`, 96 string bytes at `DS:0x6CDE`, the
+resource-sized runtime object block from the far pointer at `DS:0x6724`, and
+the packed patch stream from the far work pointer at `GS:0x0ABC`. Load reads
+the same sequence, selects and runs the saved profile before restoring the
+state payloads, applies the returned patch byte count, rebuilds derived record
+state and HUD data, and marks both redraw latches. Terminal create/open errors,
+sentinels, and successful operations share the same UI and mode-gate cleanup.
+
+Thirteen patched-callee and DOS-interrupt vectors cover inactivity, quicksave
+failure and success, phase initialization and completion, negative, sentinel,
+ordinary, reserved, and committed save selections, and negative, sentinel,
+open-failure, and successful load paths. They prove filenames, handles, every
+source/destination segment and offset, fixed and variable byte counts, helper
+order and arguments, terminal state, segment restoration, stack integrity,
+and near return. The selected slot-offset load through `BP` is explicitly
+verified against `SS`, documenting the shipped `SS == DS` data contract.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 224 instructions/710 bytes versus the original
+185/553, with 76.22 percent mnemonic-multiset overlap and no inline assembly.
+The source rebuild uses typed DOS, resource, VM, and slot APIs. It normalizes
+the name editor's carry result to `int` and snapshots rectangle completion
+before the typed helper call; a drop-in binary replacement would additionally
+need adapters for those boundaries, direct `INT 21h`, selective preservation,
+and the original shared data/stack segment layout.
+
 ## BLOODPRG save-slot name-editor candidate
 
 `0x001DD8` is the save-slot name editor and selected-row renderer. It reads the

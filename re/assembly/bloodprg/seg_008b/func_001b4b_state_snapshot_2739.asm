@@ -6,8 +6,8 @@
 ; seg_off: 008b:0c9b
 ; group: seg_008b
 ; provenance: recursive_graph
-; label: state_snapshot_2739
-; label_comment: state snapshot/copy: if [0x2739]&1, si=0x161, di=0x270d, movsd copies a state block from 0x161 to 0x270d and increments [0x2738] (a double-buffer/snapshot of presentation state). Gated conditional state save
+; label: save_load_menu_step
+; label_comment: Complete save/load menu and persistence coordinator. It animates and edits the ten-entry DS:0x25ED slot directory, reserves index nine for the DS:0x2739 quicksave path, writes profile/state/string/runtime-object/patch blocks in that order, restores the same blocks before rebuilding VM-derived state and HUD data, and clears both mode gates on terminal success or failure. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001b4b_save_load_menu_step.c and re/tools/oracle_vectors/func_1b4b_natural.json
 ; byte_count: 553
 ; boundary: cfg_blocks_26_terminals_5
 ; terminal: jmp 0x1bfc:1, jmp 0x1c3f:1, jmp 0x1d5b:1, jmp 0x1d6d:1, ret:1
