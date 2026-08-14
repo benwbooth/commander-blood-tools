@@ -1743,6 +1743,27 @@ SI, allocates inversion to AX and operand to DI, materializes query truth with
 CMP, addresses globals through DS, and duplicates returns. Exact integration
 still needs fixed segment placement and the original BP/DL/AX/BX allocation.
 
+VM opcode-C4 handler `0x006C7E` shares the optional inverted query and absolute
+record-segment addressing, but resolves the destination owner before consuming
+the related operand. Query mode requires an active owner and exact
+`{C4, related}` destination. Set mode requires active owner and related records;
+kind 1 on either side bypasses conflict checks, while other kinds reject an
+existing destination C4 or a C4 word at the related record's signed selector-
+`0x13` field before writing `{C4, related, 0}`.
+
+Twenty direct vectors prove every query and guard, prefix handling, real
+threshold/field/branch helpers, lowest-set-kind-bit field selection, positive,
+negative, and wrapped reciprocal offsets, exact three-store order, ignored
+base-offset decoys, record and script boundaries, segmented ownership,
+registers, flags, and near return. Open Watcom 1.9 medium
+(`-3 -os -s -mm -we`) compiles the natural one-to-one candidate warning-free
+to 71 instructions/184 bytes versus 58/154 original, with 87.93 percent
+mnemonic-multiset overlap and no inline assembly. It preserves the typed far
+record accesses, helper calls, signed offset, and guards, but introduces a
+frame, restores BP, uses CX for inversion and DX for the record segment, and
+duplicates returns. Direct replacement still needs fixed GS placement and the
+original path-specific register and flag envelope.
+
 VM opcode-C6 handler `0x006D80` shares C5's optional inverted typed query and
 absolute record-segment addressing, but its set mode has no guards: it always
 overwrites the destination with `{0x00C6, operand, 0}`, including with A1 and

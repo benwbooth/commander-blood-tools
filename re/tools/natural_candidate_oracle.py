@@ -42090,6 +42090,601 @@ def vm_c3_state_record_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_c4_actor_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    directory_segment = 0x3600
+    record_segment = 0x5200
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "query_exact_pass",
+            "query": 1,
+            "record_kind": 0x00C4,
+            "record_matches": True,
+        },
+        {
+            "name": "query_owner_inactive_fails",
+            "query": 1,
+            "owner_flags": 0,
+            "record_kind": 0x00C4,
+            "record_matches": True,
+        },
+        {
+            "name": "query_owner_other_bits_fail",
+            "query": 1,
+            "owner_flags": 0x82,
+            "record_kind": 0x00C4,
+            "record_matches": True,
+        },
+        {
+            "name": "query_kind_mismatch_fails",
+            "query": 1,
+            "record_kind": 0x00C3,
+            "record_matches": True,
+        },
+        {
+            "name": "query_related_mismatch_fails",
+            "query": 1,
+            "record_kind": 0x00C4,
+        },
+        {
+            "name": "query_inverted_exact_fails",
+            "query": 3,
+            "inverted": True,
+            "record_kind": 0x00C4,
+            "record_matches": True,
+        },
+        {
+            "name": "query_inverted_mismatch_pass_script_wrap",
+            "query": 1,
+            "inverted": True,
+            "record_kind": 0x00C3,
+            "record_matches": True,
+            "start": 0xFFFB,
+        },
+        {
+            "name": "query_record_word_at_ffff",
+            "query": 1,
+            "record": 0xFFFF,
+            "record_kind": 0x00C4,
+            "record_matches": True,
+        },
+        {"name": "set_owner_inactive_fails", "query": 0, "owner_flags": 0},
+        {
+            "name": "set_related_inactive_fails",
+            "query": 0,
+            "related_flags": 0,
+        },
+        {
+            "name": "set_related_other_bits_fail",
+            "query": 0,
+            "related_flags": 0x82,
+        },
+        {
+            "name": "set_owner_kind_one_bypasses_existing_c4",
+            "query": 0,
+            "owner_kind": 1,
+            "record_kind": 0x00C4,
+            "reciprocal_value": 0x00C4,
+        },
+        {
+            "name": "set_related_kind_one_bypasses_existing_c4",
+            "query": 0,
+            "related_kind": 1,
+            "record_kind": 0x00C4,
+            "reciprocal_value": 0x00C4,
+        },
+        {
+            "name": "set_existing_c4_fails_before_field_lookup",
+            "query": 0,
+            "record_kind": 0x00C4,
+        },
+        {
+            "name": "set_reciprocal_c4_fails",
+            "query": 0,
+            "reciprocal_value": 0x00C4,
+        },
+        {"name": "set_reciprocal_other_succeeds", "query": 0},
+        {
+            "name": "set_negative_reciprocal_offset_succeeds",
+            "query": 0,
+            "field_offset": -6,
+        },
+        {
+            "name": "set_wrapped_reciprocal_address_succeeds",
+            "query": 0,
+            "related": 0xFFF8,
+            "field_offset": 0x10,
+        },
+        {
+            "name": "set_mixed_kind_uses_lowest_set_bit",
+            "query": 0,
+            "related_kind": 0x0208,
+        },
+        {
+            "name": "set_a1_prefix_is_consumed_not_inverted",
+            "query": 2,
+            "inverted": True,
+            "owner_kind": 1,
+        },
+    ]
+    failure_tops = [2, 0, 1, 5]
+    vectors = []
+    failure_index = 0
+
+    def logic_flags_8(value: int) -> dict[str, bool]:
+        result = value & 0xFF
+        return {
+            "cf": False,
+            "pf": result.bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": False,
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        query_before = int(case["query"])
+        query_path = bool(query_before & 1)
+        inverted = bool(case.get("inverted", False))
+        base_offset = 0x1234
+        directory_offset = 0x3000
+        record_offset = int(case.get("record", 0x0800 + case_index * 0x40))
+        owner_offset = 0x1000 + case_index * 0x20
+        related_offset = int(case.get("related", 0x3000 + case_index * 0x20))
+        owner_kind = int(case.get("owner_kind", 0x0100))
+        owner_flags = int(case.get("owner_flags", 1))
+        related_kind = int(case.get("related_kind", 0x0200))
+        related_flags = int(case.get("related_flags", 1))
+        record_kind = int(case.get("record_kind", 0x00C3))
+        record_related = (
+            related_offset
+            if bool(case.get("record_matches", False))
+            else 0x7777
+        )
+        record_value = 0x9999
+        field_offset = int(case.get("field_offset", 0x12))
+        reciprocal_offset = (related_offset + field_offset) & 0xFFFF
+        reciprocal_value = int(case.get("reciprocal_value", 0x1234))
+        start = int(case.get("start", 0x5000 + case_index * 0x20))
+        prefix = b"\xa1" if inverted else b""
+        script = prefix + struct.pack("<HH", record_offset, related_offset)
+        final_script = (start + len(script)) & 0xFFFF
+
+        matches = (
+            bool(owner_flags & 1)
+            and record_kind == 0x00C4
+            and record_related == related_offset
+        )
+        field_called = (
+            not query_path
+            and bool(owner_flags & 1)
+            and bool(related_flags & 1)
+            and owner_kind != 1
+            and related_kind != 1
+            and record_kind != 0x00C4
+        )
+        success = (
+            matches != inverted
+            if query_path
+            else bool(owner_flags & 1)
+            and bool(related_flags & 1)
+            and (
+                owner_kind == 1
+                or related_kind == 1
+                or (
+                    record_kind != 0x00C4
+                    and reciprocal_value != 0x00C4
+                )
+            )
+        )
+        branch_failed = not success
+        if branch_failed:
+            top_before = failure_tops[failure_index % len(failure_tops)]
+            failure_index += 1
+            top_after = (top_before - 2) & 0xFFFF
+            branch_target = (0x6200 + case_index * 0x25) & 0xFFFF
+            branch_stack_effective = (0x6820 + top_after) & 0xFFFF
+        else:
+            top_before = 0x2468
+            top_after = top_before
+            branch_target = 0x5AA5
+            branch_stack_effective = 0x681E
+        record_after = (
+            (record_kind, record_related, record_value)
+            if query_path or not success
+            else (0x00C4, related_offset, 0)
+        )
+
+        related_bit = (related_kind & -related_kind).bit_length() - 1
+        field_table_offset = 0x6D60 + (0x13 << 4) + related_bit
+        pointer = struct.pack("<HH", base_offset, record_segment)
+        directory_pointer = struct.pack("<HH", directory_offset, directory_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x2222, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x3333, stack_segment)
+        data_directory_decoy = struct.pack("<HH", 0x4444, extra_segment)
+        stack_directory_decoy = struct.pack("<HH", 0x5555, stack_segment)
+        data_query_decoy = query_before ^ 0x55
+        stack_query_decoy = query_before ^ 0xAA
+        data_top_decoy = top_before ^ 0xFFFF
+        relative_record = (base_offset + record_offset) & 0xFFFF
+        relative_decoy = b"\xad\xde\xad\xde\xad\xde"
+        memory = [
+            (game_segment, 0x6724, pointer),
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (game_segment, 0x672C, directory_pointer),
+            (data_segment, 0x672C, data_directory_decoy),
+            (stack_segment, 0x672C, stack_directory_decoy),
+            (directory_segment, directory_offset + 0x10, struct.pack("<H", 0xFFFF)),
+            (directory_segment, directory_offset - 4, struct.pack("<H", owner_offset)),
+            (game_segment, 0x67AD, bytes([query_before])),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (game_segment, 0x6884, struct.pack("<H", top_before)),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (game_segment, field_table_offset, bytes([field_offset & 0xFF])),
+            (data_segment, field_table_offset, b"\x55"),
+            (stack_segment, field_table_offset, b"\xaa"),
+            (record_segment, owner_offset, struct.pack("<H", owner_kind)),
+            (record_segment, owner_offset + 2, bytes([owner_flags])),
+            (record_segment, related_offset, struct.pack("<H", related_kind)),
+            (record_segment, (related_offset + 2) & 0xFFFF, bytes([related_flags])),
+            (record_segment, record_offset, struct.pack("<H", record_kind)),
+            (record_segment, (record_offset + 2) & 0xFFFF, struct.pack("<H", record_related)),
+            (record_segment, (record_offset + 4) & 0xFFFF, struct.pack("<H", record_value)),
+            (record_segment, reciprocal_offset, struct.pack("<H", reciprocal_value)),
+            (record_segment, relative_record, relative_decoy),
+            (data_segment, record_offset, b"\x11\x22\x33\x44\x55\x66"),
+            (game_segment, record_offset, b"\xa1\xa2\xa3\xa4\xa5\xa6"),
+            (stack_segment, record_offset, b"\xb1\xb2\xb3\xb4\xb5\xb6"),
+            (stack_segment, branch_stack_effective, struct.pack("<H", branch_target)),
+            (game_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xFFFF)),
+            (data_segment, branch_stack_effective, struct.pack("<H", branch_target ^ 0xA5A5)),
+        ]
+        immutable_script = []
+        for byte_index, byte in enumerate(script):
+            script_offset = (start + byte_index) & 0xFFFF
+            encoded = bytes([byte])
+            memory.extend(
+                [
+                    (data_segment, script_offset, encoded),
+                    (extra_segment, script_offset, b"\x5a"),
+                    (game_segment, script_offset, b"\xa5"),
+                ]
+            )
+            immutable_script.append((script_offset, encoded))
+
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E50000 | start,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        base_phases = []
+        parse_phases = []
+        helper_events = []
+        write_phases = []
+
+        def read_record(machine: Uc) -> tuple[int, int, int]:
+            def read_word(offset: int) -> int:
+                return struct.unpack(
+                    "<H", machine.mem_read(record_segment * 16 + offset, 2)
+                )[0]
+
+            return (
+                read_word(record_offset),
+                read_word((record_offset + 2) & 0xFFFF),
+                read_word((record_offset + 4) & 0xFFFF),
+            )
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x6C84:
+                base_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+            elif address == 0x6C98:
+                parse_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BP),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address in (0x6023, 0x6034, 0x6462):
+                helper_events.append(
+                    (
+                        address,
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_CX),
+                        machine.reg_read(UC_X86_REG_DX),
+                        machine.reg_read(UC_X86_REG_SI),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_BP),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address in (0x6D01, 0x6D07, 0x6D0B, 0x6D11):
+                write_phases.append((address, read_record(machine)))
+
+        machine = execute(
+            0x6C7E,
+            0x6D17,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        expected_base = [(base_offset, record_segment, start)]
+        if base_phases != expected_base:
+            raise AssertionError(
+                f"0x6c7e {name}: base={base_phases}, expected={expected_base}"
+            )
+        dx_inverted = (initial["edx"] & 0xFF00) | int(inverted)
+        expected_parse = [
+            (
+                related_offset,
+                record_offset,
+                dx_inverted,
+                final_script,
+                owner_offset,
+                record_segment,
+            )
+        ]
+        if parse_phases != expected_parse:
+            raise AssertionError(
+                f"0x6c7e {name}: parse={parse_phases}, expected={expected_parse}"
+            )
+
+        initial_bx = initial["ebx"] & 0xFFFF
+        initial_cx = initial["ecx"] & 0xFFFF
+        lookup_script = (start + len(prefix) + 2) & 0xFFFF
+        expected_helpers = [
+            (
+                0x6034,
+                record_offset,
+                initial_bx,
+                initial_cx,
+                dx_inverted,
+                lookup_script,
+                base_offset,
+                record_offset,
+                record_segment,
+            )
+        ]
+        if field_called:
+            expected_helpers.append(
+                (
+                    0x6023,
+                    0x0013,
+                    related_kind,
+                    record_kind,
+                    related_offset,
+                    final_script,
+                    owner_offset,
+                    record_offset,
+                    record_segment,
+                )
+            )
+
+        terminal_bx = initial_bx
+        terminal_dx = dx_inverted
+        terminal_di = owner_offset
+        decision_ax = related_offset
+        if not query_path and (owner_flags & 1) != 0:
+            terminal_bx = related_offset
+            if (related_flags & 1) != 0:
+                if owner_kind == 1:
+                    decision_ax = owner_kind
+                elif related_kind == 1:
+                    decision_ax = related_kind
+                else:
+                    decision_ax = related_kind
+                    if record_kind != 0x00C4:
+                        terminal_dx = related_offset
+                        terminal_di = reciprocal_offset
+                        decision_ax = reciprocal_value
+
+        if branch_failed:
+            expected_helpers.append(
+                (
+                    0x6462,
+                    decision_ax,
+                    terminal_bx,
+                    record_kind,
+                    terminal_dx,
+                    final_script,
+                    terminal_di,
+                    record_offset,
+                    record_segment,
+                )
+            )
+            expected_ax = top_after
+            expected_si = branch_target
+            query_after = 0
+            expected_flags = sub16_flags(top_before, 2)
+        else:
+            expected_ax = decision_ax
+            expected_si = final_script
+            query_after = query_before
+            if query_path:
+                expected_flags = logic_flags_8(int(inverted))
+            elif owner_kind == 1:
+                expected_flags = sub16_flags(owner_kind, 1)
+            elif related_kind == 1:
+                expected_flags = sub16_flags(related_kind, 1)
+            else:
+                expected_flags = sub16_flags(reciprocal_value, 0x00C4)
+        if helper_events != expected_helpers:
+            raise AssertionError(
+                f"0x6c7e {name}: helpers={helper_events}, "
+                f"expected={expected_helpers}"
+            )
+
+        expected_write_phases = []
+        if not query_path and success:
+            expected_write_phases = [
+                (0x6D01, (record_kind, record_related, record_value)),
+                (0x6D07, (0x00C4, record_related, record_value)),
+                (0x6D0B, (0x00C4, related_offset, record_value)),
+                (0x6D11, (0x00C4, related_offset, 0)),
+            ]
+        if write_phases != expected_write_phases:
+            raise AssertionError(
+                f"0x6c7e {name}: writes={write_phases}, "
+                f"expected={expected_write_phases}"
+            )
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | expected_ax
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | terminal_bx
+        expected_registers["ecx"] = (initial["ecx"] & 0xFFFF0000) | record_kind
+        expected_registers["edx"] = (initial["edx"] & 0xFFFF0000) | terminal_dx
+        expected_registers["esi"] = (initial["esi"] & 0xFFFF0000) | expected_si
+        expected_registers["ebp"] = (initial["ebp"] & 0xFFFF0000) | record_offset
+        expected_registers["es"] = record_segment
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x6c7e {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        actual_record = read_record(machine)
+        if actual_record != record_after:
+            raise AssertionError(
+                f"0x6c7e {name}: record={actual_record}, expected={record_after}"
+            )
+
+        def read_record_word(offset: int) -> int:
+            return struct.unpack(
+                "<H", machine.mem_read(record_segment * 16 + offset, 2)
+            )[0]
+
+        if (
+            read_record_word(owner_offset),
+            machine.mem_read(record_segment * 16 + owner_offset + 2, 1)[0],
+        ) != (owner_kind, owner_flags):
+            raise AssertionError(f"0x6c7e {name}: owner record changed")
+        if (
+            read_record_word(related_offset),
+            machine.mem_read(record_segment * 16 + related_offset + 2, 1)[0],
+        ) != (related_kind, related_flags):
+            raise AssertionError(f"0x6c7e {name}: related record changed")
+        if read_record_word(reciprocal_offset) != reciprocal_value:
+            raise AssertionError(f"0x6c7e {name}: reciprocal field changed")
+        if bytes(
+            machine.mem_read(record_segment * 16 + relative_record, 6)
+        ) != relative_decoy:
+            raise AssertionError(f"0x6c7e {name}: base-relative decoy changed")
+        for script_offset, expected in immutable_script:
+            if bytes(
+                machine.mem_read(data_segment * 16 + script_offset, 1)
+            ) != expected:
+                raise AssertionError(f"0x6c7e {name}: script input changed")
+            if machine.mem_read(extra_segment * 16 + script_offset, 1) != b"\x5a":
+                raise AssertionError(f"0x6c7e {name}: ES script decoy changed")
+            if machine.mem_read(game_segment * 16 + script_offset, 1) != b"\xa5":
+                raise AssertionError(f"0x6c7e {name}: GS script decoy changed")
+        decoys = [
+            (data_segment, 0x6724, data_pointer_decoy),
+            (stack_segment, 0x6724, stack_pointer_decoy),
+            (data_segment, 0x672C, data_directory_decoy),
+            (stack_segment, 0x672C, stack_directory_decoy),
+            (data_segment, 0x67AD, bytes([data_query_decoy])),
+            (stack_segment, 0x67AD, bytes([stack_query_decoy])),
+            (data_segment, 0x6884, struct.pack("<H", data_top_decoy)),
+            (data_segment, field_table_offset, b"\x55"),
+            (stack_segment, field_table_offset, b"\xaa"),
+        ]
+        for segment, decoy_offset, expected in decoys:
+            if bytes(
+                machine.mem_read(segment * 16 + decoy_offset, len(expected))
+            ) != expected:
+                raise AssertionError(f"0x6c7e {name}: segment decoy changed")
+
+        actual_query = machine.mem_read(game_segment * 16 + 0x67AD, 1)[0]
+        actual_top = struct.unpack(
+            "<H", machine.mem_read(game_segment * 16 + 0x6884, 2)
+        )[0]
+        if (actual_query, actual_top) != (query_after, top_after):
+            raise AssertionError(
+                f"0x6c7e {name}: branch state={(actual_query, actual_top)}, "
+                f"expected={(query_after, top_after)}"
+            )
+
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x6c7e {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[0x6D17] != 0xC3:
+            raise AssertionError("0x6c7e: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "query_mode_before": query_before,
+                "inverted": inverted,
+                "record_base_offset_ignored": base_offset,
+                "record_offset": record_offset,
+                "owner_offset": owner_offset,
+                "owner_kind": owner_kind,
+                "owner_flags": owner_flags,
+                "related_offset": related_offset,
+                "related_kind": related_kind,
+                "related_flags": related_flags,
+                "record_before": [record_kind, record_related, record_value],
+                "reciprocal_field": {
+                    "called": field_called,
+                    "signed_offset": field_offset,
+                    "effective_offset": reciprocal_offset,
+                    "value": reciprocal_value,
+                },
+                "record_after": list(record_after),
+                "branch_failed": branch_failed,
+                "final_script_offset": expected_si,
+                "query_mode_after": query_after,
+                "branch_stack_top_after": top_after,
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_c5_record_match_vectors() -> list[dict[str, object]]:
     data_segment = 0x4400
     extra_segment = 0x4800
@@ -79330,6 +79925,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_6eee_natural.json",
         vm_c3_state_record_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_6c7e_natural.json",
+        vm_c4_actor_vectors(),
         args.check,
     )
     update_vector(

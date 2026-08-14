@@ -7,7 +7,8 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c4_actor
-; label_comment: 0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}
+; label_comment: 0xC4 actor/record handler: optionally inverted owner-active query, or guarded {C4, related, 0} creation with kind-1 bypass and selector-0x13 reciprocal-C4 rejection
+; natural_c: re/source/bloodprg/candidates/seg_04da/func_006c7e_vm_op_c4_actor.c
 ; incoming: vm_opcode_handlers:opcode_0xc4
 ; byte_count: 154
 ; boundary: cfg_blocks_19_terminals_4

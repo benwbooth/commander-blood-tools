@@ -52,7 +52,7 @@
 "0x006BEA","ship_3d_c1_distance_redirect","C1 raw operand 1/2 distance gate: nonzero distance redirects DI through selector-0x11 and requires a kind-0x10 target"
 "0x006C1C","ship_3d_c1_source_list_select","C1 kind-0x10 source-list scan: kind-2 object-table bitset or kind-1 operand flag selects the resolved branch"
 "0x006C48","ship_3d_c1_kind10_destination_write","C1 kind-0x10 resolved branch writes {0x00c1, operand, 0x0002} to selector-0x13 destination if empty"
-"0x006C7E","vm_op_c4_actor","0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}"
+"0x006C7E","vm_op_c4_actor","0xC4 actor/record handler: consumes optional A1 plus destination/related offsets; query mode optionally inverts an owner-active exact {C4,related} match; set mode requires active owner and related records, lets kind 1 bypass conflict checks, otherwise rejects an existing destination C4 or related selector-0x13 field C4 before writing {C4,related,0}"
 "0x0070EE","ship_3d_navigation_candidate_build","builds the 0xffff-terminated source list at 0x6886, excludes Honk, keeps exact kind-2 records with flags bit 0 set, and writes a zero-terminated navigation-candidate list at 0x2B53"
 "DS:0x1FAB","vm_text_selector","signed per-line selector set from 0xA6 b3 (0xff/0x00=no voice; 1..N=talk clip)"
 "DS:0x67AB","vm_skip_count","skip-N-tokens counter (IF/branch); set by 0xA6 b4&0x08"
