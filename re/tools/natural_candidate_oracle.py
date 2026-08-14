@@ -63852,6 +63852,504 @@ def camera_fsm_state_gate_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_state_gate_vectors() -> list[dict[str, object]]:
+    entry = 0x82E8
+    body_size = 320
+    body_hash = "a7e9873e82a6dc93b9209d39a05cde5b2b2d3066ad7e0f2689f4da517a9657d9"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x82e8: recovered 320-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {"name": "transition_low_bit_gates", "transition": 0x81},
+        {"name": "camera_low_bit_gates", "camera": 0x41},
+        {"name": "presentation_low_bit_gates", "presentation": 0x21},
+        {"name": "disabled_hover_entity_preserves_mode", "entity_flags": 0x80},
+        {
+            "name": "x_below_clears_full_data_mode",
+            "mouse": (99, 55),
+            "data_mode": 0xA5,
+        },
+        {
+            "name": "wrapped_right_edge_is_outside",
+            "rect": (0xFFF0, 50, 0x20, 10),
+            "mouse": (0xFFF5, 55),
+            "data_mode": 0x5A,
+        },
+        {
+            "name": "y_above_bottom_clears_mode",
+            "mouse": (110, 61),
+            "data_mode": 0x7F,
+        },
+        {
+            "name": "visible_mode_holds_without_recompose",
+            "data_mode": 0x82,
+        },
+        {
+            "name": "inclusive_bottom_right_composes_planet",
+            "mouse": (120, 60),
+            "kind": 0x0000,
+        },
+        {"name": "exact_ship_kind_selects_ship_title", "kind": 0x0010},
+        {
+            "name": "black_hole_bit_overrides_ship_title",
+            "kind": 0x0110,
+        },
+        {
+            "name": "roster_filters_every_record_field",
+            "source_profile": "filters",
+        },
+        {
+            "name": "high_gate_bits_do_not_block_and_game_mode_wraps",
+            "transition": 0x80,
+            "camera": 0x80,
+            "presentation": 0x80,
+            "data_mode": 0x80,
+            "game_mode": 0xFF,
+            "source_profile": "eligible",
+        },
+    ]
+
+    data_segment = 0x4400
+    game_segment = 0x6400
+    record_segment = 0x7400
+    stack_segment = 0x9000
+    initial_fs_segment = 0xA400
+    caller_sp = 0xFF00
+    return_address = 0x6F00
+    source_list_offset = 0x6886
+    archetype_offset = 0x2000
+    location_offset = 0x3000
+    ark_object = 0x7777
+    helper_address = 0x5C4B  # 04DA:0EAB, file routine 0x00624B
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+
+    source_records = [
+        (0x4000, 0x0002, 0x0001, 7, 0x1234, "ELIGIBLE"),
+        (0x4100, 0x0006, 0x0001, 7, 0x1234, "WRONGKIND"),
+        (0x4200, 0x0002, 0x0000, 7, 0x1234, "INACTIVE"),
+        (0x4300, 0x0002, 0x0001, 0, 0x1234, "UNSEEN"),
+        (0x4400, 0x0002, 0x0001, 7, ark_object, "ONARK"),
+        (0x4500, 0x0002, 0x0101, 9, 0x5678, "ACTIVEHIGH"),
+    ]
+
+    def put_word(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def put_dword(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    def put_string(image: bytearray, offset: int, value: str, size: int) -> None:
+        encoded = value.encode("ascii")
+        if len(encoded) >= size:
+            raise AssertionError(f"0x82e8: test string {value!r} is too long")
+        image[offset : offset + size] = bytes(size)
+        image[offset : offset + len(encoded)] = encoded
+
+    def logic8_flags(value: int) -> dict[str, bool]:
+        value &= 0xFF
+        return {
+            "cf": False,
+            "pf": value.bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & 0x80),
+            "of": False,
+        }
+
+    def cmp16_flags(left: int, right: int) -> dict[str, bool]:
+        flags = sub16_flags(left, right)
+        del flags["af"]
+        return flags
+
+    vectors: list[dict[str, object]] = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        transition = int(case.get("transition", 0)) & 0xFF
+        camera = int(case.get("camera", 0)) & 0xFF
+        presentation = int(case.get("presentation", 0)) & 0xFF
+        entity_flags = int(case.get("entity_flags", 0xA501)) & 0xFFFF
+        rect = tuple(int(value) & 0xFFFF for value in case.get(
+            "rect", (100, 50, 20, 10)
+        ))
+        mouse = tuple(int(value) & 0xFFFF for value in case.get(
+            "mouse", (110, 55)
+        ))
+        data_mode_before = int(case.get("data_mode", 0)) & 0xFF
+        game_mode_before = int(case.get("game_mode", 0x40)) & 0xFF
+        kind = int(case.get("kind", 0)) & 0xFFFF
+        source_profile = str(case.get("source_profile", "none"))
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 23 + case_index * 29 + 0x31)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        game_before = bytearray(
+            (offset * 11 + (offset >> 8) * 7 + case_index * 37 + 0x53)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        record_before = bytearray(
+            (offset * 5 + (offset >> 8) * 13 + case_index * 41 + 0x75)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 43 + 0x97)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        fs_before = bytes(
+            (offset * 3 + case_index * 31 + 0xB9) & 0xFF
+            for offset in range(0x10000)
+        )
+
+        data_before[0x27DA] = transition
+        data_before[0x278A] = camera
+        data_before[0x67AC] = presentation
+        data_before[0x27E2] = data_mode_before
+        put_word(data_before, 0x0A2A, mouse[0])
+        put_word(data_before, 0x0A2C, mouse[1])
+        put_word(data_before, 0x6752, archetype_offset)
+        put_word(data_before, 0x6758, 0xDADA)
+        put_dword(data_before, 0x6724, (record_segment << 16) | 0xBEEF)
+        put_string(data_before, 0x012E, "PLANET: ", 9)
+        put_string(data_before, 0x0137, "SHIP: ", 7)
+        put_string(data_before, 0x013E, "BLACK HOLE: ", 13)
+        put_string(data_before, 0x014B, "LIFE SUPPORT:", 14)
+
+        entity_offset = 0x6212 + 31 * 0x20
+        put_word(data_before, entity_offset, entity_flags)
+        struct.pack_into("<HHHH", data_before, entity_offset + 8, *rect)
+
+        game_before[0x27E2] = game_mode_before
+        put_word(game_before, 0x5E58, 0xBEEF)
+        put_word(game_before, 0x6758, ark_object)
+        put_string(game_before, 0x014B, "LIFE SUPPORT:", 14)
+
+        put_word(record_before, archetype_offset + 0x16, location_offset)
+        put_word(record_before, location_offset, kind)
+        put_word(record_before, location_offset + 2, 0xA501)
+        put_string(record_before, location_offset + 4, "GAIA", 0x14)
+        put_word(record_before, location_offset + 0x18, 0x2468)
+        put_word(record_before, location_offset + 0x36, 12)
+        for source in source_records:
+            offset, source_kind, state, visits, source_location, source_name = source
+            put_word(record_before, offset, source_kind)
+            put_word(record_before, offset + 2, state)
+            put_string(record_before, offset + 4, source_name, 0x14)
+            put_word(record_before, offset + 0x18, source_location)
+            put_word(record_before, offset + 0x36, visits)
+
+        if source_profile == "filters":
+            source_offsets = [source[0] for source in source_records]
+        elif source_profile == "eligible":
+            source_offsets = [source_records[0][0]]
+        else:
+            source_offsets = []
+
+        stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        expected_data = bytearray(data_before)
+        expected_game = bytearray(game_before)
+        expected_stack = bytearray(stack_before)
+
+        x, y, width, height = rect
+        mouse_x_value, mouse_y_value = mouse
+        right = (x + width) & 0xFFFF
+        bottom = (y + height) & 0xFFFF
+        hit = not (
+            x > mouse_x_value
+            or right < mouse_x_value
+            or y > mouse_y_value
+            or bottom < mouse_y_value
+        )
+        gated = bool((transition | camera | presentation) & 1)
+        entity_enabled = bool(entity_flags & 1)
+        compose = False
+        terminal_path = ""
+        expected_flags: dict[str, bool]
+
+        if transition & 1:
+            terminal_path = "transition_gate"
+            expected_flags = logic8_flags(transition & 1)
+        elif camera & 1:
+            terminal_path = "camera_gate"
+            expected_flags = logic8_flags(camera & 1)
+        elif presentation & 1:
+            terminal_path = "presentation_gate"
+            expected_flags = logic8_flags(presentation & 1)
+        elif not entity_enabled:
+            terminal_path = "entity_disabled"
+            expected_flags = logic8_flags(entity_flags & 1)
+        elif not hit:
+            expected_data[0x27E2] = 0
+            if x > mouse_x_value:
+                terminal_path = "x_below"
+                expected_flags = cmp16_flags(x, mouse_x_value)
+            elif right < mouse_x_value:
+                terminal_path = "x_above"
+                expected_flags = cmp16_flags(right, mouse_x_value)
+            elif y > mouse_y_value:
+                terminal_path = "y_below"
+                expected_flags = cmp16_flags(y, mouse_y_value)
+            else:
+                terminal_path = "y_above"
+                expected_flags = cmp16_flags(bottom, mouse_y_value)
+        else:
+            expected_data[0x27E2] |= 1
+            if expected_data[0x27E2] & 2:
+                terminal_path = "already_visible"
+                expected_flags = logic8_flags(expected_data[0x27E2] & 2)
+            else:
+                terminal_path = "compose"
+                compose = True
+                title = "PLANET: "
+                if kind == 0x0010:
+                    title = "SHIP: "
+                if kind & 0x0100:
+                    title = "BLACK HOLE: "
+                eligible_names = [
+                    source[5]
+                    for source in source_records
+                    if source[0] in source_offsets
+                    and source[1] == 2
+                    and source[2] & 1
+                    and source[3] != 0
+                    and source[4] != ark_object
+                ]
+                lines = [
+                    title + "GAIA",
+                    "LIFE SUPPORT:",
+                    *eligible_names,
+                    "",
+                    "",
+                ]
+                expected_text = "\r".join(lines).encode("ascii") + b"\0"
+                expected_game[0x0E18 : 0x0E18 + len(expected_text)] = expected_text
+                expected_game[0x27E2] = (game_mode_before + 1) & 0xFF
+                put_word(expected_game, 0x5E58, 0)
+                for source_index, source_offset in enumerate(
+                    [*source_offsets, 0xFFFF]
+                ):
+                    put_word(
+                        expected_stack,
+                        source_list_offset + source_index * 2,
+                        source_offset,
+                    )
+                incremented = expected_game[0x27E2]
+                expected_flags = {
+                    "cf": False,
+                    "pf": incremented.bit_count() % 2 == 0,
+                    "zf": incremented == 0,
+                    "sf": bool(incremented & 0x80),
+                    "of": game_mode_before == 0x7F,
+                }
+
+        expected_calls: list[dict[str, object]] = []
+        prefix = b""
+        if compose:
+            title = "PLANET: "
+            if kind == 0x0010:
+                title = "SHIP: "
+            if kind & 0x0100:
+                title = "BLACK HOLE: "
+            prefix = (title + "GAIA\rLIFE SUPPORT:\r").encode("ascii")
+            expected_calls.append(
+                {
+                    "call": "ship_3d_nav_source_list_build_full",
+                    "cs": 0x04DA,
+                    "ip": 0x0EAB,
+                    "sp": 0xFEEE,
+                    "ds": record_segment,
+                    "es": record_segment,
+                    "fs": record_segment,
+                    "gs": game_segment,
+                    "ss": stack_segment,
+                    "di": location_offset,
+                    "bp": source_list_offset,
+                    "text_prefix_hex": prefix.hex(),
+                }
+            )
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": game_segment,
+            "fs": initial_fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0203,
+        }
+        calls: list[dict[str, object]] = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != helper_address:
+                return
+            event = {
+                "call": "ship_3d_nav_source_list_build_full",
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "ip": machine.reg_read(UC_X86_REG_IP),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "ds": machine.reg_read(UC_X86_REG_DS),
+                "es": machine.reg_read(UC_X86_REG_ES),
+                "fs": machine.reg_read(UC_X86_REG_FS),
+                "gs": machine.reg_read(UC_X86_REG_GS),
+                "ss": machine.reg_read(UC_X86_REG_SS),
+                "di": machine.reg_read(UC_X86_REG_DI),
+                "bp": machine.reg_read(UC_X86_REG_BP),
+                "text_prefix_hex": bytes(
+                    machine.mem_read(game_segment * 16 + 0x0E18, len(prefix))
+                ).hex(),
+            }
+            calls.append(event)
+            for source_index, source_offset in enumerate(
+                [*source_offsets, 0xFFFF]
+            ):
+                machine.mem_write(
+                    stack_segment * 16 + source_list_offset + source_index * 2,
+                    struct.pack("<H", source_offset),
+                )
+            machine.reg_write(
+                UC_X86_REG_BP,
+                (source_list_offset + len(source_offsets) * 2) & 0xFFFF,
+            )
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, helper_address, b"\xCB"),
+                (data_segment, 0, bytes(data_before)),
+                (game_segment, 0, bytes(game_before)),
+                (record_segment, 0, bytes(record_before)),
+                (stack_segment, 0, bytes(stack_before)),
+                (initial_fs_segment, 0, fs_before),
+            ],
+            code_handler=capture,
+            instruction_count=1000,
+        )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x82e8 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_data, expected_data)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x82e8 {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, "
+                f"expected={expected_data[mismatch]:#x}"
+            )
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(
+                    zip(actual_game, expected_game)
+                )
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x82e8 {name}: game[{mismatch:#x}]={actual_game[mismatch]:#x}, "
+                f"expected={expected_game[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(record_segment * 16, 0x10000)) != bytes(
+            record_before
+        ):
+            raise AssertionError(f"0x82e8 {name}: record heap changed")
+        if bytes(machine.mem_read(initial_fs_segment * 16, 0x10000)) != fs_before:
+            raise AssertionError(f"0x82e8 {name}: incoming FS decoy changed")
+
+        actual_stack = bytes(machine.mem_read(stack_segment * 16, 0x10000))
+        source_list_end = source_list_offset + (len(source_offsets) + 1) * 2
+        if actual_stack[source_list_offset:source_list_end] != bytes(
+            expected_stack[source_list_offset:source_list_end]
+        ):
+            raise AssertionError(f"0x82e8 {name}: source list differs")
+        if actual_stack[
+            caller_sp + 2 : caller_sp + 2 + len(stack_sentinel)
+        ] != stack_sentinel:
+            raise AssertionError(f"0x82e8 {name}: caller stack sentinel changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = caller_sp + 2
+        if compose:
+            expected_registers["ebx"] = (
+                initial["ebx"] & 0xFFFF0000
+            ) | ark_object
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x82e8 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x82e8 {name}: near return changed CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & mask) for flag, mask in flag_masks.items()
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x82e8 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+
+        text_after = None
+        if compose:
+            text_bytes = bytearray()
+            for index in range(256):
+                character = actual_game[0x0E18 + index]
+                text_bytes.append(character)
+                if character == 0:
+                    break
+            else:
+                raise AssertionError(f"0x82e8 {name}: text is unterminated")
+            text_after = bytes(text_bytes).decode("ascii").replace("\r", "\\r")
+
+        vectors.append(
+            {
+                "name": name,
+                "terminal_path": terminal_path,
+                "transition": transition,
+                "camera": camera,
+                "presentation": presentation,
+                "entity_flags": entity_flags,
+                "rect": list(rect),
+                "mouse": list(mouse),
+                "hit": hit if not gated and entity_enabled else None,
+                "data_mode_before": data_mode_before,
+                "data_mode_after": actual_data[0x27E2],
+                "game_mode_before": game_mode_before,
+                "game_mode_after": actual_game[0x27E2],
+                "source_offsets": source_offsets,
+                "text_after": text_after,
+                "calls": calls,
+                "defined_flags": expected_flags,
+                "return": "near",
+            }
+        )
+
+    return vectors
+
+
 def nav_camera_state_check_vectors() -> list[dict[str, object]]:
     entry = 0x8CCE
     body_size = 949
@@ -86536,6 +87034,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_8a4e_natural.json",
         camera_fsm_state_gate_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_82e8_natural.json",
+        nav_state_gate_vectors(),
         args.check,
     )
     update_vector(

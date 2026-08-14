@@ -5854,6 +5854,35 @@ DS/GS data aliases, a clear direction flag, and fixed hyperspace filename
 storage. Direct binary replacement would additionally need the original BP
 parameter, selective save envelope, helper residue, and terminal flags.
 
+## Navigation hover-status composer at 0x0082E8
+
+The 320-byte body gates the nav-chart hover status on three low subsystem bits,
+entity 31's state, and an unsigned inclusive mouse rectangle. A miss clears the
+entire DS mode byte. A new hit resolves the current location through the arche
+record, selects the exact `PLANET: `, `SHIP: `, or `BLACK HOLE: ` title, and
+builds a CR-delimited status block in the text buffer.
+
+The body calls the recursive source-list builder at `0x00624B`, then keeps only
+exact-kind-two records whose low state bit and life-support word are nonzero and
+whose location is not the GS Ark object. It appends a final blank line and NUL,
+increments the GS display mode, and clears the GS reveal cursor.
+
+Thirteen patched-helper vectors execute the untouched original body. They cover
+all low-bit gates and high-bit pass-through, disabled entity behavior, inclusive
+rectangle edges, 16-bit wrapped upper bounds, full-byte miss clearing, visible
+mode hold, title precedence, every roster filter, helper arguments, CR layout,
+DS title, FS record, GS heading/output, SS source-list ownership, split DS/GS
+state writes, preservation, BX residue, terminal flags, stack, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural C
+composer warning-free to 165 instructions/449 bytes versus 122/320 original,
+with 75.41 percent mnemonic-multiset overlap and 67.21 percent ordered mnemonic
+overlap. It contains no inline assembly or register-state facade. Full-source
+integration requires the shipped `ES=GS` destination, `SS=GS` source list,
+shared data group, and clear direction flag. Direct binary replacement also
+needs the original FS/DS/ES transitions, BP helper cursor ABI, selective save
+envelope, BX residue, and terminal flags.
+
 ## Navigation camera state check at 0x008CCE
 
 The 949-byte body is the navigation-chart state machine. A zero transition

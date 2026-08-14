@@ -1,0 +1,528 @@
+[
+  {
+    "name": "transition_low_bit_gates",
+    "terminal_path": "transition_gate",
+    "transition": 129,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": null,
+    "data_mode_before": 0,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "camera_low_bit_gates",
+    "terminal_path": "camera_gate",
+    "transition": 0,
+    "camera": 65,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": null,
+    "data_mode_before": 0,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "presentation_low_bit_gates",
+    "terminal_path": "presentation_gate",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 33,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": null,
+    "data_mode_before": 0,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "disabled_hover_entity_preserves_mode",
+    "terminal_path": "entity_disabled",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 128,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": null,
+    "data_mode_before": 0,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "x_below_clears_full_data_mode",
+    "terminal_path": "x_below",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      99,
+      55
+    ],
+    "hit": false,
+    "data_mode_before": 165,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "wrapped_right_edge_is_outside",
+    "terminal_path": "x_above",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      65520,
+      50,
+      32,
+      10
+    ],
+    "mouse": [
+      65525,
+      55
+    ],
+    "hit": false,
+    "data_mode_before": 90,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "y_above_bottom_clears_mode",
+    "terminal_path": "y_above",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      61
+    ],
+    "hit": false,
+    "data_mode_before": 127,
+    "data_mode_after": 0,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "visible_mode_holds_without_recompose",
+    "terminal_path": "already_visible",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": true,
+    "data_mode_before": 130,
+    "data_mode_after": 131,
+    "game_mode_before": 64,
+    "game_mode_after": 64,
+    "source_offsets": [],
+    "text_after": null,
+    "calls": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "inclusive_bottom_right_composes_planet",
+    "terminal_path": "compose",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      120,
+      60
+    ],
+    "hit": true,
+    "data_mode_before": 0,
+    "data_mode_after": 1,
+    "game_mode_before": 64,
+    "game_mode_after": 65,
+    "source_offsets": [],
+    "text_after": "PLANET: GAIA\\rLIFE SUPPORT:\\r\\r\u0000",
+    "calls": [
+      {
+        "call": "ship_3d_nav_source_list_build_full",
+        "cs": 1242,
+        "ip": 3755,
+        "sp": 65262,
+        "ds": 29696,
+        "es": 29696,
+        "fs": 29696,
+        "gs": 25600,
+        "ss": 36864,
+        "di": 12288,
+        "bp": 26758,
+        "text_prefix_hex": "504c414e45543a20474149410d4c49464520535550504f52543a0d"
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "exact_ship_kind_selects_ship_title",
+    "terminal_path": "compose",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": true,
+    "data_mode_before": 0,
+    "data_mode_after": 1,
+    "game_mode_before": 64,
+    "game_mode_after": 65,
+    "source_offsets": [],
+    "text_after": "SHIP: GAIA\\rLIFE SUPPORT:\\r\\r\u0000",
+    "calls": [
+      {
+        "call": "ship_3d_nav_source_list_build_full",
+        "cs": 1242,
+        "ip": 3755,
+        "sp": 65262,
+        "ds": 29696,
+        "es": 29696,
+        "fs": 29696,
+        "gs": 25600,
+        "ss": 36864,
+        "di": 12288,
+        "bp": 26758,
+        "text_prefix_hex": "534849503a20474149410d4c49464520535550504f52543a0d"
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "black_hole_bit_overrides_ship_title",
+    "terminal_path": "compose",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": true,
+    "data_mode_before": 0,
+    "data_mode_after": 1,
+    "game_mode_before": 64,
+    "game_mode_after": 65,
+    "source_offsets": [],
+    "text_after": "BLACK HOLE: GAIA\\rLIFE SUPPORT:\\r\\r\u0000",
+    "calls": [
+      {
+        "call": "ship_3d_nav_source_list_build_full",
+        "cs": 1242,
+        "ip": 3755,
+        "sp": 65262,
+        "ds": 29696,
+        "es": 29696,
+        "fs": 29696,
+        "gs": 25600,
+        "ss": 36864,
+        "di": 12288,
+        "bp": 26758,
+        "text_prefix_hex": "424c41434b20484f4c453a20474149410d4c49464520535550504f52543a0d"
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "roster_filters_every_record_field",
+    "terminal_path": "compose",
+    "transition": 0,
+    "camera": 0,
+    "presentation": 0,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": true,
+    "data_mode_before": 0,
+    "data_mode_after": 1,
+    "game_mode_before": 64,
+    "game_mode_after": 65,
+    "source_offsets": [
+      16384,
+      16640,
+      16896,
+      17152,
+      17408,
+      17664
+    ],
+    "text_after": "PLANET: GAIA\\rLIFE SUPPORT:\\rELIGIBLE\\rACTIVEHIGH\\r\\r\u0000",
+    "calls": [
+      {
+        "call": "ship_3d_nav_source_list_build_full",
+        "cs": 1242,
+        "ip": 3755,
+        "sp": 65262,
+        "ds": 29696,
+        "es": 29696,
+        "fs": 29696,
+        "gs": 25600,
+        "ss": 36864,
+        "di": 12288,
+        "bp": 26758,
+        "text_prefix_hex": "504c414e45543a20474149410d4c49464520535550504f52543a0d"
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  },
+  {
+    "name": "high_gate_bits_do_not_block_and_game_mode_wraps",
+    "terminal_path": "compose",
+    "transition": 128,
+    "camera": 128,
+    "presentation": 128,
+    "entity_flags": 42241,
+    "rect": [
+      100,
+      50,
+      20,
+      10
+    ],
+    "mouse": [
+      110,
+      55
+    ],
+    "hit": true,
+    "data_mode_before": 128,
+    "data_mode_after": 129,
+    "game_mode_before": 255,
+    "game_mode_after": 0,
+    "source_offsets": [
+      16384
+    ],
+    "text_after": "PLANET: GAIA\\rLIFE SUPPORT:\\rELIGIBLE\\r\\r\u0000",
+    "calls": [
+      {
+        "call": "ship_3d_nav_source_list_build_full",
+        "cs": 1242,
+        "ip": 3755,
+        "sp": 65262,
+        "ds": 29696,
+        "es": 29696,
+        "fs": 29696,
+        "gs": 25600,
+        "ss": 36864,
+        "di": 12288,
+        "bp": 26758,
+        "text_prefix_hex": "504c414e45543a20474149410d4c49464520535550504f52543a0d"
+      }
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    },
+    "return": "near"
+  }
+]

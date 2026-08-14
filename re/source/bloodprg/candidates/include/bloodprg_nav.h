@@ -161,6 +161,8 @@ extern const cb_u8 nav_location_panel_planet_label[]; /* DS:0x012E */
 extern const cb_u8 nav_location_panel_ship_label[]; /* DS:0x0137 */
 extern const cb_u8 nav_location_panel_black_hole_label[]; /* DS:0x013E */
 extern const cb_u8 nav_location_panel_life_support_label[]; /* DS:0x014B */
+extern const cb_u8 CB_GAME_DATA
+        nav_location_panel_life_support_label_gs[]; /* GS:0x014B alias */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */

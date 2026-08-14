@@ -49,6 +49,8 @@ extern volatile cb_u8 vm_text_mode_0cf9;     /* GS:0x0CF9 */
 extern volatile cb_u8 vm_text_mode_0cfa;     /* GS:0x0CFA */
 extern volatile cb_u8 vm_text_voice_trigger; /* GS:0x0CFB */
 extern volatile char vm_text_buffer[];       /* GS:0x0E18 */
+extern volatile char CB_GAME_DATA
+        vm_text_buffer_gs[];                 /* explicit GS:0x0E18 alias */
 extern volatile cb_i16 vm_text_selector;     /* GS:0x1FAB */
 extern volatile cb_u8 vm_text_menu_pending;  /* GS:0x1FB3 */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
@@ -56,6 +58,8 @@ extern volatile char CB_NEAR * volatile
         vm_loaded_scene_image_path; /* DS:0x1FA3 */
 extern volatile cb_u16 vm_text_menu_end;     /* GS:0x27D3 */
 extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_text_reveal_cursor_gs;             /* explicit GS:0x5E58 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_text_reveal_phase; /* GS:0x5E65 */
 extern volatile cb_u8 vm_text_display_active; /* GS:0x5E64 */
 extern volatile cb_u8 CB_GAME_DATA
@@ -80,6 +84,8 @@ extern volatile cb_u16 vm_named_orxx_object; /* DS:0x6750 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_arche_record_offset_gs; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_honk_object_gs; /* GS:0x6754 */
 extern volatile cb_u16 vm_named_ark_object; /* DS:0x6758 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_named_ark_object_gs;             /* explicit GS:0x6758 alias */
 extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
 extern volatile cb_u16 CB_GAME_DATA vm_blood_history_ring_index; /* GS:0x6744 */
