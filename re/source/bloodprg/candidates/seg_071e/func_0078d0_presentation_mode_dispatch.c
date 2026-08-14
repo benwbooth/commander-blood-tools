@@ -14,10 +14,11 @@ void CB_NEAR presentation_mode_dispatch(void)
         return;
     }
 
+    rect = &nav_actor_slots[0].hit_rect;
     if ((vm_ui_flags & PRESENTATION_MODE_SECOND_RECT) != 0u) {
-        rect = &nav_actor_slots[2].hit_rect;
-    } else {
-        rect = &nav_actor_slots[0].hit_rect;
+        rect = (const volatile bloodprg_rect_i16 CB_NEAR *)
+            ((const volatile cb_u8 CB_NEAR *)rect
+             + 2u * sizeof(bloodprg_nav_actor_slot));
     }
 
     point_x = mouse_x;

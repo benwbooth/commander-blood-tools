@@ -41,10 +41,11 @@ void NEAR presentation_mode_dispatch(void)
         return;
     }
 
+    rect = &nav_actor_slots[0].hit_rect;
     if ((vm_ui_flags & PRESENTATION_MODE_SECOND_RECT) != 0u) {
-        rect = &nav_actor_slots[2].hit_rect;
-    } else {
-        rect = &nav_actor_slots[0].hit_rect;
+        rect = (const volatile rect_i16 NEAR *)
+            ((const volatile u8 NEAR *)rect
+             + 2u * sizeof(nav_actor_slot));
     }
 
     point_x = mouse_x;

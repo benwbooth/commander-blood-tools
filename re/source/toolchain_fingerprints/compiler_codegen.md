@@ -34,6 +34,23 @@ probe comparisons. `wdis` listings retained the generated object-code bytes.
 
 ## Results
 
+### Native-source acceptance
+
+Exact native instruction bytes are not the acceptance gate for recovered C.
+A routine is `codegen_accepted` when its original-binary oracle is complete,
+the C expresses the recovered behavior without a register-state emulator, and
+the remaining disassembly differences have been reviewed as compiler choices
+that do not change the source-port contract. Typical accepted differences are
+register allocation, equivalent instruction encodings, relocation spelling,
+and harmless prologue, epilogue, or loop lowering.
+
+Differences remain blocking when they affect observable register or flag
+results, memory/segment ownership without a documented runtime alias, call or
+interrupt order, stack behavior, or state mutations. `codegen_shape_exact`
+remains a stronger result, but native routines do not need it before work moves
+to the VM toolchain. VM source has a stricter goal: decompile and compile every
+script with byte-for-byte payload reproduction.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
@@ -5022,12 +5039,13 @@ activation, deactivation, and full prior-state restoration. They prove SS slot
 versus DS/GS ownership, AX residue, register preservation, final flags, stack
 integrity, and near return.
 
-Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
-candidate warning-free to 33 instructions and exactly 93 bytes, versus 31/93 in
-the original, with 96.77 percent mnemonic-multiset overlap and no inline
-assembly. The generated comparisons and branches match the original shape;
-direct replacement only needs BP rather than BX rectangle allocation and the
-original shared epilogue.
+Open Watcom 1.9 medium (`-3 -ox -os -mm -we`) compiles the actual natural
+candidate warning-free to 32 instructions/91 bytes versus 31/93 in the
+original. Expressing slot two as a two-record pointer advance recovers the
+original base-plus-`0x30` selection, improving ordered mnemonic LCS from 28/31
+to 29/31 and encoded-byte-line LCS from 6/31 to 7/31. The remaining BX-versus-BP
+allocation and duplicated success epilogue are accepted compiler differences;
+full-source integration still relies on the documented SS=DS actor-slot alias.
 
 ## BLOODPRG camera navigation update candidate
 
