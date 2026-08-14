@@ -175,6 +175,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
 #pragma aux active_object_list_build modify exact []
 #pragma aux nav_chart_list_build value [ax] modify exact [ax]
 #pragma aux vm_patch_stream_build value [ax] modify exact [ax]
+#pragma aux vm_record_state_proc modify exact []
 #pragma aux vm_special_slot_remove parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_special_slot_insert parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_field_offset parm [ax] [bx] value [ax] modify exact [ax]

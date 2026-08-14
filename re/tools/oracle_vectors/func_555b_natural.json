@@ -1,0 +1,448 @@
+[
+  {
+    "name": "inactive_first_entry",
+    "directory_offset": 512,
+    "record_pointer_offset_ignored": 12544,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 256,
+        "entry_kind": 0,
+        "kind_mask": 1,
+        "field_offset": 3,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 0,
+    "slots_before": [
+      4369,
+      65535,
+      13107
+    ],
+    "slots_after": [
+      4369,
+      65535,
+      13107
+    ],
+    "stop_reason": "directory_kind",
+    "eax": 2711687732,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "active_nonmatch_then_inactive",
+    "directory_offset": 1024,
+    "record_pointer_offset_ignored": 12817,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 288,
+        "entry_kind": 1,
+        "kind_mask": 1,
+        "field_offset": 4,
+        "field_value": 4660
+      },
+      {
+        "object_offset": 576,
+        "entry_kind": 2,
+        "kind_mask": 2,
+        "field_offset": 5,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      8738,
+      65535,
+      17476
+    ],
+    "slots_after": [
+      8738,
+      65535,
+      17476
+    ],
+    "stop_reason": "directory_kind",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "first_match_replaces_slot_and_stops",
+    "directory_offset": 1536,
+    "record_pointer_offset_ignored": 13090,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 320,
+        "entry_kind": 1,
+        "kind_mask": 2,
+        "field_offset": 7,
+        "field_value": -1
+      },
+      {
+        "object_offset": 608,
+        "entry_kind": 1,
+        "kind_mask": 4,
+        "field_offset": 9,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      43690,
+      65535,
+      52428
+    ],
+    "slots_after": [
+      320,
+      65535,
+      52428
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "nonmatch_does_not_advance_slot",
+    "directory_offset": 2048,
+    "record_pointer_offset_ignored": 13363,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 352,
+        "entry_kind": 1,
+        "kind_mask": 4,
+        "field_offset": 6,
+        "field_value": 0
+      },
+      {
+        "object_offset": 640,
+        "entry_kind": 1,
+        "kind_mask": 8,
+        "field_offset": 8,
+        "field_value": -1
+      },
+      {
+        "object_offset": 928,
+        "entry_kind": 1,
+        "kind_mask": 16,
+        "field_offset": 10,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 2,
+    "slots_before": [
+      4951,
+      65535,
+      9320
+    ],
+    "slots_after": [
+      640,
+      65535,
+      9320
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "two_matches_fill_existing_length",
+    "directory_offset": 2560,
+    "record_pointer_offset_ignored": 13636,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 384,
+        "entry_kind": 1,
+        "kind_mask": 32,
+        "field_offset": 11,
+        "field_value": -1
+      },
+      {
+        "object_offset": 672,
+        "entry_kind": 1,
+        "kind_mask": 64,
+        "field_offset": 12,
+        "field_value": -1
+      },
+      {
+        "object_offset": 960,
+        "entry_kind": 1,
+        "kind_mask": 128,
+        "field_offset": 13,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 2,
+    "slots_before": [
+      4369,
+      8738,
+      65535,
+      17476
+    ],
+    "slots_after": [
+      384,
+      672,
+      65535,
+      17476
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "signed_negative_field_offset",
+    "directory_offset": 3072,
+    "record_pointer_offset_ignored": 13909,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 768,
+        "entry_kind": 1,
+        "kind_mask": 256,
+        "field_offset": -6,
+        "field_value": -1
+      },
+      {
+        "object_offset": 1024,
+        "entry_kind": 1,
+        "kind_mask": 512,
+        "field_offset": 14,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      21845,
+      65535,
+      30583
+    ],
+    "slots_after": [
+      768,
+      65535,
+      30583
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4294906420,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lowest_set_kind_bit_selects_field",
+    "directory_offset": 3584,
+    "record_pointer_offset_ignored": 14182,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 800,
+        "entry_kind": 1,
+        "kind_mask": 160,
+        "field_offset": 15,
+        "field_value": -1
+      },
+      {
+        "object_offset": 1088,
+        "entry_kind": 1,
+        "kind_mask": 1024,
+        "field_offset": 16,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      34952,
+      65535,
+      43690
+    ],
+    "slots_after": [
+      800,
+      65535,
+      43690
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "directory_offset_wraps",
+    "directory_offset": 65520,
+    "record_pointer_offset_ignored": 14455,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 832,
+        "entry_kind": 1,
+        "kind_mask": 2048,
+        "field_offset": 17,
+        "field_value": 4660
+      },
+      {
+        "object_offset": 1120,
+        "entry_kind": 1,
+        "kind_mask": 4096,
+        "field_offset": 18,
+        "field_value": -1
+      },
+      {
+        "object_offset": 1408,
+        "entry_kind": 1,
+        "kind_mask": 8192,
+        "field_offset": 19,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 2,
+    "slots_before": [
+      48059,
+      65535,
+      56797
+    ],
+    "slots_after": [
+      1120,
+      65535,
+      56797
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "field_address_crosses_64k_without_wrap",
+    "directory_offset": 4608,
+    "record_pointer_offset_ignored": 14728,
+    "inherited_esi_high_word": 0,
+    "entries": [
+      {
+        "object_offset": 65534,
+        "entry_kind": 1,
+        "kind_mask": 16384,
+        "field_offset": 4,
+        "field_value": -1
+      },
+      {
+        "object_offset": 1568,
+        "entry_kind": 1,
+        "kind_mask": 32768,
+        "field_offset": 20,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      4660,
+      65535,
+      22136
+    ],
+    "slots_after": [
+      65534,
+      65535,
+      22136
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "inherited_esi_high_word_participates_in_field_address",
+    "directory_offset": 5120,
+    "record_pointer_offset_ignored": 15001,
+    "inherited_esi_high_word": 1,
+    "entries": [
+      {
+        "object_offset": 1280,
+        "entry_kind": 1,
+        "kind_mask": 1,
+        "field_offset": 5,
+        "field_value": -1
+      },
+      {
+        "object_offset": 1856,
+        "entry_kind": 1,
+        "kind_mask": 2,
+        "field_offset": 21,
+        "field_value": -1
+      }
+    ],
+    "scanned_entries": 1,
+    "slots_before": [
+      39612,
+      65535,
+      57072
+    ],
+    "slots_after": [
+      1280,
+      65535,
+      57072
+    ],
+    "stop_reason": "slot_sentinel",
+    "eax": 4660,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

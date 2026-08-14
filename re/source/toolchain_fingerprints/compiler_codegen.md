@@ -5120,6 +5120,32 @@ and adapt the two `DS:SI` text calls; all list, layout, input, state, and draw
 logic remains natural C. Direct replacement still needs the original byte DIV,
 SS width reads, GS tail, status flags, and preserve-all envelope.
 
+## BLOODPRG VM record-state processor candidate
+
+`0x00555B` walks exact-kind-1 entries in the 20-byte VM directory. For each
+entry it treats `+0x10` as an absolute offset under the segment half of the VM
+record pointer, resolves selector `0x11` from the object's kind, and replaces
+the current special-slot word when the resolved field is `0xFFFF`. A match
+advances the slot cursor and terminates immediately when the next existing
+slot is the `0xFFFF` sentinel; a nonmatch does not advance that cursor.
+
+Ten direct vectors cover immediate termination, nonmatches, one- and two-slot
+replacement, lowest-set-kind-bit selection through the real field helper,
+negative field offsets, directory wrap, ignored record-pointer offset, split
+GS/SS ownership, register and flag behavior, and the far return. They also
+prove the original's address-size-prefixed field read: the effective offset is
+the signed result in EAX plus ESI, so it can cross 64 KiB and inherits ESI's
+high word. Both real callers first execute the active VM wrapper path that
+zeros ESI, making the inherited high word a verified runtime precondition.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
+43-instruction/100-byte function versus 33/73 original, with 78.79 percent
+mnemonic-multiset overlap. The directory, object, field, and sentinel logic is
+natural typed C. Direct replacement still needs GS placement, the runtime
+SS=DS slot alias, the preserve-all envelope, and a narrow field-read lowering
+for the original 32-bit effective offset because Watcom's 16:16 far-pointer
+arithmetic wraps it to 16 bits.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

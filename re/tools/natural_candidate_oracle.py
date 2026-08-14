@@ -29307,6 +29307,310 @@ def vm_special_slot_vector(
     }
 
 
+def vm_record_state_proc_vectors() -> list[dict[str, object]]:
+    entry = 0x555B
+    return_address = 0x55A3
+    expected_hash = "9c41f2e1af557f037491e14e31b74b101ad43fb38a8a74d70dca5205152203b6"
+    if hashlib.sha256(EXE[entry : entry + 73]).hexdigest() != expected_hash:
+        raise AssertionError("0x555b: recovered 73-byte body changed")
+
+    game_segment = 0x2000
+    data_segment = 0x3000
+    directory_segment = 0x4000
+    record_segment = 0x5000
+    decoy_directory_segment = 0x7000
+    decoy_record_segment = 0x8000
+    stack_segment = 0x9000
+    cases = [
+        {
+            "name": "inactive_first_entry",
+            "directory_offset": 0x0200,
+            "entries": [(0x0100, 0, 0x0001, 3, -1)],
+            "slots": [0x1111, 0xFFFF, 0x3333],
+        },
+        {
+            "name": "active_nonmatch_then_inactive",
+            "directory_offset": 0x0400,
+            "entries": [
+                (0x0120, 1, 0x0001, 4, 0x1234),
+                (0x0240, 2, 0x0002, 5, -1),
+            ],
+            "slots": [0x2222, 0xFFFF, 0x4444],
+        },
+        {
+            "name": "first_match_replaces_slot_and_stops",
+            "directory_offset": 0x0600,
+            "entries": [
+                (0x0140, 1, 0x0002, 7, -1),
+                (0x0260, 1, 0x0004, 9, -1),
+            ],
+            "slots": [0xAAAA, 0xFFFF, 0xCCCC],
+        },
+        {
+            "name": "nonmatch_does_not_advance_slot",
+            "directory_offset": 0x0800,
+            "entries": [
+                (0x0160, 1, 0x0004, 6, 0),
+                (0x0280, 1, 0x0008, 8, -1),
+                (0x03A0, 1, 0x0010, 10, -1),
+            ],
+            "slots": [0x1357, 0xFFFF, 0x2468],
+        },
+        {
+            "name": "two_matches_fill_existing_length",
+            "directory_offset": 0x0A00,
+            "entries": [
+                (0x0180, 1, 0x0020, 11, -1),
+                (0x02A0, 1, 0x0040, 12, -1),
+                (0x03C0, 1, 0x0080, 13, -1),
+            ],
+            "slots": [0x1111, 0x2222, 0xFFFF, 0x4444],
+        },
+        {
+            "name": "signed_negative_field_offset",
+            "directory_offset": 0x0C00,
+            "entries": [
+                (0x0300, 1, 0x0100, -6, -1),
+                (0x0400, 1, 0x0200, 14, -1),
+            ],
+            "slots": [0x5555, 0xFFFF, 0x7777],
+        },
+        {
+            "name": "lowest_set_kind_bit_selects_field",
+            "directory_offset": 0x0E00,
+            "entries": [
+                (0x0320, 1, 0x00A0, 15, -1),
+                (0x0440, 1, 0x0400, 16, -1),
+            ],
+            "slots": [0x8888, 0xFFFF, 0xAAAA],
+        },
+        {
+            "name": "directory_offset_wraps",
+            "directory_offset": 0xFFF0,
+            "entries": [
+                (0x0340, 1, 0x0800, 17, 0x1234),
+                (0x0460, 1, 0x1000, 18, -1),
+                (0x0580, 1, 0x2000, 19, -1),
+            ],
+            "slots": [0xBBBB, 0xFFFF, 0xDDDD],
+        },
+        {
+            "name": "field_address_crosses_64k_without_wrap",
+            "directory_offset": 0x1200,
+            "entries": [
+                (0xFFFE, 1, 0x4000, 4, -1),
+                (0x0620, 1, 0x8000, 20, -1),
+            ],
+            "slots": [0x1234, 0xFFFF, 0x5678],
+            "low_field_decoy": 0,
+        },
+        {
+            "name": "inherited_esi_high_word_participates_in_field_address",
+            "directory_offset": 0x1400,
+            "entries": [
+                (0x0500, 1, 0x0001, 5, -1),
+                (0x0740, 1, 0x0002, 21, -1),
+            ],
+            "slots": [0x9ABC, 0xFFFF, 0xDEF0],
+            "esi_high": 1,
+            "low_field_decoy": 0,
+        },
+    ]
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        directory_offset = int(case["directory_offset"])
+        entries = [tuple(values) for values in case["entries"]]
+        slots_before = [int(value) for value in case["slots"]]
+        slots_after = list(slots_before)
+        slot_index = 0
+        scanned_entries = 0
+        last_field_offset = None
+        stop_reason = "directory_kind"
+        for object_offset, entry_kind, _kind, field_offset, field_value in entries:
+            if entry_kind != 1:
+                break
+            scanned_entries += 1
+            last_field_offset = field_offset
+            if field_value == -1:
+                slots_after[slot_index] = object_offset
+                slot_index += 1
+                if slots_after[slot_index] == 0xFFFF:
+                    stop_reason = "slot_sentinel"
+                    break
+
+        record_pointer_offset = (0x3100 + case_index * 0x111) & 0xFFFF
+        directory_pointer = struct.pack("<HH", directory_offset, directory_segment)
+        record_pointer = struct.pack("<HH", record_pointer_offset, record_segment)
+        decoy_directory_pointer = struct.pack(
+            "<HH", 0x2200 + case_index * 0x20, decoy_directory_segment
+        )
+        decoy_record_pointer = struct.pack(
+            "<HH", 0x3300 + case_index * 0x20, decoy_record_segment
+        )
+        slot_bytes_before = struct.pack(f"<{len(slots_before)}H", *slots_before)
+        slot_bytes_after = struct.pack(f"<{len(slots_after)}H", *slots_after)
+        slot_decoy = bytes(
+            (case_index * 31 + index * 17 + 0x45) & 0xFF
+            for index in range(len(slot_bytes_before))
+        )
+        memory = [
+            (game_segment, 0x672C, directory_pointer),
+            (game_segment, 0x6724, record_pointer),
+            (data_segment, 0x672C, decoy_directory_pointer),
+            (data_segment, 0x6724, decoy_record_pointer),
+            (stack_segment, 0x6D3E, slot_bytes_before),
+            (data_segment, 0x6D3E, slot_decoy),
+            (game_segment, 0x6D3E, bytes([0xA5]) * len(slot_bytes_before)),
+            (decoy_directory_segment, 0x2212 + case_index * 0x20, b"\0\0"),
+        ]
+        immutable = [
+            (game_segment, 0x672C, directory_pointer),
+            (game_segment, 0x6724, record_pointer),
+            (data_segment, 0x672C, decoy_directory_pointer),
+            (data_segment, 0x6724, decoy_record_pointer),
+        ]
+        esi_high = int(case.get("esi_high", 0))
+        for index, values in enumerate(entries):
+            object_offset, entry_kind, kind_mask, field_offset, field_value = values
+            entry_offset = (directory_offset + index * 20) & 0xFFFF
+            object_field = (entry_offset + 0x10) & 0xFFFF
+            kind_field = (entry_offset + 0x12) & 0xFFFF
+            kind_bit = (kind_mask & -kind_mask).bit_length() - 1
+            table_offset = (0x6D60 + 0x0110 + kind_bit) & 0xFFFF
+            extended_field_offset = (
+                (esi_high << 16) + object_offset + field_offset
+            ) & 0xFFFFFFFF
+            field_word = field_value & 0xFFFF
+            memory.extend([
+                (directory_segment, object_field, struct.pack("<H", object_offset)),
+                (directory_segment, kind_field, struct.pack("<H", entry_kind)),
+                (record_segment, object_offset, struct.pack("<H", kind_mask)),
+                (game_segment, table_offset, bytes([field_offset & 0xFF])),
+                (record_segment, extended_field_offset, struct.pack("<H", field_word)),
+                (
+                    record_segment,
+                    (record_pointer_offset + object_offset) & 0xFFFF,
+                    struct.pack("<H", kind_mask ^ 0xFFFF),
+                ),
+                (
+                    decoy_record_segment,
+                    object_offset,
+                    struct.pack("<H", kind_mask ^ 0x5A5A),
+                ),
+            ])
+            immutable.extend([
+                (directory_segment, object_field, struct.pack("<H", object_offset)),
+                (directory_segment, kind_field, struct.pack("<H", entry_kind)),
+                (record_segment, object_offset, struct.pack("<H", kind_mask)),
+                (game_segment, table_offset, bytes([field_offset & 0xFF])),
+                (record_segment, extended_field_offset, struct.pack("<H", field_word)),
+            ])
+            low_offset = (object_offset + field_offset) & 0xFFFF
+            if "low_field_decoy" in case and extended_field_offset != low_offset:
+                low_decoy = int(case["low_field_decoy"]) & 0xFFFF
+                memory.append((record_segment, low_offset, struct.pack("<H", low_decoy)))
+                immutable.append((record_segment, low_offset, struct.pack("<H", low_decoy)))
+
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": (esi_high << 16) | 0x5678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x3800,
+            "fs": 0x4800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        machine = execute(entry, return_address, initial, memory)
+
+        expected = dict(initial)
+        del expected["flags"]
+        if last_field_offset is not None:
+            eax_high = 0xFFFF if last_field_offset < 0 else 0
+            expected["eax"] = (eax_high << 16) | (initial["eax"] & 0xFFFF)
+        for register, value in expected.items():
+            actual_register = machine.reg_read(REGISTERS[register])
+            if actual_register != value:
+                raise AssertionError(
+                    f"0x555b {name}: {register}={actual_register:#x}, expected={value:#x}"
+                )
+
+        actual_slots = bytes(
+            machine.mem_read(stack_segment * 16 + 0x6D3E, len(slot_bytes_after))
+        )
+        if actual_slots != slot_bytes_after:
+            raise AssertionError(f"0x555b {name}: slot output mismatch")
+        if bytes(
+            machine.mem_read(data_segment * 16 + 0x6D3E, len(slot_decoy))
+        ) != slot_decoy:
+            raise AssertionError(f"0x555b {name}: DS slot decoy changed")
+        for segment, offset, expected_bytes in immutable:
+            actual_bytes = bytes(
+                machine.mem_read(segment * 16 + offset, len(expected_bytes))
+            )
+            if actual_bytes != expected_bytes:
+                raise AssertionError(
+                    f"0x555b {name}: immutable input changed at {segment:#x}:{offset:#x}"
+                )
+
+        if stop_reason == "slot_sentinel":
+            terminal_left = 0xFFFF
+            terminal_right = 0xFFFF
+        else:
+            terminal_left = entries[scanned_entries][1]
+            terminal_right = 1
+        expected_flags = sub16_flags(terminal_left, terminal_right)
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            "cf": bool(flags & 0x0001),
+            "pf": bool(flags & 0x0004),
+            "af": bool(flags & 0x0010),
+            "zf": bool(flags & 0x0040),
+            "sf": bool(flags & 0x0080),
+            "of": bool(flags & 0x0800),
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x555b {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if EXE[return_address] != 0xCB:
+            raise AssertionError("0x555b: expected far RET boundary")
+
+        vectors.append({
+            "name": name,
+            "directory_offset": directory_offset,
+            "record_pointer_offset_ignored": record_pointer_offset,
+            "inherited_esi_high_word": esi_high,
+            "entries": [
+                {
+                    "object_offset": object_offset,
+                    "entry_kind": entry_kind,
+                    "kind_mask": kind_mask,
+                    "field_offset": field_offset,
+                    "field_value": field_value,
+                }
+                for object_offset, entry_kind, kind_mask, field_offset, field_value
+                in entries
+            ],
+            "scanned_entries": scanned_entries,
+            "slots_before": slots_before,
+            "slots_after": slots_after,
+            "stop_reason": stop_reason,
+            "eax": expected["eax"],
+            "defined_flags": actual_flags,
+        })
+
+    return vectors
+
+
 def vm_field_offset_vectors() -> list[dict[str, object]]:
     table_segment = 0x3C00
     data_segment = 0x2400
@@ -73241,6 +73545,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_5afd_natural.json",
         vm_op_a3_collect_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_555b_natural.json",
+        vm_record_state_proc_vectors(),
         args.check,
     )
     update_vector(
