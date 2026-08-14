@@ -7,7 +7,8 @@
 ; group: seg_04da
 ; provenance: static_dispatch_table_target
 ; label: vm_op_c2_record_full
-; label_comment: 0xC2 FULL decode. QUERY (0x6E56..0x6E76): di=0x6034(op1) owning object must be ACTIVE (test es:[di+2],1), record's +2 must equal op2, record type must be 0xC2; branch when that fails (0xA1 inverts). SET (0x6E78..0x6E98): owner active, then op2's OWN record needs +2 & 0x20, then vm_special_slot_insert(op2) (0x5FF6, jae=full->exit) and write 0xFFFF into op2+vm_field_offset(0x11,kind). ASYMMETRY: every SET failure path jumps to the RET at 0x6EEC, NEVER to vm_branch - a failed C2 write does not branch. Tail 0x6E9F..0x6EE7 raises a presentation request (kind 2 -> gs:[0x6788]=0x27; kind 0x400 -> DESCRIPT lookup then gs:[0x67AA]|=2 + gs:[0x6788]=0x2B) gated on gs:[0x2793]&1 / gs:[0x67AA]&2 - NOT ported (same engine plumbing the 0xA8 request half needs). Ported: live step() 0xC2 arm || ALSO RECORDED as `vm_op_c2_record_call`: VM opcode 0xC2: les di,gs:[0x6724]; optional 0xA1 skip; lodsw bp; call 0x6034 - object/line-record op with a subcall. Manipulates the runtime state table || ALSO RECORDED as `vm_op_c2_record_state`: 0xC2 line-record state handler; raw token C2 record operand || MERGED 2026-07-25 (#185): one handler under several names.
+; label_comment: VM opcode 0xC2 full record handler: query optionally inverts an active-owner exact {C2, related} match; set mode silently returns on inactive owner, a related record without flag 0x20, or a full special-slot table, otherwise stores 0xffff through selector 0x11 and may request presentation line 0x27 or 0x2b
+; natural_c: re/source/bloodprg/candidates/seg_04da/func_006e34_vm_op_c2_record_full.c
 ; incoming: vm_opcode_handlers:opcode_0xc2
 ; byte_count: 186
 ; boundary: cfg_blocks_22_terminals_5

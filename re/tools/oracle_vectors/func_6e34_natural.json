@@ -1,0 +1,935 @@
+[
+  {
+    "name": "query_exact_pass",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2048,
+    "owner_offset": 4096,
+    "owner_flags": 1,
+    "related_offset": 12288,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      194,
+      12288,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12312
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20484,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_owner_inactive_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2112,
+    "owner_offset": 4128,
+    "owner_flags": 0,
+    "related_offset": 12320,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      194,
+      12320,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12344
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": true,
+    "final_script_offset": 25125,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_related_mismatch_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2176,
+    "owner_offset": 4160,
+    "owner_flags": 1,
+    "related_offset": 12352,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      194,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12376
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": true,
+    "final_script_offset": 25162,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": false,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_kind_mismatch_fails",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2240,
+    "owner_offset": 4192,
+    "owner_flags": 1,
+    "related_offset": 12384,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      12384,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12408
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": true,
+    "final_script_offset": 25199,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": true,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_exact_fails",
+    "query_mode_before": 3,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2304,
+    "owner_offset": 4224,
+    "owner_flags": 1,
+    "related_offset": 12416,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      194,
+      12416,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12440
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": true,
+    "final_script_offset": 25236,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_inverted_mismatch_pass_script_wrap",
+    "query_mode_before": 1,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2368,
+    "owner_offset": 4256,
+    "owner_flags": 1,
+    "related_offset": 12448,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      12448,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12472
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 0,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "query_record_word_at_ffff",
+    "query_mode_before": 1,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 65535,
+    "owner_offset": 4288,
+    "owner_flags": 1,
+    "related_offset": 12480,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      194,
+      12480,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12504
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20676,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_owner_inactive_returns_without_branch",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2496,
+    "owner_offset": 4320,
+    "owner_flags": 0,
+    "related_offset": 12512,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12536
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20708,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_related_flag_missing_returns_without_branch",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2560,
+    "owner_offset": 4352,
+    "owner_flags": 1,
+    "related_offset": 12544,
+    "related_kind": 256,
+    "related_flags": 1,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": false,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12568
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20740,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_slot_existing_succeeds",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2624,
+    "owner_offset": 4384,
+    "owner_flags": 1,
+    "related_offset": 12576,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12600
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20772,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_slot_free_inserts",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2688,
+    "owner_offset": 4416,
+    "owner_flags": 1,
+    "related_offset": 12608,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12632
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20804,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_slot_full_returns_without_branch",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2752,
+    "owner_offset": 4448,
+    "owner_flags": 1,
+    "related_offset": 12640,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": false
+    },
+    "field_store": {
+      "written": false,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12664
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20836,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_kind_two_requests_simple_line",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2816,
+    "owner_offset": 4480,
+    "owner_flags": 1,
+    "related_offset": 12672,
+    "related_kind": 2,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12696
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20868,
+    "request_flags_after": 0,
+    "active_line_after": 39,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_ui_gate_blocks_request",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2880,
+    "owner_offset": 4512,
+    "owner_flags": 1,
+    "related_offset": 12704,
+    "related_kind": 2,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12728
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20900,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_request_gate_blocks_request",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 2944,
+    "owner_offset": 4544,
+    "owner_flags": 1,
+    "related_offset": 12736,
+    "related_kind": 1024,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12760
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20932,
+    "request_flags_after": 2,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_descript_failure_keeps_request_clear",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3008,
+    "owner_offset": 4576,
+    "owner_flags": 1,
+    "related_offset": 12768,
+    "related_kind": 1024,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12792
+    },
+    "descript_called": true,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 20964,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_descript_success_requests_line",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3072,
+    "owner_offset": 4608,
+    "owner_flags": 1,
+    "related_offset": 12800,
+    "related_kind": 1024,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12824
+    },
+    "descript_called": true,
+    "descript_result": 1,
+    "branch_failed": false,
+    "final_script_offset": 20996,
+    "request_flags_after": 2,
+    "active_line_after": 43,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_descript_success_preserves_other_request_bits",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3136,
+    "owner_offset": 4640,
+    "owner_flags": 1,
+    "related_offset": 12832,
+    "related_kind": 1024,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12856
+    },
+    "descript_called": true,
+    "descript_result": 1,
+    "branch_failed": false,
+    "final_script_offset": 21028,
+    "request_flags_after": 66,
+    "active_line_after": 43,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "set_other_kind_has_no_request",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3200,
+    "owner_offset": 4672,
+    "owner_flags": 1,
+    "related_offset": 12864,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12888
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 21060,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_negative_field_offset",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3264,
+    "owner_offset": 4704,
+    "owner_flags": 1,
+    "related_offset": 12896,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": -6,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 12890
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 21092,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_addr32_crosses_64k_without_wrapping",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3328,
+    "owner_offset": 4736,
+    "owner_flags": 1,
+    "related_offset": 65528,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 16,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 65544
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 21124,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_addr32_inherits_upper_edi",
+    "query_mode_before": 0,
+    "inverted": false,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3392,
+    "owner_offset": 4768,
+    "owner_flags": 1,
+    "related_offset": 12960,
+    "related_kind": 256,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 1,
+      "effective_32bit_offset": 78520
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 21156,
+    "request_flags_after": 0,
+    "active_line_after": 4951,
+    "defined_flags": {
+      "cf": true,
+      "pf": true,
+      "af": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "set_a1_prefix_is_consumed_not_inverted",
+    "query_mode_before": 2,
+    "inverted": true,
+    "record_base_offset_ignored": 4660,
+    "record_offset": 3456,
+    "owner_offset": 4800,
+    "owner_flags": 1,
+    "related_offset": 12992,
+    "related_kind": 2,
+    "related_flags": 32,
+    "record": [
+      195,
+      30583,
+      39321
+    ],
+    "slot_insert": {
+      "called": true,
+      "succeeded": true
+    },
+    "field_store": {
+      "written": true,
+      "signed_offset": 24,
+      "inherited_edi_high": 0,
+      "effective_32bit_offset": 13016
+    },
+    "descript_called": false,
+    "descript_result": 0,
+    "branch_failed": false,
+    "final_script_offset": 21189,
+    "request_flags_after": 0,
+    "active_line_after": 39,
+    "defined_flags": {
+      "cf": false,
+      "pf": true,
+      "af": false,
+      "zf": true,
+      "sf": false,
+      "of": false
+    }
+  }
+]

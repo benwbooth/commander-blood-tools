@@ -1800,6 +1800,32 @@ local, reallocates destination/related/inversion, materializes query truth,
 addresses globals through DS, and duplicates returns. Exact integration still
 needs fixed segment placement and the original compact BP/BX/AX/DL allocation.
 
+VM opcode-C2 handler `0x006E34` loads only the segment from GS:0x6724, consumes
+an optional A1 inversion prefix and destination offset, resolves the destination
+owner, then consumes a related offset. Query mode optionally inverts an
+active-owner exact `{0x00C2, related}` match. Set mode is deliberately
+asymmetric: inactive owners, related records without flag 0x20, and full
+special-slot tables return normally instead of calling the branch helper.
+After an existing or newly inserted slot, selector 0x11 of the related kind is
+set to `0xFFFF`. UI bit 0 and pending-request bit 1 gate the tail: kind 2 selects
+line 0x27, while kind 0x0400 calls the DESCRIPT lookup on the related name and
+can set request bit 1 plus line 0x2B.
+
+Twenty-three direct vectors prove all query, set-guard, slot, field, and
+presentation paths; the real threshold, slot, field, and branch helpers;
+DESCRIPT far-call framing; ignored base-offset decoys; script/record boundaries;
+segmented ownership; registers, flags, and return. They also isolate the
+binary's `0x67` address-size-overridden field store: it sign-extends the helper
+offset into EAX, inherits upper EDI, and does not wrap the effective offset at
+64 KiB. Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural
+one-to-one candidate warning-free to 76 instructions/210 bytes versus 63/186
+original, with 85.71 percent mnemonic-multiset overlap and no inline assembly.
+The C emits a normal 16-bit far-pointer sum, which is logically equivalent for
+the shipped game domain with zero upper EDI and no segment-offset overflow.
+Exact direct replacement of arbitrary inherited machine state would require a
+narrow assembly adapter for that one store, as well as fixed GS/SS placement
+and the original carry-return slot ABI and register/flag envelope.
+
 VM opcode-C3 handler `0x006EEE` loads the segment from GS:0x6724 but ignores
 the far pointer's offset. It consumes a destination offset, resolves that
 record's owner through the GS:0x672C threshold directory, then consumes a
