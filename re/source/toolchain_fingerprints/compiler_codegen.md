@@ -5965,6 +5965,36 @@ asynchronous updates to `main_frame_delay_ticks`, and adapters for recovered
 register ABIs. Direct replacement additionally needs the original inherited-BP
 handoffs, direct interrupt frames, selective callee residue, and terminal flags.
 
+## BLOODPRG VM resource profile loader at 0x0053A0
+
+The 443-byte far routine selects a five-handle profile from `FS:0x11F4`, using
+the low word of `profile * 10` exactly. A changed profile releases the previous
+five handles; both changed and repeated selections copy and load the selected
+row. Any failed load returns `-1` before the VM reset, leaving later handle
+slots and all prior runtime state untouched.
+
+After a complete load, the routine fills 128 state words with `0xFFFF`, clears
+the 16 special slots and the individually addressed VM fields, resolves the
+third profile resource as the blood-history segment, and resolves the fifth as
+a directory of 20-byte `{name, object_offset, kind}` records. The name scan
+binds `blood`, `orxx`, `Honk`, `menu`, `arche`, `Ark`, `Scruter_Jo`, and kind-5
+`vbio`. Its control flow intentionally checks `Scruter_Jo` even after an `Ark`
+match; the natural C preserves that non-obvious fall-through.
+
+Six patched-boundary vectors execute the untouched original bytes. They cover
+same-profile reacquisition, changed-profile releases, first and middle load
+failures, wrapped profile indexing, split `DS`/`GS` ownership, every reset,
+complete and missing name maps, helper ordering, preserved memory and
+registers, and the far-return stack boundary.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
+C89 function to 207 instructions/613 bytes versus 158/443 original, with 77.85
+percent mnemonic-multiset overlap and 72.78 percent ordered mnemonic overlap.
+It contains no inline assembly or register-state facade. Full-source integration
+requires `FS_DATA` placement and the shipped `DS=GS` aliases; direct replacement
+also needs the original carry-return string comparison and segmented helper
+ABIs.
+
 ## Interpretation
 
 The initial matrix rejects Turbo C 2.00/2.01 as a blanket default for those ten

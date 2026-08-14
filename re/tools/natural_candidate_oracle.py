@@ -7313,6 +7313,498 @@ def dlg_menu_words_inline_reveal_step_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_resource_profile_select_vectors() -> list[dict[str, object]]:
+    entry = 0x53A0
+    return_address = 0xF3A0
+    body_size = 443
+    body_hash = "ef4501eb798abb40d90c8a77ea8eadec4fa2060f438aa47e481ef830f86b932c"
+    if hashlib.sha256(EXE[entry : entry + body_size]).hexdigest() != body_hash:
+        raise AssertionError("0x53a0: recovered 443-byte body changed")
+
+    cases: list[dict[str, object]] = [
+        {
+            "name": "same_profile_reloads_and_binds_every_builtin",
+            "profile": 2,
+            "current_profile": 2,
+            "entries": [
+                ("blood", 0x1100, 1),
+                ("cryobox", 0x1120, 1),
+                ("orxx", 0x1140, 1),
+                ("Honk", 0x1160, 1),
+                ("menu", 0x1180, 1),
+                ("arche", 0x11A0, 1),
+                ("Ark", 0x11C0, 1),
+                ("Scruter_Jo", 0x11E0, 1),
+                ("vbio", 0x1200, 5),
+                ("ignored", 0x1220, 7),
+            ],
+        },
+        {
+            "name": "changed_profile_releases_old_and_preserves_missing_names",
+            "profile": 1,
+            "current_profile": 4,
+            "entries": [
+                ("UNKNOWN", 0x2200, 1),
+                ("blood", 0x2220, 1),
+                ("vbio", 0x2240, 5),
+            ],
+        },
+        {
+            "name": "first_load_failure_keeps_vm_state",
+            "profile": 3,
+            "current_profile": 0,
+            "failure_index": 0,
+            "entries": [],
+        },
+        {
+            "name": "middle_load_failure_keeps_later_handles",
+            "profile": 4,
+            "current_profile": 4,
+            "failure_index": 2,
+            "entries": [],
+        },
+        {
+            "name": "profile_multiply_wraps_to_sixteen_bits",
+            "profile": 0x8000,
+            "current_profile": 0x8000,
+            "entries": [("vbio", 0x3300, 5)],
+        },
+        {
+            "name": "split_ds_gs_proves_profile_and_state_owners",
+            "profile": 1,
+            "current_profile": 0,
+            "split_data": True,
+            "entries": [("orxx", 0x4400, 1)],
+        },
+    ]
+
+    game_segment = 0x5000
+    split_data_segment = 0x6000
+    fs_segment = 0x7000
+    state_segment = 0x8000
+    directory_segment = 0xA000
+    stack_segment = 0xB000
+    directory_offset = 0x1800
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    release_entry = 0x4C88
+    load_entry = 0x227B
+    resolve_entry = 0x4D20
+    compare_entry = 0x1FA4
+    builtin_offsets = {
+        "blood": 0x67BE,
+        "orxx": 0x67C4,
+        "Honk": 0x67C9,
+        "menu": 0x67CE,
+        "arche": 0x67D3,
+        "Ark": 0x67E1,
+        "Scruter_Jo": 0x67E5,
+        "vbio": 0x67F0,
+    }
+    active_names = [
+        "blood", "orxx", "Honk", "menu", "arche", "Ark", "Scruter_Jo"
+    ]
+    active_early_names = active_names[:5]
+    binding_offsets = {
+        "orxx": 0x6750,
+        "Honk": 0x6754,
+        "menu": 0x6756,
+        "arche": 0x6752,
+        "Ark": 0x6758,
+        "Scruter_Jo": 0x6760,
+        "vbio": 0x679C,
+    }
+    reset_words = (
+        0x6730, 0x6884, 0x6732, 0x675A, 0x6744, 0x6762, 0x6766,
+        0x6768, 0x676A, 0x676E, 0x677A, 0x6778, 0x6886, 0x6770,
+        0x6786, 0x6782, 0x6784, 0x6772, 0x6774, 0x6734, 0x6736,
+        0x67A0, 0x67A2,
+    )
+    reset_bytes = (
+        0x67AD, 0x67AA, 0x67A8, 0x67AB, 0x67AC, 0x67B0, 0x5E64,
+        0x27D7, 0x67AE, 0x67B7, 0x67AF, 0x67B2, 0x67B1,
+    )
+    vectors: list[dict[str, object]] = []
+
+    def write_wrapped(memory: bytearray, offset: int, payload: bytes) -> None:
+        for index, value in enumerate(payload):
+            memory[(offset + index) & 0xFFFF] = value
+
+    def read_string(machine: Uc, segment: int, offset: int) -> str:
+        value = bytearray()
+        for _ in range(64):
+            character = machine.mem_read(segment * 16 + offset, 1)[0]
+            offset = (offset + 1) & 0xFFFF
+            if character == 0:
+                return value.decode("ascii")
+            value.append(character)
+        raise AssertionError("0x53a0: unterminated helper string")
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        profile = int(case["profile"]) & 0xFFFF
+        current_profile = int(case["current_profile"]) & 0xFFFF
+        failure_value = case.get("failure_index")
+        failure_index = None if failure_value is None else int(failure_value)
+        split_data = bool(case.get("split_data", False))
+        entries = [tuple(item) for item in case["entries"]]
+        data_segment = split_data_segment if split_data else game_segment
+
+        game_before = bytearray(
+            (offset * 13 + (offset >> 8) * 17 + case_index * 29 + 0x31) & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before = (
+            bytearray(
+                (offset * 7 + (offset >> 8) * 23 + case_index * 31 + 0x53)
+                & 0xFF
+                for offset in range(0x10000)
+            )
+            if split_data
+            else game_before
+        )
+        fs_before = bytearray(
+            (offset * 5 + (offset >> 8) * 11 + case_index * 37 + 0x75) & 0xFF
+            for offset in range(0x10000)
+        )
+        state_before = bytes(
+            (offset * 3 + case_index * 41 + 0x97) & 0xFF
+            for offset in range(0x10000)
+        )
+        directory_before = bytearray(
+            (offset * 19 + case_index * 43 + 0xB9) & 0xFF
+            for offset in range(0x10000)
+        )
+        stack_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 47 + 0xDB)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+
+        for builtin, offset in builtin_offsets.items():
+            encoded = builtin.encode("ascii") + b"\0"
+            game_before[offset : offset + len(encoded)] = encoded
+
+        old_handles = [0xD000 + case_index * 0x10 + index for index in range(5)]
+        new_handles = [0x0100 + case_index * 0x20 + index for index in range(5)]
+        struct.pack_into("<5H", data_before, 0x6712, *old_handles)
+        if split_data:
+            struct.pack_into(
+                "<5H", game_before, 0x6712,
+                *[handle ^ 0xFFFF for handle in old_handles],
+            )
+        struct.pack_into("<H", data_before, 0x677E, current_profile)
+        if split_data:
+            struct.pack_into("<H", game_before, 0x677E, current_profile ^ 0xFFFF)
+
+        profile_offset = (0x11F4 + ((profile * 10) & 0xFFFF)) & 0xFFFF
+        write_wrapped(fs_before, profile_offset, struct.pack("<5H", *new_handles))
+
+        for entry_index, (entry_name, object_offset, entry_kind) in enumerate(entries):
+            encoded_name = str(entry_name).encode("ascii") + b"\0"
+            encoded_name = encoded_name[:16].ljust(16, b"\0")
+            write_wrapped(
+                directory_before,
+                directory_offset + entry_index * 20,
+                struct.pack(
+                    "<16sHH", encoded_name, int(object_offset), int(entry_kind)
+                ),
+            )
+        write_wrapped(
+            directory_before,
+            directory_offset + len(entries) * 20,
+            struct.pack("<16sHH", bytes(16), 0xEEEE, 0),
+        )
+        stack_before[caller_sp : caller_sp + 4 + len(stack_sentinel)] = (
+            struct.pack("<HH", return_address, 0) + stack_sentinel
+        )
+
+        expected_game = bytearray(game_before)
+        expected_data = bytearray(data_before) if split_data else expected_game
+        struct.pack_into("<H", expected_data, 0x677E, profile)
+        loaded_count = 5 if failure_index is None else failure_index + 1
+        for resource_index in range(loaded_count):
+            struct.pack_into(
+                "<H", expected_game, 0x6712 + resource_index * 2,
+                new_handles[resource_index],
+            )
+
+        success = failure_index is None
+        if success:
+            expected_game[0x6ADE : 0x6BDE] = bytes([0xFF]) * 0x100
+            expected_game[0x6D3E : 0x6D5E] = bytes(0x20)
+            for offset in reset_words:
+                struct.pack_into("<H", expected_game, offset, 0)
+            for offset in reset_bytes:
+                expected_game[offset] = 0
+
+            for entry_name, object_offset, entry_kind in entries:
+                entry_name = str(entry_name)
+                object_offset = int(object_offset) & 0xFFFF
+                entry_kind = int(entry_kind) & 0xFFFF
+                if entry_kind == 1 and entry_name in active_names:
+                    if entry_name == "blood":
+                        struct.pack_into("<H", expected_game, 0x674E, object_offset)
+                        struct.pack_into(
+                            "<H", expected_game, 0x675E,
+                            (object_offset + 8) & 0xFFFF,
+                        )
+                        struct.pack_into(
+                            "<HH", expected_game, 0x6746,
+                            (object_offset + 16) & 0xFFFF, state_segment,
+                        )
+                    else:
+                        struct.pack_into(
+                            "<H", expected_game, binding_offsets[entry_name],
+                            object_offset,
+                        )
+                elif entry_kind == 5 and entry_name == "vbio":
+                    struct.pack_into("<H", expected_game, 0x679C, object_offset)
+
+        initial = {
+            "eax": 0xA1A10000 | profile,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        calls: list[dict[str, object]] = []
+        load_index = 0
+        resolve_index = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal load_index, resolve_index
+            if address == release_entry:
+                calls.append(
+                    {"call": "release", "handle": machine.reg_read(UC_X86_REG_AX)}
+                )
+            elif address == load_entry:
+                handle = machine.reg_read(UC_X86_REG_AX)
+                result = 0 if load_index == failure_index else 1
+                calls.append(
+                    {
+                        "call": "load",
+                        "handle": handle,
+                        "source": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "result": result,
+                    }
+                )
+                load_index += 1
+                machine.reg_write(UC_X86_REG_AX, result)
+            elif address == resolve_entry:
+                handle = machine.reg_read(UC_X86_REG_AX)
+                if resolve_index == 0:
+                    result = [state_segment, 0x2468]
+                else:
+                    result = [directory_segment, directory_offset]
+                calls.append(
+                    {
+                        "call": "resolve",
+                        "handle": handle,
+                        "incoming": [
+                            machine.reg_read(UC_X86_REG_DS),
+                            machine.reg_read(UC_X86_REG_SI),
+                        ],
+                        "result": result,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_DS, result[0])
+                machine.reg_write(UC_X86_REG_SI, result[1])
+                machine.reg_write(UC_X86_REG_AX, 1)
+                resolve_index += 1
+            elif address == compare_entry:
+                left = read_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_DS),
+                    machine.reg_read(UC_X86_REG_SI),
+                )
+                right = read_string(
+                    machine,
+                    machine.reg_read(UC_X86_REG_ES),
+                    machine.reg_read(UC_X86_REG_DI),
+                )
+                matched = left == right
+                flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.reg_write(
+                    UC_X86_REG_EFLAGS,
+                    (flags | 1) if matched else (flags & ~1),
+                )
+                calls.append(
+                    {
+                        "call": "compare",
+                        "left": left,
+                        "right": right,
+                        "matched": matched,
+                    }
+                )
+
+        memory: list[tuple[int, int, bytes]] = [
+            (0, return_address, b"\xCC"),
+            (0, release_entry, b"\xCB"),
+            (0, load_entry, b"\xCB"),
+            (0, resolve_entry, b"\xCB"),
+            (0, compare_entry, b"\xCB"),
+            (game_segment, 0, bytes(game_before)),
+            (fs_segment, 0, bytes(fs_before)),
+            (state_segment, 0, state_before),
+            (directory_segment, 0, bytes(directory_before)),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        if split_data:
+            memory.append((data_segment, 0, bytes(data_before)))
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            memory,
+            code_handler=capture,
+            instruction_count=12000,
+        )
+
+        expected_calls: list[dict[str, object]] = []
+        if profile != current_profile:
+            expected_calls.extend(
+                {"call": "release", "handle": handle} for handle in old_handles
+            )
+        for resource_index in range(loaded_count):
+            expected_calls.append(
+                {
+                    "call": "load",
+                    "handle": new_handles[resource_index],
+                    "source": [
+                        fs_segment,
+                        (profile_offset + (resource_index + 1) * 2) & 0xFFFF,
+                    ],
+                    "result": 0 if resource_index == failure_index else 1,
+                }
+            )
+        if success:
+            expected_calls.extend(
+                [
+                    {
+                        "call": "resolve",
+                        "handle": new_handles[2],
+                        "incoming": [
+                            game_segment,
+                            (profile_offset + 10) & 0xFFFF,
+                        ],
+                        "result": [state_segment, 0x2468],
+                    },
+                    {
+                        "call": "resolve",
+                        "handle": new_handles[4],
+                        "incoming": [state_segment, 0x2468],
+                        "result": [directory_segment, directory_offset],
+                    },
+                ]
+            )
+            for entry_name, _object_offset, entry_kind in entries:
+                entry_name = str(entry_name)
+                entry_kind = int(entry_kind)
+                compared_names: list[str] = []
+                if entry_kind == 1:
+                    for builtin in active_early_names:
+                        compared_names.append(builtin)
+                        if entry_name == builtin:
+                            break
+                    else:
+                        compared_names.extend(["Ark", "Scruter_Jo"])
+                elif entry_kind == 5:
+                    compared_names = ["vbio"]
+                for builtin in compared_names:
+                    matched = entry_name == builtin
+                    expected_calls.append(
+                        {
+                            "call": "compare",
+                            "left": entry_name,
+                            "right": builtin,
+                            "matched": matched,
+                        }
+                    )
+
+        if calls != expected_calls:
+            raise AssertionError(
+                f"0x53a0 {name}: calls={calls!r}, expected={expected_calls!r}"
+            )
+
+        actual_game = bytes(machine.mem_read(game_segment * 16, 0x10000))
+        if actual_game != bytes(expected_game):
+            raise AssertionError(f"0x53a0 {name}: game data differs")
+        if split_data:
+            actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+            if actual_data != bytes(expected_data):
+                raise AssertionError(f"0x53a0 {name}: incoming DS data differs")
+        if bytes(machine.mem_read(fs_segment * 16, 0x10000)) != bytes(fs_before):
+            raise AssertionError(f"0x53a0 {name}: FS table changed")
+        if bytes(machine.mem_read(state_segment * 16, 0x10000)) != state_before:
+            raise AssertionError(f"0x53a0 {name}: state resource changed")
+        if bytes(machine.mem_read(directory_segment * 16, 0x10000)) != bytes(
+            directory_before
+        ):
+            raise AssertionError(f"0x53a0 {name}: directory changed")
+
+        expected_registers = {
+            "eax": 0 if success else ((initial["eax"] & 0xFFFF0000) | 0xFFFF),
+            "ebx": initial["ebx"],
+            "ecx": initial["ecx"],
+            "edx": initial["edx"],
+            "esi": initial["esi"],
+            "edi": initial["edi"],
+            "ebp": initial["ebp"],
+            "sp": caller_sp + 4,
+            "ds": data_segment,
+            "es": initial["es"],
+            "fs": fs_segment,
+            "gs": game_segment,
+            "ss": stack_segment,
+        }
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x53a0 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x53a0 {name}: far return CS differs")
+        if bytes(
+            machine.mem_read(
+                stack_segment * 16 + caller_sp + 4, len(stack_sentinel)
+            )
+        ) != stack_sentinel:
+            raise AssertionError(f"0x53a0 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "profile": profile,
+                "current_profile": current_profile,
+                "profile_table_offset": profile_offset,
+                "old_handles": old_handles,
+                "new_handles": new_handles,
+                "failure_index": failure_index,
+                "split_data": split_data,
+                "calls": calls,
+                "return_value": 0 if success else -1,
+                "game_data_sha256": hashlib.sha256(actual_game).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def vm_run_wrapper_vectors() -> list[dict[str, object]]:
     entry = 0x55A4
     return_address = 0xF5A4
@@ -87238,6 +87730,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_72a8_natural.json",
         dlg_menu_words_inline_reveal_step_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_53a0_natural.json",
+        vm_resource_profile_select_vectors(),
         args.check,
     )
     update_vector(

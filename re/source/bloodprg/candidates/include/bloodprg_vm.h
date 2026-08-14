@@ -23,6 +23,8 @@ typedef bloodprg_vm_image_ptr CB_NEAR bloodprg_vm_opcode_handler(
 #define BLOODPRG_VM_TEXT_OPCODE 0xa6u
 #define BLOODPRG_VM_OPTION_PREFIX 0xa1u
 
+typedef cb_u16 bloodprg_vm_resource_profile[BLOODPRG_VM_RESOURCE_COUNT];
+
 #define vm_ui_flags (vm_ui_state.bytes.flags)
 
 extern volatile cb_i16 vm_compare_word;      /* GS:0x0AA6 */
@@ -70,6 +72,8 @@ extern volatile cb_u8 CB_FAR * CB_GAME_DATA
         vm_record_base_gs; /* explicit GS:0x6724 alias */
 /* BP addresses this table through SS; the shipped runtime has SS=GS. */
 extern volatile cb_u16 vm_resource_handles[BLOODPRG_VM_RESOURCE_COUNT];
+extern const bloodprg_vm_resource_profile CB_FS_DATA
+        vm_resource_profiles[]; /* FS:0x11F4 */
 /* These five pointers alias the individually named 0x671c..0x672f globals. */
 extern bloodprg_vm_image_ptr CB_GAME_DATA
         vm_resource_images[BLOODPRG_VM_RESOURCE_COUNT];
@@ -84,6 +88,8 @@ extern volatile cb_u16 CB_GAME_DATA vm_named_orxx_object_gs; /* GS:0x6750 */
 extern volatile cb_u16 vm_named_orxx_object; /* DS:0x6750 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_arche_record_offset_gs; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_honk_object_gs; /* GS:0x6754 */
+extern volatile cb_u16 vm_named_honk_object; /* DS:0x6754 alias */
+extern volatile cb_u16 vm_named_menu_object; /* DS:0x6756 */
 extern volatile cb_u16 vm_named_ark_object; /* DS:0x6758 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_named_ark_object_gs;             /* explicit GS:0x6758 alias */
@@ -143,6 +149,17 @@ extern volatile cb_u16 vm_presentation_selected_word; /* DS:0x6796 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_word_buffer_gs[]; /* explicit GS:0x67F8 alias */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
+extern volatile cb_u16 vm_profile_cursor;     /* GS:0x6730 */
+extern volatile cb_u16 vm_subtitle_wrap_marker; /* GS:0x6732 */
+extern volatile cb_u16 vm_profile_record_word; /* GS:0x6734 */
+extern volatile cb_u16 vm_c1_related_operand; /* GS:0x6736 */
+extern volatile cb_u16 vm_profile_word_6766;  /* GS:0x6766 */
+extern volatile cb_u16 vm_profile_word_676e;  /* GS:0x676E */
+extern volatile cb_u16 vm_profile_word_6786;  /* GS:0x6786 */
+extern volatile cb_u16 vm_profile_word_67a0;  /* GS:0x67A0 */
+extern volatile cb_u16 vm_profile_word_67a2;  /* GS:0x67A2 */
+extern volatile cb_u8 vm_query_auxiliary;     /* GS:0x67AE */
+extern volatile cb_u8 vm_profile_flag_67af;   /* GS:0x67AF */
 /* The shipped runtime has SS=GS; handlers preserve the floating script DS. */
 extern bloodprg_vm_opcode_handler CB_NEAR *CB_NEAR
         vm_opcode_handlers[];                /* GS/SS:0x6EB0 */
@@ -151,6 +168,15 @@ extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtim
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
 extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; runtime SS=DS */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
+
+extern const char CB_GAME_DATA vm_builtin_name_blood[];      /* DS:0x67BE */
+extern const char CB_GAME_DATA vm_builtin_name_orxx[];       /* DS:0x67C4 */
+extern const char CB_GAME_DATA vm_builtin_name_honk[];       /* DS:0x67C9 */
+extern const char CB_GAME_DATA vm_builtin_name_menu[];       /* DS:0x67CE */
+extern const char CB_GAME_DATA vm_builtin_name_arche[];      /* DS:0x67D3 */
+extern const char CB_GAME_DATA vm_builtin_name_ark[];        /* DS:0x67E1 */
+extern const char CB_GAME_DATA vm_builtin_name_scruter_jo[]; /* DS:0x67E5 */
+extern const char CB_GAME_DATA vm_builtin_name_vbio[];       /* DS:0x67F0 */
 
 void CB_FAR dlg_line_id_scene_dispatch(
         cb_u16 link_target_offset); /* 0x009D10 */

@@ -1,0 +1,824 @@
+[
+  {
+    "name": "same_profile_reloads_and_binds_every_builtin",
+    "profile": 2,
+    "current_profile": 2,
+    "profile_table_offset": 4616,
+    "old_handles": [
+      53248,
+      53249,
+      53250,
+      53251,
+      53252
+    ],
+    "new_handles": [
+      256,
+      257,
+      258,
+      259,
+      260
+    ],
+    "failure_index": null,
+    "split_data": false,
+    "calls": [
+      {
+        "call": "load",
+        "handle": 256,
+        "source": [
+          28672,
+          4618
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 257,
+        "source": [
+          28672,
+          4620
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 258,
+        "source": [
+          28672,
+          4622
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 259,
+        "source": [
+          28672,
+          4624
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 260,
+        "source": [
+          28672,
+          4626
+        ],
+        "result": 1
+      },
+      {
+        "call": "resolve",
+        "handle": 258,
+        "incoming": [
+          20480,
+          4626
+        ],
+        "result": [
+          32768,
+          9320
+        ]
+      },
+      {
+        "call": "resolve",
+        "handle": 260,
+        "incoming": [
+          32768,
+          9320
+        ],
+        "result": [
+          40960,
+          6144
+        ]
+      },
+      {
+        "call": "compare",
+        "left": "blood",
+        "right": "blood",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "menu",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "arche",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "Ark",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "cryobox",
+        "right": "Scruter_Jo",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "orxx",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "orxx",
+        "right": "orxx",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "Honk",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Honk",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Honk",
+        "right": "Honk",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "menu",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "menu",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "menu",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "menu",
+        "right": "menu",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "arche",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "arche",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "arche",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "arche",
+        "right": "menu",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "arche",
+        "right": "arche",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "menu",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "arche",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "Ark",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "Ark",
+        "right": "Scruter_Jo",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "menu",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "arche",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "Ark",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "Scruter_Jo",
+        "right": "Scruter_Jo",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "vbio",
+        "right": "vbio",
+        "matched": true
+      }
+    ],
+    "return_value": 0,
+    "game_data_sha256": "3b3ce5b0abd5c4e8d31cf5c07f8961b733f0c9b218c2cc7cc0189b11b49a1f01"
+  },
+  {
+    "name": "changed_profile_releases_old_and_preserves_missing_names",
+    "profile": 1,
+    "current_profile": 4,
+    "profile_table_offset": 4606,
+    "old_handles": [
+      53264,
+      53265,
+      53266,
+      53267,
+      53268
+    ],
+    "new_handles": [
+      288,
+      289,
+      290,
+      291,
+      292
+    ],
+    "failure_index": null,
+    "split_data": false,
+    "calls": [
+      {
+        "call": "release",
+        "handle": 53264
+      },
+      {
+        "call": "release",
+        "handle": 53265
+      },
+      {
+        "call": "release",
+        "handle": 53266
+      },
+      {
+        "call": "release",
+        "handle": 53267
+      },
+      {
+        "call": "release",
+        "handle": 53268
+      },
+      {
+        "call": "load",
+        "handle": 288,
+        "source": [
+          28672,
+          4608
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 289,
+        "source": [
+          28672,
+          4610
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 290,
+        "source": [
+          28672,
+          4612
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 291,
+        "source": [
+          28672,
+          4614
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 292,
+        "source": [
+          28672,
+          4616
+        ],
+        "result": 1
+      },
+      {
+        "call": "resolve",
+        "handle": 290,
+        "incoming": [
+          20480,
+          4616
+        ],
+        "result": [
+          32768,
+          9320
+        ]
+      },
+      {
+        "call": "resolve",
+        "handle": 292,
+        "incoming": [
+          32768,
+          9320
+        ],
+        "result": [
+          40960,
+          6144
+        ]
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "orxx",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "Honk",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "menu",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "arche",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "Ark",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "UNKNOWN",
+        "right": "Scruter_Jo",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "blood",
+        "right": "blood",
+        "matched": true
+      },
+      {
+        "call": "compare",
+        "left": "vbio",
+        "right": "vbio",
+        "matched": true
+      }
+    ],
+    "return_value": 0,
+    "game_data_sha256": "63342edc8a10e0d2f5eb075fec2668babee37c1d138cf2622e3c867c95dd6e56"
+  },
+  {
+    "name": "first_load_failure_keeps_vm_state",
+    "profile": 3,
+    "current_profile": 0,
+    "profile_table_offset": 4626,
+    "old_handles": [
+      53280,
+      53281,
+      53282,
+      53283,
+      53284
+    ],
+    "new_handles": [
+      320,
+      321,
+      322,
+      323,
+      324
+    ],
+    "failure_index": 0,
+    "split_data": false,
+    "calls": [
+      {
+        "call": "release",
+        "handle": 53280
+      },
+      {
+        "call": "release",
+        "handle": 53281
+      },
+      {
+        "call": "release",
+        "handle": 53282
+      },
+      {
+        "call": "release",
+        "handle": 53283
+      },
+      {
+        "call": "release",
+        "handle": 53284
+      },
+      {
+        "call": "load",
+        "handle": 320,
+        "source": [
+          28672,
+          4628
+        ],
+        "result": 0
+      }
+    ],
+    "return_value": -1,
+    "game_data_sha256": "bf47d9827df20def0688fee1c4c189476c6e23c47ad95020ed945640a8b41037"
+  },
+  {
+    "name": "middle_load_failure_keeps_later_handles",
+    "profile": 4,
+    "current_profile": 4,
+    "profile_table_offset": 4636,
+    "old_handles": [
+      53296,
+      53297,
+      53298,
+      53299,
+      53300
+    ],
+    "new_handles": [
+      352,
+      353,
+      354,
+      355,
+      356
+    ],
+    "failure_index": 2,
+    "split_data": false,
+    "calls": [
+      {
+        "call": "load",
+        "handle": 352,
+        "source": [
+          28672,
+          4638
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 353,
+        "source": [
+          28672,
+          4640
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 354,
+        "source": [
+          28672,
+          4642
+        ],
+        "result": 0
+      }
+    ],
+    "return_value": -1,
+    "game_data_sha256": "1d66593f9a1edcd1096d0ad486eb11c988caa8e71741663f6d15a72fde9e7aa5"
+  },
+  {
+    "name": "profile_multiply_wraps_to_sixteen_bits",
+    "profile": 32768,
+    "current_profile": 32768,
+    "profile_table_offset": 4596,
+    "old_handles": [
+      53312,
+      53313,
+      53314,
+      53315,
+      53316
+    ],
+    "new_handles": [
+      384,
+      385,
+      386,
+      387,
+      388
+    ],
+    "failure_index": null,
+    "split_data": false,
+    "calls": [
+      {
+        "call": "load",
+        "handle": 384,
+        "source": [
+          28672,
+          4598
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 385,
+        "source": [
+          28672,
+          4600
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 386,
+        "source": [
+          28672,
+          4602
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 387,
+        "source": [
+          28672,
+          4604
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 388,
+        "source": [
+          28672,
+          4606
+        ],
+        "result": 1
+      },
+      {
+        "call": "resolve",
+        "handle": 386,
+        "incoming": [
+          20480,
+          4606
+        ],
+        "result": [
+          32768,
+          9320
+        ]
+      },
+      {
+        "call": "resolve",
+        "handle": 388,
+        "incoming": [
+          32768,
+          9320
+        ],
+        "result": [
+          40960,
+          6144
+        ]
+      },
+      {
+        "call": "compare",
+        "left": "vbio",
+        "right": "vbio",
+        "matched": true
+      }
+    ],
+    "return_value": 0,
+    "game_data_sha256": "f7445ed8752c1870d363b2502e45376eec3bb6a12ba0f8b62996e76c3439069c"
+  },
+  {
+    "name": "split_ds_gs_proves_profile_and_state_owners",
+    "profile": 1,
+    "current_profile": 0,
+    "profile_table_offset": 4606,
+    "old_handles": [
+      53328,
+      53329,
+      53330,
+      53331,
+      53332
+    ],
+    "new_handles": [
+      416,
+      417,
+      418,
+      419,
+      420
+    ],
+    "failure_index": null,
+    "split_data": true,
+    "calls": [
+      {
+        "call": "release",
+        "handle": 53328
+      },
+      {
+        "call": "release",
+        "handle": 53329
+      },
+      {
+        "call": "release",
+        "handle": 53330
+      },
+      {
+        "call": "release",
+        "handle": 53331
+      },
+      {
+        "call": "release",
+        "handle": 53332
+      },
+      {
+        "call": "load",
+        "handle": 416,
+        "source": [
+          28672,
+          4608
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 417,
+        "source": [
+          28672,
+          4610
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 418,
+        "source": [
+          28672,
+          4612
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 419,
+        "source": [
+          28672,
+          4614
+        ],
+        "result": 1
+      },
+      {
+        "call": "load",
+        "handle": 420,
+        "source": [
+          28672,
+          4616
+        ],
+        "result": 1
+      },
+      {
+        "call": "resolve",
+        "handle": 418,
+        "incoming": [
+          20480,
+          4616
+        ],
+        "result": [
+          32768,
+          9320
+        ]
+      },
+      {
+        "call": "resolve",
+        "handle": 420,
+        "incoming": [
+          32768,
+          9320
+        ],
+        "result": [
+          40960,
+          6144
+        ]
+      },
+      {
+        "call": "compare",
+        "left": "orxx",
+        "right": "blood",
+        "matched": false
+      },
+      {
+        "call": "compare",
+        "left": "orxx",
+        "right": "orxx",
+        "matched": true
+      }
+    ],
+    "return_value": 0,
+    "game_data_sha256": "855a1d82db49abf9abc89f7cebae014f3790db5fbe22a31cba7c00b4fe5a3fbf"
+  }
+]

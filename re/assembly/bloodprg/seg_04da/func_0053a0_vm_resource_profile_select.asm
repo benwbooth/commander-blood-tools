@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph, relocation_proven_far_transfer_target, static_dispatch_table_target
 ; label: vm_resource_profile_select
-; label_comment: select script/resource profile AX; free old DS:0x6712 resources, copy five FS:0x11f4+AX*10 offsets into DS:0x6712, clear VM globals
+; label_comment: select profile AX; release old DS handles only on change, copy/load five FS:0x11f4+AX*10 handles through GS, reset VM state after complete load, then bind built-in names from the resolved DEB directory
 ; incoming: call@0x0010c8->04da:0000
 ; incoming: call@0x001cf5->04da:0000
 ; incoming: vm_opcode_handlers:opcode_0xd3
