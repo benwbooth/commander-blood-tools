@@ -5059,6 +5059,319 @@ def vm_control_flow_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def vm_flag_test_67b1_vectors() -> list[dict[str, object]]:
+    data_segment = 0x4400
+    extra_segment = 0x4800
+    game_segment = 0x2C00
+    history_segment = 0x5200
+    code_segment = 0x5600
+    stack_segment = 0x9000
+    cases = [
+        {"name": "zero_pending_is_noop", "value": 0},
+        {"name": "nonzero_miss_commits_history", "value": 0x3333},
+        {"name": "resume_bit_clear", "value": 0x1111, "pc_saved": 0},
+        {"name": "resume_bit_two", "value": 0x1111, "resume_state": 2, "pc_saved": 0},
+        {"name": "resume_mode_three_second_a3", "value": 0x2222, "resume_state": 3},
+        {"name": "first_node_a3", "value": 0x1111},
+        {"name": "first_node_non_a3", "value": 0x1111, "first_opcode": 0xA2},
+        {"name": "second_node_a3", "value": 0x2222},
+        {"name": "second_node_non_a3", "value": 0x2222, "second_opcode": 0xFF},
+        {"name": "zero_saved_pc_skips_scan", "value": 0x2222, "pc_saved": 0},
+        {"name": "odd_ring_index_wrap", "value": 0x3333, "ring_index": 15},
+        {
+            "name": "history_pointer_offset_wrap",
+            "value": 0x3333,
+            "history_base": 0xFFFE,
+            "ring_index": 3,
+        },
+        {
+            "name": "payload_opcode_at_ffff",
+            "value": 0x1111,
+            "first_node": 0xFFFB,
+        },
+        {
+            "name": "high_value_reverse_direction",
+            "value": 0xF123,
+            "first_value": 0xF123,
+            "flags": 0x0ED7,
+        },
+    ]
+    vectors = []
+
+    def logic_flags_16(value: int) -> dict[str, bool]:
+        result = value & 0xFFFF
+        return {
+            "cf": False,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": False,
+        }
+
+    def sub_flags_8(left: int, right: int) -> dict[str, bool]:
+        result = (left - right) & 0xFF
+        return {
+            "cf": left < right,
+            "pf": result.bit_count() % 2 == 0,
+            "af": (left & 0x0F) < (right & 0x0F),
+            "zf": result == 0,
+            "sf": bool(result & 0x80),
+            "of": bool(((left ^ right) & (left ^ result)) & 0x80),
+        }
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        value = int(case["value"])
+        first_value = int(case.get("first_value", 0x1111))
+        second_value = 0x2222
+        first_node = int(case.get("first_node", 0x5000 + case_index * 0x20))
+        second_node = 0x7000 + case_index * 0x10
+        first_opcode = int(case.get("first_opcode", 0xA3))
+        second_opcode = int(case.get("second_opcode", 0xA3))
+        pc_saved = int(case.get("pc_saved", first_node))
+        resume_state = int(case.get("resume_state", 0))
+        resume_before = 0x6600 + case_index
+        history_base = int(case.get("history_base", 0x2000 + case_index * 0x20))
+        ring_before = int(case.get("ring_index", case_index & 0x0F))
+        ring_after = (ring_before + 2) & 0x000F
+        history_effective = (history_base + ring_before) & 0xFFFF
+        history_before = 0xB000 + case_index
+        buffer_before = 0xC000 + case_index
+        branch_a_before = 0xD000 + case_index
+        branch_b_before = 0xD100 + case_index
+        program_before = 0xE000 + case_index
+        parent_before = 0xE100 + case_index
+        code_base_offset = 0x1234
+        matched_payload = 0
+        matched_opcode = 0
+        if value != 0 and pc_saved != 0:
+            if value == first_value:
+                matched_payload = (first_node + 4) & 0xFFFF
+                matched_opcode = first_opcode
+            elif value == second_value:
+                matched_payload = (second_node + 4) & 0xFFFF
+                matched_opcode = second_opcode
+        branch_taken = matched_payload != 0 and matched_opcode == 0xA3
+        pointer = struct.pack("<HH", history_base, history_segment)
+        code_pointer = struct.pack("<HH", code_base_offset, code_segment)
+        data_pointer_decoy = struct.pack("<HH", 0x3333, extra_segment)
+        stack_pointer_decoy = struct.pack("<HH", 0x4444, stack_segment)
+        relative_code = (code_base_offset + first_node) & 0xFFFF
+        relative_decoy = b"\xad\xde\xad\xde\xad\xde"
+        memory = [
+            (game_segment, 0x6744, struct.pack("<H", ring_before)),
+            (game_segment, 0x6746, pointer),
+            (game_segment, 0x6762, struct.pack("<H", value)),
+            (game_segment, 0x6764, struct.pack("<H", resume_before)),
+            (game_segment, 0x67B1, bytes([resume_state])),
+            (game_segment, 0x67F8, struct.pack("<H", buffer_before)),
+            (game_segment, 0x6720, code_pointer),
+            (game_segment, 0x6772, struct.pack("<H", program_before)),
+            (game_segment, 0x6774, struct.pack("<H", parent_before)),
+            (game_segment, 0x6776, struct.pack("<H", pc_saved)),
+            (game_segment, 0x6782, struct.pack("<H", branch_a_before)),
+            (game_segment, 0x6784, struct.pack("<H", branch_b_before)),
+            (history_segment, history_effective, struct.pack("<H", history_before)),
+            (code_segment, first_node, struct.pack("<HH", first_value, second_node)),
+            (code_segment, (first_node + 4) & 0xFFFF, bytes([first_opcode])),
+            (code_segment, second_node, struct.pack("<HH", second_value, 0)),
+            (code_segment, (second_node + 4) & 0xFFFF, bytes([second_opcode])),
+            (code_segment, relative_code, relative_decoy),
+            (data_segment, 0x6746, data_pointer_decoy),
+            (stack_segment, 0x6746, stack_pointer_decoy),
+        ]
+        global_decoys = []
+        for segment, xor_mask in (
+            (data_segment, 0x5555),
+            (code_segment, 0xAAAA),
+            (stack_segment, 0x0F0F),
+        ):
+            entries = [
+                (0x6744, struct.pack("<H", ring_before ^ xor_mask)),
+                (0x6762, struct.pack("<H", value ^ xor_mask)),
+                (0x6764, struct.pack("<H", resume_before ^ xor_mask)),
+                (0x6772, struct.pack("<H", program_before ^ xor_mask)),
+                (0x6774, struct.pack("<H", parent_before ^ xor_mask)),
+                (0x6776, struct.pack("<H", pc_saved ^ xor_mask)),
+                (0x6782, struct.pack("<H", branch_a_before ^ xor_mask)),
+                (0x6784, struct.pack("<H", branch_b_before ^ xor_mask)),
+                (0x67F8, struct.pack("<H", buffer_before ^ xor_mask)),
+                (0x67B1, bytes([resume_state ^ (xor_mask & 0xFF)])),
+            ]
+            for offset, data in entries:
+                memory.append((segment, offset, data))
+                global_decoys.append((segment, offset, data))
+
+        initial_flags = int(case.get("flags", 0x0AD7))
+        initial = {
+            "eax": 0xA1A1BEEF,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x4C00,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": initial_flags,
+        }
+        ring_phases = []
+        scan_phases = []
+        match_phases = []
+
+        def capture_phases(machine: Uc, address: int, _size: int) -> None:
+            if address == 0x57B5:
+                ring_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_DI),
+                        machine.reg_read(UC_X86_REG_ES),
+                    )
+                )
+            elif address == 0x57CD:
+                scan_phases.append(machine.reg_read(UC_X86_REG_DS))
+            elif address == 0x57E6:
+                match_phases.append(
+                    (
+                        machine.reg_read(UC_X86_REG_AX),
+                        machine.reg_read(UC_X86_REG_BX),
+                        machine.reg_read(UC_X86_REG_SI),
+                    )
+                )
+
+        machine = execute(
+            0x5791,
+            0x5815,
+            initial,
+            memory,
+            code_handler=capture_phases,
+        )
+
+        expected_ring_phases = [] if value == 0 else [(value, history_base, history_segment)]
+        expected_scan_phases = [] if value == 0 else [code_segment]
+        expected_match_phases = (
+            [] if matched_payload == 0 else [(value, ring_after, matched_payload)]
+        )
+        if (
+            ring_phases != expected_ring_phases
+            or scan_phases != expected_scan_phases
+            or match_phases != expected_match_phases
+        ):
+            raise AssertionError(
+                f"0x5791 {name}: phases={(ring_phases, scan_phases, match_phases)}, "
+                f"expected={(expected_ring_phases, expected_scan_phases, expected_match_phases)}"
+            )
+
+        if value == 0:
+            expected_bx = initial["ebx"] & 0xFFFF
+        elif matched_payload == 0:
+            expected_bx = ring_after
+        elif branch_taken:
+            expected_bx = program_before
+        else:
+            expected_bx = matched_opcode
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["eax"] = (initial["eax"] & 0xFFFF0000) | value
+        expected_registers["ebx"] = (initial["ebx"] & 0xFFFF0000) | expected_bx
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x5791 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+
+        resume_after = value if value != 0 and (resume_state & 2) else resume_before
+        expected_globals = {
+            0x6744: ring_after if value != 0 else ring_before,
+            0x6762: 0,
+            0x6764: resume_after,
+            0x6772: matched_payload if branch_taken else program_before,
+            0x6774: program_before if branch_taken else parent_before,
+            0x6776: pc_saved,
+            0x6782: value if branch_taken else branch_a_before,
+            0x6784: branch_a_before if branch_taken else branch_b_before,
+            0x67F8: 0 if value != 0 else buffer_before,
+        }
+        for offset, expected in expected_globals.items():
+            actual = struct.unpack(
+                "<H", machine.mem_read(game_segment * 16 + offset, 2)
+            )[0]
+            if actual != expected:
+                raise AssertionError(
+                    f"0x5791 {name}: GS:{offset:#x}={actual:#x}, expected={expected:#x}"
+                )
+        actual_history = struct.unpack(
+            "<H", machine.mem_read(history_segment * 16 + history_effective, 2)
+        )[0]
+        expected_history = value if value != 0 else history_before
+        if actual_history != expected_history:
+            raise AssertionError(
+                f"0x5791 {name}: history={actual_history:#x}, expected={expected_history:#x}"
+            )
+        for segment, offset, expected in global_decoys:
+            actual = bytes(machine.mem_read(segment * 16 + offset, len(expected)))
+            if actual != expected:
+                raise AssertionError(f"0x5791 {name}: global segment decoy changed")
+        if bytes(machine.mem_read(data_segment * 16 + 0x6746, 4)) != data_pointer_decoy:
+            raise AssertionError(f"0x5791 {name}: data pointer decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0x6746, 4)) != stack_pointer_decoy:
+            raise AssertionError(f"0x5791 {name}: stack pointer decoy changed")
+        if bytes(machine.mem_read(code_segment * 16 + relative_code, 6)) != relative_decoy:
+            raise AssertionError(f"0x5791 {name}: base-relative code decoy changed")
+
+        expected_flags = (
+            sub_flags_8(matched_opcode, 0xA3)
+            if matched_payload != 0
+            else logic_flags_16(0)
+        )
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        flag_masks = {
+            "cf": 0x0001,
+            "pf": 0x0004,
+            "af": 0x0010,
+            "zf": 0x0040,
+            "sf": 0x0080,
+            "of": 0x0800,
+        }
+        actual_flags = {
+            flag: bool(flags & flag_masks[flag]) for flag in expected_flags
+        }
+        if actual_flags != expected_flags:
+            raise AssertionError(
+                f"0x5791 {name}: flags={actual_flags}, expected={expected_flags}"
+            )
+        if bool(flags & 0x0400) != bool(initial_flags & 0x0400):
+            raise AssertionError(f"0x5791 {name}: direction flag changed")
+        if EXE[0x5815] != 0xC3:
+            raise AssertionError("0x5791: expected near RET boundary")
+
+        vectors.append(
+            {
+                "name": name,
+                "pending_value": value,
+                "resume_state": resume_state,
+                "resume_after": resume_after,
+                "history_pointer_offset": history_base,
+                "ring_before": ring_before,
+                "ring_after": ring_after if value != 0 else ring_before,
+                "code_pointer_offset_ignored": code_base_offset,
+                "pc_saved": pc_saved,
+                "matched_payload": matched_payload,
+                "matched_opcode": matched_opcode,
+                "branch_taken": branch_taken,
+                "program_counter_after": expected_globals[0x6772],
+                "defined_flags": expected_flags,
+            }
+        )
+
+    return vectors
+
+
 def vm_cod_scan_vectors() -> list[dict[str, object]]:
     entry = 0x739B
     return_address = 0xF39B
@@ -76513,6 +76826,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_56fe_natural.json",
         vm_control_flow_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_5791_natural.json",
+        vm_flag_test_67b1_vectors(),
         args.check,
     )
     update_vector(

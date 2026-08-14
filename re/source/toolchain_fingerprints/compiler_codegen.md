@@ -5233,6 +5233,32 @@ instructions/21 bytes versus 13/23 original. It preserves the natural node
 walk but compares AX directly, folds payload movement into `SI += 4`, and does
 not reproduce the original BX clobber or LODSW-derived flags.
 
+## BLOODPRG post-block VM flag-gate candidate
+
+`0x005791` consumes the pending value at GS:0x6762. Zero returns immediately.
+A nonzero value is optionally saved to GS:0x6764 when resume-state bit one is
+set, clears the first presentation-buffer word, and appends through the far
+history pointer at GS:0x6746. GS:0x6744 is a byte index, so the update is
+`(index + 2) & 0x0f` and odd indices remain valid.
+
+The routine then uses only the segment half of the code-image pointer and scans
+segment-relative `{value,next_offset,payload}` nodes from GS:0x6776. A matching
+A3 payload moves branch A to branch B, saves the current program counter as the
+parent, and publishes the value plus payload offset as the new branch and PC.
+Every nonzero path clears the pending value while preserving it in AX.
+Fourteen direct vectors execute the shipped body without stubs and cover the
+zero path, both resume states, odd and wrapping history offsets, pointer-offset
+discard, absent/first/second node matches, A3 and non-A3 payloads, wrapped code
+offsets, segmented ownership, register and flag residue, direction behavior,
+stack, and near return.
+
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free natural
+50-instruction/140-byte function versus 44/133 original, with 79.55 percent
+mnemonic-multiset overlap and no inline assembly. Full-source integration needs
+the shipped SS=GS placement and clear-DF C ABI. Direct replacement also needs
+the original frameless ES:DI/DS:SI preservation, backward-STOSW behavior, and
+path-specific BX and flags.
+
 ## BLOODPRG location-panel entity draw candidate
 
 `0x009240` loads entity zero's sprite source extent through the DS alias of the

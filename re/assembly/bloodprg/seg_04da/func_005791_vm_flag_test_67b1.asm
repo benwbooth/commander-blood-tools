@@ -7,7 +7,7 @@
 ; group: seg_04da
 ; provenance: recursive_graph
 ; label: vm_flag_test_67b1
-; label_comment: VM flag test: or ax,ax; if zero skip to 0x5811, else test byte gs:[0x67b1],2. Branches on the 0x67b1 VM state bits
+; label_comment: consume the pending block-match value, optionally save it for resume, append it to the 16-byte history ring, scan the saved linked code nodes, and publish A3 branch state before clearing the pending value; natural C: re/source/bloodprg/candidates/seg_04da/func_005791_vm_flag_test_67b1.c
 ; byte_count: 133
 ; boundary: cfg_blocks_11_terminals_2
 ; terminal: jmp 0x580a:1, ret:1

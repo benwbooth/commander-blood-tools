@@ -61,12 +61,14 @@ extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
 extern volatile cb_u16 vm_wildcard_ref_value; /* GS:0x674E */
 extern volatile cb_u16 vm_block_match_value; /* GS:0x6762; SS alias in 0x6596 */
-extern volatile cb_u16 vm_blood_history_ring_index; /* GS:0x6744 */
-extern volatile cb_u16 CB_FAR *vm_blood_history_words; /* GS:0x6746 */
+extern volatile cb_u16 CB_GAME_DATA vm_blood_history_ring_index; /* GS:0x6744 */
+extern volatile cb_u16 CB_FAR * CB_GAME_DATA
+        vm_blood_history_words; /* GS:0x6746 */
 extern volatile cb_u16 vm_presentation_reg_6770; /* GS:0x6770 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_reg_6770_gs; /* explicit GS:0x6770 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_program_counter; /* GS:0x6772 */
+extern volatile cb_u16 CB_GAME_DATA vm_parent_program_counter; /* GS:0x6774 */
 extern volatile cb_u16 CB_GAME_DATA vm_pc_saved; /* GS:0x6776 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_a; /* GS:0x6782 */
@@ -197,6 +199,7 @@ extern volatile cb_u16 vm_nav_chart_object_offsets[];
         modify exact [ax bx cx dx si di bp es]
 #pragma aux vm_control_flow parm [ds si] [bx] modify exact [ax cx dx]
 #pragma aux value_scan_match parm [ax] [ds si] value [ax] modify exact [ax bx]
+#pragma aux vm_flag_test_67b1 value [ax] modify exact [ax bx]
 #pragma aux vm_cod_scan parm [bx] value [bx] modify exact [bx]
 #pragma aux vm_record_lookup_by_threshold parm [ax] value [ax] modify exact [ax]
 #pragma aux vm_op_a3_collect modify exact []
@@ -259,6 +262,7 @@ cb_i16 CB_NEAR vm_script_block_scan(
 void CB_NEAR vm_control_flow(
         const volatile bloodprg_vm_object_header CB_FAR *object,
         cb_u16 code_offset);                     /* 0x0056FE */
+cb_u16 CB_NEAR vm_flag_test_67b1(void);           /* 0x005791 */
 int CB_NEAR vm_special_slot_remove(cb_u16 owner); /* 0x005FD8 */
 int CB_NEAR vm_special_slot_insert(cb_u16 owner); /* 0x005FF6 */
 int CB_NEAR vm_field_offset(cb_u16 selector, cb_u16 kind_mask); /* 0x006023 */
