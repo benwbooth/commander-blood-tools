@@ -1,0 +1,535 @@
+[
+  {
+    "name": "pending_uncapped_resource",
+    "initial_pending": 4660,
+    "initial_flags": 4736,
+    "initial_source_offset": 16909060,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 16909060,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4736
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4660,
+        "return_ip": 41676,
+        "has_room": true
+      },
+      {
+        "call": "ems_paged_read",
+        "byte_count": 4660,
+        "pending_after": 0,
+        "return_ip": 61696
+      }
+    ],
+    "buffer_sha256": "d8026f96b57b2ed6aa7000fdfaffdfec0422289f1b8621de930f74282954840b"
+  },
+  {
+    "name": "pending_capped_at_next_window",
+    "initial_pending": 8192,
+    "initial_flags": 4608,
+    "initial_source_offset": 4660,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 4660,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 4660,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 3532,
+        "return_ip": 41676,
+        "has_room": true
+      },
+      {
+        "call": "ems_paged_read",
+        "byte_count": 3532,
+        "pending_after": 4660,
+        "return_ip": 61696
+      }
+    ],
+    "buffer_sha256": "47777d5d2dc1472499c05556a34e81b333b3d6c5a782d8e0b81d9e613b0ac126"
+  },
+  {
+    "name": "pending_below_window_cap",
+    "initial_pending": 512,
+    "initial_flags": 4608,
+    "initial_source_offset": 6128,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 6128,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 512,
+        "return_ip": 41676,
+        "has_room": true
+      },
+      {
+        "call": "ems_paged_read",
+        "byte_count": 512,
+        "pending_after": 0,
+        "return_ip": 61696
+      }
+    ],
+    "buffer_sha256": "9c25c386cc11f835429f7fc4d54b9ff3d3e58a068d64c0df559352c1b81cf71e"
+  },
+  {
+    "name": "pending_capacity_failure",
+    "initial_pending": 837,
+    "initial_flags": 4608,
+    "initial_source_offset": 8192,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 837,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 8192,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 837,
+        "return_ip": 41676,
+        "has_room": false
+      }
+    ],
+    "buffer_sha256": "28575022036ddc0f4eac122c1700f8068a0de94444a00ac640864854885360d0"
+  },
+  {
+    "name": "next_extent_then_body",
+    "initial_pending": 0,
+    "initial_flags": 4608,
+    "initial_source_offset": 12288,
+    "initial_source_remaining": 256,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 2,
+      "read_wrap_limit": 43690,
+      "source_offset": 12290,
+      "source_remaining": 254,
+      "head": 258,
+      "byte_count": 34,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "list_d8c_read",
+        "return_ip": 41638
+      },
+      {
+        "call": "queue_d8c_wrap",
+        "extent": 32,
+        "cursor": 258,
+        "return_ip": 41643
+      },
+      {
+        "call": "queue_d8c_has_room",
+        "request": 30,
+        "return_ip": 41676,
+        "has_room": true
+      },
+      {
+        "call": "ems_paged_read",
+        "byte_count": 30,
+        "pending_after": 0,
+        "return_ip": 61696
+      }
+    ],
+    "buffer_sha256": "76592c33aef292cd9b3f488c70c45ae3777ccfeff308e0ead0e5c51606b3ba89"
+  },
+  {
+    "name": "next_extent_read_failure",
+    "initial_pending": 0,
+    "initial_flags": 4608,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 256,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 4096,
+      "source_remaining": 256,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "list_d8c_read",
+        "return_ip": 41638
+      }
+    ],
+    "buffer_sha256": "7f130e08f38d09e88e87e4436ff0d4d2f4400defdce27942e2f8344220d2f7f4"
+  },
+  {
+    "name": "finish_with_queued_entries",
+    "initial_pending": 0,
+    "initial_flags": 4608,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 3,
+      "read_wrap_limit": 43690,
+      "source_offset": 4096,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 48,
+      "state": 65,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [],
+    "buffer_sha256": "cb5b872f127645259ba8aaf1b8c5454f8b45beb376528b59c4f6b556911a496a"
+  },
+  {
+    "name": "finish_empty_closes_source",
+    "initial_pending": 0,
+    "initial_flags": 4608,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 1,
+      "read_wrap_limit": 43690,
+      "source_offset": 4096,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 0,
+      "state": 131,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4608
+    },
+    "calls": [
+      {
+        "call": "close_file_d5b",
+        "return_ip": 41713
+      }
+    ],
+    "buffer_sha256": "d043b251450f3e291b2c4166dcd44e0ca1c7316d52516ec54f28fffbdb340b49"
+  },
+  {
+    "name": "rollover_capacity_failure",
+    "initial_pending": 0,
+    "initial_flags": 4609,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 3,
+      "read_wrap_limit": 43690,
+      "source_offset": 4096,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 90,
+      "requested_id": 5,
+      "flags": 4609
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4096,
+        "return_ip": 41727,
+        "has_room": false
+      }
+    ],
+    "buffer_sha256": "3499d193b129cbbbe315bb6fbe8c3aa307814bfe79ced38701467920d25d1cc4"
+  },
+  {
+    "name": "rollover_existing_descriptor_range",
+    "initial_pending": 0,
+    "initial_flags": 4609,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 0,
+      "read_wrap_limit": 3,
+      "source_offset": 147456,
+      "source_remaining": 256,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 0,
+      "requested_id": 5,
+      "flags": 4609
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4096,
+        "return_ip": 41727,
+        "has_room": true
+      },
+      {
+        "call": "list_d8c_wrap_bounds_reset",
+        "return_ip": 41735
+      },
+      {
+        "call": "list_d8c_read",
+        "return_ip": 41638
+      }
+    ],
+    "buffer_sha256": "5225c746c141d393319ae5443d8910b9ce177e9c05efac5a6a19ec216283d782"
+  },
+  {
+    "name": "rollover_cached_descriptor",
+    "initial_pending": 0,
+    "initial_flags": 4609,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 0,
+      "read_wrap_limit": 3,
+      "source_offset": 1400832,
+      "source_remaining": 512,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 0,
+      "requested_id": 7,
+      "flags": 4617
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4096,
+        "return_ip": 41727,
+        "has_room": true
+      },
+      {
+        "call": "list_d8c_wrap_bounds_reset",
+        "return_ip": 41735
+      },
+      {
+        "call": "lookup_table_1fb5",
+        "resource_id": 7,
+        "return_ip": 41755
+      },
+      {
+        "call": "mem_copy_words",
+        "source": 12280,
+        "destination": 3438,
+        "return_ip": 41778
+      },
+      {
+        "call": "list_d8c_read",
+        "return_ip": 41638
+      }
+    ],
+    "buffer_sha256": "fbeaa67b05009b4f320b0ae66a24528f7c921f5c58b9663042ffcf93b3b29029"
+  },
+  {
+    "name": "rollover_synthesizes_four_links",
+    "initial_pending": 0,
+    "initial_flags": 4613,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 8,
+      "wrap_count": 4,
+      "read_wrap_limit": 3,
+      "source_offset": 212992,
+      "source_remaining": 1024,
+      "head": 296,
+      "byte_count": 72,
+      "state": 32,
+      "rollover_state": 128,
+      "requested_id": 5,
+      "flags": 4613
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4096,
+        "return_ip": 41727,
+        "has_room": true
+      },
+      {
+        "call": "list_d8c_wrap_bounds_reset",
+        "return_ip": 41735
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 2,
+        "head": 256,
+        "return_ip": 41823
+      },
+      {
+        "call": "queue_d8c_wrap",
+        "extent": 10,
+        "cursor": 258,
+        "return_ip": 41832
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 8,
+        "head": 258,
+        "return_ip": 41860
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 2,
+        "head": 266,
+        "return_ip": 41823
+      },
+      {
+        "call": "queue_d8c_wrap",
+        "extent": 10,
+        "cursor": 268,
+        "return_ip": 41832
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 8,
+        "head": 268,
+        "return_ip": 41860
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 2,
+        "head": 276,
+        "return_ip": 41823
+      },
+      {
+        "call": "queue_d8c_wrap",
+        "extent": 10,
+        "cursor": 278,
+        "return_ip": 41832
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 8,
+        "head": 278,
+        "return_ip": 41860
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 2,
+        "head": 286,
+        "return_ip": 41823
+      },
+      {
+        "call": "queue_d8c_wrap",
+        "extent": 10,
+        "cursor": 288,
+        "return_ip": 41832
+      },
+      {
+        "call": "queue_d8c_enqueue",
+        "byte_count": 8,
+        "head": 288,
+        "return_ip": 41860
+      },
+      {
+        "call": "list_d8c_read",
+        "return_ip": 41638
+      }
+    ],
+    "buffer_sha256": "d2cdb61990751e5fe4577d5d694abfe30d8f1b946ed6c62eb556393b4c62770f"
+  },
+  {
+    "name": "rollover_invalid_cache_hits_malformed_suffix",
+    "initial_pending": 0,
+    "initial_flags": 4609,
+    "initial_source_offset": 4096,
+    "initial_source_remaining": 0,
+    "link_target_offset": 1280,
+    "result": {
+      "pending": 0,
+      "wrap_count": 0,
+      "read_wrap_limit": 3,
+      "source_offset": 4096,
+      "source_remaining": 0,
+      "head": 256,
+      "byte_count": 32,
+      "state": 32,
+      "rollover_state": 0,
+      "requested_id": 7,
+      "flags": 4609
+    },
+    "calls": [
+      {
+        "call": "queue_d8c_has_room",
+        "request": 4096,
+        "return_ip": 41727,
+        "has_room": true
+      },
+      {
+        "call": "list_d8c_wrap_bounds_reset",
+        "return_ip": 41735
+      },
+      {
+        "call": "lookup_table_1fb5",
+        "resource_id": 7,
+        "return_ip": 41755
+      },
+      {
+        "call": "resource_switch_suffix_malformed",
+        "return_ip": 41692
+      }
+    ],
+    "buffer_sha256": "59f799ea3ee4da928c75cc91cd88d3d54d06216d8e4c2966183655dfde94e0bd"
+  }
+]

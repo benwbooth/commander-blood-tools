@@ -3,7 +3,7 @@
 
 int CB_NEAR resource_switch(cb_u16 resource_id)
 {
-    bloodprg_resource_descriptor *descriptor;
+    bloodprg_resource_descriptor CB_NEAR *descriptor;
     volatile bloodprg_dos_dta CB_FAR *dta;
     volatile cb_u8 CB_FAR *stream;
     cb_u16 saved_byte_count;

@@ -52115,6 +52115,735 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def list_d8c_refill_vectors() -> list[dict[str, object]]:
+    entry = 0xA2AB
+    routine_start = 0xA291
+    expected_hash = "4d36349869310c376a92e5443f1730b71d5d93f788e059fdcef6ca6f4954658b"
+    if hashlib.sha256(EXE[routine_start : routine_start + 253]).hexdigest() != expected_hash:
+        raise AssertionError("0xa2ab: recovered 253-byte CFG changed")
+
+    cases = [
+        {
+            "name": "pending_uncapped_resource",
+            "pending": 0x1234,
+            "flags": 0x1280,
+            "source_offset": 0x01020304,
+            "room": [True],
+        },
+        {
+            "name": "pending_capped_at_next_window",
+            "pending": 0x2000,
+            "flags": 0x1200,
+            "source_offset": 0x00001234,
+            "room": [True],
+        },
+        {
+            "name": "pending_below_window_cap",
+            "pending": 0x0200,
+            "flags": 0x1200,
+            "source_offset": 0x000017F0,
+            "room": [True],
+        },
+        {
+            "name": "pending_capacity_failure",
+            "pending": 0x0345,
+            "flags": 0x1200,
+            "source_offset": 0x00002000,
+            "room": [False],
+        },
+        {
+            "name": "next_extent_then_body",
+            "pending": 0,
+            "wrap_count": 1,
+            "secondary_limit": 3,
+            "source_remaining": 0x100,
+            "source_offset": 0x3000,
+            "reads": [(True, 0x20)],
+            "room": [True],
+        },
+        {
+            "name": "next_extent_read_failure",
+            "pending": 0,
+            "wrap_count": 1,
+            "secondary_limit": 3,
+            "source_remaining": 0x100,
+            "reads": [(False, 0)],
+        },
+        {
+            "name": "finish_with_queued_entries",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1200,
+            "byte_count": 0x30,
+            "state": 0x40,
+        },
+        {
+            "name": "finish_empty_closes_source",
+            "pending": 0,
+            "wrap_count": 1,
+            "secondary_limit": 3,
+            "source_remaining": 0,
+            "flags": 0x1200,
+            "byte_count": 0,
+            "state": 0x80,
+        },
+        {
+            "name": "rollover_capacity_failure",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1201,
+            "room": [False],
+        },
+        {
+            "name": "rollover_existing_descriptor_range",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1201,
+            "range_start": 0x00024000,
+            "range_remaining": 0x00000100,
+            "reads": [(False, 0)],
+            "room": [True],
+        },
+        {
+            "name": "rollover_cached_descriptor",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1201,
+            "requested_id": 2,
+            "active_id": 7,
+            "descriptor_flags": 0x09,
+            "descriptor_range_start": 0x00156000,
+            "descriptor_range_remaining": 0x00000200,
+            "reads": [(False, 0)],
+            "room": [True],
+        },
+        {
+            "name": "rollover_synthesizes_four_links",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1205,
+            "range_start": 0x00034000,
+            "range_remaining": 0x00000400,
+            "link_target": 0x0500,
+            "link_extents": [6, 8, 10, 12],
+            "reads": [(False, 0)],
+            "room": [True],
+        },
+        {
+            "name": "rollover_invalid_cache_hits_malformed_suffix",
+            "pending": 0,
+            "wrap_count": 3,
+            "secondary_limit": 3,
+            "flags": 0x1201,
+            "requested_id": 2,
+            "active_id": 7,
+            "descriptor_flags": 0x01,
+            "descriptor_range_start": 0x00006000,
+            "descriptor_range_remaining": 0x00000200,
+            "room": [True],
+        },
+    ]
+
+    data_segment = 0x2000
+    game_decoy_segment = 0x3000
+    buffer_segment = 0x4000
+    stack_segment = 0x9000
+    return_address = 0xF100
+    descriptor_offset = 0x3000
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    def get_u16(image: bytearray, offset: int) -> int:
+        return struct.unpack_from("<H", image, offset)[0]
+
+    def put_u16(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", image, offset, value & 0xFFFF)
+
+    def get_u32(image: bytearray, offset: int) -> int:
+        return struct.unpack_from("<I", image, offset)[0]
+
+    def put_u32(image: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", image, offset, value & 0xFFFFFFFF)
+
+    def far_word(image: bytearray, offset: int) -> int:
+        return image[offset & 0xFFFF] | (image[(offset + 1) & 0xFFFF] << 8)
+
+    def write_far_word(image: bytearray, offset: int, value: int) -> None:
+        image[offset & 0xFFFF] = value & 0xFF
+        image[(offset + 1) & 0xFFFF] = value >> 8
+
+    def stack_return(machine: Uc) -> int:
+        sp = machine.reg_read(UC_X86_REG_SP)
+        return struct.unpack(
+            "<H", machine.mem_read(stack_segment * 16 + sp, 2)
+        )[0]
+
+    def set_carry(machine: Uc, carry: bool) -> None:
+        flags = machine.reg_read(UC_X86_REG_EFLAGS)
+        machine.reg_write(
+            UC_X86_REG_EFLAGS, flags | 1 if carry else flags & ~1
+        )
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        data_before = bytearray([0xCC]) * 0x10000
+        buffer_before = bytearray(
+            ((index * 17 + case_index * 29 + 0x31) & 0xFF)
+            for index in range(0x10000)
+        )
+        data_expected = bytearray(data_before)
+        buffer_expected = bytearray(buffer_before)
+
+        pending = int(case.get("pending", 0))
+        flags = int(case.get("flags", 0x1200))
+        wrap_count = int(case.get("wrap_count", 1))
+        read_limit = int(case.get("read_limit", 0xAAAA))
+        secondary_limit = int(case.get("secondary_limit", 3))
+        source_offset = int(case.get("source_offset", 0x00001000))
+        source_remaining = int(case.get("source_remaining", 0))
+        range_start = int(case.get("range_start", 0x00022000))
+        range_remaining = int(case.get("range_remaining", 0x00000080))
+        requested_id = int(case.get("requested_id", 5))
+        active_id = int(case.get("active_id", requested_id))
+        head = int(case.get("head", 0x0100))
+        tail = int(case.get("tail", 0x0040))
+        byte_count = int(case.get("byte_count", 0x20))
+        wrap_limit = int(case.get("wrap_limit", 0xE000))
+        buffer_end = int(case.get("buffer_end", 0xF000))
+        state = int(case.get("state", 0x20))
+        rollover_state = int(case.get("rollover_state", 0x5A))
+        link_target = int(case.get("link_target", 0x0500))
+        descriptor_flags = int(case.get("descriptor_flags", 0x09))
+        descriptor_start = int(
+            case.get("descriptor_range_start", 0x00156000)
+        )
+        descriptor_remaining = int(
+            case.get("descriptor_range_remaining", 0x00000200)
+        )
+
+        put_u16(data_before, 0x0A86, 0x7777)
+        put_u16(data_before, 0x0D5B, 0x0033)
+        data_before[0x0D5F] = state
+        put_u16(data_before, 0x0D62, wrap_count)
+        put_u16(data_before, 0x0D64, read_limit)
+        put_u16(data_before, 0x0D66, secondary_limit)
+        put_u32(data_before, 0x0D6E, range_start)
+        put_u32(data_before, 0x0D72, range_remaining)
+        put_u16(data_before, 0x0D76, flags)
+        put_u16(data_before, 0x0D80, requested_id)
+        put_u16(data_before, 0x0D82, active_id)
+        put_u32(data_before, 0x0D84, source_offset)
+        put_u32(data_before, 0x0D88, source_remaining)
+        put_u16(data_before, 0x0D8C, head)
+        put_u16(data_before, 0x0D8E, buffer_segment)
+        put_u16(data_before, 0x0D90, tail)
+        put_u16(data_before, 0x0D92, buffer_segment)
+        put_u16(data_before, 0x0D98, wrap_limit)
+        put_u16(data_before, 0x0D9A, byte_count)
+        put_u16(data_before, 0x0DA0, pending)
+        data_before[0x0DAC] = rollover_state
+        put_u16(data_before, 0x5233, buffer_end)
+
+        table_offset = (0x1FB5 + active_id * 4) & 0xFFFF
+        put_u16(data_before, table_offset, descriptor_offset)
+        put_u16(data_before, table_offset + 2, 0xFFFF)
+        put_u32(data_before, descriptor_offset - 8, descriptor_start)
+        put_u32(data_before, descriptor_offset - 4, descriptor_remaining)
+        data_before[descriptor_offset] = descriptor_flags
+        data_before[descriptor_offset + 1] = 0x44
+        data_before[descriptor_offset + 2 : descriptor_offset + 14] = (
+            b"ROLLOVER.DAT"
+        )
+
+        cursor = link_target
+        for extent in case.get("link_extents", []):
+            write_far_word(buffer_before, cursor, int(extent))
+            cursor = (cursor + int(extent)) & 0xFFFF
+
+        data_expected[:] = data_before
+        buffer_expected[:] = buffer_before
+        room_responses = [bool(value) for value in case.get("room", [])]
+        read_responses = [
+            (bool(success), int(extent))
+            for success, extent in case.get("reads", [])
+        ]
+        model_calls: list[dict[str, object]] = []
+        model_room_index = 0
+        model_read_index = 0
+        model_target = link_target
+        force_source_check = False
+
+        def model_room(request: int, return_ip: int) -> bool:
+            nonlocal model_room_index
+            if model_room_index >= len(room_responses):
+                raise AssertionError(f"0xa2ab {name}: missing room response")
+            result = room_responses[model_room_index]
+            model_room_index += 1
+            model_calls.append(
+                {
+                    "call": "queue_d8c_has_room",
+                    "request": request,
+                    "return_ip": return_ip,
+                    "has_room": result,
+                }
+            )
+            return result
+
+        def model_read() -> tuple[bool, int, int]:
+            nonlocal model_read_index
+            model_calls.append(
+                {"call": "list_d8c_read", "return_ip": 0xA2A6}
+            )
+            if model_read_index >= len(read_responses):
+                raise AssertionError(f"0xa2ab {name}: missing read response")
+            success, extent = read_responses[model_read_index]
+            model_read_index += 1
+            if not success:
+                return False, 0, 0
+            current_head = (get_u16(data_expected, 0x0D8C) + 2) & 0xFFFF
+            put_u16(data_expected, 0x0D8C, current_head)
+            put_u16(
+                data_expected,
+                0x0D9A,
+                (get_u16(data_expected, 0x0D9A) + 2) & 0xFFFF,
+            )
+            put_u32(
+                data_expected,
+                0x0D84,
+                (get_u32(data_expected, 0x0D84) + 2) & 0xFFFFFFFF,
+            )
+            put_u32(
+                data_expected,
+                0x0D88,
+                (get_u32(data_expected, 0x0D88) - 2) & 0xFFFFFFFF,
+            )
+            return True, extent, current_head
+
+        def model_wrap(extent: int, current_cursor: int, return_ip: int) -> None:
+            model_calls.append(
+                {
+                    "call": "queue_d8c_wrap",
+                    "extent": extent,
+                    "cursor": current_cursor,
+                    "return_ip": return_ip,
+                }
+            )
+            full_next = current_cursor + extent
+            if full_next > 0xFFFF or (full_next & 0xFFFF) > buffer_end:
+                old_head = get_u16(data_expected, 0x0D8C)
+                put_u16(data_expected, 0x0D8C, 0)
+                put_u16(data_expected, 0x0D98, old_head)
+            put_u16(data_expected, 0x0DA0, extent - 2)
+            put_u16(
+                data_expected,
+                0x0D62,
+                get_u16(data_expected, 0x0D62) + 1,
+            )
+
+        def model_enqueue(count: int, return_ip: int) -> None:
+            model_calls.append(
+                {
+                    "call": "queue_d8c_enqueue",
+                    "byte_count": count,
+                    "head": get_u16(data_expected, 0x0D8C),
+                    "return_ip": return_ip,
+                }
+            )
+            put_u16(
+                data_expected,
+                0x0D8C,
+                get_u16(data_expected, 0x0D8C) + count,
+            )
+            put_u16(
+                data_expected,
+                0x0D9A,
+                get_u16(data_expected, 0x0D9A) + count,
+            )
+
+        while True:
+            pending_now = get_u16(data_expected, 0x0DA0)
+            if pending_now != 0 and not force_source_check:
+                chunk = pending_now
+                if data_expected[0x0D76] < 0x80:
+                    window = ((-get_u16(data_expected, 0x0D84)) & 0x07FF) + 0x0800
+                    if window < chunk:
+                        chunk = window
+                if not model_room(chunk, 0xA2CC):
+                    break
+                put_u16(data_expected, 0x0DA0, pending_now - chunk)
+                model_calls.append(
+                    {
+                        "call": "ems_paged_read",
+                        "byte_count": chunk,
+                        "pending_after": get_u16(data_expected, 0x0DA0),
+                        "return_ip": return_address,
+                    }
+                )
+                break
+
+            force_source_check = False
+            if (
+                get_u16(data_expected, 0x0D62)
+                != get_u16(data_expected, 0x0D66)
+                and get_u32(data_expected, 0x0D88) != 0
+            ):
+                read_ok, extent, read_cursor = model_read()
+                if not read_ok:
+                    break
+                model_wrap(extent, read_cursor, 0xA2AB)
+                continue
+
+            if (data_expected[0x0D76] & 1) == 0:
+                data_expected[0x0D5F] |= 1
+                if get_u16(data_expected, 0x0D9A) == 0:
+                    data_expected[0x0D5F] |= 2
+                    model_calls.append(
+                        {"call": "close_file_d5b", "return_ip": 0xA2F1}
+                    )
+                break
+
+            if not model_room(0x1000, 0xA2FF):
+                break
+            previous_wrap_count = get_u16(data_expected, 0x0D62)
+            model_calls.append(
+                {"call": "list_d8c_wrap_bounds_reset", "return_ip": 0xA307}
+            )
+            put_u16(data_expected, 0x0D62, 0)
+            put_u16(data_expected, 0x0D64, 0xFFFF)
+            put_u16(data_expected, 0x0D66, 0xFFFF)
+            put_u16(data_expected, 0x0D64, previous_wrap_count)
+            data_expected[0x0DAC] = 0
+
+            if get_u16(data_expected, 0x0D82) != get_u16(data_expected, 0x0D80):
+                model_calls.append(
+                    {
+                        "call": "lookup_table_1fb5",
+                        "resource_id": active_id,
+                        "return_ip": 0xA31B,
+                    }
+                )
+                cache_valid = (
+                    descriptor_flags & 8
+                    and ((descriptor_start >> 16) & 0xFFFF) != 0
+                )
+                put_u16(data_expected, 0x0D80, active_id)
+                if not cache_valid:
+                    model_calls.append(
+                        {
+                            "call": "resource_switch_suffix_malformed",
+                            "return_ip": 0xA2DC,
+                        }
+                    )
+                    break
+                model_calls.append(
+                    {
+                        "call": "mem_copy_words",
+                        "source": descriptor_offset - 8,
+                        "destination": 0x0D6E,
+                        "return_ip": 0xA332,
+                    }
+                )
+                data_expected[0x0D6E : 0x0D76] = data_expected[
+                    descriptor_offset - 8 : descriptor_offset
+                ]
+                data_expected[0x0D76] = descriptor_flags
+
+            put_u32(data_expected, 0x0D88, get_u32(data_expected, 0x0D72))
+            put_u32(data_expected, 0x0D84, get_u32(data_expected, 0x0D6E))
+
+            if (data_expected[0x0D76] & 4) != 0:
+                for _ in range(4):
+                    entry_offset = get_u16(data_expected, 0x0D8C)
+                    model_enqueue(2, 0xA35F)
+                    write_far_word(buffer_expected, entry_offset, 10)
+                    body_cursor = (entry_offset + 2) & 0xFFFF
+                    model_wrap(10, body_cursor, 0xA368)
+                    key = far_word(buffer_expected, model_target)
+                    body_offset = get_u16(data_expected, 0x0D8C)
+                    for word_index, value in enumerate(
+                        (0x6D6D, model_target, buffer_segment, key)
+                    ):
+                        write_far_word(
+                            buffer_expected,
+                            body_offset + word_index * 2,
+                            value,
+                        )
+                    model_target = (model_target + key) & 0xFFFF
+                    model_enqueue(8, 0xA384)
+                data_expected[0x0DAC] = 0x80
+            force_source_check = True
+            continue
+
+        observed_calls: list[dict[str, object]] = []
+        room_index = 0
+        read_index = 0
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            nonlocal room_index, read_index
+            if address == 0xA3AD:
+                if room_index >= len(room_responses):
+                    raise AssertionError(f"0xa2ab {name}: unexpected room call")
+                result = room_responses[room_index]
+                room_index += 1
+                observed_calls.append(
+                    {
+                        "call": "queue_d8c_has_room",
+                        "request": machine.reg_read(UC_X86_REG_CX),
+                        "return_ip": stack_return(machine),
+                        "has_room": result,
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, 0xA3AD)
+                machine.reg_write(UC_X86_REG_BX, 0xBEEF)
+                set_carry(machine, not result)
+                return
+            if address == 0xA622:
+                observed_calls.append(
+                    {"call": "list_d8c_read", "return_ip": stack_return(machine)}
+                )
+                if read_index >= len(read_responses):
+                    raise AssertionError(f"0xa2ab {name}: unexpected read call")
+                success, extent = read_responses[read_index]
+                read_index += 1
+                if success:
+                    head_now = (
+                        struct.unpack(
+                            "<H", machine.mem_read(data_segment * 16 + 0x0D8C, 2)
+                        )[0]
+                        + 2
+                    ) & 0xFFFF
+                    count_now = struct.unpack(
+                        "<H", machine.mem_read(data_segment * 16 + 0x0D9A, 2)
+                    )[0]
+                    offset_now = struct.unpack(
+                        "<I", machine.mem_read(data_segment * 16 + 0x0D84, 4)
+                    )[0]
+                    remaining_now = struct.unpack(
+                        "<I", machine.mem_read(data_segment * 16 + 0x0D88, 4)
+                    )[0]
+                    machine.mem_write(
+                        data_segment * 16 + 0x0D8C, struct.pack("<H", head_now)
+                    )
+                    machine.mem_write(
+                        data_segment * 16 + 0x0D9A,
+                        struct.pack("<H", (count_now + 2) & 0xFFFF),
+                    )
+                    machine.mem_write(
+                        data_segment * 16 + 0x0D84,
+                        struct.pack("<I", (offset_now + 2) & 0xFFFFFFFF),
+                    )
+                    machine.mem_write(
+                        data_segment * 16 + 0x0D88,
+                        struct.pack("<I", (remaining_now - 2) & 0xFFFFFFFF),
+                    )
+                    machine.reg_write(UC_X86_REG_AX, extent)
+                    machine.reg_write(UC_X86_REG_ES, buffer_segment)
+                    machine.reg_write(UC_X86_REG_SI, head_now)
+                set_carry(machine, not success)
+                return
+            if address == 0xA664:
+                pending_after = struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0DA0, 2)
+                )[0]
+                byte_count_now = machine.reg_read(UC_X86_REG_CX)
+                observed_calls.append(
+                    {
+                        "call": "ems_paged_read",
+                        "byte_count": byte_count_now,
+                        "pending_after": pending_after,
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                machine.reg_write(UC_X86_REG_AX, byte_count_now)
+                set_carry(machine, False)
+                return
+            if address == 0xA38E:
+                observed_calls.append(
+                    {
+                        "call": "queue_d8c_wrap",
+                        "extent": machine.reg_read(UC_X86_REG_AX),
+                        "cursor": machine.reg_read(UC_X86_REG_SI),
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                return
+            if address == 0xA734:
+                head_now = struct.unpack(
+                    "<H", machine.mem_read(data_segment * 16 + 0x0D8C, 2)
+                )[0]
+                observed_calls.append(
+                    {
+                        "call": "queue_d8c_enqueue",
+                        "byte_count": machine.reg_read(UC_X86_REG_AX),
+                        "head": head_now,
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                return
+            if address == 0xA744:
+                observed_calls.append(
+                    {
+                        "call": "list_d8c_wrap_bounds_reset",
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                return
+            if address == 0x9F80:
+                observed_calls.append(
+                    {
+                        "call": "lookup_table_1fb5",
+                        "resource_id": machine.reg_read(UC_X86_REG_AX),
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                return
+            if address == 0xA7E6:
+                observed_calls.append(
+                    {
+                        "call": "mem_copy_words",
+                        "source": machine.reg_read(UC_X86_REG_SI),
+                        "destination": machine.reg_read(UC_X86_REG_DI),
+                        "return_ip": stack_return(machine),
+                    }
+                )
+                return
+            if address == 0xA141:
+                observed_calls.append(
+                    {"call": "close_file_d5b", "return_ip": stack_return(machine)}
+                )
+                return
+            if address == 0x9FA2:
+                observed_calls.append(
+                    {
+                        "call": "resource_switch_suffix_malformed",
+                        "return_ip": stack_return(machine),
+                    }
+                )
+
+        machine = execute(
+            entry,
+            return_address,
+            {
+                "eax": 0xA5A50000 | case_index,
+                "ebx": 0xB6B61234,
+                "ecx": 0xC7C72345,
+                "edx": 0xD8D83456,
+                "esi": 0xE9E94567,
+                "edi": 0xFAFA5678,
+                "ebp": 0xABCD0000 | link_target,
+                "sp": 0xFF00,
+                "ds": data_segment,
+                "es": 0x5000,
+                "fs": 0x6000,
+                "gs": game_decoy_segment,
+                "ss": stack_segment,
+                "flags": 0x0202,
+            },
+            [
+                (0, return_address, b"\xCC"),
+                (0, 0xA3AD, b"\xC3"),
+                (0, 0xA622, b"\xC3"),
+                (0, 0xA664, b"\xC3"),
+                (0, 0xA141, b"\xC3"),
+                (0, 0x9FA2, b"\xC3"),
+                (data_segment, 0, bytes(data_before)),
+                (game_decoy_segment, 0, bytes(data_before)),
+                (buffer_segment, 0, bytes(buffer_before)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+            instruction_count=4000,
+        )
+
+        if observed_calls != model_calls:
+            raise AssertionError(
+                f"0xa2ab {name}: calls={observed_calls}, expected={model_calls}"
+            )
+        if room_index != len(room_responses) or read_index != len(read_responses):
+            raise AssertionError(f"0xa2ab {name}: helper responses remain")
+
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(data_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_data, data_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0xa2ab {name}: data differs at {mismatch:#x}: "
+                f"{actual_data[mismatch]:#x} != {data_expected[mismatch]:#x}"
+            )
+        actual_buffer = bytes(machine.mem_read(buffer_segment * 16, 0x10000))
+        if actual_buffer != bytes(buffer_expected):
+            mismatch = next(
+                index
+                for index, pair in enumerate(
+                    zip(actual_buffer, buffer_expected, strict=True)
+                )
+                if pair[0] != pair[1]
+            )
+            raise AssertionError(
+                f"0xa2ab {name}: buffer differs at {mismatch:#x}: "
+                f"{actual_buffer[mismatch]:#x} != {buffer_expected[mismatch]:#x}"
+            )
+        if bytes(machine.mem_read(game_decoy_segment * 16, 0x10000)) != bytes(
+            data_before
+        ):
+            raise AssertionError(f"0xa2ab {name}: GS decoy changed")
+        if machine.reg_read(UC_X86_REG_SP) != 0xFF02:
+            raise AssertionError(f"0xa2ab {name}: caller stack not restored")
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xa2ab {name}: near return changed CS")
+        if machine.reg_read(UC_X86_REG_DS) != data_segment:
+            raise AssertionError(f"0xa2ab {name}: DS changed")
+        if machine.reg_read(UC_X86_REG_GS) != game_decoy_segment:
+            raise AssertionError(f"0xa2ab {name}: GS changed")
+        if bytes(
+            machine.mem_read(stack_segment * 16 + 0xFF02, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0xa2ab {name}: stack sentinel changed")
+
+        result = {
+            "pending": get_u16(data_expected, 0x0DA0),
+            "wrap_count": get_u16(data_expected, 0x0D62),
+            "read_wrap_limit": get_u16(data_expected, 0x0D64),
+            "source_offset": get_u32(data_expected, 0x0D84),
+            "source_remaining": get_u32(data_expected, 0x0D88),
+            "head": get_u16(data_expected, 0x0D8C),
+            "byte_count": get_u16(data_expected, 0x0D9A),
+            "state": data_expected[0x0D5F],
+            "rollover_state": data_expected[0x0DAC],
+            "requested_id": get_u16(data_expected, 0x0D80),
+            "flags": get_u16(data_expected, 0x0D76),
+        }
+        vectors.append(
+            {
+                "name": name,
+                "initial_pending": pending,
+                "initial_flags": flags,
+                "initial_source_offset": source_offset,
+                "initial_source_remaining": source_remaining,
+                "link_target_offset": link_target,
+                "result": result,
+                "calls": observed_calls,
+                "buffer_sha256": hashlib.sha256(buffer_expected).hexdigest(),
+            }
+        )
+
+    return vectors
+
+
 def list_d8c_activate_entry_vectors() -> list[dict[str, object]]:
     entry = 0xA552
     expected_hash = "3783f26b33e432594b2256290f2c67a208dce8cfaedb64e2415705212c3c6d4e"
@@ -55800,6 +56529,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_a41a_natural.json",
         resource_active_present_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_a2ab_natural.json",
+        list_d8c_refill_vectors(),
         args.check,
     )
     update_vector(

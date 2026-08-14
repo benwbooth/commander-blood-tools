@@ -208,8 +208,8 @@ palette routines execute unchanged. They verify the extent word is used only
 for ring-wrap detection, palette data begins immediately after that word unless
 the record wraps to offset zero, `0xFF` metadata padding is skipped, and both
 32-bit absolute/remaining range pairs use the recovered relative offsets. Open
-Watcom 1.9 medium compiles the corrected far-path natural body to 180
-instructions and 529 bytes, versus 103 instructions and 309 bytes in the
+Watcom 1.9 medium compiles the corrected far-path natural body to 178
+instructions and 536 bytes, versus 103 instructions and 309 bytes in the
 original. The excess is primarily the conventional Boolean and pointer
 interfaces replacing the original AX,
 BX, ES:SI, and carry conventions, so this is a behaviorally verified natural C
@@ -390,6 +390,30 @@ instruction LCS is zero. Exact replacement still needs the ambient register
 ABI and string-instruction lowering. Natural pointer traversal assumes the
 shipped clear-DF C invariant, while the reverse vector records the binary's
 out-of-contract behavior.
+
+For `0x00A2AB`, thirteen direct coordinator vectors prove the complete D8C
+queue-refill state machine. They cover uncapped pending reads, both sides of
+the ordinary-resource `0x800` window cap, capacity failures, successful and
+failed next-extent reads, completion with and without queued entries, rollover
+reservation, an unchanged resource, a valid cached descriptor, four exact
+ten-byte `mm` link records, and the invalid cached-descriptor edge. The vectors
+verify the call order and arguments, full queue bytes, source and queue state,
+DS/GS ownership, return frames, stack, registers, and flags. Simple recovered
+helpers execute directly; transport and capacity boundaries are patched with
+their independently proven contracts.
+
+The one-function natural candidate uses typed cached-range and packed far-link
+records plus a structured loop. It has no register model, memory emulator, or
+inline assembly. Open Watcom `-3 -ox -mh` compiles it warning-free to 180
+instructions and 564 bytes versus 91/253 original. The probe has a 2.20
+percent instruction LCS, 64.84 percent mnemonic-sequence LCS, 81.32 percent
+mnemonic-multiset overlap, and 8.79 percent byte-line LCS. Exact integration
+still needs the inherited BP link-target offset, carry-returning helper ABIs,
+the tail jump into `0x00A664`, DS/GS placement, and segment-offset queue
+writes. The candidate deliberately returns on an invalid cached descriptor:
+the shipped edge calls interior address `0x009FA2` with a two-byte near-call
+frame even though that suffix pops a dword before returning, so reproducing it
+would make the C path's return frame invalid.
 
 For `0x00A41A`, ten direct coordinator vectors prove the complete active-frame
 retirement and rendering decision tree. The routine moves the old active
@@ -2842,6 +2866,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `list_d8c_refill` | huge, `-ox`, register | 91/180 | 0.0220 | 0.6484 | 0.0879 |
 | `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |

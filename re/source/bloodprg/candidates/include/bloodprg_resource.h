@@ -40,7 +40,7 @@ typedef struct bloodprg_resource_descriptor {
 } bloodprg_resource_descriptor;
 
 typedef struct bloodprg_resource_index_entry {
-    bloodprg_resource_descriptor *descriptor;
+    bloodprg_resource_descriptor CB_NEAR *descriptor;
     cb_u16 secondary_resource_id;
 } bloodprg_resource_index_entry;
 
@@ -128,7 +128,7 @@ bloodprg_resource_allocation_result CB_FAR resource_allocate(
 bloodprg_resource_resolve_result CB_FAR resource_handle_resolve(
         cb_u16 handle); /* 0x04B9:0x0190 */
 cb_u32 CB_FAR resource_get_field4(cb_u16 handle); /* 0x04B9:0x01AC */
-bloodprg_resource_descriptor *CB_NEAR lookup_table_1fb5(
+bloodprg_resource_descriptor CB_NEAR *CB_NEAR lookup_table_1fb5(
         cb_u16 index); /* 0x009F80 */
 cb_u16 CB_FAR resource_source_select(
         volatile char CB_FAR *filename); /* 0x01CE:0x03B3 */

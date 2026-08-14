@@ -40,6 +40,7 @@ extern volatile cb_u16 list_d8c_alternate_entry_segment; /* GS:0x0DA8 */
 extern volatile cb_u16 list_d8c_active_layout;     /* GS:0x0DA4 */
 extern volatile cb_u16 list_d8c_active_row_mode;   /* GS:0x0DA6 */
 extern volatile cb_u16 list_d8c_retired_segment;   /* GS:0x0DAA */
+extern volatile cb_u8 list_d8c_rollover_state;     /* DS:0x0DAC */
 extern volatile cb_u8 resource_frame_presented;    /* GS:0x0DB8 */
 extern volatile cb_u8 resource_draw_via_back_buffer; /* GS:0x0DB9 */
 extern volatile cb_u8 resource_decode_rectangular; /* GS:0x0DBA */
@@ -60,6 +61,7 @@ int CB_NEAR list_d8c_advance_due(void);         /* 0x00A240 */
 void CB_NEAR list_d8c_activate_entry(cb_u16 entry_extent,
         volatile cb_u16 CB_FAR *entry,
         cb_u16 storage_segment);                /* 0x00A552 */
+void CB_NEAR list_d8c_refill(cb_u16 link_target_offset); /* 0x00A2AB */
 void CB_NEAR presentation_queue_finish(void);   /* 0x00A2DD */
 int CB_NEAR list_d8c_read(cb_u16 *entry_extent,
         cb_u16 *cursor_offset);                  /* 0x00A622 */

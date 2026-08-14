@@ -53,7 +53,7 @@ extern volatile u8 FAR list_buffer_probe[];
 void NEAR close_file_probe(void);
 void FAR list_init_probe(void);
 void NEAR list_bounds_init_probe(void);
-resource_descriptor_probe *NEAR descriptor_lookup_probe(u16 resource_id);
+resource_descriptor_probe NEAR *NEAR descriptor_lookup_probe(u16 resource_id);
 u16 FAR path_builder_probe(volatile char FAR *filename);
 volatile dos_dta_probe FAR *NEAR dos_get_dta_probe(void);
 void NEAR dos_find_first_probe(const volatile char FAR *path);
@@ -68,7 +68,7 @@ volatile u8 FAR *NEAR palette_blocks_probe(volatile u8 FAR *stream);
 
 int NEAR resource_switch_probe(u16 resource_id)
 {
-    resource_descriptor_probe *descriptor;
+    resource_descriptor_probe NEAR *descriptor;
     volatile dos_dta_probe FAR *dta;
     volatile u8 FAR *stream;
     u16 saved_byte_count;
