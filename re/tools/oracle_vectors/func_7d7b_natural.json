@@ -1,0 +1,640 @@
+[
+  {
+    "name": "all_inactive",
+    "gate_value": 0,
+    "frame": 17,
+    "ui_word_before": 42304,
+    "ui_word_after": 42304,
+    "seek_target_before": 21248,
+    "seek_target_after": 21248,
+    "mouse_primary_after": 129,
+    "mouse_pending_after": 163,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_presentation_active_high_bit",
+    "gate_value": 128,
+    "frame": 17,
+    "ui_word_before": 42560,
+    "ui_word_after": 42560,
+    "seek_target_before": 21505,
+    "seek_target_after": 21505,
+    "mouse_primary_after": 131,
+    "mouse_pending_after": 165,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_c2_presentation",
+    "gate_value": 64,
+    "frame": 17,
+    "ui_word_before": 42816,
+    "ui_word_after": 42816,
+    "seek_target_before": 21762,
+    "seek_target_after": 21762,
+    "mouse_primary_after": 133,
+    "mouse_pending_after": 167,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_choice_phase",
+    "gate_value": 32,
+    "frame": 17,
+    "ui_word_before": 43072,
+    "ui_word_after": 43072,
+    "seek_target_before": 22019,
+    "seek_target_after": 22019,
+    "mouse_primary_after": 135,
+    "mouse_pending_after": 169,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_save_request",
+    "gate_value": 16,
+    "frame": 17,
+    "ui_word_before": 43328,
+    "ui_word_after": 43328,
+    "seek_target_before": 22276,
+    "seek_target_after": 22276,
+    "mouse_primary_after": 137,
+    "mouse_pending_after": 171,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_load_request",
+    "gate_value": 8,
+    "frame": 17,
+    "ui_word_before": 43584,
+    "ui_word_after": 43584,
+    "seek_target_before": 22533,
+    "seek_target_after": 22533,
+    "mouse_primary_after": 139,
+    "mouse_pending_after": 173,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_selected_item_low",
+    "gate_value": 4,
+    "frame": 17,
+    "ui_word_before": 43840,
+    "ui_word_after": 43840,
+    "seek_target_before": 22790,
+    "seek_target_after": 22790,
+    "mouse_primary_after": 141,
+    "mouse_pending_after": 175,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "selected_item_high_byte_ignored",
+    "gate_value": 0,
+    "frame": 17,
+    "ui_word_before": 44096,
+    "ui_word_after": 44096,
+    "seek_target_before": 23047,
+    "seek_target_after": 23047,
+    "mouse_primary_after": 143,
+    "mouse_pending_after": 177,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_target_selection",
+    "gate_value": 4,
+    "frame": 17,
+    "ui_word_before": 44352,
+    "ui_word_after": 44352,
+    "seek_target_before": 23304,
+    "seek_target_after": 23304,
+    "mouse_primary_after": 145,
+    "mouse_pending_after": 179,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_transition_pending",
+    "gate_value": 2,
+    "frame": 17,
+    "ui_word_before": 44608,
+    "ui_word_after": 44608,
+    "seek_target_before": 23561,
+    "seek_target_after": 23561,
+    "mouse_primary_after": 147,
+    "mouse_pending_after": 181,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "gate_choice_sound",
+    "gate_value": 128,
+    "frame": 17,
+    "ui_word_before": 44864,
+    "ui_word_after": 44864,
+    "seek_target_before": 23818,
+    "seek_target_after": 23818,
+    "mouse_primary_after": 149,
+    "mouse_pending_after": 183,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": true,
+      "of": false
+    }
+  },
+  {
+    "name": "active_bit_four_clears_mouse_before_hit",
+    "gate_value": 0,
+    "frame": 17,
+    "ui_word_before": 45120,
+    "ui_word_after": 45120,
+    "seek_target_before": 24075,
+    "seek_target_after": 24075,
+    "mouse_primary_after": 0,
+    "mouse_pending_after": 0,
+    "slot_flags_after": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "mouse_hit_test",
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hit_sets_auto_seek",
+    "gate_value": 0,
+    "frame": 5,
+    "ui_word_before": 45376,
+    "ui_word_after": 45384,
+    "seek_target_before": 24332,
+    "seek_target_after": 180,
+    "mouse_primary_after": 153,
+    "mouse_pending_after": 187,
+    "slot_flags_after": [
+      0,
+      0,
+      9,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "mouse_hit_test",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "existing_auto_seek",
+    "gate_value": 0,
+    "frame": 5,
+    "ui_word_before": 45632,
+    "ui_word_after": 45640,
+    "seek_target_before": 24589,
+    "seek_target_after": 270,
+    "mouse_primary_after": 155,
+    "mouse_pending_after": 189,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      9,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "mouse_hit_test",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "hit_seek_equal_then_lock_equal",
+    "gate_value": 0,
+    "frame": 45,
+    "ui_word_before": 45888,
+    "ui_word_after": 45888,
+    "seek_target_before": 24846,
+    "seek_target_after": 24846,
+    "mouse_primary_after": 157,
+    "mouse_pending_after": 191,
+    "slot_flags_after": [
+      0,
+      11,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "mouse_hit_test",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "lock_mismatch_resets_slot",
+    "gate_value": 0,
+    "frame": 0,
+    "ui_word_before": 46144,
+    "ui_word_after": 46144,
+    "seek_target_before": 25103,
+    "seek_target_after": 25103,
+    "mouse_primary_after": 159,
+    "mouse_pending_after": 193,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "mouse_hit_test",
+      "entity_flag_state_transition",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "auto_seek_precedes_lock_reset",
+    "gate_value": 0,
+    "frame": 0,
+    "ui_word_before": 46400,
+    "ui_word_after": 46408,
+    "seek_target_before": 25360,
+    "seek_target_after": 51,
+    "mouse_primary_after": 161,
+    "mouse_pending_after": 195,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      11,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "mouse_hit_test",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "doubled_frame_wrap_matches_zero_target",
+    "gate_value": 0,
+    "frame": 32768,
+    "ui_word_before": 46656,
+    "ui_word_after": 46656,
+    "seek_target_before": 25617,
+    "seek_target_after": 25617,
+    "mouse_primary_after": 163,
+    "mouse_pending_after": 197,
+    "slot_flags_after": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "mouse_hit_test",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "handler_mutates_next_slot",
+    "gate_value": 0,
+    "frame": 0,
+    "ui_word_before": 46912,
+    "ui_word_after": 46912,
+    "seek_target_before": 25874,
+    "seek_target_after": 25874,
+    "mouse_primary_after": 165,
+    "mouse_pending_after": 199,
+    "slot_flags_after": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "mouse_hit_test",
+      "entity_flag_state_transition",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  },
+  {
+    "name": "inactive_high_flag_bits_do_not_hit_test",
+    "gate_value": 0,
+    "frame": 17,
+    "ui_word_before": 47168,
+    "ui_word_after": 47168,
+    "seek_target_before": 26131,
+    "seek_target_after": 26131,
+    "mouse_primary_after": 167,
+    "mouse_pending_after": 201,
+    "slot_flags_after": [
+      128,
+      0,
+      0,
+      254,
+      0,
+      0
+    ],
+    "call_sequence": [
+      "actor_handler_5",
+      "actor_handler_4",
+      "actor_handler_3",
+      "actor_handler_2",
+      "actor_handler_1",
+      "actor_handler_0"
+    ],
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "af": false,
+      "zf": false,
+      "sf": false,
+      "of": false
+    }
+  }
+]

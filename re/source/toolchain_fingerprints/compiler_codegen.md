@@ -4728,6 +4728,34 @@ resource/DOS adapters that preserve the recovered result conventions. Direct
 replacement additionally needs the original helper register ABIs and exact
 register/flag envelope.
 
+## BLOODPRG navigation actor slot update loop candidate
+
+`0x007D7B` first combines nine low-byte busy sources. Only the low byte of the
+word at `0x2A19` participates, so a high-byte-only selected-item value does not
+block updates. When idle, the routine walks six 24-byte records at `SS:0x2A1B`
+and dispatches handlers five through zero through the code-segment table at
+`CS:0x06D4`.
+
+Active slots optionally clear both mouse-edge latches, run the shared hit test,
+and reread their flags. Bit three publishes the slot target arc and seek UI bit
+when the doubled panorama frame differs. That path takes priority over bit one,
+which otherwise resets the slot to active-only and transitions entity four on a
+target mismatch. Both the frame doubling and comparison are 16-bit.
+
+Twenty patched-helper vectors cover every busy source, high-byte-only selection,
+all six dispatches, mouse clearing, helper-set hits, equal and unequal targets,
+seek/reset priority, doubled-frame wrap, and handler mutation of the next slot.
+They prove SS slot versus DS/GS ownership, call order and state, all writes,
+register preservation, final flags, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the actual natural
+candidate warning-free to 63 instructions/163 bytes versus the original
+64/161, with 81.25 percent mnemonic-multiset overlap and no inline assembly.
+The compiler emits bytewise busy accumulation and a genuine CS-based indirect
+handler call. Direct replacement still needs SS slot placement, the ambient
+`SI`/`BP` mouse boundary, inherited-`BP` handler input, and the exact preserve-all
+and `LOOP` flag envelope.
+
 ## BLOODPRG navigation actor handler 1 candidate
 
 `0x007EC0` coordinates two related presentation passes. A present, ready line

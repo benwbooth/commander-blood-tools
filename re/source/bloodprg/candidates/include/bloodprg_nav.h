@@ -28,6 +28,20 @@ typedef struct bloodprg_presentation_line_record {
     cb_u16 draw_y;
 } bloodprg_presentation_line_record;
 
+typedef struct bloodprg_nav_actor_slot {
+    cb_u8 flags;
+    cb_u8 reserved_01[9];
+    cb_u16 target_arc;
+    bloodprg_rect_i16 hit_rect;
+    cb_u8 reserved_14[4];
+} bloodprg_nav_actor_slot;
+
+typedef void (CB_NEAR *bloodprg_nav_actor_handler)(
+        volatile bloodprg_presentation_line_record CB_NEAR *line);
+
+typedef char bloodprg_nav_actor_slot_size_must_be_24[
+        sizeof(bloodprg_nav_actor_slot) == 24 ? 1 : -1];
+
 extern volatile cb_u8 nav_choice_phase;       /* DS:0x2565 */
 extern volatile cb_u16 nav_choice_honk_record; /* DS:0x6754 */
 extern volatile cb_u16 nav_choice_radio_record; /* DS:0x6756 */
@@ -52,8 +66,15 @@ extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u8 nav_screen_rebuild_pending; /* DS:0x27D9 */
 extern volatile cb_u8 nav_transition_pending; /* DS:0x27DA */
+extern volatile cb_u8 nav_target_selection; /* DS:0x27E7 */
+extern volatile cb_u16 nav_console_selected_item; /* DS:0x2A19 */
+extern volatile cb_u16 nav_bridge_seek_target_arc; /* DS:0x279B */
 extern volatile cb_u8 nav_actor_0_busy; /* DS:0x2A7B */
 extern volatile cb_u8 nav_actor_1_busy; /* DS:0x2A93 */
+/* The binary addresses these records through BP; runtime SS=DS. */
+extern volatile bloodprg_nav_actor_slot nav_actor_slots[6]; /* SS:0x2A1B */
+extern bloodprg_nav_actor_handler CB_CODE_DATA
+        nav_actor_handlers[6]; /* CS:0x06D4 */
 extern cb_u32 nav_actor_live_palette_dwords[0x90]; /* DS:0x5251 */
 /* The shipped dispatcher keeps ES equal to DS for this destination. */
 extern cb_u32 nav_actor_bridge_palette_dwords[0x90]; /* ES:0x5B58 */
@@ -84,6 +105,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 
 int CB_NEAR presentation_line_helper(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007E1C */
+void CB_NEAR nav_actor_slot_update_loop(void); /* 0x007D7B */
 void CB_NEAR nav_actor_handler_1(
         volatile bloodprg_presentation_line_record CB_NEAR *line); /* 0x007EC0 */
 void CB_NEAR nav_actor_handler_0(

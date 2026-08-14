@@ -50783,6 +50783,436 @@ def nav_actor_handler_4_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def nav_actor_slot_update_loop_vectors() -> list[dict[str, object]]:
+    entry = 0x7D7B
+    mouse_hit_entry = 0x8269
+    entity_transition_entry = 0x3BD1  # Runtime 0299:1241.
+    handler_by_entry = {
+        0x7F9C: 0,
+        0x7EC0: 1,
+        0x813A: 2,
+        0x817E: 3,
+        0x81FB: 4,
+        0x8082: 5,
+    }
+    data_segment = 0x4400
+    game_segment = 0x2C00
+    stack_segment = 0x9000
+    slot_base = 0x2A1B
+    slot_size = 0x18
+    slot_count = 6
+    return_address = 0x6F00
+    target_arcs = [0x0000, 0x005A, 0x00B4, 0x010E, 0x0033, 0x0000]
+    cases = [
+        {"name": "all_inactive"},
+        {"name": "gate_presentation_active_high_bit", "presentation_active": 0x80},
+        {"name": "gate_c2_presentation", "c2_gate": 0x40},
+        {"name": "gate_choice_phase", "choice_phase": 0x20},
+        {"name": "gate_save_request", "save_gate": 0x10},
+        {"name": "gate_load_request", "load_gate": 0x08},
+        {"name": "gate_selected_item_low", "selected_item": 0x0004},
+        {"name": "selected_item_high_byte_ignored", "selected_item": 0x8000},
+        {"name": "gate_target_selection", "target_selection": 0x04},
+        {"name": "gate_transition_pending", "transition_pending": 0x02},
+        {"name": "gate_choice_sound", "choice_sound_gate": 0x80},
+        {
+            "name": "active_bit_four_clears_mouse_before_hit",
+            "slot_flags": {0: 0x05},
+        },
+        {
+            "name": "hit_sets_auto_seek",
+            "slot_flags": {2: 0x01},
+            "hit_slots": [2],
+            "frame": 5,
+        },
+        {
+            "name": "existing_auto_seek",
+            "slot_flags": {3: 0x09},
+            "frame": 5,
+        },
+        {
+            "name": "hit_seek_equal_then_lock_equal",
+            "slot_flags": {1: 0x03},
+            "hit_slots": [1],
+            "frame": 45,
+        },
+        {
+            "name": "lock_mismatch_resets_slot",
+            "slot_flags": {4: 0x03},
+            "frame": 0,
+        },
+        {
+            "name": "auto_seek_precedes_lock_reset",
+            "slot_flags": {4: 0x0B},
+            "frame": 0,
+        },
+        {
+            "name": "doubled_frame_wrap_matches_zero_target",
+            "slot_flags": {5: 0x03},
+            "frame": 0x8000,
+        },
+        {
+            "name": "handler_mutates_next_slot",
+            "handler_mutations": {0: {"slot": 1, "flags": 0x03}},
+            "frame": 0,
+        },
+        {
+            "name": "inactive_high_flag_bits_do_not_hit_test",
+            "slot_flags": {0: 0x80, 3: 0xFE},
+        },
+    ]
+    expected_hash = "10e3dc30894e83264c391791e90722465d66152d6f51dea830c0acb9132f37ec"
+    if hashlib.sha256(EXE[entry : entry + 161]).hexdigest() != expected_hash:
+        raise AssertionError("0x7d7b: recovered 161-byte body changed")
+
+    def logic_flags(value: int, width: int) -> dict[str, bool]:
+        value &= (1 << width) - 1
+        return {
+            "cf": False,
+            "pf": (value & 0xFF).bit_count() % 2 == 0,
+            "zf": value == 0,
+            "sf": bool(value & (1 << (width - 1))),
+            "of": False,
+        }
+
+    def add_flags_16(left: int, right: int) -> dict[str, bool]:
+        result = (left + right) & 0xFFFF
+        return {
+            "cf": left + right > 0xFFFF,
+            "pf": (result & 0xFF).bit_count() % 2 == 0,
+            "af": bool((left ^ right ^ result) & 0x10),
+            "zf": result == 0,
+            "sf": bool(result & 0x8000),
+            "of": bool((~(left ^ right) & (left ^ result)) & 0x8000),
+        }
+
+    vectors = []
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        presentation_active = int(case.get("presentation_active", 0))
+        c2_gate = int(case.get("c2_gate", 0))
+        choice_phase = int(case.get("choice_phase", 0))
+        save_gate = int(case.get("save_gate", 0))
+        load_gate = int(case.get("load_gate", 0))
+        selected_item = int(case.get("selected_item", 0))
+        target_selection = int(case.get("target_selection", 0))
+        transition_pending = int(case.get("transition_pending", 0))
+        choice_sound_gate = int(case.get("choice_sound_gate", 0))
+        frame = int(case.get("frame", 17))
+        ui_word_before = (0xA540 + case_index * 0x0100) & 0xFFFF
+        seek_target_before = (0x5300 + case_index * 0x0101) & 0xFFFF
+        mouse_primary_before = (0x81 + case_index * 2) & 0xFF
+        mouse_pending_before = (0xA3 + case_index * 2) & 0xFF
+        hit_slots = {int(value) for value in case.get("hit_slots", [])}
+        slot_flag_overrides = {
+            int(key): int(value)
+            for key, value in dict(case.get("slot_flags", {})).items()
+        }
+        handler_mutations = {
+            int(key): {str(field): int(value) for field, value in mutation.items()}
+            for key, mutation in dict(case.get("handler_mutations", {})).items()
+        }
+
+        data_before = bytearray(
+            (offset * 17 + (offset >> 8) * 13 + case_index * 29 + 0x43)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        data_before[0x67AC] = presentation_active
+        data_before[0x1FB2] = c2_gate
+        data_before[0x2565] = choice_phase
+        data_before[0x2736] = save_gate
+        data_before[0x2737] = load_gate
+        struct.pack_into("<H", data_before, 0x2A19, selected_item)
+        data_before[0x27E7] = target_selection
+        data_before[0x27DA] = transition_pending
+        data_before[0x0B13] = choice_sound_gate
+        struct.pack_into("<H", data_before, 0x2793, ui_word_before)
+        struct.pack_into("<H", data_before, 0x2795, frame)
+        struct.pack_into("<H", data_before, 0x279B, seek_target_before)
+        data_before[0x0A3E] = mouse_primary_before
+        data_before[0x0A40] = mouse_pending_before
+
+        stack_before = bytearray(
+            (offset * 7 + (offset >> 8) * 19 + case_index * 31 + 0x67)
+            & 0xFF
+            for offset in range(0x10000)
+        )
+        slot_states: list[bytearray] = []
+        for slot_index in range(slot_count):
+            slot = bytearray(
+                (slot_index * 0x31 + byte_index * 0x13 + case_index * 0x17 + 0x29)
+                & 0xFF
+                for byte_index in range(slot_size)
+            )
+            slot[0] = slot_flag_overrides.get(slot_index, 0)
+            slot[1] = (0xC0 + slot_index * 7 + case_index) & 0xFF
+            slot[0x0A:0x0C] = struct.pack("<H", target_arcs[slot_index])
+            slot_states.append(slot)
+            offset = slot_base + slot_index * slot_size
+            stack_before[offset : offset + slot_size] = slot
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        stack_before[0xFF00 : 0xFF08] = struct.pack("<H", return_address) + stack_sentinel
+        game_before = bytes(
+            (offset * 11 + case_index * 41 + 0xA3) & 0xFF
+            for offset in range(0x10000)
+        )
+        initial = {
+            "eax": 0xA1A1BE00 | ((0x40 + case_index) & 0xFF),
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": 0x4800,
+            "fs": 0x5000,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+        calls: list[dict[str, object]] = []
+
+        def read_data_byte(machine: Uc, offset: int) -> int:
+            return machine.mem_read(data_segment * 16 + offset, 1)[0]
+
+        def read_data_word(machine: Uc, offset: int) -> int:
+            return struct.unpack("<H", machine.mem_read(data_segment * 16 + offset, 2))[0]
+
+        def read_slot_byte(machine: Uc, slot_index: int, field: int = 0) -> int:
+            address = stack_segment * 16 + slot_base + slot_index * slot_size + field
+            return machine.mem_read(address, 1)[0]
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            bp = machine.reg_read(UC_X86_REG_BP)
+            slot_index = (bp - slot_base) // slot_size
+            common = {
+                "slot": slot_index,
+                "cs": machine.reg_read(UC_X86_REG_CS),
+                "sp": machine.reg_read(UC_X86_REG_SP),
+                "bp": bp,
+                "slot_flags": read_slot_byte(machine, slot_index),
+                "ui_word": read_data_word(machine, 0x2793),
+                "seek_target": read_data_word(machine, 0x279B),
+                "mouse_primary": read_data_byte(machine, 0x0A3E),
+                "mouse_pending": read_data_byte(machine, 0x0A40),
+            }
+            if address == mouse_hit_entry:
+                calls.append({
+                    "kind": "mouse_hit_test",
+                    "si": machine.reg_read(UC_X86_REG_SI),
+                    **common,
+                })
+                if slot_index in hit_slots:
+                    slot_address = stack_segment * 16 + slot_base + slot_index * slot_size
+                    machine.mem_write(
+                        slot_address,
+                        bytes((read_slot_byte(machine, slot_index) | 0x08,)),
+                    )
+            elif address == entity_transition_entry:
+                calls.append({
+                    "kind": "entity_flag_state_transition",
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    **common,
+                })
+            elif address in handler_by_entry:
+                handler_index = handler_by_entry[address]
+                calls.append({
+                    "kind": "actor_handler",
+                    "handler": handler_index,
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    **common,
+                })
+                mutation = handler_mutations.get(slot_index)
+                if mutation is not None:
+                    target_slot = mutation["slot"]
+                    target_address = (
+                        stack_segment * 16 + slot_base + target_slot * slot_size
+                    )
+                    machine.mem_write(target_address, bytes((mutation["flags"],)))
+
+        patches = [
+            (0, mouse_hit_entry, b"\xC3"),
+            (0, entity_transition_entry, b"\xCB"),
+            (
+                0,
+                0x06D4,
+                struct.pack("<6H", 0x7F9C, 0x7EC0, 0x813A, 0x817E, 0x81FB, 0x8082),
+            ),
+            (0, return_address, b"\xCC"),
+            (data_segment, 0, bytes(data_before)),
+            (game_segment, 0, game_before),
+            (stack_segment, 0, bytes(stack_before)),
+        ]
+        patches.extend((0, address, b"\xC3") for address in handler_by_entry)
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            patches,
+            code_handler=capture,
+            instruction_count=2000,
+        )
+
+        gate = (
+            presentation_active
+            | c2_gate
+            | choice_phase
+            | save_gate
+            | load_gate
+            | (selected_item & 0xFF)
+            | target_selection
+            | transition_pending
+            | choice_sound_gate
+        ) & 0xFF
+        expected_calls: list[dict[str, object]] = []
+        ui_word_after = ui_word_before
+        seek_target_after = seek_target_before
+        mouse_primary_after = mouse_primary_before
+        mouse_pending_after = mouse_pending_before
+
+        def expected_common(slot_index: int, sp: int, cs: int) -> dict[str, int]:
+            return {
+                "slot": slot_index,
+                "cs": cs,
+                "sp": sp,
+                "bp": slot_base + slot_index * slot_size,
+                "slot_flags": slot_states[slot_index][0],
+                "ui_word": ui_word_after,
+                "seek_target": seek_target_after,
+                "mouse_primary": mouse_primary_after,
+                "mouse_pending": mouse_pending_after,
+            }
+
+        if gate != 0:
+            terminal_flags = logic_flags(gate, 8)
+        else:
+            for slot_index in range(slot_count):
+                flags = slot_states[slot_index][0]
+                if (flags & 1) != 0:
+                    if (flags & 4) != 0:
+                        mouse_primary_after = 0
+                        mouse_pending_after = 0
+                    expected_calls.append({
+                        "kind": "mouse_hit_test",
+                        "si": slot_base + slot_index * slot_size + 0x0C,
+                        **expected_common(slot_index, 0xFEEE, 0),
+                    })
+                    if slot_index in hit_slots:
+                        slot_states[slot_index][0] |= 0x08
+                    flags = slot_states[slot_index][0]
+                    doubled_frame = (frame * 2) & 0xFFFF
+                    target_arc = struct.unpack("<H", slot_states[slot_index][0x0A:0x0C])[0]
+                    if (flags & 8) != 0 and doubled_frame != target_arc:
+                        seek_target_after = target_arc
+                        ui_word_after |= 8
+                    elif (flags & 2) != 0 and doubled_frame != target_arc:
+                        slot_states[slot_index][0] = 1
+                        expected_calls.append({
+                            "kind": "entity_flag_state_transition",
+                            "ax": 4,
+                            **expected_common(slot_index, 0xFEEC, 0x0299),
+                        })
+
+                handler_index = slot_count - 1 - slot_index
+                expected_calls.append({
+                    "kind": "actor_handler",
+                    "handler": handler_index,
+                    "bx": handler_index * 2,
+                    "cx": slot_count - slot_index,
+                    **expected_common(slot_index, 0xFEEE, 0),
+                })
+                mutation = handler_mutations.get(slot_index)
+                if mutation is not None:
+                    slot_states[mutation["slot"]][0] = mutation["flags"]
+            terminal_flags = add_flags_16(
+                slot_base + (slot_count - 1) * slot_size, slot_size
+            )
+
+        if calls != expected_calls:
+            raise AssertionError(f"0x7d7b {name}: calls={calls}, expected={expected_calls}")
+
+        expected_data = bytearray(data_before)
+        struct.pack_into("<H", expected_data, 0x2793, ui_word_after)
+        struct.pack_into("<H", expected_data, 0x279B, seek_target_after)
+        expected_data[0x0A3E] = mouse_primary_after
+        expected_data[0x0A40] = mouse_pending_after
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            mismatch = next(
+                offset
+                for offset, (actual, expected) in enumerate(zip(actual_data, expected_data))
+                if actual != expected
+            )
+            raise AssertionError(
+                f"0x7d7b {name}: data[{mismatch:#x}]={actual_data[mismatch]:#x}, expected={expected_data[mismatch]:#x}"
+            )
+
+        expected_stack = bytearray(stack_before)
+        for slot_index, slot in enumerate(slot_states):
+            offset = slot_base + slot_index * slot_size
+            expected_stack[offset : offset + slot_size] = slot
+        actual_slots = bytes(
+            machine.mem_read(stack_segment * 16 + slot_base, slot_count * slot_size)
+        )
+        expected_slots = bytes(
+            expected_stack[slot_base : slot_base + slot_count * slot_size]
+        )
+        if actual_slots != expected_slots:
+            raise AssertionError(
+                f"0x7d7b {name}: slots={actual_slots.hex()}, expected={expected_slots.hex()}"
+            )
+        if bytes(machine.mem_read(game_segment * 16, 0x10000)) != game_before:
+            raise AssertionError(f"0x7d7b {name}: GS decoy changed")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0x7d7b {name}: caller stack changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0x7d7b {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0x7d7b {name}: return changed CS")
+
+        flag_masks = {"cf": 1, "pf": 4, "af": 0x10, "zf": 0x40, "sf": 0x80, "of": 0x800}
+        flags_after = machine.reg_read(UC_X86_REG_EFLAGS)
+        actual_flags = {
+            flag: bool(flags_after & flag_masks[flag]) for flag in terminal_flags
+        }
+        if actual_flags != terminal_flags:
+            raise AssertionError(
+                f"0x7d7b {name}: flags={actual_flags}, expected={terminal_flags}"
+            )
+
+        vectors.append({
+            "name": name,
+            "gate_value": gate,
+            "frame": frame,
+            "ui_word_before": ui_word_before,
+            "ui_word_after": ui_word_after,
+            "seek_target_before": seek_target_before,
+            "seek_target_after": seek_target_after,
+            "mouse_primary_after": mouse_primary_after,
+            "mouse_pending_after": mouse_pending_after,
+            "slot_flags_after": [slot[0] for slot in slot_states],
+            "call_sequence": [
+                call["kind"]
+                + (f"_{call['handler']}" if call["kind"] == "actor_handler" else "")
+                for call in calls
+            ],
+            "defined_flags": terminal_flags,
+        })
+    return vectors
+
+
 def nav_actor_handler_1_vectors() -> list[dict[str, object]]:
     entry = 0x7EC0
     presentation_helper_entry = 0x7E1C
@@ -68581,6 +69011,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_77a9_natural.json",
         music_voc_name_patcher_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_7d7b_natural.json",
+        nav_actor_slot_update_loop_vectors(),
         args.check,
     )
     update_vector(

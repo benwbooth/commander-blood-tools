@@ -34,7 +34,7 @@ extern bloodprg_input_action_handler CB_CODE_DATA
 
 void CB_FAR poll_mouse(void); /* 0x000D0E */
 cb_u16 CB_NEAR mouse_button_edges_update(void); /* 0x001FBC */
-void CB_NEAR mouse_hit_test(const bloodprg_rect_i16 CB_NEAR *rect,
+void CB_NEAR mouse_hit_test(const volatile bloodprg_rect_i16 CB_NEAR *rect,
         volatile cb_u8 CB_NEAR *flags); /* 0x008269 */
 int CB_FAR region_record_hittest(
         const volatile bloodprg_rect_i16 CB_NEAR *rect); /* 0x008295 */

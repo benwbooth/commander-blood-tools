@@ -1,7 +1,7 @@
 #include "../include/bloodprg_input.h"
 
 void CB_NEAR mouse_hit_test(
-    const bloodprg_rect_i16 CB_NEAR *rect,
+    const volatile bloodprg_rect_i16 CB_NEAR *rect,
     volatile cb_u8 CB_NEAR *flags
 )
 {
