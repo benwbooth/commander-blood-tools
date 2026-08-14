@@ -4159,6 +4159,39 @@ uses typed DOS, EMS, and XMS calls. Whole-source integration must ensure
 drop-in replacement additionally needs the original direct-interrupt and
 DS/ES-only preservation boundaries.
 
+## BLOODPRG MANU3 hand-frame dispatcher candidate
+
+`0x001610` is the game-side per-frame caller for the loaded `manu3.xdb` hand
+renderer. Presentation mode `DS:0x27E0` and ship-HUD mode `DS:0x0ADF` suppress
+the call. Nonnegative animation request `DS:0x0A32` is compared with current
+selector `DS:0x0A34`: a changed nonzero request becomes current, while a
+repeated request is cleared to zero. A pending presentation flag arms a
+two-frame delay unless scene dispatch is blocked; an existing delay decrements
+and returns, including the frame on which it reaches zero.
+
+The callback request at `SS:0x0AB4` is the same typed eight-byte structure
+recovered independently from MANU3 entry zero: signed mouse x/y, animation
+selector, and planar framebuffer window offset. The indirect far call through
+`DS:0x0A96` receives the request through inherited `BP`. The bytes at
+`0x1636..0x1648` would retain selectors 4, 5, 7, 8, 11, 12, and 14 while a mouse
+button is pressed, but the shipped unconditional jump at `0x1634` makes that
+block unreachable. No direct executable write targeting that opcode was found.
+
+Eleven direct vectors cover both mode gates, signed-negative rejection,
+repeated zero and pressed-allowlisted selectors, changed nonzero and zero
+selectors, delay arm and scene-block bypass, and both countdown values. They
+prove SS-versus-DS request ownership, every request field, callback registers
+and stack frame, DS/ES/FS restoration after deliberate callback clobbers,
+clobber propagation for the other registers, stack integrity, and near return.
+
+Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
+candidate warning-free to 40 instructions/132 bytes versus the 44-instruction,
+151-byte reachable original, with 72.73 percent mnemonic-multiset overlap and
+no inline assembly. Watcom naturally addresses the ordinary request globals
+through SS in this model. Source integration requires the shipped `SS == DS`
+layout and a narrow adapter from the explicit far request pointer to MANU3's
+inherited-`BP` entry ABI.
+
 ## BLOODPRG presentation-choice transition candidate
 
 `0x001AD3` coordinates the modal presentation-choice list and its rectangle

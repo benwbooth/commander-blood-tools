@@ -1,0 +1,525 @@
+[
+  {
+    "name": "presentation_mode_gate",
+    "inputs": {
+      "presentation_mode": 1,
+      "hud_mode": 0,
+      "requested_selector": 7,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -17,
+      "mouse_y": 191,
+      "framebuffer_window_offset": 16384
+    },
+    "result": {
+      "requested_selector": 7,
+      "current_selector": 4,
+      "delay": 0,
+      "stack_request_hex": "6f8ca9c6e3001d3a",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779058740,
+      "ebx": 3065389893,
+      "ecx": 3351721046,
+      "edx": 3638052199,
+      "esi": 3924383352,
+      "edi": 4210714505,
+      "ebp": 2882369690,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 514
+    }
+  },
+  {
+    "name": "hud_mode_gate",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 1,
+      "requested_selector": 7,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -16,
+      "mouse_y": 190,
+      "framebuffer_window_offset": 16657
+    },
+    "result": {
+      "requested_selector": 7,
+      "current_selector": 4,
+      "delay": 0,
+      "stack_request_hex": "708daac7e4011e3b",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779058741,
+      "ebx": 3065389894,
+      "ecx": 3351721047,
+      "edx": 3638052200,
+      "esi": 3924383353,
+      "edi": 4210714506,
+      "ebp": 2882369691,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 514
+    }
+  },
+  {
+    "name": "negative_selector_gate",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 65535,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -15,
+      "mouse_y": 189,
+      "framebuffer_window_offset": 16930
+    },
+    "result": {
+      "requested_selector": 65535,
+      "current_selector": 4,
+      "delay": 0,
+      "stack_request_hex": "718eabc8e5021f3c",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779119615,
+      "ebx": 3065389895,
+      "ecx": 3351721048,
+      "edx": 3638052201,
+      "esi": 3924383354,
+      "edi": 4210714507,
+      "ebp": 2882369692,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 646
+    }
+  },
+  {
+    "name": "repeated_zero_selector",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 0,
+      "current_selector": 0,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -14,
+      "mouse_y": 188,
+      "framebuffer_window_offset": 17203
+    },
+    "result": {
+      "requested_selector": 0,
+      "current_selector": 0,
+      "delay": 0,
+      "stack_request_hex": "f2ffbc0000003343",
+      "callback_calls": [
+        {
+          "call": "manu3_overlay_entry",
+          "request_offset": 2740,
+          "request_hex": "f2ffbc0000003343",
+          "ax": 17203,
+          "bx": 65522,
+          "cx": 188,
+          "ds": 8192,
+          "es": 9216,
+          "fs": 9728,
+          "sp": 65270,
+          "frame": [
+            5794,
+            0,
+            9728,
+            9216,
+            8192,
+            62992
+          ]
+        }
+      ]
+    },
+    "final_registers": {
+      "eax": 286335522,
+      "ebx": 858997828,
+      "ecx": 1431660134,
+      "edx": 2004322440,
+      "esi": 2576984746,
+      "edi": 3149647052,
+      "ebp": 3722297071,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  },
+  {
+    "name": "pressed_allowlisted_selector_still_clears",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 4,
+      "current_selector": 4,
+      "mouse_buttons": 1,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -13,
+      "mouse_y": 187,
+      "framebuffer_window_offset": 17476
+    },
+    "result": {
+      "requested_selector": 0,
+      "current_selector": 4,
+      "delay": 0,
+      "stack_request_hex": "f3ffbb0000004444",
+      "callback_calls": [
+        {
+          "call": "manu3_overlay_entry",
+          "request_offset": 2740,
+          "request_hex": "f3ffbb0000004444",
+          "ax": 17476,
+          "bx": 65523,
+          "cx": 187,
+          "ds": 8192,
+          "es": 9216,
+          "fs": 9728,
+          "sp": 65270,
+          "frame": [
+            5794,
+            0,
+            9728,
+            9216,
+            8192,
+            62992
+          ]
+        }
+      ]
+    },
+    "final_registers": {
+      "eax": 286335522,
+      "ebx": 858997828,
+      "ecx": 1431660134,
+      "edx": 2004322440,
+      "esi": 2576984746,
+      "edi": 3149647052,
+      "ebp": 3722297071,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  },
+  {
+    "name": "new_nonzero_selector_updates_current",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 7,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -12,
+      "mouse_y": 186,
+      "framebuffer_window_offset": 17749
+    },
+    "result": {
+      "requested_selector": 7,
+      "current_selector": 7,
+      "delay": 0,
+      "stack_request_hex": "f4ffba0007005545",
+      "callback_calls": [
+        {
+          "call": "manu3_overlay_entry",
+          "request_offset": 2740,
+          "request_hex": "f4ffba0007005545",
+          "ax": 17749,
+          "bx": 65524,
+          "cx": 186,
+          "ds": 8192,
+          "es": 9216,
+          "fs": 9728,
+          "sp": 65270,
+          "frame": [
+            5794,
+            0,
+            9728,
+            9216,
+            8192,
+            62992
+          ]
+        }
+      ]
+    },
+    "final_registers": {
+      "eax": 286335522,
+      "ebx": 858997828,
+      "ecx": 1431660134,
+      "edx": 2004322440,
+      "esi": 2576984746,
+      "edi": 3149647052,
+      "ebp": 3722297071,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  },
+  {
+    "name": "zero_selector_preserves_current",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 0,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 0,
+      "mouse_x": -11,
+      "mouse_y": 185,
+      "framebuffer_window_offset": 18022
+    },
+    "result": {
+      "requested_selector": 0,
+      "current_selector": 4,
+      "delay": 0,
+      "stack_request_hex": "f5ffb90000006646",
+      "callback_calls": [
+        {
+          "call": "manu3_overlay_entry",
+          "request_offset": 2740,
+          "request_hex": "f5ffb90000006646",
+          "ax": 18022,
+          "bx": 65525,
+          "cx": 185,
+          "ds": 8192,
+          "es": 9216,
+          "fs": 9728,
+          "sp": 65270,
+          "frame": [
+            5794,
+            0,
+            9728,
+            9216,
+            8192,
+            62992
+          ]
+        }
+      ]
+    },
+    "final_registers": {
+      "eax": 286335522,
+      "ebx": 858997828,
+      "ecx": 1431660134,
+      "edx": 2004322440,
+      "esi": 2576984746,
+      "edi": 3149647052,
+      "ebp": 3722297071,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  },
+  {
+    "name": "presentation_request_arms_two_frame_delay",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 5,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 2,
+      "delay": 0,
+      "mouse_x": -10,
+      "mouse_y": 184,
+      "framebuffer_window_offset": 18295
+    },
+    "result": {
+      "requested_selector": 5,
+      "current_selector": 5,
+      "delay": 2,
+      "stack_request_hex": "7693b0cdea072441",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779054085,
+      "ebx": 3065389900,
+      "ecx": 3351721053,
+      "edx": 3638052206,
+      "esi": 3924383359,
+      "edi": 4210714512,
+      "ebp": 2882369697,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 514
+    }
+  },
+  {
+    "name": "scene_block_bypasses_delay_arm",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 5,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 1,
+      "presentation_flags": 2,
+      "delay": 0,
+      "mouse_x": -9,
+      "mouse_y": 183,
+      "framebuffer_window_offset": 18568
+    },
+    "result": {
+      "requested_selector": 5,
+      "current_selector": 5,
+      "delay": 0,
+      "stack_request_hex": "f7ffb70005008848",
+      "callback_calls": [
+        {
+          "call": "manu3_overlay_entry",
+          "request_offset": 2740,
+          "request_hex": "f7ffb70005008848",
+          "ax": 18568,
+          "bx": 65527,
+          "cx": 183,
+          "ds": 8192,
+          "es": 9216,
+          "fs": 9728,
+          "sp": 65270,
+          "frame": [
+            5794,
+            0,
+            9728,
+            9216,
+            8192,
+            62992
+          ]
+        }
+      ]
+    },
+    "final_registers": {
+      "eax": 286335522,
+      "ebx": 858997828,
+      "ecx": 1431660134,
+      "edx": 2004322440,
+      "esi": 2576984746,
+      "edi": 3149647052,
+      "ebp": 3722297071,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  },
+  {
+    "name": "delay_two_counts_down",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 5,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 2,
+      "mouse_x": -8,
+      "mouse_y": 182,
+      "framebuffer_window_offset": 18841
+    },
+    "result": {
+      "requested_selector": 5,
+      "current_selector": 5,
+      "delay": 1,
+      "stack_request_hex": "7895b2cfec092643",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779054085,
+      "ebx": 3065389902,
+      "ecx": 3351721055,
+      "edx": 3638052208,
+      "esi": 3924383361,
+      "edi": 4210714514,
+      "ebp": 2882369699,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 514
+    }
+  },
+  {
+    "name": "delay_one_reaches_zero_without_call",
+    "inputs": {
+      "presentation_mode": 0,
+      "hud_mode": 0,
+      "requested_selector": 5,
+      "current_selector": 4,
+      "mouse_buttons": 0,
+      "scene_blocked": 0,
+      "presentation_flags": 0,
+      "delay": 1,
+      "mouse_x": -7,
+      "mouse_y": 181,
+      "framebuffer_window_offset": 19114
+    },
+    "result": {
+      "requested_selector": 5,
+      "current_selector": 5,
+      "delay": 0,
+      "stack_request_hex": "7996b3d0ed0a2744",
+      "callback_calls": []
+    },
+    "final_registers": {
+      "eax": 2779054085,
+      "ebx": 3065389903,
+      "ecx": 3351721056,
+      "edx": 3638052209,
+      "esi": 3924383362,
+      "edi": 4210714515,
+      "ebp": 2882369700,
+      "sp": 65282,
+      "ds": 8192,
+      "es": 9216,
+      "fs": 9728,
+      "gs": 10240,
+      "flags": 582
+    }
+  }
+]

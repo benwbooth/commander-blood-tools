@@ -52115,6 +52115,417 @@ def resource_payload_decode_rect_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def manu3_hand_frame_dispatch_vectors() -> list[dict[str, object]]:
+    entry = 0x1610
+    return_address = 0xF610
+    expected_hash = "ba151c144bd8270408f41fc313f60d87c1400b6f4e8b11be055029634182af38"
+    if hashlib.sha256(EXE[entry : entry + 151]).hexdigest() != expected_hash:
+        raise AssertionError("0x1610: recovered 151-byte body changed")
+
+    cases = [
+        {
+            "name": "presentation_mode_gate",
+            "presentation_mode": 1,
+            "hud_mode": 0,
+            "requested": 7,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "hud_mode_gate",
+            "presentation_mode": 0,
+            "hud_mode": 1,
+            "requested": 7,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "negative_selector_gate",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 0xFFFF,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "repeated_zero_selector",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 0,
+            "current": 0,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "pressed_allowlisted_selector_still_clears",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 4,
+            "current": 4,
+            "mouse_buttons": 1,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "new_nonzero_selector_updates_current",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 7,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "zero_selector_preserves_current",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 0,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 0,
+        },
+        {
+            "name": "presentation_request_arms_two_frame_delay",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 5,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 2,
+            "delay": 0,
+        },
+        {
+            "name": "scene_block_bypasses_delay_arm",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 5,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 1,
+            "presentation_flags": 2,
+            "delay": 0,
+        },
+        {
+            "name": "delay_two_counts_down",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 5,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 2,
+        },
+        {
+            "name": "delay_one_reaches_zero_without_call",
+            "presentation_mode": 0,
+            "hud_mode": 0,
+            "requested": 5,
+            "current": 4,
+            "mouse_buttons": 0,
+            "scene_blocked": 0,
+            "presentation_flags": 0,
+            "delay": 1,
+        },
+    ]
+    data_segment = 0x2000
+    stack_segment = 0x9000
+    callback_segment = 0x7000
+    callback_offset = 0x0100
+    caller_sp = 0xFF00
+    stack_sentinel = bytes.fromhex("5aa596698778c33c")
+    vectors = []
+
+    for case_index, case in enumerate(cases):
+        name = str(case["name"])
+        requested = int(case["requested"])
+        current = int(case["current"])
+        delay = int(case["delay"])
+        mouse_x = -17 + case_index
+        mouse_y = 191 - case_index
+        framebuffer_offset = (0x4000 + case_index * 0x111) & 0xFFFF
+        calls: list[dict[str, object]] = []
+
+        data_before = bytearray(0x10000)
+        data_before[0x27E0] = int(case["presentation_mode"])
+        data_before[0x0ADF] = int(case["hud_mode"])
+        data_before[0x252D] = int(case["scene_blocked"])
+        data_before[0x67AA] = int(case["presentation_flags"])
+        data_before[0x0AE7] = delay
+        struct.pack_into("<H", data_before, 0x0A2A, mouse_x & 0xFFFF)
+        struct.pack_into("<H", data_before, 0x0A2C, mouse_y & 0xFFFF)
+        struct.pack_into("<H", data_before, 0x0A2E, int(case["mouse_buttons"]))
+        struct.pack_into("<H", data_before, 0x0A32, requested)
+        struct.pack_into("<H", data_before, 0x0A34, current)
+        struct.pack_into("<H", data_before, 0x5219, framebuffer_offset)
+        struct.pack_into(
+            "<HH", data_before, 0x0A96, callback_offset, callback_segment
+        )
+        data_before[0x0AB4 : 0x0ABC] = bytes.fromhex("1021324354657687")
+
+        stack_before = bytearray(
+            (index * 29 + 11 + case_index) & 0xFF for index in range(0x10000)
+        )
+        stack_before[caller_sp : caller_sp + 2 + len(stack_sentinel)] = (
+            struct.pack("<H", return_address) + stack_sentinel
+        )
+        stack_request_before = bytes(stack_before[0x0AB4 : 0x0ABC])
+
+        initial = {
+            "eax": 0xA5A51234 + case_index,
+            "ebx": 0xB6B62345 + case_index,
+            "ecx": 0xC7C73456 + case_index,
+            "edx": 0xD8D84567 + case_index,
+            "esi": 0xE9E95678 + case_index,
+            "edi": 0xFAFA6789 + case_index,
+            "ebp": 0xABCD789A + case_index,
+            "sp": caller_sp,
+            "ds": data_segment,
+            "es": 0x2400,
+            "fs": 0x2600,
+            "gs": 0x2800,
+            "ss": stack_segment,
+            "flags": 0x0202,
+        }
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != callback_segment * 16 + callback_offset:
+                return
+            request_offset = machine.reg_read(UC_X86_REG_BP)
+            request = bytes(
+                machine.mem_read(stack_segment * 16 + request_offset, 8)
+            )
+            frame = struct.unpack(
+                "<6H", machine.mem_read(stack_segment * 16 + 0xFEF6, 12)
+            )
+            calls.append(
+                {
+                    "call": "manu3_overlay_entry",
+                    "request_offset": request_offset,
+                    "request_hex": request.hex(),
+                    "ax": machine.reg_read(UC_X86_REG_AX),
+                    "bx": machine.reg_read(UC_X86_REG_BX),
+                    "cx": machine.reg_read(UC_X86_REG_CX),
+                    "ds": machine.reg_read(UC_X86_REG_DS),
+                    "es": machine.reg_read(UC_X86_REG_ES),
+                    "fs": machine.reg_read(UC_X86_REG_FS),
+                    "sp": machine.reg_read(UC_X86_REG_SP),
+                    "frame": list(frame),
+                }
+            )
+            machine.reg_write(UC_X86_REG_EAX, 0x11112222)
+            machine.reg_write(UC_X86_REG_EBX, 0x33334444)
+            machine.reg_write(UC_X86_REG_ECX, 0x55556666)
+            machine.reg_write(UC_X86_REG_EDX, 0x77778888)
+            machine.reg_write(UC_X86_REG_ESI, 0x9999AAAA)
+            machine.reg_write(UC_X86_REG_EDI, 0xBBBBCCCC)
+            machine.reg_write(UC_X86_REG_EBP, 0xDDDDBEEF)
+            machine.reg_write(UC_X86_REG_DS, 0x3100)
+            machine.reg_write(UC_X86_REG_ES, 0x3200)
+            machine.reg_write(UC_X86_REG_FS, 0x3300)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xCC"),
+                (callback_segment, callback_offset, b"\xCB"),
+                (data_segment, 0, bytes(data_before)),
+                (stack_segment, 0, bytes(stack_before)),
+            ],
+            code_handler=capture,
+            instruction_count=160,
+        )
+
+        early_gate = (
+            (int(case["presentation_mode"]) & 1) != 0
+            or (int(case["hud_mode"]) & 1) != 0
+            or (requested & 0x8000) != 0
+        )
+        expected_requested = requested
+        expected_current = current
+        expected_delay = delay
+        expect_callback = False
+        if not early_gate:
+            if requested == current:
+                expected_requested = 0
+            elif requested != 0:
+                expected_current = requested
+
+            if (
+                (int(case["scene_blocked"]) & 1) == 0
+                and (int(case["presentation_flags"]) & 2) != 0
+            ):
+                expected_delay = 2
+            elif delay != 0:
+                expected_delay = (delay - 1) & 0xFF
+            else:
+                expect_callback = True
+
+        actual_requested = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0A32, 2)
+        )[0]
+        actual_current = struct.unpack(
+            "<H", machine.mem_read(data_segment * 16 + 0x0A34, 2)
+        )[0]
+        actual_delay = machine.mem_read(data_segment * 16 + 0x0AE7, 1)[0]
+        if (actual_requested, actual_current, actual_delay) != (
+            expected_requested,
+            expected_current,
+            expected_delay,
+        ):
+            raise AssertionError(
+                f"0x1610 {name}: state="
+                f"{actual_requested:#x}/{actual_current:#x}/{actual_delay:#x}, "
+                f"expected={expected_requested:#x}/{expected_current:#x}/"
+                f"{expected_delay:#x}"
+            )
+
+        expected_data = bytearray(data_before)
+        struct.pack_into("<H", expected_data, 0x0A32, expected_requested)
+        struct.pack_into("<H", expected_data, 0x0A34, expected_current)
+        expected_data[0x0AE7] = expected_delay
+        actual_data = bytes(machine.mem_read(data_segment * 16, 0x10000))
+        if actual_data != bytes(expected_data):
+            for offset, (actual, expected) in enumerate(
+                zip(actual_data, expected_data)
+            ):
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x1610 {name}: data[{offset:#06x}]="
+                        f"{actual:#04x}, expected={expected:#04x}"
+                    )
+
+        if len(calls) != (1 if expect_callback else 0):
+            raise AssertionError(f"0x1610 {name}: callback count differs")
+        stack_request = bytes(
+            machine.mem_read(stack_segment * 16 + 0x0AB4, 8)
+        )
+        data_request = bytes(
+            machine.mem_read(data_segment * 16 + 0x0AB4, 8)
+        )
+        if data_request != bytes(data_before[0x0AB4 : 0x0ABC]):
+            raise AssertionError(f"0x1610 {name}: request incorrectly used DS")
+
+        if expect_callback:
+            expected_request = struct.pack(
+                "<hhHH",
+                mouse_x,
+                mouse_y,
+                expected_requested,
+                framebuffer_offset,
+            )
+            expected_frame = [
+                0x16A2,
+                0,
+                initial["fs"],
+                initial["es"],
+                data_segment,
+                return_address,
+            ]
+            expected_call = {
+                "call": "manu3_overlay_entry",
+                "request_offset": 0x0AB4,
+                "request_hex": expected_request.hex(),
+                "ax": framebuffer_offset,
+                "bx": mouse_x & 0xFFFF,
+                "cx": mouse_y & 0xFFFF,
+                "ds": data_segment,
+                "es": initial["es"],
+                "fs": initial["fs"],
+                "sp": 0xFEF6,
+                "frame": expected_frame,
+            }
+            if calls[0] != expected_call or stack_request != expected_request:
+                raise AssertionError(f"0x1610 {name}: callback request differs")
+        elif stack_request != stack_request_before:
+            raise AssertionError(f"0x1610 {name}: inactive request changed")
+
+        for register in ("ds", "es", "fs", "gs"):
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != initial[register]:
+                raise AssertionError(f"0x1610 {name}: {register} not restored")
+        if machine.reg_read(UC_X86_REG_SP) != caller_sp + 2:
+            raise AssertionError(f"0x1610 {name}: stack imbalance")
+        expected_bp = 0xBEEF if expect_callback else initial["ebp"] & 0xFFFF
+        if machine.reg_read(UC_X86_REG_BP) != expected_bp:
+            raise AssertionError(f"0x1610 {name}: BP result differs")
+        if expect_callback:
+            expected_clobbers = {
+                "eax": 0x11112222,
+                "ebx": 0x33334444,
+                "ecx": 0x55556666,
+                "edx": 0x77778888,
+                "esi": 0x9999AAAA,
+                "edi": 0xBBBBCCCC,
+                "ebp": 0xDDDDBEEF,
+            }
+            for register, expected in expected_clobbers.items():
+                actual = machine.reg_read(REGISTERS[register])
+                if actual != expected:
+                    raise AssertionError(
+                        f"0x1610 {name}: {register}={actual:#x}, "
+                        f"expected callback result {expected:#x}"
+                    )
+        if bytes(
+            machine.mem_read(stack_segment * 16 + caller_sp + 2, len(stack_sentinel))
+        ) != stack_sentinel:
+            raise AssertionError(f"0x1610 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "inputs": {
+                    "presentation_mode": int(case["presentation_mode"]),
+                    "hud_mode": int(case["hud_mode"]),
+                    "requested_selector": requested,
+                    "current_selector": current,
+                    "mouse_buttons": int(case["mouse_buttons"]),
+                    "scene_blocked": int(case["scene_blocked"]),
+                    "presentation_flags": int(case["presentation_flags"]),
+                    "delay": delay,
+                    "mouse_x": mouse_x,
+                    "mouse_y": mouse_y,
+                    "framebuffer_window_offset": framebuffer_offset,
+                },
+                "result": {
+                    "requested_selector": actual_requested,
+                    "current_selector": actual_current,
+                    "delay": actual_delay,
+                    "stack_request_hex": stack_request.hex(),
+                    "callback_calls": calls,
+                },
+                "final_registers": {
+                    register: machine.reg_read(REGISTERS[register])
+                    for register in (
+                        "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp",
+                        "sp", "ds", "es", "fs", "gs", "flags"
+                    )
+                },
+            }
+        )
+
+    return vectors
+
+
 def resource_archive_index_backing_initialize_vectors() -> list[dict[str, object]]:
     entry = 0x155F
     return_address = 0xF55F
@@ -60477,6 +60888,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_155f_natural.json",
         resource_archive_index_backing_initialize_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_1610_natural.json",
+        manu3_hand_frame_dispatch_vectors(),
         args.check,
     )
     update_vector(

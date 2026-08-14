@@ -6,6 +6,8 @@
 ; seg_off: 008b:0760
 ; group: seg_008b
 ; provenance: recursive_graph
+; label: manu3_hand_frame_dispatch
+; label_comment: Gate the loaded manu3.xdb hand renderer, latch one-shot animation selectors, defer two frames around presentation requests, build the SS:0x0AB4 {mouse x, mouse y, selector, framebuffer window offset} request, and call DS:0x0A96. The byte range at 0x1636 is unreachable behind the shipped unconditional jump. Natural C and direct vectors: re/source/bloodprg/candidates/seg_008b/func_001610_manu3_hand_frame_dispatch.c and re/tools/oracle_vectors/func_1610_natural.json
 ; byte_count: 151
 ; boundary: cfg_blocks_15_terminals_5
 ; terminal: jmp 0x1649:1, jmp 0x165b:1, jmp 0x16a6:2, ret:1
