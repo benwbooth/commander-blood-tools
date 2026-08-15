@@ -11,14 +11,13 @@
 const cb_u8 CB_NEAR *CB_NEAR vm_op_c6_record_match(
     const cb_u8 CB_NEAR *script_bytes)
 {
-    int inverted;
+    cb_u8 inverted;
     cb_u16 record_offset;
     cb_u16 operand;
     volatile cb_u8 CB_FAR *record_base;
     volatile cb_u16 CB_FAR *record;
-    int matches;
 
-    record_base = vm_record_base;
+    record_base = vm_record_base_gs;
     inverted = 0;
     if (*script_bytes == 0xa1u) {
         inverted = 1;
@@ -32,15 +31,19 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_c6_record_match(
 
     record = (volatile cb_u16 CB_FAR *)VM_C6_RECORD_AT(
         record_base, record_offset);
-    if ((vm_query_mode & 1u) != 0) {
-        matches = record[1] == operand && record[0] == 0x00c6u;
-        if (matches == inverted) {
-            return (const cb_u8 CB_NEAR *)vm_branch_fail();
+    if ((vm_query_mode_gs & 1u) != 0) {
+        if (record[1] == operand && record[0] == 0x00c6u) {
+            if (!inverted) {
+                return script_bytes;
+            }
+        } else if (inverted) {
+            return script_bytes;
         }
-    } else {
-        record[0] = 0x00c6u;
-        record[1] = operand;
-        record[2] = 0;
+        return (const cb_u8 CB_NEAR *)vm_branch_fail();
     }
+
+    record[0] = 0x00c6u;
+    record[1] = operand;
+    record[2] = 0;
     return script_bytes;
 }

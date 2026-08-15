@@ -5,19 +5,27 @@
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #include <dos.h>
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#include <dos.h>
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #define RECORD_AT(base, offset) ((volatile u8 FAR *)MK_FP(FP_SEG(base), (offset)))
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #define RECORD_AT(base, offset) ((base) + (offset))
 #endif
 
-extern volatile u8 FAR *record_base_global;
-extern volatile u8 query_mode;
+extern volatile u8 FAR * GAME_DATA record_base_global;
+extern volatile u8 GAME_DATA query_mode;
 
 #if defined(__WATCOMC__)
 #pragma aux branch_fail_probe value [si] modify exact [ax si]
@@ -28,14 +36,13 @@ extern u16 NEAR branch_fail_probe(void);
 
 const u8 NEAR *NEAR vm_c7_record_match_probe(const u8 NEAR *script_bytes)
 {
-    int inverted;
+    u8 inverted;
     u16 record_offset;
     u16 operand;
     u16 record_kind;
     volatile u8 FAR *record_base;
     volatile u16 FAR *record;
     volatile u16 FAR *related;
-    int matches;
 
     record_base = record_base_global;
     inverted = 0;
@@ -50,22 +57,26 @@ const u8 NEAR *NEAR vm_c7_record_match_probe(const u8 NEAR *script_bytes)
 
     record = (volatile u16 FAR *)RECORD_AT(record_base, record_offset);
     if ((query_mode & 1u) != 0) {
-        matches = record[1] == operand && record[0] == 0x00c7u;
-        if (matches == inverted) {
-            return (const u8 NEAR *)branch_fail_probe();
-        }
-    } else {
-        related = (volatile u16 FAR *)RECORD_AT(record_base, operand);
-        if ((*((volatile u8 FAR *)related + 2) & 1u) != 0) {
-            record_kind = record[0];
-            if (record_kind == 0x00c4u || record_kind == 0) {
-                record[0] = 0x00c7u;
-                record[1] = operand;
-                record[2] = 0;
+        if (record[1] == operand && record[0] == 0x00c7u) {
+            if (!inverted) {
                 return script_bytes;
             }
+        } else if (inverted) {
+            return script_bytes;
         }
         return (const u8 NEAR *)branch_fail_probe();
     }
+
+    related = (volatile u16 FAR *)RECORD_AT(record_base, operand);
+    if ((*((volatile u8 FAR *)related + 2) & 1u) == 0) {
+        return (const u8 NEAR *)branch_fail_probe();
+    }
+    record_kind = record[0];
+    if (record_kind != 0x00c4u && record_kind != 0) {
+        return (const u8 NEAR *)branch_fail_probe();
+    }
+    record[0] = 0x00c7u;
+    record[1] = operand;
+    record[2] = 0;
     return script_bytes;
 }

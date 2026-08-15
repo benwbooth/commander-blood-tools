@@ -1906,14 +1906,14 @@ the real branch helper, ignored base-offset decoys, record and script boundary
 behavior, segmented ownership, registers, flags, and near return. They exposed
 and corrected the old candidate's base-relative record addressing.
 
-The corrected one-to-one candidate uses explicit absolute far pointers and
-directly returns the parsed cursor or branch target. Open Watcom `-3 -ox -mm`
-compiles it without warnings to 41 instructions/107 bytes versus 40/104
-original; Turbo C 2.01 medium emits 64 instructions. Despite the close size,
-Watcom omits the loaded base offset, keeps the cursor in BX and destination in
-SI, allocates inversion to AX and operand to DI, materializes query truth with
-CMP, addresses globals through DS, and duplicates returns. Exact integration
-still needs fixed segment placement and the original BP/DL/AX/BX allocation.
+The accepted one-to-one candidate snapshots the explicit GS-owned far base,
+uses a byte inversion flag, preserves the value-before-type query comparisons,
+and directly returns the parsed cursor or branch target. Open Watcom size mode
+`-3 -os -s -mm` compiles it without warnings to 50 instructions/114 bytes
+versus 40/104 original; Turbo C 2.01 emits 71 instructions. Watcom retains the
+original compare, guard, and three-store order, but materializes GAME_DATA
+segment values, saves CX/DI, and reallocates the destination and operand. Those
+are accepted compiler choices at the typed function boundary.
 
 VM opcode-C4 handler `0x006C7E` shares the optional inverted query and absolute
 record-segment addressing, but resolves the destination owner before consuming
@@ -1945,13 +1945,14 @@ ordered writes, the real query-failure helper, ignored base-offset decoys,
 record and script boundaries, segmented ownership, registers, flags, and near
 return. They exposed and corrected the old candidate's base-relative pointer.
 
-The corrected one-to-one candidate directly returns the parsed cursor or
-branch target. Open Watcom `-3 -ox -mm` compiles it without warnings to 32
-instructions/82 bytes versus 31/79 original; Turbo C 2.01 medium emits 53
-instructions. Watcom keeps the same operations but uses BX for the record, DX
-for the operand, AX for inversion, SET-like Boolean comparison control, DS
-globals, a saved BX, and duplicate returns. Exact integration still needs fixed
-segment placement and the original BP/DL/AX allocation.
+The accepted one-to-one candidate snapshots the explicit GS-owned far base,
+uses a byte inversion flag and value-before-type query branches, then performs
+the unconditional three-store overwrite. Open Watcom size mode
+`-3 -os -s -mm` compiles it without warnings to 42 instructions/97 bytes
+versus 31/79 original; Turbo C 2.01 emits 57 instructions. Watcom retains the
+same query and write operations but materializes GAME_DATA segments, saves
+extra registers, and chooses different record and operand registers. Those are
+accepted compiler choices at the typed function boundary.
 
 VM opcode-C7 handler `0x006DCF` uses absolute destination and related offsets
 in the segment loaded from GS:0x6724. Query mode optionally inverts a type-C7
@@ -1964,13 +1965,15 @@ ignored base-offset decoys, boundaries, segments, registers, flags, and return.
 They corrected both the old candidate's base-relative pointers and its repeated
 volatile destination-type expression.
 
-The corrected one-to-one candidate directly returns the cursor or branch
-target. Open Watcom `-3 -ox -mm` compiles it without warnings to 49
-instructions/123 bytes versus 39/101 original; Turbo C 2.01 medium emits 66
-instructions. Watcom introduces a two-byte frame, retains segment state in a
-local, reallocates destination/related/inversion, materializes query truth,
-addresses globals through DS, and duplicates returns. Exact integration still
-needs fixed segment placement and the original compact BP/BX/AX/DL allocation.
+The accepted one-to-one candidate snapshots the explicit GS-owned far base,
+uses a byte inversion flag and direct value-before-type query branches, and
+retains the single volatile destination-kind read before the zero-or-C4 guard.
+Open Watcom size mode `-3 -os -s -mm` compiles it without warnings to 51
+instructions/125 bytes versus 39/101 original; Turbo C 2.01 emits 72
+instructions. Watcom retains the active-bit guard, single kind load, and three
+ordered stores but introduces a four-byte frame, materializes GAME_DATA
+segments, and reallocates destination, related, and inversion state. Those are
+accepted compiler choices at the typed function boundary.
 
 VM opcode-C2 handler `0x006E34` loads only the segment from GS:0x6724, consumes
 an optional A1 inversion prefix and destination offset, resolves the destination
@@ -3453,9 +3456,9 @@ LCS and then mnemonic similarity:
 | `vm_cd_record_triple` | medium, `-ox`, register | 82/96 | 0.0488 | 0.6220 | 0.0976 |
 | `vm_b7_record_bit` | medium, `-os -s`, register | 43/64 | 0.1163 | 0.5814 | 0.1628 |
 | `vm_b8_record_pair` | medium, `-os -s`, register | 26/43 | 0.0385 | 0.7308 | 0.0769 |
-| `vm_c5_record_match` | medium, `-ox`, register | 40/41 | 0.0750 | 0.5750 | 0.1000 |
-| `vm_c6_record_match` | medium, `-ox`, register | 31/32 | 0.0323 | 0.5806 | 0.0323 |
-| `vm_c7_record_match` | medium, `-ox`, register | 39/49 | 0.0769 | 0.6154 | 0.1026 |
+| `vm_c5_record_match` | medium, `-os -s`, register | 40/50 | 0.1000 | 0.6500 | 0.1500 |
+| `vm_c6_record_match` | medium, `-os -s`, register | 31/42 | 0.1290 | 0.6774 | 0.1935 |
+| `vm_c7_record_match` | medium, `-os -s`, register | 39/51 | 0.1026 | 0.7179 | 0.2051 |
 | `vm_c8_record_match` | medium, `-ox`, register | 34/32 | 0.0294 | 0.5294 | 0.0294 |
 | `vm_c9_record_clear` | medium, `-ox`, register | 26/29 | 0.1538 | 0.5000 | 0.1923 |
 | `byte_parser_mark_b16` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
