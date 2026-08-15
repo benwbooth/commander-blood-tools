@@ -4886,6 +4886,30 @@ explicit Boolean/context contract. Direct replacement would still require the
 original carry and live-`BP` ABI, raw `INT 33h` lowering, register residue, and
 terminal flags.
 
+## BLOODPRG bridge panorama frame-unpacker candidate
+
+`0x002D50` decodes a signed-control byte stream into exactly 64,000 panorama
+pixels. Negative controls repeat the following byte `-control+1` times, so
+`0x80` deliberately means 129 pixels. Nonnegative controls copy `control+1`
+literals. When transparent-zero mode is active, zero pixels advance the output
+without overwriting the existing framebuffer.
+
+Four full-frame direct vectors cover opaque and transparent repeat/literal
+paths, the `0x80` edge, preserved transparent destinations, 16-bit source and
+output offset wrap, inherited forward and backward direction, register residue,
+and `RETF`. The recovered C retains the signed-control loops and low-word
+64,000-byte termination directly.
+
+The compiler-corpus sample now includes that authoritative source. Open Watcom
+1.9 medium (`-3 -os -s -mm -we`) emits 108 instructions/233 bytes versus the
+original 50/110, with 66 percent mnemonic-multiset and 54 percent ordered
+overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 131 instructions with 72
+percent multiset and 60 percent ordered overlap and assembles cleanly to OBJ.
+The function is accepted for source-port integration under the shipped
+clear-DF C invariant. Direct replacement would still require the original raw
+`DS:SI` entry, GS data placement, preservation envelope, register residue, and
+inherited-direction behavior.
+
 ## BLOODPRG bridge panorama frame-loader candidate
 
 `0x00981B` consumes the frame in AX and performs four DOS operations on the
@@ -4909,15 +4933,24 @@ flags, stack integrity, and the near return. These are deliberate compatibility
 requirements in the natural candidate, including the unsafe station lookup and
 ignored I/O status.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdp -we`) compiles the actual candidate
-warning-free to 92 instructions/219 bytes versus the original 67/158. The
-mnemonic-sequence LCS is 67.16 percent and mnemonic-multiset overlap is 77.61
-percent. Watcom uses ordinary calls for the DOS helpers, emits word-based far
-copies for the box and palette, and materializes typed pointer arithmetic. The
-original unpack routine's raw `DS:SI` entry remains separately documented; the
-natural loader reserves an ordinary far-pointer C-to-C name for a source
-rebuild. Binding the natural unpack implementation under that name is an
-explicit future link step, not another assembly routine or a hidden emulator.
+The compiler-corpus sample now includes the authoritative loader source. Open
+Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles it warning-free to 90
+instructions/216 bytes versus the original 67/158, with 77.61 percent
+mnemonic-multiset and 68.66 percent ordered overlap. Turbo C 2.01 medium
+(`-mm -O -Z`) emits 123 instructions with 76.12 percent multiset and 67.16
+percent ordered overlap and assembles cleanly to OBJ. Watcom uses ordinary
+calls for the DOS helpers, emits word-based far copies for the box and palette,
+and materializes typed pointer arithmetic.
+
+The previous source declared an undefined `bridge_panorama_frame_unpack_c`
+bridge. The loader now calls the single recovered `0x002D50` function directly
+through its ordinary far-pointer C ABI, and the loader object reference matches
+the unpacker object's exported symbol. Its Watcom declaration also exposes the
+generated body's actual AX/ES clobbers instead of promising the original full
+preservation. The pair is accepted for source-port integration. Direct binary
+replacement still needs the unpacker's raw `DS:SI` entry, the loader's full
+register/segment preservation, original `REP MOVSD` choices, and terminal
+flags.
 
 ## BLOODPRG scene-line dispatcher candidate
 

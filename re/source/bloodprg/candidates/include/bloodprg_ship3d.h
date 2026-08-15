@@ -230,7 +230,7 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux ship_3d_plane_band_copy modify exact []
 #pragma aux ship_3d_target_record_select value [ax] modify exact [ax]
 #pragma aux draw_hud_element_2bc7 modify exact []
-#pragma aux bridge_panorama_frame_load parm [ax] modify exact []
+#pragma aux bridge_panorama_frame_load parm [ax] modify exact [ax es]
 #pragma aux page_flip value [ax] modify exact [ax bx]
 #pragma aux alien_overlay_cycle modify exact [ax dx si di bp]
 #endif

@@ -321,13 +321,6 @@ void CB_FAR fullscreen_copy_to_backbuffer_far(
 #endif
 void CB_FAR bridge_panorama_frame_unpack(
         const cb_u8 CB_FAR *source); /* 0x002D50 */
-#if defined(__WATCOMC__)
-/* Ordinary C ABI name used when recovered C calls recovered C. */
-void CB_FAR bridge_panorama_frame_unpack_c(
-        const cb_u8 CB_FAR *source);
-#else
-#define bridge_panorama_frame_unpack_c bridge_panorama_frame_unpack
-#endif
 const cb_u8 CB_FAR *CB_FAR font8x8_text_draw_display(
         const cb_u8 CB_FAR *text,
         cb_u16 x,
@@ -430,7 +423,6 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
 #pragma aux fullscreen_copy_to_backbuffer_far \
         "fullscreen_copy_to_backbuffer_" \
         parm [ds si] modify exact []
-#pragma aux bridge_panorama_frame_unpack parm [ds si]
 #pragma aux font8x8_text_draw_display \
         parm [ds si] [ax] [bx] [dx] value [ds si] modify exact [si]
 #pragma aux square_caps_text_draw_display \

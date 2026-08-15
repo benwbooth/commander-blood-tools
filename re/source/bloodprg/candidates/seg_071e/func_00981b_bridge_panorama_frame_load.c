@@ -37,7 +37,7 @@ void CB_NEAR bridge_panorama_frame_load(cb_u16 frame)
     station = &bridge_panorama_stations[station_index];
     _fmemcpy((void CB_FAR *)station->orb_box,
             (const void CB_FAR *)chunk, 8u);
-    bridge_panorama_frame_unpack_c(
+    bridge_panorama_frame_unpack(
             (const cb_u8 CB_FAR *)(chunk + BRIDGE_PANORAMA_HEADER_BYTES));
 
     if ((pbm_palette_refresh & 1u) != 0) {
