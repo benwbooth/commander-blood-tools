@@ -107,6 +107,14 @@ bytes and retain the original numeric offset. Numeric subrecord addresses are
 not assigned to a nearby object: they remain numeric unless the object's VAR
 kind and the native field-offset matrix prove the relationship.
 
+Exact DIC string boundaries establish a second symbolic namespace. The
+structured corpus declares 13,699 referenced offsets as `DIC_WORD` and uses
+those declarations in 53,194 proven dictionary operands across COD and BAS.
+The generated identifier is reconstructed from the decoded text plus its offset;
+it is not claimed as an original source identifier. Offset suffixes keep equal
+text at different addresses distinct, and the compiler rejects a dictionary
+alias in an ordinary numeric or VAR-address operand.
+
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
 deferred frame resumes, and both possible states of self-modified `A9` block
@@ -180,9 +188,9 @@ specific byte range and must never be labelled as the original 1994 source.
    regions. The first guard lift proves 443 of 682 `A0` regions and classifies
    all 239 retained low-level guards.
 5. Add symbolic object, field, and dictionary names without changing numeric
-   identity in the compiler IR. Exact DEB object bases are complete for the
-   currently proven address-bearing operands; subrecord fields and dictionary
-   words remain to be lifted.
+   identity in the compiler IR. Exact DEB object bases and referenced dictionary
+   words are complete for the currently proven operand families; subrecord fields
+   remain to be lifted.
 6. Compile the structured syntax back through the exact IR and require all ten
    images to remain byte exact.
 7. Emit complete `.COD`, `.BAS`, `.DEB`, `.DIC`, and `.VAR` bundles and

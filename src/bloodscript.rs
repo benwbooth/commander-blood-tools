@@ -34,6 +34,8 @@ pub struct Decompilation {
     pub guard_rejection_counts: BTreeMap<String, usize>,
     pub object_aliases: usize,
     pub object_alias_uses: usize,
+    pub dictionary_aliases: usize,
+    pub dictionary_alias_uses: usize,
     pub structured_selector_lists: usize,
     pub structured_cases: usize,
 }
@@ -52,6 +54,8 @@ struct BodyStats {
     guard_rejection_counts: BTreeMap<String, usize>,
     object_aliases: usize,
     object_alias_uses: usize,
+    dictionary_aliases: usize,
+    dictionary_alias_uses: usize,
     structured_selector_lists: usize,
     structured_cases: usize,
 }
@@ -90,6 +94,12 @@ struct BasStructuredAnnotations {
 struct ObjectAlias {
     identifier: String,
     source_name: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct DictionaryAlias {
+    identifier: String,
+    value: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -178,6 +188,8 @@ fn decompile_mode(
         guard_rejection_counts: stats.guard_rejection_counts,
         object_aliases: stats.object_aliases,
         object_alias_uses: stats.object_alias_uses,
+        dictionary_aliases: stats.dictionary_aliases,
+        dictionary_alias_uses: stats.dictionary_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -210,6 +222,8 @@ fn decompile_mode_with_bas_graph(
         guard_rejection_counts: stats.guard_rejection_counts,
         object_aliases: stats.object_aliases,
         object_alias_uses: stats.object_alias_uses,
+        dictionary_aliases: stats.dictionary_aliases,
+        dictionary_alias_uses: stats.dictionary_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -223,6 +237,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
 
     let mut labels = HashMap::new();
     let mut objects = HashMap::new();
+    let mut dictionary_words = HashMap::new();
     for line in &lines {
         match line.name {
             "OBJECT" => {
@@ -232,6 +247,18 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                 if objects.insert(line.args[0], address).is_some() {
                     bail!(
                         "line {}: duplicate object {:?}",
+                        line.line_number,
+                        line.args[0]
+                    );
+                }
+            }
+            "DIC_WORD" => {
+                require_count(&line.args, 2, line.line_number, line.name)?;
+                validate_identifier(line.args[0], line.line_number)?;
+                let address = parse_word(line.args[1], line.line_number, "dictionary offset")?;
+                if dictionary_words.insert(line.args[0], address).is_some() {
+                    bail!(
+                        "line {}: duplicate dictionary word {:?}",
                         line.line_number,
                         line.args[0]
                     );
@@ -273,7 +300,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             );
         }
         match line.name {
-            "OBJECT" => continue,
+            "OBJECT" | "DIC_WORD" => continue,
             "LABEL" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
                 continue;
@@ -523,8 +550,14 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                 }
             }
         }
-        let encoded =
-            compile_statement(line.name, &line.args, line.line_number, &labels, &objects)?;
+        let encoded = compile_statement(
+            line.name,
+            &line.args,
+            line.line_number,
+            &labels,
+            &objects,
+            &dictionary_words,
+        )?;
         if encoded.is_empty() {
             bail!("line {}: statement emitted no bytes", line.line_number);
         }
@@ -613,7 +646,16 @@ fn decompile_cod(
     } else {
         BTreeMap::new()
     };
+    let dictionary_aliases = if structured_source {
+        dictionary_aliases(
+            tokens.iter().flat_map(dictionary_operand_values),
+            dictionary,
+        )
+    } else {
+        BTreeMap::new()
+    };
     emit_object_declarations(output, &object_aliases)?;
+    emit_dictionary_declarations(output, &dictionary_aliases)?;
     let mut cursor = 0usize;
     let mut stats = BodyStats {
         symbolic_labels: annotations.labels.len(),
@@ -626,6 +668,12 @@ fn decompile_cod(
             .iter()
             .flat_map(object_operand_values)
             .filter(|value| object_aliases.contains_key(value))
+            .count(),
+        dictionary_aliases: dictionary_aliases.len(),
+        dictionary_alias_uses: tokens
+            .iter()
+            .flat_map(dictionary_operand_values)
+            .filter(|value| dictionary_aliases.contains_key(value))
             .count(),
         ..BodyStats::default()
     };
@@ -666,6 +714,7 @@ fn decompile_cod(
                 dictionary,
                 &annotations.labels,
                 &object_aliases,
+                &dictionary_aliases,
                 structured.rejected.get(&offset),
             )?;
         }
@@ -702,6 +751,13 @@ fn decompile_bas(
     graph: Option<&BasControlFlow>,
 ) -> Result<BodyStats> {
     let object_aliases = BTreeMap::new();
+    let dictionary_values = bas_dictionary_operand_values(image, dictionary);
+    let dictionary_aliases = if graph.is_some() {
+        dictionary_aliases(dictionary_values.iter().copied(), dictionary)
+    } else {
+        BTreeMap::new()
+    };
+    emit_dictionary_declarations(output, &dictionary_aliases)?;
     let annotations = bas_annotations(image, dictionary)?;
     let structured = bas_structured_annotations(graph);
     let mut cursor = 0usize;
@@ -710,6 +766,11 @@ fn decompile_bas(
         symbolic_labels: annotations.labels.len(),
         structured_selector_lists: structured.starts.len(),
         structured_cases: structured.cases.len(),
+        dictionary_aliases: dictionary_aliases.len(),
+        dictionary_alias_uses: dictionary_values
+            .iter()
+            .filter(|value| dictionary_aliases.contains_key(value))
+            .count(),
         ..BodyStats::default()
     };
 
@@ -736,7 +797,11 @@ fn decompile_bas(
                 vm_source::BasToken::Menu { word_offsets, .. } => {
                     write!(output, "{cursor:08X}: MENU")?;
                     for word in word_offsets {
-                        write!(output, " {word:04X}")?;
+                        write!(
+                            output,
+                            " {}",
+                            dictionary_operand(*word, &dictionary_aliases)
+                        )?;
                     }
                     writeln!(
                         output,
@@ -756,6 +821,7 @@ fn decompile_bas(
                         dictionary,
                         &HashMap::new(),
                         &object_aliases,
+                        &dictionary_aliases,
                         None,
                     )?;
                 }
@@ -773,7 +839,8 @@ fn decompile_bas(
                     };
                     writeln!(
                         output,
-                        "{cursor:08X}: {statement} {selector:04X} {} ; {:?}",
+                        "{cursor:08X}: {statement} {} {} ; {:?}",
+                        dictionary_operand(*selector, &dictionary_aliases),
                         bas_next_operand(*next, &annotations.labels),
                         dictionary.get(selector).map(String::as_str).unwrap_or("")
                     )?;
@@ -1100,6 +1167,55 @@ fn cod_object_aliases(tokens: &[VmToken], symbols: &[DebSymbol]) -> BTreeMap<u16
     aliases
 }
 
+fn dictionary_aliases(
+    values: impl IntoIterator<Item = u16>,
+    dictionary: &HashMap<u16, String>,
+) -> BTreeMap<u16, DictionaryAlias> {
+    values
+        .into_iter()
+        .filter_map(|offset| {
+            dictionary.get(&offset).map(|value| {
+                (
+                    offset,
+                    DictionaryAlias {
+                        identifier: format!("dic_{}_{offset:04X}", identifier_component(value)),
+                        value: value.clone(),
+                    },
+                )
+            })
+        })
+        .collect()
+}
+
+fn dictionary_operand_values(token: &VmToken) -> Vec<u16> {
+    match token {
+        VmToken::Text { word_offsets, .. } => word_offsets.clone(),
+        VmToken::ConceptGuard { word_offset, .. } => vec![*word_offset],
+        _ => Vec::new(),
+    }
+}
+
+fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<u16> {
+    let mut values = Vec::new();
+    let mut cursor = 0usize;
+    while cursor < image.len() {
+        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+            match token {
+                vm_source::BasToken::Menu { word_offsets, .. } => values.extend(word_offsets),
+                vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
+                    values.extend(dictionary_operand_values(&token));
+                }
+                vm_source::BasToken::SelectorNode { selector, .. } => values.push(selector),
+                _ => {}
+            }
+            cursor = end;
+        } else {
+            cursor += 1;
+        }
+    }
+    values
+}
+
 fn object_operand_values(token: &VmToken) -> Vec<u16> {
     match token {
         VmToken::Text { line_index, .. } => vec![*line_index],
@@ -1155,7 +1271,31 @@ fn emit_object_declarations(
     Ok(())
 }
 
+fn emit_dictionary_declarations(
+    output: &mut String,
+    aliases: &BTreeMap<u16, DictionaryAlias>,
+) -> Result<()> {
+    for (offset, alias) in aliases {
+        writeln!(
+            output,
+            "00000000: DIC_WORD {} {offset:04X} ; {:?}",
+            alias.identifier, alias.value
+        )?;
+    }
+    if !aliases.is_empty() {
+        output.push('\n');
+    }
+    Ok(())
+}
+
 fn object_operand(value: u16, aliases: &BTreeMap<u16, ObjectAlias>) -> String {
+    aliases
+        .get(&value)
+        .map(|alias| alias.identifier.clone())
+        .unwrap_or_else(|| format!("{value:04X}"))
+}
+
+fn dictionary_operand(value: u16, aliases: &BTreeMap<u16, DictionaryAlias>) -> String {
     aliases
         .get(&value)
         .map(|alias| alias.identifier.clone())
@@ -1168,6 +1308,7 @@ fn emit_token(
     dictionary: &HashMap<u16, String>,
     labels: &HashMap<u16, String>,
     object_aliases: &BTreeMap<u16, ObjectAlias>,
+    dictionary_aliases: &BTreeMap<u16, DictionaryAlias>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
 ) -> Result<()> {
     let offset = token.offset();
@@ -1191,7 +1332,7 @@ fn emit_token(
                 option_word(*control_word)
             )?;
             for word in word_offsets {
-                write!(output, " {word:04X}")?;
+                write!(output, " {}", dictionary_operand(*word, dictionary_aliases))?;
             }
         }
         VmToken::GuardPush { target, .. } => {
@@ -1204,7 +1345,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "CONCEPT_GUARD {word_offset:04X} {}",
+            "CONCEPT_GUARD {} {}",
+            dictionary_operand(*word_offset, dictionary_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::Jump { target, .. } => {
@@ -1432,6 +1574,7 @@ fn compile_statement(
     line: usize,
     labels: &HashMap<&str, u16>,
     objects: &HashMap<&str, u16>,
+    dictionary_words: &HashMap<&str, u16>,
 ) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     let word = |output: &mut Vec<u8>, value: u16| {
@@ -1454,7 +1597,10 @@ fn compile_statement(
             require_min_count(args, 1, line, name)?;
             output.push(0xA3);
             for value in args {
-                word(&mut output, parse_word(value, line, "menu word")?);
+                word(
+                    &mut output,
+                    parse_dictionary_address(value, dictionary_words, line, "menu word")?,
+                );
             }
             word(&mut output, 0);
         }
@@ -1468,7 +1614,10 @@ fn compile_statement(
         }
         "SELECTOR_NODE" | "CASE" => {
             require_count(args, 2, line, name)?;
-            word(&mut output, parse_word(args[0], line, "selector")?);
+            word(
+                &mut output,
+                parse_dictionary_address(args[0], dictionary_words, line, "selector")?,
+            );
             word(
                 &mut output,
                 parse_address(args[1], labels, line, "next selector node")?,
@@ -1499,7 +1648,12 @@ fn compile_statement(
             }
             word(
                 &mut output,
-                parse_word(args[0], line, "dictionary word offset")?,
+                parse_dictionary_address(
+                    args[0],
+                    dictionary_words,
+                    line,
+                    "dictionary word offset",
+                )?,
             );
         }
         "JUMP" => {
@@ -1590,7 +1744,10 @@ fn compile_statement(
                 word(&mut output, value);
             }
             for value in &args[6..] {
-                word(&mut output, parse_word(value, line, "dictionary word")?);
+                word(
+                    &mut output,
+                    parse_dictionary_address(value, dictionary_words, line, "dictionary word")?,
+                );
             }
             word(&mut output, 0);
         }
@@ -1792,6 +1949,19 @@ fn parse_object_address(
     field: &str,
 ) -> Result<u16> {
     objects
+        .get(value)
+        .copied()
+        .map(Ok)
+        .unwrap_or_else(|| parse_word(value, line, field))
+}
+
+fn parse_dictionary_address(
+    value: &str,
+    dictionary_words: &HashMap<&str, u16>,
+    line: usize,
+    field: &str,
+) -> Result<u16> {
+    dictionary_words
         .get(value)
         .copied()
         .map(Ok)
@@ -2105,6 +2275,44 @@ mod tests {
     }
 
     #[test]
+    fn dictionary_aliases_compile_only_in_dictionary_operand_positions() {
+        let image = vec![
+            0xA3, 0x34, 0x12, // concept guard
+            0xA6, 0x00, 0x20, 0xFF, 0x00, 0x80, 0x34, 0x12, 0x00, 0x00, // text
+            0xFF,
+        ];
+        let dictionary = HashMap::from([(0x1234, "TALK".to_string())]);
+        let decompiled =
+            decompile_structured_with_symbols(ImageKind::Cod, &image, &dictionary, &[]).unwrap();
+        assert_eq!(decompiled.dictionary_aliases, 1);
+        assert_eq!(decompiled.dictionary_alias_uses, 2);
+        for statement in [
+            "DIC_WORD dic_TALK_1234 1234",
+            "CONCEPT_GUARD dic_TALK_1234 0",
+            "TEXT 2000 FF 00 80 - - dic_TALK_1234",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let duplicate = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: DIC_WORD dic_same 1234\n",
+            "00000000: DIC_WORD dic_same 5678\n",
+            "00000000: END\n",
+        );
+        assert!(compile(duplicate).is_err());
+
+        let alias_as_immediate = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: DIC_WORD dic_value 1234\n",
+            "00000000: SHARED_STATE BF 2000 F5 C1 dic_value\n",
+            "00000007: END\n",
+        );
+        assert!(compile(alias_as_immediate).is_err());
+    }
+
+    #[test]
     fn symbolic_procedures_and_cod_targets_compile_exact_bytes() {
         let image = vec![vm::OP_COND_JUMP, 0x01, 0x04, 0x00, 0xFF];
         let symbols = vec![DebSymbol {
@@ -2263,10 +2471,16 @@ mod tests {
         .unwrap();
         assert_eq!(decompiled.structured_selector_lists, 1);
         assert_eq!(decompiled.structured_cases, 2);
+        assert_eq!(decompiled.dictionary_aliases, 2);
+        assert_eq!(decompiled.dictionary_alias_uses, 4);
         for statement in [
             "SELECTOR_LIST list_actor_0001",
-            "CASE 1234 selector_000C",
-            "CASE 2000 0000",
+            "DIC_WORD dic_talk_1234 1234",
+            "DIC_WORD dic_leave_2000 2000",
+            "CASE dic_talk_1234 selector_000C",
+            "CASE dic_leave_2000 0000",
+            "MENU dic_leave_2000",
+            "MENU dic_talk_1234",
             "END_SELECTOR_LIST list_actor_0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
@@ -2275,7 +2489,10 @@ mod tests {
 
         let malformed = decompiled
             .source
-            .replace("CASE 1234 selector_000C", "CASE 1234 0000");
+            .replace(
+                "CASE dic_talk_1234 selector_000C",
+                "CASE dic_talk_1234 0000",
+            );
         assert!(compile(&malformed).is_err());
     }
 

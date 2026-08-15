@@ -167,6 +167,14 @@ declaration. Interior record addresses remain numeric until VAR-kind and native
 field-matrix evidence prove their owning object and field; nearest-symbol
 guessing is not used.
 
+The structured COD and BAS sources also use 13,699 zero-byte `DIC_WORD`
+declarations for exact referenced DIC string offsets. They replace 53,194
+dictionary operands in `TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and low-level
+selector-node statements. Each generated identifier includes its numeric offset,
+so duplicate dictionary text remains distinct. The compiler accepts these aliases
+only in dictionary-typed operand positions and lowers them back to their declared
+`u16` values.
+
 The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic
 `OP` or `RAW` fallback. The BloodData corpus adds 14,676 offset-checked

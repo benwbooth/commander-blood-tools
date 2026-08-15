@@ -3,11 +3,19 @@
 ; image: BAS
 ; size: 0x00000020
 
+00000000: DIC_WORD dic__21_00F0 00F0 ; "!"
+00000000: DIC_WORD dic_Commander_04E9 04E9 ; "Commander"
+00000000: DIC_WORD dic__3F_059F 059F ; "?"
+00000000: DIC_WORD dic_Yes_0900 0900 ; "Yes"
+00000000: DIC_WORD dic_parler_0A50 0A50 ; "parler"
+00000000: DIC_WORD dic_adieu_0A57 0A57 ; "adieu"
+00000000: DIC_WORD dic_bye_bye_0A5D 0A5D ; "bye_bye"
+
 00000000: YIELD ; opcode AA
 00000001: SELECTOR_LIST list_Honk_0001 ; DEB object "Honk" at 0x082A
 00000001: YIELD_B ; opcode AC
-00000002: CASE 0A50 0000 ; "parler"
-00000006: MENU 0A57 ; adieu
-0000000B: TEXT 082A FF 61 80 - - 0900 00F0 04E9 059F FFFF 0A5D ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
+00000002: CASE dic_parler_0A50 0000 ; "parler"
+00000006: MENU dic_adieu_0A57 ; adieu
+0000000B: TEXT 082A FF 61 80 - - dic_Yes_0900 dic__21_00F0 dic_Commander_04E9 dic__3F_059F FFFF dic_bye_bye_0A5D ; TEXT line=0x082A voice=0xFF flags=0x61,0x80 "Yes ! Commander ?"
 0000001F: END
 00000020: END_SELECTOR_LIST list_Honk_0001

@@ -61,6 +61,13 @@ subrecord offset to the nearest object or invent field names. Such expressions
 remain hexadecimal until the object's VAR kind and the native field-offset
 matrix prove both ownership and field identity.
 
+COD and BAS sources also declare exact referenced DIC offsets with zero-byte
+`DIC_WORD name offset` directives. The current corpus has 13,699 declarations
+and 53,194 symbolic uses in dictionary-typed `TEXT`, `CONCEPT_GUARD`, `MENU`,
+`CASE`, and `SELECTOR_NODE` operands. Names are generated from decoded text and
+always include the offset, so repeated strings retain separate identities. The
+compiler does not accept these aliases in numeric or VAR-address operands.
+
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.
 
