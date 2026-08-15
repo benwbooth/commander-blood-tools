@@ -115,6 +115,8 @@ enum ProvenStatement {
     Navigate,
     BringAboard,
     TravelThrough,
+    PositionAssignment,
+    BloodLink { target: u16 },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1350,6 +1352,20 @@ fn normalize_modern_statement(
                 validate_identifier(fields[3], line_number)?;
                 return Ok(format!("REQUIRE_TRAVEL_THROUGH {}", fields[3]));
             }
+            if fields.len() == 4 && fields[2] == "in" && fields[3].ends_with(".links") {
+                validate_identifier(fields[1], line_number)?;
+                validate_field_identifier(fields[3], line_number)?;
+                return Ok(format!("BLOOD_LINK {} {} 0", fields[3], fields[1]));
+            }
+            if fields.len() == 5
+                && fields[2] == "not"
+                && fields[3] == "in"
+                && fields[4].ends_with(".links")
+            {
+                validate_identifier(fields[1], line_number)?;
+                validate_field_identifier(fields[4], line_number)?;
+                return Ok(format!("BLOOD_LINK {} {} 1", fields[4], fields[1]));
+            }
             if let Some(statement) =
                 normalize_modern_presentation_expression(&fields[1..], line_number)?
             {
@@ -1396,6 +1412,43 @@ fn normalize_modern_statement(
                     };
                     return Ok(format!("SET_PROCEDURE_ENABLED {procedure} {enabled}"));
                 }
+            }
+            if fields.len() == 3
+                && matches!(fields[1], "+=" | "-=")
+                && fields[0].ends_with(".links")
+            {
+                validate_field_identifier(fields[0], line_number)?;
+                validate_identifier(fields[2], line_number)?;
+                return Ok(format!(
+                    "BLOOD_LINK {} {} {}",
+                    fields[0],
+                    fields[2],
+                    if fields[1] == "-=" { 1 } else { 0 }
+                ));
+            }
+            if fields.len() >= 3 && fields[0].ends_with(".position") && fields[1] == "=" {
+                validate_field_identifier(fields[0], line_number)?;
+                let tuple = fields[2..].join(" ");
+                let inner = tuple
+                    .strip_prefix('(')
+                    .and_then(|value| value.strip_suffix(')'))
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "line {line_number}: position assignment requires '(X, Y)'"
+                        )
+                    })?;
+                let (x, y) = inner.split_once(',').ok_or_else(|| {
+                    anyhow!("line {line_number}: position assignment requires '(X, Y)'")
+                })?;
+                if y.contains(',') {
+                    bail!("line {line_number}: position assignment requires exactly two values");
+                }
+                return Ok(format!(
+                    "POSITION {} {} {}",
+                    fields[0],
+                    modern_operand_to_canonical(x.trim(), line_number)?,
+                    modern_operand_to_canonical(y.trim(), line_number)?
+                ));
             }
             if let Some(statement) = normalize_modern_bit_expression(&fields, false, line_number)? {
                 return Ok(statement);
@@ -2112,6 +2165,40 @@ fn modern_statement(
             }
             validate_identifier(args[0], line_number)?;
             Ok(format!("require travel through {}", args[0]))
+        }
+        "BLOOD_LINK" => {
+            if args.len() != 3 || !matches!(args[2], "0" | "1") {
+                bail!("line {line_number}: malformed generated BLOOD_LINK statement");
+            }
+            validate_field_identifier(args[0], line_number)?;
+            validate_identifier(args[1], line_number)?;
+            if query_mode {
+                Ok(format!(
+                    "require {}{} in {}",
+                    args[1],
+                    if args[2] == "1" { " not" } else { "" },
+                    args[0]
+                ))
+            } else {
+                Ok(format!(
+                    "{} {} {}",
+                    args[0],
+                    if args[2] == "1" { "-=" } else { "+=" },
+                    args[1]
+                ))
+            }
+        }
+        "POSITION" => {
+            if args.len() != 3 {
+                bail!("line {line_number}: malformed generated POSITION statement");
+            }
+            validate_field_identifier(args[0], line_number)?;
+            Ok(format!(
+                "{} = ({}, {})",
+                args[0],
+                canonical_operand_to_modern(args[1]),
+                canonical_operand_to_modern(args[2])
+            ))
         }
         "LOAD_STRING" => {
             if args.len() != 1 {
@@ -3247,6 +3334,8 @@ fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
         (_, [0x13]) => Some("action"),
         (0x0002, [0x03]) => Some("conversation_progress"),
         (0x0002, [0x08]) => Some("encounter_count"),
+        (0x0002, [0x05]) => Some("links"),
+        (0x0010, [0x0B]) => Some("position"),
         (0x0002 | 0x0010 | 0x0200, [0x11]) => Some("current_location"),
         (0x0400, [0x11]) => Some("holder"),
         (0x0002, [0x0F]) => Some("topic"),
@@ -3400,6 +3489,11 @@ fn semantic_object_operand_values(
     {
         values.push(*operand);
     }
+    if let Some(ProvenStatement::BloodLink { target }) = statement
+        && !values.contains(target)
+    {
+        values.push(*target);
+    }
     values
 }
 
@@ -3506,6 +3600,38 @@ fn proven_statement_offsets(
                 && object_kind_matches(operand, 0x0100) =>
             {
                 proven.insert(*offset, ProvenStatement::TravelThrough);
+            }
+            VmToken::PairRecord {
+                offset,
+                opcode: 0xBD,
+                record_offset,
+                ..
+            } if !query_mode
+                && fields.get(record_offset).is_some_and(|field| {
+                    field.kind == 0x0010 && field.selectors.as_slice() == [0x0B]
+                }) =>
+            {
+                proven.insert(*offset, ProvenStatement::PositionAssignment);
+            }
+            VmToken::BitFlag {
+                offset,
+                flag_offset,
+                bit_index: 2,
+                ..
+            } if fields.get(flag_offset).is_some_and(|field| {
+                field.kind == 0x0002 && field.selectors.as_slice() == [0x05]
+            }) && symbols.get(2).is_some_and(|symbol| {
+                symbol.kind == 1
+                    && symbol.name.eq_ignore_ascii_case("blood")
+                    && var_kind(symbol.offset) == Some(0x0001)
+            }) =>
+            {
+                proven.insert(
+                    *offset,
+                    ProvenStatement::BloodLink {
+                        target: symbols[2].offset,
+                    },
+                );
             }
             VmToken::RecordTriple {
                 offset,
@@ -3761,12 +3887,24 @@ fn emit_token(
             bit_index,
             clear,
             ..
-        } => write!(
-            output,
-            "BIT_FLAG {} {bit_index:02X} {}",
-            object_operand(*flag_offset, object_aliases, field_aliases),
-            bool_digit(*clear)
-        )?,
+        } => {
+            if let Some(ProvenStatement::BloodLink { target }) = proven_statement {
+                write!(
+                    output,
+                    "BLOOD_LINK {} {} {}",
+                    object_operand(*flag_offset, object_aliases, field_aliases),
+                    object_operand(target, object_aliases, field_aliases),
+                    bool_digit(*clear)
+                )?;
+            } else {
+                write!(
+                    output,
+                    "BIT_FLAG {} {bit_index:02X} {}",
+                    object_operand(*flag_offset, object_aliases, field_aliases),
+                    bool_digit(*clear)
+                )?;
+            }
+        }
         VmToken::SharedState {
             opcode,
             field_offset,
@@ -3865,11 +4003,21 @@ fn emit_token(
             first_word,
             second_word,
             ..
-        } => write!(
-            output,
-            "PAIR_RECORD {opcode:02X} {} {first_word:04X} {second_word:04X}",
-            object_operand(*record_offset, object_aliases, field_aliases)
-        )?,
+        } => {
+            if proven_statement == Some(ProvenStatement::PositionAssignment) {
+                write!(
+                    output,
+                    "POSITION {} {first_word:04X} {second_word:04X}",
+                    object_operand(*record_offset, object_aliases, field_aliases)
+                )?;
+            } else {
+                write!(
+                    output,
+                    "PAIR_RECORD {opcode:02X} {} {first_word:04X} {second_word:04X}",
+                    object_operand(*record_offset, object_aliases, field_aliases)
+                )?;
+            }
+        }
         VmToken::RecordTriple {
             record_offset,
             first_word,
@@ -4209,6 +4357,39 @@ fn compile_statement(
                 &mut output,
                 parse_object_address(args[0], objects, line, "black hole")?,
             );
+        }
+        "BLOOD_LINK" => {
+            require_count(args, 3, line, name)?;
+            if !args[1].eq_ignore_ascii_case("blood") {
+                bail!(
+                    "line {line}: the recovered object-link syntax currently proves only the built-in blood target"
+                );
+            }
+            let blood = parse_object_address(args[1], objects, line, "blood object")?;
+            if blood != 0x0028 {
+                bail!(
+                    "line {line}: built-in blood must be the invariant VAR object at 0x0028"
+                );
+            }
+            output.push(vm::OP_BIT_FLAG);
+            if parse_bool(args[2], line, "remove link")? {
+                output.push(vm::OP_POP);
+            }
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "object-link field")?,
+            );
+            output.push(2);
+        }
+        "POSITION" => {
+            require_count(args, 3, line, name)?;
+            output.push(0xBD);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "position field")?,
+            );
+            word(&mut output, parse_word(args[1], line, "position x")?);
+            word(&mut output, parse_word(args[2], line, "position y")?);
         }
         "RECORD_ENTRY" => {
             require_count(args, 4, line, name)?;
@@ -5206,6 +5387,207 @@ mod tests {
             let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
             assert!(compile(&source).is_err(), "accepted {invalid}");
         }
+    }
+
+    #[test]
+    fn position_and_blood_links_use_typed_object_syntax() {
+        let image = vec![
+            0xBD, 0x18, 0x01, 0x0A, 0x00, 0x64, 0x00, // Kraner position
+            vm::OP_BIT_FLAG, 0x1E, 0x02, 0x02, // Bug_Deluxe links to blood
+            0xFF,
+        ];
+        let mut var = vec![0; 0x300];
+        for (offset, kind) in [
+            (0x0028, 0x0001u16),
+            (0x0100, 0x0010),
+            (0x0200, 0x0002),
+        ] {
+            var[offset..offset + 2].copy_from_slice(&kind.to_le_bytes());
+        }
+        let symbols = [
+            ("baby1", 0x0000),
+            ("baby", 0x0014),
+            ("blood", 0x0028),
+            ("Kraner", 0x0100),
+            ("Bug_Deluxe", 0x0200),
+        ]
+        .into_iter()
+        .map(|(name, offset)| DebSymbol {
+            name: name.to_string(),
+            offset,
+            kind: 1,
+        })
+        .collect::<Vec<_>>();
+
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        for statement in [
+            "object blood = 0x0028",
+            "field Kraner.position = Kraner + 0x0018",
+            "field Bug_Deluxe.links = Bug_Deluxe + 0x001E",
+            "Kraner.position = (0x000A, 0x0064)",
+            "Bug_Deluxe.links += blood",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        for low_level in ["pair_record", "bit_flag", ".s05", ".s0B"] {
+            assert!(
+                !decompiled.source.contains(low_level),
+                "retained {low_level}"
+            );
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let edited = decompiled
+            .source
+            .replace("(0x000A, 0x0064)", "(0x0064, 0x000A)")
+            .replace("links += blood", "links -= blood");
+        let expected = vec![
+            0xBD, 0x18, 0x01, 0x64, 0x00, 0x0A, 0x00,
+            vm::OP_BIT_FLAG, vm::OP_POP, 0x1E, 0x02, 0x02,
+            0xFF,
+        ];
+        assert_eq!(compile(&edited).unwrap(), expected);
+
+        let query_image = vec![
+            vm::OP_PUSH, 0x08, 0x00,
+            vm::OP_BIT_FLAG, 0x1E, 0x02, 0x02,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let query = decompile_structured_cod_with_symbols(
+            &query_image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(query.source.contains("require blood in Bug_Deluxe.links"));
+        assert_eq!(compile(&query.source).unwrap(), query_image);
+
+        let query_position = vec![
+            vm::OP_PUSH, 0x0B, 0x00,
+            0xBD, 0x18, 0x01, 0x0A, 0x00, 0x64, 0x00,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let query = decompile_structured_cod_with_symbols(
+            &query_position,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(query.source.contains("pair_record 0xBD Kraner.position 0x000A 0x0064"));
+        assert!(!query.source.contains("Kraner.position = ("));
+        assert_eq!(compile(&query.source).unwrap(), query_position);
+
+        let wrong_pair_opcode = [0xB8, 0x18, 0x01, 0x0A, 0x00, 0x64, 0x00, 0xFF];
+        let fallback = decompile_structured_cod_with_symbols(
+            &wrong_pair_opcode,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(fallback.source.contains("pair_record 0xB8 Kraner.position"));
+        assert_eq!(compile(&fallback.source).unwrap(), wrong_pair_opcode);
+
+        let wrong_link_index = [vm::OP_BIT_FLAG, 0x1E, 0x02, 0x03, 0xFF];
+        let fallback = decompile_structured_cod_with_symbols(
+            &wrong_link_index,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        assert!(fallback.source.contains("bit_flag Bug_Deluxe.links 0x03 0"));
+        assert!(!fallback.source.contains("links +="));
+        assert_eq!(compile(&fallback.source).unwrap(), wrong_link_index);
+
+        let mut wrong_symbols = symbols.clone();
+        wrong_symbols[2].name = "not_blood".to_string();
+        let fallback = decompile_structured_cod_with_symbols(
+            &image[7..],
+            &var,
+            &HashMap::new(),
+            &wrong_symbols,
+        )
+        .unwrap();
+        assert!(fallback.source.contains("bit_flag Bug_Deluxe.links 0x02 0"));
+        assert!(!fallback.source.contains("links +="));
+        assert_eq!(compile(&fallback.source).unwrap(), &image[7..]);
+
+        for invalid in [
+            "Kraner.position = 0x000A, 0x0064",
+            "Kraner.position = (0x000A)",
+            "Bug_Deluxe.links += Kraner",
+            "require blood inside Bug_Deluxe.links",
+        ] {
+            let source = format!("// format: {SOURCE_FORMAT}\n{invalid}\nhalt\n");
+            assert!(compile(&source).is_err(), "accepted {invalid}");
+        }
+    }
+
+    #[test]
+    fn shipped_positions_and_blood_links_match_their_resource_domains() {
+        let Some(root) = game_dir() else { return };
+        let mut link_statements = 0;
+        let mut position_statements = 0;
+
+        for script in 1..=5 {
+            let read = |extension: &str| {
+                std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap()
+            };
+            let image = read("COD");
+            let var = read("VAR");
+            let dictionary = crate::script::parse_dictionary(&read("DIC"));
+            let symbols = crate::script::parse_deb(&read("DEB"));
+
+            assert_eq!(symbols[2].name, "blood");
+            assert_eq!(symbols[2].offset, 0x0028);
+            assert_eq!(symbols[2].kind, 1);
+            assert_eq!(u16::from_le_bytes([var[0x28], var[0x29]]), 1);
+
+            for symbol in symbols.iter().filter(|symbol| symbol.kind == 1) {
+                let base = usize::from(symbol.offset);
+                assert!(base + 2 <= var.len());
+                if u16::from_le_bytes([var[base], var[base + 1]]) == 2 {
+                    assert!(base + 0x36 <= var.len());
+                    assert!(
+                        var[base + 0x1E..base + 0x36]
+                            .iter()
+                            .all(|&byte| byte == 0),
+                        "SCRIPT{script} {} has a nonempty initial link set",
+                        symbol.name
+                    );
+                }
+            }
+
+            let decompiled = decompile_structured_cod_with_symbols(
+                &image,
+                &var,
+                &dictionary,
+                &symbols,
+            )
+            .unwrap();
+            link_statements += decompiled.source.matches(".links += blood").count();
+            position_statements += decompiled.source.matches(".position = (").count();
+            assert!(!decompiled.source.contains("pair_record "));
+            assert!(!decompiled.source.contains("bit_flag "));
+            assert_eq!(
+                compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+                image
+            );
+        }
+
+        assert_eq!(link_statements, 3);
+        assert_eq!(position_statements, 2);
     }
 
     #[test]

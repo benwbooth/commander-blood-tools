@@ -1589,9 +1589,17 @@ numbering inside each byte: bit 0 = mask `0x80`, bit 1 = `0x40`, ..., bit 7 =
 - Mode 1: no prefix tests that the bit is set; `A1` tests that it is clear. A
   failed test calls branch helper `0x6462`.
 
-Shipped scripts use true `B7` tokens in SCRIPT2 and SCRIPT3. Rust now exposes
-them as `VmToken::BitFlag` and `execute_trace` applies/evaluates the same
-high-bit-first bit semantics.
+Shipped scripts use exactly three true `B7` tokens in SCRIPT2 and SCRIPT3. All
+are non-inverted mode-0 sets on selector `0x05` of a kind-2 character, and all
+use bit index 2. The third DEB directory entry in both profiles is the built-in
+kind-1 `blood` object; helper `0x6210` independently maps object offsets through
+that directory to this high-bit-first selector-`0x05` bitset. Every initial
+kind-2 bitset in all five VAR files is zero. BloodScript therefore renders the
+three exact shapes as `Character.links += blood`; `links` is deliberately
+structural because the helper's only C1 call site supplies persistent scratch
+`DS:0x6886`, not the character field. Other B7 shapes remain `bit_flag`. Rust
+exposes the raw family as `VmToken::BitFlag`, and `execute_trace`
+applies/evaluates the same high-bit-first bit semantics.
 
 ### 0xB8/0xB9/0xBD pair-record handler @ file 0x6B06 — pair state (DECODED)
 
@@ -1606,10 +1614,18 @@ The handler loads `les di, gs:[0x6724]`, adds the record offset to `di`, then:
   differs.
 
 After a mode-0 write it also calls helper `0x6034` and, if the result matches
-`es:[gs:0x6752 + 0x16]`, clears that `+0x16` field. Rust does not model that
-secondary bookkeeping field yet, but it now ports the direct pair write and
-branch comparison in `interpret_line_states` / `execute_trace` and exposes the
-raw token as `VmToken::PairRecord`.
+`es:[gs:0x6752 + 0x16]`, clears that `+0x16` field. `VmMachine` models this
+owner-derived invalidation as well as the direct pair write and mode-1 branch
+comparison; the lightweight trace path models the direct pair state. Rust
+exposes the raw token as `VmToken::PairRecord`.
+
+The shipped corpus contains only two pair tokens. Both are update-mode `BD`
+writes to `Kraner + 0x18`, the field matrix's selector `0x0B` on initial kind
+`0x0010`. The native position resolver, distance helper, state processor, HUD,
+and camera paths all consume this two-word selector as x/y. BloodScript renders
+the values `(0x000A,0x000A)` and `(0x0064,0x000A)` as
+`Kraner.position = (x, y)`. Query mode, B8/B9, other kinds, and other selectors
+retain `pair_record`.
 
 Nine direct `0x6034` vectors prove that this helper returns the greatest
 directory base strictly less than AX, not less-than-or-equal. They include the
@@ -2608,8 +2624,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `execute_trace` evaluates mode-1 bit tests with optional `A1` inversion.
 - [x] Port 0xB8/0xB9/0xBD pair-record semantics. `src/vm.rs` exposes
       `VmToken::PairRecord`, applies mode-0 two-word writes, and evaluates
-      mode-1 pair compares through the branch stack. The handler's secondary
-      `gs:0x6752+0x16` bookkeeping clear remains outside the current model.
+      mode-1 pair compares through the branch stack. `VmMachine` also applies
+      the handler's owner-derived `gs:0x6752+0x16` bookkeeping clear.
 - [x] Expose 0xC1/0xC2 line-record state tokens. `src/vm.rs` keeps their raw
       record/operand words and optional mode-1 inversion as
       `VmToken::RecordState`, and `script-disassembly.tsv` can now show true

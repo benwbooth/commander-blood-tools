@@ -49,7 +49,7 @@ field blood.action = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.encounter_count = Bob_Morlock + 0x0036 // VAR kind 0x0002, selector(s) 08
 field Bob_Morlock.action = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.flags = Bug_Deluxe + 0x0002 // VAR kind 0x0002, selector(s) 00
-field Bug_Deluxe.s05 = Bug_Deluxe + 0x001E // VAR kind 0x0002, selector(s) 05
+field Bug_Deluxe.links = Bug_Deluxe + 0x001E // VAR kind 0x0002, selector(s) 05
 field Bug_Deluxe.action = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.topic = Bug_Deluxe + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Ulikan.flags = Ulikan + 0x0002 // VAR kind 0x0002, selector(s) 00
@@ -89,7 +89,7 @@ field Scruter_Mac.encounter_count = Scruter_Mac + 0x0036 // VAR kind 0x0002, sel
 field Scruter_Mac.action = Scruter_Mac + 0x003A // VAR kind 0x0002, selector(s) 13
 field Scruter_Mac.topic = Scruter_Mac + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Scruter_K.flags = Scruter_K + 0x0002 // VAR kind 0x0002, selector(s) 00
-field Scruter_K.s05 = Scruter_K + 0x001E // VAR kind 0x0002, selector(s) 05
+field Scruter_K.links = Scruter_K + 0x001E // VAR kind 0x0002, selector(s) 05
 field Scruter_K.action = Scruter_K + 0x003A // VAR kind 0x0002, selector(s) 13
 field Scruter_Jo.current_location = Scruter_Jo + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Scruter_Jo.encounter_count = Scruter_Jo + 0x0036 // VAR kind 0x0002, selector(s) 08
@@ -1162,7 +1162,7 @@ proc time {
     guard_pop
     state_array_set 0x03 0x000A
     state_array_set 0x04 0x00C8
-    bit_flag Scruter_K.s05 0x02 0
+    Scruter_K.links += blood
     time.enabled = false
 }
 
@@ -4047,7 +4047,7 @@ proc prep {
     require Morning_Oil.encounter_count == 0x0001
     guard_pop
     state_array_set 0x07 0x0014
-    bit_flag Bug_Deluxe.s05 0x02 0
+    Bug_Deluxe.links += blood
     prep.enabled = false
 }
 

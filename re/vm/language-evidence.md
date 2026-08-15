@@ -226,6 +226,33 @@ not an imperative travel command. Any C1/C2/C6 shape outside these exact
 owner, field, kind, mode, and inversion constraints retains its typed low-level
 form.
 
+`B7` establishes a different, byte-addressed relation set. The handler at
+`0x6AA7` adds `bit >> 3` to its base field and addresses the selected bit
+high-bit-first. All three shipped tokens are non-inverted update-mode sets of
+bit 2 on selector `0x05` of a kind-2 character: `Scruter_K` once and
+`Bug_Deluxe` twice. In SCRIPT2 and SCRIPT3, DEB entry 2 is independently the
+built-in kind-1 `blood` object. Helper `0x6210` scans that same 20-byte DEB
+directory to turn an object offset into the bit index before testing selector
+`0x05`/kind 2, proving that the bit number is an object-directory index rather
+than an unnamed Boolean flag. Every initial kind-2 selector-`0x05` region in
+all five VAR images is zero; these three statements are the only population
+sites. BloodScript consequently emits `Character.links += blood` and reserves
+the neutral word `links`: its sole native consumer is the kind-`0x10` C1 source
+filter, but that shipped call site supplies a cursor in persistent scratch
+`DS:0x6886`, not the character record itself. Calling the relation a radio,
+navigation, knowledge, or aboard flag would assert semantics the binary does
+not establish.
+
+The two shipped pair records have a complete coordinate proof. Both are
+opcode `BD`, both run in update mode, and both target `Kraner + 0x18`, which the
+field matrix identifies as selector `0x0B` for initial kind `0x0010`. Native
+`ship_3d_position_field_resolve` selects `0x0B` for direct kind-`0x0010`
+positions; the distance, state-processing, HUD, and camera paths consume the
+same two adjacent words as x/y. The values `(10, 10)` and `(100, 10)` bracket
+the `krando20.hnm` race sequence and its completion. BloodScript renders these
+as `Kraner.position = (0x000A, 0x000A)` and `(0x0064, 0x000A)`. The proof gate
+does not lift query-mode pairs, `B8`/`B9`, another kind, or another selector.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations
@@ -280,7 +307,7 @@ offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
 Kind-1 DEB entries also establish exact VAR object-base names. The structured
-COD and BAS corpus contains 302 image-local declarations with 6,778 uses,
+COD and BAS corpus contains 302 image-local declarations with 6,781 uses,
 including object values recovered from record relations and inventory
 transfers.
 `OBJECT` declarations emit no bytes and retain the original numeric offset.

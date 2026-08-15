@@ -254,7 +254,7 @@ two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
 The structured COD and BAS sources additionally use 302 image-local zero-byte
-`OBJECT` declarations recovered from exact kind-1 DEB offsets. Their 6,778 uses
+`OBJECT` declarations recovered from exact kind-1 DEB offsets. Their 6,781 uses
 replace direct operands, record relation values, and transfer endpoints while
 retaining the original numeric offset in each declaration.
 
@@ -266,6 +266,15 @@ condition deliberately: native navigation code produces the deferred C6 record
 after black-hole entry, and the script observes it before requesting the next
 profile. These forms require exact DEB/VAR owner and operand kinds plus the
 native mode and inversion; all other shapes remain low-level and lossless.
+
+The last five low-level COD state operations now have similarly bounded forms.
+Two update-mode `BD` writes to kind-`0x0010` selector `0x0B` are
+`Kraner.position = (x, y)`. Three `B7` sets address selector `0x05` on kind-2
+characters at DEB bit index 2; because entry 2 is the built-in `blood` object
+and native helper `0x6210` proves the object-index mapping, they are
+`Character.links += blood`. The neutral `links` name avoids assigning a radio
+or navigation meaning that the native consumer does not prove. Nonmatching
+pair opcodes, modes, kinds, selectors, or bit indices stay low-level.
 
 A first subrecord pass adds 367 zero-byte `field name = object + delta`
 declarations and replaces 1,880 direct VAR operands. A field is emitted only

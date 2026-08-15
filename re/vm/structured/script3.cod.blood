@@ -76,7 +76,7 @@ field blood.action = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.current_location = Bob_Morlock + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Bob_Morlock.action = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.flags = Bug_Deluxe + 0x0002 // VAR kind 0x0002, selector(s) 00
-field Bug_Deluxe.s05 = Bug_Deluxe + 0x001E // VAR kind 0x0002, selector(s) 05
+field Bug_Deluxe.links = Bug_Deluxe + 0x001E // VAR kind 0x0002, selector(s) 05
 field Bug_Deluxe.action = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.topic = Bug_Deluxe + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Ulikan.flags = Ulikan + 0x0002 // VAR kind 0x0002, selector(s) 00
@@ -165,7 +165,7 @@ field Oddland.flags = Oddland + 0x0002 // VAR kind 0x0100, selector(s) 00
 field arche.current_location = arche + 0x0016 // VAR kind 0x0010, selector(s) 11
 field arche.action = arche + 0x001C // VAR kind 0x0010, selector(s) 13
 field Kraner.flags = Kraner + 0x0002 // VAR kind 0x0010, selector(s) 00
-field Kraner.s0B = Kraner + 0x0018 // VAR kind 0x0010, selector(s) 0B
+field Kraner.position = Kraner + 0x0018 // VAR kind 0x0010, selector(s) 0B
 field body_scruter.holder = body_scruter + 0x0014 // VAR kind 0x0400, selector(s) 11
 field dork.holder = dork + 0x0014 // VAR kind 0x0400, selector(s) 11
 field cred.holder = cred + 0x0014 // VAR kind 0x0400, selector(s) 11
@@ -378,7 +378,7 @@ proc kra {
     say Kran_Dobu voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Ready"
     say Kran_Dobu voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Set"
     say Kran_Dobu voice=0x07 flags=0x08 display=0x90 loop=none control=none : "GO..."
-    pair_record 0xBD Kraner.s0B 0x000A 0x000A
+    Kraner.position = (0x000A, 0x000A)
     request sequence "krando20.hnm"
     say Kran_Dobu voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "See you round, comrade..."
     Kraner.in_play = false using alternate_encoding
@@ -490,7 +490,7 @@ proc kra4 {
     say Kran_Dobu voice=0x04 flags=0x00 display=0x80 loop=none control=none : "See you round... Buddy..."
     say Kran_Dobu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     Kraner.in_play = false
-    pair_record 0xBD Kraner.s0B 0x0064 0x000A
+    Kraner.position = (0x0064, 0x000A)
     end presentation Kran_Dobu
 }
 
@@ -3339,7 +3339,7 @@ proc prep {
     require state[0x1432] == 0x0001
     guard_pop
     state_array_set 0x07 0x0014
-    bit_flag Bug_Deluxe.s05 0x02 0
+    Bug_Deluxe.links += blood
     prep.enabled = false
 }
 

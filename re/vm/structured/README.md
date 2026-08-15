@@ -34,6 +34,25 @@ opcode; both bytes also encode identical operations on identical fields in the
 shipped scripts. `using alternate_encoding` retains a shipped `B0` where byte
 identity requires it and deliberately carries no runtime meaning.
 
+The separate `B7` single-bit handler now has a narrow object-link form. All
+three shipped uses are mode-0 sets of bit 2 in selector `0x05` on a kind-2
+character. DEB entry 2 is the built-in `blood` object in both affected
+profiles, and helper `0x6210` independently proves that this field is indexed by
+the high-bit-first DEB object number. They therefore render as
+`Character.links += blood`. `links` is intentionally a structural name: the
+only native consumer tests membership during the dormant kind-`0x10` C1 source
+scan, whose shipped call site reads the persistent `DS:0x6886` scratch buffer
+rather than the character field. Other indices or field kinds retain
+`bit_flag` instead of receiving a guessed gameplay meaning.
+
+Both shipped `BD` pair writes now render as ordinary coordinate assignments:
+`Kraner.position = (x, y)`. Their exact field is selector `0x0B` on a
+kind-`0x0010` record, the same two-word x/y field consumed by the native
+position resolver, distance helper, state processor, HUD path, and camera
+code. The lift requires update mode, opcode `BD`, that exact kind, and that
+exact selector. Query-mode pairs, sibling `B8`/`B9` encodings, and other fields
+remain `pair_record`.
+
 The `0x6946` record family is lifted to 531 location/holder assignments and
 equality requirements plus 49 actor-topic assignments. Selector `0x11` is
 `current_location` for kind `0x0002`, `0x0010`, and `0x0200`, while the same
@@ -151,7 +170,7 @@ COD and BAS sources also declare exact kind-1 DEB object bases with zero-byte
 `object name = offset` directives. An object name is accepted only in an operand
 position already established as a VAR address, and the compiler lowers it to
 the declared `u16` without changing layout. The current corpus contains 302
-image-local object declarations with 6,778 uses; record-value aliases cover
+image-local object declarations with 6,781 uses; record-value aliases cover
 locations, holders, inventory transfers, and other referenced objects as well
 as direct operands.
 
