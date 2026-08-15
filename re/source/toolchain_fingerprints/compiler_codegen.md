@@ -707,18 +707,19 @@ their independently proven contracts.
 
 The one-function natural candidate uses typed cached-range and packed far-link
 records plus a structured loop. It returns the possibly advanced link-target
-cursor so repeated natural callers preserve the binary's BP state. It has no
-register model, memory emulator, or inline assembly. Open Watcom `-3 -ox -mh`
-compiles it warning-free to 182 instructions and 572 bytes versus 91/253
-original. The probe has a 2.20
-percent instruction LCS, 64.84 percent mnemonic-sequence LCS, 81.32 percent
-mnemonic-multiset overlap, and 7.69 percent byte-line LCS. Exact integration
-still needs the inherited BP input/output, carry-returning helper ABIs,
-the tail jump into `0x00A664`, DS/GS placement, and segment-offset queue
-writes. The candidate deliberately returns on an invalid cached descriptor:
-the shipped edge calls interior address `0x009FA2` with a two-byte near-call
-frame even though that suffix pops a dword before returning, so reproducing it
-would make the C path's return frame invalid.
+cursor so all three recovered C callers preserve the binary's BP state. It has
+no register model, memory emulator, or inline assembly. Open Watcom
+`-3 -ox -mm -zdf` compiles the authoritative source warning-free to 136
+instructions and 427 bytes versus 91/253 original, with 62.64 percent ordered
+and 80.22 percent mnemonic-multiset overlap. Turbo C `-mm -O -Z` emits 182
+instructions with 65.93 percent ordered and 82.42 percent multiset overlap and
+assembles warning-free to OBJ. Direct binary replacement still needs adapters
+for inherited BP, carry-returning helper ABIs, the tail jump into `0x00A664`,
+and segment placement. The candidate deliberately returns on an invalid cached
+descriptor: the binary calls interior address `0x009FA2` with a two-byte near
+return frame even though that suffix pops a dword before returning, so
+reproducing it would preserve a broken control-flow edge rather than game
+logic. The natural source is accepted for valid game state.
 
 For `0x00A41A`, ten direct coordinator vectors prove the complete active-frame
 retirement and rendering decision tree. The routine moves the old active
@@ -3796,7 +3797,7 @@ LCS and then mnemonic similarity:
 | `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
 | `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
 | `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
-| `list_d8c_refill` | huge, `-ox`, register | 91/182 | 0.0220 | 0.6484 | 0.0769 |
+| `list_d8c_refill` | medium, `-ox`, register | 91/136 | 0.0220 | 0.6264 | 0.0879 |
 | `list_d8c_activate_entry` | huge, `-ox`, register | 73/177 | 0.0137 | 0.6027 | 0.0822 |
 | `ship_3d_depth_scroll_step` | medium, `-ox`, register | 29/27 | 0.0345 | 0.6207 | 0.0690 |
 | `snd_driver_call` | medium, `-ox`, register | 12/4 | 0.0833 | 0.2500 | 0.0833 |
