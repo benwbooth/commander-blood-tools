@@ -5002,7 +5002,7 @@ flags, starts `resource_load_sequence`, and conditionally builds the 50-percent
 black remap. On later updates it services `ems_resource_flush`, then either
 tears the presentation down or advances the line-0x27 and ship-depth transition
 state. The natural candidate expresses that as one C function over typed records,
-pointers, globals, `memcpy`, and direct calls.
+pointers, globals, `_fmemcpy`, and direct calls.
 
 Eleven patched-callee vectors cover the signed-negative exit, Scruter_Jo match,
 armed-overlay early trigger, changed and missing image paths, both line-8 storage
@@ -5013,13 +5013,23 @@ the 192-byte `DS:0x53D1` to caller-`ES:0x59D1` copy, inherited BP forwarding,
 all named state, segment isolation, complete register preservation, stack, and
 far return.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual candidate
-warning-free to 195 instructions/680 bytes versus the original 180/579, with
-79.4 percent mnemonic-multiset overlap. No inline assembly is used. A complete
-source rebuild can use the ordinary C function directly once the named globals
-share the original data segment; drop-in replacement still needs the original
-preserve-all envelope, inherited-BP adapter, and caller `DS == ES == GS` data
-contract for the implicit mode table and palette destination.
+The compiler-corpus sample now includes the authoritative recovered source.
+The palette mirror uses `_fmemcpy` so the GAME_DATA source remains a far
+pointer; this removes Turbo C's suspicious-pointer warning and matches the
+original cross-segment copy. Open Watcom 1.9 medium speed mode
+(`-3 -ox -mm -zdf -we`) compiles it warning-free to 207 instructions/705 bytes
+versus the original 180/579, with 81.67 percent mnemonic-multiset and 59.44
+percent ordered overlap. Size mode rejects the custom PBM helper convention
+with E1122. Turbo C 2.01 medium (`-mm -O -Z`) emits 268 instructions with 83.33
+percent multiset and 69.44 percent ordered overlap and assembles cleanly to OBJ
+without warnings.
+
+All eight recovered C callers pass the formerly inherited link target
+explicitly. The function is accepted for source-port integration once the
+named globals share the shipped DS=ES=GS data group. No inline assembly is
+used. Direct replacement still needs the original preserve-all envelope,
+inherited-BP adapter, caller ES palette destination, helper residue, and
+path-specific flags.
 
 ## BLOODPRG error-overlay candidate
 

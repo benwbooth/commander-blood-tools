@@ -52,10 +52,11 @@ void CB_FAR dlg_line_id_scene_dispatch(cb_u16 link_target_offset)
                 resource_force_write_directory = 0u;
                 pbm_palette_refresh = 0u;
                 pbm_transparent_zero = 0u;
-                memcpy(
-                        presentation_palette_dwords,
-                        &scene_palette_dwords[SCENE_PALETTE_DWORD_OFFSET],
-                        sizeof(presentation_palette_dwords));
+                _fmemcpy(
+                        (void CB_FAR *)presentation_palette_dwords,
+                        (const void CB_FAR *)&scene_palette_dwords[
+                                SCENE_PALETTE_DWORD_OFFSET],
+                        (cb_u16)sizeof(presentation_palette_dwords));
             }
 
             if (vm_loaded_scene_image_path == NO_SCENE_IMAGE) {
