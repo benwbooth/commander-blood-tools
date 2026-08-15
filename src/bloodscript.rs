@@ -76,6 +76,7 @@ struct BodyStats {
 struct SourceAnnotations {
     directives: BTreeMap<usize, Vec<String>>,
     labels: HashMap<u16, String>,
+    procedure_labels: HashMap<u16, String>,
     procedure_count: usize,
 }
 
@@ -491,6 +492,7 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
     let mut objects = HashMap::new();
     let mut dictionary_words = HashMap::new();
     let mut label_names = HashMap::new();
+    let mut procedure_names = HashSet::new();
     for line in &lines {
         match line.name {
             "OBJECT" => {
@@ -526,6 +528,9 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
                         line.line_number,
                         line.args[0]
                     );
+                }
+                if line.name == "PROCEDURE" {
+                    procedure_names.insert(line.args[0]);
                 }
             }
             _ => {}
@@ -575,6 +580,7 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
                 &line.args,
                 line.line_number,
                 &label_names,
+                &procedure_names,
                 &var_addresses,
                 &dictionary_words,
                 &interned_dictionary_words,
@@ -861,6 +867,7 @@ pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) 
             &line.args,
             line.line_number,
             &labels,
+            &procedure_names,
             &var_addresses,
             &dictionary_words,
             &interned_dictionary_words,
@@ -1229,6 +1236,24 @@ fn normalize_modern_statement(
         "selector" => {
             normalize_modern_fixed("SELECTOR_LIST", &fields[1..], 1, line_number)
         }
+        "activation" => {
+            if fields.len() != 4 || fields[2] != "until" {
+                bail!(
+                    "line {line_number}: expected 'activation enabled|disabled until TARGET'"
+                );
+            }
+            let flags = match fields[1] {
+                "enabled" => "01",
+                "disabled" => "00",
+                state => bail!(
+                    "line {line_number}: activation state must be enabled or disabled, found {state:?}"
+                ),
+            };
+            Ok(format!(
+                "CONDITIONAL_BLOCK {flags} {}",
+                modern_operand_to_canonical(fields[3], line_number)?
+            ))
+        }
         "end" => {
             if fields.len() != 3 {
                 bail!("line {line_number}: expected 'end proc|when|selector NAME'");
@@ -1274,6 +1299,19 @@ fn normalize_modern_statement(
             normalize_modern_shared_expression(&fields[1..], true, line_number)
         }
         _ => {
+            if fields.len() == 3 && fields[1] == "=" {
+                if let Some(procedure) = fields[0].strip_suffix(".enabled") {
+                    validate_identifier(procedure, line_number)?;
+                    let enabled = match fields[2] {
+                        "true" => "1",
+                        "false" => "0",
+                        value => bail!(
+                            "line {line_number}: procedure enabled state must be true or false, found {value:?}"
+                        ),
+                    };
+                    return Ok(format!("SET_PROCEDURE_ENABLED {procedure} {enabled}"));
+                }
+            }
             if let Some(statement) = normalize_modern_bit_expression(&fields, false, line_number)? {
                 return Ok(statement);
             }
@@ -1822,6 +1860,26 @@ fn modern_statement(
         "RECORD_WILDCARD" => modern_record_wildcard(args, query_mode, line_number),
         "GLOBAL_WORD_COMPARE" => modern_rtc_hour_compare(args, line_number),
         "GLOBAL_PAIR_COMPARE" => modern_rtc_date_compare(args, line_number),
+        "CONDITIONAL_BLOCK" if matches!(args.first().copied(), Some("00" | "01")) => {
+            if args.len() != 2 {
+                bail!("line {line_number}: malformed generated CONDITIONAL_BLOCK statement");
+            }
+            Ok(format!(
+                "activation {} until {}",
+                if args[0] == "01" { "enabled" } else { "disabled" },
+                canonical_operand_to_modern(args[1])
+            ))
+        }
+        "SET_PROCEDURE_ENABLED" => {
+            if args.len() != 2 || !matches!(args[1], "0" | "1") {
+                bail!("line {line_number}: malformed generated SET_PROCEDURE_ENABLED statement");
+            }
+            Ok(format!(
+                "{}.enabled = {}",
+                args[0],
+                if args[1] == "1" { "true" } else { "false" }
+            ))
+        }
         "END" => Ok("halt".to_string()),
         _ => {
             let args = args
@@ -2283,6 +2341,7 @@ fn decompile_cod(
                 &token,
                 dictionary,
                 &annotations.labels,
+                &annotations.procedure_labels,
                 &object_aliases,
                 &field_aliases,
                 &mut dictionary_operands,
@@ -2415,6 +2474,7 @@ fn decompile_bas(
                         token,
                         dictionary,
                         &HashMap::new(),
+                        &HashMap::new(),
                         &object_aliases,
                         &field_aliases,
                         &mut dictionary_operands,
@@ -2525,6 +2585,9 @@ fn cod_annotations(
                 symbol.name, symbol.offset
             ));
         annotations.labels.insert(offset as u16, identifier.clone());
+        annotations
+            .procedure_labels
+            .insert(offset as u16, identifier.clone());
         annotations.procedure_count += 1;
     }
     if let Some(prior) = prior_procedure {
@@ -3103,6 +3166,7 @@ fn emit_token(
     token: &VmToken,
     dictionary: &HashMap<u16, String>,
     labels: &HashMap<u16, String>,
+    procedure_labels: &HashMap<u16, String>,
     object_aliases: &BTreeMap<u16, ObjectAlias>,
     field_aliases: &BTreeMap<u16, FieldAlias>,
     dictionary_operands: &mut DictionaryOperandFormatter<'_>,
@@ -3164,7 +3228,22 @@ fn emit_token(
         )?,
         VmToken::LoadString { value, .. } => write!(output, "LOAD_STRING \"{value}\"")?,
         VmToken::PokeByte { address, value, .. } => {
-            write!(output, "POKE_BYTE {address:04X} {value:02X}")?
+            let procedure = if matches!(*value, 0 | 1) {
+                address
+                    .checked_sub(1)
+                    .and_then(|start| procedure_labels.get(&start))
+            } else {
+                None
+            };
+            if let Some(procedure) = procedure {
+                write!(
+                    output,
+                    "SET_PROCEDURE_ENABLED {procedure} {}",
+                    bool_digit(*value != 0)
+                )?;
+            } else {
+                write!(output, "POKE_BYTE {address:04X} {value:02X}")?;
+            }
         }
         VmToken::CharacterSlot { slot, name, .. } => {
             write!(output, "CHARACTER_SLOT {slot:02X} \"{name}\"")?
@@ -3377,6 +3456,7 @@ fn compile_statement(
     args: &[&str],
     line: usize,
     labels: &HashMap<&str, u16>,
+    procedures: &HashSet<&str>,
     objects: &HashMap<&str, u16>,
     dictionary_words: &HashMap<&str, u16>,
     interned_dictionary_words: &HashMap<String, Option<u16>>,
@@ -3519,6 +3599,22 @@ fn compile_statement(
                 &mut output,
                 parse_address(args[0], labels, line, "address")?,
             );
+        }
+        "SET_PROCEDURE_ENABLED" => {
+            require_count(args, 2, line, name)?;
+            if !procedures.contains(args[0]) {
+                bail!(
+                    "line {line}: procedure {:?} is not declared with proc",
+                    args[0]
+                );
+            }
+            let procedure = parse_address(args[0], labels, line, "procedure")?;
+            let address = procedure.checked_add(1).ok_or_else(|| {
+                anyhow!("line {line}: procedure {:?} has no addressable enable byte", args[0])
+            })?;
+            output.push(vm::OP_POKE_BYTE);
+            output.push(u8::from(parse_bool(args[1], line, "enabled")?));
+            word(&mut output, address);
         }
         "CHARACTER_SLOT" => {
             require_count(args, 2, line, name)?;
@@ -4217,7 +4313,7 @@ mod tests {
             "guard_pop",
             "state_array_set 0x02 0x5678",
             "jump block_000D",
-            "conditional_block 0x01 block_0011",
+            "activation enabled until block_0011",
             "branch_presentation",
             "branch_gameflag",
         ] {
@@ -4517,7 +4613,7 @@ mod tests {
         assert!(
             decompiled
                 .source
-                .contains("conditional_block 0x01 block_0004")
+                .contains("activation enabled until block_0004")
         );
         assert!(decompiled.source.contains("    block_0004:"));
         assert!(decompiled.source.trim_end().ends_with('}'));
@@ -4528,6 +4624,51 @@ mod tests {
             })
         }));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
+    }
+
+    #[test]
+    fn procedure_activation_syntax_compiles_exact_bytes() {
+        let image = vec![
+            vm::OP_COND_JUMP,
+            0x01,
+            0x0D,
+            0x00,
+            vm::OP_POKE_BYTE,
+            0x00,
+            0x01,
+            0x00,
+            vm::OP_POKE_BYTE,
+            0x01,
+            0x34,
+            0x12,
+            vm::OP_POP,
+            0xFF,
+        ];
+        let symbols = vec![DebSymbol {
+            name: "entry".to_string(),
+            offset: 1,
+            kind: 2,
+        }];
+        let decompiled =
+            decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
+        assert!(
+            decompiled
+                .source
+                .contains("activation enabled until block_000D")
+        );
+        assert!(decompiled.source.contains("entry.enabled = false"));
+        assert!(decompiled.source.contains("poke_byte 0x1234 0x01"));
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let nonprocedure = decompiled
+            .source
+            .replace("entry.enabled = false", "block_000D.enabled = false");
+        assert!(
+            compile(&nonprocedure)
+                .unwrap_err()
+                .to_string()
+                .contains("is not declared with proc")
+        );
     }
 
     #[test]

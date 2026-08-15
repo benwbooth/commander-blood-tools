@@ -80,11 +80,13 @@ or `secrets`. BloodScript consequently names the field `topic` and interns the
 quoted RHS through the companion dictionary. All 531 shipped `AF` operations
 and 49 `BC` operations reproduce their original bytes.
 
-Finally, opcode `A9` (`CONDITIONAL_BLOCK`) sets the native query bit just as an
-`A0` guard does. The source formatter now tracks that transition, so conditions
-immediately following an `A9` are rendered as `require` expressions rather than
-updates. A focused compiler test pins the `A9` -> `B0` query -> `A1` -> `BC`
-update sequence byte for byte.
+Finally, opcode `A9` sets the native query bit just as an `A0` guard does. The
+source formatter tracks that transition, so conditions immediately following
+an `A9` are rendered as `require` expressions rather than updates. All 480
+kind-2 DEB procedures begin at an `A9`: 420 carry flag byte `1` and 60 carry
+flag byte `0`. BloodScript therefore renders the procedure header as
+`activation enabled|disabled until target`. A focused compiler test pins the
+`A9` -> `B0` query -> `A1` -> `BC` update sequence byte for byte.
 
 The two RTC condition handlers are now fully lifted. `CA` reads an operator,
 the otherwise ignored literal tag `C1`, and an hour; all 80 shipped instances
@@ -105,10 +107,16 @@ Together the two lifts reduce generic coverage from 20,898 to 4,567 bytes, a
 78.15 percent reduction, without changing any compiled COD byte.
 
 The final six native-handler families account for those remaining 4,567 bytes:
-concept guards (`0xA3`), string loads (`0xA8`), self-modifying byte writes
+concept guards (`0xA3`), string loads (`0xA8`), procedure activation writes
 (`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
-and the `0x274F` flag branch (`0xD1`). All 118,787 shipped COD bytes now compile
-from typed statements with zero generic `OP` coverage.
+and the `0x274F` flag branch (`0xD1`). Every one of the 413 shipped `AB` writes
+stores zero or one at exactly one byte after a named kind-2 procedure start,
+which is the procedure's `A9` flag byte. The corpus contains 149 enables and 264
+disables. BloodScript renders them as `procedure.enabled = true|false`; its
+compiler restores the target address as `procedure + 1`. The low-level
+`poke_byte` form remains available for an arbitrary address or value, but no
+shipped statement needs it. All 118,787 shipped COD bytes now compile from
+typed statements with zero generic `OP` coverage.
 
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321

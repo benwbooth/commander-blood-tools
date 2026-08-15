@@ -2,7 +2,7 @@
 // image: COD
 
 proc init {
-    conditional_block 0x01 bronk2
+    activation enabled until bronk2
     guard_pop
     character_slot 0x02 "maledict"
     character_slot 0x03 "maledict"
@@ -33,11 +33,11 @@ proc init {
     state[0x150C] = 0x0001
     state[0x150E] = 0x0001
     state[0x1510] = 0x0003
-    poke_byte 0x0001 0x00
+    init.enabled = false
 }
 
 proc bronk2 {
-    conditional_block 0x01 scrujo
+    activation enabled until scrujo
     branch_flag_274f
     actor 0x054C 0x0028 0
     guard_pop
@@ -49,7 +49,7 @@ proc bronk2 {
 }
 
 proc scrujo {
-    conditional_block 0x01 recept
+    activation enabled until recept
     branch_flag_274f
     actor 0x08AC 0x0028 0
     guard_pop
@@ -100,7 +100,7 @@ proc scrujo {
 }
 
 proc recept {
-    conditional_block 0x01 beau
+    activation enabled until beau
     branch_flag_274f
     actor 0x0354 0x0028 0
     guard_pop
@@ -111,7 +111,7 @@ proc recept {
 }
 
 proc beau {
-    conditional_block 0x01 beau_055C
+    activation enabled until beau_055C
     branch_flag_274f
     actor 0x06B4 0x0028 0
     require state[0x150C] == 0x0001
@@ -129,7 +129,7 @@ proc beau {
 }
 
 proc beau_055C {
-    conditional_block 0x01 beaureg
+    activation enabled until beaureg
     branch_flag_274f
     actor 0x06B4 0x0028 0
     require !bits(0x104E,0x0002) using alternate_encoding
@@ -149,7 +149,7 @@ proc beau_055C {
 }
 
 proc beaureg {
-    conditional_block 0x01 fif
+    activation enabled until fif
     branch_flag_274f
     actor 0x06B4 0x0028 0
     require bits(0x104E,0x0002)
@@ -162,7 +162,7 @@ proc beaureg {
 }
 
 proc fif {
-    conditional_block 0x01 fif1
+    activation enabled until fif1
     branch_gameflag
     require record[0x1148] == 0x0CCE
     actor 0x07D4 0x0028 0
@@ -198,8 +198,8 @@ proc fif {
     say 0x079A voice=0x01 flags=0x08 display=0x80 loop=none control=none : "Magnu be at coordinates x453 y543..."
     bits(0x0DA8,0x0002) = true
     say 0x079A voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "Bye bye..."
-    poke_byte 0x06FE 0x00
-    poke_byte 0x08FB 0x01
+    fif.enabled = false
+    fif1.enabled = true
     clear_alternate_concept
     record_clear 0x07D4
     block_0888:
@@ -216,7 +216,7 @@ proc fif {
 }
 
 proc fif1 {
-    conditional_block 0x00 fif2
+    activation disabled until fif2
     branch_gameflag
     require record[0x1148] == 0x0CCE
     actor 0x07D4 0x0028 0
@@ -251,8 +251,8 @@ proc fif1 {
     say 0x079A voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Kiss... Kiss... Nice... Nice..."
     say 0x079A voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me like|... Me like|... Me thank you|..."
     say 0x079A voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Fifi go run..."
-    poke_byte 0x0A6C 0x01
-    poke_byte 0x08FB 0x00
+    fif2.enabled = true
+    fif1.enabled = false
     record_clear 0x07D4
     block_0A52:
     say 0x079A voice=0x01 flags=0x08 display=0x80 loop=none control=none : "Fifi go run... Bye bye|..."
@@ -260,7 +260,7 @@ proc fif1 {
 }
 
 proc fif2 {
-    conditional_block 0x00 fif3bis
+    activation disabled until fif3bis
     branch_gameflag
     require record[0x1148] == 0x0CCE
     actor 0x07D4 0x0028 0
@@ -289,7 +289,7 @@ proc fif2 {
     say 0x079A voice=0x00 flags=0x00 display=0x80 loop=none control=none : "Fifi go walk... bye friend|..."
     say 0x079A voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     record[0x07B2] = 0x10A6
-    poke_byte 0x0A6C 0x00
+    fif2.enabled = false
     record_clear 0x07D4
     block_0BCB:
     say 0x079A voice=0x00 flags=0x08 display=0x80 loop=none control=none : "Fifi go walk... Bye bye friend|..."
@@ -297,16 +297,16 @@ proc fif2 {
 }
 
 proc fif3bis {
-    conditional_block 0x01 fif4
+    activation enabled until fif4
     require record[0x14E2] == 0x0992
     guard_pop
     record[0x07B2] = 0x0CCE
-    poke_byte 0x0BFE 0x01
-    poke_byte 0x0BE7 0x00
+    fif4.enabled = true
+    fif3bis.enabled = false
 }
 
 proc fif4 {
-    conditional_block 0x00 fif5
+    activation disabled until fif5
     branch_gameflag
     require record[0x07B2] == 0x0CCE
     require record[0x1148] == 0x0CCE
@@ -339,7 +339,7 @@ proc fif4 {
 }
 
 proc fif5 {
-    conditional_block 0x01 fif6
+    activation enabled until fif6
     branch_flag_274f
     actor 0x07D4 0x0028 0
     guard_pop
@@ -372,7 +372,7 @@ proc fif5 {
 }
 
 proc fif6 {
-    conditional_block 0x01 ondo1
+    activation enabled until ondo1
     branch_gameflag
     require record[0x07B2] == 0x0F26
     require record[0x1148] == 0x0F26
@@ -398,7 +398,7 @@ proc fif6 {
 }
 
 proc ondo1 {
-    conditional_block 0x01 ondo1_1080
+    activation enabled until ondo1_1080
     branch_gameflag
     require record[0x1148] == 0x0DE2
     actor 0x0594 0x0028 0
@@ -423,7 +423,7 @@ proc ondo1 {
 }
 
 proc ondo1_1080 {
-    conditional_block 0x01 tromp1
+    activation enabled until tromp1
     branch_flag_274f
     actor 0x0594 0x0028 0
     guard_pop
@@ -439,7 +439,7 @@ proc ondo1_1080 {
 }
 
 proc tromp1 {
-    conditional_block 0x01 tromp2
+    activation enabled until tromp2
     branch_gameflag
     require record[0x1148] == 0x0DA6
     actor 0x0114 0x0028 0
@@ -452,7 +452,7 @@ proc tromp1 {
     concept_guard "ga" 0
     guard_pop
     say 0x00DA voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "ga ga ga ga ga..."
-    poke_byte 0x110D 0x00
+    tromp1.enabled = false
     clear_alternate_concept
     jump block_136E
     block_1199:
@@ -473,12 +473,12 @@ proc tromp1 {
     say 0x00DA voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You're weird, stranger. You look like you have the evil eye..."
     say 0x00DA voice=0x08 flags=0x00 display=0x80 loop=none control=none : "Leave me|... I have things to do..."
     say 0x00DA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    poke_byte 0x110D 0x00
+    tromp1.enabled = false
     record_clear 0x0114
 }
 
 proc tromp2 {
-    conditional_block 0x01 tromp2bis
+    activation enabled until tromp2bis
     branch_gameflag
     require record[0x1148] == 0x0DA6
     actor 0x0114 0x0028 0
@@ -517,8 +517,8 @@ proc tromp2 {
     require bits(0x0E20,0x0002)
     guard_pop
     say 0x00DA voice=0x08 flags=0x48 display=0xA0 loop=none control=none : "Well, I have things to do... Bye bye|..." choices "bye_bye"
-    poke_byte 0x12F2 0x00
-    poke_byte 0x14B8 0x01
+    tromp2.enabled = false
+    tromp2bis.enabled = true
     record_clear 0x0114
     block_1492:
     say 0x00DA voice=0x08 flags=0x48 display=0x80 loop=none control=none : "Well, I have things to do... Bye bye.." choices "bye_bye"
@@ -526,7 +526,7 @@ proc tromp2 {
 }
 
 proc tromp2bis {
-    conditional_block 0x00 tromp3
+    activation disabled until tromp3
     branch_gameflag
     require record[0x1148] == 0x0DA6
     actor 0x0114 0x0028 0
@@ -555,7 +555,7 @@ proc tromp2bis {
 }
 
 proc tromp3 {
-    conditional_block 0x01 bra1
+    activation enabled until bra1
     branch_gameflag
     require record[0x1148] == 0x0DA6
     actor 0x0114 0x0028 0
@@ -606,7 +606,7 @@ proc tromp3 {
 }
 
 proc bra1 {
-    conditional_block 0x01 braz
+    activation enabled until braz
     branch_gameflag
     require record[0x1148] == 0x0C26
     require record[0x03C2] != aboard
@@ -681,7 +681,7 @@ proc bra1 {
 }
 
 proc braz {
-    conditional_block 0x01 bra2
+    activation enabled until bra2
     require record[0x12D2] == 0x004A
     require record[0x1242] == 0x0028
     require record[0x03C2] == aboard
@@ -690,7 +690,7 @@ proc braz {
 }
 
 proc bra2 {
-    conditional_block 0x01 HO
+    activation enabled until HO
     branch_gameflag
     require record[0x1148] == 0x0C26
     actor 0x03E4 0x0028 0
@@ -765,7 +765,7 @@ proc bra2 {
 }
 
 proc HO {
-    conditional_block 0x01 zen1
+    activation enabled until zen1
     branch_flag_274f
     actor 0x03E4 0x0028 0
     guard_pop
@@ -776,7 +776,7 @@ proc HO {
 }
 
 proc zen1 {
-    conditional_block 0x01 zen2
+    activation enabled until zen2
     branch_gameflag
     actor 0x09CC 0x0028 0
     require record[0x122A] != 0x0028
@@ -822,21 +822,21 @@ proc zen1 {
     say 0x0992 voice=0x03 flags=0x00 display=0x80 loop=none control=none : "When you bring me the portrait, painted in the GREAT YOLK's own yellow blood, I'll remove your curse..."
     say 0x0992 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "See you soon|, my friend|..."
     say 0x0992 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    poke_byte 0x1EA4 0x00
+    zen1.enabled = false
     record[0x09AA] = 0x10A6
     record_clear 0x09CC
 }
 
 proc zen2 {
-    conditional_block 0x01 zen3
+    activation enabled until zen3
     require record[0x122A] == 0x0028
     guard_pop
     record[0x09AA] = 0x0E1E
-    poke_byte 0x21AE 0x00
+    zen2.enabled = false
 }
 
 proc zen3 {
-    conditional_block 0x01 zen4
+    activation enabled until zen4
     branch_gameflag
     actor 0x09CC 0x0028 0
     require record[0x122A] == 0x0028
@@ -854,7 +854,7 @@ proc zen3 {
 }
 
 proc zen4 {
-    conditional_block 0x01 zen5
+    activation enabled until zen5
     branch_gameflag
     actor 0x09CC 0x0028 0
     require record[0x122A] == 0x0992
@@ -890,22 +890,22 @@ proc zen4 {
     say 0x0992 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander... This is just great!"
     say 0x0992 voice=0x00 flags=0x08 display=0xB0 loop=none control=none : "Bye bye|..."
     state[0x150C] = 0x0000
-    poke_byte 0x2231 0x00
+    zen4.enabled = false
     record[0x09AA] = 0x10A6
     record_clear 0x09CC
 }
 
 proc zen5 {
-    conditional_block 0x01 zen6
+    activation enabled until zen6
     require record[0x122A] == 0x0992
     require record[0x14E2] == aboard
     guard_pop
     record[0x09AA] = 0x0E1E
-    poke_byte 0x2463 0x00
+    zen5.enabled = false
 }
 
 proc zen6 {
-    conditional_block 0x01 beta1
+    activation enabled until beta1
     branch_gameflag
     actor 0x09CC 0x0028 0
     require record[0x122A] == 0x0992
@@ -965,7 +965,7 @@ proc zen6 {
 }
 
 proc beta1 {
-    conditional_block 0x01 beta2
+    activation enabled until beta2
     branch_gameflag
     require record[0x1148] == 0x104C
     actor 0x015C 0x0028 0
@@ -1059,7 +1059,7 @@ proc beta1 {
 }
 
 proc beta2 {
-    conditional_block 0x01 beta3
+    activation enabled until beta3
     branch_flag_274f
     actor 0x015C 0x0028 0
     guard_pop
@@ -1088,7 +1088,7 @@ proc beta2 {
 }
 
 proc beta3 {
-    conditional_block 0x01 st1
+    activation enabled until st1
     branch_gameflag
     actor 0x015C 0x0028 0
     require record[0x1148] == 0x0B18
@@ -1102,7 +1102,7 @@ proc beta3 {
 }
 
 proc st1 {
-    conditional_block 0x01 sin1
+    activation enabled until sin1
     branch_gameflag
     actor 0x01EC 0x0028 0
     require record[0x1148] == 0x0C5C
@@ -1121,7 +1121,7 @@ proc st1 {
 }
 
 proc sin1 {
-    conditional_block 0x01 clay1
+    activation enabled until clay1
     branch_gameflag
     require record[0x1148] == 0x0C5C
     actor 0x0234 0x0028 0
@@ -1157,7 +1157,7 @@ proc sin1 {
 }
 
 proc clay1 {
-    conditional_block 0x01 clay2
+    activation enabled until clay2
     branch_flag_274f
     require !bits(0x0C5E,0x0002)
     actor 0x05DC 0x0028 0
@@ -1173,7 +1173,7 @@ proc clay1 {
 }
 
 proc clay2 {
-    conditional_block 0x01 clay1bis
+    activation enabled until clay1bis
     branch_flag_274f
     require bits(0x0C5E,0x0002)
     actor 0x05DC 0x0028 0
@@ -1188,22 +1188,22 @@ proc clay2 {
     say 0x05A2 voice=0x04 flags=0x00 display=0x80 loop=none control=none : "If you need any burglaries done, I'm your robot!"
     say 0x05A2 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'd call that somewhat rich possibility-wise. Right, Commander|?"
     say 0x05A2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    poke_byte 0x30C7 0x00
+    clay2.enabled = false
     record_clear 0x05DC
 }
 
 proc clay1bis {
-    conditional_block 0x01 clay3
+    activation enabled until clay3
     require bits(0x0C5E,0x0002)
     require encounter_count[0x0230] > 0x0000
     guard_pop
-    poke_byte 0x3085 0x00
-    poke_byte 0x320D 0x01
-    poke_byte 0x31F0 0x00
+    clay1.enabled = false
+    clay3.enabled = true
+    clay1bis.enabled = false
 }
 
 proc clay3 {
-    conditional_block 0x00 clay4
+    activation disabled until clay4
     branch_flag_274f
     actor 0x05DC 0x0028 0
     guard_pop
@@ -1218,7 +1218,7 @@ proc clay3 {
     guard_pop
     say 0x05A2 voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "TELEPORTING HAF TO PLANET VISTA"
     record[0x05BA] = 0x0C7A
-    poke_byte 0x320D 0x00
+    clay3.enabled = false
     clear_alternate_concept
     record_clear 0x05DC
     block_32A4:
@@ -1238,7 +1238,7 @@ proc clay3 {
 }
 
 proc clay4 {
-    conditional_block 0x01 clay5
+    activation enabled until clay5
     branch_gameflag
     require record[0x1148] == 0x0C5C
     actor 0x05DC 0x0028 0
@@ -1251,7 +1251,7 @@ proc clay4 {
 }
 
 proc clay5 {
-    conditional_block 0x01 clay6
+    activation enabled until clay6
     branch_presentation
     actor 0x05DC 0x0028 0
     guard_pop
@@ -1275,21 +1275,21 @@ proc clay5 {
     say 0x05A2 voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
     bits(0x05A4,0x0002) = false
     state_array_set 0x07 0x003C
-    poke_byte 0x33DD 0x00
+    clay5.enabled = false
     record_clear 0x05DC
 }
 
 proc clay6 {
-    conditional_block 0x01 clay7
+    activation enabled until clay7
     state_array_test 0x07
     guard_pop
     record_link 0x05DC 0x0028 0
-    poke_byte 0x352D 0x01
-    poke_byte 0x3519 0x00
+    clay7.enabled = true
+    clay6.enabled = false
 }
 
 proc clay7 {
-    conditional_block 0x00 clay8
+    activation disabled until clay8
     branch_presentation
     require record[0x05BA] == 0x0C7A
     actor 0x05DC 0x0028 0
@@ -1299,13 +1299,13 @@ proc clay7 {
     say 0x05A2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You better come get me|... I don't want to hang around here..."
     say 0x05A2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Hurry, Commander..."
     say 0x05A2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Kruikkk..."
-    poke_byte 0x3363 0x00
+    clay4.enabled = false
     bits(0x05A4,0x0002) = false
     record_clear 0x05DC
 }
 
 proc clay8 {
-    conditional_block 0x01 clay9
+    activation enabled until clay9
     branch_gameflag
     actor 0x05DC 0x0028 0
     guard_pop
@@ -1331,7 +1331,7 @@ proc clay8 {
 }
 
 proc clay9 {
-    conditional_block 0x01 masta1
+    activation enabled until masta1
     branch_flag_274f
     actor 0x05DC 0x0028 0
     guard_pop
@@ -1342,7 +1342,7 @@ proc clay9 {
 }
 
 proc masta1 {
-    conditional_block 0x01 masta2
+    activation enabled until masta2
     branch_gameflag
     actor 0x00CC 0x0028 0
     guard_pop
@@ -1356,11 +1356,11 @@ proc masta1 {
     say 0x0092 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Co Co... Commander... Maybe this isn't such a good place to be..."
     say 0x0092 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "The CHIEF is waiting..."
     record_state 0xC1 0x14F0 0x0BA8 0
-    poke_byte 0x36CE 0x00
+    masta1.enabled = false
 }
 
 proc masta2 {
-    conditional_block 0x01 masta6
+    activation enabled until masta6
     branch_gameflag
     actor 0x01A4 0x0028 0
     guard_pop
@@ -1409,7 +1409,7 @@ proc masta2 {
 }
 
 proc masta6 {
-    conditional_block 0x01 masta3
+    activation enabled until masta3
     branch_gameflag
     actor 0x00CC 0x0028 0
     guard_pop
@@ -1427,16 +1427,16 @@ proc masta6 {
 }
 
 proc masta3 {
-    conditional_block 0x01 masta4
+    activation enabled until masta4
     state_array_test 0x0F
     guard_pop
     record_link 0x039C 0x0028 0
-    poke_byte 0x3CF5 0x01
-    poke_byte 0x3CE1 0x00
+    masta4.enabled = true
+    masta3.enabled = false
 }
 
 proc masta4 {
-    conditional_block 0x00 jer1
+    activation disabled until jer1
     branch_presentation
     require state[0x1520] == state[0x1522]
     guard_pop
@@ -1455,16 +1455,16 @@ proc masta4 {
 }
 
 proc jer1 {
-    conditional_block 0x01 jer2
+    activation enabled until jer2
     require bits(0x1194,0x0002)
     guard_pop
     record_link 0x0504 0x0028 0
-    poke_byte 0x3E2F 0x01
-    poke_byte 0x3E18 0x00
+    jer2.enabled = true
+    jer1.enabled = false
 }
 
 proc jer2 {
-    conditional_block 0x00 kuka1
+    activation disabled until kuka1
     branch_presentation
     actor 0x0504 0x0028 0
     guard_pop
@@ -1476,12 +1476,12 @@ proc jer2 {
     say 0x04CA voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "KRUIIK"
     record[0x040A] = 0x1192
     bits(0x04CC,0x0002) = false
-    poke_byte 0x3E2F 0x00
+    jer2.enabled = false
     record_clear 0x0504
 }
 
 proc kuka1 {
-    conditional_block 0x01 yoo
+    activation enabled until yoo
     branch_gameflag
     actor 0x042C 0x0028 0
     require record[0x1148] == 0x1192
@@ -1504,7 +1504,7 @@ proc kuka1 {
 }
 
 proc yoo {
-    conditional_block 0x01 maxo
+    activation enabled until maxo
     branch_flag_274f
     actor 0x042C 0x0028 0
     guard_pop
@@ -1517,7 +1517,7 @@ proc yoo {
 }
 
 proc maxo {
-    conditional_block 0x01 fin1
+    activation enabled until fin1
     branch_flag_274f
     actor 0x0744 0x0028 0
     guard_pop
@@ -1529,19 +1529,19 @@ proc maxo {
 }
 
 proc fin1 {
-    conditional_block 0x01 fin2
+    activation enabled until fin2
     require record[0x013A] == 0x0B18
     require record[0x0722] == aboard
     require record[0x040A] == aboard
     require record[0x0572] == aboard
     guard_pop
     record_link 0x0504 0x0028 0
-    poke_byte 0x406D 0x01
-    poke_byte 0x4047 0x00
+    fin2.enabled = true
+    fin1.enabled = false
 }
 
 proc fin2 {
-    conditional_block 0x00 Od_dland
+    activation disabled until Od_dland
     branch_presentation
     actor 0x0504 0x0028 0
     guard_pop
@@ -1558,35 +1558,35 @@ proc fin2 {
     say 0x04CA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is Morning Oil: see you soon|, Commander|..."
     say 0x04CA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "BYE BYE COMMANDER..."
     say 0x04CA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    poke_byte 0x4194 0x01
+    Od_dland.enabled = true
     record_clear 0x0504
 }
 
 proc Od_dland {
-    conditional_block 0x00 jerry
+    activation disabled until jerry
     record_entry 0xC6 0x114E 0x1112 0
     guard_pop
     run_profile 0x05
 }
 
 proc jerry {
-    conditional_block 0x01 jerry2
+    activation enabled until jerry2
     guard_pop
     state_array_set 0x01 0x0064
-    poke_byte 0x41A0 0x00
+    jerry.enabled = false
 }
 
 proc jerry2 {
-    conditional_block 0x01 jerry3
+    activation enabled until jerry3
     state_array_test 0x01
     guard_pop
     record_link 0x0504 0x0028 0
-    poke_byte 0x41C1 0x01
-    poke_byte 0x41AD 0x00
+    jerry3.enabled = true
+    jerry2.enabled = false
 }
 
 proc jerry3 {
-    conditional_block 0x00 shark
+    activation disabled until shark
     branch_presentation
     actor 0x0504 0x0028 0
     guard_pop
@@ -1601,12 +1601,12 @@ proc jerry3 {
     say 0x04CA voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
     bits(0x1170,0x0002) = true
     bits(0x04CC,0x0002) = false
-    poke_byte 0x41C1 0x00
+    jerry3.enabled = false
     record_clear 0x0504
 }
 
 proc shark {
-    conditional_block 0x01 tamy
+    activation enabled until tamy
     branch_gameflag
     require record[0x1148] == 0x116E
     actor 0x0504 0x0028 0
@@ -1625,20 +1625,20 @@ proc shark {
     say 0x04CA voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Well... I wish you good luck, Commander|..."
     say 0x04CA voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
     bits(0x1170,0x0002) = false
-    poke_byte 0x42A0 0x00
-    poke_byte 0x43DE 0x01
+    shark.enabled = false
+    tamy.enabled = true
     record_clear 0x0504
 }
 
 proc tamy {
-    conditional_block 0x00 tamx
+    activation disabled until tamx
     guard_pop
     state_array_set 0x0D 0x00C8
-    poke_byte 0x43DE 0x00
+    tamy.enabled = false
 }
 
 proc tamx {
-    conditional_block 0x01 tam1
+    activation enabled until tam1
     guard_pop
     guard_push tam1
     state_array_test 0x0D
@@ -1648,14 +1648,14 @@ proc tamx {
 }
 
 proc tam1 {
-    conditional_block 0x01 tam1B
+    activation enabled until tam1B
     require state[0x1524] == 0x0001
     guard_pop
     record_link 0x0504 0x0028 0
 }
 
 proc tam1B {
-    conditional_block 0x01 tam2
+    activation enabled until tam2
     branch_presentation
     actor 0x0504 0x0028 0
     require state[0x1524] == 0x0001
@@ -1666,19 +1666,19 @@ proc tam1B {
     say 0x04CA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "My investigation's going fine. I know where doctor Otto Von Smile is..."
     say 0x04CA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "SEE YOU"
     say 0x04CA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Kruikk..."
-    poke_byte 0x4401 0x00
+    tam1.enabled = false
     record_clear 0x0504
 }
 
 proc tam2 {
-    conditional_block 0x01 tam2B
+    activation enabled until tam2B
     require state[0x1524] == 0x0002
     guard_pop
     record_link 0x0504 0x0028 0
 }
 
 proc tam2B {
-    conditional_block 0x01 menbr
+    activation enabled until menbr
     branch_presentation
     actor 0x0504 0x0028 0
     require state[0x1524] == 0x0002
@@ -1688,12 +1688,12 @@ proc tam2B {
     say 0x04CA voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Sure!!! We're doing great..."
     say 0x04CA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Glad to hear it... I'll call you if I need any help..."
     say 0x04CA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "See you|, Commander..."
-    poke_byte 0x44BB 0x00
+    tam2.enabled = false
     record_clear 0x0504
 }
 
 proc menbr {
-    conditional_block 0x01 men1
+    activation enabled until men1
     branch_presentation
     actor 0x0AEC 0x0028 0
     require record[0x052A] == aboard
@@ -1711,7 +1711,7 @@ proc menbr {
 }
 
 proc men1 {
-    conditional_block 0x01 men2
+    activation enabled until men2
     branch_presentation
     actor 0x0AEC 0x0028 0
     require record[0x052A] != aboard
@@ -1725,12 +1725,12 @@ proc men1 {
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!..."
     say 0x0AB2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-    poke_byte 0x4602 0x00
+    men1.enabled = false
     record_clear 0x0AEC
 }
 
 proc men2 {
-    conditional_block 0x01 men3
+    activation enabled until men3
     branch_presentation
     actor 0x0AEC 0x0028 0
     require record[0x052A] != aboard
@@ -1744,12 +1744,12 @@ proc men2 {
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!..."
     say 0x0AB2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x46B2 0x00
+    men2.enabled = false
     record_clear 0x0AEC
 }
 
 proc men3 {
-    conditional_block 0x01 men4
+    activation enabled until men4
     branch_presentation
     require record[0x052A] != aboard
     actor 0x0AEC 0x0028 0
@@ -1763,12 +1763,12 @@ proc men3 {
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say 0x0AB2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x475C 0x00
+    men3.enabled = false
     record_clear 0x0AEC
 }
 
 proc men4 {
-    conditional_block 0x01 men5
+    activation enabled until men5
     branch_presentation
     actor 0x0AEC 0x0028 0
     require record[0x052A] != aboard
@@ -1782,12 +1782,12 @@ proc men4 {
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!..."
     say 0x0AB2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x4808 0x00
+    men4.enabled = false
     record_clear 0x0AEC
 }
 
 proc men5 {
-    conditional_block 0x01 men6
+    activation enabled until men6
     branch_presentation
     actor 0x0AEC 0x0028 0
     require record[0x052A] != aboard
@@ -1801,24 +1801,24 @@ proc men5 {
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say 0x0AB2 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... You eat what you are!..."
     say 0x0AB2 voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    poke_byte 0x48BC 0x00
-    poke_byte 0x4978 0x01
+    men5.enabled = false
+    men6.enabled = true
     record_clear 0x0AEC
 }
 
 proc men6 {
-    conditional_block 0x00 honk1
+    activation disabled until honk1
     guard_pop
-    poke_byte 0x4602 0x01
-    poke_byte 0x46B2 0x01
-    poke_byte 0x475C 0x01
-    poke_byte 0x4808 0x01
-    poke_byte 0x48BC 0x01
-    poke_byte 0x4978 0x00
+    men1.enabled = true
+    men2.enabled = true
+    men3.enabled = true
+    men4.enabled = true
+    men5.enabled = true
+    men6.enabled = false
 }
 
 proc honk1 {
-    conditional_block 0x01 help1
+    activation enabled until help1
     branch_presentation
     actor 0x0AA4 0x0028 0
     guard_pop
@@ -1877,7 +1877,7 @@ proc honk1 {
 }
 
 proc help1 {
-    conditional_block 0x01 help2
+    activation enabled until help2
     branch_presentation
     actor 0x0AA4 0x0028 0
     require state[0x1510] > 0x0002
@@ -1889,12 +1889,12 @@ proc help1 {
     say 0x0A6A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Go near Vista, and talk to Anna Haf in the cryobox..."
     state[0x1510] -= 0x0003
     say 0x0A6A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x4BB9 0x00
+    help1.enabled = false
     record_clear 0x0AA4
 }
 
 proc help2 {
-    conditional_block 0x01 help3
+    activation enabled until help3
     branch_presentation
     actor 0x0AA4 0x0028 0
     require state[0x1510] > 0x0002
@@ -1903,12 +1903,12 @@ proc help2 {
     say 0x0A6A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "I'm sure Super Zen can help us|..."
     state[0x1510] -= 0x0003
     say 0x0A6A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x4C35 0x00
+    help2.enabled = false
     record_clear 0x0AA4
 }
 
 proc help3 {
-    conditional_block 0x01 help4
+    activation enabled until help4
     branch_presentation
     actor 0x0AA4 0x0028 0
     require state[0x1510] > 0x0002
@@ -1918,12 +1918,12 @@ proc help3 {
     say 0x0A6A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Maziok can help us, Commander|..."
     state[0x1510] -= 0x0003
     say 0x0A6A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x4C96 0x00
+    help3.enabled = false
     record_clear 0x0AA4
 }
 
 proc help4 {
-    conditional_block 0x01 help5
+    activation enabled until help5
     branch_presentation
     actor 0x0AA4 0x0028 0
     require state[0x1510] > 0x0002
@@ -1933,12 +1933,12 @@ proc help4 {
     say 0x0A6A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Fifi 'll love this ondoyant picture|..."
     state[0x1510] -= 0x0003
     say 0x0A6A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x4CF9 0x00
+    help4.enabled = false
     record_clear 0x0AA4
 }
 
 proc help5 {
-    conditional_block 0x01 what
+    activation enabled until what
     branch_presentation
     actor 0x0AA4 0x0028 0
     require state[0x1510] > 0x0002
@@ -1947,12 +1947,12 @@ proc help5 {
     say 0x0A6A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Fifi wants to go to planet Malus..."
     state[0x1510] -= 0x0003
     say 0x0A6A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x4D5F 0x00
+    help5.enabled = false
     record_clear 0x0AA4
 }
 
 proc what {
-    conditional_block 0x01 boba1
+    activation enabled until boba1
     branch_presentation
     actor 0x0AA4 0x0028 0
     guard_pop
@@ -1961,7 +1961,7 @@ proc what {
 }
 
 proc boba1 {
-    conditional_block 0x01 augmen
+    activation enabled until augmen
     branch_flag_274f
     actor 0x027C 0x0028 0
     guard_pop
@@ -1991,7 +1991,7 @@ proc boba1 {
 }
 
 proc augmen {
-    conditional_block 0x01 revel
+    activation enabled until revel
     branch_flag_274f
     actor 0x027C 0x0028 0
     require state[0x1528] == 0x0001
@@ -2007,7 +2007,7 @@ proc augmen {
 }
 
 proc revel {
-    conditional_block 0x01 block_5157
+    activation enabled until block_5157
     branch_flag_274f
     actor 0x027C 0x0028 0
     require state[0x152C] == 0x0001

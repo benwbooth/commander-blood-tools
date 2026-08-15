@@ -178,7 +178,7 @@ field orxx.current_location = orxx + 0x0004 // VAR kind 0x0200, selector(s) 11
 field orxx.s13 = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
 proc INIT2 {
-    conditional_block 0x01 scrujo
+    activation enabled until scrujo
     guard_pop
     Moskito.in_play = true
     Corpo.in_play = true
@@ -212,11 +212,11 @@ proc INIT2 {
     character_slot 0x05 "scrut"
     character_slot 0x06 "match"
     Anna_Haf.current_location = Magnus
-    poke_byte 0x0001 0x00
+    INIT2.enabled = false
 }
 
 proc scrujo {
-    conditional_block 0x01 clay1
+    activation enabled until clay1
     branch_flag_274f
     actor Scruter_Jo.s13 blood 0
     guard_pop
@@ -270,7 +270,7 @@ proc scrujo {
 }
 
 proc clay1 {
-    conditional_block 0x01 clay2
+    activation enabled until clay2
     branch_gameflag
     require arche.current_location == Magnus
     require Anna_Haf.encounter_count == 0x0001
@@ -290,7 +290,7 @@ proc clay1 {
 }
 
 proc clay2 {
-    conditional_block 0x01 got
+    activation enabled until got
     branch_flag_274f
     actor Anna_Haf.s13 blood 0
     guard_pop
@@ -300,14 +300,14 @@ proc clay2 {
 }
 
 proc got {
-    conditional_block 0x01 corpo1
+    activation enabled until corpo1
     require Eviscerator.current_location != prison
     guard_pop
     Izwalito.current_location = Hito
 }
 
 proc corpo1 {
-    conditional_block 0x01 t10
+    activation enabled until t10
     branch_gameflag
     require state[0x13F0] == 0x0000
     require arche.current_location == Corpo
@@ -327,23 +327,23 @@ proc corpo1 {
 }
 
 proc t10 {
-    conditional_block 0x01 krapp
+    activation enabled until krapp
     require Tina_Burner.encounter_count == 0x0001
     guard_pop
     state_array_set 0x0A 0x00C8
-    poke_byte 0x05DC 0x00
+    t10.enabled = false
 }
 
 proc krapp {
-    conditional_block 0x01 krapp1
+    activation enabled until krapp1
     state_array_test 0x0A
     guard_pop
     record_link Kran_Dobu.s13 blood 0
-    poke_byte 0x05F0 0x00
+    krapp.enabled = false
 }
 
 proc krapp1 {
-    conditional_block 0x01 kra
+    activation enabled until kra
     branch_presentation
     actor Kran_Dobu.s13 blood 0
     guard_pop
@@ -355,13 +355,13 @@ proc krapp1 {
     say Kran_Dobu voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, I suggest we ignore him..."
     say Kran_Dobu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chicken, huh?... Ha! Ha! Ha!"
     say Kran_Dobu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye"
-    poke_byte 0x0600 0x00
+    krapp1.enabled = false
     Kraner.in_play = true using alternate_encoding
     record_clear Kran_Dobu.s13
 }
 
 proc kra {
-    conditional_block 0x01 kra1
+    activation enabled until kra1
     branch_gameflag
     actor Kran_Dobu.s13 blood 0
     guard_pop
@@ -382,29 +382,29 @@ proc kra {
     say Kran_Dobu voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "See you round, comrade..."
     Kraner.in_play = false using alternate_encoding
     Troma.in_play = true using alternate_encoding
-    poke_byte 0x06F7 0x00
+    kra.enabled = false
     record_clear Kran_Dobu.s13
 }
 
 proc kra1 {
-    conditional_block 0x01 kra1bis
+    activation enabled until kra1bis
     require arche.current_location == Troma
     guard_pop
     state_array_set 0x0B 0x0064
-    poke_byte 0x0882 0x00
+    kra1.enabled = false
 }
 
 proc kra1bis {
-    conditional_block 0x01 kra2
+    activation enabled until kra2
     state_array_test 0x0B
     guard_pop
     record_link Kran_Dobu.s13 blood 0
-    poke_byte 0x08A8 0x01
-    poke_byte 0x0894 0x00
+    kra2.enabled = true
+    kra1bis.enabled = false
 }
 
 proc kra2 {
-    conditional_block 0x00 kra3
+    activation disabled until kra3
     branch_presentation
     actor Kran_Dobu.s13 blood 0
     guard_pop
@@ -422,7 +422,7 @@ proc kra2 {
 }
 
 proc kra3 {
-    conditional_block 0x01 kra4
+    activation enabled until kra4
     branch_gameflag
     actor Kran_Dobu.s13 blood 0
     require state[0x13F2] == 0x0000
@@ -438,7 +438,7 @@ proc kra3 {
 }
 
 proc kra4 {
-    conditional_block 0x01 morn1
+    activation enabled until morn1
     branch_gameflag
     actor Kran_Dobu.s13 blood 0
     guard_pop
@@ -494,7 +494,7 @@ proc kra4 {
 }
 
 proc morn1 {
-    conditional_block 0x01 morn2
+    activation enabled until morn2
     branch_gameflag
     require Morning_Oil.current_location == Ark
     require state[0x13F4] == 0x0000
@@ -532,7 +532,7 @@ proc morn1 {
 }
 
 proc morn2 {
-    conditional_block 0x01 bronk1
+    activation enabled until bronk1
     branch_flag_274f
     actor Morning_Oil.s13 blood 0
     guard_pop
@@ -557,7 +557,7 @@ proc morn2 {
 }
 
 proc bronk1 {
-    conditional_block 0x01 bronk2
+    activation enabled until bronk2
     branch_flag_274f
     require transmitter.holder != Bronko
     require state[0x13F6] == 0x0000
@@ -613,7 +613,7 @@ proc bronk1 {
 }
 
 proc bronk2 {
-    conditional_block 0x01 bronk3
+    activation enabled until bronk3
     branch_flag_274f
     require arche.current_location == Erazor
     require transmitter.holder != Bronko
@@ -660,7 +660,7 @@ proc bronk2 {
 }
 
 proc bronk3 {
-    conditional_block 0x01 bronk4
+    activation enabled until bronk4
     branch_gameflag
     require arche.current_location == Erazor
     actor Bronko.s13 blood 0
@@ -672,12 +672,12 @@ proc bronk3 {
     say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Nature. What a wonderful invention..."
     say Bronko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     Bronko.in_play = true
-    poke_byte 0x12F0 0x00
+    bronk3.enabled = false
     record_clear Bronko.s13
 }
 
 proc bronk4 {
-    conditional_block 0x01 bronk5
+    activation enabled until bronk5
     branch_presentation
     require Bronko.current_location == Erazor
     actor Bronko.s13 blood 0
@@ -725,7 +725,7 @@ proc bronk4 {
 }
 
 proc bronk5 {
-    conditional_block 0x01 bronk6
+    activation enabled until bronk6
     branch_gameflag
     require arche.current_location == Erazor
     require Bronko.current_location == Erazor
@@ -762,7 +762,7 @@ proc bronk5 {
 }
 
 proc bronk6 {
-    conditional_block 0x01 bronk7
+    activation enabled until bronk7
     branch_flag_274f
     require transmitter.holder == Bronko
     actor Bronko.s13 blood 0
@@ -775,8 +775,8 @@ proc bronk6 {
         say Bronko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Take a look in the cryobox, Commander|. I brought something back for you..."
         say Bronko voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
         splatch.holder = aboard
-        poke_byte 0x187A 0x01
-        poke_byte 0x1724 0x00
+        bronk7.enabled = true
+        bronk6.enabled = false
         record_clear Bronko.s13
     }
     block_17C1:
@@ -796,7 +796,7 @@ proc bronk6 {
 }
 
 proc bronk7 {
-    conditional_block 0x00 port1
+    activation disabled until port1
     branch_flag_274f
     actor Bronko.s13 blood 0
     guard_pop
@@ -816,7 +816,7 @@ proc bronk7 {
 }
 
 proc port1 {
-    conditional_block 0x00 port2
+    activation disabled until port2
     branch_flag_274f
     actor receiver.s13 blood 0
     state_array_test 0x02
@@ -829,7 +829,7 @@ proc port1 {
 }
 
 proc port2 {
-    conditional_block 0x01 pojk
+    activation enabled until pojk
     branch_flag_274f
     actor receiver.s13 blood 0
     require state[0x13FA] == 0x0001
@@ -844,12 +844,12 @@ proc port2 {
     say receiver voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Hurry... Faster!|..."
     say receiver voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     state[0x13FC] = 0x0001
-    poke_byte 0x1974 0x00
+    port2.enabled = false
     record_clear receiver.s13
 }
 
 proc pojk {
-    conditional_block 0x01 hom1
+    activation enabled until hom1
     branch_flag_274f
     actor receiver.s13 blood 0
     guard_pop
@@ -860,7 +860,7 @@ proc pojk {
 }
 
 proc hom1 {
-    conditional_block 0x01 hom2
+    activation enabled until hom2
     branch_gameflag
     require dork.holder != blood
     require arche.current_location == Kortex
@@ -926,7 +926,7 @@ proc hom1 {
 }
 
 proc hom2 {
-    conditional_block 0x01 hom3
+    activation enabled until hom3
     branch_gameflag
     require state[0x13FE] == 0x0001
     actor Hom.s13 blood 0
@@ -971,7 +971,7 @@ proc hom2 {
 }
 
 proc hom3 {
-    conditional_block 0x01 jour
+    activation enabled until jour
     branch_gameflag
     require state[0x13FE] == 0x0002
     actor Hom.s13 blood 0
@@ -1011,7 +1011,7 @@ proc hom3 {
 }
 
 proc jour {
-    conditional_block 0x01 bonjour
+    activation enabled until bonjour
     branch_gameflag
     require state[0x1400] == 0x0000
     actor Cyberquizz.s13 blood 0
@@ -1024,50 +1024,50 @@ proc jour {
 }
 
 proc bonjour {
-    conditional_block 0x01 bonjo
+    activation enabled until bonjo
     branch_gameflag
     require state[0x1400] == 0x0000
     actor Cyberquizz.s13 blood 0
     require arche.current_location == Cyberock
     guard_pop
-    poke_byte 0x2527 0x01
-    poke_byte 0x25DA 0x01
-    poke_byte 0x2683 0x01
-    poke_byte 0x2744 0x01
-    poke_byte 0x27E5 0x01
-    poke_byte 0x288C 0x01
-    poke_byte 0x2939 0x01
-    poke_byte 0x29D4 0x01
-    poke_byte 0x2A6F 0x01
-    poke_byte 0x2B0A 0x01
-    poke_byte 0x2BAD 0x01
-    poke_byte 0x2C3E 0x01
-    poke_byte 0x2CD1 0x01
-    poke_byte 0x2D66 0x01
-    poke_byte 0x2DFB 0x01
-    poke_byte 0x2E94 0x01
-    poke_byte 0x2F2B 0x01
-    poke_byte 0x2FD4 0x01
-    poke_byte 0x306D 0x01
-    poke_byte 0x30FE 0x01
-    poke_byte 0x31A7 0x01
-    poke_byte 0x323E 0x01
-    poke_byte 0x32D1 0x01
-    poke_byte 0x3372 0x01
-    poke_byte 0x33F3 0x01
-    poke_byte 0x3480 0x01
-    poke_byte 0x351D 0x01
-    poke_byte 0x35B2 0x01
-    poke_byte 0x3655 0x01
-    poke_byte 0x36EE 0x01
-    poke_byte 0x3787 0x01
-    poke_byte 0x3818 0x01
+    Q1.enabled = true
+    Q2.enabled = true
+    Q3.enabled = true
+    Q4.enabled = true
+    Q5.enabled = true
+    Q6.enabled = true
+    Q7.enabled = true
+    Q8.enabled = true
+    Q9.enabled = true
+    Q10.enabled = true
+    Q11.enabled = true
+    Q12.enabled = true
+    Q13.enabled = true
+    Q14.enabled = true
+    Q15.enabled = true
+    Q16.enabled = true
+    Q17.enabled = true
+    Q18.enabled = true
+    Q19.enabled = true
+    Q20.enabled = true
+    Q21.enabled = true
+    Q22.enabled = true
+    Q23.enabled = true
+    Q24.enabled = true
+    Q25.enabled = true
+    Q26.enabled = true
+    Q27.enabled = true
+    Q28.enabled = true
+    Q29.enabled = true
+    Q30.enabled = true
+    Q31.enabled = true
+    Q32.enabled = true
     state[0x1402] = 0x0000
     state[0x1404] = 0x0000
 }
 
 proc bonjo {
-    conditional_block 0x01 dork_ok
+    activation enabled until dork_ok
     branch_gameflag
     require state[0x1400] == 0x0000
     actor Cyberquizz.s13 blood 0
@@ -1079,12 +1079,12 @@ proc bonjo {
     say Cyberquizz voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Dummy! At your age I was already a NERD, a Notarized Expert in Rare Doctorates..."
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Don't take any notice, Commander|. Anything that repulsive can't be a real NERD..."
     say Cyberquizz voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Here are the questions... Are you ready?"
-    poke_byte 0x21D4 0x00
-    poke_byte 0x2279 0x00
+    bonjour.enabled = false
+    bonjo.enabled = false
 }
 
 proc dork_ok {
-    conditional_block 0x01 perdu
+    activation enabled until perdu
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     require state[0x1404] == 0x0005
@@ -1111,7 +1111,7 @@ proc dork_ok {
 }
 
 proc perdu {
-    conditional_block 0x01 Q1
+    activation enabled until Q1
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     require state[0x1402] == 0x0020
@@ -1123,15 +1123,15 @@ proc perdu {
     load_string "maledict.hnm"
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That's the way it goes...."
     say Cyberquizz voice=0xFF flags=0x08 display=0xC0 loop=none control=none : "stop"
-    poke_byte 0x2279 0x01
-    poke_byte 0x21D4 0x01
+    bonjo.enabled = true
+    bonjour.enabled = true
     state[0x1402] = 0x0000
     state[0x1404] = 0x0000
     record_clear Cyberquizz.s13
 }
 
 proc Q1 {
-    conditional_block 0x01 Q2
+    activation enabled until Q2
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1154,11 +1154,11 @@ proc Q1 {
     }
     block_25C7:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2527 0x00
+    Q1.enabled = false
 }
 
 proc Q2 {
-    conditional_block 0x01 Q3
+    activation enabled until Q3
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1181,11 +1181,11 @@ proc Q2 {
     }
     block_2670:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x25DA 0x00
+    Q2.enabled = false
 }
 
 proc Q3 {
-    conditional_block 0x01 Q4
+    activation enabled until Q4
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1209,11 +1209,11 @@ proc Q3 {
     }
     block_2731:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2683 0x00
+    Q3.enabled = false
 }
 
 proc Q4 {
-    conditional_block 0x01 Q5
+    activation enabled until Q5
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1236,11 +1236,11 @@ proc Q4 {
     }
     block_27D2:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2744 0x00
+    Q4.enabled = false
 }
 
 proc Q5 {
-    conditional_block 0x01 Q6
+    activation enabled until Q6
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1263,11 +1263,11 @@ proc Q5 {
     }
     block_2879:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x27E5 0x00
+    Q5.enabled = false
 }
 
 proc Q6 {
-    conditional_block 0x01 Q7
+    activation enabled until Q7
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1290,11 +1290,11 @@ proc Q6 {
     }
     block_2926:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x288C 0x00
+    Q6.enabled = false
 }
 
 proc Q7 {
-    conditional_block 0x01 Q8
+    activation enabled until Q8
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1317,11 +1317,11 @@ proc Q7 {
     }
     block_29C1:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2939 0x00
+    Q7.enabled = false
 }
 
 proc Q8 {
-    conditional_block 0x01 Q9
+    activation enabled until Q9
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1344,11 +1344,11 @@ proc Q8 {
     }
     block_2A5C:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x29D4 0x00
+    Q8.enabled = false
 }
 
 proc Q9 {
-    conditional_block 0x01 Q10
+    activation enabled until Q10
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1371,11 +1371,11 @@ proc Q9 {
     }
     block_2AF7:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2A6F 0x00
+    Q9.enabled = false
 }
 
 proc Q10 {
-    conditional_block 0x01 Q11
+    activation enabled until Q11
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1398,11 +1398,11 @@ proc Q10 {
     }
     block_2B9A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2B0A 0x00
+    Q10.enabled = false
 }
 
 proc Q11 {
-    conditional_block 0x01 Q12
+    activation enabled until Q12
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1425,11 +1425,11 @@ proc Q11 {
     }
     block_2C2B:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2BAD 0x00
+    Q11.enabled = false
 }
 
 proc Q12 {
-    conditional_block 0x01 Q13
+    activation enabled until Q13
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1452,11 +1452,11 @@ proc Q12 {
     }
     block_2CBE:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2C3E 0x00
+    Q12.enabled = false
 }
 
 proc Q13 {
-    conditional_block 0x01 Q14
+    activation enabled until Q14
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1479,11 +1479,11 @@ proc Q13 {
     }
     block_2D53:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2CD1 0x00
+    Q13.enabled = false
 }
 
 proc Q14 {
-    conditional_block 0x01 Q15
+    activation enabled until Q15
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1506,11 +1506,11 @@ proc Q14 {
     }
     block_2DE8:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2D66 0x00
+    Q14.enabled = false
 }
 
 proc Q15 {
-    conditional_block 0x01 Q16
+    activation enabled until Q16
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1533,11 +1533,11 @@ proc Q15 {
     }
     block_2E81:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2DFB 0x00
+    Q15.enabled = false
 }
 
 proc Q16 {
-    conditional_block 0x01 Q17
+    activation enabled until Q17
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1560,11 +1560,11 @@ proc Q16 {
     }
     block_2F18:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2E94 0x00
+    Q16.enabled = false
 }
 
 proc Q17 {
-    conditional_block 0x01 Q18
+    activation enabled until Q18
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1587,11 +1587,11 @@ proc Q17 {
     }
     block_2FC1:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2F2B 0x00
+    Q17.enabled = false
 }
 
 proc Q18 {
-    conditional_block 0x01 Q19
+    activation enabled until Q19
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1614,11 +1614,11 @@ proc Q18 {
     }
     block_305A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x2FD4 0x00
+    Q18.enabled = false
 }
 
 proc Q19 {
-    conditional_block 0x01 Q20
+    activation enabled until Q20
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1641,11 +1641,11 @@ proc Q19 {
     }
     block_30ED:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x306D 0x00
+    Q19.enabled = false
 }
 
 proc Q20 {
-    conditional_block 0x01 Q21
+    activation enabled until Q21
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1668,11 +1668,11 @@ proc Q20 {
     }
     block_3194:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x30FE 0x00
+    Q20.enabled = false
 }
 
 proc Q21 {
-    conditional_block 0x01 Q22
+    activation enabled until Q22
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1695,11 +1695,11 @@ proc Q21 {
     }
     block_322B:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x31A7 0x00
+    Q21.enabled = false
 }
 
 proc Q22 {
-    conditional_block 0x01 Q23
+    activation enabled until Q23
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1722,11 +1722,11 @@ proc Q22 {
     }
     block_32BE:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x323E 0x00
+    Q22.enabled = false
 }
 
 proc Q23 {
-    conditional_block 0x01 Q24
+    activation enabled until Q24
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1749,11 +1749,11 @@ proc Q23 {
     }
     block_335F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x32D1 0x00
+    Q23.enabled = false
 }
 
 proc Q24 {
-    conditional_block 0x01 Q25
+    activation enabled until Q25
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1776,11 +1776,11 @@ proc Q24 {
     }
     block_33E0:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x3372 0x00
+    Q24.enabled = false
 }
 
 proc Q25 {
-    conditional_block 0x01 Q26
+    activation enabled until Q26
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1803,15 +1803,15 @@ proc Q25 {
     }
     block_346D:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x33F3 0x00
+    Q25.enabled = false
 }
 
 proc Q26 {
-    conditional_block 0x01 Q27
+    activation enabled until Q27
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
-    poke_byte 0x21D4 0x00
+    bonjour.enabled = false
     say Cyberquizz voice=0x08 flags=0x10 display=0x80 loop=block_350A control=none : "Which famous dancer is the star of \"Hold me in your tentacles\"?" choices "torka" "tina_burner" "cybertha" "joy_stika"
     when block_34E2 {
         concept_guard "tina_burner" 0
@@ -1831,11 +1831,11 @@ proc Q26 {
     }
     block_350A:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x3480 0x00
+    Q26.enabled = false
 }
 
 proc Q27 {
-    conditional_block 0x01 Q28
+    activation enabled until Q28
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1858,11 +1858,11 @@ proc Q27 {
     }
     block_359F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x351D 0x00
+    Q27.enabled = false
 }
 
 proc Q28 {
-    conditional_block 0x01 Q29
+    activation enabled until Q29
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1885,11 +1885,11 @@ proc Q28 {
     }
     block_3642:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x35B2 0x00
+    Q28.enabled = false
 }
 
 proc Q29 {
-    conditional_block 0x01 Q30
+    activation enabled until Q30
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1912,11 +1912,11 @@ proc Q29 {
     }
     block_36DB:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x3655 0x00
+    Q29.enabled = false
 }
 
 proc Q30 {
-    conditional_block 0x01 Q31
+    activation enabled until Q31
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1939,11 +1939,11 @@ proc Q30 {
     }
     block_3774:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x36EE 0x00
+    Q30.enabled = false
 }
 
 proc Q31 {
-    conditional_block 0x01 Q32
+    activation enabled until Q32
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1966,11 +1966,11 @@ proc Q31 {
     }
     block_3805:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question|:"
-    poke_byte 0x3787 0x00
+    Q31.enabled = false
 }
 
 proc Q32 {
-    conditional_block 0x01 emasc0
+    activation enabled until emasc0
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1993,11 +1993,11 @@ proc Q32 {
     }
     block_38A0:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "That was the final question..."
-    poke_byte 0x3818 0x00
+    Q32.enabled = false
 }
 
 proc emasc0 {
-    conditional_block 0x01 ed1
+    activation enabled until ed1
     branch_gameflag
     actor Emasculator.s13 blood 0
     require state[0x1406] == 0x0000
@@ -2011,7 +2011,7 @@ proc emasc0 {
 }
 
 proc ed1 {
-    conditional_block 0x01 eda
+    activation enabled until eda
     branch_gameflag
     require arche.current_location == Eden
     require Amigo.current_location == hall
@@ -2030,7 +2030,7 @@ proc ed1 {
 }
 
 proc eda {
-    conditional_block 0x01 ed2
+    activation enabled until ed2
     branch_gameflag
     require arche.current_location == Eden
     require state[0x1408] == 0x0000
@@ -2069,7 +2069,7 @@ proc eda {
 }
 
 proc ed2 {
-    conditional_block 0x01 ed3
+    activation enabled until ed3
     branch_gameflag
     require arche.current_location == Eden
     require state[0x1408] == 0x0001
@@ -2120,7 +2120,7 @@ proc ed2 {
 }
 
 proc ed3 {
-    conditional_block 0x01 ed4
+    activation enabled until ed4
     branch_gameflag
     require arche.current_location == Eden
     require state[0x1408] == 0x0002
@@ -2165,7 +2165,7 @@ proc ed3 {
 }
 
 proc ed4 {
-    conditional_block 0x01 ed5
+    activation enabled until ed5
     branch_flag_274f
     actor Tina_Burner.s13 blood 0
     guard_pop
@@ -2181,13 +2181,13 @@ proc ed4 {
     say Tina_Burner voice=0x05 flags=0x00 display=0x80 loop=none control=none : "CRY CRY..."
     say Tina_Burner voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, she really tires me out..."
     say Tina_Burner voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    poke_byte 0x4041 0x00
-    poke_byte 0x41C3 0x01
+    ed4.enabled = false
+    ed5.enabled = true
     record_clear Tina_Burner.s13
 }
 
 proc ed5 {
-    conditional_block 0x00 migrator1
+    activation disabled until migrator1
     branch_flag_274f
     actor Tina_Burner.s13 blood 0
     guard_pop
@@ -2200,7 +2200,7 @@ proc ed5 {
 }
 
 proc migrator1 {
-    conditional_block 0x01 migrato1b
+    activation enabled until migrato1b
     branch_gameflag
     require state[0x140A] == 0x0000
     actor Migrator.s13 blood 0
@@ -2268,12 +2268,12 @@ proc migrator1 {
     say Migrator voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "Bye bye friend..."
     state[0x140A] = 0x0001
     state[0x140C] = 0x0001
-    poke_byte 0x423D 0x00
+    migrator1.enabled = false
     record_clear Migrator.s13
 }
 
 proc migrato1b {
-    conditional_block 0x01 migrator2
+    activation enabled until migrator2
     branch_gameflag
     require Tina_Burner.current_location == bar
     require state[0x140A] == 0x0001
@@ -2289,7 +2289,7 @@ proc migrato1b {
 }
 
 proc migrator2 {
-    conditional_block 0x01 tinator
+    activation enabled until tinator
     branch_gameflag
     require state[0x140A] == 0x0001
     require arche.current_location == Moskito
@@ -2310,11 +2310,11 @@ proc migrator2 {
     block_460F:
     say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Thank you|, friend|... Me be happy...."
     Tina_Burner.current_location = Trashlando
-    poke_byte 0x4550 0x00
+    migrator2.enabled = false
 }
 
 proc tinator {
-    conditional_block 0x01 migrator3
+    activation enabled until migrator3
     branch_gameflag
     require Tina_Burner.current_location == Trashlando
     require arche.current_location == Moskito
@@ -2328,12 +2328,12 @@ proc tinator {
     say Migrator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Thanks, Commander|. Something tells me we're going to get along just fine..."
     say Migrator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "See you..."
     say Migrator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    poke_byte 0x4633 0x00
+    tinator.enabled = false
     record_clear Migrator.s13
 }
 
 proc migrator3 {
-    conditional_block 0x01 migrator4
+    activation enabled until migrator4
     branch_gameflag
     require Tina_Burner.current_location == Trashlando
     actor Migrator.s13 blood 0
@@ -2350,7 +2350,7 @@ proc migrator3 {
 }
 
 proc migrator4 {
-    conditional_block 0x00 veuv
+    activation disabled until veuv
     branch_gameflag
     require Tina_Burner.current_location == Trashlando
     require arche.current_location == Moskito
@@ -2388,17 +2388,17 @@ proc migrator4 {
 }
 
 proc veuv {
-    conditional_block 0x01 veuv1
+    activation enabled until veuv1
     branch_presentation
     require state[0x13F4] == 0x0002
     guard_pop
     record_link Scruter_K.s13 blood 0
-    poke_byte 0x4954 0x01
-    poke_byte 0x493A 0x00
+    veuv1.enabled = true
+    veuv.enabled = false
 }
 
 proc veuv1 {
-    conditional_block 0x00 masta1
+    activation disabled until masta1
     branch_presentation
     guard_pop
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Hello hello... HANNA SCRUTA here. Husband HEKTOR be fighter pilot..."
@@ -2412,12 +2412,12 @@ proc veuv1 {
     say Scruter_K voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Phew! She just hung up... This feels bad to me, Commander|..."
     say Scruter_K voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x1410] = 0x0001
-    poke_byte 0x4954 0x00
+    veuv1.enabled = false
     record_clear Scruter_K.s13
 }
 
 proc masta1 {
-    conditional_block 0x01 masta2
+    activation enabled until masta2
     branch_gameflag
     require state[0x1412] == 0x0000
     actor Scruter_Mac.s13 blood 0
@@ -2452,7 +2452,7 @@ proc masta1 {
 }
 
 proc masta2 {
-    conditional_block 0x01 masta3
+    activation enabled until masta3
     branch_gameflag
     require state[0x1412] == 0x0001
     require Eviscerator.current_location == prison
@@ -2468,7 +2468,7 @@ proc masta2 {
 }
 
 proc masta3 {
-    conditional_block 0x01 masta5
+    activation enabled until masta5
     branch_gameflag
     require Eviscerator.current_location != prison
     require arche.current_location == Mastachok
@@ -2484,7 +2484,7 @@ proc masta3 {
 }
 
 proc masta5 {
-    conditional_block 0x01 masta4
+    activation enabled until masta4
     branch_gameflag
     require state[0x1414] == 0x0000
     actor Eviscerator.s13 blood 0
@@ -2529,7 +2529,7 @@ proc masta5 {
 }
 
 proc masta4 {
-    conditional_block 0x01 masta6
+    activation enabled until masta6
     branch_gameflag
     require arche.current_location == Magnus
     require Scruter_K.current_location == Magnus
@@ -2563,7 +2563,7 @@ proc masta4 {
 }
 
 proc masta6 {
-    conditional_block 0x01 masta6_526C
+    activation enabled until masta6_526C
     branch_gameflag
     require state[0x1414] == 0x0001
     require orxx.current_location == prison
@@ -2612,7 +2612,7 @@ proc masta6 {
 }
 
 proc masta6_526C {
-    conditional_block 0x01 rator1
+    activation enabled until rator1
     branch_gameflag
     require state[0x1414] == 0x0002
     actor Eviscerator.s13 blood 0
@@ -2624,18 +2624,18 @@ proc masta6_526C {
 }
 
 proc rator1 {
-    conditional_block 0x01 rator2
+    activation enabled until rator2
     require state[0x1414] == 0x0002
     require Tina_Burner.current_location != bar
     require Amigo.current_location != bar
     require splatch.holder == Eviscerator
     guard_pop
     Eviscerator.current_location = bar
-    poke_byte 0x52AF 0x00
+    rator1.enabled = false
 }
 
 proc rator2 {
-    conditional_block 0x01 tum1
+    activation enabled until tum1
     branch_gameflag
     actor Eviscerator.s13 blood 0
     require arche.current_location == Eden
@@ -2651,7 +2651,7 @@ proc rator2 {
 }
 
 proc tum1 {
-    conditional_block 0x01 tum3
+    activation enabled until tum3
     branch_gameflag
     actor Beauregard.s13 blood 0
     require state[0x141A] == 0x0000
@@ -2696,7 +2696,7 @@ proc tum1 {
 }
 
 proc tum3 {
-    conditional_block 0x01 st
+    activation enabled until st
     branch_gameflag
     actor Beauregard.s13 blood 0
     require state[0x141A] == 0x0001
@@ -2734,7 +2734,7 @@ proc tum3 {
 }
 
 proc st {
-    conditional_block 0x01 tum4
+    activation enabled until tum4
     branch_gameflag
     actor Fifi.s13 blood 0
     guard_pop
@@ -2748,7 +2748,7 @@ proc st {
 }
 
 proc tum4 {
-    conditional_block 0x01 tum5
+    activation enabled until tum5
     branch_gameflag
     require orxx.current_location == fresque
     actor Beauregard.s13 blood 0
@@ -2766,7 +2766,7 @@ proc tum4 {
 }
 
 proc tum5 {
-    conditional_block 0x01 tum6
+    activation enabled until tum6
     branch_gameflag
     require orxx.current_location == rubble
     actor Beauregard.s13 blood 0
@@ -2784,7 +2784,7 @@ proc tum5 {
 }
 
 proc tum6 {
-    conditional_block 0x01 tum6bis
+    activation enabled until tum6bis
     branch_gameflag
     actor Beauregard.s13 blood 0
     require orxx.current_location == rubble
@@ -2827,7 +2827,7 @@ proc tum6 {
 }
 
 proc tum6bis {
-    conditional_block 0x01 tum7
+    activation enabled until tum7
     branch_gameflag
     require orxx.current_location == rubble
     actor Beauregard.s13 blood 0
@@ -2844,7 +2844,7 @@ proc tum6bis {
 }
 
 proc tum7 {
-    conditional_block 0x01 tum8
+    activation enabled until tum8
     branch_gameflag
     require orxx.current_location == tumulus
     actor Beauregard.s13 blood 0
@@ -2873,7 +2873,7 @@ proc tum7 {
 }
 
 proc tum8 {
-    conditional_block 0x01 tum9
+    activation enabled until tum9
     branch_gameflag
     actor Beauregard.s13 blood 0
     require state[0x141A] == 0x0006
@@ -2900,7 +2900,7 @@ proc tum8 {
 }
 
 proc tum9 {
-    conditional_block 0x01 amig1
+    activation enabled until amig1
     branch_flag_274f
     actor Beauregard.s13 blood 0
     require Beauregard.current_location == aboard
@@ -2918,16 +2918,16 @@ proc tum9 {
 }
 
 proc amig1 {
-    conditional_block 0x01 amig2
+    activation enabled until amig2
     require Tina_Burner.current_location != bar
     require Eviscerator.current_location != bar
     guard_pop
     Amigo.current_location = bar
-    poke_byte 0x5C82 0x00
+    amig1.enabled = false
 }
 
 proc amig2 {
-    conditional_block 0x01 amig3
+    activation enabled until amig3
     branch_gameflag
     require Amigo.current_location == bar
     actor Amigo.s13 blood 0
@@ -2978,7 +2978,7 @@ proc amig2 {
 }
 
 proc amig3 {
-    conditional_block 0x01 yok0
+    activation enabled until yok0
     branch_gameflag
     actor Amigo.s13 blood 0
     require arche.current_location == Eden
@@ -3045,16 +3045,16 @@ proc amig3 {
 }
 
 proc yok0 {
-    conditional_block 0x01 yok1
+    activation enabled until yok1
     require Eviscerator.current_location != prison
     guard_pop
     Yoko.current_location = Rondo
-    poke_byte 0x5FB4 0x01
-    poke_byte 0x5F9C 0x00
+    yok1.enabled = true
+    yok0.enabled = false
 }
 
 proc yok1 {
-    conditional_block 0x00 yok2
+    activation disabled until yok2
     branch_gameflag
     require arche.current_location == Rondo
     actor Yoko.s13 blood 0
@@ -3114,13 +3114,13 @@ proc yok1 {
     } then {
         say Yoko voice=0x0A flags=0x00 display=0x80 loop=none control=none : "Thank you Commander|... You nice..."
         say Yoko voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Commander, let's go check out the observatory..."
-        poke_byte 0x5FB4 0x00
+        yok1.enabled = false
         record_state 0xC1 orxx.s13 0x0C62 0
     }
 }
 
 proc yok2 {
-    conditional_block 0x01 yok3
+    activation enabled until yok3
     branch_gameflag
     require arche.current_location == Rondo
     require Morning_Oil.current_location == observatory
@@ -3131,13 +3131,13 @@ proc yok2 {
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I completely reprogrammed him|, Commander|. You can trust him..."
     say Morning_Oil voice=0x03 flags=0x00 display=0x80 loop=none control=none : "See you soon... I'll call you on the radio if there's a problem..."
     say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    poke_byte 0x61E6 0x00
-    poke_byte 0x5FB4 0x00
+    yok2.enabled = false
+    yok1.enabled = false
     record_clear Morning_Oil.s13
 }
 
 proc yok3 {
-    conditional_block 0x01 yok3bis
+    activation enabled until yok3bis
     branch_gameflag
     require arche.current_location == Rondo
     actor Yoko.s13 blood 0
@@ -3148,13 +3148,13 @@ proc yok3 {
     say Yoko voice=0x06 flags=0x00 display=0x80 loop=none control=none : "He's in the observatory, playing with my father's telescope..."
     say Yoko voice=0x07 flags=0x00 display=0x80 loop=none control=none : "Go and see him. He'd like that..."
     say Yoko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    poke_byte 0x6294 0x00
-    poke_byte 0x6321 0x01
+    yok3.enabled = false
+    yok3bis.enabled = true
     record_state 0xC1 orxx.s13 0x0C62 0
 }
 
 proc yok3bis {
-    conditional_block 0x00 yok4
+    activation disabled until yok4
     branch_gameflag
     actor Yoko.s13 blood 0
     require Morning_Oil.current_location == observatory
@@ -3166,7 +3166,7 @@ proc yok3bis {
 }
 
 proc yok4 {
-    conditional_block 0x01 yok6
+    activation enabled until yok6
     branch_gameflag
     require arche.current_location == Rondo
     actor Morning_Oil.s13 blood 0
@@ -3183,22 +3183,22 @@ proc yok4 {
     say Morning_Oil voice=0x03 flags=0x00 display=0x80 loop=none control=none : "See you soon... I'll call you on the radio if there's a problem..."
     say Morning_Oil voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
     state_array_set 0x09 0x0046
-    poke_byte 0x6460 0x01
-    poke_byte 0x636E 0x00
+    yok6.enabled = true
+    yok4.enabled = false
     record_clear Morning_Oil.s13
 }
 
 proc yok6 {
-    conditional_block 0x00 yok7
+    activation disabled until yok7
     state_array_test 0x09
     guard_pop
     record_link Morning_Oil.s13 blood 0
-    poke_byte 0x6474 0x01
-    poke_byte 0x6460 0x00
+    yok7.enabled = true
+    yok6.enabled = false
 }
 
 proc yok7 {
-    conditional_block 0x00 yok5
+    activation disabled until yok5
     branch_presentation
     actor Morning_Oil.s13 blood 0
     guard_pop
@@ -3208,23 +3208,23 @@ proc yok7 {
     say Morning_Oil voice=0xFF flags=0x00 display=0x80 loop=none control=none : "I'll be expecting you..."
     say Morning_Oil voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Cruikk..."
     say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
-    poke_byte 0x650E 0x01
-    poke_byte 0x6474 0x00
+    yok5.enabled = true
+    yok7.enabled = false
     record_clear Morning_Oil.s13
 }
 
 proc yok5 {
-    conditional_block 0x00 yok8
+    activation disabled until yok8
     require arche.current_location != Rondo
     guard_pop
     Morning_Oil.current_location = Trashlando
     Jerry_Khan.current_location = observatory
-    poke_byte 0x652B 0x01
-    poke_byte 0x650E 0x00
+    yok8.enabled = true
+    yok5.enabled = false
 }
 
 proc yok8 {
-    conditional_block 0x00 jerry1
+    activation disabled until jerry1
     branch_gameflag
     require arche.current_location == Rondo
     actor Yoko.s13 blood 0
@@ -3234,12 +3234,12 @@ proc yok8 {
     say Yoko voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me very worried... You know INSPECTOR JERRY KHAN?"
     say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Inspector Jerry Khan investigate Eviscerator..."
     say Yoko voice=0x03 flags=0x08 display=0x90 loop=none control=none : "You go Observatory see Inspector Jerry Khan..."
-    poke_byte 0x65AF 0x01
+    jerry1.enabled = true
     record_state 0xC1 orxx.s13 0x0C62 0
 }
 
 proc jerry1 {
-    conditional_block 0x00 gl1
+    activation disabled until gl1
     branch_gameflag
     require arche.current_location == Rondo
     actor Jerry_Khan.s13 blood 0
@@ -3263,23 +3263,23 @@ proc jerry1 {
 }
 
 proc gl1 {
-    conditional_block 0x01 gl2
+    activation enabled until gl2
     guard_pop
     state_array_set 0x10 0x0032
-    poke_byte 0x6711 0x00
+    gl1.enabled = false
 }
 
 proc gl2 {
-    conditional_block 0x01 gl3
+    activation enabled until gl3
     state_array_test 0x10
     require Daddy_Gluxx.encounter_count == 0x0000
     guard_pop
     record_link Daddy_Gluxx.s13 blood 0
-    poke_byte 0x671E 0x00
+    gl2.enabled = false
 }
 
 proc gl3 {
-    conditional_block 0x01 glu2
+    activation enabled until glu2
     branch_presentation
     actor Daddy_Gluxx.s13 blood 0
     guard_pop
@@ -3291,7 +3291,7 @@ proc gl3 {
 }
 
 proc glu2 {
-    conditional_block 0x01 oto1
+    activation enabled until oto1
     branch_gameflag
     require state[0x142E] == 0x0000
     require arche.current_location == Ekatomb
@@ -3324,7 +3324,7 @@ proc glu2 {
 }
 
 proc oto1 {
-    conditional_block 0x00 prep
+    activation disabled until prep
     branch_gameflag
     require arche.current_location == Erazor
     actor Otto_Von_Smile.s13 blood 0
@@ -3334,16 +3334,16 @@ proc oto1 {
 }
 
 proc prep {
-    conditional_block 0x01 pub2
+    activation enabled until pub2
     require state[0x1432] == 0x0001
     guard_pop
     state_array_set 0x07 0x0014
     bit_flag Bug_Deluxe.s05 0x02 0
-    poke_byte 0x6944 0x00
+    prep.enabled = false
 }
 
 proc pub2 {
-    conditional_block 0x01 monop1
+    activation enabled until monop1
     branch_presentation
     actor Bug_Deluxe.s13 blood 0
     guard_pop
@@ -3359,7 +3359,7 @@ proc pub2 {
 }
 
 proc monop1 {
-    conditional_block 0x01 monop2
+    activation enabled until monop2
     require arche.current_location == Venusia
     actor Bug_Deluxe.s13 blood 0
     guard_pop
@@ -3368,7 +3368,7 @@ proc monop1 {
     when block_6A5C {
         concept_guard "yes" 0
     } then {
-        poke_byte 0x6AA6 0x01
+        monop2.enabled = true
         clear_alternate_concept
     }
     block_6A5C:
@@ -3384,7 +3384,7 @@ proc monop1 {
 }
 
 proc monop2 {
-    conditional_block 0x00 ad2
+    activation disabled until ad2
     require arche.current_location == Venusia
     branch_gameflag
     actor Bug_Deluxe.s13 blood 0
@@ -3397,7 +3397,7 @@ proc monop2 {
     } then {
         say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "You don't have creds? We don't care for poor clients..."
         say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-        poke_byte 0x6AA6 0x00
+        monop2.enabled = false
         record_clear Bug_Deluxe.s13
     }
     block_6B22:
@@ -3432,7 +3432,7 @@ proc monop2 {
         state_array_test 0x07
     } then {
         state_array_set 0x07 0xFFFF
-        poke_byte 0x6C50 0x01
+        ad2.enabled = true
     }
     block_6C08:
     when ad2 {
@@ -3441,25 +3441,25 @@ proc monop2 {
         say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "thank you for visiting VENUSIA the SUPRAMARKET. Come again soon to VENUSIA..."
         say Bug_Deluxe voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x1438] = state[0x1436]
-        poke_byte 0x6AA6 0x00
+        monop2.enabled = false
         record_clear Bug_Deluxe.s13
     }
 }
 
 proc ad2 {
-    conditional_block 0x00 fin1
+    activation disabled until fin1
     branch_gameflag
     guard_pop
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "We're closing right now..."
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Please move to the nearest cashpoint..."
     say Bug_Deluxe voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    poke_byte 0x6AA6 0x00
-    poke_byte 0x6C50 0x00
+    monop2.enabled = false
+    ad2.enabled = false
     record_clear Bug_Deluxe.s13
 }
 
 proc fin1 {
-    conditional_block 0x01 fin2
+    activation enabled until fin2
     require state[0x13FC] == 0x0001
     require state[0x1424] == 0x0001
     require scrambler.holder == blood
@@ -3468,12 +3468,12 @@ proc fin1 {
     require state[0x142C] == 0x0001
     guard_pop
     record_link Jerry_Khan.s13 blood 0
-    poke_byte 0x6CC7 0x01
-    poke_byte 0x6C91 0x00
+    fin2.enabled = true
+    fin1.enabled = false
 }
 
 proc fin2 {
-    conditional_block 0x00 Odd
+    activation disabled until Odd
     branch_presentation
     actor Jerry_Khan.s13 blood 0
     guard_pop
@@ -3489,19 +3489,19 @@ proc fin2 {
     say Jerry_Khan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "If you should forfeit your life, you'll be promoted to KNIGHT OF THE GUILD, posthumously..."
     say Jerry_Khan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "GOODBYE COMMANDER..."
     say Jerry_Khan voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
-    poke_byte 0x6E08 0x01
+    Odd.enabled = true
     record_clear Jerry_Khan.s13
 }
 
 proc Odd {
-    conditional_block 0x00 men1
+    activation disabled until men1
     record_entry 0xC6 arche.s13 Oddland 0
     guard_pop
     run_profile 0x04
 }
 
 proc men1 {
-    conditional_block 0x01 men2
+    activation enabled until men2
     branch_presentation
     actor menu.s13 blood 0
     guard_pop
@@ -3514,12 +3514,12 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Your chef says: eat it while it's hot!"
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-    poke_byte 0x6E14 0x00
+    men1.enabled = false
     record_clear menu.s13
 }
 
 proc men2 {
-    conditional_block 0x01 men3
+    activation enabled until men3
     branch_presentation
     actor menu.s13 blood 0
     guard_pop
@@ -3532,12 +3532,12 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Your CHEF says: You lucky eaters!"
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x6EC2 0x00
+    men2.enabled = false
     record_clear menu.s13
 }
 
 proc men3 {
-    conditional_block 0x01 men4
+    activation enabled until men4
     branch_presentation
     actor menu.s13 blood 0
     guard_pop
@@ -3550,12 +3550,12 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "your CHEF says: No eating with your mouth full!"
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x6F72 0x00
+    men3.enabled = false
     record_clear menu.s13
 }
 
 proc men4 {
-    conditional_block 0x01 men5
+    activation enabled until men5
     branch_presentation
     actor menu.s13 blood 0
     guard_pop
@@ -3568,12 +3568,12 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Your CHEF says: No talking with your mouth open!"
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x7026 0x00
+    men4.enabled = false
     record_clear menu.s13
 }
 
 proc men5 {
-    conditional_block 0x01 men6
+    activation enabled until men6
     branch_presentation
     actor menu.s13 blood 0
     guard_pop
@@ -3586,24 +3586,24 @@ proc men5 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Your CHEF says: Ventriloquists never burp..."
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    poke_byte 0x70E8 0x00
-    poke_byte 0x71A2 0x01
+    men5.enabled = false
+    men6.enabled = true
     record_clear menu.s13
 }
 
 proc men6 {
-    conditional_block 0x00 honk1
+    activation disabled until honk1
     guard_pop
-    poke_byte 0x6E14 0x01
-    poke_byte 0x6EC2 0x01
-    poke_byte 0x6F72 0x01
-    poke_byte 0x7026 0x01
-    poke_byte 0x70E8 0x01
-    poke_byte 0x71A2 0x00
+    men1.enabled = true
+    men2.enabled = true
+    men3.enabled = true
+    men4.enabled = true
+    men5.enabled = true
+    men6.enabled = false
 }
 
 proc honk1 {
-    conditional_block 0x01 help1
+    activation enabled until help1
     branch_presentation
     actor Honk.s13 blood 0
     guard_pop
@@ -3671,7 +3671,7 @@ proc honk1 {
 }
 
 proc help1 {
-    conditional_block 0x01 help2
+    activation enabled until help2
     branch_presentation
     require state[0x13EE] > 0x0002
     require !Eden.in_play
@@ -3682,12 +3682,12 @@ proc help1 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x73E1 0x00
+    help1.enabled = false
     record_clear Honk.s13
 }
 
 proc help2 {
-    conditional_block 0x01 help3
+    activation enabled until help3
     branch_presentation
     require state[0x13EE] > 0x0002
     require Daddy_Gluxx.encounter_count == 0x0000
@@ -3697,12 +3697,12 @@ proc help2 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7472 0x00
+    help2.enabled = false
     record_clear Honk.s13
 }
 
 proc help3 {
-    conditional_block 0x01 help4
+    activation enabled until help4
     branch_presentation
     require state[0x13EE] > 0x0002
     require Bronko.encounter_count == 0x0000
@@ -3713,12 +3713,12 @@ proc help3 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x74F3 0x00
+    help3.enabled = false
     record_clear Honk.s13
 }
 
 proc help4 {
-    conditional_block 0x01 help5
+    activation enabled until help5
     branch_presentation
     require state[0x13EE] > 0x0002
     require Bronko.current_location == aboard
@@ -3731,12 +3731,12 @@ proc help4 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7579 0x00
+    help4.enabled = false
     record_clear Honk.s13
 }
 
 proc help5 {
-    conditional_block 0x01 help6
+    activation enabled until help6
     branch_presentation
     require state[0x13EE] > 0x0002
     require Morning_Oil.current_location == Ark
@@ -3746,12 +3746,12 @@ proc help5 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7625 0x00
+    help5.enabled = false
     record_clear Honk.s13
 }
 
 proc help6 {
-    conditional_block 0x01 help7
+    activation enabled until help7
     branch_presentation
     require state[0x13EE] > 0x0002
     require guitar.holder == aboard
@@ -3761,12 +3761,12 @@ proc help6 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x76AA 0x00
+    help6.enabled = false
     record_clear Honk.s13
 }
 
 proc help7 {
-    conditional_block 0x01 help8
+    activation enabled until help8
     branch_presentation
     require state[0x13EE] > 0x0002
     require Tina_Burner.current_location == aboard
@@ -3776,12 +3776,12 @@ proc help7 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x772D 0x00
+    help7.enabled = false
     record_clear Honk.s13
 }
 
 proc help8 {
-    conditional_block 0x01 help9
+    activation enabled until help9
     branch_presentation
     require state[0x13EE] > 0x0002
     require Tina_Burner.current_location != bar
@@ -3793,12 +3793,12 @@ proc help8 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x77B2 0x00
+    help8.enabled = false
     record_clear Honk.s13
 }
 
 proc help9 {
-    conditional_block 0x01 help10
+    activation enabled until help10
     branch_presentation
     require state[0x13EE] > 0x0002
     require Anna_Haf.current_location == Magnus
@@ -3808,12 +3808,12 @@ proc help9 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7843 0x00
+    help9.enabled = false
     record_clear Honk.s13
 }
 
 proc help10 {
-    conditional_block 0x01 help11
+    activation enabled until help11
     branch_presentation
     require state[0x13EE] > 0x0002
     require Hom.encounter_count == 0x0000
@@ -3823,12 +3823,12 @@ proc help10 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x78CA 0x00
+    help10.enabled = false
     record_clear Honk.s13
 }
 
 proc help11 {
-    conditional_block 0x01 help12
+    activation enabled until help12
     branch_presentation
     require state[0x13EE] > 0x0002
     require Beauregard.encounter_count > 0x0000
@@ -3839,12 +3839,12 @@ proc help11 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x794B 0x00
+    help11.enabled = false
     record_clear Honk.s13
 }
 
 proc help12 {
-    conditional_block 0x01 help13
+    activation enabled until help13
     branch_presentation
     require state[0x13EE] > 0x0002
     require Yoko.encounter_count == 0x0000
@@ -3855,12 +3855,12 @@ proc help12 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x79DC 0x00
+    help12.enabled = false
     record_clear Honk.s13
 }
 
 proc help13 {
-    conditional_block 0x01 help14
+    activation enabled until help14
     branch_presentation
     require state[0x13EE] > 0x0002
     require transmitter.holder == Bronko
@@ -3872,12 +3872,12 @@ proc help13 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7A5E 0x00
+    help13.enabled = false
     record_clear Honk.s13
 }
 
 proc help14 {
-    conditional_block 0x01 helpend
+    activation enabled until helpend
     branch_presentation
     require state[0x13EE] > 0x0002
     require Beauregard.current_location == aboard
@@ -3887,12 +3887,12 @@ proc help14 {
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "That help sure eats up our BIONIUM reserves, Commander..."
     state[0x13EE] -= 0x0003
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
-    poke_byte 0x7AE8 0x00
+    help14.enabled = false
     record_clear Honk.s13
 }
 
 proc helpend {
-    conditional_block 0x01 sort
+    activation enabled until sort
     branch_presentation
     actor Honk.s13 blood 0
     guard_pop
@@ -3901,7 +3901,7 @@ proc helpend {
 }
 
 proc sort {
-    conditional_block 0x00 timy
+    activation disabled until timy
     branch_presentation
     actor Scruter_K.s13 blood 0
     guard_pop
@@ -3925,19 +3925,19 @@ proc sort {
     when timy {
         require state[0x143A] > 0x0000
     } then {
-        poke_byte 0x7B81 0x00
+        sort.enabled = false
     }
 }
 
 proc timy {
-    conditional_block 0x01 timx
+    activation enabled until timx
     guard_pop
     state_array_set 0x0C 0x05DC
-    poke_byte 0x7BF4 0x00
+    timy.enabled = false
 }
 
 proc timx {
-    conditional_block 0x01 tim1
+    activation enabled until tim1
     guard_pop
     when tim1 {
         state_array_test 0x0C
@@ -3948,7 +3948,7 @@ proc timx {
 }
 
 proc tim1 {
-    conditional_block 0x01 tim1B
+    activation enabled until tim1B
     require state[0x143C] == 0x0001
     guard_pop
     Ulikan.in_play = true
@@ -3956,7 +3956,7 @@ proc tim1 {
 }
 
 proc tim1B {
-    conditional_block 0x01 tim2
+    activation enabled until tim2
     branch_presentation
     actor Ulikan.s13 blood 0
     require state[0x143C] == 0x0001
@@ -4007,13 +4007,13 @@ proc tim1B {
     block_7DDA:
     say Ulikan voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
-    poke_byte 0x7C17 0x00
+    tim1.enabled = false
     state[0x143E] = 0x0001
     record_clear Ulikan.s13
 }
 
 proc tim2 {
-    conditional_block 0x01 tim2B
+    activation enabled until tim2B
     require state[0x143C] == 0x0002
     guard_pop
     Ulikan.in_play = true
@@ -4021,7 +4021,7 @@ proc tim2 {
 }
 
 proc tim2B {
-    conditional_block 0x01 tim3
+    activation enabled until tim3
     branch_presentation
     actor Ulikan.s13 blood 0
     require state[0x143C] == 0x0002
@@ -4070,12 +4070,12 @@ proc tim2B {
     block_7F9D:
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
-    poke_byte 0x7DF9 0x00
+    tim2.enabled = false
     record_clear Ulikan.s13
 }
 
 proc tim3 {
-    conditional_block 0x01 tim3B
+    activation enabled until tim3B
     require state[0x143C] == 0x0003
     guard_pop
     Ulikan.in_play = true
@@ -4083,7 +4083,7 @@ proc tim3 {
 }
 
 proc tim3B {
-    conditional_block 0x01 tim4
+    activation enabled until tim4
     branch_presentation
     actor Ulikan.s13 blood 0
     require state[0x143C] == 0x0003
@@ -4129,12 +4129,12 @@ proc tim3B {
     block_811F:
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
-    poke_byte 0x7FB5 0x00
+    tim3.enabled = false
     record_clear Ulikan.s13
 }
 
 proc tim4 {
-    conditional_block 0x01 tim4B
+    activation enabled until tim4B
     require state[0x143C] == 0x0004
     guard_pop
     Ulikan.in_play = true
@@ -4142,7 +4142,7 @@ proc tim4 {
 }
 
 proc tim4B {
-    conditional_block 0x01 tim5
+    activation enabled until tim5
     branch_presentation
     actor Ulikan.s13 blood 0
     require state[0x143C] == 0x0004
@@ -4191,12 +4191,12 @@ proc tim4B {
     block_82C5:
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
-    poke_byte 0x8137 0x00
+    tim4.enabled = false
     record_clear Ulikan.s13
 }
 
 proc tim5 {
-    conditional_block 0x01 tim5B
+    activation enabled until tim5B
     require state[0x143C] == 0x0005
     guard_pop
     Ulikan.in_play = true
@@ -4204,7 +4204,7 @@ proc tim5 {
 }
 
 proc tim5B {
-    conditional_block 0x01 boba1
+    activation enabled until boba1
     branch_presentation
     actor Ulikan.s13 blood 0
     require state[0x143C] == 0x0005
@@ -4265,12 +4265,12 @@ proc tim5B {
     block_84A7:
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
-    poke_byte 0x82DD 0x00
+    tim5.enabled = false
     record_clear Ulikan.s13
 }
 
 proc boba1 {
-    conditional_block 0x01 augmen
+    activation enabled until augmen
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     guard_pop
@@ -4300,7 +4300,7 @@ proc boba1 {
 }
 
 proc augmen {
-    conditional_block 0x01 revel
+    activation enabled until revel
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     require state[0x1442] == 0x0001
@@ -4316,7 +4316,7 @@ proc augmen {
 }
 
 proc revel {
-    conditional_block 0x01 block_8839
+    activation enabled until block_8839
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     require state[0x1446] == 0x0001

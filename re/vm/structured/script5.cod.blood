@@ -142,7 +142,7 @@ field orxx.current_location = orxx + 0x0004 // VAR kind 0x0200, selector(s) 11
 field orxx.s13 = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
 proc init5 {
-    conditional_block 0x01 Beau
+    activation enabled until Beau
     guard_pop
     Moskito.in_play = true
     airport.in_play = true
@@ -185,11 +185,11 @@ proc init5 {
     character_slot 0x04 "venus"
     character_slot 0x05 "scrut"
     character_slot 0x06 "present"
-    poke_byte 0x0001 0x00
+    init5.enabled = false
 }
 
 proc Beau {
-    conditional_block 0x01 cla
+    activation enabled until cla
     branch_flag_274f
     actor Beauregard.s13 blood 0
     guard_pop
@@ -199,7 +199,7 @@ proc Beau {
 }
 
 proc cla {
-    conditional_block 0x01 recept
+    activation enabled until recept
     branch_flag_274f
     actor Anna_Haf.s13 blood 0
     guard_pop
@@ -209,7 +209,7 @@ proc cla {
 }
 
 proc recept {
-    conditional_block 0x01 morn
+    activation enabled until morn
     branch_flag_274f
     actor receiver.s13 blood 0
     guard_pop
@@ -219,7 +219,7 @@ proc recept {
 }
 
 proc morn {
-    conditional_block 0x00 mac
+    activation disabled until mac
     branch_flag_274f
     actor Morning_Oil.s13 blood 0
     guard_pop
@@ -229,21 +229,21 @@ proc morn {
 }
 
 proc mac {
-    conditional_block 0x01 mac2
+    activation enabled until mac2
     require arche.current_location == Kult
     guard_pop
     Scruter_Mac.current_location = Kult
 }
 
 proc mac2 {
-    conditional_block 0x01 kult
+    activation enabled until kult
     require arche.current_location == Mastachok
     guard_pop
     Scruter_Mac.current_location = Mastachok
 }
 
 proc kult {
-    conditional_block 0x01 ondo1
+    activation enabled until ondo1
     branch_gameflag
     require arche.current_location == Kult
     actor Scruter_Mac.s13 blood 0
@@ -270,7 +270,7 @@ proc kult {
 }
 
 proc ondo1 {
-    conditional_block 0x01 big1
+    activation enabled until big1
     branch_flag_274f
     actor ondoyant.s13 blood 0
     guard_pop
@@ -304,7 +304,7 @@ proc ondo1 {
 }
 
 proc big1 {
-    conditional_block 0x01 boba0
+    activation enabled until boba0
     branch_gameflag
     require arche.current_location == Bigbang
     actor Bug_Deluxe.s13 blood 0
@@ -334,7 +334,7 @@ proc big1 {
 }
 
 proc boba0 {
-    conditional_block 0x01 boba1
+    activation enabled until boba1
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     require state[0x136C] == 0x0001
@@ -378,12 +378,12 @@ proc boba0 {
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "AND GET BACK TO WORK!!!"
     say Bob_Morlock voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Yes sir, Cap'n Bob sir..."
     state[0x136A] = 0x0001
-    poke_byte 0x071A 0x00
+    boba0.enabled = false
     record_clear Bob_Morlock.s13
 }
 
 proc boba1 {
-    conditional_block 0x01 big2
+    activation enabled until big2
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     guard_pop
@@ -413,7 +413,7 @@ proc boba1 {
 }
 
 proc big2 {
-    conditional_block 0x01 bar1
+    activation enabled until bar1
     branch_gameflag
     require arche.current_location == Bigbang
     actor Tina_Burner.s13 blood 0
@@ -431,14 +431,14 @@ proc big2 {
     say Tina_Burner voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Darling Migra's at the bar, drinking a frozen Migrita..."
     say Tina_Burner voice=0x02 flags=0x00 display=0x80 loop=none control=none : "MIGRA OH MIGRA SWEETIE... GUESS WHO'S COME..."
     say Tina_Burner voice=0x01 flags=0x08 display=0xB0 loop=none control=none : "Go join him for a stiff one, Commander|..."
-    poke_byte 0x0CD0 0x00
+    big2.enabled = false
     Migrator.current_location = bar1
     Tina_Burner.current_location = Trashlando
     record_state 0xC1 orxx.s13 0x0FDC 0
 }
 
 proc bar1 {
-    conditional_block 0x01 big3
+    activation enabled until big3
     branch_gameflag
     require arche.current_location == Bigbang
     actor Migrator.s13 blood 0
@@ -453,7 +453,7 @@ proc bar1 {
     say Migrator voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Hurry up, Commander|... We can't have the ceremony without a ring..."
     say Migrator voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Holy handouts... Where do we find a wedding band at this time of day or night?"
     say Migrator voice=0x02 flags=0x08 display=0xC0 loop=none control=none : "See you soon|, Commander|..."
-    poke_byte 0x0EBB 0x00
+    bar1.enabled = false
     Migrator.current_location = Trashlando
     Tina_Burner.current_location = bar2
     Yoko.current_location = Bigbang
@@ -461,7 +461,7 @@ proc bar1 {
 }
 
 proc big3 {
-    conditional_block 0x01 bar2
+    activation enabled until bar2
     branch_gameflag
     require arche.current_location == Bigbang
     actor Yoko.s13 blood 0
@@ -476,7 +476,7 @@ proc big3 {
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "No problem, Mister Yoko|... We have the wedding band right here..."
     say Yoko voice=0x06 flags=0x00 display=0x80 loop=none control=none : "YES|!!! Me happy..."
     say Yoko voice=0x07 flags=0x08 display=0xA0 loop=none control=none : "You go bar, Tina be impatient..."
-    poke_byte 0x1019 0x00
+    big3.enabled = false
     Fifi.current_location = bar1
     record_state 0xC1 orxx.s13 0x0FDC 0
     block_10E3:
@@ -488,7 +488,7 @@ proc big3 {
 }
 
 proc bar2 {
-    conditional_block 0x01 bar3
+    activation enabled until bar3
     branch_gameflag
     require arche.current_location == Bigbang
     actor Fifi.s13 blood 0
@@ -505,7 +505,7 @@ proc bar2 {
 }
 
 proc bar3 {
-    conditional_block 0x01 bar4
+    activation enabled until bar4
     branch_gameflag
     require arche.current_location == Bigbang
     require orxx.current_location == bar2
@@ -534,7 +534,7 @@ proc bar3 {
 }
 
 proc bar4 {
-    conditional_block 0x01 finalmen
+    activation enabled until finalmen
     branch_gameflag
     require arche.current_location == Bigbang
     require orxx.current_location == bar1
@@ -558,7 +558,7 @@ proc bar4 {
 }
 
 proc finalmen {
-    conditional_block 0x01 corpo1
+    activation enabled until corpo1
     branch_gameflag
     require arche.current_location == Bigbang
     require orxx.current_location == concert
@@ -613,7 +613,7 @@ proc finalmen {
 }
 
 proc corpo1 {
-    conditional_block 0x01 t10
+    activation enabled until t10
     branch_gameflag
     require state[0x136E] == 0x0000
     require arche.current_location == Corpo
@@ -630,22 +630,22 @@ proc corpo1 {
 }
 
 proc t10 {
-    conditional_block 0x01 krapp
+    activation enabled until krapp
     guard_pop
     state_array_set 0x0A 0x0320
-    poke_byte 0x181D 0x00
+    t10.enabled = false
 }
 
 proc krapp {
-    conditional_block 0x01 krapp1
+    activation enabled until krapp1
     state_array_test 0x0A
     guard_pop
     record_link Kran_Dobu.s13 blood 0
-    poke_byte 0x182A 0x00
+    krapp.enabled = false
 }
 
 proc krapp1 {
-    conditional_block 0x01 masta1
+    activation enabled until masta1
     branch_presentation
     actor Kran_Dobu.s13 blood 0
     guard_pop
@@ -658,12 +658,12 @@ proc krapp1 {
     say Kran_Dobu voice=0xFF flags=0x20 display=0x80 loop=none control=none : "He's talking about the Big Bang|..."
     say Kran_Dobu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "See you|... Ha|! Ha|! Ha|!"
     say Kran_Dobu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Bye bye"
-    poke_byte 0x183A 0x00
+    krapp1.enabled = false
     record_clear Kran_Dobu.s13
 }
 
 proc masta1 {
-    conditional_block 0x01 masta5
+    activation enabled until masta5
     branch_gameflag
     actor Scruter_Mac.s13 blood 0
     guard_pop
@@ -697,7 +697,7 @@ proc masta1 {
 }
 
 proc masta5 {
-    conditional_block 0x01 masta6
+    activation enabled until masta6
     branch_gameflag
     require state[0x1370] == 0x0000
     actor Eviscerator.s13 blood 0
@@ -747,7 +747,7 @@ proc masta5 {
 }
 
 proc masta6 {
-    conditional_block 0x01 amig2
+    activation enabled until amig2
     branch_gameflag
     require state[0x1370] == 0x0001
     require orxx.current_location == prison
@@ -788,7 +788,7 @@ proc masta6 {
 }
 
 proc amig2 {
-    conditional_block 0x01 yok1
+    activation enabled until yok1
     branch_gameflag
     require Amigo.current_location == bar
     actor Amigo.s13 blood 0
@@ -806,7 +806,7 @@ proc amig2 {
 }
 
 proc yok1 {
-    conditional_block 0x01 max1
+    activation enabled until max1
     branch_flag_274f
     actor Yoko.s13 blood 0
     guard_pop
@@ -847,7 +847,7 @@ proc yok1 {
 }
 
 proc max1 {
-    conditional_block 0x01 ronda
+    activation enabled until ronda
     branch_flag_274f
     actor Maxxon.s13 blood 0
     guard_pop
@@ -888,7 +888,7 @@ proc max1 {
 }
 
 proc ronda {
-    conditional_block 0x01 max3
+    activation enabled until max3
     branch_gameflag
     require arche.current_location == Rondo
     actor Yoko.s13 blood 0
@@ -905,7 +905,7 @@ proc ronda {
 }
 
 proc max3 {
-    conditional_block 0x01 glu2
+    activation enabled until glu2
     branch_gameflag
     require arche.current_location == Rondo
     actor Maxxon.s13 blood 0
@@ -921,7 +921,7 @@ proc max3 {
 }
 
 proc glu2 {
-    conditional_block 0x01 monop1
+    activation enabled until monop1
     branch_gameflag
     require arche.current_location == Ekatomb
     actor Daddy_Gluxx.s13 blood 0
@@ -941,7 +941,7 @@ proc glu2 {
 }
 
 proc monop1 {
-    conditional_block 0x01 bronk1
+    activation enabled until bronk1
     require arche.current_location == Venusia
     actor Bug_Deluxe.s13 blood 0
     guard_pop
@@ -954,7 +954,7 @@ proc monop1 {
 }
 
 proc bronk1 {
-    conditional_block 0x01 emasc0
+    activation enabled until emasc0
     branch_flag_274f
     require state[0x1378] == 0x0000
     actor Bronko.s13 blood 0
@@ -992,7 +992,7 @@ proc bronk1 {
 }
 
 proc emasc0 {
-    conditional_block 0x01 hom0
+    activation enabled until hom0
     branch_gameflag
     actor Emasculator.s13 blood 0
     require state[0x137A] == 0x0000
@@ -1008,7 +1008,7 @@ proc emasc0 {
 }
 
 proc hom0 {
-    conditional_block 0x01 hom1
+    activation enabled until hom1
     branch_flag_274f
     require Yoko.current_location == aboard
     actor Hom.s13 blood 0
@@ -1022,7 +1022,7 @@ proc hom0 {
 }
 
 proc hom1 {
-    conditional_block 0x01 hom1_2922
+    activation enabled until hom1_2922
     branch_flag_274f
     require Yoko.current_location != aboard
     actor Hom.s13 blood 0
@@ -1041,7 +1041,7 @@ proc hom1 {
 }
 
 proc hom1_2922 {
-    conditional_block 0x01 hom2
+    activation enabled until hom2
     branch_gameflag
     require urout.holder != blood
     actor Hom.s13 blood 0
@@ -1070,13 +1070,13 @@ proc hom1_2922 {
     say Hom voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We already know that, Commander|... Old Tube-head's going gaga..."
     say Hom voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me wait here with U.R.O.U.T|..."
     say Hom voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye friend|..."
-    poke_byte 0x27F6 0x00
+    hom1.enabled = false
     state[0x137C] = 0x0001
     record_clear Hom.s13
 }
 
 proc hom2 {
-    conditional_block 0x01 jour
+    activation enabled until jour
     branch_gameflag
     require state[0x137C] == 0x0001
     actor Hom.s13 blood 0
@@ -1119,7 +1119,7 @@ proc hom2 {
 }
 
 proc jour {
-    conditional_block 0x01 bonj1
+    activation enabled until bonj1
     branch_gameflag
     require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
@@ -1132,52 +1132,52 @@ proc jour {
 }
 
 proc bonj1 {
-    conditional_block 0x01 bonj2
+    activation enabled until bonj2
     branch_gameflag
     require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
     require arche.current_location == Cyberock
     guard_pop
-    poke_byte 0x3056 0x01
-    poke_byte 0x30FF 0x01
-    poke_byte 0x31A6 0x01
-    poke_byte 0x3229 0x01
-    poke_byte 0x32C2 0x01
-    poke_byte 0x3351 0x01
-    poke_byte 0x33D8 0x01
-    poke_byte 0x3465 0x01
-    poke_byte 0x34E4 0x01
-    poke_byte 0x3567 0x01
-    poke_byte 0x35FC 0x01
-    poke_byte 0x3670 0x01
-    poke_byte 0x36F7 0x01
-    poke_byte 0x3778 0x01
-    poke_byte 0x3805 0x01
-    poke_byte 0x389A 0x01
-    poke_byte 0x3921 0x01
-    poke_byte 0x39BA 0x01
-    poke_byte 0x3A3F 0x01
-    poke_byte 0x3AD0 0x01
-    poke_byte 0x3B69 0x01
-    poke_byte 0x3BEC 0x01
-    poke_byte 0x3C6D 0x01
-    poke_byte 0x3CF6 0x01
-    poke_byte 0x3D71 0x01
-    poke_byte 0x3DF6 0x01
-    poke_byte 0x3E85 0x01
-    poke_byte 0x3F0E 0x01
-    poke_byte 0x3F9F 0x01
-    poke_byte 0x402E 0x01
-    poke_byte 0x40B5 0x01
-    poke_byte 0x4140 0x01
+    Q1.enabled = true
+    Q2.enabled = true
+    Q3.enabled = true
+    Q4.enabled = true
+    Q5.enabled = true
+    Q6.enabled = true
+    Q7.enabled = true
+    Q8.enabled = true
+    Q9.enabled = true
+    Q10.enabled = true
+    Q11.enabled = true
+    Q12.enabled = true
+    Q13.enabled = true
+    Q14.enabled = true
+    Q15.enabled = true
+    Q16.enabled = true
+    Q17.enabled = true
+    Q18.enabled = true
+    Q19.enabled = true
+    Q20.enabled = true
+    Q21.enabled = true
+    Q22.enabled = true
+    Q23.enabled = true
+    Q24.enabled = true
+    Q25.enabled = true
+    Q26.enabled = true
+    Q27.enabled = true
+    Q28.enabled = true
+    Q29.enabled = true
+    Q30.enabled = true
+    Q31.enabled = true
+    Q32.enabled = true
     state[0x1380] = 0x0000
     state[0x1382] = 0x0000
-    poke_byte 0x2E07 0x01
-    poke_byte 0x2D5A 0x00
+    bonj2.enabled = true
+    bonj1.enabled = false
 }
 
 proc bonj2 {
-    conditional_block 0x00 Bof_ok
+    activation disabled until Bof_ok
     branch_gameflag
     require state[0x137E] == 0x0000
     actor Cyberquizz.s13 blood 0
@@ -1193,7 +1193,7 @@ proc bonj2 {
 }
 
 proc Bof_ok {
-    conditional_block 0x01 perdu
+    activation enabled until perdu
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     require state[0x1382] == 0x0005
@@ -1221,7 +1221,7 @@ proc Bof_ok {
 }
 
 proc perdu {
-    conditional_block 0x01 Q1
+    activation enabled until Q1
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     require state[0x1380] == 0x0020
@@ -1232,14 +1232,14 @@ proc perdu {
     say Cyberquizz voice=0x09 flags=0x00 display=0x80 loop=none control=none : "May your liver turn into oxidized mercury sauce!! How could you do this??..."
     say Cyberquizz voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I didn't deserve this humiliation...."
     say Cyberquizz voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "stop"
-    poke_byte 0x2D5A 0x01
+    bonj1.enabled = true
     state[0x1380] = 0x0000
     state[0x1382] = 0x0000
     record_clear Cyberquizz.s13
 }
 
 proc Q1 {
-    conditional_block 0x01 Q2
+    activation enabled until Q2
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1262,11 +1262,11 @@ proc Q1 {
     }
     block_30EE:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3056 0x00
+    Q1.enabled = false
 }
 
 proc Q2 {
-    conditional_block 0x01 Q3
+    activation enabled until Q3
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1289,11 +1289,11 @@ proc Q2 {
     }
     block_3195:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x30FF 0x00
+    Q2.enabled = false
 }
 
 proc Q3 {
-    conditional_block 0x01 Q4
+    activation enabled until Q4
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1317,11 +1317,11 @@ proc Q3 {
     }
     block_3218:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x31A6 0x00
+    Q3.enabled = false
 }
 
 proc Q4 {
-    conditional_block 0x01 Q5
+    activation enabled until Q5
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1344,11 +1344,11 @@ proc Q4 {
     }
     block_32B1:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3229 0x00
+    Q4.enabled = false
 }
 
 proc Q5 {
-    conditional_block 0x01 Q6
+    activation enabled until Q6
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1371,11 +1371,11 @@ proc Q5 {
     }
     block_3340:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x32C2 0x00
+    Q5.enabled = false
 }
 
 proc Q6 {
-    conditional_block 0x01 Q7
+    activation enabled until Q7
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1398,11 +1398,11 @@ proc Q6 {
     }
     block_33C7:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3351 0x00
+    Q6.enabled = false
 }
 
 proc Q7 {
-    conditional_block 0x01 Q8
+    activation enabled until Q8
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1425,11 +1425,11 @@ proc Q7 {
     }
     block_3454:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x33D8 0x00
+    Q7.enabled = false
 }
 
 proc Q8 {
-    conditional_block 0x01 Q9
+    activation enabled until Q9
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1452,11 +1452,11 @@ proc Q8 {
     }
     block_34D3:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3465 0x00
+    Q8.enabled = false
 }
 
 proc Q9 {
-    conditional_block 0x01 Q10
+    activation enabled until Q10
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1479,11 +1479,11 @@ proc Q9 {
     }
     block_3556:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x34E4 0x00
+    Q9.enabled = false
 }
 
 proc Q10 {
-    conditional_block 0x01 Q11
+    activation enabled until Q11
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1506,11 +1506,11 @@ proc Q10 {
     }
     block_35EB:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3567 0x00
+    Q10.enabled = false
 }
 
 proc Q11 {
-    conditional_block 0x01 Q12
+    activation enabled until Q12
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1532,11 +1532,11 @@ proc Q11 {
     }
     block_365F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x35FC 0x00
+    Q11.enabled = false
 }
 
 proc Q12 {
-    conditional_block 0x01 Q13
+    activation enabled until Q13
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1559,11 +1559,11 @@ proc Q12 {
     }
     block_36E6:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3670 0x00
+    Q12.enabled = false
 }
 
 proc Q13 {
-    conditional_block 0x01 Q14
+    activation enabled until Q14
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1586,11 +1586,11 @@ proc Q13 {
     }
     block_3767:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x36F7 0x00
+    Q13.enabled = false
 }
 
 proc Q14 {
-    conditional_block 0x01 Q15
+    activation enabled until Q15
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1613,11 +1613,11 @@ proc Q14 {
     }
     block_37F4:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3778 0x00
+    Q14.enabled = false
 }
 
 proc Q15 {
-    conditional_block 0x01 Q16
+    activation enabled until Q16
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1640,11 +1640,11 @@ proc Q15 {
     }
     block_3889:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3805 0x00
+    Q15.enabled = false
 }
 
 proc Q16 {
-    conditional_block 0x01 Q17
+    activation enabled until Q17
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1667,11 +1667,11 @@ proc Q16 {
     }
     block_3910:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x389A 0x00
+    Q16.enabled = false
 }
 
 proc Q17 {
-    conditional_block 0x01 Q18
+    activation enabled until Q18
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1694,11 +1694,11 @@ proc Q17 {
     }
     block_39A9:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3921 0x00
+    Q17.enabled = false
 }
 
 proc Q18 {
-    conditional_block 0x01 Q19
+    activation enabled until Q19
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1721,11 +1721,11 @@ proc Q18 {
     }
     block_3A2E:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x39BA 0x00
+    Q18.enabled = false
 }
 
 proc Q19 {
-    conditional_block 0x01 Q20
+    activation enabled until Q20
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1748,11 +1748,11 @@ proc Q19 {
     }
     block_3ABF:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3A3F 0x00
+    Q19.enabled = false
 }
 
 proc Q20 {
-    conditional_block 0x01 Q21
+    activation enabled until Q21
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1775,11 +1775,11 @@ proc Q20 {
     }
     block_3B58:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3AD0 0x00
+    Q20.enabled = false
 }
 
 proc Q21 {
-    conditional_block 0x01 Q22
+    activation enabled until Q22
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1802,11 +1802,11 @@ proc Q21 {
     }
     block_3BDB:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3B69 0x00
+    Q21.enabled = false
 }
 
 proc Q22 {
-    conditional_block 0x01 Q23
+    activation enabled until Q23
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1829,11 +1829,11 @@ proc Q22 {
     }
     block_3C5C:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3BEC 0x00
+    Q22.enabled = false
 }
 
 proc Q23 {
-    conditional_block 0x01 Q24
+    activation enabled until Q24
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1856,11 +1856,11 @@ proc Q23 {
     }
     block_3CE5:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3C6D 0x00
+    Q23.enabled = false
 }
 
 proc Q24 {
-    conditional_block 0x01 Q25
+    activation enabled until Q25
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1883,11 +1883,11 @@ proc Q24 {
     }
     block_3D60:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3CF6 0x00
+    Q24.enabled = false
 }
 
 proc Q25 {
-    conditional_block 0x01 Q26
+    activation enabled until Q26
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1910,11 +1910,11 @@ proc Q25 {
     }
     block_3DE5:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3D71 0x00
+    Q25.enabled = false
 }
 
 proc Q26 {
-    conditional_block 0x01 Q27
+    activation enabled until Q27
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1937,11 +1937,11 @@ proc Q26 {
     }
     block_3E74:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3DF6 0x00
+    Q26.enabled = false
 }
 
 proc Q27 {
-    conditional_block 0x01 Q28
+    activation enabled until Q28
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1964,11 +1964,11 @@ proc Q27 {
     }
     block_3EFD:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3E85 0x00
+    Q27.enabled = false
 }
 
 proc Q28 {
-    conditional_block 0x01 Q29
+    activation enabled until Q29
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -1991,11 +1991,11 @@ proc Q28 {
     }
     block_3F8E:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3F0E 0x00
+    Q28.enabled = false
 }
 
 proc Q29 {
-    conditional_block 0x01 Q30
+    activation enabled until Q30
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -2018,11 +2018,11 @@ proc Q29 {
     }
     block_401D:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x3F9F 0x00
+    Q29.enabled = false
 }
 
 proc Q30 {
-    conditional_block 0x01 Q31
+    activation enabled until Q31
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -2045,11 +2045,11 @@ proc Q30 {
     }
     block_40A4:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "next question:"
-    poke_byte 0x402E 0x00
+    Q30.enabled = false
 }
 
 proc Q31 {
-    conditional_block 0x01 Q32
+    activation enabled until Q32
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -2072,11 +2072,11 @@ proc Q31 {
     }
     block_412F:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Next question:"
-    poke_byte 0x40B5 0x00
+    Q31.enabled = false
 }
 
 proc Q32 {
-    conditional_block 0x01 scrujo
+    activation enabled until scrujo
     branch_gameflag
     actor Cyberquizz.s13 blood 0
     guard_pop
@@ -2099,11 +2099,11 @@ proc Q32 {
     }
     block_41B6:
     say Cyberquizz voice=0x03 flags=0x08 display=0x80 loop=none control=none : "And that wraps it up question-wise..."
-    poke_byte 0x4140 0x00
+    Q32.enabled = false
 }
 
 proc scrujo {
-    conditional_block 0x01 bigb1
+    activation enabled until bigb1
     branch_flag_274f
     actor Scruter_Jo.s13 blood 0
     guard_pop
@@ -2156,7 +2156,7 @@ proc scrujo {
 }
 
 proc bigb1 {
-    conditional_block 0x01 veuv
+    activation enabled until veuv
     branch_gameflag
     require Tina_Burner.current_location == Trashlando
     actor Migrator.s13 blood 0
@@ -2193,17 +2193,17 @@ proc bigb1 {
 }
 
 proc veuv {
-    conditional_block 0x01 veuv1
+    activation enabled until veuv1
     branch_presentation
     require Bug_Deluxe.current_location == Bigbang
     guard_pop
     record_link Scruter_K.s13 blood 0
-    poke_byte 0x46BC 0x01
-    poke_byte 0x46A4 0x00
+    veuv1.enabled = true
+    veuv.enabled = false
 }
 
 proc veuv1 {
-    conditional_block 0x00 menbr
+    activation disabled until menbr
     branch_presentation
     guard_pop
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Come in come in...THIS BE HANNA SCRUTA. My husband SCRUTER JO be fighter pilot..."
@@ -2216,12 +2216,12 @@ proc veuv1 {
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "KRUIKKK..."
     say Scruter_K voice=0xFF flags=0x20 display=0x80 loop=none control=none : "She hung up... I don't like it, Commander|..."
     say Scruter_K voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x46BC 0x00
+    veuv1.enabled = false
     record_clear Scruter_K.s13
 }
 
 proc menbr {
-    conditional_block 0x01 men1
+    activation enabled until men1
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location == aboard
@@ -2239,7 +2239,7 @@ proc menbr {
 }
 
 proc men1 {
-    conditional_block 0x01 men2
+    activation enabled until men2
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -2253,12 +2253,12 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-    poke_byte 0x48C0 0x00
+    men1.enabled = false
     record_clear menu.s13
 }
 
 proc men2 {
-    conditional_block 0x01 men3
+    activation enabled until men3
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -2272,12 +2272,12 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x4970 0x00
+    men2.enabled = false
     record_clear menu.s13
 }
 
 proc men3 {
-    conditional_block 0x01 men4
+    activation enabled until men4
     branch_presentation
     require Bronko.current_location != aboard
     actor menu.s13 blood 0
@@ -2291,12 +2291,12 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x4A1A 0x00
+    men3.enabled = false
     record_clear menu.s13
 }
 
 proc men4 {
-    conditional_block 0x01 men5
+    activation enabled until men5
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -2310,12 +2310,12 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x4AC6 0x00
+    men4.enabled = false
     record_clear menu.s13
 }
 
 proc men5 {
-    conditional_block 0x01 men6
+    activation enabled until men6
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -2329,24 +2329,24 @@ proc men5 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... You eat what you are!|..."
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    poke_byte 0x4B7A 0x00
-    poke_byte 0x4C36 0x01
+    men5.enabled = false
+    men6.enabled = true
     record_clear menu.s13
 }
 
 proc men6 {
-    conditional_block 0x00 revel
+    activation disabled until revel
     guard_pop
-    poke_byte 0x48C0 0x01
-    poke_byte 0x4970 0x01
-    poke_byte 0x4A1A 0x01
-    poke_byte 0x4AC6 0x01
-    poke_byte 0x4B7A 0x01
-    poke_byte 0x4C36 0x00
+    men1.enabled = true
+    men2.enabled = true
+    men3.enabled = true
+    men4.enabled = true
+    men5.enabled = true
+    men6.enabled = false
 }
 
 proc revel {
-    conditional_block 0x01 honk1
+    activation enabled until honk1
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     require state[0x1386] == 0x0000
@@ -2366,12 +2366,12 @@ proc revel {
     say Bob_Morlock voice=0x06 flags=0x00 display=0x80 loop=none control=none : "OK Honk, you can switch yourself back on..."
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "KROIIIIkkk!!! -&KRUIIIIkkk!!! -&I AM supposed to be aware of everything that goes on round here, being the onboard computer... Don't tell me you switched off Olga???"
     say Bob_Morlock voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Can it and do some work!!"
-    poke_byte 0x4C53 0x00
+    revel.enabled = false
     record_clear Bob_Morlock.s13
 }
 
 proc honk1 {
-    conditional_block 0x01 block_51E2
+    activation enabled until block_51E2
     branch_presentation
     actor Honk.s13 blood 0
     guard_pop

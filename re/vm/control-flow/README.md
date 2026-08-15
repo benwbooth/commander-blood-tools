@@ -13,10 +13,14 @@ cargo run --bin cbvm -- analyze-control-flow \
 
 The analyzer starts at byte zero and every recovered kind-2 DEB procedure. It
 tracks the native query bit and exact guard-target stack, verifies every target
-is a decoded instruction boundary, and accounts for every self-modifying
-`POKE_BYTE`. All 413 shipped POKEs target the flag byte of an `A9`
-`CONDITIONAL_BLOCK`; 270 distinct blocks are patched and 269 can take both
-enter and skip states.
+is a decoded instruction boundary, and accounts for every self-modifying byte
+write. Every one of the 480 kind-2 DEB procedures begins with an `A9` activation
+header: 420 are initially enabled and 60 are initially disabled. All 413 shipped
+`AB` writes store zero or one at exactly `named procedure start + 1`, the `A9`
+flag byte; 149 enable a procedure and 264 disable one. They patch 270 distinct
+procedures, of which 269 can take both enter and skip states. BloodScript
+therefore renders the headers as `activation enabled|disabled until target` and
+the writes as `procedure.enabled = true|false`.
 
 Across 7,010 basic blocks, 7,005 are reachable and no branch-capable
 instruction is missing its native guard target. The five unreachable blocks

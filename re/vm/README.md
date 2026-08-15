@@ -142,10 +142,15 @@ dictionary-backed actor `topic`, so source such as `Eviscerator.topic =
 
 The native control-flow handlers at `0x6559`, `0x6572`, `0x65DB`, `0x65EB`,
 `0x6830`, `0x6494`, and `0x64A0` are represented as guard push/pop, jump,
-state-array test/set, conditional-block, and flag-branch statements. Their
-flags, indices, and values remain explicit in source. Branch destinations are
-now symbolic labels or procedure names; the compiler resolves them without
-reordering statements or changing layout.
+state-array test/set, activation, and flag-branch statements. Every one of the
+480 kind-2 DEB procedures begins with an `A9` activation header, rendered as
+`activation enabled|disabled until target`. All 413 shipped `AB` byte writes
+target that same flag byte at a named procedure's start plus one, so they are
+rendered as `procedure.enabled = true|false`. The compiler derives the exact
+opcode, flag byte, and address from these forms. Arbitrary `AB` addresses or
+values retain the explicit `poke_byte` fallback rather than receiving guessed
+semantics. Branch destinations are symbolic labels or procedure names; the
+compiler resolves them without reordering statements or changing layout.
 
 The remaining native handlers provide typed concept guards, presentation-name
 loads, self-modifying COD byte writes, character-slot bindings, alternate

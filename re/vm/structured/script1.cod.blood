@@ -18,7 +18,7 @@ field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
 field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
 proc menbr {
-    conditional_block 0x01 men1
+    activation enabled until men1
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location == aboard
@@ -36,7 +36,7 @@ proc menbr {
 }
 
 proc men1 {
-    conditional_block 0x01 men2
+    activation enabled until men2
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -50,12 +50,12 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-    poke_byte 0x00B4 0x00
+    men1.enabled = false
     record_clear menu.s13
 }
 
 proc men2 {
-    conditional_block 0x01 men3
+    activation enabled until men3
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -69,12 +69,12 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x0164 0x00
+    men2.enabled = false
     record_clear menu.s13
 }
 
 proc men3 {
-    conditional_block 0x01 men4
+    activation enabled until men4
     branch_presentation
     require Bronko.current_location != aboard
     actor menu.s13 blood 0
@@ -88,12 +88,12 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x020E 0x00
+    men3.enabled = false
     record_clear menu.s13
 }
 
 proc men4 {
-    conditional_block 0x01 men5
+    activation enabled until men5
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -107,12 +107,12 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
-    poke_byte 0x02BA 0x00
+    men4.enabled = false
     record_clear menu.s13
 }
 
 proc men5 {
-    conditional_block 0x01 men6
+    activation enabled until men6
     branch_presentation
     actor menu.s13 blood 0
     require Bronko.current_location != aboard
@@ -126,39 +126,39 @@ proc men5 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... You eat what you are!..."
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
-    poke_byte 0x036E 0x00
-    poke_byte 0x042A 0x01
+    men5.enabled = false
+    men6.enabled = true
     record_clear menu.s13
 }
 
 proc men6 {
-    conditional_block 0x00 tima
+    activation disabled until tima
     guard_pop
-    poke_byte 0x00B4 0x01
-    poke_byte 0x0164 0x01
-    poke_byte 0x020E 0x01
-    poke_byte 0x02BA 0x01
-    poke_byte 0x036E 0x01
-    poke_byte 0x042A 0x00
+    men1.enabled = true
+    men2.enabled = true
+    men3.enabled = true
+    men4.enabled = true
+    men5.enabled = true
+    men6.enabled = false
 }
 
 proc tima {
-    conditional_block 0x01 ho
+    activation enabled until ho
     guard_pop
     state_array_set 0x16 0x0005
-    poke_byte 0x0447 0x00
+    tima.enabled = false
 }
 
 proc ho {
-    conditional_block 0x01 ho1
+    activation enabled until ho1
     state_array_test 0x16
     guard_pop
     record_link Izwalito.s13 blood 0
-    poke_byte 0x0454 0x00
+    ho.enabled = false
 }
 
 proc ho1 {
-    conditional_block 0x01 hon
+    activation enabled until hon
     branch_presentation
     actor Izwalito.s13 blood 0
     guard_pop
@@ -195,7 +195,7 @@ proc ho1 {
 }
 
 proc hon {
-    conditional_block 0x01 BOB1
+    activation enabled until BOB1
     branch_presentation
     actor Honk.s13 blood 0
     guard_pop
@@ -214,7 +214,7 @@ proc hon {
 }
 
 proc BOB1 {
-    conditional_block 0x01 scr2
+    activation enabled until scr2
     branch_flag_274f
     actor Bob_Morlock.s13 blood 0
     guard_pop
@@ -271,7 +271,7 @@ proc BOB1 {
 }
 
 proc scr2 {
-    conditional_block 0x01 block_0C0B
+    activation enabled until block_0C0B
     require Honk.encounter_count == 0x0001
     require Bob_Morlock.encounter_count == 0x0001
     guard_pop
