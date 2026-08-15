@@ -138,6 +138,22 @@ residue differences are not part of the C-level opcode-handler contract, so
 these routines are accepted for source-port integration rather than held for
 byte equality.
 
+### Small VM handler acceptance batch
+
+Five additional compact routines clear the source-port gate after applying the
+same caller-observation rule:
+
+| routine | original | closest reviewed Watcom result | accepted boundary |
+| --- | ---: | ---: | --- |
+| `0x0067A7 strlen_b` | 11 instructions, 19 bytes | speed mode: 11 instructions, 21 bytes | scalar bounded loop returns identical AX; its only caller replaces flags before any branch |
+| `0x0067BA vm_op_a7_set_if_presentation` | 5 instructions, 14 bytes | size mode: 13 instructions, 26 bytes | shared GAME_DATA declarations preserve script DS and operand-before-gate order; DX/ES setup is incidental |
+| `0x00684C vm_op_ab_poke_byte` | 5 instructions, 9 bytes | speed mode: 6 instructions, 11 bytes | MOV/INC replaces LODSB; the final four instructions and final ADD flags are exact |
+| `0x006855`, `0x00685C` yield handlers | 2 instructions, 7 bytes each | 4 instructions, 12 bytes each | explicit GAME_DATA access materializes AX/ES; both dispatchers immediately consume signal one and terminate the handler loop |
+
+The two yield entries intentionally remain separate one-assignment functions.
+Their shared segment-qualified declaration lives in `bloodprg_vm.h`; no wrapper,
+register model, or duplicated far-memory syntax is introduced.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
@@ -1627,8 +1643,9 @@ checked.
 With an ES:DI argument and AX result declaration, Open Watcom `-3 -ox -mm`
 emits the exact 11-instruction count in 21 bytes versus 19 original. It chooses
 a scalar increment/count loop instead of `REPNE SCASB`, so return values and
-the malformed-input bound match while final flags do not. Turbo C 2.01 medium
-uses a stack far pointer and emits 18 instructions.
+the malformed-input bound match while final flags do not. The sole caller uses
+AX and establishes new comparison flags before branching, so this difference is
+accepted. Turbo C 2.01 medium uses a stack far pointer and emits 18 instructions.
 
 VM presentation-register handler `0x0067BA` has six direct vectors proving that
 the DS:SI word load and SI advance precede the gate, only bit zero of
@@ -1636,10 +1653,12 @@ GS:0x67AC matters, and GS:0x6770 is written only on the active path. Unaligned
 and segment-end operands, AX/SI outputs, segmented decoys, preservation, and
 TEST-derived flags are covered.
 
-Open Watcom `-3 -ox -mm` preserves SI input/result, AX operand, the bit test,
-conditional store, and final flags in 7 instructions/17 bytes versus 5/14
-original. It uses MOV/ADD instead of LODSW and duplicates RET around an inverted
-branch. Turbo C 2.01 medium uses a stack argument and emits 16 instructions.
+The corrected source and probe name both globals through shared `GAME_DATA`
+declarations, preserving script DS. Open Watcom `-3 -os -s -mm` preserves the
+operand-before-gate order, SI result, AX operand, conditional store, and final
+TEST flags in 13 instructions/26 bytes versus 5/14 original. Its explicit
+segment setup and saved DX/ES are accepted; Turbo C 2.01 medium emits 20
+instructions under its stack ABI.
 
 VM padded-string handler `0x0067C8` has ten direct vectors proving SS:0x2120
 destination ownership, DS:SI NUL copy, one-byte pad consumption, case-sensitive
@@ -1687,8 +1706,8 @@ The direct-return natural candidate compiles without warnings under Open Watcom
 `ADD SI,2`, and `RET` are byte-for-byte identical to the remaining original
 instructions. The expansion does not alter final behavior because the final ADD
 replaces INC's arithmetic flags. Turbo C 2.01 medium emits 20 instructions under
-its stack ABI. Exact codegen requires only LODSB selection, not a different C
-algorithm or an emulation layer.
+its stack ABI. The one-instruction expansion is accepted rather than requiring
+LODSB selection through inline assembly.
 
 VM yield handlers `0x006855` (AA) and `0x00685C` (AC) are byte-identical but
 remain separate dispatch targets and separate C functions. Six direct vectors
@@ -1697,12 +1716,13 @@ values. They prove an unconditional write of one to GS:0x67B4, isolation from
 DS/ES/FS/SS decoys, complete register preservation, preserved arithmetic,
 interrupt, and direction flags, and near return.
 
-The existing natural C body is exactly one volatile assignment for each entry.
-Both Open Watcom `-3 -ox -mm` and Turbo C 2.01 medium emit the exact two-mnemonic
-`MOV; RET` shape. Watcom compiles each actual candidate without warnings to 6
-bytes versus 7 original; the sole structural difference is the missing GS
-override because an ordinary external global is addressed through DS. Exact
-integration is therefore a data-placement/linker problem, not missing C logic.
+The natural C body remains exactly one volatile assignment for each entry, now
+using a shared `GAME_DATA` alias so script DS is never mistaken for state data.
+Open Watcom emits `MOV segment; MOV ES; MOV ES:[yield],1; RET`, four instructions
+and 12 bytes versus 2/7 original. That materialization changes AX/ES residue,
+but both dispatchers immediately read signal one, terminate the handler loop,
+and do not consume AX/ES handler residue. The difference is accepted without a
+register-preservation wrapper.
 
 Shared VM state handler `0x006863` serves dispatch opcodes B1, B4, B5, B6, BE,
 BF, and C0. Twenty direct vectors cover all six query relations, signed boundary
@@ -3371,11 +3391,11 @@ LCS and then mnemonic similarity:
 | `vm_script_jump` | medium, `-ox`, register | 4/12 | 0.2500 | 1.0000 | 0.5000 |
 | `vm_cond_state_array` | medium, `-ox`, register | 13/24 | 0.0769 | 0.4615 | 0.0769 |
 | `strlen_b` | medium, `-ox`, register | 11/11 | 0.2727 | 0.4545 | 0.2727 |
-| `vm_presentation_register_set` | medium, `-ox`, register | 5/7 | 0.2000 | 0.6000 | 0.2000 |
+| `vm_presentation_register_set` | medium, `-ox`, register | 5/15 | 0.2000 | 0.6000 | 0.2000 |
 | `vm_load_string` | medium, `-ox`, register | 29/38 | 0.0690 | 0.8621 | 0.1034 |
 | `vm_conditional_jump` | medium, `-ox`, register | 10/12 | 0.1000 | 0.7000 | 0.3000 |
 | `vm_poke_byte` | medium, `-ox`, register | 5/6 | 0.2000 | 0.8000 | 0.8000 |
-| `vm_yield` | medium, `-ox`, register | 2/2 | 0.5000 | 1.0000 | 0.5000 |
+| `vm_yield` | medium, `-ox`, register | 2/4 | 0.5000 | 1.0000 | 0.5000 |
 | `vm_shared_state` | medium, `-ox`, register | 69/87 | 0.1304 | 0.7971 | 0.2464 |
 | `vm_shared_bit_state` | medium, `-ox`, register | 31/36 | 0.0323 | 0.4839 | 0.0645 |
 | `vm_record_wildcard` | medium, `-ox`, register | 55/56 | 0.0545 | 0.5455 | 0.1273 |

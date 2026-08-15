@@ -4,13 +4,18 @@
  */
 typedef unsigned char u8;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define NEAR near
+#define GAME_DATA far
 #else
 #define NEAR
+#define GAME_DATA
 #endif
 
-extern volatile u8 yield_flag;
+extern volatile u8 GAME_DATA yield_flag;
 
 void NEAR vm_yield_probe(void)
 {

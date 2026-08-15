@@ -168,6 +168,8 @@ extern volatile cb_u8 CB_GAME_DATA
         vm_block_scan_flags_gs;              /* explicit GS:0x67B2 alias */
 extern volatile cb_u8 vm_yield_flag;         /* GS:0x67B4 */
 extern volatile cb_u8 CB_GAME_DATA
+        vm_yield_flag_gs;                    /* explicit GS:0x67B4 alias */
+extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_pair_write_disabled; /* GS:0x67B6 */
 extern volatile cb_u8 CB_GAME_DATA vm_presentation_start_lock; /* GS:0x67B7 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */

@@ -2,5 +2,5 @@
 
 void CB_NEAR vm_op_ac_yield(void)
 {
-    vm_yield_flag = 1;
+    vm_yield_flag_gs = 1;
 }

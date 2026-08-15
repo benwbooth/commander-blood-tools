@@ -5,14 +5,19 @@
 typedef unsigned char u8;
 typedef unsigned int u16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define NEAR near
+#define GAME_DATA far
 #else
 #define NEAR
+#define GAME_DATA
 #endif
 
-extern volatile u8 presentation_active;
-extern volatile u16 presentation_register;
+extern volatile u8 GAME_DATA presentation_active;
+extern volatile u16 GAME_DATA presentation_register;
 
 #if defined(__WATCOMC__)
 #pragma aux vm_presentation_register_set_probe parm [si] value [si] modify exact [ax si]
