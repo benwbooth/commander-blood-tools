@@ -257,6 +257,8 @@ pub const OP_SCRIPT_PROFILE_REQUEST: u8 = 0xD2;
 pub const OP_PUSH: u8 = 0xA0;
 /// `0xA1` POP the VM operand stack. Handler 0x6572.
 pub const OP_POP: u8 = 0xA1;
+/// `0xA3` compare the selected concept with a dictionary-word offset. Handler 0x6596.
+pub const OP_CONCEPT_GUARD: u8 = 0xA3;
 /// `0xA4` unconditional JUMP (PC = operand). Handler 0x65db.
 pub const OP_JUMP: u8 = 0xA4;
 /// `0xA5` conditional branch on the `gs:0x6ade` state-array flag. Handler 0x65eb.
@@ -271,13 +273,17 @@ pub const OP_YIELD_A: u8 = 0xAA;
 pub const OP_YIELD_B: u8 = 0xAC;
 /// `0xAB` poke a byte to `[address operand]` (set-variable). Handler 0x684c.
 pub const OP_POKE_BYTE: u8 = 0xAB;
+/// `0xCC` bind a NUL-terminated name to a 16-byte character slot. Handler 0x64ce.
+pub const OP_SET_CHARACTER_SLOT: u8 = 0xCC;
 /// `0xCE`/`0xD0` conditional branch on game flags `[0x2793]`/`[0x252a]` via `vm_branch`.
 /// Handler 0x06494 (`vm_op_ce_cond_branch`) — dispatch table `0x142D0`, the entry for 0xCE.
 pub const OP_COND_BRANCH_PRESENTATION: u8 = 0xCE;
+/// `0xCF` clear the alternate concept selection and resume state. Handler 0x64c0.
+pub const OP_CLEAR_ALTERNATE_CONCEPT: u8 = 0xCF;
 /// Handler 0x064a0 (`vm_op_d0_cond_branch`) — dispatch table `0x142D0`, the entry for 0xD0.
 pub const OP_COND_BRANCH_GAMEFLAG: u8 = 0xD0;
-/// `0xCC` set a byte in the 16-byte-record table `gs:0x6cde`. Handler 0x64ce.
-pub const OP_SET_RECORD_BYTE: u8 = 0xCC;
+/// `0xD1` branch on game flag `gs:0x274F` through `vm_branch`. Handler 0x64ac.
+pub const OP_COND_BRANCH_FLAG_274F: u8 = 0xD1;
 
 /// The decoded VM query/set model (`gs:0x67ad`): record opcodes COMPARE-and-branch while
 /// query mode is on (inside an `A0 … A1` block), or WRITE (set) while it is off — the
@@ -862,6 +868,19 @@ fn scan_zero_word(cod: &[u8], start: usize, end: usize) -> usize {
     p.min(end)
 }
 
+fn simple_ascii_payload(cod: &[u8], start: usize, end: usize) -> Option<String> {
+    let payload_end = end.checked_sub(2)?;
+    if start > payload_end
+        || cod.get(payload_end..end) != Some(&[0, 0])
+        || !cod.get(start..payload_end)?.iter().all(|byte| {
+            byte.is_ascii_graphic() && !matches!(*byte, b'"' | b'\\')
+        })
+    {
+        return None;
+    }
+    String::from_utf8(cod[start..payload_end].to_vec()).ok()
+}
+
 /// A single decoded token from a COD stream, in execution order.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum VmToken {
@@ -895,6 +914,14 @@ pub enum VmToken {
         offset: usize,
         len: usize,
     },
+    /// `0xA3 [0xA1] <word_offset:u16>` branches when the selected concept does
+    /// not match (or, with the prefix, does match) the dictionary word.
+    ConceptGuard {
+        offset: usize,
+        word_offset: u16,
+        inverted: bool,
+        len: usize,
+    },
     /// `0xA4 <target:u16>` unconditional script jump.
     Jump {
         offset: usize,
@@ -917,8 +944,35 @@ pub enum VmToken {
         target: u16,
         len: usize,
     },
-    /// Operand-free `0xCE`/`0xD0` branch through the current guard target using
-    /// the presentation or game-flag condition handled by the native VM.
+    /// `0xA8 <ascii> 00 00` copies a presentation/resource name into the native
+    /// VM's string buffer.
+    LoadString {
+        offset: usize,
+        value: String,
+        len: usize,
+    },
+    /// `0xAB <value:u8> <address:u16>` writes into the loaded COD image.
+    PokeByte {
+        offset: usize,
+        address: u16,
+        value: u8,
+        len: usize,
+    },
+    /// `0xCC <slot:u8> <ascii> 00 00` binds a name in the native 16-byte
+    /// character-slot table.
+    CharacterSlot {
+        offset: usize,
+        slot: u8,
+        name: String,
+        len: usize,
+    },
+    /// `0xCF` clears the alternate concept selection and resume state.
+    ClearAlternateConcept {
+        offset: usize,
+        len: usize,
+    },
+    /// Operand-free `0xCE`/`0xD0`/`0xD1` branch through the current guard target
+    /// using the presentation or game-flag condition handled by the native VM.
     FlagBranch {
         offset: usize,
         opcode: u8,
@@ -1108,9 +1162,14 @@ impl VmToken {
             VmToken::Text { offset, .. }
             | VmToken::GuardPush { offset, .. }
             | VmToken::GuardPop { offset, .. }
+            | VmToken::ConceptGuard { offset, .. }
             | VmToken::Jump { offset, .. }
             | VmToken::StateArray { offset, .. }
             | VmToken::ConditionalBlock { offset, .. }
+            | VmToken::LoadString { offset, .. }
+            | VmToken::PokeByte { offset, .. }
+            | VmToken::CharacterSlot { offset, .. }
+            | VmToken::ClearAlternateConcept { offset, .. }
             | VmToken::FlagBranch { offset, .. }
             | VmToken::Actor { offset, .. }
             | VmToken::RecordLink { offset, .. }
@@ -1173,6 +1232,13 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             w(&mut b, *target);
         }
         VmToken::GuardPop { .. } => b.push(OP_POP),
+        VmToken::ConceptGuard { word_offset, inverted, .. } => {
+            b.push(OP_CONCEPT_GUARD);
+            if *inverted {
+                b.push(OP_POP);
+            }
+            w(&mut b, *word_offset);
+        }
         VmToken::Jump { target, .. } => {
             b.push(OP_JUMP);
             w(&mut b, *target);
@@ -1189,7 +1255,32 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             b.push(*flags);
             w(&mut b, *target);
         }
-        VmToken::FlagBranch { opcode, .. } => b.push(*opcode),
+        VmToken::LoadString { value, .. } => {
+            b.push(OP_LOAD_STRING);
+            b.extend_from_slice(value.as_bytes());
+            b.extend_from_slice(&[0, 0]);
+        }
+        VmToken::PokeByte { address, value, .. } => {
+            b.push(OP_POKE_BYTE);
+            b.push(*value);
+            w(&mut b, *address);
+        }
+        VmToken::CharacterSlot { slot, name, .. } => {
+            b.push(OP_SET_CHARACTER_SLOT);
+            b.push(*slot);
+            b.extend_from_slice(name.as_bytes());
+            b.extend_from_slice(&[0, 0]);
+        }
+        VmToken::ClearAlternateConcept { .. } => b.push(OP_CLEAR_ALTERNATE_CONCEPT),
+        VmToken::FlagBranch { opcode, .. } => {
+            if !matches!(
+                *opcode,
+                OP_COND_BRANCH_PRESENTATION | OP_COND_BRANCH_GAMEFLAG | OP_COND_BRANCH_FLAG_274F
+            ) {
+                return None;
+            }
+            b.push(*opcode);
+        }
         VmToken::Actor { record_offset, related_record_offset, inverted, .. } => {
             b.push(0xC4);
             if *inverted {
@@ -1381,12 +1472,46 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             let l = if mode1 { b1 } else { b0 } as usize;
             if l == 0 {
                 let next = scan_zero_word(cod, pos + 1, end);
-                out.push(VmToken::Op {
-                    offset: pos,
-                    opcode: op,
-                    len: next - pos,
-                    operands: cod[pos + 1..next].to_vec(),
-                });
+                let len = next - pos;
+                if op == OP_LOAD_STRING {
+                    if let Some(value) = simple_ascii_payload(cod, pos + 1, next) {
+                        out.push(VmToken::LoadString {
+                            offset: pos,
+                            value,
+                            len,
+                        });
+                    } else {
+                        out.push(VmToken::Op {
+                            offset: pos,
+                            opcode: op,
+                            len,
+                            operands: cod[pos + 1..next].to_vec(),
+                        });
+                    }
+                } else if op == OP_SET_CHARACTER_SLOT {
+                    if let Some(name) = simple_ascii_payload(cod, pos + 2, next) {
+                        out.push(VmToken::CharacterSlot {
+                            offset: pos,
+                            slot: cod.get(pos + 1).copied().unwrap_or(0),
+                            name,
+                            len,
+                        });
+                    } else {
+                        out.push(VmToken::Op {
+                            offset: pos,
+                            opcode: op,
+                            len,
+                            operands: cod[pos + 1..next].to_vec(),
+                        });
+                    }
+                } else {
+                    out.push(VmToken::Op {
+                        offset: pos,
+                        opcode: op,
+                        len,
+                        operands: cod[pos + 1..next].to_vec(),
+                    });
+                }
                 pos = next;
                 continue;
             }
@@ -1401,6 +1526,15 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             });
         } else if op == OP_POP {
             out.push(VmToken::GuardPop { offset: pos, len });
+        } else if op == OP_CONCEPT_GUARD {
+            let inverted = cod.get(pos + 1) == Some(&OP_POP);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            out.push(VmToken::ConceptGuard {
+                offset: pos,
+                word_offset: read_u16(cod, operand_pos).unwrap_or(0),
+                inverted,
+                len,
+            });
         } else if op == OP_JUMP {
             out.push(VmToken::Jump {
                 offset: pos,
@@ -1421,7 +1555,19 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 target: read_u16(cod, pos + 2).unwrap_or(0),
                 len,
             });
-        } else if matches!(op, OP_COND_BRANCH_PRESENTATION | OP_COND_BRANCH_GAMEFLAG) {
+        } else if op == OP_POKE_BYTE {
+            out.push(VmToken::PokeByte {
+                offset: pos,
+                address: read_u16(cod, pos + 2).unwrap_or(0),
+                value: cod.get(pos + 1).copied().unwrap_or(0),
+                len,
+            });
+        } else if op == OP_CLEAR_ALTERNATE_CONCEPT {
+            out.push(VmToken::ClearAlternateConcept { offset: pos, len });
+        } else if matches!(
+            op,
+            OP_COND_BRANCH_PRESENTATION | OP_COND_BRANCH_GAMEFLAG | OP_COND_BRANCH_FLAG_274F
+        ) {
             out.push(VmToken::FlagBranch {
                 offset: pos,
                 opcode: op,
@@ -10743,9 +10889,14 @@ mod tests {
                     }
                     VmToken::GuardPush { offset, len, .. }
                     | VmToken::GuardPop { offset, len, .. }
+                    | VmToken::ConceptGuard { offset, len, .. }
                     | VmToken::Jump { offset, len, .. }
                     | VmToken::StateArray { offset, len, .. }
                     | VmToken::ConditionalBlock { offset, len, .. }
+                    | VmToken::LoadString { offset, len, .. }
+                    | VmToken::PokeByte { offset, len, .. }
+                    | VmToken::CharacterSlot { offset, len, .. }
+                    | VmToken::ClearAlternateConcept { offset, len, .. }
                     | VmToken::FlagBranch { offset, len, .. }
                     | VmToken::Actor { offset, len, .. }
                     | VmToken::RecordLink { offset, len, .. }
@@ -11311,9 +11462,21 @@ mod tests {
         // The opcodes decoded from the handler table (0x142d0) this session are all in
         // the VM's 0xA0..=0xD3 space, and the two yield aliases differ.
         for op in [
-            OP_PUSH, OP_POP, OP_JUMP, OP_COND_STATE_ARRAY, OP_LOAD_STRING, OP_COND_JUMP,
-            OP_YIELD_A, OP_YIELD_B, OP_POKE_BYTE, OP_COND_BRANCH_PRESENTATION,
-            OP_COND_BRANCH_GAMEFLAG, OP_SET_RECORD_BYTE,
+            OP_PUSH,
+            OP_POP,
+            OP_CONCEPT_GUARD,
+            OP_JUMP,
+            OP_COND_STATE_ARRAY,
+            OP_LOAD_STRING,
+            OP_COND_JUMP,
+            OP_YIELD_A,
+            OP_YIELD_B,
+            OP_POKE_BYTE,
+            OP_COND_BRANCH_PRESENTATION,
+            OP_CLEAR_ALTERNATE_CONCEPT,
+            OP_COND_BRANCH_GAMEFLAG,
+            OP_COND_BRANCH_FLAG_274F,
+            OP_SET_CHARACTER_SLOT,
         ] {
             assert!((OP_MIN..=OP_MAX).contains(&op), "opcode {op:#x} in range");
         }

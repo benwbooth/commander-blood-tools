@@ -40,6 +40,14 @@ and the `0xCE`/`0xD0` flag branches. This removes another 5,854 generic bytes.
 Together the two lifts reduce generic coverage from 20,898 to 4,567 bytes, a
 78.15 percent reduction, without changing any compiled COD byte.
 
+The final six native-handler families account for those remaining 4,567 bytes:
+concept guards (`0xA3`), string loads (`0xA8`), self-modifying byte writes
+(`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
+and the `0x274F` flag branch (`0xD1`). All 118,787 shipped COD bytes now compile
+from typed statements with zero generic `OP` coverage. The unresolved binary
+surface is the 3,780 `RAW` bytes in BAS container structures, not COD opcode
+framing.
+
 ## What is not established
 
 The `.BAS` files are binary data, not surviving text source. No QuickBASIC,

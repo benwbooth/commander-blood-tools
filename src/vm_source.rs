@@ -334,6 +334,14 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
             format!("GUARD_PUSH target=0x{target:04X}")
         }
         VmToken::GuardPop { .. } => "GUARD_POP".to_string(),
+        VmToken::ConceptGuard {
+            word_offset,
+            inverted,
+            ..
+        } => format!(
+            "CONCEPT_GUARD word=0x{word_offset:04X} inverted={inverted} {:?}",
+            dictionary.get(word_offset).map(String::as_str).unwrap_or("")
+        ),
         VmToken::Jump { target, .. } => format!("JUMP target=0x{target:04X}"),
         VmToken::StateArray {
             index,
@@ -346,9 +354,18 @@ pub(crate) fn token_comment(token: &VmToken, dictionary: &HashMap<u16, String>) 
         VmToken::ConditionalBlock { flags, target, .. } => {
             format!("CONDITIONAL_BLOCK flags=0x{flags:02X} target=0x{target:04X}")
         }
+        VmToken::LoadString { value, .. } => format!("LOAD_STRING {value:?}"),
+        VmToken::PokeByte { address, value, .. } => {
+            format!("POKE_BYTE address=0x{address:04X} value=0x{value:02X}")
+        }
+        VmToken::CharacterSlot { slot, name, .. } => {
+            format!("CHARACTER_SLOT slot=0x{slot:02X} name={name:?}")
+        }
+        VmToken::ClearAlternateConcept { .. } => "CLEAR_ALTERNATE_CONCEPT".to_string(),
         VmToken::FlagBranch { opcode, .. } => match *opcode {
             vm::OP_COND_BRANCH_PRESENTATION => "BRANCH_PRESENTATION".to_string(),
             vm::OP_COND_BRANCH_GAMEFLAG => "BRANCH_GAMEFLAG".to_string(),
+            vm::OP_COND_BRANCH_FLAG_274F => "BRANCH_FLAG_274F".to_string(),
             _ => format!("FLAG_BRANCH opcode=0x{opcode:02X}"),
         },
         VmToken::Actor {

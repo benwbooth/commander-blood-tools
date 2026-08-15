@@ -79,6 +79,12 @@ state-array test/set, conditional-block, and flag-branch statements. Their
 numeric targets, flags, indices, and values remain explicit in source; the
 compiler does not recalculate or normalize addresses.
 
+The remaining native handlers provide typed concept guards, presentation-name
+loads, self-modifying COD byte writes, character-slot bindings, alternate
+concept clears, and the `0x274F` flag branch. String-bearing opcodes are lifted
+only when they match the shipped printable-ASCII plus `00 00` representation;
+other payload shapes retain the generic lossless fallback.
+
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. BAS semantic coverage is intentionally conservative:
 only dictionary-validated menu tables and text records are labelled today;
@@ -92,6 +98,8 @@ historical source syntax is known.
 
 The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
 contains 12,521 typed statements covering 179,743 bytes. Of that typed total,
-1,233 statements and 4,567 bytes are still generic `OP` forms; the BAS images
-retain 3,780 `RAW` bytes. See `bloodscript/manifest.tsv` for per-image counts and
+no shipped COD statement remains in generic `OP` form; the BAS images retain
+3,780 `RAW` bytes. This means the COD instruction stream is fully typed, not
+that its control-flow graph has already been reconstructed into procedures and
+structured blocks. See `bloodscript/manifest.tsv` for per-image counts and
 [language-evidence.md](language-evidence.md) for the source-language inference.

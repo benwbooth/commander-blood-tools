@@ -268,6 +268,15 @@ fn emit_token(
         }
         VmToken::GuardPush { target, .. } => write!(output, "GUARD_PUSH {target:04X}")?,
         VmToken::GuardPop { .. } => write!(output, "GUARD_POP")?,
+        VmToken::ConceptGuard {
+            word_offset,
+            inverted,
+            ..
+        } => write!(
+            output,
+            "CONCEPT_GUARD {word_offset:04X} {}",
+            bool_digit(*inverted)
+        )?,
         VmToken::Jump { target, .. } => write!(output, "JUMP {target:04X}")?,
         VmToken::StateArray {
             index,
@@ -280,9 +289,18 @@ fn emit_token(
         VmToken::ConditionalBlock { flags, target, .. } => {
             write!(output, "CONDITIONAL_BLOCK {flags:02X} {target:04X}")?
         }
+        VmToken::LoadString { value, .. } => write!(output, "LOAD_STRING \"{value}\"")?,
+        VmToken::PokeByte { address, value, .. } => {
+            write!(output, "POKE_BYTE {address:04X} {value:02X}")?
+        }
+        VmToken::CharacterSlot { slot, name, .. } => {
+            write!(output, "CHARACTER_SLOT {slot:02X} \"{name}\"")?
+        }
+        VmToken::ClearAlternateConcept { .. } => write!(output, "CLEAR_ALTERNATE_CONCEPT")?,
         VmToken::FlagBranch { opcode, .. } => match *opcode {
             vm::OP_COND_BRANCH_PRESENTATION => write!(output, "BRANCH_PRESENTATION")?,
             vm::OP_COND_BRANCH_GAMEFLAG => write!(output, "BRANCH_GAMEFLAG")?,
+            vm::OP_COND_BRANCH_FLAG_274F => write!(output, "BRANCH_FLAG_274F")?,
             _ => bail!("unsupported flag-branch opcode {opcode:02X}"),
         },
         VmToken::Actor {
@@ -473,6 +491,17 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             require_count(args, 0, line, name)?;
             output.push(vm::OP_POP);
         }
+        "CONCEPT_GUARD" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_CONCEPT_GUARD);
+            if parse_bool(args[1], line, "inverted")? {
+                output.push(vm::OP_POP);
+            }
+            word(
+                &mut output,
+                parse_word(args[0], line, "dictionary word offset")?,
+            );
+        }
         "JUMP" => {
             require_count(args, 1, line, name)?;
             output.push(vm::OP_JUMP);
@@ -498,12 +527,35 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
                 parse_word(args[1], line, "conditional target")?,
             );
         }
-        "BRANCH_PRESENTATION" | "BRANCH_GAMEFLAG" => {
+        "LOAD_STRING" => {
+            require_count(args, 1, line, name)?;
+            output.push(vm::OP_LOAD_STRING);
+            output.extend_from_slice(parse_simple_ascii(args[0], line, "string")?.as_bytes());
+            output.extend_from_slice(&[0, 0]);
+        }
+        "POKE_BYTE" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_POKE_BYTE);
+            output.push(parse_byte(args[1], line, "value")?);
+            word(&mut output, parse_word(args[0], line, "address")?);
+        }
+        "CHARACTER_SLOT" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_SET_CHARACTER_SLOT);
+            output.push(parse_byte(args[0], line, "slot")?);
+            output.extend_from_slice(parse_simple_ascii(args[1], line, "name")?.as_bytes());
+            output.extend_from_slice(&[0, 0]);
+        }
+        "CLEAR_ALTERNATE_CONCEPT" => {
             require_count(args, 0, line, name)?;
-            output.push(if name == "BRANCH_PRESENTATION" {
-                vm::OP_COND_BRANCH_PRESENTATION
-            } else {
-                vm::OP_COND_BRANCH_GAMEFLAG
+            output.push(vm::OP_CLEAR_ALTERNATE_CONCEPT);
+        }
+        "BRANCH_PRESENTATION" | "BRANCH_GAMEFLAG" | "BRANCH_FLAG_274F" => {
+            require_count(args, 0, line, name)?;
+            output.push(match name {
+                "BRANCH_PRESENTATION" => vm::OP_COND_BRANCH_PRESENTATION,
+                "BRANCH_GAMEFLAG" => vm::OP_COND_BRANCH_GAMEFLAG,
+                _ => vm::OP_COND_BRANCH_FLAG_274F,
             });
         }
         "TEXT" => {
@@ -677,6 +729,20 @@ fn parse_byte(value: &str, line: usize, field: &str) -> Result<u8> {
         .map_err(|_| anyhow!("line {line}: invalid hexadecimal {field} {value:?}"))
 }
 
+fn parse_simple_ascii<'a>(value: &'a str, line: usize, field: &str) -> Result<&'a str> {
+    let Some(value) = value.strip_prefix('"').and_then(|value| value.strip_suffix('"')) else {
+        bail!("line {line}: {field} must be a quoted ASCII atom");
+    };
+    if !value
+        .as_bytes()
+        .iter()
+        .all(|byte| byte.is_ascii_graphic() && !matches!(*byte, b'"' | b'\\'))
+    {
+        bail!("line {line}: {field} must contain unescaped printable ASCII without spaces");
+    }
+    Ok(value)
+}
+
 fn parse_optional_word(value: &str, line: usize, field: &str) -> Result<Option<u16>> {
     if value == "-" {
         Ok(None)
@@ -812,6 +878,44 @@ mod tests {
             "CONDITIONAL_BLOCK 01 DEF0",
             "BRANCH_PRESENTATION",
             "BRANCH_GAMEFLAG",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
+    fn residual_opcode_families_compile_exact_bytes() {
+        let source = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: GUARD_PUSH 1234\n",
+            "00000003: CONCEPT_GUARD 0D26 0\n",
+            "00000006: CONCEPT_GUARD 0EE8 1\n",
+            "0000000A: GUARD_POP\n",
+            "0000000B: LOAD_STRING \"fin.hnm\"\n",
+            "00000015: POKE_BYTE 1234 56\n",
+            "00000019: CHARACTER_SLOT 02 \"scrut\"\n",
+            "00000022: CLEAR_ALTERNATE_CONCEPT\n",
+            "00000023: BRANCH_FLAG_274F\n",
+            "00000024: END\n",
+        );
+        let expected = vec![
+            0xA0, 0x34, 0x12, 0xA3, 0x26, 0x0D, 0xA3, 0xA1, 0xE8, 0x0E, 0xA1, 0xA8,
+            b'f', b'i', b'n', b'.', b'h', b'n', b'm', 0, 0, 0xAB, 0x56, 0x34, 0x12, 0xCC,
+            0x02, b's', b'c', b'r', b'u', b't', 0, 0, 0xCF, 0xD1, 0xFF,
+        ];
+        assert_eq!(compile(source).unwrap(), expected);
+
+        let decompiled = decompile(ImageKind::Cod, &expected, &HashMap::new()).unwrap();
+        assert_eq!(decompiled.generic_op_statements, 0);
+        for statement in [
+            "CONCEPT_GUARD 0D26 0",
+            "CONCEPT_GUARD 0EE8 1",
+            "LOAD_STRING \"fin.hnm\"",
+            "POKE_BYTE 1234 56",
+            "CHARACTER_SLOT 02 \"scrut\"",
+            "CLEAR_ALTERNATE_CONCEPT",
+            "BRANCH_FLAG_274F",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }

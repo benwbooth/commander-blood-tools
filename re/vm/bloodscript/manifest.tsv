@@ -1,11 +1,11 @@
 script	image	input_bytes	typed_statements	typed_bytes	generic_op_statements	generic_op_bytes	raw_bytes	roundtrip
-SCRIPT1	COD	3084	215	3084	27	134	0	byte_exact
+SCRIPT1	COD	3084	215	3084	0	0	0	byte_exact
 SCRIPT1	BAS	32	1	20	0	0	12	byte_exact
-SCRIPT2	COD	39042	3272	39042	273	884	0	byte_exact
+SCRIPT2	COD	39042	3272	39042	0	0	0	byte_exact
 SCRIPT2	BAS	22565	719	21026	0	0	1539	byte_exact
-SCRIPT3	COD	34874	3282	34874	434	1453	0	byte_exact
+SCRIPT3	COD	34874	3282	34874	0	0	0	byte_exact
 SCRIPT3	BAS	15242	506	13784	0	0	1458	byte_exact
-SCRIPT4	COD	20824	1715	20824	196	797	0	byte_exact
+SCRIPT4	COD	20824	1715	20824	0	0	0	byte_exact
 SCRIPT4	BAS	10585	381	10145	0	0	440	byte_exact
-SCRIPT5	COD	20963	1870	20963	303	1299	0	byte_exact
+SCRIPT5	COD	20963	1870	20963	0	0	0	byte_exact
 SCRIPT5	BAS	16312	560	15981	0	0	331	byte_exact

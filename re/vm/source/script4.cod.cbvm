@@ -6,12 +6,12 @@
 
 00000000: .byte A9 01 C9 00 ; CONDITIONAL_BLOCK flags=0x01 target=0x00C9
 00000004: .byte A1 ; GUARD_POP
-00000005: .byte CC 02 6D 61 6C 65 64 69 63 74 00 00 ; OP_CC 02 6D 61 6C 65 64 69 63 74 00 00
-00000011: .byte CC 03 6D 61 6C 65 64 69 63 74 00 00 ; OP_CC 03 6D 61 6C 65 64 69 63 74 00 00
-0000001D: .byte CC 04 6D 61 6C 65 64 69 63 74 00 00 ; OP_CC 04 6D 61 6C 65 64 69 63 74 00 00
-00000029: .byte CC 05 6D 61 6C 65 64 69 63 74 00 00 ; OP_CC 05 6D 61 6C 65 64 69 63 74 00 00
-00000035: .byte CC 01 6D 61 6C 65 64 69 63 74 00 00 ; OP_CC 01 6D 61 6C 65 64 69 63 74 00 00
-00000041: .byte CC 06 70 72 65 73 65 6E 74 00 00 ; OP_CC 06 70 72 65 73 65 6E 74 00 00
+00000005: .byte CC 02 6D 61 6C 65 64 69 63 74 00 00 ; CHARACTER_SLOT slot=0x02 name="maledict"
+00000011: .byte CC 03 6D 61 6C 65 64 69 63 74 00 00 ; CHARACTER_SLOT slot=0x03 name="maledict"
+0000001D: .byte CC 04 6D 61 6C 65 64 69 63 74 00 00 ; CHARACTER_SLOT slot=0x04 name="maledict"
+00000029: .byte CC 05 6D 61 6C 65 64 69 63 74 00 00 ; CHARACTER_SLOT slot=0x05 name="maledict"
+00000035: .byte CC 01 6D 61 6C 65 64 69 63 74 00 00 ; CHARACTER_SLOT slot=0x01 name="maledict"
+00000041: .byte CC 06 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x06 name="present"
 0000004C: .byte AE D0 0C 02 00 ; OP_AE SHARED_BIT_STATE field=0x0CD0 mask=0x0002 inverted=false
 00000051: .byte AF 9A 04 A6 10 ; OP_AF RECORD_WILDCARD record=0x049A value=0x10A6 inverted=false
 00000056: .byte AF 82 01 A8 0B ; OP_AF RECORD_WILDCARD record=0x0182 value=0x0BA8 inverted=false
@@ -35,9 +35,9 @@
 000000B0: .byte C0 0C 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x150C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000000B7: .byte C0 0E 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x150E operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000000BE: .byte C0 10 15 F5 C1 03 00 ; OP_C0 SHARED_STATE field=0x1510 operator=0xF5 rhs_mode=0xC1 rhs=0x0003
-000000C5: .byte AB 00 01 00 ; OP_AB 00 01 00
+000000C5: .byte AB 00 01 00 ; POKE_BYTE address=0x0001 value=0x00
 000000C9: .byte A9 01 47 01 ; CONDITIONAL_BLOCK flags=0x01 target=0x0147
-000000CD: .byte D1 ; OP_D1
+000000CD: .byte D1 ; BRANCH_FLAG_274F
 000000CE: .byte C4 4C 05 28 00 ; ACTOR record=0x054C related=0x0028 inverted=false
 000000D3: .byte A1 ; GUARD_POP
 000000D4: .byte A6 12 05 FF 00 80 0C 00 0F 00 14 00 17 00 1F 00 ; TEXT line=0x0512 voice=0xFF flags=0x00,0x80 "Me busy do onboard cooking . Me make tasty meals for Cap'n Bob ..."
@@ -51,7 +51,7 @@
 0000013A: .byte A6 12 05 FF 08 80 48 00 00 00 ; TEXT line=0x0512 voice=0xFF flags=0x08,0x80 "..."
 00000144: .byte C9 4C 05 ; RECORD_CLEAR record=0x054C
 00000147: .byte A9 01 85 04 ; CONDITIONAL_BLOCK flags=0x01 target=0x0485
-0000014B: .byte D1 ; OP_D1
+0000014B: .byte D1 ; BRANCH_FLAG_274F
 0000014C: .byte C4 AC 08 28 00 ; ACTOR record=0x08AC related=0x0028 inverted=false
 00000151: .byte A1 ; GUARD_POP
 00000152: .byte A6 72 08 13 00 80 5E 00 A0 00 A4 00 A7 00 AB 00 ; TEXT line=0x0872 voice=0x13 flags=0x00,0x80 "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."
@@ -128,7 +128,7 @@
 00000478: .byte 0C 00 92 03 90 00 99 03 00 00 ; continuation
 00000482: .byte C9 AC 08 ; RECORD_CLEAR record=0x08AC
 00000485: .byte A9 01 C7 04 ; CONDITIONAL_BLOCK flags=0x01 target=0x04C7
-00000489: .byte D1 ; OP_D1
+00000489: .byte D1 ; BRANCH_FLAG_274F
 0000048A: .byte C4 54 03 28 00 ; ACTOR record=0x0354 related=0x0028 inverted=false
 0000048F: .byte A1 ; GUARD_POP
 00000490: .byte A6 1A 03 FF 00 80 A7 03 B2 03 BF 03 48 00 00 00 ; TEXT line=0x031A voice=0xFF flags=0x00,0x80 "zzzzzzzzzz shshshshs... crak ..."
@@ -137,7 +137,7 @@
 000004BA: .byte A6 1A 03 FF 08 80 EE 03 00 00 ; TEXT line=0x031A voice=0xFF flags=0x08,0x80 "Krouikk..."
 000004C4: .byte C9 54 03 ; RECORD_CLEAR record=0x0354
 000004C7: .byte A9 01 5C 05 ; CONDITIONAL_BLOCK flags=0x01 target=0x055C
-000004CB: .byte D1 ; OP_D1
+000004CB: .byte D1 ; BRANCH_FLAG_274F
 000004CC: .byte C4 B4 06 28 00 ; ACTOR record=0x06B4 related=0x0028 inverted=false
 000004D1: .byte C0 0C 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x150C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 000004D8: .byte A1 ; GUARD_POP
@@ -154,7 +154,7 @@
 0000054F: .byte A6 7A 06 FF 08 80 48 00 00 00 ; TEXT line=0x067A voice=0xFF flags=0x08,0x80 "..."
 00000559: .byte C9 B4 06 ; RECORD_CLEAR record=0x06B4
 0000055C: .byte A9 01 9D 06 ; CONDITIONAL_BLOCK flags=0x01 target=0x069D
-00000560: .byte D1 ; OP_D1
+00000560: .byte D1 ; BRANCH_FLAG_274F
 00000561: .byte C4 B4 06 28 00 ; ACTOR record=0x06B4 related=0x0028 inverted=false
 00000566: .byte B0 A1 4E 10 02 00 ; OP_B0 SHARED_BIT_STATE field=0x104E mask=0x0002 inverted=true
 0000056C: .byte C0 0C 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x150C operator=0xF5 rhs_mode=0xC1 rhs=0x0000
@@ -183,7 +183,7 @@
 0000068A: .byte A6 7A 06 01 08 80 CF 05 A0 00 D3 05 09 05 00 00 ; TEXT line=0x067A voice=0x01 flags=0x08,0x80 "See you soon, Commander..."
 0000069A: .byte C9 B4 06 ; RECORD_CLEAR record=0x06B4
 0000069D: .byte A9 01 FD 06 ; CONDITIONAL_BLOCK flags=0x01 target=0x06FD
-000006A1: .byte D1 ; OP_D1
+000006A1: .byte D1 ; BRANCH_FLAG_274F
 000006A2: .byte C4 B4 06 28 00 ; ACTOR record=0x06B4 related=0x0028 inverted=false
 000006A7: .byte AE 4E 10 02 00 ; OP_AE SHARED_BIT_STATE field=0x104E mask=0x0002 inverted=false
 000006AC: .byte C0 0C 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x150C operator=0xF5 rhs_mode=0xC1 rhs=0x0000
@@ -222,11 +222,11 @@
 000007E4: .byte A6 9A 07 FF 10 80 88 08 62 06 66 06 6B 06 FF FF ; TEXT line=0x079A voice=0xFF flags=0x10,0x80 "USE MIND SCRAMBLER"
 000007F4: .byte 4C 06 75 06 00 00 ; continuation
 000007FA: .byte A0 02 08 ; GUARD_PUSH target=0x0802
-000007FD: .byte A3 4C 06 ; OP_A3 4C 06
+000007FD: .byte A3 4C 06 ; CONCEPT_GUARD word=0x064C inverted=false "use"
 00000800: .byte A1 ; GUARD_POP
-00000801: .byte CF ; OP_CF
+00000801: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000802: .byte A0 88 08 ; GUARD_PUSH target=0x0888
-00000805: .byte A3 75 06 ; OP_A3 75 06
+00000805: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 00000808: .byte A1 ; GUARD_POP
 00000809: .byte A6 9A 07 FF 20 80 7C 06 83 06 76 01 8B 06 09 05 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "You're calling the shots, Commander..."
 00000819: .byte 00 00 ; continuation
@@ -239,12 +239,12 @@
 00000867: .byte E4 06 00 00 ; continuation
 0000086B: .byte AE A8 0D 02 00 ; OP_AE SHARED_BIT_STATE field=0x0DA8 mask=0x0002 inverted=false
 00000870: .byte A6 9A 07 FF 08 B0 8A 03 EC 06 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0xB0 "Bye bye..."
-0000087C: .byte AB 00 FE 06 ; OP_AB 00 FE 06
-00000880: .byte AB 01 FB 08 ; OP_AB 01 FB 08
-00000884: .byte CF ; OP_CF
+0000087C: .byte AB 00 FE 06 ; POKE_BYTE address=0x06FE value=0x00
+00000880: .byte AB 01 FB 08 ; POKE_BYTE address=0x08FB value=0x01
+00000884: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000885: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
 00000888: .byte A6 9A 07 05 08 80 F3 06 FD 06 01 07 00 00 ; TEXT line=0x079A voice=0x05 flags=0x08,0x80 "Zorglu... Eta ouch..."
-00000896: .byte A8 62 72 6F 75 69 6C 2E 68 6E 6D 00 00 ; OP_A8 62 72 6F 75 69 6C 2E 68 6E 6D 00 00
+00000896: .byte A8 62 72 6F 75 69 6C 2E 68 6E 6D 00 00 ; LOAD_STRING "brouil.hnm"
 000008A3: .byte A6 9A 07 03 00 80 09 07 00 00 ; TEXT line=0x079A voice=0x03 flags=0x00,0x80 "Haga...."
 000008AD: .byte A6 9A 07 04 00 80 12 07 17 07 00 00 ; TEXT line=0x079A voice=0x04 flags=0x00,0x80 "HATA HATA..."
 000008B9: .byte A6 9A 07 FF 00 80 1F 07 25 07 00 00 ; TEXT line=0x079A voice=0xFF flags=0x00,0x80 "HOGLO HOGLO..."
@@ -276,17 +276,17 @@
 00000991: .byte A6 9A 07 FF 10 80 EA 09 A9 07 B2 07 BA 07 BD 07 ; TEXT line=0x079A voice=0xFF flags=0x10,0x80 "TELEPORT PICTURE TO FIFI"
 000009A1: .byte FF FF C2 07 75 06 00 00 ; continuation
 000009A9: .byte A0 C8 09 ; GUARD_PUSH target=0x09C8
-000009AC: .byte A3 C2 07 ; OP_A3 C2 07
+000009AC: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 000009AF: .byte A1 ; GUARD_POP
 000009B0: .byte A6 9A 07 FF 08 90 CB 07 B2 07 BA 07 BD 07 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0x90 "TELEPORTING PICTURE TO FIFI"
 000009C0: .byte CD 30 00 2E 12 9A 07 ; RECORD_TRIPLE record=0x0030 first=0x122E second=0x079A inverted=false
-000009C7: .byte CF ; OP_CF
+000009C7: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000009C8: .byte A0 EA 09 ; GUARD_PUSH target=0x09EA
-000009CB: .byte A3 75 06 ; OP_A3 75 06
+000009CB: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 000009CE: .byte A1 ; GUARD_POP
 000009CF: .byte A6 9A 07 FF 28 80 4C 01 D7 07 76 01 DE 07 A0 00 ; TEXT line=0x079A voice=0xFF flags=0x28,0x80 "If that's the way you want it , Commander..."
 000009DF: .byte E2 07 1E 02 5C 00 09 05 00 00 ; continuation
-000009E9: .byte CF ; OP_CF
+000009E9: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000009EA: .byte A0 52 0A ; GUARD_PUSH target=0x0A52
 000009ED: .byte AF 42 12 9A 07 ; OP_AF RECORD_WILDCARD record=0x1242 value=0x079A inverted=false
 000009F2: .byte A1 ; GUARD_POP
@@ -296,8 +296,8 @@
 00000A1B: .byte A6 9A 07 03 00 80 0C 00 34 01 48 00 0C 00 34 01 ; TEXT line=0x079A voice=0x03 flags=0x00,0x80 "Me like ... Me like ... Me thank you ..."
 00000A2B: .byte 48 00 0C 00 15 08 A0 00 48 00 00 00 ; continuation
 00000A37: .byte A6 9A 07 01 08 A0 E7 05 A4 00 1B 08 48 00 00 00 ; TEXT line=0x079A voice=0x01 flags=0x08,0xA0 "Fifi go run ..."
-00000A47: .byte AB 01 6C 0A ; OP_AB 01 6C 0A
-00000A4B: .byte AB 00 FB 08 ; OP_AB 00 FB 08
+00000A47: .byte AB 01 6C 0A ; POKE_BYTE address=0x0A6C value=0x01
+00000A4B: .byte AB 00 FB 08 ; POKE_BYTE address=0x08FB value=0x00
 00000A4F: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
 00000A52: .byte A6 9A 07 01 08 80 E7 05 A4 00 1B 08 48 00 8A 03 ; TEXT line=0x079A voice=0x01 flags=0x08,0x80 "Fifi go run ... Bye bye ..."
 00000A62: .byte 8E 03 48 00 00 00 ; continuation
@@ -325,11 +325,11 @@
 00000B0A: .byte A6 9A 07 FF 10 80 3F 0B A9 07 4D 08 BA 07 51 08 ; TEXT line=0x079A voice=0xFF flags=0x10,0x80 "TELEPORT HAT TO CRYOBOX"
 00000B1A: .byte FF FF C2 07 00 00 ; continuation
 00000B20: .byte A0 3F 0B ; GUARD_PUSH target=0x0B3F
-00000B23: .byte A3 C2 07 ; OP_A3 C2 07
+00000B23: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00000B26: .byte A1 ; GUARD_POP
 00000B27: .byte A6 9A 07 FF 08 90 CB 07 4D 08 BA 07 51 08 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0x90 "TELEPORTING HAT TO CRYOBOX"
 00000B37: .byte CD D4 07 CE 14 28 00 ; RECORD_TRIPLE record=0x07D4 first=0x14CE second=0x0028 inverted=false
-00000B3E: .byte CF ; OP_CF
+00000B3E: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000B3F: .byte A6 9A 07 FF 20 80 59 08 2D 03 D7 07 5D 08 46 08 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "But Commander, that's EVISCERATOR's hat... Where did he find it?"
 00000B4F: .byte 6B 08 9A 02 71 08 ED 00 74 08 00 00 ; continuation
 00000B5B: .byte A6 9A 07 FF 20 80 2D 03 78 08 84 08 FE 00 89 08 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "Commander, EVISCERATOR must be near here ..."
@@ -342,7 +342,7 @@
 00000BAF: .byte 21 03 48 00 00 00 ; continuation
 00000BB5: .byte A6 9A 07 FF 08 A0 48 00 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0xA0 "..."
 00000BBF: .byte AF B2 07 A6 10 ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x10A6 inverted=false
-00000BC4: .byte AB 00 6C 0A ; OP_AB 00 6C 0A
+00000BC4: .byte AB 00 6C 0A ; POKE_BYTE address=0x0A6C value=0x00
 00000BC8: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
 00000BCB: .byte A6 9A 07 00 08 80 E7 05 A4 00 B3 08 48 00 8A 03 ; TEXT line=0x079A voice=0x00 flags=0x08,0x80 "Fifi go walk ... Bye bye friend ..."
 00000BDB: .byte 8E 03 21 03 48 00 00 00 ; continuation
@@ -351,8 +351,8 @@
 00000BEA: .byte AF E2 14 92 09 ; OP_AF RECORD_WILDCARD record=0x14E2 value=0x0992 inverted=false
 00000BEF: .byte A1 ; GUARD_POP
 00000BF0: .byte AF B2 07 CE 0C ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0CCE inverted=false
-00000BF5: .byte AB 01 FE 0B ; OP_AB 01 FE 0B
-00000BF9: .byte AB 00 E7 0B ; OP_AB 00 E7 0B
+00000BF5: .byte AB 01 FE 0B ; POKE_BYTE address=0x0BFE value=0x01
+00000BF9: .byte AB 00 E7 0B ; POKE_BYTE address=0x0BE7 value=0x00
 00000BFD: .byte A9 00 2F 0D ; CONDITIONAL_BLOCK flags=0x00 target=0x0D2F
 00000C01: .byte D0 ; BRANCH_GAMEFLAG
 00000C02: .byte AF B2 07 CE 0C ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0CCE inverted=false
@@ -375,24 +375,24 @@
 00000CB6: .byte A6 9A 07 FF 10 80 2F 0D A9 07 BD 07 BA 07 51 08 ; TEXT line=0x079A voice=0xFF flags=0x10,0x80 "TELEPORT FIFI TO CRYOBOX"
 00000CC6: .byte FF FF C2 07 75 06 00 00 ; continuation
 00000CCE: .byte A0 EE 0C ; GUARD_PUSH target=0x0CEE
-00000CD1: .byte A3 C2 07 ; OP_A3 C2 07
+00000CD1: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00000CD4: .byte A1 ; GUARD_POP
 00000CD5: .byte A6 9A 07 FF 08 90 CB 07 BD 07 BA 07 51 08 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0x90 "TELEPORTING FIFI TO CRYOBOX"
 00000CE5: .byte AF B2 07 FF FF ; OP_AF RECORD_WILDCARD record=0x07B2 value=0xFFFF inverted=false
-00000CEA: .byte CF ; OP_CF
+00000CEA: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000CEB: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
 00000CEE: .byte A0 2F 0D ; GUARD_PUSH target=0x0D2F
-00000CF1: .byte A3 75 06 ; OP_A3 75 06
+00000CF1: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 00000CF4: .byte A1 ; GUARD_POP
 00000CF5: .byte A6 9A 07 FF 00 80 0C 00 97 00 A0 07 0F 09 13 09 ; TEXT line=0x079A voice=0xFF flags=0x00,0x80 "Me not happy... CRY CRY..."
 00000D05: .byte 00 00 ; continuation
 00000D07: .byte A6 9A 07 FF 20 80 1A 09 8F 01 A0 00 FE 00 B3 05 ; TEXT line=0x079A voice=0xFF flags=0x20,0x80 "How can you be so heartless , Commander ?"
 00000D17: .byte 1E 09 5C 00 5E 00 54 02 00 00 ; continuation
 00000D21: .byte A6 9A 07 FF 08 90 48 00 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0x90 "..."
-00000D2B: .byte CF ; OP_CF
+00000D2B: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000D2C: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
 00000D2F: .byte A9 01 4F 0E ; CONDITIONAL_BLOCK flags=0x01 target=0x0E4F
-00000D33: .byte D1 ; OP_D1
+00000D33: .byte D1 ; BRANCH_FLAG_274F
 00000D34: .byte C4 D4 07 28 00 ; ACTOR record=0x07D4 related=0x0028 inverted=false
 00000D39: .byte A1 ; GUARD_POP
 00000D3A: .byte A6 9A 07 03 00 80 E7 05 28 09 48 00 EC 05 26 06 ; TEXT line=0x079A voice=0x03 flags=0x00,0x80 "Fifi happy ... Hee hee hee..."
@@ -422,12 +422,12 @@
 00000E17: .byte A6 9A 07 FF 10 80 4F 0E A9 07 BD 07 BA 07 73 09 ; TEXT line=0x079A voice=0xFF flags=0x10,0x80 "TELEPORT FIFI TO PLANET MALUS"
 00000E27: .byte EA 08 FF FF C2 07 00 00 ; continuation
 00000E2F: .byte A0 4F 0E ; GUARD_PUSH target=0x0E4F
-00000E32: .byte A3 C2 07 ; OP_A3 C2 07
+00000E32: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00000E35: .byte A1 ; GUARD_POP
 00000E36: .byte A6 9A 07 FF 08 A0 CB 07 BD 07 BA 07 EA 08 00 00 ; TEXT line=0x079A voice=0xFF flags=0x08,0xA0 "TELEPORTING FIFI TO MALUS"
 00000E46: .byte AF B2 07 26 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F26 inverted=false
 00000E4B: .byte C9 D4 07 ; RECORD_CLEAR record=0x07D4
-00000E4E: .byte CF ; OP_CF
+00000E4E: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00000E4F: .byte A9 01 7C 0F ; CONDITIONAL_BLOCK flags=0x01 target=0x0F7C
 00000E53: .byte D0 ; BRANCH_GAMEFLAG
 00000E54: .byte AF B2 07 26 0F ; OP_AF RECORD_WILDCARD record=0x07B2 value=0x0F26 inverted=false
@@ -482,15 +482,15 @@
 00001046: .byte A6 5A 05 FF 10 80 80 10 A9 07 3A 09 BA 07 51 0A ; TEXT line=0x055A voice=0xFF flags=0x10,0x80 "TELEPORT ondoyant TO ARK..."
 00001056: .byte FF FF C2 07 00 00 ; continuation
 0000105C: .byte A0 80 10 ; GUARD_PUSH target=0x1080
-0000105F: .byte A3 C2 07 ; OP_A3 C2 07
+0000105F: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00001062: .byte A1 ; GUARD_POP
 00001063: .byte A6 5A 05 FF 08 A0 CB 07 3A 09 58 0A 5D 0A BA 07 ; TEXT line=0x055A voice=0xFF flags=0x08,0xA0 "TELEPORTING ondoyant VERY GENTLY TO ARK"
 00001073: .byte 64 0A 00 00 ; continuation
 00001077: .byte AF 72 05 FF FF ; OP_AF RECORD_WILDCARD record=0x0572 value=0xFFFF inverted=false
-0000107C: .byte CF ; OP_CF
+0000107C: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 0000107D: .byte C9 94 05 ; RECORD_CLEAR record=0x0594
 00001080: .byte A9 01 0C 11 ; CONDITIONAL_BLOCK flags=0x01 target=0x110C
-00001084: .byte D1 ; OP_D1
+00001084: .byte D1 ; BRANCH_FLAG_274F
 00001085: .byte C4 94 05 28 00 ; ACTOR record=0x0594 related=0x0028 inverted=false
 0000108A: .byte A1 ; GUARD_POP
 0000108B: .byte A6 5A 05 00 00 80 48 00 00 00 ; TEXT line=0x055A voice=0x00 flags=0x00,0x80 "..."
@@ -518,17 +518,17 @@
 0000115A: .byte A6 DA 00 02 10 80 A2 11 7D 0A A7 0A 54 02 FF FF ; TEXT line=0x00DA voice=0x02 flags=0x10,0x80 "Ga ga ?"
 0000116A: .byte A7 0A 06 00 DC 04 AA 0A B0 0A 00 00 ; continuation
 00001176: .byte A0 99 11 ; GUARD_PUSH target=0x1199
-00001179: .byte A3 A7 0A ; OP_A3 A7 0A
+00001179: .byte A3 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=false "ga"
 0000117C: .byte A1 ; GUARD_POP
 0000117D: .byte A6 DA 00 FF 08 A0 A7 0A A7 0A A7 0A A7 0A A7 0A ; TEXT line=0x00DA voice=0xFF flags=0x08,0xA0 "ga ga ga ga ga ..."
 0000118D: .byte 48 00 00 00 ; continuation
-00001191: .byte AB 00 0D 11 ; OP_AB 00 0D 11
-00001195: .byte CF ; OP_CF
+00001191: .byte AB 00 0D 11 ; POKE_BYTE address=0x110D value=0x00
+00001195: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001196: .byte A4 6E 13 ; JUMP target=0x136E
 00001199: .byte A0 A2 11 ; GUARD_PUSH target=0x11A2
-0000119C: .byte A3 A1 A7 0A ; OP_A3 A1 A7 0A
+0000119C: .byte A3 A1 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=true "ga"
 000011A0: .byte A1 ; GUARD_POP
-000011A1: .byte CF ; OP_CF
+000011A1: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000011A2: .byte A6 DA 00 06 00 80 B5 0A 48 00 00 00 ; TEXT line=0x00DA voice=0x06 flags=0x00,0x80 "GA ..."
 000011AE: .byte A6 DA 00 FF 20 80 5E 00 5C 00 16 02 74 03 94 09 ; TEXT line=0x00DA voice=0xFF flags=0x20,0x80 "Commander , I don't think he has the power of speech ... And get a load of that trunk..."
 000011BE: .byte 71 08 98 04 76 01 B8 0A C1 00 BE 0A 48 00 C5 0A ; continuation
@@ -555,7 +555,7 @@
 000012C6: .byte A6 DA 00 08 00 80 8F 0B 46 01 48 00 16 02 9B 00 ; TEXT line=0x00DA voice=0x08 flags=0x00,0x80 "Leave me ... I have things to do ..."
 000012D6: .byte 95 0B 90 00 14 00 48 00 00 00 ; continuation
 000012E0: .byte A6 DA 00 FF 08 90 48 00 00 00 ; TEXT line=0x00DA voice=0xFF flags=0x08,0x90 "..."
-000012EA: .byte AB 00 0D 11 ; OP_AB 00 0D 11
+000012EA: .byte AB 00 0D 11 ; POKE_BYTE address=0x110D value=0x00
 000012EE: .byte C9 14 01 ; RECORD_CLEAR record=0x0114
 000012F1: .byte A9 01 B7 14 ; CONDITIONAL_BLOCK flags=0x01 target=0x14B7
 000012F5: .byte D0 ; BRANCH_GAMEFLAG
@@ -567,18 +567,18 @@
 00001312: .byte A6 DA 00 02 10 80 6E 13 9C 0B FF FF A7 0A 06 00 ; TEXT line=0x00DA voice=0x02 flags=0x10,0x80 "Ga..."
 00001322: .byte A2 0B 95 02 B1 0B B8 0B 00 00 ; continuation
 0000132C: .byte A0 48 13 ; GUARD_PUSH target=0x1348
-0000132F: .byte A3 A7 0A ; OP_A3 A7 0A
+0000132F: .byte A3 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=false "ga"
 00001332: .byte A1 ; GUARD_POP
 00001333: .byte A6 DA 00 04 08 80 E9 00 C3 0B C7 0B CC 0B 5C 00 ; TEXT line=0x00DA voice=0x04 flags=0x08,0x80 "You are most polite , stranger..."
 00001343: .byte D3 0B 00 00 ; continuation
-00001347: .byte CF ; OP_CF
+00001347: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001348: .byte A0 6E 13 ; GUARD_PUSH target=0x136E
-0000134B: .byte A3 A1 A7 0A ; OP_A3 A1 A7 0A
+0000134B: .byte A3 A1 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=true "ga"
 0000134F: .byte A1 ; GUARD_POP
 00001350: .byte A6 DA 00 03 08 90 E9 00 C3 0B B3 05 DF 0B 48 00 ; TEXT line=0x00DA voice=0x03 flags=0x08,0x90 "You are so rude ... Bye bye , stranger..."
 00001360: .byte 8A 03 8E 03 5C 00 D3 0B 00 00 ; continuation
 0000136A: .byte C9 14 01 ; RECORD_CLEAR record=0x0114
-0000136D: .byte CF ; OP_CF
+0000136D: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 0000136E: .byte A6 DA 00 FF 20 80 E4 0B EA 0B 5C 00 5E 00 48 00 ; TEXT line=0x00DA voice=0xFF flags=0x20,0x80 "Smart thinking , Commander ..."
 0000137E: .byte 00 00 ; continuation
 00001380: .byte A6 DA 00 07 00 80 7C 06 71 0B 5C 00 77 0B E9 00 ; TEXT line=0x00DA voice=0x07 flags=0x00,0x80 "You're weird , stranger. You look like you have the evil eye ..."
@@ -608,8 +608,8 @@
 00001465: .byte A6 DA 00 08 48 A0 53 0C 5C 00 16 02 9B 00 95 0B ; TEXT line=0x00DA voice=0x08 flags=0x48,0xA0 "Well , I have things to do ... Bye bye ..."
 00001475: .byte 90 00 14 00 48 00 8A 03 8E 03 48 00 FF FF 52 07 ; continuation
 00001485: .byte 00 00 ; continuation
-00001487: .byte AB 00 F2 12 ; OP_AB 00 F2 12
-0000148B: .byte AB 01 B8 14 ; OP_AB 01 B8 14
+00001487: .byte AB 00 F2 12 ; POKE_BYTE address=0x12F2 value=0x00
+0000148B: .byte AB 01 B8 14 ; POKE_BYTE address=0x14B8 value=0x01
 0000148F: .byte C9 14 01 ; RECORD_CLEAR record=0x0114
 00001492: .byte A6 DA 00 08 48 80 53 0C 5C 00 16 02 9B 00 95 0B ; TEXT line=0x00DA voice=0x08 flags=0x48,0x80 "Well , I have things to do ... Bye bye .."
 000014A2: .byte 90 00 14 00 48 00 8A 03 8E 03 58 0C FF FF 52 07 ; continuation
@@ -624,18 +624,18 @@
 000014CE: .byte A6 DA 00 02 10 80 2A 15 9C 0B FF FF A7 0A 06 00 ; TEXT line=0x00DA voice=0x02 flags=0x10,0x80 "Ga..."
 000014DE: .byte A2 0B 95 02 B1 0B B8 0B 00 00 ; continuation
 000014E8: .byte A0 04 15 ; GUARD_PUSH target=0x1504
-000014EB: .byte A3 A7 0A ; OP_A3 A7 0A
+000014EB: .byte A3 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=false "ga"
 000014EE: .byte A1 ; GUARD_POP
 000014EF: .byte A6 DA 00 04 08 80 E9 00 C3 0B C7 0B CC 0B 5C 00 ; TEXT line=0x00DA voice=0x04 flags=0x08,0x80 "You are most polite , stranger..."
 000014FF: .byte D3 0B 00 00 ; continuation
-00001503: .byte CF ; OP_CF
+00001503: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001504: .byte A0 2A 15 ; GUARD_PUSH target=0x152A
-00001507: .byte A3 A1 A7 0A ; OP_A3 A1 A7 0A
+00001507: .byte A3 A1 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=true "ga"
 0000150B: .byte A1 ; GUARD_POP
 0000150C: .byte A6 DA 00 03 08 90 E9 00 C3 0B B3 05 DF 0B 48 00 ; TEXT line=0x00DA voice=0x03 flags=0x08,0x90 "You are so rude ... Bye bye , stranger..."
 0000151C: .byte 8A 03 8E 03 5C 00 D3 0B 00 00 ; continuation
 00001526: .byte C9 14 01 ; RECORD_CLEAR record=0x0114
-00001529: .byte CF ; OP_CF
+00001529: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 0000152A: .byte A6 DA 00 07 00 80 7C 06 71 0B 5C 00 77 0B E9 00 ; TEXT line=0x00DA voice=0x07 flags=0x00,0x80 "You're weird , stranger. You look like you have the evil eye ..."
 0000153A: .byte 81 0B 34 01 A0 00 9B 00 76 01 86 0B 8B 0B 48 00 ; continuation
 0000154A: .byte 00 00 ; continuation
@@ -657,18 +657,18 @@
 000015CC: .byte A6 DA 00 02 10 80 28 16 9C 0B FF FF A7 0A 06 00 ; TEXT line=0x00DA voice=0x02 flags=0x10,0x80 "Ga..."
 000015DC: .byte A2 0B 95 02 B1 0B B8 0B 00 00 ; continuation
 000015E6: .byte A0 02 16 ; GUARD_PUSH target=0x1602
-000015E9: .byte A3 A7 0A ; OP_A3 A7 0A
+000015E9: .byte A3 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=false "ga"
 000015EC: .byte A1 ; GUARD_POP
 000015ED: .byte A6 DA 00 FF 08 80 A7 0A A7 0A A7 0A A7 0A A7 0A ; TEXT line=0x00DA voice=0xFF flags=0x08,0x80 "ga ga ga ga ga ..."
 000015FD: .byte 48 00 00 00 ; continuation
-00001601: .byte CF ; OP_CF
+00001601: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001602: .byte A0 28 16 ; GUARD_PUSH target=0x1628
-00001605: .byte A3 A1 A7 0A ; OP_A3 A1 A7 0A
+00001605: .byte A3 A1 A7 0A ; CONCEPT_GUARD word=0x0AA7 inverted=true "ga"
 00001609: .byte A1 ; GUARD_POP
 0000160A: .byte A6 DA 00 05 08 90 E9 00 C3 0B B3 05 DF 0B 48 00 ; TEXT line=0x00DA voice=0x05 flags=0x08,0x90 "You are so rude ... Bye bye , stranger..."
 0000161A: .byte 8A 03 8E 03 5C 00 D3 0B 00 00 ; continuation
 00001624: .byte C9 14 01 ; RECORD_CLEAR record=0x0114
-00001627: .byte CF ; OP_CF
+00001627: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001628: .byte A6 DA 00 02 08 80 B6 09 14 00 A0 00 E2 07 90 00 ; TEXT line=0x00DA voice=0x02 flags=0x08,0x80 "What do you want to know ?"
 00001638: .byte 85 0A 54 02 00 00 ; continuation
 0000163E: .byte BC 20 01 DC 04 ; OP_BC RECORD_WILDCARD record=0x0120 value=0x04DC inverted=false
@@ -751,11 +751,11 @@
 000018F2: .byte A6 4A 00 FF 10 80 2B 19 A9 07 08 0E 0C 0E BA 07 ; TEXT line=0x004A voice=0xFF flags=0x10,0x80 "TELEPORT OLD DECODER TO PLANET VISTAR"
 00001902: .byte 73 09 91 0D FF FF C2 07 00 00 ; continuation
 0000190C: .byte A0 2B 19 ; GUARD_PUSH target=0x192B
-0000190F: .byte A3 C2 07 ; OP_A3 C2 07
+0000190F: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00001912: .byte A1 ; GUARD_POP
 00001913: .byte A6 4A 00 FF 08 90 A9 07 0C 0E BA 07 14 0E 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x90 "TELEPORT DECODER TO BRATAKAS"
 00001923: .byte CD 30 00 BE 12 4A 00 ; RECORD_TRIPLE record=0x0030 first=0x12BE second=0x004A inverted=false
-0000192A: .byte CF ; OP_CF
+0000192A: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 0000192B: .byte A0 43 1A ; GUARD_PUSH target=0x1A43
 0000192E: .byte AF D2 12 4A 00 ; OP_AF RECORD_WILDCARD record=0x12D2 value=0x004A inverted=false
 00001933: .byte AF A1 42 12 28 00 ; OP_AF RECORD_WILDCARD record=0x1242 value=0x0028 inverted=true
@@ -780,20 +780,20 @@
 00001A09: .byte A6 4A 00 FF 10 80 43 1A A9 07 B2 07 BA 07 51 08 ; TEXT line=0x004A voice=0xFF flags=0x10,0x80 "TELEPORT PICTURE TO CRYOBOX"
 00001A19: .byte FF FF C2 07 00 00 ; continuation
 00001A1F: .byte A0 43 1A ; GUARD_PUSH target=0x1A43
-00001A22: .byte A3 C2 07 ; OP_A3 C2 07
+00001A22: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00001A25: .byte A1 ; GUARD_POP
 00001A26: .byte A6 4A 00 FF 08 A0 A9 07 B2 07 BA 07 51 08 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0xA0 "TELEPORT PICTURE TO CRYOBOX"
 00001A36: .byte CD 84 00 2E 12 28 00 ; RECORD_TRIPLE record=0x0084 first=0x122E second=0x0028 inverted=false
 00001A3D: .byte BC 90 00 01 00 ; OP_BC RECORD_WILDCARD record=0x0090 value=0x0001 inverted=false
-00001A42: .byte CF ; OP_CF
+00001A42: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001A43: .byte A0 62 1A ; GUARD_PUSH target=0x1A62
-00001A46: .byte A3 52 07 ; OP_A3 52 07
+00001A46: .byte A3 52 07 ; CONCEPT_GUARD word=0x0752 inverted=false "bye_bye"
 00001A49: .byte C0 1C 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x151C operator=0xF5 rhs_mode=0xC1 rhs=0x0000
 00001A50: .byte A1 ; GUARD_POP
 00001A51: .byte A6 4A 00 FF 08 80 8A 03 8E 03 48 00 00 00 ; TEXT line=0x004A voice=0xFF flags=0x08,0x80 "Bye bye ..."
 00001A5F: .byte C9 84 00 ; RECORD_CLEAR record=0x0084
 00001A62: .byte A0 B9 1A ; GUARD_PUSH target=0x1AB9
-00001A65: .byte A3 52 07 ; OP_A3 52 07
+00001A65: .byte A3 52 07 ; CONCEPT_GUARD word=0x0752 inverted=false "bye_bye"
 00001A68: .byte C0 1C 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x151C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00001A6F: .byte A1 ; GUARD_POP
 00001A70: .byte A6 4A 00 01 00 80 8A 03 8E 03 48 00 85 0E B3 05 ; TEXT line=0x004A voice=0x01 flags=0x00,0x80 "Bye bye ... Leaving so soon ?"
@@ -834,14 +834,14 @@
 00001BA0: .byte 42 0F 48 00 49 0F 4C 0F 52 0F 48 00 FF FF 58 0F ; continuation
 00001BB0: .byte 00 00 ; continuation
 00001BB2: .byte A0 CE 1B ; GUARD_PUSH target=0x1BCE
-00001BB5: .byte A3 58 0F ; OP_A3 58 0F
+00001BB5: .byte A3 58 0F ; CONCEPT_GUARD word=0x0F58 inverted=false "click"
 00001BB8: .byte A1 ; GUARD_POP
 00001BB9: .byte A6 AA 03 FF 20 80 5E 0F 16 02 65 0F 5C 00 5E 00 ; TEXT line=0x03AA voice=0xFF flags=0x20,0x80 "Forget I spoke , Commander ..."
 00001BC9: .byte 48 00 00 00 ; continuation
-00001BCD: .byte CF ; OP_CF
+00001BCD: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001BCE: .byte A6 AA 03 05 08 80 3C 08 C3 06 F8 07 22 0F 48 00 ; TEXT line=0x03AA voice=0x05 flags=0x08,0x80 "Ohh ! Nice print ..."
 00001BDE: .byte 00 00 ; continuation
-00001BE0: .byte A8 73 63 61 6E 64 6F 69 67 2E 68 6E 6D 00 00 ; OP_A8 73 63 61 6E 64 6F 69 67 2E 68 6E 6D 00 00
+00001BE0: .byte A8 73 63 61 6E 64 6F 69 67 2E 68 6E 6D 00 00 ; LOAD_STRING "scandoig.hnm"
 00001BEF: .byte A0 84 1C ; GUARD_PUSH target=0x1C84
 00001BF2: .byte AF 42 12 28 00 ; OP_AF RECORD_WILDCARD record=0x1242 value=0x0028 inverted=false
 00001BF7: .byte AF D2 12 4A 00 ; OP_AF RECORD_WILDCARD record=0x12D2 value=0x004A inverted=false
@@ -856,11 +856,11 @@
 00001C4F: .byte A6 AA 03 FF 10 80 84 1C A9 07 6E 0F BA 07 B0 0F ; TEXT line=0x03AA voice=0xFF flags=0x10,0x80 "TELEPORT D.O.R.K. TO HOM"
 00001C5F: .byte FF FF C2 07 00 00 ; continuation
 00001C65: .byte A0 84 1C ; GUARD_PUSH target=0x1C84
-00001C68: .byte A3 C2 07 ; OP_A3 C2 07
+00001C68: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00001C6B: .byte A1 ; GUARD_POP
 00001C6C: .byte A6 AA 03 FF 08 90 CB 07 6E 0F BA 07 E5 0E 00 00 ; TEXT line=0x03AA voice=0xFF flags=0x08,0x90 "TELEPORTING D.O.R.K. TO HOM..."
 00001C7C: .byte CD 30 00 5E 12 AA 03 ; RECORD_TRIPLE record=0x0030 first=0x125E second=0x03AA inverted=false
-00001C83: .byte CF ; OP_CF
+00001C83: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001C84: .byte A0 26 1E ; GUARD_PUSH target=0x1E26
 00001C87: .byte AF 72 12 AA 03 ; OP_AF RECORD_WILDCARD record=0x1272 value=0x03AA inverted=false
 00001C8C: .byte A1 ; GUARD_POP
@@ -894,22 +894,22 @@
 00001DF0: .byte A6 AA 03 FF 10 80 26 1E A9 07 B0 0F BA 07 64 0A ; TEXT line=0x03AA voice=0xFF flags=0x10,0x80 "TELEPORT HOM TO ARK"
 00001E00: .byte FF FF C2 07 00 00 ; continuation
 00001E06: .byte A0 26 1E ; GUARD_PUSH target=0x1E26
-00001E09: .byte A3 C2 07 ; OP_A3 C2 07
+00001E09: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00001E0C: .byte A1 ; GUARD_POP
 00001E0D: .byte A6 AA 03 FF 08 A0 CB 07 B0 0F BA 07 51 08 00 00 ; TEXT line=0x03AA voice=0xFF flags=0x08,0xA0 "TELEPORTING HOM TO CRYOBOX"
 00001E1D: .byte AF C2 03 FF FF ; OP_AF RECORD_WILDCARD record=0x03C2 value=0xFFFF inverted=false
-00001E22: .byte CF ; OP_CF
+00001E22: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00001E23: .byte C9 E4 03 ; RECORD_CLEAR record=0x03E4
 00001E26: .byte A6 AA 03 04 08 80 B6 09 A0 00 E2 07 85 0A 5C 00 ; TEXT line=0x03AA voice=0x04 flags=0x08,0x80 "What you want know , friend ? Me be OMNISCIENT... ME KNOW EVERYTHING ..."
 00001E36: .byte 21 03 54 02 0C 00 FE 00 8C 10 49 0F 9A 10 9F 10 ; continuation
 00001E46: .byte 48 00 00 00 ; continuation
 00001E4A: .byte BC F0 03 06 00 ; OP_BC RECORD_WILDCARD record=0x03F0 value=0x0006 inverted=false
 00001E4F: .byte A0 59 1E ; GUARD_PUSH target=0x1E59
-00001E52: .byte A3 52 07 ; OP_A3 52 07
+00001E52: .byte A3 52 07 ; CONCEPT_GUARD word=0x0752 inverted=false "bye_bye"
 00001E55: .byte A1 ; GUARD_POP
 00001E56: .byte C9 E4 03 ; RECORD_CLEAR record=0x03E4
 00001E59: .byte A9 01 A3 1E ; CONDITIONAL_BLOCK flags=0x01 target=0x1EA3
-00001E5D: .byte D1 ; OP_D1
+00001E5D: .byte D1 ; BRANCH_FLAG_274F
 00001E5E: .byte C4 E4 03 28 00 ; ACTOR record=0x03E4 related=0x0028 inverted=false
 00001E63: .byte A1 ; GUARD_POP
 00001E64: .byte A6 AA 03 06 00 80 0C 00 E5 0E 00 00 ; TEXT line=0x03AA voice=0x06 flags=0x00,0x80 "Me HOM..."
@@ -963,13 +963,13 @@
 0000208F: .byte 9B 00 A0 00 0D 0C 54 02 FF FF 4C 0D 19 10 E1 11 ; continuation
 0000209F: .byte 00 00 ; continuation
 000020A1: .byte A0 A9 20 ; GUARD_PUSH target=0x20A9
-000020A4: .byte A3 4C 0D ; OP_A3 4C 0D
+000020A4: .byte A3 4C 0D ; CONCEPT_GUARD word=0x0D4C inverted=false "nothing"
 000020A7: .byte A1 ; GUARD_POP
-000020A8: .byte CF ; OP_CF
+000020A8: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000020A9: .byte A0 B2 20 ; GUARD_PUSH target=0x20B2
-000020AC: .byte A3 A1 4C 0D ; OP_A3 A1 4C 0D
+000020AC: .byte A3 A1 4C 0D ; CONCEPT_GUARD word=0x0D4C inverted=true "nothing"
 000020B0: .byte A1 ; GUARD_POP
-000020B1: .byte CF ; OP_CF
+000020B1: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000020B2: .byte A6 92 09 02 00 80 16 02 DE 01 48 00 00 00 ; TEXT line=0x0992 voice=0x02 flags=0x00,0x80 "I see ..."
 000020C0: .byte A6 92 09 03 00 80 E6 11 48 00 16 02 9B 00 39 01 ; TEXT line=0x0992 voice=0x03 flags=0x00,0x80 "Look ... I have a mission for you ..."
 000020D0: .byte EB 11 3A 00 A0 00 48 00 00 00 ; continuation
@@ -989,14 +989,14 @@
 00002181: .byte A6 92 09 04 00 80 CF 05 A0 00 8D 0E 5C 00 F1 09 ; TEXT line=0x0992 voice=0x04 flags=0x00,0x80 "See you soon , my friend ..."
 00002191: .byte 21 03 48 00 00 00 ; continuation
 00002197: .byte A6 92 09 FF 08 A0 48 00 00 00 ; TEXT line=0x0992 voice=0xFF flags=0x08,0xA0 "..."
-000021A1: .byte AB 00 A4 1E ; OP_AB 00 A4 1E
+000021A1: .byte AB 00 A4 1E ; POKE_BYTE address=0x1EA4 value=0x00
 000021A5: .byte AF AA 09 A6 10 ; OP_AF RECORD_WILDCARD record=0x09AA value=0x10A6 inverted=false
 000021AA: .byte C9 CC 09 ; RECORD_CLEAR record=0x09CC
 000021AD: .byte A9 01 C0 21 ; CONDITIONAL_BLOCK flags=0x01 target=0x21C0
 000021B1: .byte AF 2A 12 28 00 ; OP_AF RECORD_WILDCARD record=0x122A value=0x0028 inverted=false
 000021B6: .byte A1 ; GUARD_POP
 000021B7: .byte AF AA 09 1E 0E ; OP_AF RECORD_WILDCARD record=0x09AA value=0x0E1E inverted=false
-000021BC: .byte AB 00 AE 21 ; OP_AB 00 AE 21
+000021BC: .byte AB 00 AE 21 ; POKE_BYTE address=0x21AE value=0x00
 000021C0: .byte A9 01 30 22 ; CONDITIONAL_BLOCK flags=0x01 target=0x2230
 000021C4: .byte D0 ; BRANCH_GAMEFLAG
 000021C5: .byte C4 CC 09 28 00 ; ACTOR record=0x09CC related=0x0028 inverted=false
@@ -1009,12 +1009,12 @@
 000021F5: .byte A6 92 09 FF 10 80 30 22 67 12 50 00 76 01 21 12 ; TEXT line=0x0992 voice=0xFF flags=0x10,0x80 "Teleport him the painting , Commander..."
 00002205: .byte 5C 00 09 05 FF FF C2 07 00 00 ; continuation
 0000220F: .byte A0 30 22 ; GUARD_PUSH target=0x2230
-00002212: .byte A3 C2 07 ; OP_A3 C2 07
+00002212: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00002215: .byte A1 ; GUARD_POP
 00002216: .byte A6 92 09 FF 08 90 CB 07 70 12 BA 07 73 09 79 12 ; TEXT line=0x0992 voice=0xFF flags=0x08,0x90 "TELEPORTING PAINTING TO PLANET CRAZYSTONE"
 00002226: .byte 00 00 ; continuation
 00002228: .byte CD 30 00 16 12 92 09 ; RECORD_TRIPLE record=0x0030 first=0x1216 second=0x0992 inverted=false
-0000222F: .byte CF ; OP_CF
+0000222F: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002230: .byte A9 01 62 24 ; CONDITIONAL_BLOCK flags=0x01 target=0x2462
 00002234: .byte D0 ; BRANCH_GAMEFLAG
 00002235: .byte C4 CC 09 28 00 ; ACTOR record=0x09CC related=0x0028 inverted=false
@@ -1032,13 +1032,13 @@
 000022B1: .byte A6 92 09 0A 00 80 B2 12 B2 12 1F 07 B6 12 00 00 ; TEXT line=0x0992 voice=0x0A flags=0x00,0x80 "ATA ATA HOGLO HULU..."
 000022C1: .byte A6 92 09 FF 08 80 BE 12 C2 12 C6 12 CC 12 B6 12 ; TEXT line=0x0992 voice=0xFF flags=0x08,0x80 "HAM TOT ZAGLO HOLO HULU..."
 000022D1: .byte 00 00 ; continuation
-000022D3: .byte A8 74 6F 75 72 62 69 2E 68 6E 6D 00 00 ; OP_A8 74 6F 75 72 62 69 2E 68 6E 6D 00 00
+000022D3: .byte A8 74 6F 75 72 62 69 2E 68 6E 6D 00 00 ; LOAD_STRING "tourbi.hnm"
 000022E0: .byte A6 92 09 08 00 80 B2 12 B2 12 1F 07 B6 12 00 00 ; TEXT line=0x0992 voice=0x08 flags=0x00,0x80 "ATA ATA HOGLO HULU..."
 000022F0: .byte A6 92 09 FF 08 80 B2 12 B2 12 1F 07 B6 12 00 00 ; TEXT line=0x0992 voice=0xFF flags=0x08,0x80 "ATA ATA HOGLO HULU..."
-00002300: .byte A8 6D 6F 6D 69 31 30 2E 68 6E 6D 00 00 ; OP_A8 6D 6F 6D 69 31 30 2E 68 6E 6D 00 00
+00002300: .byte A8 6D 6F 6D 69 31 30 2E 68 6E 6D 00 00 ; LOAD_STRING "momi10.hnm"
 0000230D: .byte A6 92 09 FF 08 80 D1 12 C2 12 C6 12 CC 12 B6 12 ; TEXT line=0x0992 voice=0xFF flags=0x08,0x80 "HER TOT ZAGLO HOLO HULU..."
 0000231D: .byte 00 00 ; continuation
-0000231F: .byte A8 73 74 61 72 32 2E 68 6E 6D 00 00 ; OP_A8 73 74 61 72 32 2E 68 6E 6D 00 00
+0000231F: .byte A8 73 74 61 72 32 2E 68 6E 6D 00 00 ; LOAD_STRING "star2.hnm"
 0000232B: .byte A6 92 09 FF 20 80 D5 12 5C 00 5E 00 C3 06 24 04 ; TEXT line=0x0992 voice=0xFF flags=0x20,0x80 "Hey , Commander ! The curse has been lifted !"
 0000233B: .byte FC 0B 98 04 F9 09 D9 12 C3 06 00 00 ; continuation
 00002347: .byte A6 92 09 FF 20 80 08 03 E0 12 63 02 A8 05 C8 02 ; TEXT line=0x0992 voice=0xFF flags=0x20,0x80 "I'll bet Mister Beauregard is happy about it ..."
@@ -1055,16 +1055,16 @@
 000023D5: .byte A6 92 09 01 08 80 29 0C ED 00 50 00 5D 01 76 01 ; TEXT line=0x0992 voice=0x01 flags=0x08,0x80 "You'll find him on the planet Attrox, coordinates x342 y765..."
 000023E5: .byte DC 04 A0 05 D3 06 2C 13 31 13 00 00 ; continuation
 000023F1: .byte AE 4E 10 02 00 ; OP_AE SHARED_BIT_STATE field=0x104E mask=0x0002 inverted=false
-000023F6: .byte CC 01 70 72 65 73 65 6E 74 00 00 ; OP_CC 01 70 72 65 73 65 6E 74 00 00
-00002401: .byte CC 02 70 72 65 73 65 6E 74 00 00 ; OP_CC 02 70 72 65 73 65 6E 74 00 00
-0000240C: .byte CC 03 70 72 65 73 65 6E 74 00 00 ; OP_CC 03 70 72 65 73 65 6E 74 00 00
-00002417: .byte CC 04 70 72 65 73 65 6E 74 00 00 ; OP_CC 04 70 72 65 73 65 6E 74 00 00
-00002422: .byte CC 05 70 72 65 73 65 6E 74 00 00 ; OP_CC 05 70 72 65 73 65 6E 74 00 00
+000023F6: .byte CC 01 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x01 name="present"
+00002401: .byte CC 02 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x02 name="present"
+0000240C: .byte CC 03 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x03 name="present"
+00002417: .byte CC 04 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x04 name="present"
+00002422: .byte CC 05 70 72 65 73 65 6E 74 00 00 ; CHARACTER_SLOT slot=0x05 name="present"
 0000242D: .byte A6 92 09 FF 20 80 09 05 C3 02 C8 02 A3 11 0D 03 ; TEXT line=0x0992 voice=0xFF flags=0x20,0x80 "Commander... This is just great !"
 0000243D: .byte C3 06 00 00 ; continuation
 00002441: .byte A6 92 09 00 08 B0 8A 03 8E 03 48 00 00 00 ; TEXT line=0x0992 voice=0x00 flags=0x08,0xB0 "Bye bye ..."
 0000244F: .byte C0 0C 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x150C operator=0xF5 rhs_mode=0xC1 rhs=0x0000
-00002456: .byte AB 00 31 22 ; OP_AB 00 31 22
+00002456: .byte AB 00 31 22 ; POKE_BYTE address=0x2231 value=0x00
 0000245A: .byte AF AA 09 A6 10 ; OP_AF RECORD_WILDCARD record=0x09AA value=0x10A6 inverted=false
 0000245F: .byte C9 CC 09 ; RECORD_CLEAR record=0x09CC
 00002462: .byte A9 01 7A 24 ; CONDITIONAL_BLOCK flags=0x01 target=0x247A
@@ -1072,7 +1072,7 @@
 0000246B: .byte AF E2 14 FF FF ; OP_AF RECORD_WILDCARD record=0x14E2 value=0xFFFF inverted=false
 00002470: .byte A1 ; GUARD_POP
 00002471: .byte AF AA 09 1E 0E ; OP_AF RECORD_WILDCARD record=0x09AA value=0x0E1E inverted=false
-00002476: .byte AB 00 63 24 ; OP_AB 00 63 24
+00002476: .byte AB 00 63 24 ; POKE_BYTE address=0x2463 value=0x00
 0000247A: .byte A9 01 2E 27 ; CONDITIONAL_BLOCK flags=0x01 target=0x272E
 0000247E: .byte D0 ; BRANCH_GAMEFLAG
 0000247F: .byte C4 CC 09 28 00 ; ACTOR record=0x09CC related=0x0028 inverted=false
@@ -1097,18 +1097,18 @@
 00002522: .byte A6 92 09 FF 10 80 77 25 A9 07 4D 08 BA 07 5E 13 ; TEXT line=0x0992 voice=0xFF flags=0x10,0x80 "TELEPORT HAT TO SUPER ZEN"
 00002532: .byte 88 11 FF FF C2 07 75 06 00 00 ; continuation
 0000253C: .byte A0 5D 25 ; GUARD_PUSH target=0x255D
-0000253F: .byte A3 C2 07 ; OP_A3 C2 07
+0000253F: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00002542: .byte A1 ; GUARD_POP
 00002543: .byte A6 92 09 FF 08 90 CB 07 4D 08 BA 07 5E 13 88 11 ; TEXT line=0x0992 voice=0xFF flags=0x08,0x90 "TELEPORTING HAT TO SUPER ZEN"
 00002553: .byte 00 00 ; continuation
 00002555: .byte CD 30 00 CE 14 92 09 ; RECORD_TRIPLE record=0x0030 first=0x14CE second=0x0992 inverted=false
-0000255C: .byte CF ; OP_CF
+0000255C: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 0000255D: .byte A0 77 25 ; GUARD_PUSH target=0x2577
-00002560: .byte A3 75 06 ; OP_A3 75 06
+00002560: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 00002563: .byte A1 ; GUARD_POP
 00002564: .byte A6 92 09 FF 20 80 68 00 64 01 64 13 5C 00 09 05 ; TEXT line=0x0992 voice=0xFF flags=0x20,0x80 "It's your decision , Commander..."
 00002574: .byte 00 00 ; continuation
-00002576: .byte CF ; OP_CF
+00002576: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002577: .byte A0 0F 27 ; GUARD_PUSH target=0x270F
 0000257A: .byte AF E2 14 92 09 ; OP_AF RECORD_WILDCARD record=0x14E2 value=0x0992 inverted=false
 0000257F: .byte A1 ; GUARD_POP
@@ -1186,29 +1186,29 @@
 0000287E: .byte A6 22 01 FF 30 80 E3 28 77 14 E2 01 65 10 23 01 ; TEXT line=0x0122 voice=0xFF flags=0x30,0x80 "Is that okay with you , Commander ?"
 0000288E: .byte A0 00 5C 00 5E 00 54 02 FF FF 7A 14 75 06 00 00 ; continuation
 0000289E: .byte A0 A6 28 ; GUARD_PUSH target=0x28A6
-000028A1: .byte A3 7A 14 ; OP_A3 7A 14
+000028A1: .byte A3 7A 14 ; CONCEPT_GUARD word=0x147A inverted=false "accept"
 000028A4: .byte A1 ; GUARD_POP
-000028A5: .byte CF ; OP_CF
+000028A5: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000028A6: .byte A0 E3 28 ; GUARD_PUSH target=0x28E3
-000028A9: .byte A3 75 06 ; OP_A3 75 06
+000028A9: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 000028AC: .byte A1 ; GUARD_POP
 000028AD: .byte A6 22 01 FF 20 80 7C 06 76 01 81 14 5C 00 09 05 ; TEXT line=0x0122 voice=0xFF flags=0x20,0x80 "You're the bossman , Commander..."
 000028BD: .byte 00 00 ; continuation
 000028BF: .byte A6 22 01 FF 28 90 59 08 16 02 9B 00 39 01 3D 0C ; TEXT line=0x0122 voice=0xFF flags=0x28,0x90 "But I have a feeling we're out of our depth here ..."
 000028CF: .byte 89 14 07 13 C1 00 A6 04 8F 14 8E 08 48 00 00 00 ; continuation
-000028DF: .byte CF ; OP_CF
+000028DF: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000028E0: .byte C9 5C 01 ; RECORD_CLEAR record=0x015C
 000028E3: .byte A6 22 01 FF 20 80 95 14 5C 00 09 05 63 02 A8 05 ; TEXT line=0x0122 voice=0xFF flags=0x20,0x80 "Ok , Commander... Mister Beauregard , wakey wakey !"
 000028F3: .byte 5C 00 98 14 98 14 C3 06 00 00 ; continuation
 000028FD: .byte A6 22 01 FF 08 80 12 02 48 00 03 04 8E 08 48 00 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "Yes ... I'm here ..."
 0000290D: .byte 00 00 ; continuation
-0000290F: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+0000290F: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 0000291A: .byte A6 22 01 FF 20 80 DB 03 B3 00 76 01 9E 14 C1 00 ; TEXT line=0x0122 voice=0xFF flags=0x20,0x80 "We're in the middle of a conversation with king Betakam ..."
 0000292A: .byte 39 01 A5 14 23 01 F4 04 ED 12 48 00 00 00 ; continuation
 00002938: .byte A6 22 01 FF 08 80 7C 06 8E 08 5C 00 ED 12 B2 14 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "You're here , Betakam ??? I can hardly believe it ... I spent years studying your civilization ..."
 00002948: .byte 16 02 8F 01 B6 14 BD 14 1E 02 48 00 16 02 C5 14 ; continuation
 00002958: .byte 0F 0A CB 14 64 01 D4 14 48 00 00 00 ; continuation
-00002964: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00002964: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 0000296F: .byte A6 22 01 FF 00 80 5E 00 DA 00 6D 00 E1 14 54 00 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "Commander how about teleporting his mummy, perhaps it would please him ..."
 0000297F: .byte ED 14 F4 14 1E 02 39 0E FC 14 50 00 48 00 00 00 ; continuation
 0000298F: .byte A6 22 01 FF 00 80 B6 09 C3 0B A0 00 03 15 54 02 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "What are you doing ? You're going to seriously traumatize the poor guy !"
@@ -1217,14 +1217,14 @@
 000029B3: .byte A6 22 01 FF 08 80 1E 15 56 02 85 0A 64 01 3B 14 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "Betakam... We know your sun Gladis is going to explode and all your descendants will perish ..."
 000029C3: .byte 29 15 C8 02 33 11 90 00 30 15 EB 04 39 0A 64 01 ; continuation
 000029D3: .byte 38 15 44 15 49 15 48 00 00 00 ; continuation
-000029DD: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+000029DD: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 000029E8: .byte A6 22 01 FF 00 80 1A 09 50 15 48 00 E9 00 58 15 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "How amusing ... You realize of course that nobody can predict the future !"
 000029F8: .byte C1 00 60 15 E2 01 67 15 8F 01 6E 15 76 01 DD 0F ; continuation
 00002A08: .byte C3 06 00 00 ; continuation
 00002A0C: .byte A6 22 01 FF 08 80 E7 07 76 15 7A 15 8F 01 7A 01 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "Oh yes they can !!! Betakam , we know the future ... That's where we come from ..."
 00002A1C: .byte ED 12 5C 00 78 00 85 0A 76 01 DD 0F 48 00 31 05 ; continuation
 00002A2C: .byte 7F 15 78 00 2C 02 36 02 48 00 00 00 ; continuation
-00002A38: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00002A38: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 00002A43: .byte A6 22 01 FF 00 80 14 10 76 01 DD 0F 5C 00 85 15 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "From the future , eh ? I suppose you forgot to bring proof ..."
 00002A53: .byte 54 02 16 02 88 15 A0 00 90 15 90 00 2A 12 97 15 ; continuation
 00002A63: .byte 48 00 00 00 ; continuation
@@ -1234,21 +1234,21 @@
 00002A8F: .byte 50 06 B2 15 C3 06 00 00 ; continuation
 00002A97: .byte A6 22 01 FF 08 80 BC 15 5D 0D 5C 00 63 02 93 04 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "Excellent idea , Mister Honk !!!"
 00002AA7: .byte 7A 01 00 00 ; continuation
-00002AAB: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00002AAB: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 00002AB6: .byte A6 22 01 FF 10 80 13 2B A9 07 66 06 6B 06 BA 07 ; TEXT line=0x0122 voice=0xFF flags=0x10,0x80 "TELEPORT MIND SCRAMBLER TO KING BETAKAM IV"
 00002AC6: .byte C6 15 BF 04 C7 04 FF FF C2 07 75 06 00 00 ; continuation
 00002AD4: .byte A0 F1 2A ; GUARD_PUSH target=0x2AF1
-00002AD7: .byte A3 C2 07 ; OP_A3 C2 07
+00002AD7: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00002ADA: .byte A1 ; GUARD_POP
 00002ADB: .byte A6 22 01 FF 08 90 CB 07 66 06 6B 06 00 00 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x90 "TELEPORTING MIND SCRAMBLER"
 00002AE9: .byte CD 30 00 B6 14 22 01 ; RECORD_TRIPLE record=0x0030 first=0x14B6 second=0x0122 inverted=false
-00002AF0: .byte CF ; OP_CF
+00002AF0: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002AF1: .byte A0 13 2B ; GUARD_PUSH target=0x2B13
-00002AF4: .byte A3 75 06 ; OP_A3 75 06
+00002AF4: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 00002AF7: .byte A1 ; GUARD_POP
 00002AF8: .byte A6 22 01 FF 08 80 4C 01 D7 07 76 01 DE 07 A0 00 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "If that's the way you want it , Commander..."
 00002B08: .byte E2 07 1E 02 5C 00 09 05 00 00 ; continuation
-00002B12: .byte CF ; OP_CF
+00002B12: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002B13: .byte A0 F3 2B ; GUARD_PUSH target=0x2BF3
 00002B16: .byte AF CA 14 22 01 ; OP_AF RECORD_WILDCARD record=0x14CA value=0x0122 inverted=false
 00002B1B: .byte A1 ; GUARD_POP
@@ -1259,7 +1259,7 @@
 00002B5A: .byte 39 01 E7 15 DC 04 3A 00 A0 00 48 00 00 00 ; continuation
 00002B68: .byte A6 22 01 FF 08 80 DB 03 A8 13 C2 07 EB 04 7A 09 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "We're gonna teleport and transport you ..."
 00002B78: .byte A0 00 48 00 00 00 ; continuation
-00002B7E: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00002B7E: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 00002B89: .byte A6 22 01 FF 00 80 EE 15 F2 15 48 00 00 00 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "All right ..."
 00002B97: .byte A6 22 01 FF 20 80 F8 07 EB 04 7E 01 5C 00 5E 00 ; TEXT line=0x0122 voice=0xFF flags=0x20,0x80 "Nice and easy , Commander ... This is all new to him ..."
 00002BA7: .byte 48 00 C3 02 C8 02 39 0A F8 15 90 00 50 00 48 00 ; continuation
@@ -1267,12 +1267,12 @@
 00002BB9: .byte A6 22 01 FF 10 80 F3 2B A9 07 BF 04 C7 04 BA 07 ; TEXT line=0x0122 voice=0xFF flags=0x10,0x80 "TELEPORT BETAKAM IV TO CRYOBOX"
 00002BC9: .byte 51 08 FF FF C2 07 00 00 ; continuation
 00002BD1: .byte A0 F3 2B ; GUARD_PUSH target=0x2BF3
-00002BD4: .byte A3 C2 07 ; OP_A3 C2 07
+00002BD4: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00002BD7: .byte A1 ; GUARD_POP
 00002BD8: .byte A6 22 01 FF 08 A0 CB 07 BF 04 C7 04 BA 07 64 0A ; TEXT line=0x0122 voice=0xFF flags=0x08,0xA0 "TELEPORTING BETAKAM IV TO ARK"
 00002BE8: .byte 00 00 ; continuation
 00002BEA: .byte AF 3A 01 FF FF ; OP_AF RECORD_WILDCARD record=0x013A value=0xFFFF inverted=false
-00002BEF: .byte CF ; OP_CF
+00002BEF: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002BF0: .byte C9 5C 01 ; RECORD_CLEAR record=0x015C
 00002BF3: .byte A6 22 01 FF 00 80 16 02 74 03 85 0A 6D 00 A0 00 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "I don't know about you , but I have some murffalo meat in the oven ..."
 00002C03: .byte 5C 00 FE 0D 16 02 9B 00 87 0C FC 15 05 16 B3 00 ; continuation
@@ -1283,7 +1283,7 @@
 00002C39: .byte A6 22 01 FF 08 80 CF 05 A0 00 8D 0E 48 00 00 00 ; TEXT line=0x0122 voice=0xFF flags=0x08,0x80 "See you soon ..."
 00002C49: .byte C9 5C 01 ; RECORD_CLEAR record=0x015C
 00002C4C: .byte A9 01 3D 2D ; CONDITIONAL_BLOCK flags=0x01 target=0x2D3D
-00002C50: .byte D1 ; OP_D1
+00002C50: .byte D1 ; BRANCH_FLAG_274F
 00002C51: .byte C4 5C 01 28 00 ; ACTOR record=0x015C related=0x0028 inverted=false
 00002C56: .byte A1 ; GUARD_POP
 00002C57: .byte A6 22 01 FF 00 80 0F 16 A0 00 ED 00 39 01 DC 04 ; TEXT line=0x0122 voice=0xFF flags=0x00,0x80 "Did you find a planet ?"
@@ -1299,12 +1299,12 @@
 00002CB6: .byte A6 22 01 FF 10 80 EE 2C A9 07 BF 04 BA 07 47 16 ; TEXT line=0x0122 voice=0xFF flags=0x10,0x80 "TELEPORT BETAKAM TO SAT"
 00002CC6: .byte FF FF C2 07 00 00 ; continuation
 00002CCC: .byte A0 EE 2C ; GUARD_PUSH target=0x2CEE
-00002CCF: .byte A3 C2 07 ; OP_A3 C2 07
+00002CCF: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00002CD2: .byte A1 ; GUARD_POP
 00002CD3: .byte A6 22 01 FF 08 A0 CB 07 BF 04 BA 07 73 09 47 16 ; TEXT line=0x0122 voice=0xFF flags=0x08,0xA0 "TELEPORTING BETAKAM TO PLANET SAT"
 00002CE3: .byte 00 00 ; continuation
 00002CE5: .byte AF 3A 01 18 0B ; OP_AF RECORD_WILDCARD record=0x013A value=0x0B18 inverted=false
-00002CEA: .byte CF ; OP_CF
+00002CEA: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002CEB: .byte C9 5C 01 ; RECORD_CLEAR record=0x015C
 00002CEE: .byte A0 3D 2D ; GUARD_PUSH target=0x2D3D
 00002CF1: .byte AF A1 48 11 18 0B ; OP_AF RECORD_WILDCARD record=0x1148 value=0x0B18 inverted=true
@@ -1371,17 +1371,17 @@
 00002F18: .byte A6 FA 01 FF 10 80 6C 2F 23 17 9B 0A 29 17 48 00 ; TEXT line=0x01FA voice=0xFF flags=0x10,0x80 "LIGHT A CANDLE ..."
 00002F28: .byte FF FF 7A 14 75 06 00 00 ; continuation
 00002F30: .byte A0 50 2F ; GUARD_PUSH target=0x2F50
-00002F33: .byte A3 7A 14 ; OP_A3 7A 14
+00002F33: .byte A3 7A 14 ; CONCEPT_GUARD word=0x147A inverted=false "accept"
 00002F36: .byte A1 ; GUARD_POP
 00002F37: .byte A6 FA 01 04 00 80 30 17 14 17 44 15 35 17 3A 00 ; TEXT line=0x01FA voice=0x04 flags=0x00,0x80 "Your candle will burn for three years ..."
 00002F47: .byte 3A 17 0F 0A 48 00 00 00 ; continuation
-00002F4F: .byte CF ; OP_CF
+00002F4F: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002F50: .byte A0 6C 2F ; GUARD_PUSH target=0x2F6C
-00002F53: .byte A3 75 06 ; OP_A3 75 06
+00002F53: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 00002F56: .byte A1 ; GUARD_POP
 00002F57: .byte A6 FA 01 05 00 80 7C 06 40 17 39 01 13 16 48 17 ; TEXT line=0x01FA voice=0x05 flags=0x00,0x80 "You're wasting a fine opportunity ..."
 00002F67: .byte 48 00 00 00 ; continuation
-00002F6B: .byte CF ; OP_CF
+00002F6B: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00002F6C: .byte A6 FA 01 06 00 80 E9 00 54 17 DE 01 76 01 F9 11 ; TEXT line=0x01FA voice=0x06 flags=0x00,0x80 "You cannot see the portrait of the Great Yolk , painted with his own yellow blood ..."
 00002F7C: .byte C1 00 76 01 26 0D 2C 0D 5C 00 30 12 23 01 54 00 ; continuation
 00002F8C: .byte 3F 12 43 12 4A 12 48 00 00 00 ; continuation
@@ -1406,7 +1406,7 @@
 0000307C: .byte AF 12 02 A6 10 ; OP_AF RECORD_WILDCARD record=0x0212 value=0x10A6 inverted=false
 00003081: .byte C9 34 02 ; RECORD_CLEAR record=0x0234
 00003084: .byte A9 01 C6 30 ; CONDITIONAL_BLOCK flags=0x01 target=0x30C6
-00003088: .byte D1 ; OP_D1
+00003088: .byte D1 ; BRANCH_FLAG_274F
 00003089: .byte AE A1 5E 0C 02 00 ; OP_AE SHARED_BIT_STATE field=0x0C5E mask=0x0002 inverted=true
 0000308F: .byte C4 DC 05 28 00 ; ACTOR record=0x05DC related=0x0028 inverted=false
 00003094: .byte A1 ; GUARD_POP
@@ -1414,13 +1414,13 @@
 0000309F: .byte A6 A2 05 FF 10 80 C6 30 21 18 28 18 FF FF 52 07 ; TEXT line=0x05A2 voice=0xFF flags=0x10,0x80 "BROKEN ROBOT"
 000030AF: .byte 00 00 ; continuation
 000030B1: .byte A0 C6 30 ; GUARD_PUSH target=0x30C6
-000030B4: .byte A3 52 07 ; OP_A3 52 07
+000030B4: .byte A3 52 07 ; CONCEPT_GUARD word=0x0752 inverted=false "bye_bye"
 000030B7: .byte A1 ; GUARD_POP
 000030B8: .byte A6 A2 05 FF 08 80 48 00 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0x80 "..."
 000030C2: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
-000030C5: .byte CF ; OP_CF
+000030C5: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000030C6: .byte A9 01 EF 31 ; CONDITIONAL_BLOCK flags=0x01 target=0x31EF
-000030CA: .byte D1 ; OP_D1
+000030CA: .byte D1 ; BRANCH_FLAG_274F
 000030CB: .byte AE 5E 0C 02 00 ; OP_AE SHARED_BIT_STATE field=0x0C5E mask=0x0002 inverted=false
 000030D0: .byte C4 DC 05 28 00 ; ACTOR record=0x05DC related=0x0028 inverted=false
 000030D5: .byte A1 ; GUARD_POP
@@ -1444,17 +1444,17 @@
 000031C0: .byte A6 A2 05 FF 20 80 D5 01 EF 18 E2 01 F4 18 64 14 ; TEXT line=0x05A2 voice=0xFF flags=0x20,0x80 "I'd call that somewhat rich possibility-wise . Right , Commander ?"
 000031D0: .byte FD 18 27 00 6A 02 5C 00 5E 00 54 02 00 00 ; continuation
 000031DE: .byte A6 A2 05 FF 08 90 48 00 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0x90 "..."
-000031E8: .byte AB 00 C7 30 ; OP_AB 00 C7 30
+000031E8: .byte AB 00 C7 30 ; POKE_BYTE address=0x30C7 value=0x00
 000031EC: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 000031EF: .byte A9 01 0C 32 ; CONDITIONAL_BLOCK flags=0x01 target=0x320C
 000031F3: .byte AE 5E 0C 02 00 ; OP_AE SHARED_BIT_STATE field=0x0C5E mask=0x0002 inverted=false
 000031F8: .byte BF 30 02 F2 C1 00 00 ; OP_BF SHARED_STATE field=0x0230 operator=0xF2 rhs_mode=0xC1 rhs=0x0000
 000031FF: .byte A1 ; GUARD_POP
-00003200: .byte AB 00 85 30 ; OP_AB 00 85 30
-00003204: .byte AB 01 0D 32 ; OP_AB 01 0D 32
-00003208: .byte AB 00 F0 31 ; OP_AB 00 F0 31
+00003200: .byte AB 00 85 30 ; POKE_BYTE address=0x3085 value=0x00
+00003204: .byte AB 01 0D 32 ; POKE_BYTE address=0x320D value=0x01
+00003208: .byte AB 00 F0 31 ; POKE_BYTE address=0x31F0 value=0x00
 0000320C: .byte A9 00 62 33 ; CONDITIONAL_BLOCK flags=0x00 target=0x3362
-00003210: .byte D1 ; OP_D1
+00003210: .byte D1 ; BRANCH_FLAG_274F
 00003211: .byte C4 DC 05 28 00 ; ACTOR record=0x05DC related=0x0028 inverted=false
 00003216: .byte A1 ; GUARD_POP
 00003217: .byte A0 DF 32 ; GUARD_PUSH target=0x32DF
@@ -1468,22 +1468,22 @@
 00003264: .byte A6 A2 05 FF 10 80 DF 32 A9 07 2B 19 BA 07 73 09 ; TEXT line=0x05A2 voice=0xFF flags=0x10,0x80 "TELEPORT HAF TO PLANET VISTA"
 00003274: .byte 0D 12 FF FF C2 07 75 06 00 00 ; continuation
 0000327E: .byte A0 A4 32 ; GUARD_PUSH target=0x32A4
-00003281: .byte A3 C2 07 ; OP_A3 C2 07
+00003281: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00003284: .byte A1 ; GUARD_POP
 00003285: .byte A6 A2 05 FF 08 B0 CB 07 2B 19 BA 07 73 09 0D 12 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0xB0 "TELEPORTING HAF TO PLANET VISTA"
 00003295: .byte 00 00 ; continuation
 00003297: .byte AF BA 05 7A 0C ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0C7A inverted=false
-0000329C: .byte AB 00 0D 32 ; OP_AB 00 0D 32
-000032A0: .byte CF ; OP_CF
+0000329C: .byte AB 00 0D 32 ; POKE_BYTE address=0x320D value=0x00
+000032A0: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000032A1: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 000032A4: .byte A0 DF 32 ; GUARD_PUSH target=0x32DF
-000032A7: .byte A3 75 06 ; OP_A3 75 06
+000032A7: .byte A3 75 06 ; CONCEPT_GUARD word=0x0675 inverted=false "refuse"
 000032AA: .byte A1 ; GUARD_POP
 000032AB: .byte A6 A2 05 FF 20 80 2F 19 A0 00 E6 0D 5C 00 5E 00 ; TEXT line=0x05A2 voice=0xFF flags=0x20,0x80 "Whatever you say , Commander ..."
 000032BB: .byte 48 00 00 00 ; continuation
 000032BF: .byte A6 A2 05 02 08 90 A2 0F A0 00 38 19 90 00 94 09 ; TEXT line=0x05A2 voice=0x02 flags=0x08,0x90 "Maybe you ought to think about it , Commander ..."
 000032CF: .byte 6D 00 1E 02 5C 00 5E 00 48 00 00 00 ; continuation
-000032DB: .byte CF ; OP_CF
+000032DB: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 000032DC: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 000032DF: .byte A6 A2 05 FF 20 80 F6 0D 46 06 13 03 1E 12 A7 00 ; TEXT line=0x05A2 voice=0xFF flags=0x20,0x80 "He could help us get our hands on that painting , Commander ..."
 000032EF: .byte A6 04 3E 19 5D 01 E2 01 21 12 5C 00 5E 00 48 00 ; continuation
@@ -1545,14 +1545,14 @@
 000034FD: .byte A6 A2 05 FF 08 B0 48 00 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0xB0 "..."
 00003507: .byte AE A1 A4 05 02 00 ; OP_AE SHARED_BIT_STATE field=0x05A4 mask=0x0002 inverted=true
 0000350D: .byte A5 07 3C 00 ; STATE_ARRAY_SET index=0x07 value=0x003C
-00003511: .byte AB 00 DD 33 ; OP_AB 00 DD 33
+00003511: .byte AB 00 DD 33 ; POKE_BYTE address=0x33DD value=0x00
 00003515: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 00003518: .byte A9 01 2C 35 ; CONDITIONAL_BLOCK flags=0x01 target=0x352C
 0000351C: .byte A5 07 ; STATE_ARRAY_TEST index=0x07
 0000351E: .byte A1 ; GUARD_POP
 0000351F: .byte C3 DC 05 28 00 ; RECORD_LINK record=0x05DC related=0x0028 inverted=false
-00003524: .byte AB 01 2D 35 ; OP_AB 01 2D 35
-00003528: .byte AB 00 19 35 ; OP_AB 00 19 35
+00003524: .byte AB 01 2D 35 ; POKE_BYTE address=0x352D value=0x01
+00003528: .byte AB 00 19 35 ; POKE_BYTE address=0x3519 value=0x00
 0000352C: .byte A9 00 BD 35 ; CONDITIONAL_BLOCK flags=0x00 target=0x35BD
 00003530: .byte CE ; BRANCH_PRESENTATION
 00003531: .byte AF BA 05 7A 0C ; OP_AF RECORD_WILDCARD record=0x05BA value=0x0C7A inverted=false
@@ -1568,7 +1568,7 @@
 00003596: .byte 00 00 ; continuation
 00003598: .byte A6 A2 05 FF 00 80 4C 1A 5C 00 09 05 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x00,0x80 "Hurry , Commander..."
 000035A6: .byte A6 A2 05 FF 08 A0 52 1A 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0xA0 "Kruikkk..."
-000035B0: .byte AB 00 63 33 ; OP_AB 00 63 33
+000035B0: .byte AB 00 63 33 ; POKE_BYTE address=0x3363 value=0x00
 000035B4: .byte AE A1 A4 05 02 00 ; OP_AE SHARED_BIT_STATE field=0x05A4 mask=0x0002 inverted=true
 000035BA: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 000035BD: .byte A9 01 83 36 ; CONDITIONAL_BLOCK flags=0x01 target=0x3683
@@ -1583,24 +1583,24 @@
 00003602: .byte A6 A2 05 FF 10 80 37 36 A9 07 70 12 BA 07 64 0A ; TEXT line=0x05A2 voice=0xFF flags=0x10,0x80 "TELEPORT PAINTING TO ARK"
 00003612: .byte FF FF C2 07 00 00 ; continuation
 00003618: .byte A0 37 36 ; GUARD_PUSH target=0x3637
-0000361B: .byte A3 C2 07 ; OP_A3 C2 07
+0000361B: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 0000361E: .byte A1 ; GUARD_POP
 0000361F: .byte A6 A2 05 FF 08 90 CB 07 70 12 BA 07 64 0A 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0x90 "TELEPORTING PAINTING TO ARK"
 0000362F: .byte CD DC 05 16 12 28 00 ; RECORD_TRIPLE record=0x05DC first=0x1216 second=0x0028 inverted=false
-00003636: .byte CF ; OP_CF
+00003636: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00003637: .byte A6 A2 05 04 00 80 67 12 46 01 5C 00 5E 00 27 00 ; TEXT line=0x05A2 voice=0x04 flags=0x00,0x80 "Teleport me , Commander . Hurry ..."
 00003647: .byte 4C 1A 48 00 00 00 ; continuation
 0000364D: .byte A6 A2 05 FF 10 80 83 36 67 12 50 00 5C 00 09 05 ; TEXT line=0x05A2 voice=0xFF flags=0x10,0x80 "Teleport him , Commander..."
 0000365D: .byte FF FF C2 07 00 00 ; continuation
 00003663: .byte A0 83 36 ; GUARD_PUSH target=0x3683
-00003666: .byte A3 C2 07 ; OP_A3 C2 07
+00003666: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00003669: .byte A1 ; GUARD_POP
 0000366A: .byte A6 A2 05 FF 08 A0 A9 07 2B 19 BA 07 64 0A 00 00 ; TEXT line=0x05A2 voice=0xFF flags=0x08,0xA0 "TELEPORT HAF TO ARK"
 0000367A: .byte AF BA 05 FF FF ; OP_AF RECORD_WILDCARD record=0x05BA value=0xFFFF inverted=false
-0000367F: .byte CF ; OP_CF
+0000367F: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00003680: .byte C9 DC 05 ; RECORD_CLEAR record=0x05DC
 00003683: .byte A9 01 CD 36 ; CONDITIONAL_BLOCK flags=0x01 target=0x36CD
-00003687: .byte D1 ; OP_D1
+00003687: .byte D1 ; BRANCH_FLAG_274F
 00003688: .byte C4 DC 05 28 00 ; ACTOR record=0x05DC related=0x0028 inverted=false
 0000368D: .byte A1 ; GUARD_POP
 0000368E: .byte A6 A2 05 02 00 80 69 18 5C 00 09 05 03 04 5D 1A ; TEXT line=0x05A2 voice=0x02 flags=0x00,0x80 "Hello , Commander... I'm sleeping real well ..."
@@ -1638,7 +1638,7 @@
 00003802: .byte A6 92 00 FF 08 90 24 04 84 1B C8 02 FE 09 48 00 ; TEXT line=0x0092 voice=0xFF flags=0x08,0x90 "The CHIEF is waiting ..."
 00003812: .byte 00 00 ; continuation
 00003814: .byte C1 F0 14 A8 0B ; OP_C1 RECORD_STATE record=0x14F0 operand=0x0BA8 inverted=false
-00003819: .byte AB 00 CE 36 ; OP_AB 00 CE 36
+00003819: .byte AB 00 CE 36 ; POKE_BYTE address=0x36CE value=0x00
 0000381D: .byte A9 01 A1 3B ; CONDITIONAL_BLOCK flags=0x01 target=0x3BA1
 00003821: .byte D0 ; BRANCH_GAMEFLAG
 00003822: .byte C4 A4 01 28 00 ; ACTOR record=0x01A4 related=0x0028 inverted=false
@@ -1663,26 +1663,26 @@
 00003906: .byte A6 6A 01 FF 08 80 25 11 46 01 5C 00 5E 00 48 00 ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "Excuse me , Commander ... But I'm having trouble getting to sleep ..."
 00003916: .byte 59 08 03 04 0E 19 3E 1C 46 1C 90 00 AA 10 48 00 ; continuation
 00003926: .byte 00 00 ; continuation
-00003928: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00003928: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 00003933: .byte A6 6A 01 FF 20 80 C3 02 7E 1B 39 01 1C 03 2C 11 ; TEXT line=0x016A voice=0xFF flags=0x20,0x80 "This isn't a good moment , Mister Beauregard ..."
 00003943: .byte 5C 00 63 02 A8 05 48 00 00 00 ; continuation
 0000394D: .byte A6 6A 01 FF 08 80 16 02 9B 00 7F 00 5D 01 F1 09 ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "I have something on my conscience... Something I have to confess to you ..."
 0000395D: .byte 4E 1C 8C 11 16 02 9B 00 90 00 5C 1C 90 00 A0 00 ; continuation
 0000396D: .byte 48 00 00 00 ; continuation
-00003971: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00003971: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 0000397C: .byte A6 6A 01 FF 08 80 24 04 64 1C 48 00 5E 00 48 00 ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "The treasure ... Commander ... EVISCERATOR's treasure ... You see , I found it , Commander..."
 0000398C: .byte 5D 08 64 1C 48 00 E9 00 DE 01 5C 00 16 02 E2 19 ; continuation
 0000399C: .byte 1E 02 5C 00 09 05 00 00 ; continuation
-000039A4: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+000039A4: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 000039AF: .byte A6 6A 01 FF 08 80 68 00 48 00 6D 1C F4 10 F8 10 ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "It's ... IN THE MUMMY ..."
 000039BF: .byte 48 00 00 00 ; continuation
-000039C3: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+000039C3: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 000039CE: .byte A6 6A 01 FF 20 80 E7 07 70 1C 47 04 74 1C 76 01 ; TEXT line=0x016A voice=0xFF flags=0x20,0x80 "Oh boy That wasn't the smartest thing you ever did , Mister Beauregard..."
 000039DE: .byte 7B 1C 9A 05 A0 00 84 1C 9A 02 5C 00 63 02 89 1C ; continuation
 000039EE: .byte 00 00 ; continuation
 000039F0: .byte A6 6A 01 FF 08 80 53 0C 5C 00 16 02 9A 02 97 1C ; TEXT line=0x016A voice=0xFF flags=0x08,0x80 "Well , I did intend telling you ..."
 00003A00: .byte B6 11 A0 00 48 00 00 00 ; continuation
-00003A08: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; OP_A8 68 62 6F 63 2E 68 6E 6D 00 00
+00003A08: .byte A8 68 62 6F 63 2E 68 6E 6D 00 00 ; LOAD_STRING "hboc.hnm"
 00003A13: .byte A6 6A 01 FF 20 80 B3 04 34 01 9E 1C 89 02 28 01 ; TEXT line=0x016A voice=0xFF flags=0x20,0x80 "Looks like we'd better hand over the mummy , Commander ..."
 00003A23: .byte 06 18 76 01 B9 04 5C 00 5E 00 48 00 00 00 ; continuation
 00003A31: .byte A6 6A 01 05 00 80 4C 01 A3 1C 1D 0E E4 12 64 01 ; TEXT line=0x016A voice=0x05 flags=0x00,0x80 "If you've quite finished your nice little conversation ... I'd like your attention ..."
@@ -1699,11 +1699,11 @@
 00003AB7: .byte A6 6A 01 FF 10 80 EE 3A A9 07 F8 10 BA 07 29 1C ; TEXT line=0x016A voice=0xFF flags=0x10,0x80 "TELEPORT MUMMY TO CROOLIS OUTRAGEOR"
 00003AC7: .byte E3 1C FF FF C2 07 00 00 ; continuation
 00003ACF: .byte A0 EE 3A ; GUARD_PUSH target=0x3AEE
-00003AD2: .byte A3 C2 07 ; OP_A3 C2 07
+00003AD2: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00003AD5: .byte A1 ; GUARD_POP
 00003AD6: .byte A6 6A 01 FF 08 90 CB 07 F8 10 BA 07 E3 1C 00 00 ; TEXT line=0x016A voice=0xFF flags=0x08,0x90 "TELEPORTING MUMMY TO OUTRAGEOR"
 00003AE6: .byte CD 30 00 FE 11 6A 01 ; RECORD_TRIPLE record=0x0030 first=0x11FE second=0x016A inverted=false
-00003AED: .byte CF ; OP_CF
+00003AED: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00003AEE: .byte A6 6A 01 05 00 80 60 03 60 03 60 03 ED 1C B3 00 ; TEXT line=0x016A voice=0x05 flags=0x00,0x80 "Ha! Ha! Ha! Everything in its place , as I always say ..."
 00003AFE: .byte 82 17 AB 01 5C 00 83 01 16 02 C9 08 E6 0D 48 00 ; continuation
 00003B0E: .byte 00 00 ; continuation
@@ -1747,14 +1747,14 @@
 00003CB4: .byte 7E 1B 00 09 39 01 1C 03 AB 01 90 00 FE 00 48 00 ; continuation
 00003CC4: .byte 00 00 ; continuation
 00003CC6: .byte A6 92 00 05 08 90 36 1D 00 00 ; TEXT line=0x0092 voice=0x05 flags=0x08,0x90 "BAAAOOOM..."
-00003CD0: .byte A8 65 78 70 6C 6F 33 2E 68 6E 6D 00 00 ; OP_A8 65 78 70 6C 6F 33 2E 68 6E 6D 00 00
+00003CD0: .byte A8 65 78 70 6C 6F 33 2E 68 6E 6D 00 00 ; LOAD_STRING "explo3.hnm"
 00003CDD: .byte C9 CC 00 ; RECORD_CLEAR record=0x00CC
 00003CE0: .byte A9 01 F4 3C ; CONDITIONAL_BLOCK flags=0x01 target=0x3CF4
 00003CE4: .byte A5 0F ; STATE_ARRAY_TEST index=0x0F
 00003CE6: .byte A1 ; GUARD_POP
 00003CE7: .byte C3 9C 03 28 00 ; RECORD_LINK record=0x039C related=0x0028 inverted=false
-00003CEC: .byte AB 01 F5 3C ; OP_AB 01 F5 3C
-00003CF0: .byte AB 00 E1 3C ; OP_AB 00 E1 3C
+00003CEC: .byte AB 01 F5 3C ; POKE_BYTE address=0x3CF5 value=0x01
+00003CF0: .byte AB 00 E1 3C ; POKE_BYTE address=0x3CE1 value=0x00
 00003CF4: .byte A9 00 17 3E ; CONDITIONAL_BLOCK flags=0x00 target=0x3E17
 00003CF8: .byte CE ; BRANCH_PRESENTATION
 00003CF9: .byte C0 20 15 F5 C0 22 15 ; OP_C0 SHARED_STATE field=0x1520 operator=0xF5 rhs_mode=0xC0 rhs=0x1522
@@ -1786,8 +1786,8 @@
 00003E1B: .byte AE 94 11 02 00 ; OP_AE SHARED_BIT_STATE field=0x1194 mask=0x0002 inverted=false
 00003E20: .byte A1 ; GUARD_POP
 00003E21: .byte C3 04 05 28 00 ; RECORD_LINK record=0x0504 related=0x0028 inverted=false
-00003E26: .byte AB 01 2F 3E ; OP_AB 01 2F 3E
-00003E2A: .byte AB 00 18 3E ; OP_AB 00 18 3E
+00003E26: .byte AB 01 2F 3E ; POKE_BYTE address=0x3E2F value=0x01
+00003E2A: .byte AB 00 18 3E ; POKE_BYTE address=0x3E18 value=0x00
 00003E2E: .byte A9 00 DF 3E ; CONDITIONAL_BLOCK flags=0x00 target=0x3EDF
 00003E32: .byte CE ; BRANCH_PRESENTATION
 00003E33: .byte C4 04 05 28 00 ; ACTOR record=0x0504 related=0x0028 inverted=false
@@ -1806,7 +1806,7 @@
 00003EC3: .byte A6 CA 04 FF 08 B0 9E 1D 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0xB0 "KRUIIK"
 00003ECD: .byte AF 0A 04 92 11 ; OP_AF RECORD_WILDCARD record=0x040A value=0x1192 inverted=false
 00003ED2: .byte AE A1 CC 04 02 00 ; OP_AE SHARED_BIT_STATE field=0x04CC mask=0x0002 inverted=true
-00003ED8: .byte AB 00 2F 3E ; OP_AB 00 2F 3E
+00003ED8: .byte AB 00 2F 3E ; POKE_BYTE address=0x3E2F value=0x00
 00003EDC: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 00003EDF: .byte A9 01 94 3F ; CONDITIONAL_BLOCK flags=0x01 target=0x3F94
 00003EE3: .byte D0 ; BRANCH_GAMEFLAG
@@ -1817,23 +1817,23 @@
 00003EFF: .byte 5E 00 48 00 00 00 ; continuation
 00003F05: .byte A6 F2 03 FF 08 80 4C 1A 5C 00 16 02 E2 07 DE 01 ; TEXT line=0x03F2 voice=0xFF flags=0x08,0x80 "Hurry , I want see father MAXXON ..."
 00003F15: .byte E5 1D 03 1D 48 00 00 00 ; continuation
-00003F1D: .byte A8 61 72 65 61 64 79 33 30 2E 68 6E 6D 00 00 ; OP_A8 61 72 65 61 64 79 33 30 2E 68 6E 6D 00 00
+00003F1D: .byte A8 61 72 65 61 64 79 33 30 2E 68 6E 6D 00 00 ; LOAD_STRING "aready30.hnm"
 00003F2C: .byte A6 F2 03 FF 08 80 EC 1D E2 01 F3 1D 48 00 00 00 ; TEXT line=0x03F2 voice=0xFF flags=0x08,0x80 "Behind that door ..."
-00003F3C: .byte A8 61 72 65 61 64 79 34 30 2E 68 6E 6D 00 00 ; OP_A8 61 72 65 61 64 79 34 30 2E 68 6E 6D 00 00
+00003F3C: .byte A8 61 72 65 61 64 79 34 30 2E 68 6E 6D 00 00 ; LOAD_STRING "aready40.hnm"
 00003F4B: .byte A6 F2 03 FF 30 80 94 3F 67 12 F8 1D 5C 00 2D 03 ; TEXT line=0x03F2 voice=0xFF flags=0x30,0x80 "Teleport them , Commander, quick ..."
 00003F5B: .byte FD 1D 48 00 FF FF C2 07 00 00 ; continuation
 00003F65: .byte A0 94 3F ; GUARD_PUSH target=0x3F94
-00003F68: .byte A3 C2 07 ; OP_A3 C2 07
+00003F68: .byte A3 C2 07 ; CONCEPT_GUARD word=0x07C2 inverted=false "teleport"
 00003F6B: .byte A1 ; GUARD_POP
 00003F6C: .byte A6 F2 03 FF 08 C0 CB 07 03 1D 03 1E 07 1E BA 07 ; TEXT line=0x03F2 voice=0xFF flags=0x08,0xC0 "TELEPORTING MAXXON AND YOKO TO ARK"
 00003F7C: .byte 64 0A 00 00 ; continuation
 00003F80: .byte AF 22 07 FF FF ; OP_AF RECORD_WILDCARD record=0x0722 value=0xFFFF inverted=false
 00003F85: .byte AF 0A 04 FF FF ; OP_AF RECORD_WILDCARD record=0x040A value=0xFFFF inverted=false
 00003F8A: .byte AE A1 94 11 02 00 ; OP_AE SHARED_BIT_STATE field=0x1194 mask=0x0002 inverted=true
-00003F90: .byte CF ; OP_CF
+00003F90: .byte CF ; CLEAR_ALTERNATE_CONCEPT
 00003F91: .byte C9 2C 04 ; RECORD_CLEAR record=0x042C
 00003F94: .byte A9 01 F6 3F ; CONDITIONAL_BLOCK flags=0x01 target=0x3FF6
-00003F98: .byte D1 ; OP_D1
+00003F98: .byte D1 ; BRANCH_FLAG_274F
 00003F99: .byte C4 2C 04 28 00 ; ACTOR record=0x042C related=0x0028 inverted=false
 00003F9E: .byte A1 ; GUARD_POP
 00003F9F: .byte A6 F2 03 FF 00 80 0C 1E 12 1E 0C 1E A0 00 48 00 ; TEXT line=0x03F2 voice=0xFF flags=0x00,0x80 "Thank you... Thank you ... Commander..."
@@ -1846,7 +1846,7 @@
 00003FE7: .byte A6 F2 03 FF 08 80 0C 1E 12 1E 00 00 ; TEXT line=0x03F2 voice=0xFF flags=0x08,0x80 "Thank you..."
 00003FF3: .byte C9 2C 04 ; RECORD_CLEAR record=0x042C
 00003FF6: .byte A9 01 46 40 ; CONDITIONAL_BLOCK flags=0x01 target=0x4046
-00003FFA: .byte D1 ; OP_D1
+00003FFA: .byte D1 ; BRANCH_FLAG_274F
 00003FFB: .byte C4 44 07 28 00 ; ACTOR record=0x0744 related=0x0028 inverted=false
 00004000: .byte A1 ; GUARD_POP
 00004001: .byte A6 0A 07 FF 00 80 0C 1E A0 00 48 00 09 05 00 00 ; TEXT line=0x070A voice=0xFF flags=0x00,0x80 "Thank you ... Commander..."
@@ -1863,8 +1863,8 @@
 00004059: .byte AF 72 05 FF FF ; OP_AF RECORD_WILDCARD record=0x0572 value=0xFFFF inverted=false
 0000405E: .byte A1 ; GUARD_POP
 0000405F: .byte C3 04 05 28 00 ; RECORD_LINK record=0x0504 related=0x0028 inverted=false
-00004064: .byte AB 01 6D 40 ; OP_AB 01 6D 40
-00004068: .byte AB 00 47 40 ; OP_AB 00 47 40
+00004064: .byte AB 01 6D 40 ; POKE_BYTE address=0x406D value=0x01
+00004068: .byte AB 00 47 40 ; POKE_BYTE address=0x4047 value=0x00
 0000406C: .byte A9 00 93 41 ; CONDITIONAL_BLOCK flags=0x00 target=0x4193
 00004070: .byte CE ; BRANCH_PRESENTATION
 00004071: .byte C4 04 05 28 00 ; ACTOR record=0x0504 related=0x0028 inverted=false
@@ -1893,7 +1893,7 @@
 00004164: .byte DE 01 A0 00 8D 0E 5C 00 5E 00 48 00 00 00 ; continuation
 00004172: .byte A6 CA 04 FF 00 80 EB 1E EB 1E D6 0E 48 00 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x00,0x80 "BYE BYE COMMANDER ..."
 00004182: .byte A6 CA 04 FF 08 90 48 00 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0x90 "..."
-0000418C: .byte AB 01 94 41 ; OP_AB 01 94 41
+0000418C: .byte AB 01 94 41 ; POKE_BYTE address=0x4194 value=0x01
 00004190: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 00004193: .byte A9 00 9F 41 ; CONDITIONAL_BLOCK flags=0x00 target=0x419F
 00004197: .byte C6 4E 11 12 11 ; OP_C6 RECORD_ENTRY record=0x114E operand=0x1112 inverted=false
@@ -1902,13 +1902,13 @@
 0000419F: .byte A9 01 AC 41 ; CONDITIONAL_BLOCK flags=0x01 target=0x41AC
 000041A3: .byte A1 ; GUARD_POP
 000041A4: .byte A5 01 64 00 ; STATE_ARRAY_SET index=0x01 value=0x0064
-000041A8: .byte AB 00 A0 41 ; OP_AB 00 A0 41
+000041A8: .byte AB 00 A0 41 ; POKE_BYTE address=0x41A0 value=0x00
 000041AC: .byte A9 01 C0 41 ; CONDITIONAL_BLOCK flags=0x01 target=0x41C0
 000041B0: .byte A5 01 ; STATE_ARRAY_TEST index=0x01
 000041B2: .byte A1 ; GUARD_POP
 000041B3: .byte C3 04 05 28 00 ; RECORD_LINK record=0x0504 related=0x0028 inverted=false
-000041B8: .byte AB 01 C1 41 ; OP_AB 01 C1 41
-000041BC: .byte AB 00 AD 41 ; OP_AB 00 AD 41
+000041B8: .byte AB 01 C1 41 ; POKE_BYTE address=0x41C1 value=0x01
+000041BC: .byte AB 00 AD 41 ; POKE_BYTE address=0x41AD value=0x00
 000041C0: .byte A9 00 9F 42 ; CONDITIONAL_BLOCK flags=0x00 target=0x429F
 000041C4: .byte CE ; BRANCH_PRESENTATION
 000041C5: .byte C4 04 05 28 00 ; ACTOR record=0x0504 related=0x0028 inverted=false
@@ -1931,7 +1931,7 @@
 00004283: .byte A6 CA 04 FF 08 B0 48 00 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0xB0 "..."
 0000428D: .byte AE 70 11 02 00 ; OP_AE SHARED_BIT_STATE field=0x1170 mask=0x0002 inverted=false
 00004292: .byte AE A1 CC 04 02 00 ; OP_AE SHARED_BIT_STATE field=0x04CC mask=0x0002 inverted=true
-00004298: .byte AB 00 C1 41 ; OP_AB 00 C1 41
+00004298: .byte AB 00 C1 41 ; POKE_BYTE address=0x41C1 value=0x00
 0000429C: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 0000429F: .byte A9 01 DD 43 ; CONDITIONAL_BLOCK flags=0x01 target=0x43DD
 000042A3: .byte D0 ; BRANCH_GAMEFLAG
@@ -1964,13 +1964,13 @@
 000043B6: .byte 1C 03 08 20 5C 00 5E 00 48 00 00 00 ; continuation
 000043C2: .byte A6 CA 04 FF 08 B0 48 00 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0xB0 "..."
 000043CC: .byte AE A1 70 11 02 00 ; OP_AE SHARED_BIT_STATE field=0x1170 mask=0x0002 inverted=true
-000043D2: .byte AB 00 A0 42 ; OP_AB 00 A0 42
-000043D6: .byte AB 01 DE 43 ; OP_AB 01 DE 43
+000043D2: .byte AB 00 A0 42 ; POKE_BYTE address=0x42A0 value=0x00
+000043D6: .byte AB 01 DE 43 ; POKE_BYTE address=0x43DE value=0x01
 000043DA: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 000043DD: .byte A9 00 EA 43 ; CONDITIONAL_BLOCK flags=0x00 target=0x43EA
 000043E1: .byte A1 ; GUARD_POP
 000043E2: .byte A5 0D C8 00 ; STATE_ARRAY_SET index=0x0D value=0x00C8
-000043E6: .byte AB 00 DE 43 ; OP_AB 00 DE 43
+000043E6: .byte AB 00 DE 43 ; POKE_BYTE address=0x43DE value=0x00
 000043EA: .byte A9 01 00 44 ; CONDITIONAL_BLOCK flags=0x01 target=0x4400
 000043EE: .byte A1 ; GUARD_POP
 000043EF: .byte A0 00 44 ; GUARD_PUSH target=0x4400
@@ -2000,7 +2000,7 @@
 0000449B: .byte 00 00 ; continuation
 0000449D: .byte A6 CA 04 FF 00 80 58 20 7B 02 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x00,0x80 "SEE YOU"
 000044A9: .byte A6 CA 04 FF 08 90 5C 20 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0x90 "Kruikk..."
-000044B3: .byte AB 00 01 44 ; OP_AB 00 01 44
+000044B3: .byte AB 00 01 44 ; POKE_BYTE address=0x4401 value=0x00
 000044B7: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 000044BA: .byte A9 01 CB 44 ; CONDITIONAL_BLOCK flags=0x01 target=0x44CB
 000044BE: .byte C0 24 15 F5 C1 02 00 ; OP_C0 SHARED_STATE field=0x1524 operator=0xF5 rhs_mode=0xC1 rhs=0x0002
@@ -2020,7 +2020,7 @@
 00004523: .byte 08 03 EF 18 A0 00 9E 0C 16 02 49 03 59 0D 13 03 ; continuation
 00004533: .byte 48 00 00 00 ; continuation
 00004537: .byte A6 CA 04 FF 08 90 CF 05 A0 00 5C 00 09 05 00 00 ; TEXT line=0x04CA voice=0xFF flags=0x08,0x90 "See you , Commander..."
-00004547: .byte AB 00 BB 44 ; OP_AB 00 BB 44
+00004547: .byte AB 00 BB 44 ; POKE_BYTE address=0x44BB value=0x00
 0000454B: .byte C9 04 05 ; RECORD_CLEAR record=0x0504
 0000454E: .byte A9 01 01 46 ; CONDITIONAL_BLOCK flags=0x01 target=0x4601
 00004552: .byte CE ; BRANCH_PRESENTATION
@@ -2059,7 +2059,7 @@
 00004680: .byte A6 B2 0A FF 00 80 24 04 96 21 1C 0B 48 00 6C 0E ; TEXT line=0x0AB2 voice=0xFF flags=0x00,0x80 "The chef says ... Don't eat with your mouth full ! ..."
 00004690: .byte 93 00 23 01 64 01 9B 21 AC 1B C3 06 48 00 00 00 ; continuation
 000046A0: .byte A6 B2 0A FF 08 90 A2 21 00 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x08,0x90 "Stop"
-000046AA: .byte AB 00 02 46 ; OP_AB 00 02 46
+000046AA: .byte AB 00 02 46 ; POKE_BYTE address=0x4602 value=0x00
 000046AE: .byte C9 EC 0A ; RECORD_CLEAR record=0x0AEC
 000046B1: .byte A9 01 5B 47 ; CONDITIONAL_BLOCK flags=0x01 target=0x475B
 000046B5: .byte CE ; BRANCH_PRESENTATION
@@ -2077,7 +2077,7 @@
 0000472A: .byte A6 B2 0A FF 00 80 24 04 96 21 1C 0B 48 00 6C 0E ; TEXT line=0x0AB2 voice=0xFF flags=0x00,0x80 "The chef says ... Don't talk with your mouth open ! ..."
 0000473A: .byte 01 00 23 01 64 01 9B 21 CC 21 C3 06 48 00 00 00 ; continuation
 0000474A: .byte A6 B2 0A FF 08 90 33 21 00 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x08,0x90 "stop"
-00004754: .byte AB 00 B2 46 ; OP_AB 00 B2 46
+00004754: .byte AB 00 B2 46 ; POKE_BYTE address=0x46B2 value=0x00
 00004758: .byte C9 EC 0A ; RECORD_CLEAR record=0x0AEC
 0000475B: .byte A9 01 07 48 ; CONDITIONAL_BLOCK flags=0x01 target=0x4807
 0000475F: .byte CE ; BRANCH_PRESENTATION
@@ -2096,7 +2096,7 @@
 000047D8: .byte A6 B2 0A FF 00 80 24 04 96 21 1C 0B 48 00 F2 21 ; TEXT line=0x0AB2 voice=0xFF flags=0x00,0x80 "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
 000047E8: .byte 38 03 FB 21 54 00 02 22 0C 22 48 00 00 00 ; continuation
 000047F6: .byte A6 B2 0A FF 08 90 33 21 00 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x08,0x90 "stop"
-00004800: .byte AB 00 5C 47 ; OP_AB 00 5C 47
+00004800: .byte AB 00 5C 47 ; POKE_BYTE address=0x475C value=0x00
 00004804: .byte C9 EC 0A ; RECORD_CLEAR record=0x0AEC
 00004807: .byte A9 01 BB 48 ; CONDITIONAL_BLOCK flags=0x01 target=0x48BB
 0000480B: .byte CE ; BRANCH_PRESENTATION
@@ -2115,7 +2115,7 @@
 0000488C: .byte A6 B2 0A FF 00 80 24 04 96 21 1C 0B 48 00 3A 22 ; TEXT line=0x0AB2 voice=0xFF flags=0x00,0x80 "The chef says ... Plenty more in the kitchen ! ..."
 0000489C: .byte 0D 02 B3 00 76 01 41 22 C3 06 48 00 00 00 ; continuation
 000048AA: .byte A6 B2 0A FF 08 90 33 21 00 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x08,0x90 "stop"
-000048B4: .byte AB 00 08 48 ; OP_AB 00 08 48
+000048B4: .byte AB 00 08 48 ; POKE_BYTE address=0x4808 value=0x00
 000048B8: .byte C9 EC 0A ; RECORD_CLEAR record=0x0AEC
 000048BB: .byte A9 01 77 49 ; CONDITIONAL_BLOCK flags=0x01 target=0x4977
 000048BF: .byte CE ; BRANCH_PRESENTATION
@@ -2135,17 +2135,17 @@
 00004944: .byte A6 B2 0A FF 00 80 24 04 96 21 1C 0B 48 00 E9 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x00,0x80 "The chef says ... You eat what you are ! ..."
 00004954: .byte 93 00 8A 0A A0 00 C3 0B C3 06 48 00 00 00 ; continuation
 00004962: .byte A6 B2 0A FF 08 A0 33 21 00 00 ; TEXT line=0x0AB2 voice=0xFF flags=0x08,0xA0 "stop"
-0000496C: .byte AB 00 BC 48 ; OP_AB 00 BC 48
-00004970: .byte AB 01 78 49 ; OP_AB 01 78 49
+0000496C: .byte AB 00 BC 48 ; POKE_BYTE address=0x48BC value=0x00
+00004970: .byte AB 01 78 49 ; POKE_BYTE address=0x4978 value=0x01
 00004974: .byte C9 EC 0A ; RECORD_CLEAR record=0x0AEC
 00004977: .byte A9 00 94 49 ; CONDITIONAL_BLOCK flags=0x00 target=0x4994
 0000497B: .byte A1 ; GUARD_POP
-0000497C: .byte AB 01 02 46 ; OP_AB 01 02 46
-00004980: .byte AB 01 B2 46 ; OP_AB 01 B2 46
-00004984: .byte AB 01 5C 47 ; OP_AB 01 5C 47
-00004988: .byte AB 01 08 48 ; OP_AB 01 08 48
-0000498C: .byte AB 01 BC 48 ; OP_AB 01 BC 48
-00004990: .byte AB 00 78 49 ; OP_AB 00 78 49
+0000497C: .byte AB 01 02 46 ; POKE_BYTE address=0x4602 value=0x01
+00004980: .byte AB 01 B2 46 ; POKE_BYTE address=0x46B2 value=0x01
+00004984: .byte AB 01 5C 47 ; POKE_BYTE address=0x475C value=0x01
+00004988: .byte AB 01 08 48 ; POKE_BYTE address=0x4808 value=0x01
+0000498C: .byte AB 01 BC 48 ; POKE_BYTE address=0x48BC value=0x01
+00004990: .byte AB 00 78 49 ; POKE_BYTE address=0x4978 value=0x00
 00004994: .byte A9 01 B8 4B ; CONDITIONAL_BLOCK flags=0x01 target=0x4BB8
 00004998: .byte CE ; BRANCH_PRESENTATION
 00004999: .byte C4 A4 0A 28 00 ; ACTOR record=0x0AA4 related=0x0028 inverted=false
@@ -2229,7 +2229,7 @@
 00004C09: .byte A6 6A 0A FF 28 90 03 23 23 01 39 01 0B 23 C3 06 ; TEXT line=0x0A6A voice=0xFF flags=0x28,0x90 "Service with a smile ! That's the story of my life , Commander ..."
 00004C19: .byte 31 05 76 01 BE 11 C1 00 F1 09 11 23 5C 00 5E 00 ; continuation
 00004C29: .byte 48 00 00 00 ; continuation
-00004C2D: .byte AB 00 B9 4B ; OP_AB 00 B9 4B
+00004C2D: .byte AB 00 B9 4B ; POKE_BYTE address=0x4BB9 value=0x00
 00004C31: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004C34: .byte A9 01 95 4C ; CONDITIONAL_BLOCK flags=0x01 target=0x4C95
 00004C38: .byte CE ; BRANCH_PRESENTATION
@@ -2243,7 +2243,7 @@
 00004C6A: .byte A6 6A 0A FF 28 90 03 23 23 01 39 01 0B 23 C3 06 ; TEXT line=0x0A6A voice=0xFF flags=0x28,0x90 "Service with a smile ! That's the story of my life , Commander ..."
 00004C7A: .byte 31 05 76 01 BE 11 C1 00 F1 09 11 23 5C 00 5E 00 ; continuation
 00004C8A: .byte 48 00 00 00 ; continuation
-00004C8E: .byte AB 00 35 4C ; OP_AB 00 35 4C
+00004C8E: .byte AB 00 35 4C ; POKE_BYTE address=0x4C35 value=0x00
 00004C92: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004C95: .byte A9 01 F8 4C ; CONDITIONAL_BLOCK flags=0x01 target=0x4CF8
 00004C99: .byte CE ; BRANCH_PRESENTATION
@@ -2258,7 +2258,7 @@
 00004CCD: .byte A6 6A 0A FF 28 90 03 23 23 01 39 01 0B 23 C3 06 ; TEXT line=0x0A6A voice=0xFF flags=0x28,0x90 "Service with a smile ! That's the story of my life , Commander ..."
 00004CDD: .byte 31 05 76 01 BE 11 C1 00 F1 09 11 23 5C 00 5E 00 ; continuation
 00004CED: .byte 48 00 00 00 ; continuation
-00004CF1: .byte AB 00 96 4C ; OP_AB 00 96 4C
+00004CF1: .byte AB 00 96 4C ; POKE_BYTE address=0x4C96 value=0x00
 00004CF5: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004CF8: .byte A9 01 5E 4D ; CONDITIONAL_BLOCK flags=0x01 target=0x4D5E
 00004CFC: .byte CE ; BRANCH_PRESENTATION
@@ -2273,7 +2273,7 @@
 00004D33: .byte A6 6A 0A FF 28 90 03 23 23 01 39 01 0B 23 C3 06 ; TEXT line=0x0A6A voice=0xFF flags=0x28,0x90 "Service with a smile ! That's the story of my life , Commander ..."
 00004D43: .byte 31 05 76 01 BE 11 C1 00 F1 09 11 23 5C 00 5E 00 ; continuation
 00004D53: .byte 48 00 00 00 ; continuation
-00004D57: .byte AB 00 F9 4C ; OP_AB 00 F9 4C
+00004D57: .byte AB 00 F9 4C ; POKE_BYTE address=0x4CF9 value=0x00
 00004D5B: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004D5E: .byte A9 01 BF 4D ; CONDITIONAL_BLOCK flags=0x01 target=0x4DBF
 00004D62: .byte CE ; BRANCH_PRESENTATION
@@ -2287,7 +2287,7 @@
 00004D94: .byte A6 6A 0A FF 28 90 03 23 23 01 39 01 0B 23 C3 06 ; TEXT line=0x0A6A voice=0xFF flags=0x28,0x90 "Service with a smile ! That's the story of my life , Commander ..."
 00004DA4: .byte 31 05 76 01 BE 11 C1 00 F1 09 11 23 5C 00 5E 00 ; continuation
 00004DB4: .byte 48 00 00 00 ; continuation
-00004DB8: .byte AB 00 5F 4D ; OP_AB 00 5F 4D
+00004DB8: .byte AB 00 5F 4D ; POKE_BYTE address=0x4D5F value=0x00
 00004DBC: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004DBF: .byte A9 01 DF 4D ; CONDITIONAL_BLOCK flags=0x01 target=0x4DDF
 00004DC3: .byte CE ; BRANCH_PRESENTATION
@@ -2297,7 +2297,7 @@
 00004DDA: .byte 00 00 ; continuation
 00004DDC: .byte C9 A4 0A ; RECORD_CLEAR record=0x0AA4
 00004DDF: .byte A9 01 90 4E ; CONDITIONAL_BLOCK flags=0x01 target=0x4E90
-00004DE3: .byte D1 ; OP_D1
+00004DE3: .byte D1 ; BRANCH_FLAG_274F
 00004DE4: .byte C4 7C 02 28 00 ; ACTOR record=0x027C related=0x0028 inverted=false
 00004DE9: .byte A1 ; GUARD_POP
 00004DEA: .byte A6 42 02 02 00 80 B6 09 14 00 A0 00 E2 07 5C 00 ; TEXT line=0x0242 voice=0x02 flags=0x00,0x80 "What do you want , Commander?"
@@ -2326,7 +2326,7 @@
 00004E89: .byte A5 01 FF FF ; STATE_ARRAY_SET index=0x01 value=0xFFFF
 00004E8D: .byte C9 7C 02 ; RECORD_CLEAR record=0x027C
 00004E90: .byte A9 01 90 4F ; CONDITIONAL_BLOCK flags=0x01 target=0x4F90
-00004E94: .byte D1 ; OP_D1
+00004E94: .byte D1 ; BRANCH_FLAG_274F
 00004E95: .byte C4 7C 02 28 00 ; ACTOR record=0x027C related=0x0028 inverted=false
 00004E9A: .byte C0 28 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x1528 operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00004EA1: .byte C0 2A 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x152A operator=0xF5 rhs_mode=0xC1 rhs=0x0000
@@ -2351,7 +2351,7 @@
 00004F81: .byte 69 19 43 23 27 00 00 00 ; continuation
 00004F89: .byte C0 2A 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x152A operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00004F90: .byte A9 01 57 51 ; CONDITIONAL_BLOCK flags=0x01 target=0x5157
-00004F94: .byte D1 ; OP_D1
+00004F94: .byte D1 ; BRANCH_FLAG_274F
 00004F95: .byte C4 7C 02 28 00 ; ACTOR record=0x027C related=0x0028 inverted=false
 00004F9A: .byte C0 2C 15 F5 C1 01 00 ; OP_C0 SHARED_STATE field=0x152C operator=0xF5 rhs_mode=0xC1 rhs=0x0001
 00004FA1: .byte C0 2E 15 F5 C1 00 00 ; OP_C0 SHARED_STATE field=0x152E operator=0xF5 rhs_mode=0xC1 rhs=0x0000

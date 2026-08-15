@@ -1907,6 +1907,28 @@ fn push_vm_token_disassembly(
             });
             true
         }
+        vm::VmToken::ConceptGuard {
+            offset,
+            word_offset,
+            inverted,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a3".to_string(),
+                mnemonic: "concept_guard".to_string(),
+                operands: format!(
+                    "word=0x{word_offset:04x} inverted={inverted} label={:?}",
+                    words.get(word_offset).map(String::as_str).unwrap_or("")
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
         vm::VmToken::Jump {
             offset,
             target,
@@ -1970,6 +1992,72 @@ fn push_vm_token_disassembly(
             });
             true
         }
+        vm::VmToken::LoadString { offset, value, len } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "a8".to_string(),
+                mnemonic: "load_string".to_string(),
+                operands: format!("value={value:?}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::PokeByte {
+            offset,
+            address,
+            value,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "ab".to_string(),
+                mnemonic: "poke_byte".to_string(),
+                operands: format!("address=0x{address:04x} value=0x{value:02x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::CharacterSlot {
+            offset,
+            slot,
+            name,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "cc".to_string(),
+                mnemonic: "character_slot".to_string(),
+                operands: format!("slot=0x{slot:02x} name={name:?}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::ClearAlternateConcept { offset, len } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "cf".to_string(),
+                mnemonic: "clear_alternate_concept".to_string(),
+                operands: String::new(),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
         vm::VmToken::FlagBranch {
             offset,
             opcode,
@@ -1981,10 +2069,10 @@ fn push_vm_token_disassembly(
                 offset: *offset,
                 len: *len,
                 opcode: format!("{opcode:02x}"),
-                mnemonic: if *opcode == vm::OP_COND_BRANCH_PRESENTATION {
-                    "branch_presentation".to_string()
-                } else {
-                    "branch_gameflag".to_string()
+                mnemonic: match *opcode {
+                    vm::OP_COND_BRANCH_PRESENTATION => "branch_presentation".to_string(),
+                    vm::OP_COND_BRANCH_GAMEFLAG => "branch_gameflag".to_string(),
+                    _ => "branch_flag_274f".to_string(),
                 },
                 operands: String::new(),
                 actor_record: current_actor_record(current_actor),
@@ -2347,9 +2435,14 @@ fn vm_token_offset(token: &vm::VmToken) -> usize {
         vm::VmToken::Text { offset, .. }
         | vm::VmToken::GuardPush { offset, .. }
         | vm::VmToken::GuardPop { offset, .. }
+        | vm::VmToken::ConceptGuard { offset, .. }
         | vm::VmToken::Jump { offset, .. }
         | vm::VmToken::StateArray { offset, .. }
         | vm::VmToken::ConditionalBlock { offset, .. }
+        | vm::VmToken::LoadString { offset, .. }
+        | vm::VmToken::PokeByte { offset, .. }
+        | vm::VmToken::CharacterSlot { offset, .. }
+        | vm::VmToken::ClearAlternateConcept { offset, .. }
         | vm::VmToken::FlagBranch { offset, .. }
         | vm::VmToken::Actor { offset, .. }
         | vm::VmToken::RecordLink { offset, .. }
@@ -2381,9 +2474,14 @@ fn vm_token_len(token: &vm::VmToken) -> usize {
         } => text_token_end(*offset, *flags_b4, *loop_target, word_offsets.len()) - offset,
         vm::VmToken::GuardPush { len, .. }
         | vm::VmToken::GuardPop { len, .. }
+        | vm::VmToken::ConceptGuard { len, .. }
         | vm::VmToken::Jump { len, .. }
         | vm::VmToken::StateArray { len, .. }
         | vm::VmToken::ConditionalBlock { len, .. }
+        | vm::VmToken::LoadString { len, .. }
+        | vm::VmToken::PokeByte { len, .. }
+        | vm::VmToken::CharacterSlot { len, .. }
+        | vm::VmToken::ClearAlternateConcept { len, .. }
         | vm::VmToken::FlagBranch { len, .. }
         | vm::VmToken::Actor { len, .. }
         | vm::VmToken::RecordLink { len, .. }
