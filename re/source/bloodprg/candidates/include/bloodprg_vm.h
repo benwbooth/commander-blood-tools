@@ -52,6 +52,8 @@ extern volatile cb_u8 CB_GAME_DATA
 extern volatile cb_u8 CB_GAME_DATA vm_subtitle_display_mode; /* GS:0x27E2 */
 extern volatile cb_u8 vm_subtitle_display_mode_ds; /* DS:0x27E2 alias */
 extern volatile cb_u16 vm_operand_word_count; /* GS:0x27CF */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_operand_word_count_gs;            /* explicit GS:0x27CF alias */
 extern volatile cb_u16 vm_text_menu_inline_x; /* DS/GS:0x27D1 */
 extern volatile cb_u8 vm_load_string_buffer[]; /* SS:0x2120 here; SS=GS at runtime */
 extern volatile cb_u8 CB_GAME_DATA
@@ -60,13 +62,23 @@ extern volatile cb_u8 vm_dialog_gate_0b3b;   /* GS:0x0B3B */
 extern volatile cb_u8 CB_GAME_DATA
         vm_dialog_gate_0b3b_gs;              /* explicit GS:0x0B3B alias */
 extern volatile cb_u8 vm_text_mode_0cf9;     /* GS:0x0CF9 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_text_mode_0cf9_gs;                /* explicit GS:0x0CF9 alias */
 extern volatile cb_u8 vm_text_mode_0cfa;     /* GS:0x0CFA */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_text_mode_0cfa_gs;                /* explicit GS:0x0CFA alias */
 extern volatile cb_u8 vm_text_voice_trigger; /* GS:0x0CFB */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_text_voice_trigger_gs;            /* explicit GS:0x0CFB alias */
 extern volatile char vm_text_buffer[];       /* GS:0x0E18 */
 extern volatile char CB_GAME_DATA
         vm_text_buffer_gs[];                 /* explicit GS:0x0E18 alias */
 extern volatile cb_i16 vm_text_selector;     /* GS:0x1FAB */
+extern volatile cb_i16 CB_GAME_DATA
+        vm_text_selector_gs;                 /* explicit GS:0x1FAB alias */
 extern volatile cb_u8 vm_text_menu_pending;  /* GS:0x1FB3 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_text_menu_pending_gs;             /* explicit GS:0x1FB3 alias */
 extern volatile cb_u8 vm_c2_presentation_gate; /* GS:0x1FB2 */
 extern volatile cb_u8 CB_GAME_DATA
         vm_c2_presentation_gate_gs;          /* explicit GS:0x1FB2 alias */
@@ -75,6 +87,8 @@ extern volatile char CB_NEAR * volatile
 extern volatile cb_u16 CB_GAME_DATA
         vm_loaded_scene_image_path_offset_gs; /* explicit GS:0x1FA3 alias */
 extern volatile cb_u16 vm_text_menu_end;     /* GS:0x27D3 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_text_menu_end_gs;                 /* explicit GS:0x27D3 alias */
 extern volatile cb_u16 vm_text_reveal_cursor; /* GS:0x5E58 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_text_reveal_cursor_gs;             /* explicit GS:0x5E58 alias */
@@ -83,6 +97,8 @@ extern volatile cb_u8 vm_text_display_active; /* GS:0x5E64 */
 extern volatile cb_u8 CB_GAME_DATA
         vm_text_display_active_gs; /* explicit GS:0x5E64 alias */
 extern const char CB_FAR *vm_dic_words; /* GS:0x6728 */
+extern const char CB_FAR * CB_GAME_DATA
+        vm_dic_words_gs;                /* explicit GS:0x6728 alias */
 extern volatile cb_u8 CB_FAR *vm_record_base; /* GS:0x6724 */
 extern volatile cb_u8 CB_FAR * CB_GAME_DATA
         vm_record_base_gs; /* explicit GS:0x6724 alias */
@@ -102,6 +118,8 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u16 CB_GAME_DATA
         vm_resume_value_gs;                  /* explicit GS:0x6764 alias */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
+extern const cb_u16 CB_FAR * volatile CB_GAME_DATA
+        vm_text_menu_words_gs;               /* explicit GS:0x674A alias */
 extern const cb_u16 vm_presentation_menu_words_buffer[]; /* DS:0x6790 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
 extern volatile cb_u16 CB_GAME_DATA vm_named_orxx_object_gs; /* GS:0x6750 */
@@ -135,13 +153,19 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u16 CB_GAME_DATA
         vm_cd_replacement_related_gs; /* GS:0x6794 */
 extern volatile cb_u16 vm_text_loop_target;  /* GS:0x6778 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_text_loop_target_gs;              /* explicit GS:0x6778 alias */
 extern volatile cb_u16 CB_GAME_DATA vm_resume_cursor; /* GS:0x677A */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_a; /* GS:0x6782 */
 extern volatile cb_u16 CB_GAME_DATA vm_branch_b; /* GS:0x6784 */
 extern volatile cb_u16 vm_presentation_owner_offset; /* DS:0x679A */
 extern volatile cb_u16 vm_named_vbio_object; /* DS:0x679C */
 extern cb_u8 CB_NEAR * volatile vm_text_selector_bytes; /* GS:0x677C */
+extern cb_u8 CB_NEAR * volatile CB_GAME_DATA
+        vm_text_selector_bytes_gs;           /* explicit GS:0x677C alias */
 extern volatile cb_u8 vm_skip_count;         /* GS:0x67AB */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_skip_count_gs;                    /* explicit GS:0x67AB alias */
 extern volatile cb_u16 vm_active_line;       /* GS:0x6788 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_active_line_gs; /* explicit GS:0x6788 alias */
@@ -168,6 +192,8 @@ extern volatile cb_u8 CB_GAME_DATA
         vm_query_mode_gs;                    /* explicit GS:0x67AD alias */
 extern volatile cb_u16 vm_query_mode_word;   /* GS:0x67AD; includes 0x67AE */
 extern volatile cb_u8 vm_presentation_defer_a; /* GS:0x67B0 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_presentation_defer_a_gs;          /* explicit GS:0x67B0 alias */
 extern volatile cb_u8 vm_resume_state;       /* GS:0x67B1 */
 extern volatile cb_u8 CB_GAME_DATA
         vm_resume_state_gs;                  /* explicit GS:0x67B1 alias */
@@ -181,6 +207,8 @@ extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_pair_write_disabled; /* GS:0x67B6 */
 extern volatile cb_u8 CB_GAME_DATA vm_presentation_start_lock; /* GS:0x67B7 */
 extern volatile cb_u8 vm_text_word_list_mode; /* GS:0x67B9 */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_text_word_list_mode_gs;           /* explicit GS:0x67B9 alias */
 extern volatile cb_u8 vm_presentation_text_wait; /* GS:0x67BA */
 extern volatile cb_u8 CB_GAME_DATA
         vm_presentation_text_wait_gs; /* explicit GS:0x67BA alias */
@@ -242,6 +270,8 @@ extern volatile char vm_record_string_slots[][16]; /* SS:0x6CDE; SS=GS at runtim
 extern volatile char CB_GAME_DATA vm_scene_name_buffer[]; /* ES=GS:0x209E */
 extern volatile cb_u16 vm_special_slots[16]; /* SS:0x6D3E in helpers; runtime SS=DS */
 extern const cb_i8 CB_FAR vm_field_offset_table[]; /* GS:0x6D60 */
+extern const cb_i8 CB_GAME_DATA
+        vm_field_offset_table_gs[];          /* explicit GS:0x6D60 alias */
 
 extern const char CB_GAME_DATA vm_builtin_name_blood[];      /* DS:0x67BE */
 extern const char CB_GAME_DATA vm_builtin_name_orxx[];       /* DS:0x67C4 */

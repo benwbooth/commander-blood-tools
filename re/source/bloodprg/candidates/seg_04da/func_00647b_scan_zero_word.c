@@ -10,5 +10,5 @@ void CB_NEAR scan_zero_word(const cb_i16 CB_NEAR *script_words)
         ++count;
     }
 
-    vm_operand_word_count = count;
+    vm_operand_word_count_gs = count;
 }

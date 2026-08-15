@@ -7,7 +7,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
     const cb_u8 *cursor;
     const cb_u16 *candidate;
     const cb_u16 *words;
-    volatile cb_u16 *out;
+    volatile cb_u16 CB_GAME_DATA *out;
     cb_u8 control;
     cb_u8 detail;
     cb_u8 required;
@@ -28,7 +28,7 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
     }
 
     if ((control & 0x04u) != 0) {
-        field_offset = (cb_u8)vm_field_offset_table[
+        field_offset = (cb_u8)vm_field_offset_table_gs[
             ((((cb_u16)detail >> 1) & 7u) + 1u) * 16u + 1u];
         record_word = *(const volatile cb_u16 CB_FAR *)(record + field_offset);
         operand = *(const cb_u16 *)cursor;
@@ -95,13 +95,13 @@ int CB_NEAR vm_condition_5(cb_u16 flags,
     }
 
     if ((control & 0x20u) != 0) {
-        vm_text_word_list_mode = 1;
+        vm_text_word_list_mode_gs = 1;
     }
 
     if ((control & 0x10u) != 0) {
-        out = vm_presentation_word_buffer;
+        out = vm_presentation_word_buffer_gs;
         cursor = vm_token_special(0xffffu, cursor);
-        vm_yield_flag = 1;
+        vm_yield_flag_gs = 1;
         do {
             *out = *(const cb_u16 *)cursor;
             cursor += 2;

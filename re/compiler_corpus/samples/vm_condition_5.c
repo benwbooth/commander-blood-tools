@@ -6,20 +6,26 @@ typedef unsigned char u8;
 typedef unsigned int u16;
 typedef signed int i16;
 
-#if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(__WATCOMC__)
 #define FAR far
 #define NEAR near
+#define GAME_DATA __based(__segname("GAME_DATA"))
+#elif defined(__TURBOC__) || defined(__BORLANDC__)
+#define FAR far
+#define NEAR near
+#define GAME_DATA far
 #else
 #define FAR
 #define NEAR
+#define GAME_DATA
 #endif
 
-extern const signed char FAR field_offset_table[];
-extern volatile u16 history_ring_index;
-extern volatile u16 FAR *history_words;
-extern volatile u8 text_word_list_mode;
-extern volatile u8 yield_flag;
-extern volatile u16 presentation_word_buffer[];
+extern const signed char GAME_DATA field_offset_table[];
+extern volatile u16 GAME_DATA history_ring_index;
+extern volatile u16 FAR * GAME_DATA history_words;
+extern volatile u8 GAME_DATA text_word_list_mode;
+extern volatile u8 GAME_DATA yield_flag;
+extern volatile u16 GAME_DATA presentation_word_buffer[];
 
 extern u16 FAR prng_next(u16 modulus);
 extern const u8 NEAR *NEAR token_special(u16 terminator,
@@ -37,7 +43,7 @@ int NEAR condition_5_probe(u16 flags,
     const u8 NEAR *cursor;
     const u16 NEAR *candidate;
     const u16 NEAR *words;
-    volatile u16 NEAR *out;
+    volatile u16 GAME_DATA *out;
     u8 control;
     u8 detail;
     u8 required;

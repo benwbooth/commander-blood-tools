@@ -170,6 +170,25 @@ Both functions retain a one-to-one routine boundary and natural pointer/state
 operations. No inline assembly, register-state model, or compatibility wrapper
 was added to improve superficial codegen similarity.
 
+### A6 text-chain acceptance batch
+
+The final A0-A9 gap is accepted as one dependency chain: the A6 text handler,
+its conditional helper, and its positive-word scanner. Shared `GAME_DATA`
+declarations now cover every field table, pointer object, output buffer, and
+state byte/word while all script cursors remain near pointers on `DS`.
+
+| routine | original | closest reviewed Watcom result | accepted boundary |
+| --- | ---: | ---: | --- |
+| `0x006339 vm_condition_5` | 104 instructions, 250 bytes | size mode: 151 instructions, 372 bytes | all fifteen vectors pass; the natural Boolean result replaces the carry-only internal ABI at its sole C caller; frame, explicit segments, and register allocation are incidental |
+| `0x00647B scan_zero_word` | 14 instructions, 25 bytes | speed mode: 15 instructions, 30 bytes | all ten vectors pass; the A6 caller consumes only the GAME_DATA count, so AX and final-flag residue are dead |
+| `0x00660C vm_op_a6_text` | 138 instructions, 411 bytes | size mode: 188 instructions, 596 bytes | all eleven vectors pass; typed far line/dictionary pointers, token mutation, both text modes, formatting, and final cursor agree; all state publications complete before either synchronous dispatcher reads yield/state after return |
+
+The A6 size listing has 68.84 percent ordered mnemonic overlap and 78.26
+percent mnemonic-multiset overlap with the original. Its remaining frame,
+segment-load, string-loop, Boolean-helper, and state-publication scheduling
+differences do not remove game logic and are accepted without source
+contortions, inline assembly, or a register-state layer.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
@@ -1388,11 +1407,13 @@ hits for one operand.
 The vectors also prove CX, ES:DI, and DS:SI inputs; GS ownership of the field
 table and mode flags; an ES history base; presentation output through
 SS:0x67F8 against GS/DS decoys; CF-only success; immutable inputs; and
-CX/SI/DI/BP plus segment preservation. The natural candidate is now exactly one
-C function. Open Watcom `-3 -ox -mm` binds the three input locations and emits
-142 instructions/355 bytes versus 104/250 original; Turbo C 2.01 medium emits
-179 instructions. Exact integration still needs fixed segment placement, the
-runtime SS=GS alias, and a narrow Boolean-to-carry result adapter.
+CX/SI/DI/BP plus segment preservation. The natural candidate is exactly one C
+function and now uses shared `GAME_DATA` declarations for every non-script
+object. Open Watcom `-3 -os -s -mm` emits 151 instructions/372 bytes versus
+104/250 original, with 80.77 percent mnemonic-multiset overlap. Its Boolean AX
+result deliberately replaces the carry-only internal ABI at the sole natural-C
+A6 caller. The frame, explicit segment setup, result allocation, and register
+choices are accepted source-port differences.
 
 VM dictionary lookup `0x006433` has eight direct vectors covering first- and
 later-entry matches, immediate inactive termination, active miss, prefix
@@ -1435,13 +1456,13 @@ restored CX, GS ownership of the count against DS/SS decoys, the terminating or
 final positive word in AX, immutable input, exact `NEG`/`DEC` result flags, and
 the near-return boundary.
 
-The natural C uses a read-only near pointer, signed comparison, and explicit
-`0xFFFF` count bound. Open Watcom `-3 -ox -mm` binds SI and emits 11
-instructions/22 bytes versus 14/25 original; Turbo C 2.01 medium emits 16
-instructions. Watcom preserves SI but stores through DS, leaves the count in AX,
-and returns comparison flags rather than the binary's terminal word and final
-count flags. Exact integration needs GS placement and a narrow AX/flag boundary;
-the scan algorithm itself requires no assembly.
+The natural C uses a read-only near pointer, signed comparison, explicit
+`0xFFFF` count bound, and a shared `GAME_DATA` count declaration. Open Watcom
+`-3 -ox -mm` binds SI and emits 15 instructions/30 bytes versus 14/25 original.
+It preserves script DS and SI, materializes ES for the count store, leaves the
+count in AX, and returns comparison flags rather than the binary's terminal word
+and final count flags. Its sole A6 caller consumes only the count global and
+discards helper AX/flags, so these differences are accepted without an adapter.
 
 VM conditional gates `0x006494`, `0x0064A0`, and `0x0064AC` each have four
 direct vectors for flag values zero, an unrelated-bit-only value, bit zero, and
@@ -1641,13 +1662,17 @@ the optional-control ordering, raw menu pointers and count, subtitle punctuation
 spacing, 35-column wrapping, the `0xFFFF` spoken/menu separator, all touched
 segments/globals, path registers, and final flags.
 
-The full natural candidate compiles cleanly with Open Watcom `-3 -ox -mm` to
-188 instructions/515 bytes versus 138/411 original. It retains the high-level
-branch topology and direct SI result but introduces a frame and locals, uses DS
-for globals, normalizes far pointers, and materializes the condition helper's
-logical result in AX instead of consuming its original carry result. This is a
-compiler/ABI mismatch; the recovered C body has no register-state or memory
-emulation layer.
+The corrected candidate uses shared `GAME_DATA` declarations for every state
+and output object while script reads stay on DS. Open Watcom `-3 -os -s -mm`
+compiles it cleanly to 188 instructions/596 bytes versus 138/411 original,
+with 68.84 percent ordered mnemonic and 78.26 percent mnemonic-multiset overlap.
+It retains the complete branch topology and direct SI result but introduces a
+frame, locals, explicit segment loads, different string-loop allocation, an AX
+Boolean for the condition helper, and some scheduling changes among independent
+state publications. All publications complete before return, and both VM
+dispatchers inspect yield/state only after the synchronous handler call. These
+are accepted compiler differences; the recovered C contains no register-state
+or memory-emulation layer.
 
 Near string-length helper `0x0067A7` has eight direct vectors covering empty,
 ordinary, high-byte, segment-offset wrapping, the maximum terminated length,
@@ -3359,7 +3384,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
-| `vm_condition_5` | medium, `-ox`, register | 104/142 | 0.0577 | 0.5096 | 0.0769 |
+| `vm_condition_5` | medium, `-os -s`, register | 104/151 | 0.0481 | 0.6346 | 0.0769 |
 | `presentation_line_step` | medium, `-ox`, register | 60/59 | 0.1833 | 0.6500 | 0.2333 |
 | `segment_global_gate` | medium, `-ox`, register | 4/10 | 0.2500 | 0.7500 | 0.2500 |
 | `string_equal_mixed` | medium, `-ox`, register | 16/18 | 0.3750 | 0.6250 | 0.5000 |
@@ -3396,7 +3421,7 @@ LCS and then mnemonic similarity:
 | `xdb_manu3_face_bucket_sort` | medium, `-ox -zdp`, register | 47/83 | 0.0000 | 0.6809 | 0.0426 |
 | `xdb_manu3_face_activate` | medium, `-ox -zdp`, register | 6/12 | 0.0000 | 0.6667 | 0.0000 |
 | `vm_branch_stack_return` | medium, `-ox`, register | 8/12 | 0.1250 | 0.8750 | 0.1250 |
-| `scan_zero_word` | medium, `-ox`, register | 14/11 | 0.2143 | 0.2857 | 0.2143 |
+| `scan_zero_word` | medium, `-ox`, register | 14/15 | 0.2143 | 0.5000 | 0.2143 |
 | `vm_script_profile_request` | medium, `-ox`, register | 5/5 | 0.4000 | 0.6000 | 0.4000 |
 | `vm_clear_state` | medium, `-ox`, register | 3/7 | 0.3333 | 1.0000 | 0.3333 |
 | `vm_record_string_copy` | medium, `-ox`, register | 13/20 | 0.2308 | 0.6923 | 0.3846 |
