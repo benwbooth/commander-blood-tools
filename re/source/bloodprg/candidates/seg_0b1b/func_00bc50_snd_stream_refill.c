@@ -5,19 +5,19 @@
 
 void CB_FAR snd_stream_refill(void)
 {
-    volatile bloodprg_snd_stream_buffer *buffer;
+    volatile bloodprg_snd_stream_buffer CB_GAME_DATA *buffer;
     volatile cb_u8 CB_FAR *cursor;
     cb_u16 page;
     cb_u16 position;
 
-    if ((voc_playback_enabled & 1u) == 0
+    if ((voc_playback_enabled_gs & 1u) == 0
             || (snd_stream_channel_active & 1u) == 0
-            || (snd_driver_pending_flag & 2u) == 0) {
+            || (snd_driver_pending_flag_gs & 2u) == 0) {
         return;
     }
 
     for (;;) {
-        position = audio_position_callback();
+        position = audio_position_callback_gs();
         buffer = &snd_stream_buffers[0];
         if ((buffer->state & 2u) != 0) {
             ++buffer;

@@ -55,6 +55,8 @@ extern volatile bloodprg_snd_driver_entry CB_GAME_DATA
 extern bloodprg_snd_clip_callback CB_GAME_DATA
         snd_play_clip_callback; /* GS:0x0AEC */
 extern bloodprg_audio_position_callback audio_position_callback; /* DS:0x0CF3 */
+extern bloodprg_audio_position_callback CB_GAME_DATA
+        audio_position_callback_gs; /* explicit GS:0x0CF3 alias */
 extern volatile cb_u8 snd_driver_pending_flag; /* DS=GS:0x0BA0 */
 extern volatile cb_u8 CB_GAME_DATA
         snd_driver_pending_flag_gs; /* explicit GS:0x0BA0 alias */

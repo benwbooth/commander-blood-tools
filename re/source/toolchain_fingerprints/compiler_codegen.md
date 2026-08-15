@@ -4643,11 +4643,20 @@ compiles warning-free to a valid 1,074-byte OMF object. The bootstrap is
 accepted for source integration. Fixed data placement and narrow page-read,
 reset, and original-driver play adapters remain direct-replacement work.
 
-The refill candidate remains 105 instructions/293 bytes versus 73/185 under
-Watcom. Both routines use the ordinary eight-byte descriptor and typed
-callbacks; neither models CPU registers or raw memory. Their extra code is
-mostly GAME_DATA segment loads, C local preservation, and materialized
-pointer/Boolean operations rather than missing playback logic.
+The refill source now uses the same explicit GS gate aliases, an explicit GS
+position-callback alias, and a game-data-qualified selected-buffer pointer. Its
+compiler-corpus sample also includes the maintained candidate directly. Open
+Watcom emits 109 instructions/310 bytes versus 73/185 original, with 78.08
+percent mnemonic-multiset and 71.23 percent ordered overlap. Turbo C emits 147
+instructions with 79.45 percent multiset and 65.75 percent ordered overlap and
+compiles warning-free to a valid 1,257-byte OMF object. The refill is accepted
+for source integration; fixed placement and narrow position, page-read,
+service, and play adapters remain direct-replacement work.
+
+Both routines use the ordinary eight-byte descriptor and typed callbacks;
+neither models CPU registers or raw memory. Their extra code is mostly
+GAME_DATA segment loads, C local preservation, and materialized pointer/Boolean
+operations rather than missing playback logic.
 
 ## BLOODPRG SND stream source candidate
 
