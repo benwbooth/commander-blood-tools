@@ -10169,6 +10169,30 @@ def presentation_scan_vectors() -> list[dict[str, object]]:
             ],
         },
         {
+            "name": "deferred_related_without_type_is_retained",
+            "active": 1,
+            "deferred": (0, 0x7272, 0x9999),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 17,
+                }
+            ],
+        },
+        {
+            "name": "deferred_type_without_related_is_retained",
+            "active": 1,
+            "deferred": (0xC2, 0, 0x8888),
+            "entries": [
+                {
+                    "kind": 1,
+                    "record_kind": 0xC4,
+                    "record_value": 18,
+                }
+            ],
+        },
+        {
             "name": "ship_and_special_entries_both_run_action",
             "entries": [
                 {

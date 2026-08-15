@@ -1,6 +1,6 @@
 //! Lossless source and compiler for Commander Blood VM data companions.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 
 const DEB_RECORD_BYTES: usize = 20;
 const DEB_NAME_BYTES: usize = 16;
@@ -329,5 +329,73 @@ mod tests {
     fn compiler_rejects_noncontiguous_offsets() {
         let error = compile(DataKind::Var, "00000002: WORDS 1234\n").unwrap_err();
         assert!(error.to_string().contains("does not match output offset"));
+    }
+
+    #[test]
+    fn shipped_presentation_kind2_fields_fit_16_bit_far_offsets() {
+        const FIELD_MATRIX_FILE_OFFSET: usize = 0x14180;
+        const FIELD_MATRIX_BYTES: usize = 0x150;
+        const DIRECTORY_RECORD_BYTES: usize = 20;
+        const DIRECTORY_ACTIVE_KIND: u16 = 1;
+        const OBJECT_ACTIVE_FLAG: u16 = 1;
+        const CHARACTER_KIND: u16 = 2;
+        const HANDOFF_SELECTOR: usize = 2;
+
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let executable = std::fs::read(root.join("re/bin/BLOODPRG.EXE")).unwrap();
+        let matrix =
+            &executable[FIELD_MATRIX_FILE_OFFSET..FIELD_MATRIX_FILE_OFFSET + FIELD_MATRIX_BYTES];
+        let source_root = root.join("re/vm/structured");
+        let mut processed_entries = 0usize;
+        let mut active_characters = 0usize;
+        let mut minimum_effective = i32::MAX;
+        let mut maximum_effective = i32::MIN;
+
+        for script in 1..=5 {
+            let deb_source =
+                std::fs::read_to_string(source_root.join(format!("script{script}.deb.blooddata")))
+                    .unwrap();
+            let var_source =
+                std::fs::read_to_string(source_root.join(format!("script{script}.var.blooddata")))
+                    .unwrap();
+            let deb = compile(DataKind::Deb, &deb_source).unwrap();
+            let var = compile(DataKind::Var, &var_source).unwrap();
+
+            for (record_index, record) in deb.chunks_exact(DIRECTORY_RECORD_BYTES).enumerate() {
+                let entry_kind = u16::from_le_bytes([record[18], record[19]]);
+                if record_index != 0 && entry_kind != DIRECTORY_ACTIVE_KIND {
+                    break;
+                }
+                processed_entries += 1;
+
+                let object_offset = u16::from_le_bytes([record[16], record[17]]) as usize;
+                assert!(
+                    object_offset + 4 <= var.len(),
+                    "SCRIPT{script} entry {record_index} object is outside VAR"
+                );
+                let kind = u16::from_le_bytes([var[object_offset], var[object_offset + 1]]);
+                let flags = u16::from_le_bytes([var[object_offset + 2], var[object_offset + 3]]);
+                if kind != CHARACTER_KIND || flags & OBJECT_ACTIVE_FLAG == 0 {
+                    continue;
+                }
+
+                let column = kind.trailing_zeros() as usize;
+                let field_offset = matrix[HANDOFF_SELECTOR * 16 + column] as i8 as i32;
+                let effective = object_offset as i32 + field_offset;
+                assert!(
+                    effective >= 0 && effective + 2 <= var.len() as i32,
+                    "SCRIPT{script} entry {record_index} selector-2 field is outside VAR"
+                );
+                assert!(effective <= u16::MAX as i32);
+                active_characters += 1;
+                minimum_effective = minimum_effective.min(effective);
+                maximum_effective = maximum_effective.max(effective);
+            }
+        }
+
+        assert_eq!(processed_entries, 640);
+        assert_eq!(active_characters, 156);
+        assert_eq!(minimum_effective, 100);
+        assert_eq!(maximum_effective, 2764);
     }
 }

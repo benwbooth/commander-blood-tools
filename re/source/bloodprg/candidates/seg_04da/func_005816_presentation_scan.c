@@ -17,7 +17,6 @@
 #define PRESENTATION_KIND_SHIP 0x0010u
 #define PRESENTATION_KIND_SPECIAL 0x0200u
 #define PRESENTATION_RECORD_C1 0x00c1u
-#define PRESENTATION_RECORD_C4 0x00c4u
 #define PRESENTATION_RECORD_C6 0x00c6u
 #define PRESENTATION_EFFECT_RESOURCE 0x8007u
 #define PRESENTATION_EFFECT_ENTITY 2u
@@ -51,6 +50,9 @@ void CB_NEAR presentation_scan(void)
     cb_u16 field_offset;
     cb_u16 target_offset;
     cb_u16 history_index;
+    cb_u16 deferred_type;
+    cb_u16 deferred_related;
+    cb_u16 deferred_value;
     int run_action;
 
     vm_presentation_pair_write_disabled = 0u;
@@ -81,8 +83,8 @@ void CB_NEAR presentation_scan(void)
                             record_segment,
                             vm_primary_c4_record_gs,
                             bloodprg_vm_record_triple);
-                    if (primary_record->kind == PRESENTATION_RECORD_C4
-                            && record->kind == PRESENTATION_RECORD_C4
+                    if (primary_record->kind == BLOODPRG_VM_RECORD_C4
+                            && record->kind == BLOODPRG_VM_RECORD_C4
                             && record->related == vm_wildcard_ref_value_gs
                             && (object->flags
                                 & PRESENTATION_OWNER_BLOCKED) == 0u) {
@@ -109,7 +111,7 @@ void CB_NEAR presentation_scan(void)
                 break;
 
             case PRESENTATION_KIND_ACTOR:
-                if (record->kind == PRESENTATION_RECORD_C4) {
+                if (record->kind == BLOODPRG_VM_RECORD_C4) {
                     related = PRESENTATION_RECORD_AT(
                             record_segment,
                             record->related,
@@ -175,31 +177,33 @@ void CB_NEAR presentation_scan(void)
                     }
                 }
 
-                if (vm_deferred_record_related_gs != 0u
-                        && vm_deferred_record_type_gs != 0u) {
-                    if (vm_deferred_record_type_gs == PRESENTATION_RECORD_C1
-                            || vm_deferred_record_type_gs
-                                == PRESENTATION_RECORD_C6) {
-                        field_offset = (cb_u16)vm_field_offset(
-                                BLOODPRG_VM_RECIPROCAL_SELECTOR,
-                                PRESENTATION_KIND_SHIP);
-                        deferred_target = PRESENTATION_RECORD_AT(
-                                record_segment,
-                                (cb_u16)(vm_arche_record_offset_gs
-                                    + field_offset),
-                                bloodprg_vm_record_triple);
-                        deferred_target->kind = vm_deferred_record_type_gs;
-                        deferred_target->related =
-                                vm_deferred_record_related_gs;
-                        deferred_target->value = 0u;
-                    } else {
-                        record->kind = vm_deferred_record_type_gs;
-                        record->related = vm_deferred_record_related_gs;
-                        record->value = vm_deferred_record_value_gs;
+                deferred_related = vm_deferred_record_related_gs;
+                if (deferred_related != 0u) {
+                    deferred_type = vm_deferred_record_type_gs;
+                    if (deferred_type != 0u) {
+                        if (deferred_type == PRESENTATION_RECORD_C1
+                                || deferred_type == PRESENTATION_RECORD_C6) {
+                            field_offset = (cb_u16)vm_field_offset(
+                                    BLOODPRG_VM_RECIPROCAL_SELECTOR,
+                                    PRESENTATION_KIND_SHIP);
+                            deferred_target = PRESENTATION_RECORD_AT(
+                                    record_segment,
+                                    (cb_u16)(vm_arche_record_offset_gs
+                                        + field_offset),
+                                    bloodprg_vm_record_triple);
+                            deferred_target->kind = deferred_type;
+                            deferred_target->related = deferred_related;
+                            deferred_target->value = 0u;
+                        } else {
+                            record->kind = deferred_type;
+                            record->related = deferred_related;
+                            deferred_value = vm_deferred_record_value_gs;
+                            record->value = deferred_value;
+                        }
+                        vm_deferred_record_type_gs = 0u;
+                        vm_deferred_record_related_gs = 0u;
+                        vm_deferred_record_value_gs = 0u;
                     }
-                    vm_deferred_record_type_gs = 0u;
-                    vm_deferred_record_related_gs = 0u;
-                    vm_deferred_record_value_gs = 0u;
                 }
                 run_action = 1;
                 break;

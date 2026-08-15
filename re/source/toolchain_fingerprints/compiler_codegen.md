@@ -7028,20 +7028,34 @@ entities 4 and 2, and zeroes eight history words. Deferred C1 and C6 records are
 redirected to the Arche ship field; other record types overwrite the current
 record. In every case, action eligibility is tested after that deferred write.
 
-Fourteen patched-helper vectors execute the untouched original body. They cover
+Sixteen patched-helper vectors execute the untouched original body. They cover
 inactive records, kind-2 handoff and every action gate, both presentation-start
 paths, teardown, C1 and C6 Arche redirection, ordinary positive and negative
-deferred writes, multi-entry scans, full-word directory termination, helper
-arguments and order, complete game/record/history memory images, segment
-ownership, terminal flags, stack integrity, and the near return.
+deferred writes, both partial deferred states, multi-entry scans, full-word
+directory termination, helper arguments and order, complete game/record/history
+memory images, segment ownership, terminal flags, stack integrity, and the near
+return. The natural C snapshots deferred related, then type, then value exactly
+where the assembly first observes each volatile field.
+
+A checked-in data-domain test recompiles the byte-exact DEB and VAR sources and
+walks their directory entries with this routine's rules. Across 640 processed
+entries, all 156 active kind-2 selector-2 fields lie at effective offsets 100
+through 2764. This proves the natural 16-bit far-offset expression is equivalent
+to the original 32-bit address calculation for every shipped script image.
 
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the warning-free natural
-C89 function to 236 instructions/718 bytes versus 183/606 original, with 86.89
+C89 function to 228 instructions/693 bytes versus 183/606 original, with 86.89
 percent mnemonic-multiset overlap and 69.40 percent ordered mnemonic overlap.
-It contains no inline assembly or register-state facade. Full-source integration
-requires `GAME_DATA` placement and the shipped record/directory segment
-contracts. Direct replacement additionally needs the original DS:SI/DS:BP
-helper ABIs, selective preservation envelope, and helper residue.
+Turbo C 2.01 large (`-ml -O -Z`) emits 386 instructions with 87.98 percent
+multiset and 66.67 percent ordered overlap and assembles warning-free to a valid
+3,516-byte OMF object. It contains no inline assembly or register-state facade
+and is accepted for source-port integration under the shipped clear-direction-
+flag invariant. All recovered `STD` sites restore `CLD` before returning.
+
+Direct replacement additionally needs true GS-qualified globals, the original
+DS:SI/DS:BP/helper ABIs, 32-bit selector-2 behavior outside the proven shipped
+domain, selective preservation and helper residue, inherited-direction `REP
+STOSW` behavior, and terminal flags.
 
 ## BLOODPRG record action ladder at 0x005B38
 
