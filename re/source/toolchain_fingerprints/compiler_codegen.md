@@ -717,8 +717,9 @@ binary AX/flag preservation.
 
 For `0x00A82C`, eight direct vectors prove that the routine clears destination
 offset bit 9 before any branch, sums exactly six source bytes modulo 256, and
-selects only checksum `0xAB` or `0xAD`. The AB path calls `0x00A867` and returns
-the source segment with the masked destination offset. The AD path writes mode
+selects only checksum `0xAB` or `0xAD`. The AB path calls `0x00A867`, copies its
+restored DI into SI, and therefore returns the source segment with the masked
+destination offset when composed with the real helper. The AD path writes mode
 3 to GS:0x0AA0 before calling `0x00A914` with ES set from BP, then returns that
 destination segment at source offset zero. Both paths restore the masked input
 DI and original CX. Cases cover ordinary checksums immediately below and above
@@ -727,13 +728,16 @@ exact helper frames, call-time state, register effects, path flags, and return.
 
 The one-function natural candidate exposes source and destination as far
 pointers and returns both in a typed cursor result. Open Watcom `-3 -ox -mm`
-compiles it warning-free to 123 instructions/291 bytes versus 30/59 original.
-The corpus probe emits 112 instructions, with a 66.67 percent mnemonic-sequence
-LCS and 70 percent mnemonic-multiset overlap. Watcom materializes far pointers,
-uses an ordinary hidden structure return, and passes decoder arguments through
-its C ABI rather than the binary's ambient DS:SI, ES:DI, and BP state. There is
-no inline assembly. Natural forward indexing relies on the shipped clear-DF C
-invariant; the reverse vector records the binary behavior outside that domain.
+compiles the direct maintained source warning-free to 60 instructions/148 bytes
+versus 30/59 original, with 60 percent mnemonic-sequence LCS, 70 percent
+mnemonic-multiset overlap, and 13.33 percent byte-line LCS. Turbo C 2.01 medium
+emits 67 instructions with 60 percent ordered and 73.33 percent multiset overlap
+and assembles cleanly to OBJ. Watcom materializes far pointers, uses an ordinary
+hidden structure return, and passes decoder arguments through its C ABI rather
+than the binary's ambient DS:SI, ES:DI, and BP state. The corrected oracle
+summary records callback-derived AB source SI separately from the restored
+masked destination DI. These differences are accepted for source integration;
+natural forward indexing relies on the shipped clear-DF C invariant.
 
 For `0x00A4ED`, nine direct vectors prove the rectangular framebuffer blitter.
 The routine takes its source at DS:SI, destination segment in ES, x/y in DX/BX,
@@ -862,7 +866,10 @@ percent byte-line LCS. Watcom preserves offset-only far-pointer wrap but uses
 scalar pointer operations and ordinary register allocation instead of the
 original DS:SI/ES:DI string-instruction ABI. The sole caller at `0x00A82C`
 overwrites SI and restores CX after the call, so the binary's cursor/count
-outputs are deliberately absent from the source-level `void` API.
+outputs are deliberately absent from the source-level `void` API. Turbo C 2.01
+huge emits 152 instructions with 65.75 percent mnemonic-multiset overlap and
+assembles cleanly to OBJ. The remaining differences are accepted as ABI and
+scalar-lowering choices rather than missing decoder behavior.
 
 For `0x00A914`, nine direct vectors prove the checksum-`0xAD` payload grammar.
 The six-byte header supplies output and staging extents plus flags. Flag bit 2
@@ -885,9 +892,12 @@ than encoding the refill sentinel in carry/zero flags. Open Watcom `-3 -ox
 -mh` compiles the actual candidate and probe warning-free to 212 instructions
 and 525 bytes versus 207/424 original. The probe has a 31.40 percent
 mnemonic-sequence LCS, 45.89 percent mnemonic-multiset overlap, and 2.90
-percent byte-line LCS. Exact replacement still needs the original ambient
-DS:SI/ES:DI/BP ABI, sentinel-flag refill, register residue, and MOVS/STOS/REP
-lowering; those are integration boundaries rather than missing decoder logic.
+percent byte-line LCS. The original differs in its ambient DS:SI/ES:DI/BP ABI,
+sentinel-flag refill, register residue, and MOVS/STOS/REP lowering; these are
+reviewed integration boundaries rather than missing decoder logic.
+Turbo C 2.01 huge emits 240 instructions and assembles cleanly to OBJ. The
+explicit literal-bias argument and reviewed codegen differences are accepted
+for source integration.
 
 For `0x00AABC`, thirteen direct vectors prove the shared pair-packed LZ grammar.
 Control zero emits zero. Controls 1 through 127 add a literal bias selected by
@@ -3863,7 +3873,7 @@ LCS and then mnemonic similarity:
 | `ship_3d_plot_point` | medium, `-ox`, register | 30/39 | 0.1000 | 0.7667 | 0.1000 |
 | `ship_3d_point_cloud_randomize` | medium, `-ox`, register | 22/20 | 0.0455 | 0.5909 | 0.1818 |
 | `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
-| `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/112 | 0.1000 | 0.6667 | 0.1333 |
+| `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/60 | 0.1000 | 0.6000 | 0.1333 |
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |

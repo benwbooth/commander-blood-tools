@@ -78789,7 +78789,7 @@ def resource_payload_decode_dispatch_vectors() -> list[dict[str, object]]:
                 "masked_destination_offset": masked_destination,
                 "source_result_offset": (
                     0 if path == "ad"
-                    else masked_destination if path == "ab"
+                    else callback_changes["di"] if path == "ab"
                     else source_offset
                 ),
                 "source_result_segment": (
@@ -78798,6 +78798,7 @@ def resource_payload_decode_dispatch_vectors() -> list[dict[str, object]]:
                 "destination_result_segment": (
                     alternate_segment if path == "ad" else destination_segment
                 ),
+                "destination_result_offset": masked_destination,
                 "mode_before": initial_mode,
                 "mode_after": 3 if path == "ad" else initial_mode,
                 "defined_flags": expected_flags,

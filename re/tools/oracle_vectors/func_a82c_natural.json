@@ -16,6 +16,7 @@
     "source_result_offset": 256,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 511,
     "mode_before": 28928,
     "mode_after": 28928,
     "defined_flags": {
@@ -44,6 +45,7 @@
     "source_result_offset": 4369,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 64767,
     "mode_before": 29185,
     "mode_after": 29185,
     "defined_flags": {
@@ -72,6 +74,7 @@
     "source_result_offset": 8738,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 0,
     "mode_before": 29442,
     "mode_after": 29442,
     "defined_flags": {
@@ -97,9 +100,10 @@
     "direction": "forward",
     "path": "ab",
     "masked_destination_offset": 42495,
-    "source_result_offset": 42495,
+    "source_result_offset": 23230,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 42495,
     "mode_before": 29699,
     "mode_after": 29699,
     "defined_flags": {
@@ -128,6 +132,7 @@
     "source_result_offset": 0,
     "source_result_segment": 26624,
     "destination_result_segment": 26624,
+    "destination_result_offset": 46250,
     "mode_before": 29956,
     "mode_after": 3,
     "defined_flags": {
@@ -152,9 +157,10 @@
     "direction": "forward",
     "path": "ab",
     "masked_destination_offset": 65023,
-    "source_result_offset": 65023,
+    "source_result_offset": 23230,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 65023,
     "mode_before": 30213,
     "mode_after": 30213,
     "defined_flags": {
@@ -183,6 +189,7 @@
     "source_result_offset": 0,
     "source_result_segment": 26624,
     "destination_result_segment": 26624,
+    "destination_result_offset": 4439,
     "mode_before": 30470,
     "mode_after": 3,
     "defined_flags": {
@@ -207,9 +214,10 @@
     "direction": "backward",
     "path": "ab",
     "masked_destination_offset": 70,
-    "source_result_offset": 70,
+    "source_result_offset": 23230,
     "source_result_segment": 8192,
     "destination_result_segment": 14336,
+    "destination_result_offset": 70,
     "mode_before": 30727,
     "mode_after": 30727,
     "defined_flags": {
