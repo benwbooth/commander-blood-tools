@@ -2185,11 +2185,19 @@ the final `DEC SI`. They also narrow `0x00766F` from an incorrect whole-record
 label to its actual name-copy boundary.
 
 The four one-to-one candidates use far DS:SI results, a signed-byte guard, and
-named based-segment destinations. Open Watcom `-3 -os -s -mh -we` compiles each
-without warnings to 43 instructions/103 bytes versus 11/21 original. Watcom
-retains the signed and unsigned tests, explicit
-cursor decrement, and NUL store, but loads `GAME_DATA`, saves BX/DX/ES, and
-uses scalar indexing instead of ambient ES plus LODSB/STOSB.
+direct 16-bit indexes into named based-segment destinations. Each has its own
+authoritative compiler probe. This removes the generated `__PIA` helper from
+the former decayed-pointer form and cuts every Open Watcom
+`-3 -os -s -mh -we` body from 43 instructions/103 bytes to 21/43. The originals
+are 11/21, mnemonic-multiset overlap is 63.64 percent, and Turbo C 2.01 emits
+35 instructions per function. After normalizing only function and destination
+symbols, all four Watcom bodies have the same hash.
+
+The candidates are accepted for source-port integration. They retain the two
+printable tests, unconsumed stopping byte, NUL placement, and 16-bit cursor
+wrap. Shipped dispatch establishes `ES == GS`; independent destination ES,
+the original DI plus LODSB/STOSB allocation, and exact register residue remain
+direct-binary-replacement differences rather than missing parser logic.
 
 Byte-parser opcode-11 handler `0x00763E` extends the same printable-copy shape
 with a GS:0x2793 bit-zero gate and a far SND-bank loader call. Eight direct
