@@ -6314,11 +6314,16 @@ state writes, preservation, BX residue, terminal flags, stack, and near return.
 Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one-function natural C
 composer warning-free to 165 instructions/449 bytes versus 122/320 original,
 with 75.41 percent mnemonic-multiset overlap and 67.21 percent ordered mnemonic
-overlap. It contains no inline assembly or register-state facade. Full-source
-integration requires the shipped `ES=GS` destination, `SS=GS` source list,
-shared data group, and clear direction flag. Direct binary replacement also
-needs the original FS/DS/ES transitions, BP helper cursor ABI, selective save
-envelope, BX residue, and terminal flags.
+overlap. Turbo C 2.01 large compiles the same authoritative source to 175
+instructions with 70.49 percent multiset and 58.20 percent ordered overlap.
+Turbo's `STDDEF.H` has no `offsetof`; the source therefore checks the complete
+0x38-byte object-record size, whose even 1- and 2-byte field extents fix the
+required name/location/life-support offsets without compiler-specific syntax.
+The routine is accepted for source integration with no inline assembly or
+register-state facade. The shipped `ES=GS` destination, `SS=GS` source list,
+shared data group, and clear direction flag remain integration invariants;
+direct replacement additionally needs the original segment transitions, BP
+helper cursor ABI, selective save envelope, BX residue, and terminal flags.
 
 ## Navigation camera state check at 0x008CCE
 

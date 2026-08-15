@@ -1,5 +1,4 @@
 #include <dos.h>
-#include <stddef.h>
 
 #include "../include/bloodprg_entity.h"
 #include "../include/bloodprg_input.h"
@@ -27,13 +26,8 @@ typedef struct nav_status_object_record {
     cb_u16 life_support_visits;
 } nav_status_object_record;
 
-typedef char nav_status_object_name_must_be_at_4[
-        offsetof(nav_status_object_record, name) == 4 ? 1 : -1];
-typedef char nav_status_object_location_must_be_at_18[
-        offsetof(nav_status_object_record, location) == 0x18 ? 1 : -1];
-typedef char nav_status_object_life_support_must_be_at_36[
-        offsetof(nav_status_object_record, life_support_visits) == 0x36
-            ? 1 : -1];
+typedef char nav_status_object_record_must_be_38[
+        sizeof(nav_status_object_record) == 0x38 ? 1 : -1];
 
 #if defined(__TURBOC__) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define NAV_STATUS_OBJECT_AT(offset) \
