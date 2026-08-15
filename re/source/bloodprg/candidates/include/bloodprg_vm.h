@@ -32,6 +32,8 @@ extern volatile cb_i8 vm_compare_pair_low;   /* GS:0x0AA8 */
 extern volatile cb_i8 vm_compare_pair_high;  /* GS:0x0AAA */
 extern volatile cb_u8 vm_sequence_active;    /* GS:0x252A */
 extern volatile cb_u8 vm_sequence_active_ds; /* DS:0x252A alias */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_sequence_active_gs;               /* explicit GS:0x252A alias */
 extern volatile cb_u8 vm_ship_3d_depth_step; /* GS:0x2531 */
 extern volatile cb_u16 vm_ship_active_flags; /* GS:0x24F3 */
 extern volatile cb_u16 CB_GAME_DATA
@@ -39,6 +41,8 @@ extern volatile cb_u16 CB_GAME_DATA
 extern volatile cb_u8 vm_ship_active_flags_low; /* game data:0x24F3 */
 extern volatile cb_u16 vm_dialogue_hold_countdown; /* game data:0x0B35 */
 extern volatile cb_u8 vm_scene_gate;         /* GS:0x274F */
+extern volatile cb_u8 CB_GAME_DATA
+        vm_scene_gate_gs;                    /* explicit GS:0x274F alias */
 extern volatile cb_u16 vm_scene_record_offset; /* DS:0x274D */
 extern volatile bloodprg_vm_ui_state vm_ui_state; /* game data:0x2793 */
 extern volatile cb_i16 vm_bridge_view_frame; /* game data:0x2795 */
@@ -85,6 +89,10 @@ extern bloodprg_vm_image_ptr CB_GAME_DATA vm_script_image; /* GS:0x671C */
 extern bloodprg_vm_image_ptr CB_GAME_DATA vm_code_image; /* GS:0x6720 */
 extern volatile cb_u16 vm_branch_stack[];    /* SS:0x6820; SS=GS at runtime */
 extern volatile cb_u16 vm_resume_value;      /* GS:0x6764; SS alias in 0x6596 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_branch_stack_gs[];                /* explicit GS/SS:0x6820 alias */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_resume_value_gs;                  /* explicit GS:0x6764 alias */
 extern const cb_u16 CB_FAR * volatile vm_text_menu_words; /* GS:0x674A */
 extern const cb_u16 vm_presentation_menu_words_buffer[]; /* DS:0x6790 */
 extern volatile cb_u16 vm_arche_record_offset; /* GS:0x6752 */
@@ -179,6 +187,8 @@ extern volatile cb_u16 vm_presentation_selected_word; /* DS:0x6796 */
 extern volatile cb_u16 CB_GAME_DATA
         vm_presentation_word_buffer_gs[]; /* explicit GS:0x67F8 alias */
 extern volatile cb_u16 vm_branch_stack_top;  /* GS:0x6884 */
+extern volatile cb_u16 CB_GAME_DATA
+        vm_branch_stack_top_gs;              /* explicit GS:0x6884 alias */
 extern volatile cb_u16 vm_profile_cursor;     /* GS:0x6730 */
 extern volatile cb_u16 vm_subtitle_wrap_marker; /* GS:0x6732 */
 extern volatile cb_u16 vm_profile_record_word; /* GS:0x6734 */

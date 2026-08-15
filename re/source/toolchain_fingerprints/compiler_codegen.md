@@ -92,6 +92,29 @@ save/restore envelope at `0x009F53` is retained because it is the smallest
 source-level representation of an observed nonstandard call boundary and is
 required for the exact compiler result.
 
+### GAME_DATA-correct VM helper batch
+
+Six compact VM routines were reviewed again after their callers exposed a
+load-bearing segment distinction: opcode handlers keep `DS` on script bytes,
+while VM state lives in the preloaded game-data segment. An ordinary DS-relative
+probe can look closer to the original and still be wrong when integrated.
+
+The accepted candidates now name shared `CB_GAME_DATA` aliases from
+`bloodprg_vm.h`. Open Watcom keeps script `DS` intact and accesses those symbols
+through a temporary based segment:
+
+| routine | original | GAME_DATA-qualified Watcom | reviewed difference |
+| --- | ---: | ---: | --- |
+| `0x006462 vm_branch` | 8 instructions, 25 bytes | 12 instructions, 34 bytes | ES/BX replace ambient GS plus SS:BP; all 26 callers consume only the SI cursor and state before exiting |
+| `0x006494`, `0x0064A0`, `0x0064AC` conditional branches | 4 instructions, 12 bytes each | 21 bytes each | explicit segment load/preserve and duplicated return keep floating script DS valid |
+| `0x0064C0 vm_op_cf_clear_state` | 3 instructions, 14 bytes | 7 instructions, 18 bytes | explicit segment load and AX zero materialization; dispatcher observes only ordered state stores |
+| `0x0065DB vm_op_a4_jump` | 4 instructions, 16 bytes | 12 instructions, 24 bytes | script target still loads through DS:SI before state writes; ES/AX preservation and final flags are unobserved |
+
+This batch deliberately prefers logically correct segment ownership over the
+shorter DS-relative corpus probes. It also centralizes every segment-qualified
+declaration in the shared VM header rather than duplicating far-memory syntax
+inside function bodies.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its

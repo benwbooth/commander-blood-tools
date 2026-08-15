@@ -6,7 +6,7 @@ const cb_u8 CB_NEAR *CB_NEAR vm_op_a4_jump(
     const cb_u8 CB_NEAR *target;
 
     target = (const cb_u8 CB_NEAR *)*script_words;
-    vm_resume_state = 0;
-    vm_resume_value = 0;
+    vm_resume_state_gs = 0;
+    vm_resume_value_gs = 0;
     return target;
 }
