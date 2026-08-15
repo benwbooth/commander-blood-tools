@@ -2663,17 +2663,26 @@ requires both DS==GS for the counter and SS==GS for the matrix/output object.
 
 The natural one-function candidate maps those runtime aliases to typed
 GAME_DATA objects and calls the separately recovered natural plotter with an
-ordinary context and far framebuffer pointer. Open Watcom medium with
-`-3 -ox -mm -zdp -we` compiles it warning-free to 164 instructions/505 bytes
-versus 80/244
-original. The probe's mnemonic-sequence LCS is 48.75 percent and multiset
-overlap is 61.25 percent. Watcom emits nine `__I4M` calls, two `__I4D` calls,
-15- and 7-iteration SAR/RCR loops, and conventional plot arguments where the
-binary uses inline 386 IMUL/IDIV and ambient SS:BP/ES state. These are explicit
-codegen and ABI boundaries. The C call carries the complete display pointer
-where the binary loads only its segment; the allocator and dirty-rectangle
-recovery independently establish that this pointer's runtime offset is zero.
-The projection loop itself remains natural C.
+ordinary context and far framebuffer pointer. The compiler-corpus sample now
+includes that authoritative source directly. Open Watcom medium
+`-3 -os -s -mm -we` compiles it warning-free to 162 instructions/501 bytes
+versus 80/244 original, with 60 percent mnemonic-multiset and 57.50 percent
+ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 229 instructions with
+63.75 percent multiset and 51.25 percent ordered overlap and assembles cleanly
+to OBJ.
+
+Watcom emits nine `__I4M` calls, two `__I4D` calls, 15- and 7-iteration SAR/RCR
+loops, and conventional plot arguments where the binary uses inline 386
+IMUL/IDIV and ambient SS:BP/ES state. The generated body preserves
+BX/CX/DX/SI/DI/BP/DS but clobbers AX/ES, so the Watcom declaration now exposes
+those clobbers instead of promising the original preserve-all boundary. Both
+recovered callers immediately continue into later rendering stages and consume
+no register or flag result. The C call carries the complete display pointer
+where the binary loads only its segment; allocator and dirty-rectangle evidence
+independently establish that its runtime offset is zero. The function is
+accepted for source-port integration under those explicit invariants. Direct
+replacement still needs the original inline arithmetic, ambient plot ABI,
+preservation envelope, and terminal DEC flags.
 
 Point plotter `0x009B04` reads projected x/y/depth through SS:BP, compares
 against signed DS clip bounds, and addresses a normalized ES framebuffer. Its
