@@ -1223,14 +1223,19 @@ terminators, following-entry segment shifts, moved-size accumulation including
 zero-sized followers, exact compaction pointers/data, and complete register and
 segment preservation.
 
-Open Watcom compiles the actual `0x00529C` candidate without warnings; `-3 -ox
--mm` emits 69 instructions/158 bytes versus 55/120 original. Standalone 8086/
-286/386 probes emit 71/69/69 instructions and 162/158/158 bytes, while Turbo C
-2.01 emits 95 instructions. The natural implementation preserves the typed
-resource table, resident list, accounting, and conditional `far_memmove` logic.
-Exact integration still needs the original FS/GS placement, `REPNE SCASW`
-search, packed 32-bit register operations, and DS/ES segment construction at
-the far-call boundary.
+The compiler sample now includes the maintained source directly. Open Watcom
+1.9 medium (`-3 -ox -mm -zdp -we`) compiles it warning-free to 69
+instructions/158 bytes versus 55/120 original, with 76.36 percent
+mnemonic-multiset and 54.55 percent ordered overlap. Turbo C 2.01 medium (`-mm
+-O -Z`) emits 95 instructions with 72.73 percent multiset and 54.55 percent
+ordered overlap and assembles warning-free to a 778-byte OMF object. The
+natural implementation preserves the typed resource table, resident list,
+accounting, and conditional `far_memmove` logic. It relies on the allocator's
+valid-state invariant that the released handle appears in the bounded 256-entry
+resident list; malformed absent-handle behavior is not reproduced. Exact
+integration still needs the original FS/GS placement, `REPNE SCASW` search,
+packed 32-bit register operations, and DS/ES segment construction at the
+far-call boundary.
 
 Resource-handle resolver `0x005320` has six direct vectors. They prove clear and
 unrelated unloaded flags, each and combined loaded bits, 16-bit `handle * 8`
