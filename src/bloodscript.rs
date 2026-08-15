@@ -32,6 +32,8 @@ pub struct Decompilation {
     pub structured_guards: usize,
     pub unstructured_guards: usize,
     pub guard_rejection_counts: BTreeMap<String, usize>,
+    pub object_aliases: usize,
+    pub object_alias_uses: usize,
     pub structured_selector_lists: usize,
     pub structured_cases: usize,
 }
@@ -48,6 +50,8 @@ struct BodyStats {
     structured_guards: usize,
     unstructured_guards: usize,
     guard_rejection_counts: BTreeMap<String, usize>,
+    object_aliases: usize,
+    object_alias_uses: usize,
     structured_selector_lists: usize,
     structured_cases: usize,
 }
@@ -80,6 +84,12 @@ struct BasStructuredAnnotations {
     starts: BTreeMap<usize, (String, String, u16)>,
     cases: BTreeSet<usize>,
     ends: BTreeMap<usize, String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ObjectAlias {
+    identifier: String,
+    source_name: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -166,6 +176,8 @@ fn decompile_mode(
         structured_guards: stats.structured_guards,
         unstructured_guards: stats.unstructured_guards,
         guard_rejection_counts: stats.guard_rejection_counts,
+        object_aliases: stats.object_aliases,
+        object_alias_uses: stats.object_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -196,6 +208,8 @@ fn decompile_mode_with_bas_graph(
         structured_guards: stats.structured_guards,
         unstructured_guards: stats.unstructured_guards,
         guard_rejection_counts: stats.guard_rejection_counts,
+        object_aliases: stats.object_aliases,
+        object_alias_uses: stats.object_alias_uses,
         structured_selector_lists: stats.structured_selector_lists,
         structured_cases: stats.structured_cases,
     })
@@ -208,25 +222,40 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
     }
 
     let mut labels = HashMap::new();
+    let mut objects = HashMap::new();
     for line in &lines {
-        if !matches!(line.name, "LABEL" | "PROCEDURE") {
-            continue;
-        }
-        require_count(&line.args, 1, line.line_number, line.name)?;
-        validate_identifier(line.args[0], line.line_number)?;
-        let address = u16::try_from(line.offset).map_err(|_| {
-            anyhow!(
-                "line {}: label offset 0x{:08X} exceeds the VM address space",
-                line.line_number,
-                line.offset
-            )
-        })?;
-        if labels.insert(line.args[0], address).is_some() {
-            bail!(
-                "line {}: duplicate label {:?}",
-                line.line_number,
-                line.args[0]
-            );
+        match line.name {
+            "OBJECT" => {
+                require_count(&line.args, 2, line.line_number, line.name)?;
+                validate_identifier(line.args[0], line.line_number)?;
+                let address = parse_word(line.args[1], line.line_number, "object offset")?;
+                if objects.insert(line.args[0], address).is_some() {
+                    bail!(
+                        "line {}: duplicate object {:?}",
+                        line.line_number,
+                        line.args[0]
+                    );
+                }
+            }
+            "LABEL" | "PROCEDURE" => {
+                require_count(&line.args, 1, line.line_number, line.name)?;
+                validate_identifier(line.args[0], line.line_number)?;
+                let address = u16::try_from(line.offset).map_err(|_| {
+                    anyhow!(
+                        "line {}: label offset 0x{:08X} exceeds the VM address space",
+                        line.line_number,
+                        line.offset
+                    )
+                })?;
+                if labels.insert(line.args[0], address).is_some() {
+                    bail!(
+                        "line {}: duplicate label {:?}",
+                        line.line_number,
+                        line.args[0]
+                    );
+                }
+            }
+            _ => {}
         }
     }
 
@@ -244,6 +273,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             );
         }
         match line.name {
+            "OBJECT" => continue,
             "LABEL" => {
                 require_count(&line.args, 1, line.line_number, line.name)?;
                 continue;
@@ -493,7 +523,8 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
                 }
             }
         }
-        let encoded = compile_statement(line.name, &line.args, line.line_number, &labels)?;
+        let encoded =
+            compile_statement(line.name, &line.args, line.line_number, &labels, &objects)?;
         if encoded.is_empty() {
             bail!("line {}: statement emitted no bytes", line.line_number);
         }
@@ -568,15 +599,21 @@ fn decompile_cod(
     image: &[u8],
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
-    structured: bool,
+    structured_source: bool,
 ) -> Result<BodyStats> {
     let tokens = vm::walk(image, 0, image.len());
     let annotations = cod_annotations(&tokens, image, symbols)?;
-    let structured = if structured {
+    let structured = if structured_source {
         structured_annotations(analyze_structured_guards("COD", image, symbols)?)
     } else {
         StructuredAnnotations::default()
     };
+    let object_aliases = if structured_source {
+        cod_object_aliases(&tokens, symbols)
+    } else {
+        BTreeMap::new()
+    };
+    emit_object_declarations(output, &object_aliases)?;
     let mut cursor = 0usize;
     let mut stats = BodyStats {
         symbolic_labels: annotations.labels.len(),
@@ -584,6 +621,12 @@ fn decompile_cod(
         structured_guards: structured.starts.len(),
         unstructured_guards: structured.rejected.len(),
         guard_rejection_counts: guard_rejection_counts(&structured.rejected),
+        object_aliases: object_aliases.len(),
+        object_alias_uses: tokens
+            .iter()
+            .flat_map(object_operand_values)
+            .filter(|value| object_aliases.contains_key(value))
+            .count(),
         ..BodyStats::default()
     };
 
@@ -622,6 +665,7 @@ fn decompile_cod(
                 &token,
                 dictionary,
                 &annotations.labels,
+                &object_aliases,
                 structured.rejected.get(&offset),
             )?;
         }
@@ -657,6 +701,7 @@ fn decompile_bas(
     dictionary: &HashMap<u16, String>,
     graph: Option<&BasControlFlow>,
 ) -> Result<BodyStats> {
+    let object_aliases = BTreeMap::new();
     let annotations = bas_annotations(image, dictionary)?;
     let structured = bas_structured_annotations(graph);
     let mut cursor = 0usize;
@@ -705,7 +750,14 @@ fn decompile_bas(
                     )?;
                 }
                 vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
-                    emit_token(output, token, dictionary, &HashMap::new(), None)?;
+                    emit_token(
+                        output,
+                        token,
+                        dictionary,
+                        &HashMap::new(),
+                        &object_aliases,
+                        None,
+                    )?;
                 }
                 vm_source::BasToken::Yield { .. } => {
                     writeln!(output, "{cursor:08X}: YIELD ; opcode AA")?;
@@ -1028,11 +1080,94 @@ fn bas_next_operand(target: u16, labels: &HashMap<u16, String>) -> String {
         .unwrap_or_else(|| format!("{target:04X}"))
 }
 
+fn cod_object_aliases(tokens: &[VmToken], symbols: &[DebSymbol]) -> BTreeMap<u16, ObjectAlias> {
+    let referenced: BTreeSet<u16> = tokens.iter().flat_map(object_operand_values).collect();
+
+    let mut aliases = BTreeMap::new();
+    for symbol in symbols
+        .iter()
+        .filter(|symbol| symbol.kind == 1 && referenced.contains(&symbol.offset))
+    {
+        aliases.entry(symbol.offset).or_insert_with(|| ObjectAlias {
+            identifier: format!(
+                "object_{}_{:04X}",
+                identifier_component(&symbol.name),
+                symbol.offset
+            ),
+            source_name: symbol.name.clone(),
+        });
+    }
+    aliases
+}
+
+fn object_operand_values(token: &VmToken) -> Vec<u16> {
+    match token {
+        VmToken::Text { line_index, .. } => vec![*line_index],
+        VmToken::Actor {
+            record_offset,
+            related_record_offset,
+            ..
+        }
+        | VmToken::RecordLink {
+            record_offset,
+            related_record_offset,
+            ..
+        } => vec![*record_offset, *related_record_offset],
+        VmToken::RecordEntry {
+            entry_opcode,
+            record_offset,
+            operand,
+            ..
+        } if *entry_opcode != vm::OP_RECORD_ENTRY_MAX => vec![*record_offset, *operand],
+        VmToken::RecordEntry { record_offset, .. }
+        | VmToken::RecordClear { record_offset, .. }
+        | VmToken::RecordWildcard { record_offset, .. }
+        | VmToken::RecordState { record_offset, .. }
+        | VmToken::PairRecord { record_offset, .. }
+        | VmToken::RecordTriple { record_offset, .. } => vec![*record_offset],
+        VmToken::BitFlag { flag_offset, .. } => vec![*flag_offset],
+        VmToken::SharedState {
+            field_offset,
+            rhs_mode,
+            rhs,
+            ..
+        } if matches!(*rhs_mode, 0xC0 | 0xC2) => vec![*field_offset, *rhs],
+        VmToken::SharedState { field_offset, .. }
+        | VmToken::SharedBitState { field_offset, .. } => vec![*field_offset],
+        _ => Vec::new(),
+    }
+}
+
+fn emit_object_declarations(
+    output: &mut String,
+    aliases: &BTreeMap<u16, ObjectAlias>,
+) -> Result<()> {
+    for (offset, alias) in aliases {
+        writeln!(
+            output,
+            "00000000: OBJECT {} {offset:04X} ; DEB kind 1 {:?}",
+            alias.identifier, alias.source_name
+        )?;
+    }
+    if !aliases.is_empty() {
+        output.push('\n');
+    }
+    Ok(())
+}
+
+fn object_operand(value: u16, aliases: &BTreeMap<u16, ObjectAlias>) -> String {
+    aliases
+        .get(&value)
+        .map(|alias| alias.identifier.clone())
+        .unwrap_or_else(|| format!("{value:04X}"))
+}
+
 fn emit_token(
     output: &mut String,
     token: &VmToken,
     dictionary: &HashMap<u16, String>,
     labels: &HashMap<u16, String>,
+    object_aliases: &BTreeMap<u16, ObjectAlias>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
 ) -> Result<()> {
     let offset = token.offset();
@@ -1050,7 +1185,8 @@ fn emit_token(
         } => {
             write!(
                 output,
-                "TEXT {line_index:04X} {voice_selector:02X} {flags_b4:02X} {flags_b5:02X} {} {}",
+                "TEXT {} {voice_selector:02X} {flags_b4:02X} {flags_b5:02X} {} {}",
+                object_operand(*line_index, object_aliases),
                 optional_address_operand(*loop_target, labels),
                 option_word(*control_word)
             )?;
@@ -1108,7 +1244,9 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "ACTOR {record_offset:04X} {related_record_offset:04X} {}",
+            "ACTOR {} {} {}",
+            object_operand(*record_offset, object_aliases),
+            object_operand(*related_record_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordLink {
@@ -1118,7 +1256,9 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "RECORD_LINK {record_offset:04X} {related_record_offset:04X} {}",
+            "RECORD_LINK {} {} {}",
+            object_operand(*record_offset, object_aliases),
+            object_operand(*related_record_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordEntry {
@@ -1129,12 +1269,20 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "RECORD_ENTRY {entry_opcode:02X} {record_offset:04X} {operand:04X} {}",
+            "RECORD_ENTRY {entry_opcode:02X} {} {} {}",
+            object_operand(*record_offset, object_aliases),
+            if *entry_opcode == vm::OP_RECORD_ENTRY_MAX {
+                format!("{operand:04X}")
+            } else {
+                object_operand(*operand, object_aliases)
+            },
             bool_digit(*inverted)
         )?,
-        VmToken::RecordClear { record_offset, .. } => {
-            write!(output, "RECORD_CLEAR {record_offset:04X}")?
-        }
+        VmToken::RecordClear { record_offset, .. } => write!(
+            output,
+            "RECORD_CLEAR {}",
+            object_operand(*record_offset, object_aliases)
+        )?,
         VmToken::BitFlag {
             flag_offset,
             bit_index,
@@ -1142,7 +1290,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "BIT_FLAG {flag_offset:04X} {bit_index:02X} {}",
+            "BIT_FLAG {} {bit_index:02X} {}",
+            object_operand(*flag_offset, object_aliases),
             bool_digit(*clear)
         )?,
         VmToken::SharedState {
@@ -1152,10 +1301,18 @@ fn emit_token(
             rhs_mode,
             rhs,
             ..
-        } => write!(
-            output,
-            "SHARED_STATE {opcode:02X} {field_offset:04X} {operator:02X} {rhs_mode:02X} {rhs:04X}"
-        )?,
+        } => {
+            let rhs = if matches!(*rhs_mode, 0xC0 | 0xC2) {
+                object_operand(*rhs, object_aliases)
+            } else {
+                format!("{rhs:04X}")
+            };
+            write!(
+                output,
+                "SHARED_STATE {opcode:02X} {} {operator:02X} {rhs_mode:02X} {rhs}",
+                object_operand(*field_offset, object_aliases)
+            )?
+        }
         VmToken::SharedBitState {
             opcode,
             field_offset,
@@ -1164,7 +1321,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "SHARED_BIT_STATE {opcode:02X} {field_offset:04X} {mask:04X} {}",
+            "SHARED_BIT_STATE {opcode:02X} {} {mask:04X} {}",
+            object_operand(*field_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordWildcard {
@@ -1175,7 +1333,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "RECORD_WILDCARD {opcode:02X} {record_offset:04X} {value:04X} {}",
+            "RECORD_WILDCARD {opcode:02X} {} {value:04X} {}",
+            object_operand(*record_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::RecordState {
@@ -1186,7 +1345,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "RECORD_STATE {opcode:02X} {record_offset:04X} {operand:04X} {}",
+            "RECORD_STATE {opcode:02X} {} {operand:04X} {}",
+            object_operand(*record_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::GlobalWordCompare {
@@ -1215,7 +1375,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "PAIR_RECORD {opcode:02X} {record_offset:04X} {first_word:04X} {second_word:04X}"
+            "PAIR_RECORD {opcode:02X} {} {first_word:04X} {second_word:04X}",
+            object_operand(*record_offset, object_aliases)
         )?,
         VmToken::RecordTriple {
             record_offset,
@@ -1225,7 +1386,8 @@ fn emit_token(
             ..
         } => write!(
             output,
-            "RECORD_TRIPLE {record_offset:04X} {first_word:04X} {second_word:04X} {}",
+            "RECORD_TRIPLE {} {first_word:04X} {second_word:04X} {}",
+            object_operand(*record_offset, object_aliases),
             bool_digit(*inverted)
         )?,
         VmToken::ScriptProfileRequest { operand, .. } => {
@@ -1269,6 +1431,7 @@ fn compile_statement(
     args: &[&str],
     line: usize,
     labels: &HashMap<&str, u16>,
+    objects: &HashMap<&str, u16>,
 ) -> Result<Vec<u8>> {
     let mut output = Vec::new();
     let word = |output: &mut Vec<u8>, value: u16| {
@@ -1403,7 +1566,7 @@ fn compile_statement(
         }
         "TEXT" => {
             require_min_count(args, 6, line, name)?;
-            let line_index = parse_word(args[0], line, "line index")?;
+            let line_index = parse_object_address(args[0], objects, line, "line index")?;
             let voice = parse_byte(args[1], line, "voice")?;
             let flags_b4 = parse_byte(args[2], line, "control flags")?;
             let flags_b5 = parse_byte(args[3], line, "display flags")?;
@@ -1437,22 +1600,54 @@ fn compile_statement(
             if parse_bool(args[2], line, "inverted")? {
                 output.push(0xA1);
             }
-            word(&mut output, parse_word(args[0], line, "record")?);
-            word(&mut output, parse_word(args[1], line, "related record")?);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "record")?,
+            );
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "related record")?,
+            );
         }
-        "RECORD_ENTRY" | "RECORD_STATE" => {
+        "RECORD_ENTRY" => {
+            require_count(args, 4, line, name)?;
+            let opcode = parse_byte(args[0], line, "opcode")?;
+            output.push(opcode);
+            if parse_bool(args[3], line, "inverted")? {
+                output.push(0xA1);
+            }
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "record")?,
+            );
+            word(
+                &mut output,
+                if opcode == vm::OP_RECORD_ENTRY_MAX {
+                    parse_word(args[2], line, "operand")?
+                } else {
+                    parse_object_address(args[2], objects, line, "related record")?
+                },
+            );
+        }
+        "RECORD_STATE" => {
             require_count(args, 4, line, name)?;
             output.push(parse_byte(args[0], line, "opcode")?);
             if parse_bool(args[3], line, "inverted")? {
                 output.push(0xA1);
             }
-            word(&mut output, parse_word(args[1], line, "record")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "record")?,
+            );
             word(&mut output, parse_word(args[2], line, "operand")?);
         }
         "RECORD_CLEAR" => {
             require_count(args, 1, line, name)?;
             output.push(0xC9);
-            word(&mut output, parse_word(args[0], line, "record")?);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "record")?,
+            );
         }
         "BIT_FLAG" => {
             require_count(args, 3, line, name)?;
@@ -1460,7 +1655,10 @@ fn compile_statement(
             if parse_bool(args[2], line, "clear")? {
                 output.push(0xA1);
             }
-            word(&mut output, parse_word(args[0], line, "record")?);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "record")?,
+            );
             output.push(parse_byte(args[1], line, "bit index")?);
         }
         "SHARED_STATE" => {
@@ -1470,10 +1668,21 @@ fn compile_statement(
                 bail!("line {line}: opcode {opcode:02X} is not a SHARED_STATE opcode");
             }
             output.push(opcode);
-            word(&mut output, parse_word(args[1], line, "field offset")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "field offset")?,
+            );
             output.push(parse_byte(args[2], line, "operator")?);
-            output.push(parse_byte(args[3], line, "RHS mode")?);
-            word(&mut output, parse_word(args[4], line, "RHS")?);
+            let rhs_mode = parse_byte(args[3], line, "RHS mode")?;
+            output.push(rhs_mode);
+            word(
+                &mut output,
+                if matches!(rhs_mode, 0xC0 | 0xC2) {
+                    parse_object_address(args[4], objects, line, "RHS field")?
+                } else {
+                    parse_word(args[4], line, "RHS value")?
+                },
+            );
         }
         "SHARED_BIT_STATE" => {
             require_count(args, 4, line, name)?;
@@ -1485,7 +1694,10 @@ fn compile_statement(
             if parse_bool(args[3], line, "inverted")? {
                 output.push(vm::OP_POP);
             }
-            word(&mut output, parse_word(args[1], line, "field offset")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "field offset")?,
+            );
             word(&mut output, parse_word(args[2], line, "mask")?);
         }
         "RECORD_WILDCARD" => {
@@ -1502,7 +1714,10 @@ fn compile_statement(
             if inverted {
                 output.push(vm::OP_POP);
             }
-            word(&mut output, parse_word(args[1], line, "record offset")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "record offset")?,
+            );
             word(&mut output, parse_word(args[2], line, "value")?);
         }
         "GLOBAL_WORD_COMPARE" => {
@@ -1522,7 +1737,10 @@ fn compile_statement(
         "PAIR_RECORD" => {
             require_count(args, 4, line, name)?;
             output.push(parse_byte(args[0], line, "opcode")?);
-            word(&mut output, parse_word(args[1], line, "record")?);
+            word(
+                &mut output,
+                parse_object_address(args[1], objects, line, "record")?,
+            );
             word(&mut output, parse_word(args[2], line, "first word")?);
             word(&mut output, parse_word(args[3], line, "second word")?);
         }
@@ -1532,7 +1750,10 @@ fn compile_statement(
             if parse_bool(args[3], line, "inverted")? {
                 output.push(0xA1);
             }
-            word(&mut output, parse_word(args[0], line, "record")?);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "record")?,
+            );
             word(&mut output, parse_word(args[1], line, "first word")?);
             word(&mut output, parse_word(args[2], line, "second word")?);
         }
@@ -1562,6 +1783,19 @@ fn parse_hex_usize(value: &str, line: usize, field: &str) -> Result<usize> {
 fn parse_word(value: &str, line: usize, field: &str) -> Result<u16> {
     u16::from_str_radix(value, 16)
         .map_err(|_| anyhow!("line {line}: invalid hexadecimal {field} {value:?}"))
+}
+
+fn parse_object_address(
+    value: &str,
+    objects: &HashMap<&str, u16>,
+    line: usize,
+    field: &str,
+) -> Result<u16> {
+    objects
+        .get(value)
+        .copied()
+        .map(Ok)
+        .unwrap_or_else(|| parse_word(value, line, field))
 }
 
 fn parse_address(
@@ -1825,6 +2059,49 @@ mod tests {
             "GUARD_PUSH block_000E ; GUARD_PUSH target=0x000E ; unstructured_guard=external_entry"
         ));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
+    }
+
+    #[test]
+    fn deb_object_aliases_compile_to_exact_var_offsets() {
+        let image = vec![
+            0xA6, 0x34, 0x12, 0xFF, 0x00, 0x80, 0x00, 0x00, // text line object
+            0xC9, 0x34, 0x12, // clear the same object record
+            0xFF,
+        ];
+        let symbols = vec![DebSymbol {
+            name: "Tina_Burner".to_string(),
+            offset: 0x1234,
+            kind: 1,
+        }];
+        let decompiled =
+            decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols)
+                .unwrap();
+        assert_eq!(decompiled.object_aliases, 1);
+        assert_eq!(decompiled.object_alias_uses, 2);
+        for statement in [
+            "OBJECT object_Tina_Burner_1234 1234",
+            "TEXT object_Tina_Burner_1234 FF 00 80",
+            "RECORD_CLEAR object_Tina_Burner_1234",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let duplicate = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: OBJECT object_same 1234\n",
+            "00000000: OBJECT object_same 5678\n",
+            "00000000: END\n",
+        );
+        assert!(compile(duplicate).is_err());
+
+        let alias_as_immediate = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: OBJECT object_value 1234\n",
+            "00000000: SHARED_STATE BF object_value F5 C1 object_value\n",
+            "00000007: END\n",
+        );
+        assert!(compile(alias_as_immediate).is_err());
     }
 
     #[test]

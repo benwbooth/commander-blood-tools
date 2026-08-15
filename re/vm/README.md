@@ -160,6 +160,13 @@ emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
+The structured COD sources additionally use 104 zero-byte `OBJECT`
+declarations recovered from exact kind-1 DEB offsets. They replace 4,113 proven
+VAR object-base operands while retaining the original numeric offset in each
+declaration. Interior record addresses remain numeric until VAR-kind and native
+field-matrix evidence prove their owning object and field; nearest-symbol
+guessing is not used.
+
 The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic
 `OP` or `RAW` fallback. The BloodData corpus adds 14,676 offset-checked

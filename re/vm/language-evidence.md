@@ -99,6 +99,14 @@ two-pass compiler resolves symbolic operands while retaining explicit source
 offsets and exact statement order. Across the corpus this yields 1,059 distinct
 COD symbols and 284 BAS labels without changing any output byte.
 
+Kind-1 DEB entries also establish exact VAR object-base names. The structured
+COD corpus declares the 104 bases that are actually referenced and uses them in
+4,113 proven address operands: 3,687 text-line owners, 389 actor relations, 35
+record links, and two record-entry relations. `OBJECT` declarations emit no
+bytes and retain the original numeric offset. Numeric subrecord addresses are
+not assigned to a nearby object: they remain numeric unless the object's VAR
+kind and the native field-offset matrix prove the relationship.
+
 The first structured COD pass recovers 7,010 basic blocks and 17,287 edges. It
 models the native query bit and guard-target stack, direct jumps, text skips and
 deferred frame resumes, and both possible states of self-modified `A9` block
@@ -172,7 +180,9 @@ specific byte range and must never be labelled as the original 1994 source.
    regions. The first guard lift proves 443 of 682 `A0` regions and classifies
    all 239 retained low-level guards.
 5. Add symbolic object, field, and dictionary names without changing numeric
-   identity in the compiler IR.
+   identity in the compiler IR. Exact DEB object bases are complete for the
+   currently proven address-bearing operands; subrecord fields and dictionary
+   words remain to be lifted.
 6. Compile the structured syntax back through the exact IR and require all ten
    images to remain byte exact.
 7. Emit complete `.COD`, `.BAS`, `.DEB`, `.DIC`, and `.VAR` bundles and

@@ -376,7 +376,7 @@ fn main() -> Result<()> {
             }
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from(
-                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
+                "script\timage\tinput_bytes\ttyped_statements\ttyped_bytes\tgeneric_op_statements\tgeneric_op_bytes\traw_bytes\tsymbolic_labels\tprocedures\tobject_aliases\tobject_alias_uses\tstructured_guards\tunstructured_guards\tguard_rejections\tselector_lists\tcases\troundtrip\n",
             );
             for script in 1..=5 {
                 let dictionary = game_dir.join(format!("SCRIPT{script}.DIC"));
@@ -399,7 +399,7 @@ fn main() -> Result<()> {
                     )?;
                     let input_bytes = std::fs::metadata(&image)?.len();
                     manifest.push_str(&format!(
-                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
+                        "SCRIPT{script}\t{extension}\t{input_bytes}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\tbyte_exact\n",
                         source.typed_statements,
                         source.typed_bytes,
                         source.generic_op_statements,
@@ -407,6 +407,8 @@ fn main() -> Result<()> {
                         source.raw_bytes,
                         source.symbolic_labels,
                         source.procedures,
+                        source.object_aliases,
+                        source.object_alias_uses,
                         source.structured_guards,
                         source.unstructured_guards,
                         guard_rejection_summary(&source.guard_rejection_counts),

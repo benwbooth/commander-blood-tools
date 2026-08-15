@@ -49,6 +49,18 @@ they occur. Comments do not emit bytes.
 All ten generated COD and BAS sources compile to the exact 183,523 shipped
 bytes; per-image guard, rejection, list, and case counts are in `manifest.tsv`.
 
+COD sources also declare exact kind-1 DEB object bases with zero-byte
+`OBJECT name offset` directives. An object name is accepted only in an operand
+position already established as a VAR address, and the compiler lowers it to
+the declared `u16` without changing layout. The current corpus contains 104
+used object declarations and 4,113 symbolic operands: 3,687 `TEXT` line owners,
+389 actor relations, 35 record links, and two record-entry relations.
+
+This pass aliases only an exact DEB object base. It does not assign a numeric
+subrecord offset to the nearest object or invent field names. Such expressions
+remain hexadecimal until the object's VAR kind and the native field-offset
+matrix prove both ownership and field identity.
+
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.
 
