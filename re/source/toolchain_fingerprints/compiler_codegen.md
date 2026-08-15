@@ -4822,11 +4822,13 @@ saved registers, AX and flag residue, stack integrity, and near return.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural coordinator
 warning-free to 71 instructions/184 bytes versus the original 58/162, with
-91.38 percent mnemonic-multiset overlap and no inline assembly. The source uses
-typed entity/graphics helpers and `_fmemcpy`; full-source execution relies on
-the normal clear-DF C invariant. Direct replacement additionally needs the
-inherited ES palette destination, BP frame argument, original dword copy, and
-the exact register/flag envelope.
+91.38 percent mnemonic-multiset and 77.59 percent ordered overlap. Turbo C 2.01
+medium (`-mm -O -Z`) emits 74 instructions with 81.03 percent multiset and
+56.90 percent ordered overlap and assembles cleanly to OBJ. No inline assembly
+is used. The source uses typed entity/graphics helpers and `_fmemcpy`;
+full-source execution relies on the normal clear-DF C invariant. Direct
+replacement additionally needs the inherited ES palette destination, BP frame
+argument, original dword copy, and the exact register/flag envelope.
 
 ## BLOODPRG bridge steering candidate
 
