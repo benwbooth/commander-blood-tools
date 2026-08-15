@@ -2622,14 +2622,22 @@ and RETF. DF must be clear at entry, as required by the surrounding ABI.
 
 The corrected candidate removes two source-only helper functions so one
 assembly routine again corresponds to one C function, and restores the
-previously omitted 24-byte workspace side effect. Open Watcom `-3 -ox -mm`
-compiles it without warnings to 248 instructions/737 bytes versus 104/343
-original; Turbo C 2.01 medium emits 281 instructions. Both preserve the natural
-arithmetic, but neither emits the original inline 32-bit 386 multiply sequence:
-Watcom calls `__I4M` and implements each arithmetic shift as a 15-iteration
-16-bit SAR/RCR loop. Its based-segment form also leaves AX and ES clobbered, so
-the C declaration exposes those clobbers for a full rebuild; a drop-in binary
-replacement would still require a narrow preservation boundary.
+previously omitted 24-byte workspace side effect. The compiler-corpus sample
+now includes that authoritative source directly. Open Watcom
+`-3 -os -s -mm -we` compiles it without warnings to 246 instructions/735 bytes
+versus 104/343 original, with 60.58 percent mnemonic-multiset and 58.65 percent
+ordered overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 281 instructions with
+55.77 percent multiset and 43.27 percent ordered overlap and assembles cleanly
+to OBJ.
+
+Both compilers preserve the natural arithmetic, but neither emits the original
+inline 32-bit 386 multiply sequence: Watcom calls `__I4M` and implements each
+arithmetic shift as a 15-iteration 16-bit SAR/RCR loop. Both recovered callers
+immediately enter later projection stages and consume no register or flag
+result. The function is accepted for source-port integration with SS and
+GAME_DATA bound to the shared game data group and AX/ES declared as generated
+clobbers. A drop-in binary replacement would still require the original
+preserve-all envelope and inline 386 arithmetic shape.
 
 Point-cloud projector `0x009A10` first seeds DS:0x2F77 with 1000, then sets
 DS=GS and walks 1,000 eight-byte records at GS:0x2FC1. It copies every complete
