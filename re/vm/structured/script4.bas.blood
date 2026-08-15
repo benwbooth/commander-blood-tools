@@ -13,9 +13,9 @@ object Fifi = 0x079A
 object Honk = 0x0A6A
 
 field Bob_Morlock.conversation_progress = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
-field Bob_Morlock.s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
-field Hom.s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
-field Bronko.s13 = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bob_Morlock.action = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
+field Hom.action = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bronko.action = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
 
 yield
 
@@ -225,7 +225,7 @@ selector Bronko_choices {
     case "robot" -> selector_0E73 {
         menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
         say Bronko voice=0x05 flags=0x48 display=0x80 loop=none control=none : "See you soon|, friend|..." choices "bye_bye"
-        record_clear Bronko.s13
+        end presentation Bronko
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me robot Bronko AX34 BUTCHER model..." choices "robot"
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Robot be strong friend|. Robot Bronko know how chop meat with chopper..." choices "robot"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me big robot... Sophisticated..." choices "robot"
@@ -285,7 +285,7 @@ selector Bob_Morlock_choices {
         menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_"
         say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you want to know|, Commander?" choices "talk"
         say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
         say Bob_Morlock voice=0x02 flags=0x40 display=0x80 loop=none control=none : "After years of research, I was able to isolate time|, Commander" choices "black_hole"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Certain black holes can be used to travel back in time." choices "black_hole"
         say Bob_Morlock voice=0x02 flags=0x48 display=0x80 loop=none control=none : "Honk has been programmed to identify appropriate black holes" choices "black_hole"
@@ -373,7 +373,7 @@ selector Hom_choices {
         say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You dumb..." choices "not_talk"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You deaf too..." choices "not_talk"
         say Hom voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tired. Bye bye..." choices "not_talk"
-        record_clear Hom.s13
+        end presentation Hom
         yield_b
         selector_1932:
     }
@@ -409,7 +409,7 @@ selector Hom_choices {
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "I eat spiritual food" choices "food"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You always talk food. You hungry maybe..." choices "food"
         say Hom voice=0x00 flags=0x48 display=0x80 loop=none control=none : "Now you make me hungry. I go eat. Bye bye, friend..." choices "food"
-        record_clear Hom.s13
+        end presentation Hom
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Izwals like astronomy, like stars" choices "science"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal small science, big telescope" choices "science"
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "They build wood space ships... laugh laugh..." choices "science"

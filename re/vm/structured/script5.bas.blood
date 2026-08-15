@@ -6,7 +6,7 @@ object Hom = 0x01FA
 object Yoko = 0x0242
 object Honk = 0x08BA
 
-field Hom.s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
+field Hom.action = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
 
 yield
 
@@ -554,7 +554,7 @@ selector Hom_choices {
         say Hom voice=0x08 flags=0x40 display=0x80 loop=none control=none : "You dumb..." choices "not_talk"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "You deaf too..." choices "not_talk"
         say Hom voice=0x06 flags=0x48 display=0x80 loop=none control=none : "Me tired. Bye bye..." choices "not_talk"
-        record_clear Hom.s13
+        end presentation Hom
         yield_b
         selector_301D:
     }
@@ -590,7 +590,7 @@ selector Hom_choices {
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "I eat spiritual food" choices "food"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "You always talk food. You hungry maybe..." choices "food"
         say Hom voice=0x00 flags=0x48 display=0x80 loop=none control=none : "Now you make me hungry. I go eat. Bye bye, friend..." choices "food"
-        record_clear Hom.s13
+        end presentation Hom
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Izwals like astronomy, like stars" choices "science"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal small science, big telescope" choices "science"
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "They build wood space ships... laugh laugh..." choices "science"

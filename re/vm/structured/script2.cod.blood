@@ -45,62 +45,62 @@ object bionium = 0x11B4
 object batteries = 0x11CC
 object orxx = 0x1244
 
-field blood.s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
+field blood.action = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.encounter_count = Bob_Morlock + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Bob_Morlock.s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bob_Morlock.action = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.flags = Bug_Deluxe + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Bug_Deluxe.s05 = Bug_Deluxe + 0x001E // VAR kind 0x0002, selector(s) 05
-field Bug_Deluxe.s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bug_Deluxe.action = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bug_Deluxe.topic = Bug_Deluxe + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Ulikan.flags = Ulikan + 0x0002 // VAR kind 0x0002, selector(s) 00
-field Ulikan.s13 = Ulikan + 0x003A // VAR kind 0x0002, selector(s) 13
+field Ulikan.action = Ulikan + 0x003A // VAR kind 0x0002, selector(s) 13
 field Hom.current_location = Hom + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Hom.encounter_count = Hom + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Hom.s13 = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
+field Hom.action = Hom + 0x003A // VAR kind 0x0002, selector(s) 13
 field Yoko.current_location = Yoko + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Yoko.encounter_count = Yoko + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Yoko.s13 = Yoko + 0x003A // VAR kind 0x0002, selector(s) 13
+field Yoko.action = Yoko + 0x003A // VAR kind 0x0002, selector(s) 13
 field Yoko.topic = Yoko + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Morning_Oil.flags = Morning_Oil + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Morning_Oil.current_location = Morning_Oil + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Morning_Oil.encounter_count = Morning_Oil + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Morning_Oil.s13 = Morning_Oil + 0x003A // VAR kind 0x0002, selector(s) 13
+field Morning_Oil.action = Morning_Oil + 0x003A // VAR kind 0x0002, selector(s) 13
 field Morning_Oil.topic = Morning_Oil + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Bronko.flags = Bronko + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Bronko.current_location = Bronko + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Bronko.encounter_count = Bronko + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Bronko.s13 = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bronko.action = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bronko.topic = Bronko + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Daddy_Gluxx.current_location = Daddy_Gluxx + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Daddy_Gluxx.encounter_count = Daddy_Gluxx + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Daddy_Gluxx.s13 = Daddy_Gluxx + 0x003A // VAR kind 0x0002, selector(s) 13
+field Daddy_Gluxx.action = Daddy_Gluxx + 0x003A // VAR kind 0x0002, selector(s) 13
 field Daddy_Gluxx.topic = Daddy_Gluxx + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Maxxon.current_location = Maxxon + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Maxxon.encounter_count = Maxxon + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Maxxon.s13 = Maxxon + 0x003A // VAR kind 0x0002, selector(s) 13
+field Maxxon.action = Maxxon + 0x003A // VAR kind 0x0002, selector(s) 13
 field Izwalito.flags = Izwalito + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Izwalito.current_location = Izwalito + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Izwalito.encounter_count = Izwalito + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Izwalito.s13 = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
+field Izwalito.action = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
 field Izwalito.topic = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Otto_Von_Smile.encounter_count = Otto_Von_Smile + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Otto_Von_Smile.s13 = Otto_Von_Smile + 0x003A // VAR kind 0x0002, selector(s) 13
+field Otto_Von_Smile.action = Otto_Von_Smile + 0x003A // VAR kind 0x0002, selector(s) 13
 field Scruter_Mac.encounter_count = Scruter_Mac + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Scruter_Mac.s13 = Scruter_Mac + 0x003A // VAR kind 0x0002, selector(s) 13
+field Scruter_Mac.action = Scruter_Mac + 0x003A // VAR kind 0x0002, selector(s) 13
 field Scruter_Mac.topic = Scruter_Mac + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Scruter_K.flags = Scruter_K + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Scruter_K.s05 = Scruter_K + 0x001E // VAR kind 0x0002, selector(s) 05
-field Scruter_K.s13 = Scruter_K + 0x003A // VAR kind 0x0002, selector(s) 13
+field Scruter_K.action = Scruter_K + 0x003A // VAR kind 0x0002, selector(s) 13
 field Scruter_Jo.current_location = Scruter_Jo + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Scruter_Jo.encounter_count = Scruter_Jo + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Scruter_Jo.s13 = Scruter_Jo + 0x003A // VAR kind 0x0002, selector(s) 13
+field Scruter_Jo.action = Scruter_Jo + 0x003A // VAR kind 0x0002, selector(s) 13
 field Emasculator.flags = Emasculator + 0x0002 // VAR kind 0x0002, selector(s) 00
 field Emasculator.current_location = Emasculator + 0x0018 // VAR kind 0x0002, selector(s) 11
 field Emasculator.encounter_count = Emasculator + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Emasculator.s13 = Emasculator + 0x003A // VAR kind 0x0002, selector(s) 13
-field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
+field Emasculator.action = Emasculator + 0x003A // VAR kind 0x0002, selector(s) 13
+field Honk.action = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
 field Honk.topic = Honk + 0x0046 // VAR kind 0x0002, selector(s) 0F
-field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
+field menu.action = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 field Venusia.flags = Venusia + 0x0002 // VAR kind 0x0008, selector(s) 00
 field Erazor.flags = Erazor + 0x0002 // VAR kind 0x0008, selector(s) 00
 field Mastachok.flags = Mastachok + 0x0002 // VAR kind 0x0008, selector(s) 00
@@ -122,12 +122,12 @@ field murffalo.holder = murffalo + 0x0014 // VAR kind 0x0400, selector(s) 11
 field lens.holder = lens + 0x0014 // VAR kind 0x0400, selector(s) 11
 field bionium.holder = bionium + 0x0014 // VAR kind 0x0400, selector(s) 11
 field batteries.holder = batteries + 0x0014 // VAR kind 0x0400, selector(s) 11
-field orxx.s13 = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
+field orxx.action = orxx + 0x000A // VAR kind 0x0200, selector(s) 13
 
 proc pter {
     activation enabled until scrub
     branch_gameflag
-    actor Scruter_Jo.s13 blood 0
+    require presentation == Scruter_Jo
     require arche.current_location == Pterra
     guard_pop
     say Scruter_Jo voice=0x01 flags=0x00 display=0x80 loop=none control=none : "ME SCRUTER JO: SCANNING STRANGER...XRAY....STOP"
@@ -172,7 +172,7 @@ proc pter {
         say Scruter_Jo voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
         say Scruter_Jo voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "BAAANG!!!"
         request sequence "explo3.hnm"
-        record_clear Scruter_Jo.s13
+        end presentation Scruter_Jo
         choice = none
     }
     block_0227:
@@ -184,7 +184,7 @@ proc pter {
     } then {
         say Scruter_Jo voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORT SCRUTER JO TO CRYOBOX"
         Scruter_Jo.current_location = aboard
-        record_clear Scruter_Jo.s13
+        end presentation Scruter_Jo
         choice = none
     }
     block_02B3:
@@ -193,14 +193,14 @@ proc pter {
     } then {
         say Scruter_Jo voice=0xFF flags=0x28 display=0x90 loop=none control=none : "You're the commander, Commander|..."
         choice = none
-        record_clear Scruter_Jo.s13
+        end presentation Scruter_Jo
     }
 }
 
 proc scrub {
     activation enabled until scrujo
     branch_flag_274f
-    actor Scruter_Jo.s13 blood 0
+    require presentation == Scruter_Jo
     guard_pop
     say Scruter_Jo voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I've reprogrammed him|, Commander|... And I've discovered something weird..."
     say Scruter_Jo voice=0xFF flags=0x20 display=0x80 loop=none control=none : "These SCRUT robots use a psychic structure based on CYBERSPACE|..."
@@ -213,7 +213,7 @@ proc scrub {
 proc scrujo {
     activation enabled until menbr
     branch_flag_274f
-    actor Scruter_Jo.s13 blood 0
+    require presentation == Scruter_Jo
     guard_pop
     say Scruter_Jo voice=0x13 flags=0x00 display=0x80 loop=none control=none : "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."
     when block_0549 {
@@ -261,13 +261,13 @@ proc scrujo {
     }
     block_069C:
     say Scruter_Jo voice=0x07 flags=0x08 display=0x80 loop=none control=none : "Bye bye, Commander|. Me return to CYBERSPACE..."
-    record_clear Scruter_Jo.s13
+    end presentation Scruter_Jo
 }
 
 proc menbr {
     activation enabled until men1
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location == aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
@@ -279,13 +279,13 @@ proc menbr {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!|..."
     say menu voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men1 {
     activation enabled until men2
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -298,13 +298,13 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     men1.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men2 {
     activation enabled until men3
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -317,14 +317,14 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men2.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men3 {
     activation enabled until men4
     branch_presentation
     require Bronko.current_location != aboard
-    actor menu.s13 blood 0
+    require presentation == menu
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -336,13 +336,13 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men3.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men4 {
     activation enabled until men5
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -355,13 +355,13 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!|..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men4.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men5 {
     activation enabled until men6
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
@@ -375,7 +375,7 @@ proc men5 {
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     men5.enabled = false
     men6.enabled = true
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men6 {
@@ -392,7 +392,7 @@ proc men6 {
 proc bbbob {
     activation enabled until honk1
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     guard_pop
     when block_0B37 {
         require state[0x126E] == 0x0000
@@ -411,7 +411,7 @@ proc bbbob {
 proc honk1 {
     activation enabled until help2
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : ""
     state[0x1270] = 0x0000
@@ -491,7 +491,7 @@ proc honk1 {
 proc help2 {
     activation enabled until help3
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require !Rondo.in_play
     require Izwalito.encounter_count > 0x0000
@@ -505,7 +505,7 @@ proc help2 {
 proc help3 {
     activation enabled until help4
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Yoko.encounter_count > 0x0001
     require !Ekatomb.in_play
@@ -519,7 +519,7 @@ proc help3 {
 proc help4 {
     activation enabled until help6
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Ekatomb.in_play
     require !Erazor.in_play
@@ -534,7 +534,7 @@ proc help4 {
 proc help6 {
     activation enabled until help7
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Bronko.current_location == aboard
     require Emasculator.encounter_count == 0x0000
@@ -550,7 +550,7 @@ proc help6 {
 proc help7 {
     activation enabled until help8
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Hom.encounter_count == 0x0000
     require Mastachok.in_play
@@ -564,7 +564,7 @@ proc help7 {
 proc help8 {
     activation enabled until help9
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Scruter_Mac.encounter_count > 0x0002
     require perfume.holder != Scruter_Mac
@@ -578,7 +578,7 @@ proc help8 {
 proc help9 {
     activation enabled until help1
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require state[0x1272] == 0x0001
     require cred.holder != blood
@@ -592,7 +592,7 @@ proc help9 {
 proc help1 {
     activation enabled until help5
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require !Mastachok.in_play
     require Morning_Oil.current_location == Ark
@@ -606,7 +606,7 @@ proc help1 {
 proc help5 {
     activation enabled until what
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require state[0x126C] > 0x0002
     require Erazor.in_play
     require state[0x1274] == 0x0000
@@ -622,7 +622,7 @@ proc help5 {
 proc what {
     activation enabled until miss
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "..."
     say Honk voice=0xFF flags=0x30 display=0x80 loop=block_121E control=none : "What do you want Commander|?" choices "talk" "remember" "bye_bye"
@@ -645,7 +645,7 @@ proc what {
     } then {
         say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
         choice = none
-        record_clear Honk.s13
+        end presentation Honk
     }
     block_121E:
     when block_12A5 {
@@ -660,7 +660,7 @@ proc what {
             say Honk voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Script 3 selected..."
             run_profile 0x03
             choice = none
-            record_clear Honk.s13
+            end presentation Honk
         }
         block_126F:
         when block_128A {
@@ -669,7 +669,7 @@ proc what {
             say Honk voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Script 4 selected..."
             run_profile 0x04
             choice = none
-            record_clear Honk.s13
+            end presentation Honk
         }
         block_128A:
         when block_12A5 {
@@ -678,7 +678,7 @@ proc what {
             say Honk voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Script 5 selected..."
             run_profile 0x05
             choice = none
-            record_clear Honk.s13
+            end presentation Honk
         }
     }
     block_12A5:
@@ -686,7 +686,7 @@ proc what {
         require choice == "bye_bye"
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Bye bye, Commander..."
-        record_clear Honk.s13
+        end presentation Honk
     }
     block_12BF:
     when block_12FE {
@@ -694,7 +694,7 @@ proc what {
     } then {
         say Honk voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Pardon me,Commander, but I have work to do... I have to quadrify the multiplexers... See you!"
         state_array_set 0x0F 0xFFFF
-        record_clear Honk.s13
+        end presentation Honk
     }
     block_12FE:
     when miss {
@@ -704,13 +704,13 @@ proc what {
         require state[0x1278] == 0x0001
     } then {
         say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, I just forged a CRED! Take a look in the Cryobox|..."
-        record_triple Izwalito.s13 0x1004 0x0028 0
+        record_triple Izwalito.action 0x1004 0x0028 0
     }
 }
 
 proc miss {
     activation disabled until boba1
-    actor Honk.s13 blood 0
+    require presentation == Honk
     require Corpo.in_play
     guard_pop
     when block_13BD {
@@ -930,7 +930,7 @@ proc miss {
 proc boba1 {
     activation enabled until boba2
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12B4] == 0x0000
     guard_pop
     say Bob_Morlock voice=0x02 flags=0x00 display=0x80 loop=none control=none : "HONK|! You worthless heap of wires... Are you working?"
@@ -945,7 +945,7 @@ proc boba1 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0002
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
     block_1D14:
     say Bob_Morlock voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I feel weak, Commander|... Let me sleep..." choices "bye_bye"
@@ -958,14 +958,14 @@ proc boba1 {
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0002
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
 }
 
 proc boba2 {
     activation enabled until boba3
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12B4] == 0x0002
     guard_pop
     say Bob_Morlock voice=0x04 flags=0x08 display=0x80 loop=none control=none : "My bones feel like they've been through a shredder... HONK! Miserable machine! Give me a shot of ASPIROX!!!"
@@ -985,7 +985,7 @@ proc boba2 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0003
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
     block_1F0A:
     say Bob_Morlock voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I feel awful, Commander|... You're tiring me out... Let me sleep..." choices "bye_bye"
@@ -998,14 +998,14 @@ proc boba2 {
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0003
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
 }
 
 proc boba3 {
     activation enabled until boba4
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12B4] == 0x0003
     guard_pop
     say Bob_Morlock voice=0x04 flags=0x00 display=0x80 loop=none control=none : "I'm thirsty... HONK! You reject fridge component! Give me a glass of recycled water!!!"
@@ -1023,7 +1023,7 @@ proc boba3 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12B4] = 0x0004
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
     block_20B9:
     say Bob_Morlock voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I feel weak as that kitten I accidentally converted to anti-matter, Commander|... Let me get some sleep..." choices "bye_bye"
@@ -1036,14 +1036,14 @@ proc boba3 {
         state[0x1270] = 0x0000
         state[0x12B4] = 0x0004
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
 }
 
 proc boba4 {
     activation enabled until augmen
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12B4] == 0x0004
     guard_pop
     when block_221B {
@@ -1065,7 +1065,7 @@ proc boba4 {
         say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "AAAAAAAAAAAAhhhh!!!"
         say Bob_Morlock voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
     block_226C:
     say Bob_Morlock voice=0x06 flags=0x48 display=0x80 loop=none control=none : "I feel weak as that lamb I inadvertently dropped in my shark-pool one day, Commander|... Let me sleep..." choices "bye_bye"
@@ -1077,14 +1077,14 @@ proc boba4 {
         say Bob_Morlock voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x1270] = 0x0000
         state_array_set 0x01 0xFFFF
-        record_clear Bob_Morlock.s13
+        end presentation Bob_Morlock
     }
 }
 
 proc augmen {
     activation enabled until revel
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12B6] == 0x0001
     require state[0x12B8] == 0x0000
     guard_pop
@@ -1101,7 +1101,7 @@ proc augmen {
 proc revel {
     activation enabled until caft
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     require state[0x12BA] == 0x0001
     require state[0x12BC] == 0x0000
     guard_pop
@@ -1131,7 +1131,7 @@ proc caft {
     activation enabled until time
     branch_flag_274f
     require state[0x12BE] == 0x0001
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     guard_pop
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Cap'n Bob, I have to tell you the Commander has behaved very badly..."
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "He stole money from a defenceless Izwal of planet Corpo and then he spent it|..."
@@ -1170,7 +1170,7 @@ proc radioscr {
     activation enabled until sort
     state_array_test 0x03
     guard_pop
-    record_link Scruter_K.s13 blood 0
+    queue presentation Scruter_K
     sort.enabled = true
     radioscr.enabled = false
 }
@@ -1178,7 +1178,7 @@ proc radioscr {
 proc sort {
     activation disabled until radio1
     branch_presentation
-    actor Scruter_K.s13 blood 0
+    require presentation == Scruter_K
     guard_pop
     block_2763:
     say Scruter_K voice=0xFF flags=0x0A display=0x80 loop=none control=none : ""
@@ -1207,7 +1207,7 @@ proc sort {
 proc radio1 {
     activation disabled until dring
     branch_presentation
-    actor Scruter_K.s13 blood 0
+    require presentation == Scruter_K
     guard_pop
     guard_push block_2904 // unstructured_guard=alternate_exit
     require state[0x12C0] == 0x0001
@@ -1298,7 +1298,7 @@ proc radio1 {
     radioscr.enabled = false
     state_array_set 0x08 0x000A
     radio1.enabled = false
-    record_clear Scruter_K.s13
+    end presentation Scruter_K
 }
 
 proc dring {
@@ -1307,7 +1307,7 @@ proc dring {
     require Scruter_Jo.encounter_count < 0x0002
     state_array_test 0x08
     guard_pop
-    record_link Scruter_K.s13 blood 0
+    queue presentation Scruter_K
     state[0x12C4] = 0x0001
     dring.enabled = false
 }
@@ -1316,7 +1316,7 @@ proc encor {
     activation enabled until destroy
     require state[0x12C4] == 0x0001
     branch_presentation
-    actor Scruter_K.s13 blood 0
+    require presentation == Scruter_K
     guard_pop
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MESSAGE RADIO:"
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is SCRUT agent K, district director. Message to unknown vessel..."
@@ -1352,7 +1352,7 @@ proc encor {
     state[0x12C4] = state[0x12CA]
     destroy.enabled = true
     radiof.enabled = true
-    record_clear Scruter_K.s13
+    end presentation Scruter_K
 }
 
 proc destroy {
@@ -1361,7 +1361,7 @@ proc destroy {
     state_array_test 0x04
     guard_pop
     radio1.enabled = false
-    record_link Scruter_K.s13 blood 0
+    queue presentation Scruter_K
     last.enabled = true
     destroy.enabled = false
 }
@@ -1369,7 +1369,7 @@ proc destroy {
 proc last {
     activation disabled until init
     branch_presentation
-    actor Scruter_K.s13 blood 0
+    require presentation == Scruter_K
     guard_pop
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MESSAGE RADIO:"
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "SWEAR... INSULT... SWEAR... ROARS... INSULT..."
@@ -1377,7 +1377,7 @@ proc last {
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "WE'LL MEET AGAIN... YOU'LL SEE..."
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "HEAK! HUURK!!! FILTHY INSULT..."
     say Scruter_K voice=0xFF flags=0x08 display=0x90 loop=none control=none : "STOP"
-    record_clear Scruter_K.s13
+    end presentation Scruter_K
     last.enabled = false
 }
 
@@ -1408,7 +1408,7 @@ proc rhom1 {
     require state[0x12D0] == 0x0000
     require arche.current_location == Magnus
     guard_pop
-    record_link Scruter_Mac.s13 blood 0
+    queue presentation Scruter_Mac
     rhom1b.enabled = true
     rhom1.enabled = false
 }
@@ -1416,7 +1416,7 @@ proc rhom1 {
 proc rhom1b {
     activation disabled until rhom2
     branch_presentation
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MESSAGE RADIO:"
     Scruter_Mac.topic = "rien"
@@ -1429,7 +1429,7 @@ proc rhom1b {
     Scruter_Mac.encounter_count = 0x0000
     state[0x12D0] = 0x0001
     rhom1b.enabled = false
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc rhom2 {
@@ -1438,7 +1438,7 @@ proc rhom2 {
     branch_presentation
     require arche.current_location == Moskito
     guard_pop
-    record_link Scruter_Mac.s13 blood 0
+    queue presentation Scruter_Mac
     rhom2b.enabled = true
     rhom2.enabled = false
 }
@@ -1446,7 +1446,7 @@ proc rhom2 {
 proc rhom2b {
     activation disabled until rhom3
     branch_presentation
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MESSAGE RADIO:"
     say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Beep beep bop bop bop beeep... Tut Tut Ts Ts Tsk Craaak..."
@@ -1459,7 +1459,7 @@ proc rhom2b {
     Scruter_Mac.encounter_count = 0x0000
     state[0x12D0] = 0x0002
     rhom2b.enabled = false
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc rhom3 {
@@ -1468,7 +1468,7 @@ proc rhom3 {
     require arche.current_location == Corpo
     require state[0x12D0] == 0x0002
     guard_pop
-    record_link Scruter_Mac.s13 blood 0
+    queue presentation Scruter_Mac
     rhom3b.enabled = true
     rhom3.enabled = false
 }
@@ -1476,7 +1476,7 @@ proc rhom3 {
 proc rhom3b {
     activation enabled until timy
     branch_presentation
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "MESSAGE RADIO:"
     say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Bee bee rla rla bop bop bop beeep... Turlu ta ta ta tweeeeet..."
@@ -1490,7 +1490,7 @@ proc rhom3b {
     state[0x12D0] = 0x0003
     Scruter_Mac.encounter_count = 0x0000
     rhom3b.enabled = false
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc timy {
@@ -1516,13 +1516,13 @@ proc tim1 {
     require state[0x1278] == 0x0001
     guard_pop
     Ulikan.in_play = true
-    record_link Ulikan.s13 blood 0
+    queue presentation Ulikan
 }
 
 proc tim1B {
     activation enabled until tim2
     branch_presentation
-    actor Ulikan.s13 blood 0
+    require presentation == Ulikan
     require state[0x1278] == 0x0001
     guard_pop
     when block_33C2 {
@@ -1594,7 +1594,7 @@ proc tim1B {
     Ulikan.in_play = false using alternate_encoding
     tim1.enabled = false
     state[0x128A] = 0x0001
-    record_clear Ulikan.s13
+    end presentation Ulikan
 }
 
 proc tim2 {
@@ -1602,13 +1602,13 @@ proc tim2 {
     require state[0x1278] == 0x0002
     guard_pop
     Ulikan.in_play = true
-    record_link Ulikan.s13 blood 0
+    queue presentation Ulikan
 }
 
 proc tim2B {
     activation enabled until tim3
     branch_presentation
-    actor Ulikan.s13 blood 0
+    require presentation == Ulikan
     require state[0x1278] == 0x0002
     guard_pop
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
@@ -1661,7 +1661,7 @@ proc tim2B {
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
     tim2.enabled = false
-    record_clear Ulikan.s13
+    end presentation Ulikan
 }
 
 proc tim3 {
@@ -1669,13 +1669,13 @@ proc tim3 {
     require state[0x1278] == 0x0003
     guard_pop
     Ulikan.in_play = true
-    record_link Ulikan.s13 blood 0
+    queue presentation Ulikan
 }
 
 proc tim3B {
     activation enabled until tim4
     branch_presentation
-    actor Ulikan.s13 blood 0
+    require presentation == Ulikan
     require state[0x1278] == 0x0003
     guard_pop
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
@@ -1725,7 +1725,7 @@ proc tim3B {
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
     tim3.enabled = false
-    record_clear Ulikan.s13
+    end presentation Ulikan
 }
 
 proc tim4 {
@@ -1733,13 +1733,13 @@ proc tim4 {
     require state[0x1278] == 0x0004
     guard_pop
     Ulikan.in_play = true
-    record_link Ulikan.s13 blood 0
+    queue presentation Ulikan
 }
 
 proc tim4B {
     activation enabled until tim5
     branch_presentation
-    actor Ulikan.s13 blood 0
+    require presentation == Ulikan
     require state[0x1278] == 0x0004
     guard_pop
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network..."
@@ -1792,7 +1792,7 @@ proc tim4B {
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     Ulikan.in_play = false using alternate_encoding
     tim4.enabled = false
-    record_clear Ulikan.s13
+    end presentation Ulikan
 }
 
 proc tim5 {
@@ -1800,13 +1800,13 @@ proc tim5 {
     require state[0x1278] == 0x0005
     guard_pop
     Ulikan.in_play = true
-    record_link Ulikan.s13 blood 0
+    queue presentation Ulikan
 }
 
 proc tim5B {
     activation enabled until Corpo6
     branch_presentation
-    actor Ulikan.s13 blood 0
+    require presentation == Ulikan
     require state[0x1278] == 0x0005
     guard_pop
     say Ulikan voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Network|..."
@@ -1855,7 +1855,7 @@ proc tim5B {
     say Ulikan voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     Ulikan.in_play = false using alternate_encoding
     tim5.enabled = false
-    record_clear Ulikan.s13
+    end presentation Ulikan
 }
 
 proc Corpo6 {
@@ -1863,14 +1863,14 @@ proc Corpo6 {
     branch_gameflag
     require Rondo.in_play
     require state[0x12D2] == 0x0001
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Izwalito happy see you, dear friend from sky and stars..."
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Me must go visit villages..."
     say Izwalito voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me not can talk..."
     say Izwalito voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye, dear friend from sky..."
     Izwalito.current_location = Trashlando
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc Corpo1 {
@@ -1878,7 +1878,7 @@ proc Corpo1 {
     branch_gameflag
     require state[0x12C8] == 0x0000
     require arche.current_location == Corpo
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Olga reporting for \"instant translation\" duty:"
     say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Oooooh! You stranger... You come from sky... FEAR... FEAR..."
@@ -2077,7 +2077,7 @@ proc ad {
     state[0x12C8] = 0x0001
     state[0x127C] = 0x0001
     ad.enabled = false
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc Corpo2 {
@@ -2085,7 +2085,7 @@ proc Corpo2 {
     branch_gameflag
     require arche.current_location == Corpo
     require state[0x12C8] == 0x0001
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Olga on station for \"simul-tran\" services:"
     say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Yipee! Me happy... You come back..."
@@ -2098,7 +2098,7 @@ proc Corpo2 {
         require choice == "teleport"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO ARK"
-        record_triple Izwalito.s13 0x1004 0x0028 0
+        record_triple Izwalito.action 0x1004 0x0028 0
         choice = none
     }
     block_44F0:
@@ -2109,7 +2109,7 @@ proc Corpo2 {
         say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Me sad. Me not like you|... Bye bye|..."
         say Izwalito voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Bye bye|..."
         choice = none
-        record_clear Izwalito.s13
+        end presentation Izwalito
     }
     block_453D:
     say Izwalito voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Moskito be 124325 degrees in galactic cluster B12"
@@ -2174,7 +2174,7 @@ proc Corpo2 {
     state[0x12C8] = 0x0002
     state[0x12E6] = 0x0001
     state[0x1280] = 0x0001
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc corp3bis {
@@ -2204,7 +2204,7 @@ proc corrp3 {
         require choice == "teleport"
     } then {
         say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO TELEPORTED TO IZWALITO"
-        record_triple blood.s13 0x1064 0x055A 0
+        record_triple blood.action 0x1064 0x055A 0
         choice = none
     }
     block_4909:
@@ -2217,7 +2217,7 @@ proc corrp3 {
     say Izwalito voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x1282] = 0x0001
     state[0x12E8] = 0x0000
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc corbis {
@@ -2226,7 +2226,7 @@ proc corbis {
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0001
     require state[0x12C8] == 0x0002
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You be back..."
     say Izwalito voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You did buy murffalo meat?"
@@ -2300,7 +2300,7 @@ proc corbis {
     block_4CD6:
     say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     state[0x12E6] = 0x0002
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc corter {
@@ -2309,7 +2309,7 @@ proc corter {
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0002
     require state[0x12C8] == 0x0002
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You again|..."
     say Izwalito voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You not buy frozen murffalo meat?"
@@ -2330,7 +2330,7 @@ proc corter {
     say Izwalito voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Izwal people starve. You bring murffalo from planet MOSKITO..."
     say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     state[0x12E6] = 0x0003
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc corqua {
@@ -2339,7 +2339,7 @@ proc corqua {
     require arche.current_location == Corpo
     require state[0x12E6] == 0x0003
     require state[0x12C8] == 0x0002
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You again|..."
     say Izwalito voice=0x07 flags=0x00 display=0x80 loop=none control=none : "You not buy frozen murffalo meat from planet MOSKITO?"
@@ -2354,7 +2354,7 @@ proc corqua {
     block_4EE5:
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CRY CRY|... Me not want see you again|..."
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc pleur {
@@ -2365,7 +2365,7 @@ proc pleur {
     require state[0x12E6] == 0x0003
     require arche.current_location == Venusia
     guard_pop
-    record_link Izwalito.s13 blood 0
+    queue presentation Izwalito
     Izwalito.in_play = true
     pleur1.enabled = true
     pleur.enabled = false
@@ -2386,7 +2386,7 @@ proc pleur1 {
     state[0x1284] = 0x0001
     pleur1.enabled = false
     Izwalito.in_play = false
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc Corpo3 {
@@ -2394,7 +2394,7 @@ proc Corpo3 {
     branch_gameflag
     require arche.current_location == Corpo
     require state[0x12C8] == 0x0003
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     when block_50FE {
         require murffalos.holder == blood
@@ -2407,7 +2407,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "MURFFALO TELEPORTED TO IZWALITO"
-            record_triple blood.s13 0x104C 0x055A 0
+            record_triple blood.action 0x104C 0x055A 0
             choice = none
         }
         block_50BB:
@@ -2418,7 +2418,7 @@ proc Corpo3 {
             say Izwalito voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me unhappy... Me angry..."
             say Izwalito voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Bye bye|..."
             choice = none
-            record_clear Izwalito.s13
+            end presentation Izwalito
         }
     }
     block_50FE:
@@ -2436,7 +2436,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "DECODER TELEPORTED TO ARK"
-            record_triple Izwalito.s13 0x1034 0x0028 0
+            record_triple Izwalito.action 0x1034 0x0028 0
             choice = none
         }
         block_51DF:
@@ -2448,7 +2448,7 @@ proc Corpo3 {
             require choice == "teleport"
         } then {
             say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO ARK"
-            record_triple Izwalito.s13 0x1004 0x0028 0
+            record_triple Izwalito.action 0x1004 0x0028 0
             choice = none
             say Izwalito voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You love cred, friend|..."
         }
@@ -2465,7 +2465,7 @@ proc Corpo3 {
         state[0x1286] = 0x0001
         state[0x1270] = 0x0000
         state[0x12C8] = 0x0004
-        record_clear Izwalito.s13
+        end presentation Izwalito
     }
 }
 
@@ -2475,7 +2475,7 @@ proc cor4bis {
     require murffalos.holder == Izwalito
     require !Rondo.in_play
     require arche.current_location == Corpo
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Friend from sky and stars back on Corpo..."
     state[0x12E2] = 0x0000
@@ -2516,7 +2516,7 @@ proc cor4bis {
     }
     block_549E:
     say Izwalito voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Bye bye, come back... You talk good. Me like talk...." choices "bye_bye"
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc Corpo4 {
@@ -2527,7 +2527,7 @@ proc Corpo4 {
     require !Hita.in_play
     require Rondo.in_play
     require arche.current_location == Corpo
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Izwalito happy see you, friend from sky and stars..."
     Corpo3.enabled = false
@@ -2544,7 +2544,7 @@ proc Corpo4 {
     hom1.enabled = true
     Corpo4.enabled = false
     state[0x12C8] = 0x0005
-    record_state 0xC1 orxx.s13 0x0D52 0
+    record_state 0xC1 orxx.action 0x0D52 0
     choice = none
     block_55CA:
     when hom1 {
@@ -2554,7 +2554,7 @@ proc Corpo4 {
         say Izwalito voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Bye bye, friend. Me must go..."
         say Izwalito voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         choice = none
-        record_clear Izwalito.s13
+        end presentation Izwalito
     }
 }
 
@@ -2563,7 +2563,7 @@ proc hom1 {
     branch_gameflag
     require Hom.current_location == Hita
     require state[0x12D2] == 0x0000
-    actor Hom.s13 blood 0
+    require presentation == Hom
     guard_pop
     Corpo4.enabled = false
     say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger. You be big traveller..."
@@ -2579,7 +2579,7 @@ proc hom1 {
     state[0x128C] = 0x0001
     state[0x12D2] = 0x0001
     Hom.current_location = Trashlando
-    record_clear Hom.s13
+    end presentation Hom
 }
 
 proc M0sk0 {
@@ -2588,7 +2588,7 @@ proc M0sk0 {
     require arche.current_location == Moskito
     require Bronko.encounter_count == 0x0001
     require state[0x12EA] == 0x0000
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     guard_pop
     say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO FACTORY"
     request sequence "moskit20.hnm"
@@ -2614,7 +2614,7 @@ proc M0sk0 {
     block_58F1:
     say Bronko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Bye bye... Bronko real busy. Much work|... You come back later..."
     say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Bye bye"
-    record_clear Bronko.s13
+    end presentation Bronko
 }
 
 proc Mosk1 {
@@ -2623,7 +2623,7 @@ proc Mosk1 {
     require arche.current_location == Moskito
     require state[0x12C8] == 0x0002
     require state[0x12EA] == 0x0000
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     require Bronko.encounter_count > 0x0001
     guard_pop
     say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "MURFFALO FACTORY"
@@ -2647,7 +2647,7 @@ proc Mosk1 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO BRONKO"
-            record_triple blood.s13 0x1004 0x031A 0
+            record_triple blood.action 0x1004 0x031A 0
             choice = none
         }
         block_5A59:
@@ -2658,7 +2658,7 @@ proc Mosk1 {
             say Bronko voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You waste my time|... Me not have time..."
             say Bronko voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Bye bye|..."
             choice = none
-            record_clear Bronko.s13
+            end presentation Bronko
         }
         block_5A9E:
         say Bronko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Thank you, stranger..."
@@ -2676,7 +2676,7 @@ proc Mosk1 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "MURFFALO TELEPORTING TO ARK"
-            record_triple Bronko.s13 0x104C 0x0028 0
+            record_triple Bronko.action 0x104C 0x0028 0
             choice = none
         }
     }
@@ -2699,13 +2699,13 @@ proc Mosk1 {
         say Bronko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You not have creds? No creds, no murffalo meat... Bye bye, stranger.."
         say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I suggest we find a CRED someplace, Commander|..."
         say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-        record_clear Bronko.s13
+        end presentation Bronko
     }
     block_5C68:
     say Bronko voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x12C8] = 0x0003
     state[0x12EA] = 0x0001
-    record_clear Bronko.s13
+    end presentation Bronko
 }
 
 proc Mosk2 {
@@ -2713,7 +2713,7 @@ proc Mosk2 {
     branch_gameflag
     require arche.current_location == Moskito
     require state[0x12EA] == 0x0001
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     guard_pop
     say Bronko voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Ahhh! A visitor..."
     state[0x1270] = 0x0000
@@ -2751,10 +2751,10 @@ proc Mosk2 {
             require choice == "teleport"
         } then {
             say Bronko voice=0xFF flags=0x28 display=0xB0 loop=none control=none : "BRONKO TELEPORTING TO ARK"
-            record_state 0xC2 blood.s13 0x031A 0
+            record_state 0xC2 blood.action 0x031A 0
             Emasculator.current_location = usine
             choice = none
-            record_clear Bronko.s13
+            end presentation Bronko
         }
         block_5E7A:
         when block_5EE9 {
@@ -2765,7 +2765,7 @@ proc Mosk2 {
             say Bronko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Me sad... Me all alone..."
             say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
             choice = none
-            record_clear Bronko.s13
+            end presentation Bronko
         }
     }
     block_5EE9:
@@ -2776,7 +2776,7 @@ proc Mosk2 {
     } then {
         say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         state[0x1270] = state[0x12CA]
-        record_clear Bronko.s13
+        end presentation Bronko
     }
 }
 
@@ -2784,7 +2784,7 @@ proc Brorad {
     activation disabled until bronk1
     branch_presentation
     require Bronko.current_location == usine
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     guard_pop
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "YES, hello. You be Commander|..."
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me much lot busy|. Me not can talk. SCRUT watch me..."
@@ -2792,14 +2792,14 @@ proc Brorad {
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me hang up|..."
     say Bronko voice=0xFF flags=0x08 display=0x90 loop=none control=none : "cruikkk!"
     Bronko.in_play = false
-    record_clear Bronko.s13
+    end presentation Bronko
 }
 
 proc bronk1 {
     activation enabled until bronk2
     branch_flag_274f
     require state[0x128E] == 0x0000
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     guard_pop
     say Bronko voice=0xFF flags=0x02 display=0x80 loop=none control=none : "Nice ship you got, Commander|..."
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me do cooking. Me make tasty meals for Cap'n Bob|..."
@@ -2819,26 +2819,26 @@ proc bronk1 {
     say Bronko voice=0x01 flags=0x08 display=0xA0 loop=none control=none : "Me cryonize... AAAAHHHH!!!"
     Emasculator.active = true
     Emasculator.current_location = usine
-    record_clear Bronko.s13
+    end presentation Bronko
 }
 
 proc bronk2 {
     activation enabled until emasc0
     branch_flag_274f
-    actor Bronko.s13 blood 0
+    require presentation == Bronko
     require state[0x128E] == 0x0001
     guard_pop
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me busy do onboard cooking. Me make tasty meals for Cap'n Bob|..."
     say Bronko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Let him do his job, Commander|. It's about time we had something edible to eat..."
     say Bronko voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me not have time, Commander|..."
     say Bronko voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_clear Bronko.s13
+    end presentation Bronko
 }
 
 proc emasc0 {
     activation enabled until Magnus1
     branch_gameflag
-    actor Emasculator.s13 blood 0
+    require presentation == Emasculator
     require arche.current_location == Moskito
     require state[0x12EE] == 0x0000
     guard_pop
@@ -2855,7 +2855,7 @@ proc emasc0 {
             require choice == "teleport"
         } then {
             say Emasculator voice=0xFF flags=0x08 display=0x90 loop=none control=none : "CRED TELEPORTED TO EMASCULATOR"
-            record_triple blood.s13 0x1004 0x031A 0
+            record_triple blood.action 0x1004 0x031A 0
             state[0x1272] = 0x0001
             say Emasculator voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Thank you, stranger Ha! Ha! Ha!..."
             choice = none
@@ -2868,7 +2868,7 @@ proc emasc0 {
             say Emasculator voice=0x02 flags=0x00 display=0x80 loop=none control=none : "You waste my time|... Me not have time..."
             say Emasculator voice=0x05 flags=0x08 display=0x90 loop=none control=none : "Bye bye|..."
             choice = none
-            record_clear Emasculator.s13
+            end presentation Emasculator
         }
     }
     block_6244:
@@ -2892,7 +2892,7 @@ proc emasc0 {
             require choice == "teleport"
         } then {
             say Emasculator voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "CONTAINER TELEPORTED TO ARK"
-            record_triple Emasculator.s13 0x11B4 0x0028 0
+            record_triple Emasculator.action 0x11B4 0x0028 0
             state[0x1290] = 0x0001
             state[0x12F0] = 0x0000
             choice = none
@@ -2915,7 +2915,7 @@ proc emasc0 {
             say Emasculator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "GOOD GOOD... Me much work now... You waste my time|..."
             say Emasculator voice=0x04 flags=0x08 display=0x90 loop=none control=none : "Bye bye..."
             choice = none
-            record_clear Emasculator.s13
+            end presentation Emasculator
         }
         block_63D6:
         when block_63F2 {
@@ -2928,7 +2928,7 @@ proc emasc0 {
     block_63F2:
     say Emasculator voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me much work|... You not waste my time|..."
     say Emasculator voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Bye bye stranger"
-    record_clear Emasculator.s13
+    end presentation Emasculator
 }
 
 proc Magnus1 {
@@ -2936,7 +2936,7 @@ proc Magnus1 {
     branch_gameflag
     require arche.current_location == Magnus
     require state[0x12F2] == 0x0000
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Some player shoots again|... Rem RLA LDIR... POP AX... Mov bx,19... deltree."
     Morning_Oil.topic = "broken_down"
@@ -2976,7 +2976,7 @@ proc ad1 {
         state[0x1298] = 0x0001
         state[0x1270] = state[0x12CA]
         ad1.enabled = false
-        record_clear Morning_Oil.s13
+        end presentation Morning_Oil
     }
 }
 
@@ -2985,7 +2985,7 @@ proc Magnus2 {
     branch_gameflag
     require arche.current_location == Magnus
     require state[0x12F2] == 0x0001
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     when block_6653 {
         require batteries.holder == blood
@@ -2996,7 +2996,7 @@ proc Magnus2 {
             require choice == "teleport"
         } then {
             say Morning_Oil voice=0xFF flags=0x28 display=0x90 loop=none control=none : "TELEPORTING BATTERIES TO MORNING OIL ROBOT"
-            record_triple blood.s13 0x11CC 0x028A 0
+            record_triple blood.action 0x11CC 0x028A 0
             choice = none
         }
     }
@@ -3011,7 +3011,7 @@ proc Magnus2 {
             require choice == "teleport"
         } then {
             say Morning_Oil voice=0xFF flags=0x28 display=0x90 loop=none control=none : "TELEPORT MORNING OIL TO CRYOBOX"
-            record_state 0xC2 blood.s13 0x028A 0
+            record_state 0xC2 blood.action 0x028A 0
             choice = none
         }
         block_66D4:
@@ -3021,7 +3021,7 @@ proc Magnus2 {
             state[0x12F2] = 0x0002
             state[0x12F4] = state[0x12CA]
             state[0x129A] = 0x0001
-            record_clear Morning_Oil.s13
+            end presentation Morning_Oil
         }
     }
 }
@@ -3033,19 +3033,19 @@ proc Magbis {
     require state[0x12F4] == 0x0001
     require batteries.holder != blood
     require batteries.holder != Morning_Oil
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x01 flags=0x00 display=0x80 loop=none control=none : "RLA RLA LDIR PUSH A,X POP POP HJJKLMDFD KLML HL HFFGFDGHFGJ J KL GJKHL JKLL JG"
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK: We ought to get some batteries|, Commander|. This is an interesting robot..."
     say Morning_Oil voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc viol1 {
     activation enabled until cach
     branch_gameflag
     require state[0x12F6] == 0x0001
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x06 flags=0x00 display=0x80 loop=none control=none : "What's that he's saying? Honk! Behave yourself!!!"
     say Morning_Oil voice=0x05 flags=0x00 display=0x80 loop=none control=none : "I'm not deaf... Watch your neurons. Next time, I'll short-circuit you|..."
@@ -3063,7 +3063,7 @@ proc cach {
     activation enabled until Cryomorn2
     branch_gameflag
     require state[0x12F8] == 0x0001
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "What's that he's saying? I don't have clearance for that information!!!!!!!!!"
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "That's outrageous!! We better wake up Cap'n Bob right now..."
@@ -3134,14 +3134,14 @@ proc Cryomorn2 {
     say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x129C] = 0x0001
     state[0x12F2] = 0x0004
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc letar {
     activation enabled until morntv
     require state[0x12F2] == 0x0004
     branch_flag_274f
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x02 flags=0x08 display=0x90 loop=none control=none : "Aaaaaah..."
     state_array_set 0x06 0x000A
@@ -3153,14 +3153,14 @@ proc letar {
         say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x12F2] = 0x0005
         state_array_set 0x06 0xFFFF
-        record_clear Morning_Oil.s13
+        end presentation Morning_Oil
     }
 }
 
 proc morntv {
     activation enabled until Cryomorn4
     require state[0x12F2] == 0x0005
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     branch_flag_274f
     guard_pop
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "THE HONK REPORT:"
@@ -3173,14 +3173,14 @@ proc morntv {
     say Morning_Oil voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x129E] = 0x0001
     state[0x12F2] = 0x0006
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc Cryomorn4 {
     activation enabled until Cryomorn3
     branch_flag_274f
     require state[0x12F2] == 0x0006
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander|, Commander|, Morning Oil has something big, big, big to tell you|... Commander|..."
     say Morning_Oil voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Commander|, I know a way to make us a pile of CREDs: BIONIUM|..."
@@ -3195,7 +3195,7 @@ proc Cryomorn4 {
     say Morning_Oil voice=0x00 flags=0x08 display=0xA0 loop=none control=none : "Bye bye Commander|..."
     Morning_Oil.current_location = Ark
     state[0x12F2] = 0x0007
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc Cryomorn3 {
@@ -3204,7 +3204,7 @@ proc Cryomorn3 {
     require state[0x12F2] == 0x0007
     require Morning_Oil.current_location == Ark
     require !Mastachok.in_play
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK REPORTS HERE AND NOW:"
     say Morning_Oil voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, I cleaned up his memories. You can question him now."
@@ -3225,7 +3225,7 @@ proc Cryomorn3 {
     }
     block_7134:
     say Morning_Oil voice=0xFF flags=0x48 display=0x80 loop=none control=none : "Bye bye" choices "bye_bye"
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc adi {
@@ -3234,14 +3234,14 @@ proc adi {
     require state[0x12F2] == 0x0007
     require Morning_Oil.current_location == Ark
     require Mastachok.in_play
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Cruiiiiiikkk!"
     say Morning_Oil voice=0xFF flags=0x08 display=0xB0 loop=none control=none : "..."
     state[0x12FC] = 0x0001
     state[0x12F2] = 0x0008
     adi.enabled = false
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc ado {
@@ -3250,14 +3250,14 @@ proc ado {
     require Morning_Oil.current_location == Ark
     require Mastachok.in_play
     require state[0x12F2] == 0x0008
-    actor Morning_Oil.s13 blood 0
+    require presentation == Morning_Oil
     guard_pop
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Sorry, Commander|, but I was just doing some minor repairs on Morning Oil..."
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "He's not ready to talk right now..."
     say Morning_Oil voice=0xFF flags=0x20 display=0x80 loop=none control=none : "But he can continue to repaint the ARK's hull. The old girl's getting rusty..."
     say Morning_Oil voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Sorry about that|, Commander|..."
     say Morning_Oil voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_clear Morning_Oil.s13
+    end presentation Morning_Oil
 }
 
 proc mastab {
@@ -3275,7 +3275,7 @@ proc mastac {
     activation enabled until mastachok1
     branch_gameflag
     require arche.current_location == Mastachok
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     require Scruter_Mac.encounter_count == 0x0001
     guard_pop
     say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yikes... A guard..."
@@ -3322,7 +3322,7 @@ proc mastac {
     say Scruter_Mac voice=0x05 flags=0x08 display=0x80 loop=none control=none : "Baaaoooommmm!!!!"
     request sequence "explo3.hnm"
     say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc mastachok1 {
@@ -3331,7 +3331,7 @@ proc mastachok1 {
     require state[0x12FC] == 0x0001
     require perfume.holder != blood
     require arche.current_location == Mastachok
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x00 flags=0x08 display=0x80 loop=none control=none : "SCANNING STRANGER...XRAY....STOP"
     Scruter_Mac.topic = "talk"
@@ -3375,13 +3375,13 @@ proc mastachok1 {
         say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Uh oh Commander|. He's gonna zap the Orxx..."
         say Scruter_Mac voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
         say Scruter_Mac voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-        record_clear Scruter_Mac.s13
+        end presentation Scruter_Mac
         choice = none
     }
     block_7637:
     say Scruter_Mac voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     state[0x12FC] = 0x0002
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc scr2 {
@@ -3389,7 +3389,7 @@ proc scr2 {
     branch_gameflag
     require state[0x12FC] == 0x0002
     require perfume.holder != blood
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HALT STRANGER. ME HAVE THING TO SAY..."
     say Scruter_Mac voice=0x01 flags=0x10 display=0x80 loop=block_7773 control=none : "You give identity code:" choices "code" "125" "242" "44" "5" "666" "70" "800"
@@ -3410,13 +3410,13 @@ proc scr2 {
         say Scruter_Mac voice=0xFF flags=0x20 display=0x80 loop=none control=none : "What a dummy... Cap'n Bob won't like it when I tell him!"
         say Scruter_Mac voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
         say Scruter_Mac voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-        record_clear Scruter_Mac.s13
+        end presentation Scruter_Mac
         choice = none
     }
     block_7773:
     say Scruter_Mac voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     state[0x12FC] = 0x0003
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc scr3 {
@@ -3424,7 +3424,7 @@ proc scr3 {
     branch_gameflag
     require state[0x12FC] == 0x0003
     require perfume.holder != blood
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x06 flags=0x00 display=0x80 loop=none control=none : "HALT STRANGER. YOU SAY CODE.."
     say Scruter_Mac voice=0x01 flags=0x10 display=0x80 loop=block_78D7 control=none : "Hurry, stranger!" choices "code" "1" "2" "3" "4" "5" "6" "7" "8" "9" "0"
@@ -3446,13 +3446,13 @@ proc scr3 {
         say Scruter_Mac voice=0x04 flags=0x08 display=0x80 loop=none control=none : "Bye bye, unauthorized strangers..."
         request sequence "explo3.hnm"
         say Scruter_Mac voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
-        record_clear Scruter_Mac.s13
+        end presentation Scruter_Mac
         choice = none
     }
     block_78D7:
     say Scruter_Mac voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     state[0x12FC] = 0x0004
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc scr4 {
@@ -3461,7 +3461,7 @@ proc scr4 {
     require state[0x12FC] == 0x0004
     require perfume.holder != blood
     require perfume.holder != Scruter_Mac
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x06 flags=0x0A display=0x80 loop=none control=none : "You irritate me..."
     state[0x1272] = 0x0001
@@ -3470,7 +3470,7 @@ proc scr4 {
     say Scruter_Mac voice=0x05 flags=0x08 display=0x80 loop=none control=none : "BBBBAAAAAAAAOOOMMMM!!!!!!!!!!!"
     request sequence "explo3.hnm"
     say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc mastabis {
@@ -3487,7 +3487,7 @@ proc masta2 {
     require state[0x12FC] == 0x0005
     require arche.current_location == Mastachok
     require perfume.holder == blood
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You again, stranger..."
     say Scruter_Mac voice=0x04 flags=0x00 display=0x80 loop=none control=none : "You smell real nice... Me like your perfume..."
@@ -3498,7 +3498,7 @@ proc masta2 {
     } then {
         say Scruter_Mac voice=0xFF flags=0x00 display=0x80 loop=none control=none : "TELEPORT PERFUME TO SCRUT ROBOT MAC"
         say Scruter_Mac voice=0xFF flags=0x28 display=0xA0 loop=none control=none : "Nifty work, Commander|..."
-        record_triple blood.s13 0x101C 0x067A 0
+        record_triple blood.action 0x101C 0x067A 0
         state[0x12FE] = 0x0001
         choice = none
     }
@@ -3511,7 +3511,7 @@ proc mas2bis {
     require arche.current_location == Mastachok
     require perfume.holder == Scruter_Mac
     require state[0x12FE] == 0x0001
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Oooh! Present for me! I be so moved..."
     say Scruter_Mac voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me undo package quick................"
@@ -3522,7 +3522,7 @@ proc mas2bis {
     say Scruter_Mac voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x12FE] = 0x0000
     state[0x12FC] = 0x0006
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc mas2ter {
@@ -3531,7 +3531,7 @@ proc mas2ter {
     require state[0x12FC] == 0x0006
     require arche.current_location == Mastachok
     require perfume.holder == Scruter_Mac
-    actor Scruter_Mac.s13 blood 0
+    require presentation == Scruter_Mac
     guard_pop
     say Scruter_Mac voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Oooh! You be back... Me perfumed. You smell me..."
     say Scruter_Mac voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Me soon go dance tekno..."
@@ -3540,14 +3540,14 @@ proc mas2ter {
     say Scruter_Mac voice=0x03 flags=0x00 display=0x80 loop=none control=none : "You must be patient. Come back later..."
     say Scruter_Mac voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye, friend. Me must stand guard..."
     say Scruter_Mac voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Scruter_Mac.s13
+    end presentation Scruter_Mac
 }
 
 proc yok1 {
     activation enabled until yok2
     branch_gameflag
     require arche.current_location == Rondo
-    actor Yoko.s13 blood 0
+    require presentation == Yoko
     require state[0x1300] == 0x0000
     guard_pop
     say Yoko voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Hello, stranger. Me be Yoko, me izwal. Welcome to planet Rondo|..."
@@ -3578,7 +3578,7 @@ proc yok1 {
         say Yoko voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Before leave, you must go Observatory talk to my father Maxxon..."
         say Yoko voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye|... You come back soon... Little Yoko wait you|..."
         state[0x1300] = 0x0001
-        record_state 0xC1 orxx.s13 0x0B60 0
+        record_state 0xC1 orxx.action 0x0B60 0
     }
 }
 
@@ -3586,7 +3586,7 @@ proc yok2 {
     activation enabled until yok3
     branch_gameflag
     require arche.current_location == Rondo
-    actor Yoko.s13 blood 0
+    require presentation == Yoko
     require state[0x1300] == 0x0001
     guard_pop
     say Yoko voice=0x01 flags=0x08 display=0x90 loop=none control=none : "Hello, stranger. You back, Yoko happy... Welcome to planet Rondo|..."
@@ -3614,7 +3614,7 @@ proc yok2 {
         require state[0x1270] == 0x0001
     } then {
         say Yoko voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Bye bye|... You come back soon... Little Yoko wait you|..."
-        record_clear Yoko.s13
+        end presentation Yoko
     }
 }
 
@@ -3623,7 +3623,7 @@ proc yok3 {
     branch_gameflag
     require arche.current_location == Rondo
     require Ekatomb.in_play
-    actor Yoko.s13 blood 0
+    require presentation == Yoko
     require state[0x1300] == 0x0001
     guard_pop
     say Yoko voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You see his trunk, Commander|? Barf! Ha! Ha! Ha!|..."
@@ -3647,7 +3647,7 @@ proc yok3 {
     } then {
         say Yoko voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye|... See you in a few days..."
         Yoko.current_location = Trashlando
-        record_clear Yoko.s13
+        end presentation Yoko
     }
 }
 
@@ -3656,7 +3656,7 @@ proc max1 {
     branch_gameflag
     require lens.holder != Maxxon
     require lens.holder != blood
-    actor Maxxon.s13 blood 0
+    require presentation == Maxxon
     require state[0x1304] == 0x0000
     guard_pop
     when block_8179 {
@@ -3684,13 +3684,13 @@ proc max1 {
     say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "..."
     state[0x1270] = 0x0000
     state[0x12A8] = 0x0001
-    record_clear Maxxon.s13
+    end presentation Maxxon
 }
 
 proc max2 {
     activation enabled until max2bis
     branch_gameflag
-    actor Maxxon.s13 blood 0
+    require presentation == Maxxon
     require lens.holder == blood
     guard_pop
     say Maxxon voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Welcome stranger... You come back to planet Rondo|..."
@@ -3701,7 +3701,7 @@ proc max2 {
         require choice == "teleport"
     } then {
         say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "TELEPORTING LENS TO PLANET RONDO"
-        record_triple blood.s13 0x119C 0x0512 0
+        record_triple blood.action 0x119C 0x0512 0
         state[0x1306] = 0x0001
         choice = none
     }
@@ -3710,7 +3710,7 @@ proc max2 {
 proc max2bis {
     activation enabled until max2ter
     branch_gameflag
-    actor Maxxon.s13 blood 0
+    require presentation == Maxxon
     require lens.holder == Maxxon
     require state[0x1306] == 0x0001
     guard_pop
@@ -3726,13 +3726,13 @@ proc max2bis {
     say Maxxon voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye"
     state[0x12B2] = 0x0001
     state[0x1306] = 0x0002
-    record_clear Maxxon.s13
+    end presentation Maxxon
 }
 
 proc max2ter {
     activation enabled until pio
     branch_gameflag
-    actor Maxxon.s13 blood 0
+    require presentation == Maxxon
     require lens.holder == Maxxon
     require state[0x1306] == 0x0002
     guard_pop
@@ -3762,7 +3762,7 @@ proc max2ter {
             require choice == "teleport"
         } then {
             say Maxxon voice=0xFF flags=0x08 display=0x90 loop=none control=none : "TELEPORT CRED IN CRYOBOX"
-            record_triple Bug_Deluxe.s13 0x1004 0x0028 0
+            record_triple Bug_Deluxe.action 0x1004 0x0028 0
             choice = none
         }
     }
@@ -3771,7 +3771,7 @@ proc max2ter {
     say Maxxon voice=0xFF flags=0x22 display=0x80 loop=none control=none : "Okay. We'll come back when you've got it all set up|..."
     say Maxxon voice=0x09 flags=0x00 display=0x80 loop=none control=none : "Me much work. Bye bye, friend. See soon..."
     say Maxxon voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Bye bye..."
-    record_clear Maxxon.s13
+    end presentation Maxxon
 }
 
 proc pio {
@@ -3788,7 +3788,7 @@ proc glu1 {
     branch_gameflag
     require state[0x130A] == 0x0000
     require arche.current_location == Ekatomb
-    actor Daddy_Gluxx.s13 blood 0
+    require presentation == Daddy_Gluxx
     guard_pop
     say Daddy_Gluxx voice=0x01 flags=0x08 display=0x80 loop=none control=none : "Ho! A visitor from far away in the space-time continuum..."
     state[0x1270] = 0x0000
@@ -3822,7 +3822,7 @@ proc glu1 {
         say Daddy_Gluxx voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "Bye bye"
         state[0x12AA] = 0x0001
         state[0x130A] = 0x0001
-        record_clear Daddy_Gluxx.s13
+        end presentation Daddy_Gluxx
     }
 }
 
@@ -3831,7 +3831,7 @@ proc glu2 {
     branch_gameflag
     require state[0x130A] == 0x0001
     require arche.current_location == Ekatomb
-    actor Daddy_Gluxx.s13 blood 0
+    require presentation == Daddy_Gluxx
     guard_pop
     say Daddy_Gluxx voice=0x01 flags=0x08 display=0x90 loop=none control=none : "Ho! A visitor from far away in the space-time continuum..."
     state[0x1270] = 0x0000
@@ -3854,7 +3854,7 @@ proc glu2 {
     block_897A:
     say Daddy_Gluxx voice=0x03 flags=0x48 display=0x90 loop=none control=none : "Bye bye, sir..." choices "bye_bye"
     ERA.enabled = true
-    record_clear Daddy_Gluxx.s13
+    end presentation Daddy_Gluxx
 }
 
 proc ERA {
@@ -3871,7 +3871,7 @@ proc oto1 {
     activation enabled until oto2
     branch_gameflag
     require arche.current_location == Erazor
-    actor Otto_Von_Smile.s13 blood 0
+    require presentation == Otto_Von_Smile
     require state[0x130C] == 0x0000
     guard_pop
     say Otto_Von_Smile voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Welcome, dear dear client. Take a seat. Our 3 star clinic is happy to have you|..."
@@ -3890,7 +3890,7 @@ proc oto1 {
         say Otto_Von_Smile voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Another time perhaps, dear client and, dare I hope, friend! Ha! Ha! Ha!..."
         say Otto_Von_Smile voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         choice = none
-        record_clear Otto_Von_Smile.s13
+        end presentation Otto_Von_Smile
     }
     block_8BA6:
     when block_8CB6 {
@@ -3905,7 +3905,7 @@ proc oto1 {
         say Otto_Von_Smile voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         choice = none
         state[0x130C] = 0x0001
-        record_clear Otto_Von_Smile.s13
+        end presentation Otto_Von_Smile
     }
     block_8CB6:
     guard_push oto2 // unstructured_guard=alternate_exit
@@ -3917,14 +3917,14 @@ proc oto1 {
     say Otto_Von_Smile voice=0x06 flags=0x00 display=0x80 loop=none control=none : "Another time perhaps, dear client and, dare I hope, friend! Ha! Ha! Ha!|..."
     say Otto_Von_Smile voice=0xFF flags=0x08 display=0xE0 loop=none control=none : "stop"
     choice = none
-    record_clear Otto_Von_Smile.s13
+    end presentation Otto_Von_Smile
 }
 
 proc oto2 {
     activation enabled until oto3
     branch_gameflag
     require arche.current_location == Erazor
-    actor Otto_Von_Smile.s13 blood 0
+    require presentation == Otto_Von_Smile
     require state[0x130C] == 0x0001
     guard_pop
     say Otto_Von_Smile voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Well hello, dear client. Do take a seat and admire our 3 star clinic!"
@@ -3951,14 +3951,14 @@ proc oto2 {
     say Otto_Von_Smile voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Bye bye for the present, dear dear client..."
     say Otto_Von_Smile voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     state[0x130C] = 0x0002
-    record_clear Otto_Von_Smile.s13
+    end presentation Otto_Von_Smile
 }
 
 proc oto3 {
     activation enabled until oto4
     branch_gameflag
     require arche.current_location == Erazor
-    actor Otto_Von_Smile.s13 blood 0
+    require presentation == Otto_Von_Smile
     require state[0x130C] == 0x0002
     require state[0x1274] == 0x0001
     guard_pop
@@ -3973,7 +3973,7 @@ proc oto3 {
         require choice == "teleport"
     } then {
         say Otto_Von_Smile voice=0xFF flags=0x28 display=0x90 loop=none control=none : "LENS TELEPORTED TO CRYOBOX."
-        record_triple Otto_Von_Smile.s13 0x119C 0x0028 0
+        record_triple Otto_Von_Smile.action 0x119C 0x0028 0
         choice = none
     }
     block_9071:
@@ -3981,14 +3981,14 @@ proc oto3 {
     say Otto_Von_Smile voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     state[0x130C] = 0x0004
     state[0x12B0] = 0x0001
-    record_clear Otto_Von_Smile.s13
+    end presentation Otto_Von_Smile
 }
 
 proc oto4 {
     activation enabled until oto5
     branch_gameflag
     require arche.current_location == Erazor
-    actor Otto_Von_Smile.s13 blood 0
+    require presentation == Otto_Von_Smile
     require state[0x130C] == 0x0002
     require state[0x1274] == 0x0000
     guard_pop
@@ -4016,7 +4016,7 @@ proc oto4 {
     say Otto_Von_Smile voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye for the present, dear dear client..."
     say Otto_Von_Smile voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     oto5.enabled = true
-    record_clear Otto_Von_Smile.s13
+    end presentation Otto_Von_Smile
 }
 
 proc oto5 {
@@ -4030,7 +4030,7 @@ proc oto6 {
     activation enabled until prep
     branch_gameflag
     require arche.current_location == Erazor
-    actor Otto_Von_Smile.s13 blood 0
+    require presentation == Otto_Von_Smile
     require lens.holder != Otto_Von_Smile
     guard_pop
     say Otto_Von_Smile voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Hello, dear client. Please don't sit..."
@@ -4039,7 +4039,7 @@ proc oto6 {
     say Otto_Von_Smile voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Do come back another time|..."
     say Otto_Von_Smile voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Thank you once more for your delightful visit, dear DEAR client..."
     say Otto_Von_Smile voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear Otto_Von_Smile.s13
+    end presentation Otto_Von_Smile
 }
 
 proc prep {
@@ -4056,7 +4056,7 @@ proc pub1 {
     state_array_test 0x07
     guard_pop
     Bug_Deluxe.in_play = true
-    record_link Bug_Deluxe.s13 blood 0
+    queue presentation Bug_Deluxe
     state_array_set 0x07 0xFFFF
     pub2.enabled = true
     pub1.enabled = false
@@ -4065,7 +4065,7 @@ proc pub1 {
 proc pub2 {
     activation disabled until monop1
     branch_presentation
-    actor Bug_Deluxe.s13 blood 0
+    require presentation == Bug_Deluxe
     guard_pop
     say Bug_Deluxe voice=0xFF flags=0x08 display=0x80 loop=none control=none : "COMMERCIAL... COMMERCIAL... COMMERCIAL..."
     character_slot 0x03 "venus"
@@ -4076,13 +4076,13 @@ proc pub2 {
     say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CRUIK..........."
     say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     Venusia.in_play = true
-    record_clear Bug_Deluxe.s13
+    end presentation Bug_Deluxe
 }
 
 proc monop1 {
     activation enabled until monop2
     require arche.current_location == Venusia
-    actor Bug_Deluxe.s13 blood 0
+    require presentation == Bug_Deluxe
     guard_pop
     say Bug_Deluxe voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Hi there, Comsumer Comrade. Welcome to VENUSIA SUPRAMARKET"
     say Bug_Deluxe voice=0x04 flags=0x10 display=0x80 loop=monop2 control=none : "Wanna buy a SUPRA product at VENUSIA?" choices "yes" "no"
@@ -4100,7 +4100,7 @@ proc monop1 {
         say Bug_Deluxe voice=0x02 flags=0x00 display=0x80 loop=none control=none : "Have a happy day, comrade."
         say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         choice = none
-        record_clear Bug_Deluxe.s13
+        end presentation Bug_Deluxe
     }
 }
 
@@ -4108,7 +4108,7 @@ proc monop2 {
     activation disabled until finscr1
     require arche.current_location == Venusia
     branch_gameflag
-    actor Bug_Deluxe.s13 blood 0
+    require presentation == Bug_Deluxe
     guard_pop
     say Bug_Deluxe voice=0x05 flags=0x00 display=0x80 loop=none control=none : "You got the CREDs? At VENUSIA|, it's CREDs CREDs CREDs, Consumer Comrade..."
     when block_950B {
@@ -4119,7 +4119,7 @@ proc monop2 {
         say Bug_Deluxe voice=0xFF flags=0x00 display=0x80 loop=none control=none : "No CREDs, huh?... That's not an attitude we care for at VENUSIA!"
         say Bug_Deluxe voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
         monop2.enabled = false
-        record_clear Bug_Deluxe.s13
+        end presentation Bug_Deluxe
     }
     block_950B:
     when block_95DE {
@@ -4133,13 +4133,13 @@ proc monop2 {
             require choice != "teleport"
         } then {
             say Bug_Deluxe voice=0xFF flags=0x08 display=0x80 loop=none control=none : "CRED TELEPORTED TO ARK"
-            record_triple Bug_Deluxe.s13 0x1004 0x0028 0
+            record_triple Bug_Deluxe.action 0x1004 0x0028 0
             say Bug_Deluxe voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Ahhh|! Lady luck loves a consumer, comrade... Happy spending!"
             say Bug_Deluxe voice=0x04 flags=0x00 display=0x80 loop=none control=none : "And remember... \"MORE FOR YOUR CREDS AT VENU-USIA-AAA!\""
             say Bug_Deluxe voice=0x05 flags=0x08 display=0xA0 loop=none control=none : "Bye bye comrade consumer..."
             state[0x1272] = state[0x12CA]
             choice = none
-            record_clear Bug_Deluxe.s13
+            end presentation Bug_Deluxe
         }
     }
     block_95DE:
@@ -4160,7 +4160,7 @@ proc monop2 {
         say Bug_Deluxe voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
         state[0x1310] = state[0x12CA]
         monop2.enabled = false
-        record_clear Bug_Deluxe.s13
+        end presentation Bug_Deluxe
     }
 }
 
@@ -4173,14 +4173,14 @@ proc finscr1 {
     require Bronko.current_location == aboard
     guard_pop
     Scruter_K.in_play = true
-    record_link Scruter_K.s13 blood 0
+    queue presentation Scruter_K
     scrapp.enabled = true
 }
 
 proc scrapp {
     activation disabled until block_9881
     branch_presentation
-    actor Scruter_K.s13 blood 0
+    require presentation == Scruter_K
     guard_pop
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "This is SCRUT customs and excise ship... Calling unknown vessel..."
     say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Pull over for a routine check... We have orders to routinely check your ship specifically..."
@@ -4191,7 +4191,7 @@ proc scrapp {
         require cred.holder == aboard
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0x80 loop=none control=none : "ILLEGAL MONEY DETECTED..."
-        record_triple blood.s13 0x1004 0x06C2 0
+        record_triple blood.action 0x1004 0x06C2 0
         say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Confiscated..."
     }
     block_975F:
@@ -4199,7 +4199,7 @@ proc scrapp {
         require bionium.holder == aboard
     } then {
         say Scruter_K voice=0xFF flags=0x08 display=0x80 loop=none control=none : "BIONIUM container detected... Ultra-illegal item..."
-        record_triple blood.s13 0x11B4 0x06C2 0
+        record_triple blood.action 0x11B4 0x06C2 0
         say Scruter_K voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Confiscated..."
     }
     block_9791:
@@ -4219,7 +4219,7 @@ proc scrapp {
     say Scruter_K voice=0xFF flags=0x20 display=0x80 loop=none control=none : "They left us right in the middle of this star soup... How about that..."
     say Scruter_K voice=0xFF flags=0x08 display=0x90 loop=none control=none : "..."
     run_profile 0x03
-    record_clear Scruter_K.s13
+    end presentation Scruter_K
     block_9881:
     halt
 }

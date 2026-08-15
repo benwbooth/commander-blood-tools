@@ -1255,8 +1255,14 @@ fn normalize_modern_statement(
             ))
         }
         "end" => {
+            if fields.len() == 3 && fields[1] == "presentation" {
+                validate_identifier(fields[2], line_number)?;
+                return Ok(format!("RECORD_CLEAR {}.action", fields[2]));
+            }
             if fields.len() != 3 {
-                bail!("line {line_number}: expected 'end proc|when|selector NAME'");
+                bail!(
+                    "line {line_number}: expected 'end proc|when|selector|presentation NAME'"
+                );
             }
             let canonical = match fields[1].to_ascii_lowercase().as_str() {
                 "proc" => "END_PROCEDURE",
@@ -1280,6 +1286,13 @@ fn normalize_modern_statement(
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
+        "queue" => {
+            if fields.len() != 3 || fields[1] != "presentation" {
+                bail!("line {line_number}: expected 'queue presentation ACTOR'");
+            }
+            validate_identifier(fields[2], line_number)?;
+            Ok(format!("RECORD_LINK {}.action blood 0", fields[2]))
+        }
         "request" => {
             if fields.len() != 3 || fields[1] != "sequence" {
                 bail!("line {line_number}: expected 'request sequence \"NAME.hnm\"'");
@@ -1295,6 +1308,11 @@ fn normalize_modern_statement(
             ))
         }
         "require" => {
+            if let Some(statement) =
+                normalize_modern_presentation_expression(&fields[1..], line_number)?
+            {
+                return Ok(statement);
+            }
             if let Some(statement) =
                 normalize_modern_choice_expression(&fields[1..], line_number)?
             {
@@ -1364,6 +1382,30 @@ fn normalize_modern_statement(
             }
         }
     }
+}
+
+fn normalize_modern_presentation_expression(
+    fields: &[&str],
+    line_number: usize,
+) -> Result<Option<String>> {
+    if fields.first() != Some(&"presentation") {
+        return Ok(None);
+    }
+    if fields.len() != 3 {
+        bail!("line {line_number}: expected 'require presentation ==|!= ACTOR'");
+    }
+    let inverted = match fields[1] {
+        "==" => "0",
+        "!=" => "1",
+        operator => bail!(
+            "line {line_number}: presentation comparison requires == or !=, found {operator:?}"
+        ),
+    };
+    validate_identifier(fields[2], line_number)?;
+    Ok(Some(format!(
+        "ACTOR {}.action blood {inverted}",
+        fields[2]
+    )))
 }
 
 fn normalize_modern_choice_expression(
@@ -1942,6 +1984,39 @@ fn modern_statement(
                 );
             }
             Ok("choice = none".to_string())
+        }
+        "ACTOR"
+            if query_mode
+                && args.len() == 3
+                && args[1] == "blood"
+                && matches!(args[2], "0" | "1")
+                && args[0].ends_with(".action") =>
+        {
+            let actor = args[0]
+                .strip_suffix(".action")
+                .expect("suffix checked above");
+            Ok(format!(
+                "require presentation {} {actor}",
+                if args[2] == "1" { "!=" } else { "==" }
+            ))
+        }
+        "RECORD_LINK"
+            if !query_mode
+                && args.len() == 3
+                && args[1] == "blood"
+                && args[2] == "0"
+                && args[0].ends_with(".action") =>
+        {
+            let actor = args[0]
+                .strip_suffix(".action")
+                .expect("suffix checked above");
+            Ok(format!("queue presentation {actor}"))
+        }
+        "RECORD_CLEAR" if args.len() == 1 && args[0].ends_with(".action") => {
+            let actor = args[0]
+                .strip_suffix(".action")
+                .expect("suffix checked above");
+            Ok(format!("end presentation {actor}"))
         }
         "LOAD_STRING" => {
             if args.len() != 1 {
@@ -3050,6 +3125,7 @@ fn simplify_alias_identifiers(
 fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
     match (alias.kind, alias.selectors.as_slice()) {
         (_, [0x00]) => Some("flags"),
+        (_, [0x13]) => Some("action"),
         (0x0002, [0x03]) => Some("conversation_progress"),
         (0x0002, [0x08]) => Some("encounter_count"),
         (0x0002 | 0x0010 | 0x0200, [0x11]) => Some("current_location"),
@@ -4388,6 +4464,83 @@ mod tests {
         let decompiled = decompile(ImageKind::Cod, &fallback, &HashMap::new()).unwrap();
         assert!(decompiled.source.contains("load_string \"note\""));
         assert_eq!(compile(&decompiled.source).unwrap(), fallback);
+    }
+
+    #[test]
+    fn presentation_pairs_use_actor_level_syntax() {
+        let image = vec![
+            vm::OP_COND_JUMP,
+            0x01,
+            0x12,
+            0x00,
+            vm::OP_ACTOR,
+            0x3A,
+            0x01,
+            0x28,
+            0x00,
+            vm::OP_POP,
+            vm::OP_RECORD_LINK,
+            0x3A,
+            0x01,
+            0x28,
+            0x00,
+            vm::OP_RECORD_CLEAR,
+            0x3A,
+            0x01,
+            0xFF,
+        ];
+        let mut var = vec![0; 0x140];
+        var[0x28..0x2A].copy_from_slice(&1u16.to_le_bytes());
+        var[0x100..0x102].copy_from_slice(&2u16.to_le_bytes());
+        let symbols = vec![
+            DebSymbol {
+                name: "blood".to_string(),
+                offset: 0x0028,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "Beauregard".to_string(),
+                offset: 0x0100,
+                kind: 1,
+            },
+            DebSymbol {
+                name: "entry".to_string(),
+                offset: 1,
+                kind: 2,
+            },
+        ];
+        let decompiled = decompile_structured_cod_with_symbols(
+            &image,
+            &var,
+            &HashMap::new(),
+            &symbols,
+        )
+        .unwrap();
+        for statement in [
+            "field Beauregard.action = Beauregard + 0x003A",
+            "require presentation == Beauregard",
+            "queue presentation Beauregard",
+            "end presentation Beauregard",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        for low_level in ["actor ", "record_link ", "record_clear ", ".s13"] {
+            assert!(
+                !decompiled.source.contains(low_level),
+                "retained {low_level}"
+            );
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), image);
+
+        let inverted = decompiled
+            .source
+            .replace("presentation == Beauregard", "presentation != Beauregard");
+        let expected = [vm::OP_COND_JUMP, 0x01, 0x13, 0x00]
+            .into_iter()
+            .chain([vm::OP_ACTOR, vm::OP_POP])
+            .chain(image[5..].iter().copied())
+            .collect::<Vec<_>>();
+        assert_eq!(compile(&inverted).unwrap(), expected);
     }
 
     #[test]

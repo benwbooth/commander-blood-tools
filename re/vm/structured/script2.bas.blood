@@ -15,9 +15,9 @@ object Honk = 0x0872
 object Rondo = 0x0B2A
 object Magnus = 0x0C02
 
-field blood.s13 = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
+field blood.action = blood + 0x0008 // VAR kind 0x0001, selector(s) 13
 field Bob_Morlock.conversation_progress = Bob_Morlock + 0x0032 // VAR kind 0x0002, selector(s) 03
-field Bug_Deluxe.s13 = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bug_Deluxe.action = Bug_Deluxe + 0x003A // VAR kind 0x0002, selector(s) 13
 field Rondo.flags = Rondo + 0x0002 // VAR kind 0x0008, selector(s) 00
 field Magnus.flags = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
 
@@ -411,7 +411,7 @@ selector Bug_Deluxe_choices {
         menu "bye_bye" "beauty" "food" "sport" "handywork" "pharmaceutical" "leisure" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You'll love our bargains!" choices "department"
         say Bug_Deluxe voice=0xFF flags=0x48 display=0x80 loop=none control=none : "Bye bye|..." choices "bye_bye"
-        record_clear Bug_Deluxe.s13
+        end presentation Bug_Deluxe
         yield_b
         selector_2304:
     }
@@ -431,8 +431,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a heady perfume for fleshy young females. \"Do not swallow\": 1 CRED" choices "eden"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x101C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x101C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_23A5:
@@ -441,8 +441,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, the scent of hot passion. \"Promotes reproduction\": 1 CRED" choices "dune"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x101C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x101C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2404:
@@ -451,8 +451,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolence, for males with armpits. \"Watch the babes home in on your armpits\": 1 CRED" choices "kroolence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x101C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x101C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_246B:
@@ -461,8 +461,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Motoroil, perfume for droid. \"Be an exhaust nozzle Romeo \": 1 CRED" choices "motoroil"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x101C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x101C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_24CE:
@@ -471,8 +471,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulence. Gravitational vertigo guaranteed. \"A real head-spinner\": 1 CRED" choices "turbulence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x101C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x101C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_252B:
@@ -487,8 +487,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide tie. Embroidered with tentacles. So right for you: 1 CRED" choices "hide"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x107C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x107C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_25B0:
@@ -497,8 +497,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tromp hair tie: 1 CRED" choices "hair"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x107C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x107C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2601:
@@ -507,8 +507,8 @@ selector Bug_Deluxe_choices {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fully synthetic tie, with integrated altimeter, geiger counter: 4 CREDS" choices "synthetic"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 4 CREDS." choices "buy"
-        record_triple Bug_Deluxe.s13 0x107C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x107C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2660:
@@ -528,8 +528,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson rouge for non-metal lips: 1 CRED" choices "crimson"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1094 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1094 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_26E5:
@@ -538,8 +538,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluorescent green rouge. For tentacles and suction caps: 1 CRED" choices "green"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1094 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1094 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2740:
@@ -548,8 +548,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black rouge, for the ultimate in discretion... not: 1 CRED" choices "black"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1094 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1094 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_279D:
@@ -558,8 +558,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space blue rouge. In space|, somebody can hear you scream at last: 1 CRED" choices "blue"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1094 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1094 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2802:
@@ -574,8 +574,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkiller cream. Apply to all amputation wounds during combat: 1 CRED" choices "painkiller"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10C4 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10C4 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2881:
@@ -584,8 +584,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MUSCLOR salve. For gleaming pectorals. It's half the battle: 1 CRED" choices "musclor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10C4 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10C4 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_28E0:
@@ -594,8 +594,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR jelly. Say goodbye to meteor bumps: 1 CRED" choices "meteor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10C4 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10C4 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2939:
@@ -610,8 +610,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl necklace. suitable for necks situated between head and body. Other cases, see sales personnel: 1 CRED" choices "necklace"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10AC 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10AC 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_29C6:
@@ -620,8 +620,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Bracelet in elastosteel. Fits all body parts. Amuse your guests: 1 CRED" choices "bracelet"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10AC 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10AC 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2A27:
@@ -642,8 +642,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Joint of murffalo. tender and spicy: 1 CRED" choices "joint"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2AC4:
@@ -652,8 +652,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo steak. Tenderized by the Bronkos of Moskito: 1 CRED" choices "steak"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2B1B:
@@ -662,8 +662,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered murffalo horn. For males with a mission: 1 CRED" choices "horn"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2B76:
@@ -672,8 +672,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo fur. Deodorized. Your neighbors will die of envy: 1 CRED" choices "fur"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2BD5:
@@ -682,8 +682,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo sausages. Great for those barbecue moments: 1 CRED" choices "sausages"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2C2E:
@@ -692,8 +692,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo intestines. Read the future and forecast the weather: 1 CRED" choices "intestines"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1064 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1064 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2C8B:
@@ -708,8 +708,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Comes in steel, lead, magnetic or gravitational iron: 1 CRED" choices "ball"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10DC 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10DC 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2D0E:
@@ -718,8 +718,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide boxing gloves. Deodorized. Your opponents aren't going to thank you: 1 CRED" choices "boxing_gloves"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x10F4 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x10F4 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2D73:
@@ -728,8 +728,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Shells. The perfect way to protect the family jewels. Pairs, three of a kind, full house or poker: 1 CRED" choices "shells"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x110C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x110C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2DE8:
@@ -750,8 +750,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Screwdriver. Remote control for doing outdoor jobs from your armchair: 1 CRED" choices "screwdriver"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1124 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1124 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2E85:
@@ -760,8 +760,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Unbreakable ray saw. Saws through anything except itself: 1 CRED" choices "saws"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1124 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1124 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2EE0:
@@ -770,8 +770,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction drill. Guaranteed drool-free: 1 CRED" choices "drills"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x1124 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x1124 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2F33:
@@ -786,8 +786,8 @@ selector Bug_Deluxe_choices {
         menu "department" "handywork" "buy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batteries. The perfect way to get your droid back to work: 1 CRED" choices "batteries"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x11CC 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x11CC 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_2FB2:
@@ -802,8 +802,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox. Relief from head pain. Suitable for stainless steel and nonstick heads.. See sales personnel for lead heads: 1 CRED" choices "aspirox"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
-        record_triple Bug_Deluxe.s13 0x113C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x113C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_3043:
@@ -812,8 +812,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snormor, the sleep solution. At bedtime precisely, administer violently to head: 1 CRED" choices "snormor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x113C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x113C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_30A8:
@@ -822,8 +822,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang brush. It doesn't matter how many rows of teeth you have, this brush keeps 'em healthy and pointy: 1 CRED" choices "fang_brush"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x113C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x113C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield_b
         selector_311B:
@@ -898,8 +898,8 @@ selector Bug_Deluxe_choices {
         menu "buy" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The latest from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED" choices "audio_CD"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
-        record_triple Bug_Deluxe.s13 0x116C 0x0028 0
-        record_triple blood.s13 0x1004 0x0092 0
+        record_triple Bug_Deluxe.action 0x116C 0x0028 0
+        record_triple blood.action 0x1004 0x0092 0
         state[0x1310] = 0x0001
         yield
     }

@@ -9,18 +9,18 @@ object Honk = 0x082A
 object menu = 0x0872
 
 field Bob_Morlock.encounter_count = Bob_Morlock + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Bob_Morlock.s13 = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
+field Bob_Morlock.action = Bob_Morlock + 0x003A // VAR kind 0x0002, selector(s) 13
 field Bronko.current_location = Bronko + 0x0018 // VAR kind 0x0002, selector(s) 11
-field Izwalito.s13 = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
+field Izwalito.action = Izwalito + 0x003A // VAR kind 0x0002, selector(s) 13
 field Izwalito.topic = Izwalito + 0x0046 // VAR kind 0x0002, selector(s) 0F
 field Honk.encounter_count = Honk + 0x0036 // VAR kind 0x0002, selector(s) 08
-field Honk.s13 = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
-field menu.s13 = menu + 0x003A // VAR kind 0x0002, selector(s) 13
+field Honk.action = Honk + 0x003A // VAR kind 0x0002, selector(s) 13
+field menu.action = menu + 0x003A // VAR kind 0x0002, selector(s) 13
 
 proc menbr {
     activation enabled until men1
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location == aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
@@ -32,13 +32,13 @@ proc menbr {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Recycled water"
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!..."
     say menu voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men1 {
     activation enabled until men2
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -51,13 +51,13 @@ proc men1 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't eat with your mouth full!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     men1.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men2 {
     activation enabled until men3
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -70,14 +70,14 @@ proc men2 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Don't talk with your mouth open!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men2.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men3 {
     activation enabled until men4
     branch_presentation
     require Bronko.current_location != aboard
-    actor menu.s13 blood 0
+    require presentation == menu
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Today's fare:"
@@ -89,13 +89,13 @@ proc men3 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Somebody didn't finish his wrigglers yesterday..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men3.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men4 {
     activation enabled until men5
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"MENU\""
@@ -108,13 +108,13 @@ proc men4 {
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "The chef says... Plenty more in the kitchen!..."
     say menu voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     men4.enabled = false
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men5 {
     activation enabled until men6
     branch_presentation
-    actor menu.s13 blood 0
+    require presentation == menu
     require Bronko.current_location != aboard
     guard_pop
     say menu voice=0xFF flags=0x00 display=0x80 loop=none control=none : "\"IMPROVED MENU\""
@@ -128,7 +128,7 @@ proc men5 {
     say menu voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "stop"
     men5.enabled = false
     men6.enabled = true
-    record_clear menu.s13
+    end presentation menu
 }
 
 proc men6 {
@@ -153,14 +153,14 @@ proc ho {
     activation enabled until ho1
     state_array_test 0x16
     guard_pop
-    record_link Izwalito.s13 blood 0
+    queue presentation Izwalito
     ho.enabled = false
 }
 
 proc ho1 {
     activation enabled until hon
     branch_presentation
-    actor Izwalito.s13 blood 0
+    require presentation == Izwalito
     guard_pop
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "You found the right button. So far so good..."
     Izwalito.topic = "rien"
@@ -171,7 +171,7 @@ proc ho1 {
         say Izwalito voice=0xFF flags=0x08 display=0xA0 loop=none control=none : "GAME"
         run_profile 0x02
         choice = none
-        record_clear Izwalito.s13
+        end presentation Izwalito
     }
     block_04C6:
     when block_04CE {
@@ -191,13 +191,13 @@ proc ho1 {
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "In which case, write to: SUPER ZEN, end of corridor, CRAZYSTONE planet, BABY1 UNIVERSE..."
     say Izwalito voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Click quick on \"HONK\". He has important information for YOU..."
     say Izwalito voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
-    record_clear Izwalito.s13
+    end presentation Izwalito
 }
 
 proc hon {
     activation enabled until BOB1
     branch_presentation
-    actor Honk.s13 blood 0
+    require presentation == Honk
     guard_pop
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Welcome aboard the ARK, Commander. I'm HONK, your trusted computer..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "I'm here to help you a lot..."
@@ -210,13 +210,13 @@ proc hon {
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "If you have questions, I have all the answers..."
     say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Click quick on \"CRYOBOX\" Cap'n Bob is waiting..."
     say Honk voice=0xFF flags=0x28 display=0x80 loop=none control=none : "End of report..."
-    record_clear Honk.s13
+    end presentation Honk
 }
 
 proc BOB1 {
     activation enabled until scr2
     branch_flag_274f
-    actor Bob_Morlock.s13 blood 0
+    require presentation == Bob_Morlock
     guard_pop
     say Bob_Morlock voice=0x03 flags=0x00 display=0x80 loop=none control=none : "Good day COMMANDER. My name is BOB, BOB MORLOCK..."
     say Bob_Morlock voice=0x01 flags=0x00 display=0x80 loop=none control=none : "If the phone rings, press the \"RED BUTTON\" on the radio to answer..."
@@ -267,7 +267,7 @@ proc BOB1 {
     say Bob_Morlock voice=0xFF flags=0x20 display=0x80 loop=none control=none : "The old turkey's out for the count..."
     say Bob_Morlock voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     run_profile 0x02
-    record_clear Bob_Morlock.s13
+    end presentation Bob_Morlock
 }
 
 proc scr2 {

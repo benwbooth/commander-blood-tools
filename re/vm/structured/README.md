@@ -59,6 +59,18 @@ form to 20 bytes so its NUL cannot cross into the next descriptor. An unusual
 A8 payload that does not meet those established constraints is rendered as the
 explicit `load_string` fallback.
 
+Presentation relationships are also source-level. The native post-VM object
+scan resolves selector `0x13` as a six-byte typed action record, so the 115
+unambiguous field declarations now use `object.action` instead of `object.s13`.
+The narrower C3/C4/C9 lifecycle is rendered without exposing that storage:
+`require presentation == Actor` tests the active C4 pair,
+`queue presentation Actor` writes the C3 scheduled form, and
+`end presentation Actor` clears the action and any reciprocal C4 pair. The
+shipped corpus has 389 requirements, 35 queues, and 371 endings; every C3/C4
+related operand is the built-in `blood` object. The remaining C1/C2/C6/CD uses
+of `action` stay as typed record operations until those distinct behaviors are
+lifted independently.
+
 Each kind-2 procedure begins with an `activation enabled|disabled until target`
 header backed by its native `A9` flag byte. Writes to those bytes are named
 assignments such as `dialogue.enabled = false`. All 413 shipped writes target a

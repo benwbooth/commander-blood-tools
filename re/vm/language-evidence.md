@@ -148,6 +148,35 @@ uses `request sequence "name.hnm"` for the established high-level shape. Its
 `DS:0x2135`, including the trailing NUL. Other possible A8 payloads remain
 `load_string`, preserving their bytes without extending the proven semantics.
 
+Selector `0x13` is the per-object action-record field. Native
+`presentation_scan` at `0x5816` resolves that selector through the field matrix
+for each active directory object, then passes any nonempty, nonnegative-valued
+record to `record_c1_ship3d_action` at `0x5B38`. That routine dispatches on the
+record's C1..CD kind, so `action` is established while a narrower name such as
+`speaker` would be false for the non-presentation record kinds stored there.
+The structured source has 115 unambiguous selector-`0x13` field aliases and now
+names each one `object.action`.
+
+C4, C3, and C9 establish one complete presentation lifecycle on those action
+records. Every one of the 389 shipped C4 instructions runs while the VM query
+bit is set, has no inline inversion, targets a selector-`0x13` field, and names
+the built-in `blood` object as its related operand. Handler `0x6C7E` requires an
+active owner and an exact `{C4,blood}` record, making
+`require presentation == object` the direct source condition. All 35 C3
+instructions run in update mode with the same field and related object; handler
+`0x6EEE` writes `{C3,blood,1}`, which the post-VM presentation path consumes as
+a scheduled presentation. BloodScript renders this as
+`queue presentation object`.
+
+All 371 C9 operands are selector-`0x13` action fields. Handler `0x6FB9` clears
+the complete six-byte record. If its old kind was C4, it resolves selector
+`0x13` on the related object and clears that reciprocal record too, while also
+resetting sequence state. This is `end presentation object`. Eleven endings
+occur in continuation procedures without a local C4 condition; their
+presentations were established or queued earlier, so the syntax does not infer
+an artificial local requirement. Nonmatching C3/C4/C9 forms retain their typed
+low-level statements.
+
 The remaining 3,780 BAS bytes form 1,003 complete records: three one-topic menus,
 19 presentation-register writes, three string loads, 37 `0xAA` yields, 321
 `0xAC` yields, 321 linked selector nodes, and 299 shared state/record operations

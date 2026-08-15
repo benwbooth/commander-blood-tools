@@ -177,10 +177,24 @@ descriptor at `DS:0x2135`, leaving room for the terminating NUL. A non-HNM or
 otherwise nonconforming A8 operand retains the exact low-level `load_string`
 fallback rather than being assigned sequence semantics.
 
-The remaining native handlers provide typed character-slot bindings and the
-`0x274F` flag branch. String-bearing opcodes are lifted only when they match the
-shipped printable-ASCII plus `00 00` representation; other payload shapes
-retain the generic lossless fallback.
+Selector `0x13` is now named `action` rather than the opaque `s13`. The native
+post-VM scan resolves that selector for every active object and dispatches its
+six-byte typed record through `record_c1_ship3d_action`. Presentation pairing is
+one proven subset of that action protocol. All 389 shipped C4 operations execute
+in query mode and test whether the named object's action is a C4 pair with the
+built-in `blood` object; BloodScript spells these as
+`require presentation == object`. All 35 C3 operations execute in update mode,
+write `{C3,blood,1}`, and schedule a subsequent presentation, represented as
+`queue presentation object`. All 371 C9 operations clear an `action`; when it
+contains C4 the native handler also clears the reciprocal `blood.action` pair,
+represented as `end presentation object`.
+
+Other C3/C4 operand shapes retain `record_link` or `actor`, and a C9 target that
+cannot be proven to be an action retains `record_clear`. The remaining native
+handlers provide typed character-slot bindings and the `0x274F` flag branch.
+String-bearing opcodes are lifted only when they match the shipped
+printable-ASCII plus `00 00` representation; other payload shapes retain the
+generic lossless fallback.
 
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
 all ten program images. The BAS decoder now walks the recovered sequential
