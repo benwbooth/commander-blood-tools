@@ -254,7 +254,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
 #pragma aux nav_kind2_target_list_build value [ax] modify exact [ax cx]
 #pragma aux nav_chart_object_pick \
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
-#pragma aux nav_center_wipe_span_table_build parm [si]
+#pragma aux nav_center_wipe_span_table_build parm [si] modify exact []
 #pragma aux name_area_palette_effect_update modify exact [ax]
 #pragma aux nav_camera_state_check modify exact []
 #endif

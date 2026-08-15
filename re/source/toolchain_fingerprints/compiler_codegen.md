@@ -5964,13 +5964,15 @@ They also preserve the original center-point pathology: `LOOP` begins at zero,
 so that input emits 65,536 spans before the sentinel. The natural C uses a
 deliberate `do/while` with 16-bit iteration state rather than hiding that edge.
 
-Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits one warning-free
-69-instruction/163-byte function versus 85/145 original, with 52.94 percent
-mnemonic-multiset overlap and no inline assembly. It is logically equivalent in
-the shipped clear-DF C environment. A direct binary replacement would also need
-the original `DS:SI` live-in, reverse `LODSW`/`STOSW` behavior, preserve-all
-register envelope, and terminal flags; those are ABI boundaries rather than
-reasons to encode register-state emulation in the recovered source.
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) emits a 77-instruction/173-byte
+function versus 85/145 original, with 61.18 percent mnemonic-multiset and 52.94
+percent ordered overlap. Turbo C 2.01 medium emits 125 instructions with 63.53
+percent multiset and 55.29 percent ordered overlap and assembles cleanly to OBJ.
+The natural body remains logically equivalent in the shipped clear-DF C
+environment; narrow compiler-only pushes now preserve every original register
+and `ES`. A direct binary replacement would still need reverse
+`LODSW`/`STOSW` behavior and terminal flags. Those are ABI/code-shape boundaries
+rather than reasons to encode register-state emulation in the recovered source.
 
 ## BLOODPRG alien-overlay and temporary-SND coordinator candidate
 
