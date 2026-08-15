@@ -55,6 +55,10 @@ extern volatile cb_u8 descript_text_records_remaining; /* DS:0x131F */
 extern volatile char descript_text_record_table[][16]; /* DS:0x1320 */
 
 #if defined(__WATCOMC__)
+static void CB_NEAR bloodprg_byte_parser_mark_b16_gs(void);
+#pragma aux bloodprg_byte_parser_mark_b16_gs = \
+        "mov byte ptr gs:[0b16h],1" \
+        modify exact []
 #pragma aux byte_parser_op_01_mark_b16 modify exact []
 #pragma aux byte_parser_op_02_mark_b16 modify exact []
 #pragma aux byte_parser_op_0f_mark_b16 modify exact []

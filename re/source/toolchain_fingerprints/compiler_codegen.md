@@ -2137,13 +2137,19 @@ vectors per entry execute through RET and prove the exact seven-byte body,
 constant overwrite of GS:0x0B16, DS and SS decoy preservation, unchanged
 registers, segments, and flags, and the two-byte near-return stack advance.
 
-Each one-to-one candidate is the same natural volatile assignment. Open Watcom
-`-3 -ox -mm` compiles all four without warnings to the same two instructions
-and six bytes; Turbo C 2.01 medium emits the same two mnemonics. The original's
-seventh byte is the GS override, while both standalone probes address the
-unresolved global through DS. The C logic and instruction shape are settled,
-but direct integration requires a GS-qualified data mechanism or a minimal
-one-instruction boundary because DS owns the parser stream at these entries.
+The copied miniature probe originally concealed a definition-side ABI defect:
+the authoritative far assignment loaded the flag segment into DS through AX and
+returned with both registers clobbered, even though the declaration promised
+preservation. A shared Watcom `#pragma aux` intrinsic now supplies only the
+unavoidable GS-qualified store; it is expanded in place and emits no helper
+function. Each recovered entry remains a separate natural C function.
+
+Open Watcom `-3 -ox -mm` now emits the exact original `MOV GS:[0x0B16],1; RET`
+sequence and all seven bytes, preserving every register and flag. The four C
+bodies are identical apart from their one-to-one symbols, so the authoritative
+probe applies mechanically to each. Turbo C 2.01 medium uses the portable far-
+assignment fallback and emits eight instructions. All four handlers are
+accepted for source-port and exact Watcom integration.
 
 Byte-parser opcode-05 handler `0x007612` copies a NUL-terminated DS:SI string,
 including and consuming the terminator, to ES:0x0E18. The dispatcher has set
