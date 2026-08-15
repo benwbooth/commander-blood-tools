@@ -4872,10 +4872,19 @@ and `RETF`.
 
 Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural DOS C
 candidate warning-free to 230 instructions/642 bytes versus the original
-157/453, with 84.71 percent mnemonic-multiset overlap and no inline assembly.
-Full-source integration uses the explicit Boolean/context contract. Direct
-replacement would still require the original carry and live-`BP` ABI, raw
-`INT 33h` lowering, register residue, and terminal flags.
+157/453, with 84.71 percent mnemonic-multiset and 74.52 percent ordered overlap.
+Turbo C 2.01 medium (`-mm -O -Z`) emits 308 instructions with 80.89 percent
+multiset and 70.06 percent ordered overlap and assembles cleanly to OBJ. No
+inline assembly is used.
+
+There are four recovered callers. Accepted routine `0x0077E0` consumes carry
+and the live `BP` context and proves that the natural Boolean return plus
+explicit `presentation_link_target` pointer preserve that dataflow through the
+downstream scene dispatcher. The other three callers discard both outputs.
+The routine is therefore accepted for source-port integration with the
+explicit Boolean/context contract. Direct replacement would still require the
+original carry and live-`BP` ABI, raw `INT 33h` lowering, register residue, and
+terminal flags.
 
 ## BLOODPRG bridge panorama frame-loader candidate
 
