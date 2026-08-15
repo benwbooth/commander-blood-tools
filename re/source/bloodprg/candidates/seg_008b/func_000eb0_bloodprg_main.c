@@ -60,7 +60,7 @@ void CB_FAR bloodprg_main(void)
 
     allocation = resource_allocate(12u, BLOODPRG_ARENA_BYTES);
     resource_copy_buffer = allocation.destination;
-    nav_presentation_resource_buffer = (volatile cb_u8 CB_FAR *)MK_FP(
+    nav_resource_buffer = (volatile cb_u8 CB_FAR *)MK_FP(
             (cb_u16)(FP_SEG(allocation.destination) + 0x0640u), 0u);
 
     allocation = resource_allocate(9u, BLOODPRG_ARENA_BYTES);
@@ -199,7 +199,7 @@ void CB_FAR bloodprg_main(void)
             }
             if ((vm_presentation_hold_ready & 1u) != 0u) {
                 if (vm_presentation_word_buffer[0] != 0u) {
-                    vm_presentation_word_choice_active = 1u;
+                    vm_word_choice_active = 1u;
                 } else {
                     vm_presentation_defer_a = 0u;
                     vm_text_display_active = 0u;
@@ -216,7 +216,7 @@ void CB_FAR bloodprg_main(void)
 
         if ((vm_dialogue_hold_complete & 1u) != 0u) {
             if (vm_presentation_word_buffer[0] != 0u) {
-                vm_presentation_word_choice_active =
+                vm_word_choice_active =
                         (vm_presentation_active & 1u) != 0u;
             }
             if (vm_dialogue_hold_countdown != 0u

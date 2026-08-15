@@ -31,12 +31,12 @@ cb_u16 CB_NEAR ship_3d_position_distance(
             SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, first_record->kind);
         selector = *(const volatile cb_u16 CB_NEAR *)
             (first_record_bytes + field_offset) == compare_word
-            ? SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH
-            : SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH;
+            ? SHIP_3D_KIND100_POS_MATCH_FIELD
+            : SHIP_3D_KIND100_POS_MISMATCH_FIELD;
         field_offset = (cb_u16)vm_field_offset(selector, first_record->kind);
         first = (const volatile ship_3d_position_field CB_NEAR *)
             (first_record_bytes + field_offset);
-    } else if (first_record->kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40) {
+    } else if (first_record->kind == SHIP_3D_POS_KIND_DIRECT_40) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_POSITION, first_record->kind);
         first = (const volatile ship_3d_position_field CB_NEAR *)
@@ -56,12 +56,12 @@ cb_u16 CB_NEAR ship_3d_position_distance(
             SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD, second_record->kind);
         selector = *(const volatile cb_u16 CB_NEAR *)
             (second_record_bytes + field_offset) == compare_word
-            ? SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH
-            : SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH;
+            ? SHIP_3D_KIND100_POS_MATCH_FIELD
+            : SHIP_3D_KIND100_POS_MISMATCH_FIELD;
         field_offset = (cb_u16)vm_field_offset(selector, second_record->kind);
         second = (const volatile ship_3d_position_field CB_NEAR *)
             (second_record_bytes + field_offset);
-    } else if (second_record->kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40) {
+    } else if (second_record->kind == SHIP_3D_POS_KIND_DIRECT_40) {
         field_offset = (cb_u16)vm_field_offset(
             SHIP_3D_FIELD_SELECTOR_POSITION, second_record->kind);
         second = (const volatile ship_3d_position_field CB_NEAR *)

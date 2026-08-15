@@ -20,18 +20,18 @@ ship_3d_position_field_resolve(
             if (*(volatile cb_u16 CB_NEAR *)(record_bytes + field_offset) ==
                     kind100_compare_word) {
                 field_offset = (cb_u16)vm_field_offset(
-                    SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH, kind);
+                    SHIP_3D_KIND100_POS_MATCH_FIELD, kind);
             } else {
                 field_offset = (cb_u16)vm_field_offset(
-                    SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH, kind);
+                    SHIP_3D_KIND100_POS_MISMATCH_FIELD, kind);
             }
             return (volatile ship_3d_position_field CB_NEAR *)
                 (record_bytes + field_offset);
         }
 
-        if (kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8 ||
-                kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10 ||
-                kind == SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200) {
+        if (kind == SHIP_3D_POS_KIND_DIRECT_8 ||
+                kind == SHIP_3D_POS_KIND_DIRECT_10 ||
+                kind == SHIP_3D_POS_KIND_DIRECT_200) {
             field_offset = (cb_u16)vm_field_offset(
                 SHIP_3D_FIELD_SELECTOR_POSITION, kind);
             return (volatile ship_3d_position_field CB_NEAR *)

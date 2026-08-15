@@ -117,7 +117,7 @@ void CB_NEAR nav_state_gate(void)
     *output++ = NAV_STATUS_LINE_END;
 
     name = (const volatile char CB_GAME_DATA *)
-            nav_location_panel_life_support_label_gs;
+            nav_life_support_label_gs;
     while (*name != '\0') {
         *output++ = *name++;
     }

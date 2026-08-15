@@ -55,7 +55,7 @@ void CB_FAR draw_hud_element_2bc7(void)
                 SHIP_3D_HUD_RECORD_AT(object_offset);
             if (object_kind == SHIP_3D_OBJECT_KIND_POSITION_KIND100) {
                 field_offset = (cb_u16)vm_field_offset(
-                    SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH,
+                    SHIP_3D_KIND100_POS_MATCH_FIELD,
                     object_kind);
                 position = (const volatile cb_u32 CB_FAR *)
                     SHIP_3D_HUD_RECORD_AT(

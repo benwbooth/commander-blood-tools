@@ -116,11 +116,11 @@ typedef char bloodprg_nav_chart_object_size_must_be_32[
         sizeof(bloodprg_nav_chart_object) == 32 ? 1 : -1];
 typedef char bloodprg_nav_chart_arche_size_must_be_36[
         sizeof(bloodprg_nav_chart_arche) == 36 ? 1 : -1];
-typedef char bloodprg_location_panel_art_entry_size_must_be_22[
+typedef char bloodprg_location_panel_art_size_ok[
         sizeof(bloodprg_location_panel_art_entry) == 22 ? 1 : -1];
 typedef char bloodprg_nav_wipe_point_size_must_be_4[
         sizeof(bloodprg_nav_wipe_point) == 4 ? 1 : -1];
-typedef char bloodprg_name_area_effect_control_size_must_be_2[
+typedef char bloodprg_name_area_control_size_ok[
         sizeof(bloodprg_name_area_effect_control) == 2 ? 1 : -1];
 typedef char bloodprg_name_area_effect_frame_size_must_be_8[
         sizeof(bloodprg_name_area_effect_frame) == 8 ? 1 : -1];
@@ -174,9 +174,9 @@ extern const bloodprg_location_panel_art_entry
 extern const cb_u8 nav_location_panel_planet_label[]; /* DS:0x012E */
 extern const cb_u8 nav_location_panel_ship_label[]; /* DS:0x0137 */
 extern const cb_u8 nav_location_panel_black_hole_label[]; /* DS:0x013E */
-extern const cb_u8 nav_location_panel_life_support_label[]; /* DS:0x014B */
+extern const cb_u8 nav_life_support_label[]; /* DS:0x014B */
 extern const cb_u8 CB_GAME_DATA
-        nav_location_panel_life_support_label_gs[]; /* GS:0x014B alias */
+        nav_life_support_label_gs[]; /* GS:0x014B alias */
 extern volatile cb_u8 nav_actor_5_active; /* DS:0x278E */
 extern volatile cb_u16 nav_selected_location_record; /* DS:0x27BF */
 extern volatile cb_u16 nav_chart_object_count; /* DS:0x27C1 */
@@ -239,9 +239,9 @@ extern const cb_u8 confirm_dialog_yes[]; /* DS:0x0189 */
 extern const cb_u8 confirm_dialog_no[]; /* DS:0x018D */
 extern const bloodprg_rect_i16 confirm_dialog_yes_region; /* DS:0x2555 */
 extern const bloodprg_rect_i16 confirm_dialog_no_region; /* DS:0x255D */
-extern volatile cb_u8 CB_FAR *nav_presentation_resource_buffer; /* DS:0x0A80 */
+extern volatile cb_u8 CB_FAR *nav_resource_buffer; /* DS:0x0A80 */
 extern volatile cb_u8 CB_FAR * CB_GAME_DATA
-        nav_presentation_resource_buffer_gs; /* explicit GS:0x0A80 alias */
+        nav_resource_buffer_gs; /* explicit GS:0x0A80 alias */
 extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 */
 
 #if defined(__WATCOMC__)

@@ -14,7 +14,7 @@ typedef union ship_3d_extent_comparison_reference {
     const volatile bloodprg_sprite_source_extent CB_FAR *extent;
 } ship_3d_extent_comparison_reference;
 
-typedef char ship_3d_extent_comparison_reference_size_must_be_4[
+typedef char ship_3d_extent_comparison_ref_size_ok[
         sizeof(ship_3d_extent_comparison_reference) == 4 ? 1 : -1];
 
 void CB_FAR ship_3d_object_sprite_project(void)

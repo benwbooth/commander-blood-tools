@@ -157,7 +157,7 @@ void CB_NEAR location_info_panel_dispatch(
         text_x = LOCATION_PANEL_TEXT_X;
         text_y = (cb_u16)(text_y + LOCATION_PANEL_TEXT_ROW_HEIGHT);
         main_font_text_draw_display(
-                nav_location_panel_life_support_label,
+                nav_life_support_label,
                 text_x,
                 text_y,
                 LOCATION_PANEL_TITLE_COLOR);

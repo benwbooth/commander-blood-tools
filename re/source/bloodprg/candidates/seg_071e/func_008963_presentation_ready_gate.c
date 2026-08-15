@@ -43,7 +43,7 @@ void CB_FAR presentation_ready_gate(void)
     int transition_complete;
 
     if ((vm_presentation_active & 1u) == 0u
-            || (vm_presentation_word_choice_active & 1u) == 0u
+            || (vm_word_choice_active & 1u) == 0u
             || (vm_presentation_request_flags & 2u) != 0u) {
         return;
     }
@@ -111,7 +111,7 @@ void CB_FAR presentation_ready_gate(void)
     }
 
     vm_block_match_value = vm_presentation_selected_word;
-    vm_presentation_word_choice_active = 0u;
+    vm_word_choice_active = 0u;
     vm_presentation_defer_a = 0u;
     vm_text_display_active = 0u;
     vm_dialogue_hold_complete = 0u;

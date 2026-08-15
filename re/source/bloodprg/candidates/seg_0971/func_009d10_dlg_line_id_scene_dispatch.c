@@ -30,7 +30,7 @@ void CB_FAR dlg_line_id_scene_dispatch(cb_u16 link_target_offset)
         if (line == 0x001du) {
             record = (volatile bloodprg_vm_record_triple CB_FAR *)MK_FP(
                     FP_SEG(vm_record_base),
-                    vm_presentation_primary_c4_record);
+                    vm_primary_c4_record);
             ship_3d_alien_overlay_armed =
                     record->related == vm_named_scruter_jo_object;
         } else if ((ship_3d_alien_overlay_armed & 1u) != 0u) {

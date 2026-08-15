@@ -127,7 +127,7 @@ void CB_NEAR record_c1_ship3d_action(
 
                 primary = RECORD_AT(
                         record_segment,
-                        vm_presentation_primary_c4_record_gs,
+                        vm_primary_c4_record_gs,
                         bloodprg_vm_record_triple);
                 if (primary->kind == RECORD_KIND_C4) {
                     related_offset = primary->related;
@@ -150,7 +150,7 @@ void CB_NEAR record_c1_ship3d_action(
                 ship_3d_current_target_gs = related_offset;
                 vm_ship_active_flags_gs = 9u;
                 vm_presentation_word_buffer_gs[0] = 0u;
-                vm_presentation_word_choice_active_gs = 0u;
+                vm_word_choice_active_gs = 0u;
                 vm_presentation_request_flags_gs = 0u;
                 vm_c2_presentation_gate_gs = 0u;
                 ship_3d_hud_initialized_word_gs = 1u;

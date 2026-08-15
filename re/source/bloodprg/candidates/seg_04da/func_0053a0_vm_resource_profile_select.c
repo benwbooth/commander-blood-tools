@@ -60,7 +60,7 @@ cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile)
     vm_presentation_active = 0u;
     vm_presentation_defer_a = 0u;
     vm_text_display_active = 0u;
-    vm_presentation_word_choice_active = 0u;
+    vm_word_choice_active = 0u;
     vm_block_match_value = 0u;
     vm_profile_word_6766 = 0u;
     nav_deferred_record_type = 0u;
@@ -95,7 +95,7 @@ cb_i16 CB_FAR vm_resource_profile_select(cb_u16 profile)
             object_offset = entry->object_offset;
             if (string_compare(entry->name, vm_builtin_name_blood)) {
                 vm_wildcard_ref_value = object_offset;
-                vm_presentation_primary_c4_record =
+                vm_primary_c4_record =
                         (cb_u16)(object_offset + 8u);
                 vm_blood_history_words = (volatile cb_u16 CB_FAR *)MK_FP(
                         state_resource.segment,

@@ -1230,14 +1230,22 @@ comparison flags, stack integrity, and far return. The addr32 record load also
 exposes a shipped ABI precondition: EAX is cleared, but incoming upper EDI must
 already be zero because LES only replaces DI.
 
-Open Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles the actual natural
-candidate warning-free to 29 instructions/76 bytes versus the original 32/79,
-with 75 percent mnemonic-multiset overlap and no inline assembly. Watcom uses
-DI as the output cursor and reloads GAME_DATA inside the loop; the binary uses
-BP for output and leaves DI at the record-base offset. Those clobber choices,
-the helper's inherited BP cursor, fixed segmented placement, and the addr32
-high-half convention remain integration boundaries around the recovered C
-algorithm.
+Open Watcom 1.9 medium size mode (`-3 -os -s -mm -we`) compiles the actual
+natural candidate warning-free to 29 instructions/71 bytes versus the original
+32/79, with 71.88 percent mnemonic-multiset overlap and no inline assembly.
+Turbo C 2.01 medium emits 50 instructions. The real Turbo probe also exposed
+nine shared-header identifier groups that collided at its 32-character
+significance limit; shortening those declarations and their users makes the
+actual candidate compile cleanly instead of relying on the old miniature probe.
+
+Watcom uses DI as the output cursor and reloads GAME_DATA inside the loop; the
+binary uses BP for output and leaves DI at the record-base offset. Runtime
+captures place the relocatable record block at `8681:0000` and `7838:0000`, so
+the C compiler's 16-bit far-offset addition addresses every shipped object just
+as the original addr32 expression does. The typed helper call, cursor allocation,
+and segment reloads are accepted compiler differences for source-port
+integration. Exact drop-in replacement still needs the inherited BP cursor and
+upper-EDI-zero ABI adapter.
 
 VM state-record processor `0x00713D` takes only the segment from the far record
 pointer at `GS:0x6724`, walks the far directory at `GS:0x672C` while each

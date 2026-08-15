@@ -31,6 +31,12 @@ FORBIDDEN_SOURCE_TOKENS = [
     "register_state",
     "CbMachine",
 ]
+TURBO_C_IDENTIFIER_CHARACTERS = 32
+IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
+C_COMMENT_OR_LITERAL_RE = re.compile(
+    r"//[^\n]*|/\*.*?\*/|\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'",
+    re.DOTALL,
+)
 
 
 def manifest_paths() -> list[Path]:
@@ -138,6 +144,26 @@ def check_candidates(manifests: list[tuple[Path, Path, list[dict[str, str]]]]) -
             for token in FORBIDDEN_SOURCE_TOKENS:
                 if token in text:
                     errors.append(f"{path}: forbidden token {token}")
+
+    significant_names: dict[str, set[str]] = {}
+    for candidate_root in sorted(candidate_roots):
+        for path in sorted(candidate_root.glob("**/*")):
+            if path.suffix not in {".c", ".h"}:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            code = C_COMMENT_OR_LITERAL_RE.sub(" ", text)
+            for name in IDENTIFIER_RE.findall(code):
+                if len(name) <= TURBO_C_IDENTIFIER_CHARACTERS:
+                    continue
+                prefix = name[:TURBO_C_IDENTIFIER_CHARACTERS]
+                significant_names.setdefault(prefix, set()).add(name)
+
+    for prefix, names in sorted(significant_names.items()):
+        if len(names) > 1:
+            errors.append(
+                "Turbo C identifier collision at "
+                f"{prefix!r}: {', '.join(sorted(names))}"
+            )
 
     if errors:
         for error in errors:

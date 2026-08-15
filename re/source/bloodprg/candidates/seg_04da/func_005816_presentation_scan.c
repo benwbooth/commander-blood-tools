@@ -75,11 +75,11 @@ void CB_NEAR presentation_scan(void)
             case PRESENTATION_KIND_CHARACTER:
                 if ((vm_presentation_active_gs & 1u) != 0u
                         && (vm_c2_presentation_gate_gs & 1u) == 0u
-                        && (vm_presentation_word_choice_active_gs & 1u) == 0u
+                        && (vm_word_choice_active_gs & 1u) == 0u
                         && (vm_presentation_start_lock & 1u) == 0u) {
                     primary_record = PRESENTATION_RECORD_AT(
                             record_segment,
-                            vm_presentation_primary_c4_record_gs,
+                            vm_primary_c4_record_gs,
                             bloodprg_vm_record_triple);
                     if (primary_record->kind == PRESENTATION_RECORD_C4
                             && record->kind == PRESENTATION_RECORD_C4
@@ -128,7 +128,7 @@ void CB_NEAR presentation_scan(void)
                         vm_presentation_word_buffer_gs[0] = 0u;
                         vm_presentation_input_gate = 0u;
                         vm_presentation_text_wait_gs = 0u;
-                        vm_presentation_word_choice_active_gs = 0u;
+                        vm_word_choice_active_gs = 0u;
                         vm_presentation_hold_ready_gs = 0u;
                         vm_dialogue_hold_complete_gs = 0u;
                         vm_presentation_owner_offset_gs = 0u;
@@ -144,10 +144,10 @@ void CB_NEAR presentation_scan(void)
                                 name_area_effect_restart_gs = 1u;
                                 (void)resource_named_file_load(
                                         PRESENTATION_EFFECT_RESOURCE,
-                                        nav_presentation_resource_buffer_gs);
+                                        nav_resource_buffer_gs);
                                 entity_record_setter(
                                         PRESENTATION_EFFECT_ENTITY,
-                                        nav_presentation_resource_buffer_gs,
+                                        nav_resource_buffer_gs,
                                         PRESENTATION_EFFECT_X,
                                         PRESENTATION_EFFECT_Y,
                                         0u);

@@ -325,7 +325,7 @@ typedef char xdb_alien_star_camera_cell_size_must_be_0x04[
         sizeof(xdb_alien_star_camera_cell) == 0x04 ? 1 : -1];
 typedef char xdb_alien_projection_state_size_must_be_0x5e[
         sizeof(xdb_alien_projection_state) == 0x5e ? 1 : -1];
-typedef char xdb_alien_primary_render_context_size_must_be_0x2e[
+typedef char xdb_alien_primary_context_size_ok[
         sizeof(xdb_alien_primary_render_context) == 0x2e ? 1 : -1];
 
 typedef struct xdb_alien_slot7_root_state {
