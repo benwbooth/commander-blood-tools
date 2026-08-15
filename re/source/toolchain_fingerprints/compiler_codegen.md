@@ -6675,11 +6675,16 @@ framebuffer, and stack segments prove state ownership, the explicit GS
 operation read after DS becomes the framebuffer segment, the PRNG call frame,
 all preserved registers, AX residue, and near return.
 
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) compiles the one natural typed C
-function warning-free to 115 instructions versus 116/235 original, with 77.59
-percent mnemonic-multiset overlap and 62.93 percent ordered mnemonic overlap.
-There is no inline assembly or register-state facade. Full-source integration
-uses the shipped DS=GS alias and valid nonzero frame records; direct binary
+The corrected source names the operation byte through an explicit GS alias;
+this preserves the split-segment behavior proved above instead of relying on
+the shipped DS=GS state before the framebuffer switch. Open Watcom 1.9 large
+(`-3 -os -s -ml -we`) compiles the natural typed function warning-free to 117
+instructions/306 bytes versus 116/235 original, with 77.59 percent
+mnemonic-multiset overlap and 62.93 percent ordered mnemonic overlap. Turbo C
+2.01 large (`-ml -O -Z`) emits 160 instructions with 74.14 percent multiset and
+64.66 percent ordered overlap and assembles warning-free to a 1,414-byte OMF
+object. There is no inline assembly or register-state facade. The source is
+accepted for full-source integration with valid frame records; direct binary
 replacement would additionally need the original segment switch, save
 envelope, AX residue, and terminal flags.
 

@@ -96,6 +96,8 @@ extern const bloodprg_name_area_effect_frame CB_NEAR
         *name_area_effect_frame_cursor; /* DS:0x27ED */
 extern volatile bloodprg_name_area_effect_control
         name_area_effect_control; /* DS:0x27EF */
+extern volatile cb_u8 CB_GAME_DATA
+        name_area_effect_operation_gs; /* explicit GS:0x27EF alias */
 extern const bloodprg_name_area_effect_sequence CB_NEAR
         *name_area_effect_sequences[10]; /* DS:0x27F1 */
 

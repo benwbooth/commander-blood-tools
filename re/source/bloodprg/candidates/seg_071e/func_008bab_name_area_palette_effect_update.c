@@ -41,7 +41,7 @@ void CB_NEAR name_area_palette_effect_update(void)
 
     frame = name_area_effect_frame_cursor;
     name_area_effect_frame_cursor = frame + 1;
-    operation = name_area_effect_control.fields.operation;
+    operation = name_area_effect_operation_gs;
     row_offset = (cb_u16)((frame->y << 8) | (frame->y >> 8));
     row_offset = (cb_u16)(row_offset + (frame->y << 6));
     pixel = graphics_display_buffer_ds
