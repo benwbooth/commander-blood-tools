@@ -321,12 +321,19 @@ an invalid-state edge, not a usable call convention.
 The natural candidate is a structured retry loop with typed Boolean helper
 results and an explicit link-target argument. It has no register model, memory
 emulator, inline assembly, or nonlocal unwind. On the malformed edge it performs
-the apparent intended latch helper and returns safely. Open Watcom `-3 -ox -mh`
-compiles it warning-free to 33 instructions and 87 bytes, versus 38
-instructions and 88 bytes in the binary. The probe has a 13.16 percent
-instruction and byte-line LCS, 42.11 percent mnemonic-sequence LCS, and 60.53
-percent mnemonic-multiset overlap. Exact integration still needs carry-result
-adapters for the ready/due helpers and the far presentation call boundary.
+the apparent intended latch helper and returns safely. The compiler-corpus
+sample now includes that authoritative source. Open Watcom 1.9 medium (`-3 -ox
+-mm -zdf -we`) compiles it warning-free to 33 instructions/88 bytes versus
+38/88 original, with 60.53 percent mnemonic-multiset and 44.74 percent ordered
+overlap. Turbo C 2.01 medium (`-mm -O -Z`) emits 34 instructions with 65.79
+percent multiset and 47.37 percent ordered overlap and assembles warning-free
+to OBJ.
+
+The accepted scene-line dispatcher is its sole recovered C caller. The
+function is accepted for valid shipped-state source integration under the
+descriptor invariant above. The malformed external-data edge remains an
+explicit non-equivalence; direct replacement also needs carry-result adapters,
+the far presentation boundary, parent-frame unwind, and register/flag residue.
 
 For `0x00A1F3`, four direct vectors enter through the actual eight-word save
 frame created by `0x00A1B4`. They prove both values of resource flag bit 7,
