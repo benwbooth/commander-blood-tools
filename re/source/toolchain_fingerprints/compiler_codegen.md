@@ -889,10 +889,11 @@ The one-function natural candidate uses a typed six-byte header, direct far
 pointers, and the recovered AABC function. It passes literal bias normally
 instead of mutating executable bytes and uses a mask-based bit reader rather
 than encoding the refill sentinel in carry/zero flags. Open Watcom `-3 -ox
--mh` compiles the actual candidate and probe warning-free to 212 instructions
-and 525 bytes versus 207/424 original. The probe has a 31.40 percent
-mnemonic-sequence LCS, 45.89 percent mnemonic-multiset overlap, and 2.90
-percent byte-line LCS. The original differs in its ambient DS:SI/ES:DI/BP ABI,
+-mh` compiles the actual candidate and probe warning-free to 208 instructions
+and 521 bytes versus 207/424 original after applying AABC's recovered DS:BX
+return contract. The probe has a 31.40 percent mnemonic-sequence LCS, 45.89
+percent mnemonic-multiset overlap, and 3.38 percent byte-line LCS. The original
+differs in its ambient DS:SI/ES:DI/BP ABI,
 sentinel-flag refill, register residue, and MOVS/STOS/REP lowering; these are
 reviewed integration boundaries rather than missing decoder logic.
 Turbo C 2.01 huge emits 240 instructions and assembles cleanly to OBJ. The
@@ -914,13 +915,16 @@ the destination end.
 The one-function natural candidate returns only the compressed source cursor,
 which is the sole result consumed by both callers at `0x00A914` and `0x00AB25`,
 and takes the literal bias as an ordinary argument instead of modifying code.
-Open Watcom `-3 -ox -mh` compiles it warning-free to 113 instructions and 261
-bytes versus 53/105 original. Its probe has a 45.28 percent mnemonic-sequence
-LCS, 62.26 percent mnemonic-multiset overlap, and 5.66 percent byte-line LCS.
-The remaining boundary is mechanical: the original takes DS:SI, ES:DI, and BP,
-returns BX, mutates two code bytes, and uses `REP MOVSB`; the natural function
-uses typed far pointers, an explicit bias, and an ordinary pointer return under
-the same clear-DF runtime invariant.
+The authoritative source classifies controls as signed bytes, computes each
+one-use distance directly, and declares the recovered DS:BX result plus live
+register clobbers. Open Watcom `-3 -ox -mh` compiles it warning-free to 109
+instructions and 248 bytes versus 53/105 original, with 45.28 percent
+mnemonic-sequence LCS, 58.49 percent mnemonic-multiset overlap, and 5.66 percent
+byte-line LCS. Turbo C 2.01 huge emits 121 instructions and assembles cleanly to
+OBJ. The remaining difference is mechanical: typed far-pointer arguments,
+explicit literal bias, and scalar forward overlap replace the original ambient
+entry registers, two modified code bytes, and `REP MOVSB`. These differences
+are accepted for source integration under the same clear-DF runtime invariant.
 
 For `0x00AB25`, eight direct vectors prove that the former generic
 `block_iter_6byte` label is a rectangular transparent-pixel AD decoder. It
@@ -3875,8 +3879,8 @@ LCS and then mnemonic similarity:
 | `ship_3d_object_sprite_project` | medium, `-ox`, register | 122/303 | 0.0410 | 0.6066 | 0.0656 |
 | `resource_payload_decode_dispatch` | medium, `-ox`, register | 30/60 | 0.1000 | 0.6000 | 0.1333 |
 | `resource_payload_decode_ab` | huge, `-ox`, register | 73/120 | 0.0411 | 0.5616 | 0.0959 |
-| `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
-| `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
+| `resource_payload_decode_ad` | huge, `-ox`, register | 207/208 | 0.0145 | 0.3140 | 0.0338 |
+| `resource_pair_lz_decode` | huge, `-ox`, register | 53/109 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
 | `resource_rect_blit` | medium, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
