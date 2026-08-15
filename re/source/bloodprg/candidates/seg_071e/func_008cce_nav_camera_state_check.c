@@ -76,10 +76,29 @@ void CB_NEAR nav_camera_state_check(
     cb_i16 label_y;
     cb_u8 state;
 
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+    /* TASM 1.0 accepts the operand-size prefix as raw data in 16-bit mode. */
+    asm db 066h;
+    asm push ax;
+    asm push bx;
+    asm push cx;
+    asm push dx;
+    asm push bp;
+    asm push ds;
+    asm push si;
+    asm push es;
+    asm push di;
+#elif defined(__WATCOMC__)
+    /* Watcom saves allocated GPRs; preserve full EAX and both data segments. */
+    _asm push eax;
+    _asm push ds;
+    _asm push es;
+#endif
+
     state = nav_camera_view_state;
     if (state == 0u) {
         if ((nav_camera_view_active & NAV_CAMERA_ACTIVE_FLAG) == 0u) {
-            return;
+            goto restore_registers;
         }
         goto interactive;
     }
@@ -232,6 +251,12 @@ void CB_NEAR nav_camera_state_check(
             saved_buffer = graphics_back_buffer_ds;
             graphics_back_buffer_ds = graphics_work_surface;
             pbm_palette_refresh_ds = 0u;
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+            asm db 066h;
+            asm xor ax, ax;
+#elif defined(__WATCOMC__)
+            _asm xor eax, eax;
+#endif
             bridge_panorama_frame_load(0u);
             ship_3d_hud_palette_snapshot_and_camera_reset();
             (void)page_flip();
@@ -289,16 +314,16 @@ void CB_NEAR nav_camera_state_check(
     dirty_rects_copy_secondary_to_primary(
             (const volatile bloodprg_dirty_rect CB_FAR *)
             &bloodprg_dirty_rect_list[0]);
-    return;
+    goto restore_registers;
 
 interactive:
     if ((nav_center_wipe_complete & 1u) == 0u) {
-        return;
+        goto restore_registers;
     }
     vm_ui_flags |= NAV_CAMERA_UI_FLAG;
     if (nav_selected_location_record != 0u) {
         location_info_panel_dispatch(comparison_extent);
-        return;
+        goto restore_registers;
     }
 
     entity_id = NAV_CAMERA_SUBOBJECT_FIRST_ENTITY;
@@ -321,7 +346,7 @@ interactive:
 
     picked_offset = nav_chart_object_pick(vm_record_base);
     if (picked_offset == 0u) {
-        return;
+        goto restore_registers;
     }
 
     object = NAV_CAMERA_RECORD_AT(picked_offset);
@@ -342,7 +367,7 @@ interactive:
                 (cb_u16)label_x,
                 (cb_u16)label_y,
                 NAV_CAMERA_LABEL_COLOR);
-        return;
+        goto restore_registers;
     }
 
     manu3_animation_selector_current = 0u;
@@ -355,7 +380,7 @@ interactive:
 
     arche = NAV_CAMERA_RECORD_AT(vm_arche_record_offset);
     if (picked_offset == arche->current_location) {
-        return;
+        goto restore_registers;
     }
 
     nav_selected_location_record = picked_offset;
@@ -375,4 +400,22 @@ interactive:
     while (object_count-- != 0u) {
         entity_flag_state_transition(entity_id++);
     }
+
+restore_registers:
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+    asm pop di;
+    asm pop es;
+    asm pop si;
+    asm pop ds;
+    asm pop bp;
+    asm pop dx;
+    asm pop cx;
+    asm pop bx;
+    asm db 066h;
+    asm pop ax;
+#elif defined(__WATCOMC__)
+    _asm pop es;
+    _asm pop ds;
+    _asm pop eax;
+#endif
 }

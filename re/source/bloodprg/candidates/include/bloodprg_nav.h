@@ -256,6 +256,7 @@ extern volatile char CB_FAR fs_presentation_resource_names[][16]; /* FS:0x0C04 *
         parm [es di] value [ax] modify exact [ax bx cx dx bp di]
 #pragma aux nav_center_wipe_span_table_build parm [si]
 #pragma aux name_area_palette_effect_update modify exact [ax]
+#pragma aux nav_camera_state_check modify exact []
 #endif
 
 int CB_NEAR presentation_line_helper(
