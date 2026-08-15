@@ -6139,16 +6139,18 @@ the exact primitive and text-draw arguments, `SS:BP` table ownership against DS
 decoys, DS text ownership, path-specific ES, saved registers, stack integrity,
 and the far return against the untouched 283-byte body.
 
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
-110-instruction function versus 96 instructions in the original, with 84.38
-percent mnemonic-multiset overlap and 76.04 percent ordered mnemonic overlap.
-The candidate is one typed C function with normal pointer traversal and no
-inline assembly or register-state facade.
+Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits a 108-instruction/363-byte
+function versus 96/283 original, with 84.38 percent mnemonic-multiset and 76.04
+percent ordered overlap. Turbo C 2.01 large emits 135 instructions with 84.38
+percent multiset and 70.83 percent ordered overlap and assembles cleanly to OBJ.
+The candidate remains one typed C function with normal pointer traversal; a
+narrow compiler-only restore exit preserves the original full `EAX`, `DS`,
+`SI`, and `BP` contract without introducing a register-state facade.
 
 Full-source integration requires the shipped `SS=DS` primitive-table alias and
 the game's guaranteed CR termination. Direct binary replacement additionally
-needs the original BP cursor, selective save envelope, ES/register residue, and
-path-specific flags.
+needs the original BP cursor, path-specific ES/helper residue, and terminal
+flags.
 
 ## BLOODPRG ship-3D navigation coordinator candidate
 

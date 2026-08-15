@@ -16,11 +16,20 @@ void CB_FAR subtitle_reveal_pump(void)
     cb_u16 y;
     cb_u8 color;
 
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+    asm db 066h;
+    asm push ax;
+    asm push ds;
+#elif defined(__WATCOMC__)
+    _asm push eax;
+    _asm push ds;
+#endif
+
     if ((vm_subtitle_display_mode_ds & 2u) == 0u
             && (vm_text_display_active & 1u) == 0u
             && ((vm_presentation_hold_ready & 1u) == 0u
                 || vm_presentation_owner_offset != SUBTITLE_HOLD_OWNER)) {
-        return;
+        goto restore_registers;
     }
 
     line = (const cb_u8 CB_NEAR *)vm_text_buffer;
@@ -65,7 +74,7 @@ void CB_FAR subtitle_reveal_pump(void)
             subtitle_opening_frame_pulse = 1u;
             vm_text_reveal_phase = (cb_u16)(phase - 1u);
         }
-        return;
+        goto restore_registers;
     }
 
     character = (const volatile cb_u8 CB_NEAR *)subtitle_reveal_cursor;
@@ -92,8 +101,18 @@ void CB_FAR subtitle_reveal_pump(void)
         }
         ++line;
         if (*line == 0u) {
-            return;
+            goto restore_registers;
         }
         y = (cb_u16)(y + SUBTITLE_LINE_PITCH);
     }
+
+restore_registers:
+#if defined(__TURBOC__) || defined(__BORLANDC__)
+    asm pop ds;
+    asm db 066h;
+    asm pop ax;
+#elif defined(__WATCOMC__)
+    _asm pop ds;
+    _asm pop eax;
+#endif
 }

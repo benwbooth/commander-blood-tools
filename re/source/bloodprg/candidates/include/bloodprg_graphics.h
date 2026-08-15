@@ -443,6 +443,7 @@ void CB_NEAR list_walk_f18(void); /* 0x007CE8 */
         parm [ds si] [bx] [dx] [ax] modify exact []
 #pragma aux subtitle_reveal_draw_wrapper \
         parm [si] [bx] [dx] modify exact []
+#pragma aux subtitle_reveal_pump modify exact [bx cx dx di es]
 #pragma aux small_text_render \
         parm [si] [ax] [bx] [dx] modify exact []
 #pragma aux small_text_render_far "small_text_render_" \
