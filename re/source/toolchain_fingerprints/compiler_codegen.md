@@ -705,14 +705,17 @@ memory ownership, and inherited reverse DF.
 
 The one-function natural candidate exposes ordinary source and framebuffer far
 pointers plus typed scalar dimensions. It contains no register model, memory
-emulator, or inline assembly. Open Watcom `-3 -ox -mh` compiles the actual
-candidate and probe warning-free to 92 instructions and 206 bytes versus
-51/101 original. The probe has a 62.75 percent mnemonic-sequence LCS, 80.39
-percent mnemonic-multiset overlap, and 3.92 percent byte-line LCS; the exact
-instruction LCS is zero. Exact replacement still needs the ambient register
-ABI and string-instruction lowering. Natural pointer traversal assumes the
-shipped clear-DF C invariant, while the reverse vector records the binary's
-out-of-contract behavior.
+emulator, or inline assembly, and the compiler-corpus sample now includes this
+source directly. Open Watcom `-3 -ox -s -mm -zdf` compiles it warning-free to
+92 instructions/206 bytes versus 51/101 original, with 62.75 percent ordered,
+80.39 percent mnemonic-multiset, and 3.92 percent byte-line overlap. Turbo C
+`-mm -O -Z` emits 108 instructions with 68.63 percent ordered and 84.31 percent
+multiset overlap and assembles warning-free to OBJ.
+
+The accepted presentation coordinator consumes only framebuffer effects.
+Exact replacement still needs the ambient register ABI and string-instruction
+lowering. Natural pointer traversal assumes the shipped clear-DF C invariant,
+while the reverse vector records binary behavior outside that contract.
 
 For `0x00A2AB`, thirteen direct coordinator vectors prove the complete D8C
 queue-refill state machine. They cover uncapped pending reads, both sides of
@@ -3818,7 +3821,7 @@ LCS and then mnemonic similarity:
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
 | `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
-| `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
+| `resource_rect_blit` | medium, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
 | `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
 | `list_d8c_refill_with_rollover_latch` | huge, `-ox`, register | 14/10 | 0.1429 | 0.5000 | 0.2143 |
