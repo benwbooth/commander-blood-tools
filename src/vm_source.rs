@@ -47,11 +47,82 @@ pub struct Disassembly {
     pub raw_bytes: usize,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum BasToken {
+    Menu {
+        offset: usize,
+        word_offsets: Vec<u16>,
+    },
+    Text(VmToken),
+    Yield {
+        offset: usize,
+    },
+    BlockEnd {
+        offset: usize,
+        selector: u16,
+        continuation: u16,
+    },
+    PresentationRegister {
+        offset: usize,
+        value: u16,
+    },
+    Vm(VmToken),
+    End {
+        offset: usize,
+    },
+}
+
+impl BasToken {
+    pub(crate) fn offset(&self) -> usize {
+        match self {
+            Self::Menu { offset, .. }
+            | Self::Yield { offset }
+            | Self::BlockEnd { offset, .. }
+            | Self::PresentationRegister { offset, .. }
+            | Self::End { offset } => *offset,
+            Self::Text(token) | Self::Vm(token) => token.offset(),
+        }
+    }
+
+    pub(crate) fn encode(&self) -> Option<Vec<u8>> {
+        let mut bytes = Vec::new();
+        let word = |bytes: &mut Vec<u8>, value: u16| {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        };
+        match self {
+            Self::Menu { word_offsets, .. } => {
+                bytes.push(0xA3);
+                for value in word_offsets {
+                    word(&mut bytes, *value);
+                }
+                word(&mut bytes, 0);
+            }
+            Self::Text(token) | Self::Vm(token) => return vm::encode_token(token),
+            Self::Yield { .. } => bytes.push(vm::OP_YIELD_A),
+            Self::BlockEnd {
+                selector,
+                continuation,
+                ..
+            } => {
+                bytes.push(vm::OP_YIELD_B);
+                word(&mut bytes, *selector);
+                word(&mut bytes, *continuation);
+            }
+            Self::PresentationRegister { value, .. } => {
+                bytes.push(0xA7);
+                word(&mut bytes, *value);
+            }
+            Self::End { .. } => bytes.push(0xFF),
+        }
+        Some(bytes)
+    }
+}
+
 /// Disassemble one complete VM image into the parseable CBVM-ASM format.
 ///
-/// COD uses the recovered opcode descriptor grammar. BAS is not forced through
-/// that grammar: only independently recognizable menu tables and text records
-/// receive semantic comments, and every other byte remains an explicit raw span.
+/// COD uses the recovered opcode descriptor grammar. BAS uses its independently
+/// recovered sequential grammar, including menu tables and five-byte block links.
+/// Any byte shape outside those grammars remains an explicit raw span.
 pub fn disassemble(
     kind: ImageKind,
     image: &[u8],
@@ -206,26 +277,7 @@ fn disassemble_bas(
     let mut raw_bytes = 0usize;
 
     while cursor < image.len() {
-        let recognized = bas_menu_at(image, cursor, dictionary)
-            .map(|(end, labels)| {
-                (
-                    end,
-                    format!(
-                        "MENU {}",
-                        labels
-                            .iter()
-                            .map(|(_, label)| label.as_str())
-                            .collect::<Vec<_>>()
-                            .join(" | ")
-                    ),
-                )
-            })
-            .or_else(|| {
-                bas_text_at(image, cursor, dictionary)
-                    .map(|(end, token)| (end, token_comment(&token, dictionary)))
-            });
-
-        if let Some((end, comment)) = recognized {
+        if let Some((end, token)) = bas_token_at(image, cursor, dictionary) {
             if raw_start < cursor {
                 emit_span(
                     output,
@@ -235,9 +287,20 @@ fn disassemble_bas(
                 )?;
                 raw_bytes += cursor - raw_start;
             }
-            emit_span(output, cursor, &image[cursor..end], &comment)?;
+            let encoded = token.encode().ok_or_else(|| {
+                anyhow!("BAS token at 0x{:08X} cannot be encoded", token.offset())
+            })?;
+            if image.get(cursor..end) != Some(encoded.as_slice()) {
+                bail!("BAS token at 0x{cursor:08X} does not re-encode exactly");
+            }
+            emit_span(
+                output,
+                cursor,
+                &encoded,
+                &bas_token_comment(&token, dictionary),
+            )?;
             semantic_spans += 1;
-            semantic_bytes += end - cursor;
+            semantic_bytes += encoded.len();
             cursor = end;
             raw_start = cursor;
         } else {
@@ -251,10 +314,119 @@ fn disassemble_bas(
     Ok((semantic_spans, semantic_bytes, raw_bytes))
 }
 
-pub(crate) fn bas_menu_at(
+pub(crate) fn bas_token_at(
     image: &[u8],
     offset: usize,
     dictionary: &HashMap<u16, String>,
+) -> Option<(usize, BasToken)> {
+    let opcode = *image.get(offset)?;
+    if opcode == 0xFF {
+        return Some((offset + 1, BasToken::End { offset }));
+    }
+    if opcode == 0xA3 {
+        let (end, labels) = bas_menu_at(image, offset, dictionary, 1)?;
+        return Some((
+            end,
+            BasToken::Menu {
+                offset,
+                word_offsets: labels.into_iter().map(|(word, _)| word).collect(),
+            },
+        ));
+    }
+    if opcode == vm::OP_TEXT {
+        let (end, token) = bas_text_at(image, offset, dictionary)?;
+        return Some((end, BasToken::Text(token)));
+    }
+    if opcode == vm::OP_YIELD_A {
+        return Some((offset + 1, BasToken::Yield { offset }));
+    }
+    if opcode == vm::OP_YIELD_B {
+        let end = offset.checked_add(5)?;
+        let selector = read_word(image, offset + 1)?;
+        let continuation = read_word(image, offset + 3)?;
+        dictionary.get(&selector)?;
+        if continuation != 0 && continuation as usize >= image.len() {
+            return None;
+        }
+        return (end <= image.len()).then_some((
+            end,
+            BasToken::BlockEnd {
+                offset,
+                selector,
+                continuation,
+            },
+        ));
+    }
+    if opcode == 0xA7 {
+        let end = offset.checked_add(3)?;
+        let value = read_word(image, offset + 1)?;
+        return (end <= image.len()).then_some((
+            end,
+            BasToken::PresentationRegister { offset, value },
+        ));
+    }
+
+    if matches!(opcode, 0xA8 | 0xAE | 0xB0 | 0xB4 | 0xC0 | 0xC9 | 0xCD) {
+        let token = vm::walk(image, offset, image.len()).into_iter().next()?;
+        if !matches!(
+            token,
+            VmToken::LoadString { .. }
+                | VmToken::SharedBitState { .. }
+                | VmToken::SharedState { .. }
+                | VmToken::RecordClear { .. }
+                | VmToken::RecordTriple { .. }
+        ) {
+            return None;
+        }
+        let encoded = vm::encode_token(&token)?;
+        let end = offset.checked_add(encoded.len())?;
+        if image.get(offset..end) == Some(encoded.as_slice()) {
+            return Some((end, BasToken::Vm(token)));
+        }
+    }
+    None
+}
+
+fn bas_token_comment(token: &BasToken, dictionary: &HashMap<u16, String>) -> String {
+    match token {
+        BasToken::Menu { word_offsets, .. } => format!(
+            "MENU {}",
+            word_offsets
+                .iter()
+                .filter_map(|word| dictionary.get(word))
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(" | ")
+        ),
+        BasToken::Text(token) | BasToken::Vm(token) => token_comment(token, dictionary),
+        BasToken::Yield { .. } => "YIELD".to_string(),
+        BasToken::BlockEnd {
+            selector,
+            continuation,
+            ..
+        } => format!(
+            "BAS_BLOCK_END selector=0x{selector:04X} {:?} continuation=0x{continuation:04X}",
+            dictionary.get(selector).map(String::as_str).unwrap_or("")
+        ),
+        BasToken::PresentationRegister { value, .. } => {
+            format!("PRESENTATION_REGISTER value=0x{value:04X}")
+        }
+        BasToken::End { .. } => "END".to_string(),
+    }
+}
+
+fn read_word(image: &[u8], offset: usize) -> Option<u16> {
+    Some(u16::from_le_bytes([
+        *image.get(offset)?,
+        *image.get(offset + 1)?,
+    ]))
+}
+
+fn bas_menu_at(
+    image: &[u8],
+    offset: usize,
+    dictionary: &HashMap<u16, String>,
+    minimum_labels: usize,
 ) -> Option<(usize, Vec<(u16, String)>)> {
     if image.get(offset) != Some(&0xA3) {
         return None;
@@ -265,7 +437,7 @@ pub(crate) fn bas_menu_at(
         let word = u16::from_le_bytes([image[cursor], image[cursor + 1]]);
         cursor += 2;
         if word == 0 {
-            return (labels.len() >= 2).then_some((cursor, labels));
+            return (labels.len() >= minimum_labels).then_some((cursor, labels));
         }
         let label = dictionary.get(&word)?;
         if !(2..=16).contains(&label.len()) || label.contains(' ') {
@@ -541,6 +713,10 @@ mod tests {
                     std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap();
                 let listing = disassemble(kind, &image, &dictionary).unwrap();
                 let rebuilt = assemble(&listing.source).unwrap();
+                assert_eq!(
+                    listing.raw_bytes, 0,
+                    "SCRIPT{script}.{extension} must have no raw spans"
+                );
                 assert_eq!(
                     rebuilt, image,
                     "SCRIPT{script}.{extension} must rebuild byte-exactly"

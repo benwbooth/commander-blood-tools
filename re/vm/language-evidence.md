@@ -44,9 +44,20 @@ The final six native-handler families account for those remaining 4,567 bytes:
 concept guards (`0xA3`), string loads (`0xA8`), self-modifying byte writes
 (`0xAB`), character-slot bindings (`0xCC`), alternate-concept clears (`0xCF`),
 and the `0x274F` flag branch (`0xD1`). All 118,787 shipped COD bytes now compile
-from typed statements with zero generic `OP` coverage. The unresolved binary
-surface is the 3,780 `RAW` bytes in BAS container structures, not COD opcode
-framing.
+from typed statements with zero generic `OP` coverage.
+
+The remaining 3,780 BAS bytes form 682 complete records: three one-topic menus,
+19 presentation-register writes, three string loads, 37 yields, 321 block links,
+and 299 shared state/record operations and end markers. The sequential decoder
+now types all of them. Every block-link selector resolves through its script's
+dictionary and every continuation is zero or an in-image offset; runtime BASSTEP
+traces independently establish `0xAC` as the response-block terminator. All
+64,736 BAS bytes now compile with no `RAW` fallback.
+
+The whole ten-image corpus therefore compiles byte-for-byte from typed
+BloodScript IR. This closes byte framing, not source structuring: numeric branch
+targets, continuation offsets, record fields, and routine boundaries still
+need to be lifted into labels, procedures, and reducible control-flow blocks.
 
 ## What is not established
 

@@ -182,7 +182,7 @@ fn decompile_bas(
     let mut raw_bytes = 0usize;
 
     while cursor < image.len() {
-        if let Some((end, labels)) = vm_source::bas_menu_at(image, cursor, dictionary) {
+        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
             if raw_start < cursor {
                 emit_raw(
                     output,
@@ -192,38 +192,58 @@ fn decompile_bas(
                 )?;
                 raw_bytes += cursor - raw_start;
             }
-            write!(output, "{cursor:08X}: MENU")?;
-            for (word, _) in &labels {
-                write!(output, " {word:04X}")?;
+            let encoded = token.encode().ok_or_else(|| {
+                anyhow!("BAS token at 0x{cursor:08X} cannot be encoded")
+            })?;
+            if image.get(cursor..end) != Some(encoded.as_slice()) {
+                bail!("BAS token at 0x{cursor:08X} does not re-encode exactly");
             }
-            writeln!(
-                output,
-                " ; {}",
-                labels
-                    .iter()
-                    .map(|(_, label)| label.as_str())
-                    .collect::<Vec<_>>()
-                    .join(" | ")
-            )?;
-            typed_statements += 1;
-            typed_bytes += end - cursor;
-            cursor = end;
-            raw_start = cursor;
-            continue;
-        }
-        if let Some((end, token)) = vm_source::bas_text_at(image, cursor, dictionary) {
-            if raw_start < cursor {
-                emit_raw(
-                    output,
-                    raw_start,
-                    &image[raw_start..cursor],
-                    "BAS structure",
-                )?;
-                raw_bytes += cursor - raw_start;
+            match &token {
+                vm_source::BasToken::Menu { word_offsets, .. } => {
+                    write!(output, "{cursor:08X}: MENU")?;
+                    for word in word_offsets {
+                        write!(output, " {word:04X}")?;
+                    }
+                    writeln!(
+                        output,
+                        " ; {}",
+                        word_offsets
+                            .iter()
+                            .filter_map(|word| dictionary.get(word))
+                            .map(String::as_str)
+                            .collect::<Vec<_>>()
+                            .join(" | ")
+                    )?;
+                }
+                vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
+                    emit_token(output, token, dictionary)?;
+                }
+                vm_source::BasToken::Yield { .. } => {
+                    writeln!(output, "{cursor:08X}: YIELD ; opcode AA")?;
+                }
+                vm_source::BasToken::BlockEnd {
+                    selector,
+                    continuation,
+                    ..
+                } => {
+                    writeln!(
+                        output,
+                        "{cursor:08X}: BAS_BLOCK_END {selector:04X} {continuation:04X} ; {:?}",
+                        dictionary.get(selector).map(String::as_str).unwrap_or("")
+                    )?;
+                }
+                vm_source::BasToken::PresentationRegister { value, .. } => {
+                    writeln!(
+                        output,
+                        "{cursor:08X}: PRESENTATION_REGISTER {value:04X}"
+                    )?;
+                }
+                vm_source::BasToken::End { .. } => {
+                    writeln!(output, "{cursor:08X}: END")?;
+                }
             }
-            emit_token(output, &token, dictionary)?;
             typed_statements += 1;
-            typed_bytes += end - cursor;
+            typed_bytes += encoded.len();
             cursor = end;
             raw_start = cursor;
             continue;
@@ -475,12 +495,27 @@ fn compile_statement(name: &str, args: &[&str], line: usize) -> Result<Vec<u8>> 
             }
         }
         "MENU" => {
-            require_min_count(args, 2, line, name)?;
+            require_min_count(args, 1, line, name)?;
             output.push(0xA3);
             for value in args {
                 word(&mut output, parse_word(value, line, "menu word")?);
             }
             word(&mut output, 0);
+        }
+        "YIELD" => {
+            require_count(args, 0, line, name)?;
+            output.push(vm::OP_YIELD_A);
+        }
+        "BAS_BLOCK_END" => {
+            require_count(args, 2, line, name)?;
+            output.push(vm::OP_YIELD_B);
+            word(&mut output, parse_word(args[0], line, "selector")?);
+            word(&mut output, parse_word(args[1], line, "continuation")?);
+        }
+        "PRESENTATION_REGISTER" => {
+            require_count(args, 1, line, name)?;
+            output.push(0xA7);
+            word(&mut output, parse_word(args[0], line, "presentation value")?);
         }
         "GUARD_PUSH" => {
             require_count(args, 1, line, name)?;
@@ -923,6 +958,36 @@ mod tests {
     }
 
     #[test]
+    fn bas_structural_families_compile_exact_bytes() {
+        let source = concat!(
+            "; format: bloodscript-ir-v1\n",
+            "00000000: YIELD\n",
+            "00000001: BAS_BLOCK_END 1234 0006\n",
+            "00000006: MENU 1234\n",
+            "0000000B: PRESENTATION_REGISTER 9ABC\n",
+            "0000000E: END\n",
+        );
+        let expected = vec![
+            0xAA, 0xAC, 0x34, 0x12, 0x06, 0x00, 0xA3, 0x34, 0x12, 0x00, 0x00, 0xA7,
+            0xBC, 0x9A, 0xFF,
+        ];
+        assert_eq!(compile(source).unwrap(), expected);
+
+        let dictionary = HashMap::from([(0x1234, "topic".to_string())]);
+        let decompiled = decompile(ImageKind::Bas, &expected, &dictionary).unwrap();
+        assert_eq!(decompiled.raw_bytes, 0);
+        for statement in [
+            "YIELD",
+            "BAS_BLOCK_END 1234 0006",
+            "MENU 1234",
+            "PRESENTATION_REGISTER 9ABC",
+        ] {
+            assert!(decompiled.source.contains(statement), "missing {statement}");
+        }
+        assert_eq!(compile(&decompiled.source).unwrap(), expected);
+    }
+
+    #[test]
     fn every_shipped_vm_image_round_trips_through_bloodscript() {
         let Some(root) = game_dir() else { return };
         for script in 1..=5 {
@@ -933,6 +998,14 @@ mod tests {
                     std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap();
                 let source = decompile(kind, &image, &dictionary).unwrap();
                 let rebuilt = compile(&source.source).unwrap();
+                assert_eq!(
+                    source.generic_op_bytes, 0,
+                    "SCRIPT{script}.{extension} must have no generic opcodes"
+                );
+                assert_eq!(
+                    source.raw_bytes, 0,
+                    "SCRIPT{script}.{extension} must have no raw spans"
+                );
                 assert_eq!(
                     rebuilt, image,
                     "SCRIPT{script}.{extension} must rebuild byte-exactly"

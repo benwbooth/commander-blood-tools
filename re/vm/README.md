@@ -86,20 +86,21 @@ only when they match the shipped printable-ASCII plus `00 00` representation;
 other payload shapes retain the generic lossless fallback.
 
 `re/vm/source/manifest.tsv` records semantic and unresolved byte coverage for
-all ten program images. BAS semantic coverage is intentionally conservative:
-only dictionary-validated menu tables and text records are labelled today;
-every other byte is retained as `RAW BAS structure`.
+all ten program images. The BAS decoder now walks the recovered sequential
+grammar: dictionary-validated menus, text records, yields, five-byte block
+end/link records, presentation-register writes, and the shared record/state
+operations used by both image kinds.
 
-The initial corpus covers all 118,787 COD bytes with decoded token boundaries.
-For BAS it labels 60,956 of 64,736 bytes (94.16 percent) as validated menu or
-text spans and preserves the remaining 3,780 bytes raw. These percentages are
-structural coverage, not a claim that every opcode's high-level meaning or the
-historical source syntax is known.
+All 118,787 COD bytes and all 64,736 BAS bytes now have decoded token boundaries.
+The 321 BAS block links each carry a dictionary selector and an in-image
+continuation offset. Runtime tracing establishes that `0xAC` terminates the
+current menu response block; reconstructing those links into structured source
+control flow remains a separate step.
 
 The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
-contains 12,521 typed statements covering 179,743 bytes. Of that typed total,
-no shipped COD statement remains in generic `OP` form; the BAS images retain
-3,780 `RAW` bytes. This means the COD instruction stream is fully typed, not
-that its control-flow graph has already been reconstructed into procedures and
-structured blocks. See `bloodscript/manifest.tsv` for per-image counts and
-[language-evidence.md](language-evidence.md) for the source-language inference.
+contains 13,203 typed statements covering every byte with no shipped generic
+`OP` or `RAW` fallback. This means both instruction streams are fully framed and
+typed, not that their control-flow graphs have already been reconstructed into
+procedures and structured blocks. See `bloodscript/manifest.tsv` for per-image
+counts and [language-evidence.md](language-evidence.md) for the source-language
+inference.
