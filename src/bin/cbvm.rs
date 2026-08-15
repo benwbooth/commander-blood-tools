@@ -1,15 +1,16 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use commander_blood_tools::bas_cfg::{self, BasControlFlow};
 use commander_blood_tools::bloodscript;
 use commander_blood_tools::vm_bundle;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
+use commander_blood_tools::vm_data::{self, DataKind};
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm decompile-data-bundle <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm compile-data <deb|dic|var> <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -81,6 +82,33 @@ fn write_bloodscript(
         bail!(
             "internal BloodScript round-trip failure for {}",
             image_path.display()
+        );
+    }
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(output_path, &source.source)
+        .with_context(|| format!("writing {}", output_path.display()))?;
+    Ok(source)
+}
+
+fn write_vm_data(
+    kind: DataKind,
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<vm_data::Decompilation> {
+    let input = std::fs::read(input_path)
+        .with_context(|| format!("reading VM data {}", input_path.display()))?;
+    let source = vm_data::decompile(kind, &input)
+        .with_context(|| format!("decompiling {}", input_path.display()))?;
+    let rebuilt = vm_data::compile(kind, &source.source)?;
+    if rebuilt != input {
+        bail!(
+            "internal BloodData round-trip failure for {}",
+            input_path.display()
         );
     }
     if let Some(parent) = output_path
@@ -199,6 +227,20 @@ fn main() -> Result<()> {
             let text = std::fs::read_to_string(&source)
                 .with_context(|| format!("reading {}", source.display()))?;
             let image = bloodscript::compile(&text)?;
+            std::fs::write(&output, &image)
+                .with_context(|| format!("writing {}", output.display()))?;
+            println!("wrote {}: {} byte(s)", output.display(), image.len());
+        }
+        Some("compile-data") => {
+            let kind = DataKind::parse(&args.next().unwrap_or_else(|| usage()))?;
+            let source = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            let text = std::fs::read_to_string(&source)
+                .with_context(|| format!("reading {}", source.display()))?;
+            let image = vm_data::compile(kind, &text)?;
             std::fs::write(&output, &image)
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("wrote {}: {} byte(s)", output.display(), image.len());
@@ -362,6 +404,32 @@ fn main() -> Result<()> {
                 }
             }
             std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("decompile-data-bundle") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from("script\timage\tinput_bytes\tstatements\troundtrip\n");
+            for script in 1..=5 {
+                for kind in [DataKind::Deb, DataKind::Dic, DataKind::Var] {
+                    let extension = kind.extension();
+                    let input = game_dir.join(format!("SCRIPT{script}.{extension}"));
+                    let output = output_dir.join(format!(
+                        "script{script}.{}.blooddata",
+                        extension.to_ascii_lowercase()
+                    ));
+                    let source = write_vm_data(kind, &input, &output)?;
+                    manifest.push_str(&format!(
+                        "SCRIPT{script}\t{extension}\t{}\t{}\tbyte_exact\n",
+                        source.bytes, source.statements
+                    ));
+                    println!("verified {} -> {}", input.display(), output.display());
+                }
+            }
+            std::fs::write(output_dir.join("data-manifest.tsv"), manifest)?;
         }
         Some("analyze-control-flow") => {
             let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));

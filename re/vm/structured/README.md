@@ -44,3 +44,25 @@ invitation to guess. All ten generated COD and BAS sources compile to the exact
 
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.
+
+## BloodData companions
+
+The adjacent `script*.deb.blooddata`, `script*.dic.blooddata`, and
+`script*.var.blooddata` files are the lossless source for the other fifteen VM
+resources. Generate them with:
+
+```sh
+cargo run --bin cbvm -- decompile-data-bundle \
+  /path/to/extracted-game re/vm/structured
+```
+
+DEB uses fixed-width `SYMBOL` records with the complete 16-byte name field plus
+the two trailing words. DIC uses `STRING` records that own their terminating
+NUL; `TAIL` is available for an unterminated final payload. VAR uses
+little-endian `WORDS`, with `BYTES` reserved for an odd tail. Every statement
+has an explicit output offset, and compilation rejects gaps, overlaps, malformed
+field widths, and wrong directive kinds.
+
+`data-manifest.tsv` records 14,676 statements covering 134,312 bytes. Every data
+source recompiles byte-for-byte, and `compile-bundle` combines them with the ten
+BloodScript images to rebuild all 25 VM resources from checked-in source.

@@ -1,0 +1,16 @@
+script	image	input_bytes	statements	roundtrip
+SCRIPT1	DEB	2740	137	byte_exact
+SCRIPT1	DIC	2663	439	byte_exact
+SCRIPT1	VAR	4666	292	byte_exact
+SCRIPT2	DEB	6840	342	byte_exact
+SCRIPT2	DIC	24772	3458	byte_exact
+SCRIPT2	VAR	4882	306	byte_exact
+SCRIPT3	DEB	7060	353	byte_exact
+SCRIPT3	DIC	21068	3008	byte_exact
+SCRIPT3	VAR	5198	325	byte_exact
+SCRIPT4	DEB	4880	244	byte_exact
+SCRIPT4	DIC	15558	2237	byte_exact
+SCRIPT4	VAR	5428	340	byte_exact
+SCRIPT5	DEB	4880	244	byte_exact
+SCRIPT5	DIC	18669	2638	byte_exact
+SCRIPT5	VAR	5008	313	byte_exact

@@ -10,8 +10,8 @@ profiles:
 
 The other three files are inputs to those programs: `.VAR` is initial mutable
 object state, `.DIC` is the text/concept dictionary, and `.DEB` is the symbol and
-object directory. A complete source compiler will eventually need to emit all
-five files as one bundle.
+object directory. The lossless BloodData source layer now emits those three
+companions, so the bundle compiler rebuilds all five files for every profile.
 
 ## Source-language evidence
 
@@ -68,12 +68,26 @@ cargo run --bin cbvm -- decompile-structured \
   accuracy/cblood_install/cblood re/vm/structured
 ```
 
+Generate lossless source for the DEB/DIC/VAR data companions with:
+
+```sh
+cargo run --bin cbvm -- decompile-data-bundle \
+  /path/to/extracted-game re/vm/structured
+```
+
 Compile one edited BloodScript IR image with:
 
 ```sh
 cargo run --bin cbvm -- compile-bloodscript \
   re/vm/bloodscript/script1.cod.blood /tmp/SCRIPT1.COD
 ```
+
+BloodData keeps the known physical structures explicit without inventing
+unrecovered field names. DEB source has one exact 20-byte `SYMBOL` record per
+line, DIC source has one NUL-owning `STRING` entry per dictionary offset, and
+VAR source has offset-checked little-endian `WORDS` plus an optional odd-byte
+tail. Full DEB name fields are retained rather than normalized, so padding and
+CP437 bytes round-trip exactly.
 
 The typed files use named statements for established record, actor, dialogue,
 menu, and profile operations. `OP` is an explicitly generic decoded opcode, not
@@ -124,12 +138,12 @@ The structured corpus now renders these as 37 named `SELECTOR_LIST` regions and
 compile back to all 64,736 BAS bytes exactly.
 
 `cbvm compile-bundle` turns the structured corpus into a complete 25-file VM
-resource set. It refuses any compiled COD/BAS image that differs from the
-shipped file and preserves the DEB/DIC/VAR companions. `cbvm
+resource set. It compiles every COD/BAS BloodScript image and every DEB/DIC/VAR
+BloodData image, refusing any result that differs from the shipped file. `cbvm
 build-runtime-tree` installs the result into an extracted-CD asset tree without
-retaining the original script resources. The original DOS executable boots and
-runs that tree in DOSBox-X; see [runtime-validation.md](runtime-validation.md)
-and `bundle-manifest.tsv`.
+retaining any original script resource. The original DOS executable boots and
+runs that tree in DOSBox-X; see [runtime-validation.md](runtime-validation.md),
+`structured/data-manifest.tsv`, and `bundle-manifest.tsv`.
 
 The shipped address conventions are now enforced rather than inferred during
 display. All 480 kind-2 `.DEB` routine values are one-based: subtracting one
@@ -146,14 +160,16 @@ emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.
 
-The current BloodScript corpus recompiles all 183,523 input bytes exactly. It
+The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic
-`OP` or `RAW` fallback. This means both instruction streams are fully framed and
-typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed edges across
-all 480 DEB procedures, with no unresolved guard target. Five disabled block
-bodies are retained as unreachable evidence. The structured pass proves 443 of
-682 `A0` guard regions and leaves the remaining 239 in explicit low-level form.
-See `bloodscript/manifest.tsv` for per-image byte coverage,
+`OP` or `RAW` fallback. The BloodData corpus adds 14,676 offset-checked
+statements for all 134,312 companion bytes, making the complete 25-resource,
+317,835-byte VM bundle source-reproducible. Both instruction streams are fully
+framed and typed. The COD pass now recovers 7,010 basic blocks and 17,287 typed
+edges across all 480 DEB procedures, with no unresolved guard target. Five
+disabled block bodies are retained as unreachable evidence. The structured pass
+proves 443 of 682 `A0` guard regions and leaves the remaining 239 in explicit
+low-level form. See `bloodscript/manifest.tsv` for per-image byte coverage,
 `control-flow/manifest.tsv` for graph counts, `structured/manifest.tsv` for
 source-lift counts, `bas-control-flow/manifest.tsv` for selector-list graphs,
 and

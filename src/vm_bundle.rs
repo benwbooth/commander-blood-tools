@@ -3,13 +3,13 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 
-use crate::bloodscript;
+use crate::{bloodscript, vm_data};
 
 const SCRIPT_COUNT: usize = 5;
-const COMPILED_EXTENSIONS: [&str; 2] = ["COD", "BAS"];
-const COMPANION_EXTENSIONS: [&str; 3] = ["DEB", "DIC", "VAR"];
+const PROGRAM_EXTENSIONS: [&str; 2] = ["COD", "BAS"];
+const DATA_EXTENSIONS: [&str; 3] = ["DEB", "DIC", "VAR"];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BundleEntry {
@@ -27,9 +27,9 @@ pub struct RuntimeTreeStats {
     pub directories: usize,
 }
 
-/// Compile all ten checked-in BloodScript sources and copy their fifteen data
-/// companions. Every output is compared with the shipped resource before it is
-/// written; a mismatch aborts the bundle.
+/// Compile all 25 checked-in BloodScript and BloodData sources. Every output is
+/// compared with the shipped resource before it is written; a mismatch aborts
+/// the bundle.
 pub fn compile_bundle(
     source_dir: &Path,
     original_dir: &Path,
@@ -41,7 +41,7 @@ pub fn compile_bundle(
 
     for script in 1..=SCRIPT_COUNT {
         let script_name = format!("SCRIPT{script}");
-        for extension in COMPILED_EXTENSIONS {
+        for extension in PROGRAM_EXTENSIONS {
             let lower = extension.to_ascii_lowercase();
             let source_path = source_dir.join(format!("script{script}.{lower}.blood"));
             let source = fs::read_to_string(&source_path)
@@ -64,18 +64,26 @@ pub fn compile_bundle(
             });
         }
 
-        for extension in COMPANION_EXTENSIONS {
+        for extension in DATA_EXTENSIONS {
+            let lower = extension.to_ascii_lowercase();
+            let source_path = source_dir.join(format!("script{script}.{lower}.blooddata"));
+            let source = fs::read_to_string(&source_path)
+                .with_context(|| format!("reading BloodData source {}", source_path.display()))?;
+            let kind = vm_data::DataKind::parse(extension)?;
+            let compiled = vm_data::compile(kind, &source)
+                .with_context(|| format!("compiling {}", source_path.display()))?;
             let file_name = format!("{script_name}.{extension}");
             let original_path = original_dir.join(&file_name);
-            let bytes = fs::read(&original_path)
-                .with_context(|| format!("reading VM companion {}", original_path.display()))?;
-            fs::write(output_dir.join(&file_name), &bytes)
-                .with_context(|| format!("writing VM companion {file_name}"))?;
+            let original = fs::read(&original_path)
+                .with_context(|| format!("reading shipped VM data {}", original_path.display()))?;
+            require_equal(&file_name, &compiled, &original)?;
+            fs::write(output_dir.join(&file_name), &compiled)
+                .with_context(|| format!("writing compiled VM data {file_name}"))?;
             entries.push(BundleEntry {
                 script: script_name.clone(),
                 extension: extension.to_string(),
-                bytes: bytes.len(),
-                origin: "preserved",
+                bytes: compiled.len(),
+                origin: "compiled",
                 comparison: "byte_exact",
             });
         }
@@ -198,9 +206,9 @@ fn is_script_resource(relative: &Path) -> bool {
     };
     let upper = name.to_ascii_uppercase();
     (1..=SCRIPT_COUNT).any(|script| {
-        COMPILED_EXTENSIONS
+        PROGRAM_EXTENSIONS
             .iter()
-            .chain(COMPANION_EXTENSIONS.iter())
+            .chain(DATA_EXTENSIONS.iter())
             .any(|extension| upper == format!("SCRIPT{script}.{extension}"))
     })
 }
@@ -228,7 +236,7 @@ mod tests {
         fs::create_dir_all(&sources).unwrap();
         fs::create_dir_all(&original).unwrap();
         for script in 1..=SCRIPT_COUNT {
-            for extension in COMPILED_EXTENSIONS {
+            for extension in PROGRAM_EXTENSIONS {
                 fs::write(
                     sources.join(format!(
                         "script{script}.{}.blood",
@@ -239,27 +247,48 @@ mod tests {
                 .unwrap();
                 fs::write(original.join(format!("SCRIPT{script}.{extension}")), [0xFF]).unwrap();
             }
-            for extension in COMPANION_EXTENSIONS {
+            for extension in DATA_EXTENSIONS {
+                let kind = vm_data::DataKind::parse(extension).unwrap();
+                let bytes = match kind {
+                    vm_data::DataKind::Deb => {
+                        let mut record = vec![0u8; 20];
+                        record[0] = b'A' + script as u8;
+                        record[16] = script as u8;
+                        record[18] = 1;
+                        record
+                    }
+                    vm_data::DataKind::Dic => vec![script as u8, b'D', 0],
+                    vm_data::DataKind::Var => vec![script as u8, b'V'],
+                };
+                let source = vm_data::decompile(kind, &bytes).unwrap();
                 fs::write(
-                    original.join(format!("SCRIPT{script}.{extension}")),
-                    [script as u8, extension.as_bytes()[0]],
+                    sources.join(format!(
+                        "script{script}.{}.blooddata",
+                        extension.to_ascii_lowercase()
+                    )),
+                    source.source,
                 )
                 .unwrap();
+                fs::write(original.join(format!("SCRIPT{script}.{extension}")), bytes).unwrap();
             }
         }
         (sources, original)
     }
 
     #[test]
-    fn compiles_all_ten_images_and_preserves_companions() {
+    fn compiles_all_twenty_five_resources() {
         let root = test_root("bundle");
         let (sources, original) = fixture(&root);
         let output = root.join("bundle");
         let entries = compile_bundle(&sources, &original, &output).unwrap();
         assert_eq!(entries.len(), 25);
         assert_eq!(fs::read(output.join("SCRIPT3.COD")).unwrap(), [0xFF]);
-        assert_eq!(fs::read(output.join("SCRIPT3.DEB")).unwrap(), [3, b'D']);
+        let deb = fs::read(output.join("SCRIPT3.DEB")).unwrap();
+        assert_eq!(deb.len(), 20);
+        assert_eq!(deb[0], b'D');
+        assert_eq!(deb[16], 3);
         assert!(entries.iter().all(|entry| entry.comparison == "byte_exact"));
+        assert!(entries.iter().all(|entry| entry.origin == "compiled"));
         fs::remove_dir_all(root).unwrap();
     }
 
