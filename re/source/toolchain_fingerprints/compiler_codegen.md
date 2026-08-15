@@ -482,6 +482,23 @@ source-port integration. An isolated replacement still needs the original
 segment restore, DI residue, register-preservation envelope, and path-specific
 flags.
 
+For `0x00A117`, four direct-execution cases verify both gate outcomes, the
+exact 384-byte copy within caller ES, GS-only gate ownership, DS/GS decoy
+isolation, preservation, and path-specific register and flag residue. The
+compiler-corpus sample now includes the authoritative recovered source. Open
+Watcom 1.9 medium (`-3 -ox -mm -zdf -we`) compiles its fixed-size `memcpy`
+warning-free to 21 instructions/40 bytes versus 13/29 original, with 92.31
+percent mnemonic-multiset and 76.92 percent ordered overlap. It inlines the
+copy as `REP MOVSW`. Turbo C 2.01 medium (`-mm -O -Z`) emits 11 instructions
+with 61.54 percent multiset and 46.15 percent ordered overlap, calls its CRT
+`memcpy`, and assembles warning-free to OBJ.
+
+The sole recovered C caller is the accepted palette-block parser. The helper
+is accepted for source-port integration with the palette arrays in the shared
+data group. An isolated replacement still needs the original caller-ES
+ownership, GS gate access, DS/SI restore, 96-dword `REP MOVSD`, CX/DI residue,
+and TEST-derived flags.
+
 For `0x00A38E`, six direct-execution boundary cases confirm the natural queue
 wrap source and show that both direct callers ignore its incidental AX/SI/CX
 results. Open Watcom 1.9 medium is closest at 16 instructions and 43 bytes,
