@@ -754,14 +754,19 @@ separately proven `0x003E46`, `0x00A4ED`, and `0x00AB25` callees are stubbed.
 
 The natural function uses direct far pointers, named frame state, and ordinary
 calls to those recovered functions. It has no register model, memory emulator,
-or inline assembly. Open Watcom `-3 -ox -mh` compiles it warning-free to 168
-instructions and 470 bytes versus 87/211 original. The probe has a 12.64
-percent instruction LCS, 58.62 percent mnemonic-sequence LCS, 77.01 percent
-mnemonic-multiset overlap, and 13.79 percent byte-line LCS. Watcom materializes
-far-pointer temporaries and stack-passes rectangle arguments instead of using
-the original ambient DS:SI/ES/BX/CX/DX/DI/BP convention. Reverse DF records the
-binary behavior outside the shipped clear-DF C contract; the two real callers
-discard the original AX and flag residue.
+or inline assembly. The compiler-corpus sample now includes that authoritative
+source and shared declarations. Open Watcom `-3 -ox -s -mm -zdf` compiles it
+warning-free to 115 instructions/317 bytes versus 87/211 original, with 57.47
+percent ordered, 78.16 percent mnemonic-multiset, and 13.79 percent byte-line
+overlap. Turbo C `-mm -O -Z` emits 133 instructions with 60.92 percent ordered
+and 79.31 percent multiset overlap and assembles warning-free to OBJ.
+
+Watcom materializes far-pointer temporaries and stack-passes rectangle
+arguments instead of using the original ambient DS:SI/ES/BX/CX/DX/DI/BP
+convention. Reverse DF records binary behavior outside the shipped clear-DF C
+contract; both accepted callers discard the original AX and flag residue. The
+coordinator is therefore accepted for source integration, with ambient ABI
+adaptation reserved for isolated replacement.
 
 For `0x00A552`, fourteen direct vectors prove the queue-entry activation
 grammar. The routine normalizes a wrapping or out-of-bounds source to segment
@@ -3812,7 +3817,7 @@ LCS and then mnemonic similarity:
 | `resource_payload_decode_ad` | huge, `-ox`, register | 207/212 | 0.0145 | 0.3140 | 0.0290 |
 | `resource_pair_lz_decode` | huge, `-ox`, register | 53/113 | 0.0566 | 0.4528 | 0.0566 |
 | `resource_payload_decode_rect` | huge, `-ox`, register | 483/310 | 0.0104 | 0.2878 | 0.0145 |
-| `list_d8c_active_present` | huge, `-ox`, register | 87/168 | 0.1264 | 0.5862 | 0.1379 |
+| `list_d8c_active_present` | medium, `-ox`, register | 87/115 | 0.1264 | 0.5747 | 0.1379 |
 | `resource_rect_blit` | huge, `-ox`, register | 51/92 | 0.0000 | 0.6275 | 0.0392 |
 | `resource_load_sequence` | huge, `-ox`, register | 43/42 | 0.2093 | 0.4419 | 0.2093 |
 | `ems_resource_flush` | huge, `-ox`, register | 38/33 | 0.1316 | 0.4211 | 0.1316 |
