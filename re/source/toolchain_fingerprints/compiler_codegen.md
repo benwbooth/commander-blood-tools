@@ -392,18 +392,22 @@ to its relocatable base instead of using the original `LES` plus replacement
 For `0x00A141`, seven direct-execution cases cover zero and reserved-handle
 skips, successful and failed DOS closes, the clear-before-interrupt ordering,
 the unconditional post-close bounds reset, DS versus GS decoys, every register
-and segment effect, and the final `XOR CX,CX` flags. Open Watcom 1.9 targeting
-8086 in the medium model (`-0 -ox -mm`) keeps the handle in BX, emits the direct
-`INT 21h` close and bounds-reset call, and retains 10 of the original 11
-mnemonics in order. The ABI-honest source emits 14 instructions and 31 bytes
-versus the original 11 and 30: it saves/restores ES, uses equivalent `TEST BX,BX`
-instead of `OR BX,BX`, and lowers the zero assignment through `XOR AX,AX` plus a
-store. The last choice changes AL before the interrupt, so the build is not
-classified as exact. An exploratory 29-byte form omitted the ES save only after
-declaring ES clobbered at the C boundary; that declaration was rejected because
-the original preserves ES. Turbo C 2.01 medium preserves the natural branch and
-direct zero-store shape but saves SI and calls the far CRT `close` routine rather
-than issuing the interrupt inline.
+and segment effect, and the final `XOR CX,CX` flags. The compiler-corpus sample
+now includes the authoritative recovered source. Open Watcom 1.9 medium size
+mode (`-3 -os -s -mm -we`) compiles it warning-free to 16 instructions/37
+bytes versus 11/30 original, with 90.91 percent mnemonic-multiset and ordered
+overlap. It keeps the handle in BX, emits the direct `INT 21h` close and
+bounds-reset call, and retains 10 of the original 11 mnemonics. Turbo C 2.01
+medium (`-mm -O -Z`) emits 17 instructions with 90.91 percent multiset and
+81.82 percent ordered overlap and assembles successfully to OBJ; its expected
+diagnostic reports recompilation through the assembler because of the CX
+boundary statement.
+
+The routine is accepted for source-port integration. Its branch and state
+logic remain natural C; inline instructions are limited to the DOS interrupt
+and required CX residue. An isolated replacement still needs the original DS
+ownership, OR flags, direct zero store, exact preservation, and path-specific
+flags.
 
 For `0x009F53`, eight direct-execution cases cover the inactive gate, both
 redraw outcomes, low-byte versus high-byte ship flags, nonzero and zero queue
