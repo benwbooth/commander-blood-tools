@@ -7225,10 +7225,18 @@ and both defective epilogues. Open Watcom 1.9 medium (`-3 -os -s -mm -we`)
 compiles the warning-free natural C89 function to 153 instructions/428 bytes
 versus 118/306 original, with 83.90 percent mnemonic-multiset overlap and 72.88
 percent ordered mnemonic overlap. It uses no inline assembly or register-state
-facade. Full-source integration requires `GAME_DATA` placement, the shipped
-`SS == GS` source-buffer alias, and the record-segment helper contracts; direct
-replacement also needs adapters for the carry-return bit test and original
-register allocation plus an explicit compatibility policy for the defects.
+facade. A separate 22-case Open Watcom 16-bit DOS harness includes the
+maintained candidate directly and reports `OK 22` under DOSBox-X, covering each
+natural-C branch and helper contract.
+
+The function is accepted for source-port integration. `GAME_DATA` placement,
+the shipped `SS == GS` source-buffer alias, and the record-segment helper
+contracts remain integration requirements. Ordinary compiler frame, register,
+segment, and Boolean lowering differences are harmless within compiled C. The
+source deliberately repairs the two unrestored-frame success returns and passes
+the semantic zero-extended A1 Boolean to the distance helper rather than
+inheriting `DH`. An isolated binary replacement would still need ABI adapters
+if those machine-level quirks were required.
 
 ## Interpretation
 
