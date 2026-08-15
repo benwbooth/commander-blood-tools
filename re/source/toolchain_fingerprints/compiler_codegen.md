@@ -5225,14 +5225,21 @@ cursor return, preservation, flags, stack, and `RETF`. The shipped
 `DESCRIPT.DES` contains 254 opcode-03 records and uses only slots one through
 four.
 
-Open Watcom 1.9 (`-3 -os -s -mh -we`) compiles the natural direct-array
-candidate warning-free to 111 instructions/301 bytes versus the original
-78/180, with 57.69 percent mnemonic-multiset overlap and no inline assembly.
-Full-source integration requires fixed game-data placement, the shipped
-`SS == GS` path-argument invariant, the one-buffer low-word extent, and narrow
-resource/DOS adapters that preserve the recovered result conventions. Direct
-replacement additionally needs the original helper register ABIs and exact
-register/flag envelope.
+The compiler probe includes the authoritative candidate rather than a copied
+miniature. Expressing the prefix comparison as a direct cache-miss branch
+removes the synthetic Boolean local. Open Watcom 1.9
+(`-3 -os -s -mh -we`) compiles it warning-free to 108 instructions/289 bytes
+versus the original 78/180, with 56.41 percent mnemonic-multiset overlap and no
+inline assembly. Turbo C 2.01 emits 174 instructions.
+
+The candidate is accepted for source-port integration. Its direct loops retain
+the prefix-hit rule, the four shipped cache slots, one low-word read, actual
+short-read write length, and standalone-only source close. The typed DOS
+adapters deliberately publish raw AX as the handle even when create or open
+fails, preserving the original ignored-error path. Fixed game-data placement,
+the shipped `SS == GS` path-argument invariant, resource-helper result ABIs,
+and compiler-selected register/flag allocation remain integration or direct-
+replacement differences rather than missing cache/file logic.
 
 ## BLOODPRG bridge render-frame coordinator candidate
 

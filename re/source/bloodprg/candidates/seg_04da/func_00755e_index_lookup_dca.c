@@ -15,7 +15,6 @@ const cb_u8 CB_FAR *CB_NEAR index_lookup_dca(
     cb_u16 output_handle;
     cb_u16 bytes_read;
     cb_u8 value;
-    int names_match;
 
     cursor = script_bytes;
     slot_index = (cb_u16)(cb_i16)(cb_i8)(cb_u8)(*cursor++ - 1u);
@@ -34,21 +33,18 @@ const cb_u8 CB_FAR *CB_NEAR index_lookup_dca(
             BACKGROUND_NAME_OFFSET + name_index] = '\0';
 
     compare_index = 0u;
-    names_match = 1;
     while (byte_parser_background_path[
             BACKGROUND_NAME_OFFSET + compare_index] != '\0') {
         if (byte_parser_background_path[
                 BACKGROUND_NAME_OFFSET + compare_index]
                 != byte_parser_background_slots[slot_index][compare_index]) {
-            names_match = 0;
-            break;
+            goto cache_miss;
         }
         ++compare_index;
     }
-    if (names_match) {
-        return cursor;
-    }
+    return cursor;
 
+cache_miss:
     startup_write_directory_enter();
     (void)cb_dos_delete(byte_parser_background_slots[slot_index]);
 
