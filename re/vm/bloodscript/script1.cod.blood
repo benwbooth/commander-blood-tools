@@ -1,7 +1,7 @@
 // format: bloodscript-v3
 // image: COD
 
-proc menbr
+proc menbr {
     conditional_block 0x01 men1
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -17,9 +17,9 @@ proc menbr
     say 0x0872 voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!..."
     say 0x0872 voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x08AC
-end proc menbr
+}
 
-proc men1
+proc men1 {
     conditional_block 0x01 men2
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -36,9 +36,9 @@ proc men1
     say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     poke_byte 0x00B4 0x00
     record_clear 0x08AC
-end proc men1
+}
 
-proc men2
+proc men2 {
     conditional_block 0x01 men3
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -55,9 +55,9 @@ proc men2
     say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x0164 0x00
     record_clear 0x08AC
-end proc men2
+}
 
-proc men3
+proc men3 {
     conditional_block 0x01 men4
     branch_presentation
     record_wildcard 0xAF 0x0332 0xFFFF 1
@@ -74,9 +74,9 @@ proc men3
     say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x020E 0x00
     record_clear 0x08AC
-end proc men3
+}
 
-proc men4
+proc men4 {
     conditional_block 0x01 men5
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -93,9 +93,9 @@ proc men4
     say 0x0872 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x02BA 0x00
     record_clear 0x08AC
-end proc men4
+}
 
-proc men5
+proc men5 {
     conditional_block 0x01 men6
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -113,9 +113,9 @@ proc men5
     poke_byte 0x036E 0x00
     poke_byte 0x042A 0x01
     record_clear 0x08AC
-end proc men5
+}
 
-proc men6
+proc men6 {
     conditional_block 0x00 tima
     guard_pop
     poke_byte 0x00B4 0x01
@@ -124,24 +124,24 @@ proc men6
     poke_byte 0x02BA 0x01
     poke_byte 0x036E 0x01
     poke_byte 0x042A 0x00
-end proc men6
+}
 
-proc tima
+proc tima {
     conditional_block 0x01 ho
     guard_pop
     state_array_set 0x16 0x0005
     poke_byte 0x0447 0x00
-end proc tima
+}
 
-proc ho
+proc ho {
     conditional_block 0x01 ho1
     state_array_test 0x16
     guard_pop
     record_link 0x0594 0x0028 0
     poke_byte 0x0454 0x00
-end proc ho
+}
 
-proc ho1
+proc ho1 {
     conditional_block 0x01 hon
     branch_presentation
     actor 0x0594 0x0028 0
@@ -174,9 +174,9 @@ proc ho1
     say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Click quick on \"HONK\". He has important information for YOU..."
     say 0x055A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     record_clear 0x0594
-end proc ho1
+}
 
-proc hon
+proc hon {
     conditional_block 0x01 BOB1
     branch_presentation
     actor 0x0864 0x0028 0
@@ -193,9 +193,9 @@ proc hon
     say 0x082A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Click quick on \"CRYOBOX\" Cap'n Bob is waiting..."
     say 0x082A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "End of report..."
     record_clear 0x0864
-end proc hon
+}
 
-proc BOB1
+proc BOB1 {
     conditional_block 0x01 scr2
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -248,9 +248,9 @@ proc BOB1
     say 0x004A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     run_profile 0x02
     record_clear 0x0084
-end proc BOB1
+}
 
-proc scr2
+proc scr2 {
     conditional_block 0x01 block_0C0B
     shared_state 0xBF 0x0860 0xF5 0xC1 0x0001
     shared_state 0xBF 0x0080 0xF5 0xC1 0x0001
@@ -258,4 +258,4 @@ proc scr2
     run_profile 0x02
     block_0C0B:
     halt
-end proc scr2
+}

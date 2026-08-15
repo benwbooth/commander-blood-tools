@@ -23,18 +23,19 @@ field Magnus_s00 = Magnus + 0x0002 // VAR kind 0x0008, selector(s) 00
 
 yield
 
-selector Eviscerator_choices
+selector Eviscerator_choices {
     yield_b
-    case "talk" -> 0x0000
+    case "talk" -> 0x0000 {
         menu "yes" "no"
         say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Yes" choices "yes"
         say Eviscerator voice=0x01 flags=0x40 display=0x80 loop=none control=none : "No" choices "no"
         yield
-end selector Eviscerator_choices
+    }
+}
 
-selector Honk_choices
+selector Honk_choices {
     yield_b
-    case "talk" -> selector_00B3
+    case "talk" -> selector_00B3 {
         menu "bye_bye" "optimization" "consultation" "explanations" "calm_down" "play" "win" "lose" "help"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "How to play?" choices "play"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "You got it|..." choices "talk"
@@ -42,7 +43,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "What would you like to optimize, Commander|?" choices "optimization"
         yield_b
         selector_00B3:
-    case "play" -> selector_02AD
+    }
+    case "play" -> selector_02AD {
         menu "talk" "click" "dialog" "fair_play"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "That's the best way to play, Commander|. Just keep clickin'!" choices "click"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Something tells me you're a pretty hot clicker, eh?!!" choices "click"
@@ -58,7 +60,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "OK, Commander|... You seem like a fair play guy. I'll tell Cap'n Bob|..." choices "fair_play"
         yield_b
         selector_02AD:
-    case "win" -> selector_0429
+    }
+    case "win" -> selector_0429 {
         menu "talk" "willpower" "strength" "bravery" "pride"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Willpower makes a winner, Commander|. Cap'n Bob knows you've got it|..." choices "willpower"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Okay, so you click on Willpower. Now that's not going to get us very far, Commander|..." choices "willpower"
@@ -70,7 +73,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "I detect a speck of contempt in the B cortex of your brain's right hemisphere. I'll just give you a little shot of adrenal..." choices "pride"
         yield_b
         selector_0429:
-    case "lose" -> selector_0613
+    }
+    case "lose" -> selector_0613 {
         menu "talk" "fear" "weakness" "complain" "anger" "break" "cry"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "There's several ways to lose, Commander|. Which do you choose?" choices "lose"
         say Honk voice=0xFF flags=0x62 display=0x80 loop=none control=none : "Commander, I'm here with you. It's me... HONK, your onboard bioconsciousness." choices "fear"
@@ -87,7 +91,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Everything'll be just fine afterwards, Commander..." choices "cry"
         yield_b
         selector_0613:
-    case "help" -> selector_092D
+    }
+    case "help" -> selector_092D {
         menu "talk" "switch_off" "break" "endless_lives" "contest" "tips" "presents" "messages"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Need some expert guidance, Commander|?" choices "help"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "To disconnect, you can always pull the plug out of the power point..." choices "switch_off"
@@ -111,7 +116,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "You just clicked on the word \"message\". Way to go!!!" choices "message"
         yield_b
         selector_092D:
-    case "optimization" -> selector_0BF5
+    }
+    case "optimization" -> selector_0BF5 {
         menu "talk" "speed" "telephone" "keyboard" "mouse" "joystick" "screen" "CDROM" "music" "sounds"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "You want to speed up your computer? No prob..., I'll just double the frequency. Uh, you may want to move back a couple of yards..." choices "speed"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Uh oh... Your computer can't take it|... It's about to implode... DANGER... THROW YOUR PC OUT THE WINDOW... DO IT NOW!!!" choices "speed"
@@ -126,12 +132,14 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Seems like I'm sensing a fault in your sound card!!! Try hitting it awfully hard... It works for me..." choices "sounds"
         yield_b
         selector_0BF5:
-    case "consultation" -> selector_0C23
+    }
+    case "consultation" -> selector_0C23 {
         menu "talk" "therapy"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "What kind of consultation did you have in mind, Commander?" choices "consultation"
         yield_b
         selector_0C23:
-    case "therapy" -> selector_0F87
+    }
+    case "therapy" -> selector_0F87 {
         menu "talk" "ego" "super_ego" "under_ego" "end_of_month" "libido" "who" "where" "when" "what" "how" "why"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "A free psychotherapy session... That's a once in a lifetime offer, Commander|." choices "therapy"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Relax... Loosen up those muscles... Choose the first thing that enters your head:" choices "therapy"
@@ -157,7 +165,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "It's obvious: BECAUSE!!! And don't ask \"Because what?\"" choices "why"
         yield_b
         selector_0F87:
-    case "calm_down" -> selector_10EC
+    }
+    case "calm_down" -> selector_10EC {
         menu "talk" "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "How about a simple exercise in mind power? Choose a number. There's only one right one..." choices "calm_down"
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "We're going to count murffalos together. You start, Commander|..." choices "calm_down"
@@ -175,7 +184,8 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "nine... GOOD WORK, COMMANDER... I sense you're quite relaxed now...." choices "nine"
         yield_b
         selector_10EC:
-    case "explanations" -> 0x0000
+    }
+    case "explanations" -> 0x0000 {
         menu "bye_bye" "talk" "blood" "Bob_Morlock" "Honk" "Ark" "Ma" "Orxx" "Olga" "Big_Bang" "Black_holes"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Explanations about anything in particular, Commander|?" choices "explanations"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Why, you're Commander Blood, Commander. You're the hero of this story..." choices "blood"
@@ -214,22 +224,25 @@ selector Honk_choices
         say Honk voice=0xFF flags=0x60 display=0x80 loop=none control=none : "Commander|, I feel dizzy all of a sudden..." choices "Black_holes"
         say Honk voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Yes, Commander|?"
         yield
-end selector Honk_choices
+    }
+}
 
-selector Izwalito_choices
+selector Izwalito_choices {
     yield_b
-    case "talk1" -> selector_1717
+    case "talk1" -> selector_1717 {
         menu "hello" "talk"
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Hello friend|..." choices "hello"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "You want talk|, friend?" choices "talk"
         yield_b
         selector_1717:
-    case "talk" -> selector_1743
+    }
+    case "talk" -> selector_1743 {
         menu "bye_bye" "Izwal" "food" "planet" "reproduction"
         say Izwalito voice=0x04 flags=0x43 display=0x80 loop=none control=none : "What you want know, friend?" choices "talk"
         yield_b
         selector_1743:
-    case "Izwal" -> selector_1942
+    }
+    case "Izwal" -> selector_1942 {
         menu "talk" "bye_bye" "society" "ideal" "happiness"
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Izwal be great pacifist people..." choices "Izwal"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "We live in tribe. We poor and starving..." choices "society"
@@ -249,7 +262,8 @@ selector Izwalito_choices
         say Izwalito voice=0x03 flags=0x41 display=0x80 loop=none control=none : "You talk much..." choices "happiness"
         yield_b
         selector_1942:
-    case "know" -> selector_19E9
+    }
+    case "know" -> selector_19E9 {
         menu "talk" "bye_bye" "Rondo" "truth"
         say Izwalito voice=0x03 flags=0x40 display=0x80 loop=none control=none : "What you want know, friend?" choices "know"
         say Izwalito voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Rondo you want know planet Rondo, friend|..." choices "Rondo"
@@ -260,7 +274,8 @@ selector Izwalito_choices
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me say truth, Commander" choices "truth"
         yield_b
         selector_19E9:
-    case "food" -> selector_1ADD
+    }
+    case "food" -> selector_1ADD {
         menu "talk" "bye_bye" "murffalos" "grass"
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Us like eat murffalos, but our planet not have murffalos. Us did eat all..." choices "food"
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Izwal people hungry. You help us, friend|..." choices "food"
@@ -272,7 +287,8 @@ selector Izwalito_choices
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Grass not grow here|..." choices "grass"
         yield_b
         selector_1ADD:
-    case "reproduction" -> selector_1BAB
+    }
+    case "reproduction" -> selector_1BAB {
         menu "talk" "bye_bye" "love" "female" "murffalos"
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Me like reproduction..." choices "reproduction"
         say Izwalito voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me have girl friend. Hee hee hee...." choices "love"
@@ -283,7 +299,8 @@ selector Izwalito_choices
         say Izwalito voice=0x06 flags=0x41 display=0x80 loop=none control=none : "Hunger... Hunger..." choices "murffalos"
         yield_b
         selector_1BAB:
-    case "planet" -> 0x0000
+    }
+    case "planet" -> 0x0000 {
         menu "talk" "bye_bye" "ecology" "stars"
         say Izwalito voice=0x02 flags=0x43 display=0x80 loop=none control=none : "Corpo nice Izwal planet|..." choices "planet"
         say Izwalito voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Corpo poor planet but nice ecology..." choices "ecology"
@@ -295,11 +312,12 @@ selector Izwalito_choices
         shared_bit_state 0xB0 Magnus_s00 0x0002 0
         say Izwalito voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Stars big science..." choices "stars"
         yield
-end selector Izwalito_choices
+    }
+}
 
-selector Morning_Oil_choices
+selector Morning_Oil_choices {
     yield_b
-    case "broken_down" -> selector_1D75
+    case "broken_down" -> selector_1D75 {
         menu "bye_bye" "on" "off" "hello" "yes" "no" "great" "in" "out" "more" "less"
         say Morning_Oil voice=0x01 flags=0x41 display=0x80 loop=none control=none : "ON" choices "off"
         say Morning_Oil voice=0x02 flags=0x41 display=0x80 loop=none control=none : "Off" choices "on"
@@ -315,7 +333,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x04 flags=0x43 display=0x80 loop=none control=none : "bzzz... klk........." choices "broken_down"
         yield_b
         selector_1D75:
-    case "letar" -> selector_1DC3
+    }
+    case "letar" -> selector_1DC3 {
         menu "dream" "sleep" "nightmare" "snore"
         say Morning_Oil voice=0x05 flags=0x41 display=0x80 loop=none control=none : "AAAAHHH...." choices "dream"
         say Morning_Oil voice=0x04 flags=0x41 display=0x80 loop=none control=none : "bZZZZZZZZZZ..." choices "sleep"
@@ -323,11 +342,13 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x01 flags=0x41 display=0x80 loop=none control=none : "gruhhh pshhhh" choices "snore"
         yield_b
         selector_1DC3:
-    case "history" -> selector_1DD7
+    }
+    case "history" -> selector_1DD7 {
         menu "bye_bye" "war" "Croolis" "treasure" "battles" "mastachok"
         yield_b
         selector_1DD7:
-    case "war" -> selector_1F19
+    }
+    case "war" -> selector_1F19 {
         menu "bye_bye" "history" "fight"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "That was a nasty war... It all started the day of the big fight between the Croolis EVISCERATOR and EMASCULATOR..." choices "war"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ah|, you should have seen it|, Commander|... What a fight..." choices "war"
@@ -338,7 +359,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The fight was televised across the universe... Ahh, I remember it like it was yesterday..." choices "fight"
         yield_b
         selector_1F19:
-    case "Croolis" -> selector_20A6
+    }
+    case "Croolis" -> selector_20A6 {
         menu "bye_bye" "history" "terror" "eviscerator" "emasculator"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Croolis are impresive warriors" choices "Croolis"
         say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "My master EVISCERATOR was a fine BIONIUM hunter..." choices "Croolis"
@@ -355,7 +377,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "I hate that Croolis..." choices "emasculator"
         yield_b
         selector_20A6:
-    case "treasure" -> selector_220B
+    }
+    case "treasure" -> selector_220B {
         menu "bye_bye" "history" "hiding_place"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ah|! The treasure. If you could have seen it|, Commander|... Beyond imagination..." choices "treasure"
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Stones from Galabar, horns from Rla, authentic Rhinox thigh-bone vases..." choices "treasure"
@@ -369,7 +392,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The defeated Croolis fled to the planet Trashlando, a TERRIBLE place, Commander|..." choices "battle"
         yield_b
         selector_220B:
-    case "mastachok" -> 0x0000
+    }
+    case "mastachok" -> 0x0000 {
         menu "bye_bye" "history" "information"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastachok is now a dead planet|... Nothing lives upon its surface..." choices "mastachok"
         say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by a prison... With SCRUT guards..." choices "mastachok"
@@ -378,28 +402,32 @@ selector Morning_Oil_choices
         shared_bit_state 0xB0 Rondo_s00 0x0002 0
         say Morning_Oil voice=0x02 flags=0x01 display=0x80 loop=none control=none : "..."
         yield
-end selector Morning_Oil_choices
+    }
+}
 
-selector Bug_Deluxe_choices
+selector Bug_Deluxe_choices {
     yield_b
-    case "department" -> selector_2304
+    case "department" -> selector_2304 {
         menu "bye_bye" "beauty" "food" "sport" "handywork" "pharmaceutical" "leisure" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You'll love our bargains!" choices "department"
         say Bug_Deluxe voice=0xFF flags=0x48 display=0x80 loop=none control=none : "Bye bye|..." choices "bye_bye"
         record_clear Bug_Deluxe_s13
         yield_b
         selector_2304:
-    case "beauty" -> selector_2320
+    }
+    case "beauty" -> selector_2320 {
         menu "department" "perfume" "necktie" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x01 display=0x80 loop=none control=none : "BEAUTY:"
         yield_b
         selector_2320:
-    case "perfume" -> selector_2342
+    }
+    case "perfume" -> selector_2342 {
         menu "beauty" "eden" "dune" "kroolence" "motoroil" "turbulence"
         say Bug_Deluxe voice=0xFF flags=0x01 display=0x80 loop=none control=none : "PERFUME DEPARTMENT:"
         yield_b
         selector_2342:
-    case "eden" -> selector_23A5
+    }
+    case "eden" -> selector_23A5 {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Eden, a heady perfume for fleshy young females. \"Do not swallow\": 1 CRED" choices "eden"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -408,7 +436,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_23A5:
-    case "dune" -> selector_2404
+    }
+    case "dune" -> selector_2404 {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Dune, the scent of hot passion. \"Promotes reproduction\": 1 CRED" choices "dune"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -417,7 +446,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2404:
-    case "kroolence" -> selector_246B
+    }
+    case "kroolence" -> selector_246B {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Kroolence, for males with armpits. \"Watch the babes home in on your armpits\": 1 CRED" choices "kroolence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -426,7 +456,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_246B:
-    case "motoroil" -> selector_24CE
+    }
+    case "motoroil" -> selector_24CE {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Motoroil, perfume for droid. \"Be an exhaust nozzle Romeo \": 1 CRED" choices "motoroil"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -435,7 +466,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_24CE:
-    case "turbulence" -> selector_252B
+    }
+    case "turbulence" -> selector_252B {
         menu "department" "buy" "perfume"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Turbulence. Gravitational vertigo guaranteed. \"A real head-spinner\": 1 CRED" choices "turbulence"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -444,12 +476,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_252B:
-    case "necktie" -> selector_254D
+    }
+    case "necktie" -> selector_254D {
         menu "beauty" "hide" "hair" "synthetic"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "NECKTIE DEPARTMENT:" choices "necktie"
         yield_b
         selector_254D:
-    case "hide" -> selector_25B0
+    }
+    case "hide" -> selector_25B0 {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide tie. Embroidered with tentacles. So right for you: 1 CRED" choices "hide"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -458,7 +492,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_25B0:
-    case "hair" -> selector_2601
+    }
+    case "hair" -> selector_2601 {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Tromp hair tie: 1 CRED" choices "hair"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -467,7 +502,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2601:
-    case "synthetic" -> selector_2660
+    }
+    case "synthetic" -> selector_2660 {
         menu "department" "buy" "necktie"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fully synthetic tie, with integrated altimeter, geiger counter: 4 CREDS" choices "synthetic"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 4 CREDS." choices "buy"
@@ -476,16 +512,19 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2660:
-    case "make_up" -> selector_2680
+    }
+    case "make_up" -> selector_2680 {
         menu "department" "rouge" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "COSMETICS DEPARTMENT:" choices "make_up"
         yield_b
         selector_2680:
-    case "rouge" -> selector_2694
+    }
+    case "rouge" -> selector_2694 {
         menu "department" "beauty" "crimson" "green" "black" "blue"
         yield_b
         selector_2694:
-    case "crimson" -> selector_26E5
+    }
+    case "crimson" -> selector_26E5 {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Crimson rouge for non-metal lips: 1 CRED" choices "crimson"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -494,7 +533,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_26E5:
-    case "green" -> selector_2740
+    }
+    case "green" -> selector_2740 {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fluorescent green rouge. For tentacles and suction caps: 1 CRED" choices "green"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -503,7 +543,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2740:
-    case "black" -> selector_279D
+    }
+    case "black" -> selector_279D {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Black rouge, for the ultimate in discretion... not: 1 CRED" choices "black"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -512,7 +553,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_279D:
-    case "blue" -> selector_2802
+    }
+    case "blue" -> selector_2802 {
         menu "buy" "rouge"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Space blue rouge. In space|, somebody can hear you scream at last: 1 CRED" choices "blue"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -521,12 +563,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2802:
-    case "cream" -> selector_2824
+    }
+    case "cream" -> selector_2824 {
         menu "department" "painkiller" "musclor" "meteor"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "VARIOUS OINTMENTS:" choices "cream"
         yield_b
         selector_2824:
-    case "painkiller" -> selector_2881
+    }
+    case "painkiller" -> selector_2881 {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Painkiller cream. Apply to all amputation wounds during combat: 1 CRED" choices "painkiller"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -535,7 +579,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2881:
-    case "musclor" -> selector_28E0
+    }
+    case "musclor" -> selector_28E0 {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MUSCLOR salve. For gleaming pectorals. It's half the battle: 1 CRED" choices "musclor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -544,7 +589,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_28E0:
-    case "meteor" -> selector_2939
+    }
+    case "meteor" -> selector_2939 {
         menu "buy" "cream"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "METEOR jelly. Say goodbye to meteor bumps: 1 CRED" choices "meteor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -553,12 +599,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2939:
-    case "jewel" -> selector_2959
+    }
+    case "jewel" -> selector_2959 {
         menu "department" "necklace" "bracelet"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "JEWELRY DEPARTMENT:" choices "jewel"
         yield_b
         selector_2959:
-    case "necklace" -> selector_29C6
+    }
+    case "necklace" -> selector_29C6 {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Pearl necklace. suitable for necks situated between head and body. Other cases, see sales personnel: 1 CRED" choices "necklace"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -567,7 +615,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_29C6:
-    case "bracelet" -> selector_2A27
+    }
+    case "bracelet" -> selector_2A27 {
         menu "buy" "jewel"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Bracelet in elastosteel. Fits all body parts. Amuse your guests: 1 CRED" choices "bracelet"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -576,17 +625,20 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2A27:
-    case "food" -> selector_2A45
+    }
+    case "food" -> selector_2A45 {
         menu "department" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "FOOD DEPARTMENT:" choices "food"
         yield_b
         selector_2A45:
-    case "murffalo" -> selector_2A6D
+    }
+    case "murffalo" -> selector_2A6D {
         menu "department" "joint" "steak" "horn" "fur" "sausages" "intestines"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MURFFALO DEPARTMENT:" choices "murffalo"
         yield_b
         selector_2A6D:
-    case "joint" -> selector_2AC4
+    }
+    case "joint" -> selector_2AC4 {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Joint of murffalo. tender and spicy: 1 CRED" choices "joint"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -595,7 +647,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2AC4:
-    case "steak" -> selector_2B1B
+    }
+    case "steak" -> selector_2B1B {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo steak. Tenderized by the Bronkos of Moskito: 1 CRED" choices "steak"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -604,7 +657,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2B1B:
-    case "horn" -> selector_2B76
+    }
+    case "horn" -> selector_2B76 {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Powdered murffalo horn. For males with a mission: 1 CRED" choices "horn"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -613,7 +667,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2B76:
-    case "fur" -> selector_2BD5
+    }
+    case "fur" -> selector_2BD5 {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo fur. Deodorized. Your neighbors will die of envy: 1 CRED" choices "fur"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -622,7 +677,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2BD5:
-    case "sausages" -> selector_2C2E
+    }
+    case "sausages" -> selector_2C2E {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo sausages. Great for those barbecue moments: 1 CRED" choices "sausages"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -631,7 +687,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2C2E:
-    case "intestines" -> selector_2C8B
+    }
+    case "intestines" -> selector_2C8B {
         menu "buy" "murffalo"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo intestines. Read the future and forecast the weather: 1 CRED" choices "intestines"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -640,12 +697,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2C8B:
-    case "sport" -> selector_2CAD
+    }
+    case "sport" -> selector_2CAD {
         menu "department" "ball" "boxing_gloves" "shells"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "SPORT DEPARTMENT:" choices "sport"
         yield_b
         selector_2CAD:
-    case "ball" -> selector_2D0E
+    }
+    case "ball" -> selector_2D0E {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Ball. Comes in steel, lead, magnetic or gravitational iron: 1 CRED" choices "ball"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -654,7 +713,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2D0E:
-    case "boxing_gloves" -> selector_2D73
+    }
+    case "boxing_gloves" -> selector_2D73 {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Murffalo hide boxing gloves. Deodorized. Your opponents aren't going to thank you: 1 CRED" choices "boxing_gloves"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -663,7 +723,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2D73:
-    case "shells" -> selector_2DE8
+    }
+    case "shells" -> selector_2DE8 {
         menu "buy" "sport"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Shells. The perfect way to protect the family jewels. Pairs, three of a kind, full house or poker: 1 CRED" choices "shells"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -672,17 +733,20 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2DE8:
-    case "handywork" -> selector_2E06
+    }
+    case "handywork" -> selector_2E06 {
         menu "department" "tools" "robotics"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HANDYWORK DEPARTMENT" choices "handywork"
         yield_b
         selector_2E06:
-    case "tools" -> selector_2E26
+    }
+    case "tools" -> selector_2E26 {
         menu "department" "screwdriver" "saws" "drills"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "TOOL DEPARTMENT" choices "tools"
         yield_b
         selector_2E26:
-    case "screwdriver" -> selector_2E85
+    }
+    case "screwdriver" -> selector_2E85 {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Screwdriver. Remote control for doing outdoor jobs from your armchair: 1 CRED" choices "screwdriver"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -691,7 +755,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2E85:
-    case "saws" -> selector_2EE0
+    }
+    case "saws" -> selector_2EE0 {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Unbreakable ray saw. Saws through anything except itself: 1 CRED" choices "saws"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -700,7 +765,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2EE0:
-    case "drills" -> selector_2F33
+    }
+    case "drills" -> selector_2F33 {
         menu "buy" "handywork"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Suction drill. Guaranteed drool-free: 1 CRED" choices "drills"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -709,12 +775,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2F33:
-    case "robotics" -> selector_2F4F
+    }
+    case "robotics" -> selector_2F4F {
         menu "department" "batteries"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "ROBOTICS DEPARTMENT" choices "robotics"
         yield_b
         selector_2F4F:
-    case "batteries" -> selector_2FB2
+    }
+    case "batteries" -> selector_2FB2 {
         menu "department" "handywork" "buy"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Batteries. The perfect way to get your droid back to work: 1 CRED" choices "batteries"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -723,12 +791,14 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_2FB2:
-    case "pharmaceutical" -> selector_2FD2
+    }
+    case "pharmaceutical" -> selector_2FD2 {
         menu "department" "aspirox" "snormor" "fang_brush"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "PHARMACEUTICAL DEPARTMENT" choices "pharmaceutical"
         yield_b
         selector_2FD2:
-    case "aspirox" -> selector_3043
+    }
+    case "aspirox" -> selector_3043 {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Aspirox. Relief from head pain. Suitable for stainless steel and nonstick heads.. See sales personnel for lead heads: 1 CRED" choices "aspirox"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED." choices "buy"
@@ -737,7 +807,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_3043:
-    case "snormor" -> selector_30A8
+    }
+    case "snormor" -> selector_30A8 {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Snormor, the sleep solution. At bedtime precisely, administer violently to head: 1 CRED" choices "snormor"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -746,7 +817,8 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_30A8:
-    case "fang_brush" -> selector_311B
+    }
+    case "fang_brush" -> selector_311B {
         menu "buy" "pharmaceutical"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Fang brush. It doesn't matter how many rows of teeth you have, this brush keeps 'em healthy and pointy: 1 CRED" choices "fang_brush"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -755,63 +827,74 @@ selector Bug_Deluxe_choices
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield_b
         selector_311B:
-    case "leisure" -> selector_3137
+    }
+    case "leisure" -> selector_3137 {
         menu "department" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "LEISURE DEPARTMENT" choices "leisure"
         yield_b
         selector_3137:
-    case "video_games" -> selector_315D
+    }
+    case "video_games" -> selector_315D {
         menu "department" "Dead_Killer" "Fatal_Butcher" "Harakira" "Commander_Blood" "Streetofkarnage" "Eat_my_liver"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "VIDEO GAMES" choices "video_games"
         yield_b
         selector_315D:
-    case "Dead_Killer" -> selector_31B1
+    }
+    case "Dead_Killer" -> selector_31B1 {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "MORTAL KILLER. Blood'n'bolts. Hash 'em, slash 'em, bash 'em and mash 'em: 20 CREDS" choices "Dead_Killer"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You can't pay 20 CREDS" choices "buy"
         yield_b
         selector_31B1:
-    case "Fatal_Butcher" -> selector_31F7
+    }
+    case "Fatal_Butcher" -> selector_31F7 {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "FATAL BUTCHER. Turn those losers into chemical sludge: 40 CRED" choices "Fatal_Butcher"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "You can't pay 40 CREDS" choices "buy"
         yield_b
         selector_31F7:
-    case "Harakira" -> selector_324B
+    }
+    case "Harakira" -> selector_324B {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HARAKIRA. Wield a postapocalyptic suction drill. Kill 'em an' drill 'em: 200 CREDS" choices "Harakira"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "CREDS. You have to be kidding." choices "buy"
         yield_b
         selector_324B:
-    case "Commander_Blood" -> selector_327D
+    }
+    case "Commander_Blood" -> selector_327D {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Uh!.... You already have it|... You sure you want another one?" choices "Commander_Blood"
         yield_b
         selector_327D:
-    case "Streetofkarnage" -> selector_32D5
+    }
+    case "Streetofkarnage" -> selector_32D5 {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "STREET OF KARNAGE. Intestines litter the city sidewalks at last: 250 CREDS" choices "Streetofkarnage"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "PRICE: 250 CREDS. You can read, can't you?" choices "buy"
         yield_b
         selector_32D5:
-    case "Eat_my_liver" -> selector_3339
+    }
+    case "Eat_my_liver" -> selector_3339 {
         menu "buy" "video_games"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "EAT MY LIVER. Game of the year! Package includes ruptured liver, punctured lung, brain stuff: 400 CREDS" choices "Eat_my_liver"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The price is 400 CREDS, so calm down." choices "buy"
         yield_b
         selector_3339:
-    case "hifi" -> selector_3357
+    }
+    case "hifi" -> selector_3357 {
         menu "department" "multimedia" "audio_CD"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "HIFI DEPARTMENT" choices "hifi"
         yield_b
         selector_3357:
-    case "multimedia" -> selector_3399
+    }
+    case "multimedia" -> selector_3399 {
         menu "buy" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Are you crazy!!!" choices "multimedia"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "Keep your money for a nice weekend in the country..." choices "buy"
         yield_b
         selector_3399:
-    case "audio_CD" -> 0x0000
+    }
+    case "audio_CD" -> 0x0000 {
         menu "buy" "hifi"
         say Bug_Deluxe voice=0xFF flags=0x41 display=0x80 loop=none control=none : "The latest from the MIGRATORS: \"CRUSH MY SKULL\": 1 CRED" choices "audio_CD"
         say Bug_Deluxe voice=0xFF flags=0x49 display=0xA0 loop=none control=none : "You pay 1 CRED|." choices "buy"
@@ -819,11 +902,12 @@ selector Bug_Deluxe_choices
         record_triple blood_s13 0x1004 0x0092 0
         shared_state 0xC0 0x1310 0xF5 0xC1 0x0001
         yield
-end selector Bug_Deluxe_choices
+    }
+}
 
-selector Yoko_choices
+selector Yoko_choices {
     yield_b
-    case "hello" -> selector_3485
+    case "hello" -> selector_3485 {
         menu "bye_bye" "talk" "say_nothing"
         say Yoko voice=0x00 flags=0x40 display=0x80 loop=none control=none : "What me do for you?" choices "say_nothing"
         say Yoko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me small. Friends call me small Yoko..." choices "say_nothing"
@@ -832,12 +916,14 @@ selector Yoko_choices
         say Yoko voice=0x0C flags=0x00 display=0x80 loop=none control=none : "Me listen you,stranger from sky. Welcome..."
         yield_b
         selector_3485:
-    case "talk" -> selector_34AF
+    }
+    case "talk" -> selector_34AF {
         menu "bye_bye" "race" "art" "politics" "reproduction" "science"
         say Yoko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "What you want know?" choices "talk"
         yield_b
         selector_34AF:
-    case "race" -> selector_3539
+    }
+    case "race" -> selector_3539 {
         menu "bye_bye" "talk" "Izwal" "Slimers" "Croolis" "Tromp" "Migrax" "ondoyant" "Tubular_brain"
         say Yoko voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Peoples of universe interest you, friend|..." choices "race"
         say Yoko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "You like talk of races in universe..." choices "race"
@@ -845,7 +931,8 @@ selector Yoko_choices
         say Yoko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Out there, far in universe, much races..." choices "race"
         yield_b
         selector_3539:
-    case "Izwal" -> selector_3779
+    }
+    case "Izwal" -> selector_3779 {
         menu "bye_bye" "talk" "race" "peace" "Yoko" "Maxxon" "planet" "listen" "like"
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Izwals be great pacifist people..." choices "peace"
         say Yoko voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Me very frightened of war..." choices "peace"
@@ -871,7 +958,8 @@ selector Yoko_choices
         say Yoko voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Izwals like play..." choices "Izwal"
         yield_b
         selector_3779:
-    case "Croolis" -> selector_3882
+    }
+    case "Croolis" -> selector_3882 {
         menu "bye_bye" "talk" "race" "war" "news" "brain" "fear"
         say Yoko voice=0x09 flags=0x48 display=0x80 loop=none control=none : "War be big problem. Life be good if no war..." choices "war"
         shared_state 0xC0 0x1302 0xF5 0xC1 0x0001
@@ -883,14 +971,16 @@ selector Yoko_choices
         say Yoko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Croolis be bad, stupid and violent..." choices "Croolis"
         yield_b
         selector_3882:
-    case "Tromp" -> selector_38E0
+    }
+    case "Tromp" -> selector_38E0 {
         menu "bye_bye" "talk" "race" "know" "trunk"
         say Yoko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me not know Tromps..." choices "know"
         say Yoko voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Trumpet nice instrument..." choices "trunk"
         say Yoko voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me not smoke Trump tails. So bad for health..." choices "Tromp"
         yield_b
         selector_38E0:
-    case "Migrax" -> selector_3954
+    }
+    case "Migrax" -> selector_3954 {
         menu "bye_bye" "talk" "race" "brain" "money"
         say Yoko voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Migrax big stupid." choices "brain"
         say Yoko voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Migrax like too much money." choices "money"
@@ -898,7 +988,8 @@ selector Yoko_choices
         say Yoko voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Migrators be cool. Me like music." choices "Migrax"
         yield_b
         selector_3954:
-    case "ondoyant" -> selector_3A14
+    }
+    case "ondoyant" -> selector_3A14 {
         menu "bye_bye" "talk" "race" "emotion" "news" "feeling"
         say Yoko voice=0x06 flags=0x40 display=0x80 loop=none control=none : "ondoyants be very strange. Them intimidate me..." choices "news"
         say Yoko voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Father say ondoyants not exist, ondoyants be legend..." choices "news"
@@ -908,14 +999,16 @@ selector Yoko_choices
         say Yoko voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Me want ondoyant with me|, friend|..." choices "ondoyant"
         yield_b
         selector_3A14:
-    case "Tubular_brain" -> selector_3A60
+    }
+    case "Tubular_brain" -> selector_3A60 {
         menu "bye_bye" "talk" "news"
         say Yoko voice=0x03 flags=0x41 display=0x80 loop=none control=none : "Me not know those beings..." choices "news"
         say Yoko voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Tubular strange name..." choices "Tubular_brain"
         say Yoko voice=0x09 flags=0x41 display=0x80 loop=none control=none : "Not know..." choices "Tubular_brain"
         yield_b
         selector_3A60:
-    case "Slimers" -> selector_3B5B
+    }
+    case "Slimers" -> selector_3B5B {
         menu "bye_bye" "talk" "information"
         say Yoko voice=0x00 flags=0x41 display=0x80 loop=none control=none : "Me know Slimers..." choices "Slimers"
         say Yoko voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Slimers be strange people. Big Yolk be big Slimer. He be buried on planet Vista..." choices "information"
@@ -927,7 +1020,8 @@ selector Yoko_choices
         shared_state 0xC0 0x12E2 0xF5 0xC1 0x0001
         yield_b
         selector_3B5B:
-    case "art" -> selector_3C33
+    }
+    case "art" -> selector_3C33 {
         menu "bye_bye" "talk" "music" "painting" "reproduction" "book"
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like music. You know group called Migrators?" choices "music"
         say Yoko voice=0x0C flags=0x40 display=0x80 loop=none control=none : "MIGRATORS make big sound. Not hear think!" choices "music"
@@ -938,7 +1032,8 @@ selector Yoko_choices
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like color blue..." choices "art"
         yield_b
         selector_3C33:
-    case "politics" -> selector_3CFF
+    }
+    case "politics" -> selector_3CFF {
         menu "bye_bye" "talk" "peace" "war" "weapon"
         say Yoko voice=0x0A flags=0x41 display=0x80 loop=none control=none : "Us Izwals like Peace..." choices "peace"
         say Yoko voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Me hate war, friend|..." choices "war"
@@ -949,7 +1044,8 @@ selector Yoko_choices
         say Yoko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Politics always leads to war. People not want same thing..." choices "politics"
         yield_b
         selector_3CFF:
-    case "peace" -> selector_3D85
+    }
+    case "peace" -> selector_3D85 {
         menu "bye_bye" "talk" "family"
         say Yoko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwals like peace of family..." choices "family"
         say Yoko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "War kill my family, friend|..." choices "family"
@@ -957,7 +1053,8 @@ selector Yoko_choices
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me want base life on respect of others. That be only law..." choices "peace"
         yield_b
         selector_3D85:
-    case "war" -> selector_3E17
+    }
+    case "war" -> selector_3E17 {
         menu "bye_bye" "talk" "peace" "slave" "power"
         say Yoko voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Me not want be slaves. POWER make slaves..." choices "slave"
         say Yoko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "POWER make people crazy..." choices "power"
@@ -966,7 +1063,8 @@ selector Yoko_choices
         say Yoko voice=0x09 flags=0x40 display=0x80 loop=none control=none : "War be very stupid..." choices "war"
         yield_b
         selector_3E17:
-    case "reproduction" -> selector_3F59
+    }
+    case "reproduction" -> selector_3F59 {
         menu "bye_bye" "talk" "laugh" "idea" "female"
         say Yoko voice=0x08 flags=0x40 display=0x80 loop=none control=none : "Hee hee hee hee|..." choices "reproduction"
         say Yoko voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Reproduction be big universal law..." choices "reproduction"
@@ -981,7 +1079,8 @@ selector Yoko_choices
         say Yoko voice=0x0D flags=0x40 display=0x80 loop=none control=none : "You like reproduction. You talk much about|..." choices "female"
         yield_b
         selector_3F59:
-    case "science" -> 0x0000
+    }
+    case "science" -> 0x0000 {
         menu "bye_bye" "talk" "weapon"
         say Yoko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me not like weapons, friend|..." choices "weapon"
         say Yoko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Science must be for peace, not war..." choices "weapon"
@@ -992,15 +1091,17 @@ selector Yoko_choices
         say Yoko voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Sinox like science and technology..." choices "science"
         say Yoko voice=0x03 flags=0x01 display=0x80 loop=none control=none : "..."
         yield
-end selector Yoko_choices
+    }
+}
 
-selector Bronko_choices
+selector Bronko_choices {
     yield_b
-    case "talk" -> selector_404A
+    case "talk" -> selector_404A {
         menu "bye_bye" "robot" "cred" "murffalos" "weapons"
         yield_b
         selector_404A:
-    case "robot" -> selector_41F6
+    }
+    case "robot" -> selector_41F6 {
         menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me robot Bronko AX34 BUTCHER model..." choices "robot"
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Robots be strong, friend. Robot Bronko know chop meat with sharp tools..." choices "robot"
@@ -1017,7 +1118,8 @@ selector Bronko_choices
         say Bronko voice=0x05 flags=0x40 display=0x80 loop=none control=none : "See you soon..." choices "bye_bye"
         yield_b
         selector_41F6:
-    case "cred" -> selector_42E2
+    }
+    case "cred" -> selector_42E2 {
         menu "talk" "bye_bye" "cred" "buy"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me work much to earn CRED|, friend|..." choices "cred"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Creds be hard to earn..." choices "cred"
@@ -1028,7 +1130,8 @@ selector Bronko_choices
         say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To buy, me must work much..." choices "buy"
         yield_b
         selector_42E2:
-    case "murffalos" -> selector_439C
+    }
+    case "murffalos" -> selector_439C {
         menu "talk" "bye_bye" "hunt"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Thirteen murffalos to reproduce... One in middle, rest around. That be reproduction for Murffalos..." choices "murffalos"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not like murffalos|... Not good, too soft... Me like blade of lawn-mower..." choices "murffalos"
@@ -1037,7 +1140,8 @@ selector Bronko_choices
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Hunting big sport..." choices "hunt"
         yield_b
         selector_439C:
-    case "weapons" -> selector_442C
+    }
+    case "weapons" -> selector_442C {
         menu "talk" "bye_bye" "planets" "war"
         say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To find nice weapons, pay much creds, Commander|..." choices "weapons"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me have weapons on end of arms..." choices "weapons"
@@ -1045,16 +1149,18 @@ selector Bronko_choices
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Croolis war do much bad... Bad war, friend|..." choices "war"
         yield_b
         selector_442C:
-    case "retirement" -> 0x0000
+    }
+    case "retirement" -> 0x0000 {
         menu "talk" "bye_bye"
         say Bronko voice=0x01 flags=0x48 display=0x80 loop=none control=none : "Ah|, retirement... Them send me planet Magnus|, with other worn-out robots... CRY CRY|..." choices "retirement"
         shared_state 0xC0 0x12EC 0xF5 0xC1 0x0001
         yield
-end selector Bronko_choices
+    }
+}
 
-selector Bob_Morlock_choices
+selector Bob_Morlock_choices {
     yield_b
-    case "talk" -> selector_4919
+    case "talk" -> selector_4919 {
         menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "Kanary" "mission" "Corpo" "Good_ol_Bob"
         say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you need to know, Commander?" choices "talk"
         say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
@@ -1101,7 +1207,8 @@ selector Bob_Morlock_choices
         say Bob_Morlock voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Heh heh..." choices "Good_ol_Bob"
         yield_b
         selector_4919:
-    case "Kanary" -> 0x0000
+    }
+    case "Kanary" -> 0x0000 {
         menu "talk" "bye_bye" "cottage" "clones" "employees" "balance_sheets"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research Department is my secret project..." choices "cottage"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The domain of vegetation is a marvel of nature..." choices "cottage"
@@ -1132,17 +1239,19 @@ selector Bob_Morlock_choices
         say Bob_Morlock voice=0x09 flags=0x04 display=0x85 loop=none control=0x0014 : "You talk too much, Commander. You're wasting my time|..."
         say Bob_Morlock voice=0x0F flags=0x04 display=0x85 loop=none control=0x0019 : "I'll tell you something about yourself, Commander|. You ask too many questions..."
         yield
-end selector Bob_Morlock_choices
+    }
+}
 
-selector Daddy_Gluxx_choices
+selector Daddy_Gluxx_choices {
     yield_b
-    case "talk" -> selector_4CDF
+    case "talk" -> selector_4CDF {
         menu "bye_bye" "Slim_Gelati" "family" "Slimers" "Great_Yolk"
         say Daddy_Gluxx voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Bye bye, friend|..." choices "bye_bye"
         say Daddy_Gluxx voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Do you speak our language, stranger?" choices "talk"
         yield_b
         selector_4CDF:
-    case "Slim_Gelati" -> selector_4D92
+    }
+    case "Slim_Gelati" -> selector_4D92 {
         menu "bye_bye" "talk" "treatment"
         say Daddy_Gluxx voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Old Slim's not the guy he used to be. He sold his jelly house. He's throwing away his savings..." choices "Slim_Gelati"
         say Daddy_Gluxx voice=0x04 flags=0x00 display=0x80 loop=none control=none : "He's obsessed with regaining his long lost youth..."
@@ -1151,7 +1260,8 @@ selector Daddy_Gluxx_choices
         shared_state 0xC0 0x12E2 0xF5 0xC1 0x0001
         yield_b
         selector_4D92:
-    case "family" -> selector_4E7A
+    }
+    case "family" -> selector_4E7A {
         menu "bye_bye" "talk" "children" "village"
         say Daddy_Gluxx voice=0x00 flags=0x40 display=0x82 loop=none control=none : "Ah! Family! Look at these fine children. Little Gooseberry and her sister Gelatine... Latex! Behave yourself!!!" choices "family"
         say Daddy_Gluxx voice=0x03 flags=0x00 display=0x80 loop=none control=none : "We SLIMERS take great joy in our families..."
@@ -1160,7 +1270,8 @@ selector Daddy_Gluxx_choices
         say Daddy_Gluxx voice=0x06 flags=0x40 display=0x80 loop=none control=none : "This village is called JEWELTOWN. It is quite unique in the universe... We get a lot of tourists..." choices "village"
         yield_b
         selector_4E7A:
-    case "Slimers" -> selector_4F56
+    }
+    case "Slimers" -> selector_4F56 {
         menu "bye_bye" "talk" "origin"
         say Daddy_Gluxx voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Slimers are a very old race..." choices "Slimers"
         say Daddy_Gluxx voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Our origins are lost in the mist of time|..." choices "origin"
@@ -1169,7 +1280,8 @@ selector Daddy_Gluxx_choices
         say Daddy_Gluxx voice=0x03 flags=0x40 display=0x80 loop=none control=none : "There is no pollution here. Everything is clean and pure..." choices "origin"
         yield_b
         selector_4F56:
-    case "Great_Yolk" -> 0x0000
+    }
+    case "Great_Yolk" -> 0x0000 {
         menu "bye_bye" "talk" "history"
         say Daddy_Gluxx voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Great YOLK... An eminent SLIMER philosopher... His thoughts are taught to all the children of the universe..." choices "Great_Yolk"
         say Daddy_Gluxx voice=0x02 flags=0x40 display=0x80 loop=none control=none : "The Great YOLK said: \"Cyberspace feeds off our dreams...\"" choices "Great_Yolk"
@@ -1177,23 +1289,26 @@ selector Daddy_Gluxx_choices
         say Daddy_Gluxx voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Our history is written within us for eternity. We have no need to tell it or write it down..." choices "history"
         say Daddy_Gluxx voice=0x01 flags=0x01 display=0x80 loop=none control=none : "..."
         yield
-end selector Daddy_Gluxx_choices
+    }
+}
 
-selector Scruter_Mac_choices
+selector Scruter_Mac_choices {
     yield_b
-    case "talk" -> selector_5053
+    case "talk" -> selector_5053 {
         menu "bye_bye" "Scruter_Mac" "SCRUT" "prison" "Mastachok" "presents"
         say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Bye bye stranger... Me must stand guard..." choices "bye_bye"
         yield_b
         selector_5053:
-    case "Scruter_Mac" -> selector_50F3
+    }
+    case "Scruter_Mac" -> selector_50F3 {
         menu "talk" "bye_bye" "robot"
         say Scruter_Mac voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Ah|, robot be hard job... Me think always of vacation on islands of Sea of Tranquility... SIGH..." choices "robot"
         say Scruter_Mac voice=0x04 flags=0x40 display=0x80 loop=none control=none : "If you want be SCRUT agent, you can. Them put your brain inside SCRUT robot..." choices "robot"
         say Scruter_Mac voice=0x03 flags=0x40 display=0x80 loop=none control=none : "After war, them put Croolis brain in SCRUT robot. Me did be Croolis..." choices "robot"
         yield_b
         selector_50F3:
-    case "SCRUT" -> selector_524D
+    }
+    case "SCRUT" -> selector_524D {
         menu "talk" "bye_bye" "order" "chief" "war" "happy"
         say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "SCRUT big army... SCRUT control universe..." choices "SCRUT"
         say Scruter_Mac voice=0x05 flags=0x40 display=0x80 loop=none control=none : "SUPER TRUMP be big chief of SCRUT..." choices "SCRUT"
@@ -1208,7 +1323,8 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "SCRUT robot enforce order in universe... Nice... Me like..." choices "war"
         yield_b
         selector_524D:
-    case "prison" -> selector_53E7
+    }
+    case "prison" -> selector_53E7 {
         menu "talk" "bye_bye" "eviscerator" "Croolis"
         say Scruter_Mac voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Prison of Mastachok solid... Big fortress... Tough..." choices "prison"
         say Scruter_Mac voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Prisoner not can escape from here|... Us control all..." choices "prison"
@@ -1222,7 +1338,8 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me have Croolis brain but not be chief..." choices "Croolis"
         yield_b
         selector_53E7:
-    case "Mastachok" -> selector_5547
+    }
+    case "Mastachok" -> selector_5547 {
         menu "talk" "bye_bye" "planet" "life"
         say Scruter_Mac voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastachok be planet ravaged by war... Here did be big battle..." choices "Mastachok"
         say Scruter_Mac voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not like spend vacation here|... Not sun... Not sea... Not Night Club..." choices "Mastachok"
@@ -1234,7 +1351,8 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Here not be tekno Night Club... Life be very lousy..." choices "life"
         yield_b
         selector_5547:
-    case "presents" -> selector_5651
+    }
+    case "presents" -> selector_5651 {
         menu "talk" "bye_bye" "friendship" "like"
         say Scruter_Mac voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me like presents... Presents... Presents... Me like..." choices "presents"
         say Scruter_Mac voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me like perfume for go dance tekno. Me pour whole bottle on head. Attract females..." choices "presents"
@@ -1244,7 +1362,8 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Friendship not exist in SCRUT army... Brothers in arms... Not friends..." choices "friendship"
         yield_b
         selector_5651:
-    case "like" -> selector_5713
+    }
+    case "like" -> selector_5713 {
         menu "bye_bye" "talk" "food" "beauty" "perfumes"
         say Scruter_Mac voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me always like same thing, go dance in Night Club on planet Galabar where night last six months..." choices "like"
         say Scruter_Mac voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me not eat, friend. Me run on BIONIUM|..." choices "food"
@@ -1252,7 +1371,8 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x00 flags=0x41 display=0x80 loop=none control=none : "ME LIKE PERFUME: \"MOTOROIL\" Be exhaust nozzle Romeo... ME LIKE, friend|..." choices "perfumes"
         yield_b
         selector_5713:
-    case "happy" -> selector_57E5
+    }
+    case "happy" -> selector_57E5 {
         menu "bye_bye" "talk" "beach" "party" "ballroom"
         say Scruter_Mac voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Me not happy... Mastachok not have Night Club..." choices "happy"
         say Scruter_Mac voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me like mercury beach on GALABAR..." choices "beach"
@@ -1262,10 +1382,12 @@ selector Scruter_Mac_choices
         say Scruter_Mac voice=0x03 flags=0x01 display=0x80 loop=none control=none : "..."
         yield_b
         selector_57E5:
-    case "boude" -> 0x0000
+    }
+    case "boude" -> 0x0000 {
         menu "grmmph" "bye_bye"
         say Scruter_Mac voice=0x07 flags=0x40 display=0x80 loop=none control=none : "... Sulk..." choices "grmmph"
         say Scruter_Mac voice=0x05 flags=0x40 display=0x80 loop=none control=none : "... SILENT COMPLAINT....." choices "grmmph"
         say Scruter_Mac voice=0x08 flags=0x41 display=0x80 loop=none control=none : "..." choices "grmmph"
         halt
-end selector Scruter_Mac_choices
+    }
+}

@@ -169,8 +169,8 @@ distinct explicit COD branch destinations are zero-based offsets. Every BAS
 reading resulted from incorrectly grouping the preceding `0xAC` with that node.
 An unaligned address in any of these sets makes decompilation fail.
 
-`proc`/`end proc` directives delimit the 480 named COD routines. Label colons
-name remaining COD blocks and BAS selector nodes. These directives
+Brace-delimited `proc` blocks delimit the 480 named COD routines. Label colons
+name remaining COD blocks and BAS selector nodes. These structures
 emit no bytes, but symbolic operands are resolved and range-checked by the
 two-pass BloodScript compiler. The generated corpus contains 1,059 distinct COD
 symbols and 284 BAS selector labels while retaining exact layout.

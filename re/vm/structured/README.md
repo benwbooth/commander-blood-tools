@@ -15,14 +15,14 @@ indentation for procedure, guard, selector, and case bodies. Redundant
 disassembly comments are omitted; comments remain only for recovery evidence
 that is not expressed by syntax.
 
-The `when target` / `then` / `end when target` syntax is a lossless structural
-form of the native `A0 target` / `A1` guard protocol. `WHEN` and `THEN` emit
-those original bytes. `END_WHEN` emits no bytes and must occur exactly at its
-resolved target. The compiler validates nesting, matching names, procedure
-boundaries, and derived target offsets.
+The `when target { ... } then { ... }` syntax is a lossless structural form of
+the native `A0 target` / `A1` guard protocol. `when` and `then` emit those
+original bytes. The closing brace emits no bytes and must occur exactly at the
+resolved target. The compiler validates brace nesting, procedure boundaries,
+and derived target offsets.
 
-The BAS pass uses `selector name` / `case selector -> next` / `end selector
-name`. List boundaries emit no bytes; `case` emits the same four-byte
+The BAS pass uses brace-delimited `selector name { ... }` and `case selector ->
+next { ... }` blocks. List and case braces emit no bytes; `case` emits the same four-byte
 `{selector,next}` header as low-level `selector_node`. The existing `yield_b`,
 `menu`, response/state operations, and terminal `yield` or `halt`
 remain explicit byte-owning statements. The compiler requires every list to

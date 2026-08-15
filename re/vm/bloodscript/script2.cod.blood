@@ -1,7 +1,7 @@
 // format: bloodscript-v3
 // image: COD
 
-proc pter
+proc pter {
     conditional_block 0x01 scrub
     branch_gameflag
     actor 0x0744 0x0028 0
@@ -65,9 +65,9 @@ proc pter
     say 0x070A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "You're the commander, Commander|..."
     clear_alternate_concept
     record_clear 0x0744
-end proc pter
+}
 
-proc scrub
+proc scrub {
     conditional_block 0x01 scrujo
     branch_flag_274f
     actor 0x0744 0x0028 0
@@ -78,9 +78,9 @@ proc scrub
     say 0x070A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "The energy source computers are wild about..."
     say 0x070A voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Ask SCRUTER JO a few questions, Commander|. You'll understand..."
     poke_byte 0x02D3 0x00
-end proc scrub
+}
 
-proc scrujo
+proc scrujo {
     conditional_block 0x01 menbr
     branch_flag_274f
     actor 0x0744 0x0028 0
@@ -129,9 +129,9 @@ proc scrujo
     block_069C:
     say 0x070A voice=0x07 flags=0x08 display=0x80 loop=none control=none : "Bye bye, Commander|. Me return to CYBERSPACE..."
     record_clear 0x0744
-end proc scrujo
+}
 
-proc menbr
+proc menbr {
     conditional_block 0x01 men1
     branch_presentation
     actor 0x08F4 0x0028 0
@@ -147,9 +147,9 @@ proc menbr
     say 0x08BA voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Chef Bronko says... Burping's bad manners!|..."
     say 0x08BA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x08F4
-end proc menbr
+}
 
-proc men1
+proc men1 {
     conditional_block 0x01 men2
     branch_presentation
     actor 0x08F4 0x0028 0
@@ -166,9 +166,9 @@ proc men1
     say 0x08BA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "Stop"
     poke_byte 0x076D 0x00
     record_clear 0x08F4
-end proc men1
+}
 
-proc men2
+proc men2 {
     conditional_block 0x01 men3
     branch_presentation
     actor 0x08F4 0x0028 0
@@ -185,9 +185,9 @@ proc men2
     say 0x08BA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x081D 0x00
     record_clear 0x08F4
-end proc men2
+}
 
-proc men3
+proc men3 {
     conditional_block 0x01 men4
     branch_presentation
     record_wildcard 0xAF 0x0332 0xFFFF 1
@@ -204,9 +204,9 @@ proc men3
     say 0x08BA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x08C7 0x00
     record_clear 0x08F4
-end proc men3
+}
 
-proc men4
+proc men4 {
     conditional_block 0x01 men5
     branch_presentation
     actor 0x08F4 0x0028 0
@@ -223,9 +223,9 @@ proc men4
     say 0x08BA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x0973 0x00
     record_clear 0x08F4
-end proc men4
+}
 
-proc men5
+proc men5 {
     conditional_block 0x01 men6
     branch_presentation
     actor 0x08F4 0x0028 0
@@ -243,9 +243,9 @@ proc men5
     poke_byte 0x0A27 0x00
     poke_byte 0x0AE3 0x01
     record_clear 0x08F4
-end proc men5
+}
 
-proc men6
+proc men6 {
     conditional_block 0x00 bbbob
     guard_pop
     poke_byte 0x076D 0x01
@@ -254,9 +254,9 @@ proc men6
     poke_byte 0x0973 0x01
     poke_byte 0x0A27 0x01
     poke_byte 0x0AE3 0x00
-end proc men6
+}
 
-proc bbbob
+proc bbbob {
     conditional_block 0x01 honk1
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -271,9 +271,9 @@ proc bbbob
     guard_pop
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "Commander, I hope you're gonna tell me what ol' Turkey face said when he unplugged me..."
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "It's a secret... Right Commander|..."
-end proc bbbob
+}
 
-proc honk1
+proc honk1 {
     conditional_block 0x01 help2
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -340,9 +340,9 @@ proc honk1
     guard_pop
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "We've got eight doses of BIONIUM left, Commander"
     say 0x0872 voice=0xFF flags=0x20 display=0x80 loop=none control=none : "You're the best of the best, Commander..."
-end proc honk1
+}
 
-proc help2
+proc help2 {
     conditional_block 0x01 help3
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -354,9 +354,9 @@ proc help2
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0DE0 0x00
-end proc help2
+}
 
-proc help3
+proc help3 {
     conditional_block 0x01 help4
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -368,9 +368,9 @@ proc help3
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0E4A 0x00
-end proc help3
+}
 
-proc help4
+proc help4 {
     conditional_block 0x01 help6
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -383,9 +383,9 @@ proc help4
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0EB4 0x00
-end proc help4
+}
 
-proc help6
+proc help6 {
     conditional_block 0x01 help7
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -399,9 +399,9 @@ proc help6
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0F27 0x00
-end proc help6
+}
 
-proc help7
+proc help7 {
     conditional_block 0x01 help8
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -413,9 +413,9 @@ proc help7
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0F94 0x00
-end proc help7
+}
 
-proc help8
+proc help8 {
     conditional_block 0x01 help9
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -427,9 +427,9 @@ proc help8
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x0FF9 0x00
-end proc help8
+}
 
-proc help9
+proc help9 {
     conditional_block 0x01 help1
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -441,9 +441,9 @@ proc help9
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x1061 0x00
-end proc help9
+}
 
-proc help1
+proc help1 {
     conditional_block 0x01 help5
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -455,9 +455,9 @@ proc help1
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x10C9 0x00
-end proc help1
+}
 
-proc help5
+proc help5 {
     conditional_block 0x01 what
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -471,9 +471,9 @@ proc help5
     shared_state 0xC0 0x126C 0xF7 0xC1 0x0003
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Service with a smile! That's the story of my life, Commander|..."
     poke_byte 0x1131 0x00
-end proc help5
+}
 
-proc what
+proc what {
     conditional_block 0x01 miss
     branch_presentation
     actor 0x08AC 0x0028 0
@@ -550,9 +550,9 @@ proc what
     guard_pop
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "Commander, I just forged a CRED! Take a look in the Cryobox|..."
     record_triple 0x0594 0x1004 0x0028 0
-end proc what
+}
 
-proc miss
+proc miss {
     conditional_block 0x00 boba1
     actor 0x08AC 0x0028 0
     shared_bit_state 0xAE 0x0D36 0x0002 0
@@ -737,9 +737,9 @@ proc miss
     block_1C2C:
     say 0x0872 voice=0xFF flags=0x28 display=0x80 loop=none control=none : "You need anything else? Just say the word..."
     poke_byte 0x1348 0x00
-end proc miss
+}
 
-proc boba1
+proc boba1 {
     conditional_block 0x01 boba2
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -770,9 +770,9 @@ proc boba1
     shared_state 0xC0 0x12B4 0xF5 0xC1 0x0002
     state_array_set 0x01 0xFFFF
     record_clear 0x0084
-end proc boba1
+}
 
-proc boba2
+proc boba2 {
     conditional_block 0x01 boba3
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -808,9 +808,9 @@ proc boba2
     shared_state 0xC0 0x12B4 0xF5 0xC1 0x0003
     state_array_set 0x01 0xFFFF
     record_clear 0x0084
-end proc boba2
+}
 
-proc boba3
+proc boba3 {
     conditional_block 0x01 boba4
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -844,9 +844,9 @@ proc boba3
     shared_state 0xC0 0x12B4 0xF5 0xC1 0x0004
     state_array_set 0x01 0xFFFF
     record_clear 0x0084
-end proc boba3
+}
 
-proc boba4
+proc boba4 {
     conditional_block 0x01 augmen
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -882,9 +882,9 @@ proc boba4
     shared_state 0xC0 0x1270 0xF5 0xC1 0x0000
     state_array_set 0x01 0xFFFF
     record_clear 0x0084
-end proc boba4
+}
 
-proc augmen
+proc augmen {
     conditional_block 0x01 revel
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -899,9 +899,9 @@ proc augmen
     say 0x004A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Heart!!... He means his power generator... Those guys... Just mention a couple of lousy megawatts!"
     shared_state 0xC0 0x12B8 0xF5 0xC1 0x0001
     poke_byte 0x22DB 0x00
-end proc augmen
+}
 
-proc revel
+proc revel {
     conditional_block 0x01 caft
     branch_flag_274f
     actor 0x0084 0x0028 0
@@ -928,9 +928,9 @@ proc revel
     shared_state 0xC0 0x12BC 0xF5 0xC1 0x0001
     shared_state 0xC0 0x12BA 0xF5 0xC1 0x0000
     poke_byte 0x23D3 0x00
-end proc revel
+}
 
-proc caft
+proc caft {
     conditional_block 0x01 time
     branch_flag_274f
     shared_state 0xC0 0x12BE 0xF5 0xC1 0x0001
@@ -956,27 +956,27 @@ proc caft
     say 0x004A voice=0x02 flags=0x08 display=0x90 loop=none control=none : "SILENCE!!!"
     shared_state 0xC0 0x12BE 0xF5 0xC1 0x0000
     clear_alternate_concept
-end proc caft
+}
 
-proc time
+proc time {
     conditional_block 0x01 radioscr
     guard_pop
     state_array_set 0x03 0x000A
     state_array_set 0x04 0x00C8
     bit_flag 0x06E0 0x02 0
     poke_byte 0x2730 0x00
-end proc time
+}
 
-proc radioscr
+proc radioscr {
     conditional_block 0x01 sort
     state_array_test 0x03
     guard_pop
     record_link 0x06FC 0x0028 0
     poke_byte 0x2759 0x01
     poke_byte 0x2745 0x00
-end proc radioscr
+}
 
-proc sort
+proc sort {
     conditional_block 0x00 radio1
     branch_presentation
     actor 0x06FC 0x0028 0
@@ -1002,9 +1002,9 @@ proc sort
     guard_pop
     poke_byte 0x2759 0x00
     poke_byte 0x27D0 0x01
-end proc sort
+}
 
-proc radio1
+proc radio1 {
     conditional_block 0x00 dring
     branch_presentation
     actor 0x06FC 0x0028 0
@@ -1098,9 +1098,9 @@ proc radio1
     state_array_set 0x08 0x000A
     poke_byte 0x27D0 0x00
     record_clear 0x06FC
-end proc radio1
+}
 
-proc dring
+proc dring {
     conditional_block 0x01 encor
     shared_state 0xBF 0x0590 0xF1 0xC1 0x0002
     shared_state 0xBF 0x0740 0xF1 0xC1 0x0002
@@ -1109,9 +1109,9 @@ proc dring
     record_link 0x06FC 0x0028 0
     shared_state 0xC0 0x12C4 0xF5 0xC1 0x0001
     poke_byte 0x2DBF 0x00
-end proc dring
+}
 
-proc encor
+proc encor {
     conditional_block 0x01 destroy
     shared_state 0xC0 0x12C4 0xF5 0xC1 0x0001
     branch_presentation
@@ -1149,9 +1149,9 @@ proc encor
     poke_byte 0x2F75 0x01
     poke_byte 0x3043 0x01
     record_clear 0x06FC
-end proc encor
+}
 
-proc destroy
+proc destroy {
     conditional_block 0x00 last
     shared_state 0xC0 0x12C6 0xF5 0xC1 0x0001
     state_array_test 0x04
@@ -1160,9 +1160,9 @@ proc destroy
     record_link 0x06FC 0x0028 0
     poke_byte 0x2F94 0x01
     poke_byte 0x2F75 0x00
-end proc destroy
+}
 
-proc last
+proc last {
     conditional_block 0x00 init
     branch_presentation
     actor 0x06FC 0x0028 0
@@ -1175,9 +1175,9 @@ proc last
     say 0x06C2 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "STOP"
     record_clear 0x06FC
     poke_byte 0x2F94 0x00
-end proc last
+}
 
-proc init
+proc init {
     conditional_block 0x01 radiof
     shared_state 0xC0 0x12C2 0xF5 0xC1 0x0001
     guard_pop
@@ -1185,9 +1185,9 @@ proc init
     shared_state 0xC0 0x12CC 0xF5 0xC0 0x12CE
     shared_bit_state 0xB0 0x0DA2 0x0002 0
     poke_byte 0x3022 0x00
-end proc init
+}
 
-proc radiof
+proc radiof {
     conditional_block 0x00 rhom1
     record_wildcard 0xAF 0x0F4E 0x0D34 0
     guard_pop
@@ -1196,9 +1196,9 @@ proc radiof
     poke_byte 0x2F75 0x00
     shared_bit_state 0xB0 0x06C4 0x0002 1
     poke_byte 0x3043 0x00
-end proc radiof
+}
 
-proc rhom1
+proc rhom1 {
     conditional_block 0x01 rhom1b
     branch_presentation
     shared_state 0xC0 0x12D0 0xF5 0xC1 0x0000
@@ -1207,9 +1207,9 @@ proc rhom1
     record_link 0x06B4 0x0028 0
     poke_byte 0x3082 0x01
     poke_byte 0x3063 0x00
-end proc rhom1
+}
 
-proc rhom1b
+proc rhom1b {
     conditional_block 0x00 rhom2
     branch_presentation
     actor 0x06B4 0x0028 0
@@ -1226,9 +1226,9 @@ proc rhom1b
     shared_state 0xC0 0x12D0 0xF5 0xC1 0x0001
     poke_byte 0x3082 0x00
     record_clear 0x06B4
-end proc rhom1b
+}
 
-proc rhom2
+proc rhom2 {
     conditional_block 0x00 rhom2b
     shared_state 0xC0 0x12D0 0xF5 0xC1 0x0001
     branch_presentation
@@ -1237,9 +1237,9 @@ proc rhom2
     record_link 0x06B4 0x0028 0
     poke_byte 0x315C 0x01
     poke_byte 0x313D 0x00
-end proc rhom2
+}
 
-proc rhom2b
+proc rhom2b {
     conditional_block 0x00 rhom3
     branch_presentation
     actor 0x06B4 0x0028 0
@@ -1256,9 +1256,9 @@ proc rhom2b
     shared_state 0xC0 0x12D0 0xF5 0xC1 0x0002
     poke_byte 0x315C 0x00
     record_clear 0x06B4
-end proc rhom2b
+}
 
-proc rhom3
+proc rhom3 {
     conditional_block 0x00 rhom3b
     branch_presentation
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -1267,9 +1267,9 @@ proc rhom3
     record_link 0x06B4 0x0028 0
     poke_byte 0x3235 0x01
     poke_byte 0x3216 0x00
-end proc rhom3
+}
 
-proc rhom3b
+proc rhom3b {
     conditional_block 0x01 timy
     branch_presentation
     actor 0x06B4 0x0028 0
@@ -1287,16 +1287,16 @@ proc rhom3b
     shared_state 0xBF 0x06B0 0xF5 0xC1 0x0000
     poke_byte 0x3235 0x00
     record_clear 0x06B4
-end proc rhom3b
+}
 
-proc timy
+proc timy {
     conditional_block 0x01 timx
     guard_pop
     state_array_set 0x0C 0x04B0
     poke_byte 0x3353 0x00
-end proc timy
+}
 
-proc timx
+proc timx {
     conditional_block 0x01 tim1
     guard_pop
     guard_push tim1
@@ -1304,17 +1304,17 @@ proc timx
     guard_pop
     shared_state 0xC0 0x1278 0xF6 0xC1 0x0001
     state_array_set 0x0C 0x04B0
-end proc timx
+}
 
-proc tim1
+proc tim1 {
     conditional_block 0x01 tim1B
     shared_state 0xC0 0x1278 0xF5 0xC1 0x0001
     guard_pop
     shared_bit_state 0xAE 0x00DC 0x0002 0
     record_link 0x0114 0x0028 0
-end proc tim1
+}
 
-proc tim1B
+proc tim1B {
     conditional_block 0x01 tim2
     branch_presentation
     actor 0x0114 0x0028 0
@@ -1387,17 +1387,17 @@ proc tim1B
     poke_byte 0x3376 0x00
     shared_state 0xC0 0x128A 0xF5 0xC1 0x0001
     record_clear 0x0114
-end proc tim1B
+}
 
-proc tim2
+proc tim2 {
     conditional_block 0x01 tim2B
     shared_state 0xC0 0x1278 0xF5 0xC1 0x0002
     guard_pop
     shared_bit_state 0xAE 0x00DC 0x0002 0
     record_link 0x0114 0x0028 0
-end proc tim2
+}
 
-proc tim2B
+proc tim2B {
     conditional_block 0x01 tim3
     branch_presentation
     actor 0x0114 0x0028 0
@@ -1453,17 +1453,17 @@ proc tim2B
     shared_bit_state 0xB0 0x00DC 0x0002 1
     poke_byte 0x35F5 0x00
     record_clear 0x0114
-end proc tim2B
+}
 
-proc tim3
+proc tim3 {
     conditional_block 0x01 tim3B
     shared_state 0xC0 0x1278 0xF5 0xC1 0x0003
     guard_pop
     shared_bit_state 0xAE 0x00DC 0x0002 0
     record_link 0x0114 0x0028 0
-end proc tim3
+}
 
-proc tim3B
+proc tim3B {
     conditional_block 0x01 tim4
     branch_presentation
     actor 0x0114 0x0028 0
@@ -1516,17 +1516,17 @@ proc tim3B
     shared_bit_state 0xB0 0x00DC 0x0002 1
     poke_byte 0x37D8 0x00
     record_clear 0x0114
-end proc tim3B
+}
 
-proc tim4
+proc tim4 {
     conditional_block 0x01 tim4B
     shared_state 0xC0 0x1278 0xF5 0xC1 0x0004
     guard_pop
     shared_bit_state 0xAE 0x00DC 0x0002 0
     record_link 0x0114 0x0028 0
-end proc tim4
+}
 
-proc tim4B
+proc tim4B {
     conditional_block 0x01 tim5
     branch_presentation
     actor 0x0114 0x0028 0
@@ -1582,17 +1582,17 @@ proc tim4B
     shared_bit_state 0xB0 0x00DC 0x0002 1
     poke_byte 0x3975 0x00
     record_clear 0x0114
-end proc tim4B
+}
 
-proc tim5
+proc tim5 {
     conditional_block 0x01 tim5B
     shared_state 0xC0 0x1278 0xF5 0xC1 0x0005
     guard_pop
     shared_bit_state 0xAE 0x00DC 0x0002 0
     record_link 0x0114 0x0028 0
-end proc tim5
+}
 
-proc tim5B
+proc tim5B {
     conditional_block 0x01 Corpo6
     branch_presentation
     actor 0x0114 0x0028 0
@@ -1644,9 +1644,9 @@ proc tim5B
     shared_bit_state 0xB0 0x00DC 0x0002 1
     poke_byte 0x3B46 0x00
     record_clear 0x0114
-end proc tim5B
+}
 
-proc Corpo6
+proc Corpo6 {
     conditional_block 0x01 Corpo1
     branch_gameflag
     shared_bit_state 0xAE 0x0B2C 0x0002 0
@@ -1659,9 +1659,9 @@ proc Corpo6
     say 0x055A voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye, dear friend from sky..."
     record_wildcard 0xAF 0x0572 0x0ECC 0
     record_clear 0x0594
-end proc Corpo6
+}
 
-proc Corpo1
+proc Corpo1 {
     conditional_block 0x01 ad
     branch_gameflag
     shared_state 0xC0 0x12C8 0xF5 0xC1 0x0000
@@ -1779,9 +1779,9 @@ proc Corpo1
     guard_pop
     poke_byte 0x4147 0x01
     shared_state 0xC0 0x1270 0xF5 0xC0 0x12CA
-end proc Corpo1
+}
 
-proc ad
+proc ad {
     conditional_block 0x00 Corpo2
     branch_gameflag
     guard_pop
@@ -1844,9 +1844,9 @@ proc ad
     shared_state 0xC0 0x127C 0xF5 0xC1 0x0001
     poke_byte 0x4147 0x00
     record_clear 0x0594
-end proc ad
+}
 
-proc Corpo2
+proc Corpo2 {
     conditional_block 0x01 corp3bis
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -1932,9 +1932,9 @@ proc Corpo2
     shared_state 0xC0 0x12E6 0xF5 0xC1 0x0001
     shared_state 0xC0 0x1280 0xF5 0xC1 0x0001
     record_clear 0x0594
-end proc Corpo2
+}
 
-proc corp3bis
+proc corp3bis {
     conditional_block 0x01 corrp3
     branch_gameflag
     record_wildcard 0xAF 0x1078 0x0028 0
@@ -1944,9 +1944,9 @@ proc corp3bis
     guard_pop
     shared_state 0xC0 0x12E8 0xF5 0xC1 0x0001
     poke_byte 0x4810 0x00
-end proc corp3bis
+}
 
-proc corrp3
+proc corrp3 {
     conditional_block 0x01 corbis
     branch_gameflag
     shared_state 0xC0 0x12E8 0xF5 0xC1 0x0001
@@ -1974,9 +1974,9 @@ proc corrp3
     shared_state 0xC0 0x1282 0xF5 0xC1 0x0001
     shared_state 0xC0 0x12E8 0xF5 0xC1 0x0000
     record_clear 0x0594
-end proc corrp3
+}
 
-proc corbis
+proc corbis {
     conditional_block 0x01 corter
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -2048,9 +2048,9 @@ proc corbis
     say 0x055A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     shared_state 0xC0 0x12E6 0xF5 0xC1 0x0002
     record_clear 0x0594
-end proc corbis
+}
 
-proc corter
+proc corter {
     conditional_block 0x01 corqua
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -2077,9 +2077,9 @@ proc corter
     say 0x055A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     shared_state 0xC0 0x12E6 0xF5 0xC1 0x0003
     record_clear 0x0594
-end proc corter
+}
 
-proc corqua
+proc corqua {
     conditional_block 0x01 pleur
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -2100,9 +2100,9 @@ proc corqua
     say 0x055A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "CRY CRY|... Me not want see you again|..."
     say 0x055A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x0594
-end proc corqua
+}
 
-proc pleur
+proc pleur {
     conditional_block 0x01 pleur1
     branch_presentation
     record_wildcard 0xAF 0x1018 0x055A 1
@@ -2114,9 +2114,9 @@ proc pleur
     shared_bit_state 0xAE 0x055C 0x0002 0
     poke_byte 0x4F3F 0x01
     poke_byte 0x4F0F 0x00
-end proc pleur
+}
 
-proc pleur1
+proc pleur1 {
     conditional_block 0x00 Corpo3
     branch_presentation
     guard_pop
@@ -2132,9 +2132,9 @@ proc pleur1
     poke_byte 0x4F3F 0x00
     shared_bit_state 0xAE 0x055C 0x0002 1
     record_clear 0x0594
-end proc pleur1
+}
 
-proc Corpo3
+proc Corpo3 {
     conditional_block 0x01 cor4bis
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0D34 0
@@ -2205,9 +2205,9 @@ proc Corpo3
     shared_state 0xC0 0x1270 0xF5 0xC1 0x0000
     shared_state 0xC0 0x12C8 0xF5 0xC1 0x0004
     record_clear 0x0594
-end proc Corpo3
+}
 
-proc cor4bis
+proc cor4bis {
     conditional_block 0x01 Corpo4
     branch_gameflag
     record_wildcard 0xAF 0x1060 0x055A 0
@@ -2251,9 +2251,9 @@ proc cor4bis
     block_549E:
     say 0x055A voice=0x05 flags=0x48 display=0x80 loop=none control=none : "Bye bye, come back... You talk good. Me like talk...." choices "bye_bye"
     record_clear 0x0594
-end proc cor4bis
+}
 
-proc Corpo4
+proc Corpo4 {
     conditional_block 0x01 hom1
     branch_gameflag
     record_wildcard 0xAF 0x1060 0x055A 0
@@ -2289,9 +2289,9 @@ proc Corpo4
     say 0x055A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     clear_alternate_concept
     record_clear 0x0594
-end proc Corpo4
+}
 
-proc hom1
+proc hom1 {
     conditional_block 0x00 M0sk0
     branch_gameflag
     record_wildcard 0xAF 0x01CA 0x0D52 0
@@ -2313,9 +2313,9 @@ proc hom1
     shared_state 0xC0 0x12D2 0xF5 0xC1 0x0001
     record_wildcard 0xAF 0x01CA 0x0ECC 0
     record_clear 0x01EC
-end proc hom1
+}
 
-proc M0sk0
+proc M0sk0 {
     conditional_block 0x01 Mosk1
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0EEA 0
@@ -2346,9 +2346,9 @@ proc M0sk0
     say 0x031A voice=0x05 flags=0x00 display=0x80 loop=none control=none : "Bye bye... Bronko real busy. Much work|... You come back later..."
     say 0x031A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Bye bye"
     record_clear 0x0354
-end proc M0sk0
+}
 
-proc Mosk1
+proc Mosk1 {
     conditional_block 0x01 Mosk2
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0EEA 0
@@ -2429,9 +2429,9 @@ proc Mosk1
     shared_state 0xC0 0x12C8 0xF5 0xC1 0x0003
     shared_state 0xC0 0x12EA 0xF5 0xC1 0x0001
     record_clear 0x0354
-end proc Mosk1
+}
 
-proc Mosk2
+proc Mosk2 {
     conditional_block 0x01 Brorad
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0EEA 0
@@ -2495,9 +2495,9 @@ proc Mosk2
     say 0x031A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     shared_state 0xC0 0x1270 0xF5 0xC0 0x12CA
     record_clear 0x0354
-end proc Mosk2
+}
 
-proc Brorad
+proc Brorad {
     conditional_block 0x00 bronk1
     branch_presentation
     record_wildcard 0xAF 0x0332 0x0F08 0
@@ -2510,9 +2510,9 @@ proc Brorad
     say 0x031A voice=0xFF flags=0x08 display=0x90 loop=none control=none : "cruikkk!"
     shared_bit_state 0xAE 0x031C 0x0002 1
     record_clear 0x0354
-end proc Brorad
+}
 
-proc bronk1
+proc bronk1 {
     conditional_block 0x01 bronk2
     branch_flag_274f
     shared_state 0xC0 0x128E 0xF5 0xC1 0x0000
@@ -2536,9 +2536,9 @@ proc bronk1
     shared_bit_state 0xAE 0x082C 0x0001 0
     record_wildcard 0xAF 0x0842 0x0F08 0
     record_clear 0x0354
-end proc bronk1
+}
 
-proc bronk2
+proc bronk2 {
     conditional_block 0x01 emasc0
     branch_flag_274f
     actor 0x0354 0x0028 0
@@ -2549,9 +2549,9 @@ proc bronk2
     say 0x031A voice=0xFF flags=0x00 display=0x80 loop=none control=none : "Me not have time, Commander|..."
     say 0x031A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     record_clear 0x0354
-end proc bronk2
+}
 
-proc emasc0
+proc emasc0 {
     conditional_block 0x01 Magnus1
     branch_gameflag
     actor 0x0864 0x0028 0
@@ -2636,9 +2636,9 @@ proc emasc0
     say 0x082A voice=0x04 flags=0x00 display=0x80 loop=none control=none : "Me much work|... You not waste my time|..."
     say 0x082A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "Bye bye stranger"
     record_clear 0x0864
-end proc emasc0
+}
 
-proc Magnus1
+proc Magnus1 {
     conditional_block 0x01 ad1
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0C02 0
@@ -2659,9 +2659,9 @@ proc Magnus1
     poke_byte 0x650B 0x01
     shared_state 0xC0 0x1270 0xF5 0xC0 0x12CA
     poke_byte 0x6420 0x00
-end proc Magnus1
+}
 
-proc ad1
+proc ad1 {
     conditional_block 0x00 Magnus2
     branch_gameflag
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0000
@@ -2683,9 +2683,9 @@ proc ad1
     shared_state 0xC0 0x1270 0xF5 0xC0 0x12CA
     poke_byte 0x650B 0x00
     record_clear 0x02C4
-end proc ad1
+}
 
-proc Magnus2
+proc Magnus2 {
     conditional_block 0x01 Magbis
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0C02 0
@@ -2724,9 +2724,9 @@ proc Magnus2
     shared_state 0xC0 0x12F4 0xF5 0xC0 0x12CA
     shared_state 0xC0 0x129A 0xF5 0xC1 0x0001
     record_clear 0x02C4
-end proc Magnus2
+}
 
-proc Magbis
+proc Magbis {
     conditional_block 0x01 viol1
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0C02 0
@@ -2739,9 +2739,9 @@ proc Magbis
     say 0x028A voice=0xFF flags=0x20 display=0x80 loop=none control=none : "HONK: We ought to get some batteries|, Commander|. This is an interesting robot..."
     say 0x028A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x02C4
-end proc Magbis
+}
 
-proc viol1
+proc viol1 {
     conditional_block 0x01 cach
     branch_gameflag
     shared_state 0xC0 0x12F6 0xF5 0xC1 0x0001
@@ -2757,9 +2757,9 @@ proc viol1
     say 0x028A voice=0xFF flags=0x28 display=0x90 loop=none control=none : "Okay okay. I'll leave you alone..."
     poke_byte 0x6776 0x00
     shared_state 0xC0 0x12F6 0xF5 0xC1 0x0000
-end proc viol1
+}
 
-proc cach
+proc cach {
     conditional_block 0x01 Cryomorn2
     branch_gameflag
     shared_state 0xC0 0x12F8 0xF5 0xC1 0x0001
@@ -2790,9 +2790,9 @@ proc cach
     shared_state 0xC0 0x12F8 0xF5 0xC1 0x0000
     poke_byte 0x68BB 0x00
     clear_alternate_concept
-end proc cach
+}
 
-proc Cryomorn2
+proc Cryomorn2 {
     conditional_block 0x01 letar
     branch_flag_274f
     record_wildcard 0xAF 0x02A2 0xFFFF 0
@@ -2831,9 +2831,9 @@ proc Cryomorn2
     shared_state 0xC0 0x129C 0xF5 0xC1 0x0001
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0004
     record_clear 0x02C4
-end proc Cryomorn2
+}
 
-proc letar
+proc letar {
     conditional_block 0x01 morntv
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0004
     branch_flag_274f
@@ -2850,9 +2850,9 @@ proc letar
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0005
     state_array_set 0x06 0xFFFF
     record_clear 0x02C4
-end proc letar
+}
 
-proc morntv
+proc morntv {
     conditional_block 0x01 Cryomorn4
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0005
     actor 0x02C4 0x0028 0
@@ -2869,9 +2869,9 @@ proc morntv
     shared_state 0xC0 0x129E 0xF5 0xC1 0x0001
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0006
     record_clear 0x02C4
-end proc morntv
+}
 
-proc Cryomorn4
+proc Cryomorn4 {
     conditional_block 0x01 Cryomorn3
     branch_flag_274f
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0006
@@ -2891,9 +2891,9 @@ proc Cryomorn4
     record_wildcard 0xAF 0x02A2 0x0F5C 0
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0007
     record_clear 0x02C4
-end proc Cryomorn4
+}
 
-proc Cryomorn3
+proc Cryomorn3 {
     conditional_block 0x01 adi
     branch_gameflag
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0007
@@ -2920,9 +2920,9 @@ proc Cryomorn3
     block_7134:
     say 0x028A voice=0xFF flags=0x48 display=0x80 loop=none control=none : "Bye bye" choices "bye_bye"
     record_clear 0x02C4
-end proc Cryomorn3
+}
 
-proc adi
+proc adi {
     conditional_block 0x00 ado
     branch_gameflag
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0007
@@ -2936,9 +2936,9 @@ proc adi
     shared_state 0xC0 0x12F2 0xF5 0xC1 0x0008
     poke_byte 0x7148 0x00
     record_clear 0x02C4
-end proc adi
+}
 
-proc ado
+proc ado {
     conditional_block 0x01 mastab
     branch_gameflag
     record_wildcard 0xAF 0x02A2 0x0F5C 0
@@ -2952,9 +2952,9 @@ proc ado
     say 0x028A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Sorry about that|, Commander|..."
     say 0x028A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "..."
     record_clear 0x02C4
-end proc ado
+}
 
-proc mastab
+proc mastab {
     conditional_block 0x01 mastac
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0001
     record_wildcard 0xAF 0x02A2 0x0F5C 0
@@ -2963,9 +2963,9 @@ proc mastab
     shared_state 0xC0 0x128C 0xF5 0xC1 0x0001
     guard_pop
     poke_byte 0x7255 0x00
-end proc mastab
+}
 
-proc mastac
+proc mastac {
     conditional_block 0x01 mastachok1
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x09E6 0
@@ -3012,9 +3012,9 @@ proc mastac
     load_string "explo3.hnm"
     say 0x067A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x06B4
-end proc mastac
+}
 
-proc mastachok1
+proc mastachok1 {
     conditional_block 0x01 scr2
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0001
@@ -3066,9 +3066,9 @@ proc mastachok1
     say 0x067A voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0002
     record_clear 0x06B4
-end proc mastachok1
+}
 
-proc scr2
+proc scr2 {
     conditional_block 0x01 scr3
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0002
@@ -3099,9 +3099,9 @@ proc scr2
     say 0x067A voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0003
     record_clear 0x06B4
-end proc scr2
+}
 
-proc scr3
+proc scr3 {
     conditional_block 0x01 scr4
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0003
@@ -3133,9 +3133,9 @@ proc scr3
     say 0x067A voice=0xFF flags=0x48 display=0x90 loop=none control=none : "stop" choices "bye_bye"
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0004
     record_clear 0x06B4
-end proc scr3
+}
 
-proc scr4
+proc scr4 {
     conditional_block 0x01 mastabis
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0004
@@ -3151,17 +3151,17 @@ proc scr4
     load_string "explo3.hnm"
     say 0x067A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x06B4
-end proc scr4
+}
 
-proc mastabis
+proc mastabis {
     conditional_block 0x01 masta2
     record_wildcard 0xAF 0x0F4E 0x09E6 0
     record_wildcard 0xAF 0x1030 0x0028 0
     guard_pop
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0005
-end proc mastabis
+}
 
-proc masta2
+proc masta2 {
     conditional_block 0x01 mas2bis
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0005
@@ -3181,9 +3181,9 @@ proc masta2
     record_triple 0x0030 0x101C 0x067A 0
     shared_state 0xC0 0x12FE 0xF5 0xC1 0x0001
     clear_alternate_concept
-end proc masta2
+}
 
-proc mas2bis
+proc mas2bis {
     conditional_block 0x01 mas2ter
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0005
@@ -3202,9 +3202,9 @@ proc mas2bis
     shared_state 0xC0 0x12FE 0xF5 0xC1 0x0000
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0006
     record_clear 0x06B4
-end proc mas2bis
+}
 
-proc mas2ter
+proc mas2ter {
     conditional_block 0x01 yok1
     branch_gameflag
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0006
@@ -3220,9 +3220,9 @@ proc mas2ter
     say 0x067A voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Bye bye, friend. Me must stand guard..."
     say 0x067A voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x06B4
-end proc mas2ter
+}
 
-proc yok1
+proc yok1 {
     conditional_block 0x01 yok2
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0B2A 0
@@ -3257,9 +3257,9 @@ proc yok1
     say 0x01FA voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye|... You come back soon... Little Yoko wait you|..."
     shared_state 0xC0 0x1300 0xF5 0xC1 0x0001
     record_state 0xC1 0x124E 0x0B60 0
-end proc yok1
+}
 
-proc yok2
+proc yok2 {
     conditional_block 0x01 yok3
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0B2A 0
@@ -3291,9 +3291,9 @@ proc yok2
     guard_pop
     say 0x01FA voice=0x03 flags=0x08 display=0x80 loop=none control=none : "Bye bye|... You come back soon... Little Yoko wait you|..."
     record_clear 0x0234
-end proc yok2
+}
 
-proc yok3
+proc yok3 {
     conditional_block 0x01 max1
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x0B2A 0
@@ -3322,9 +3322,9 @@ proc yok3
     say 0x01FA voice=0x03 flags=0x08 display=0x90 loop=none control=none : "Bye bye|... See you in a few days..."
     record_wildcard 0xAF 0x0212 0x0ECC 0
     record_clear 0x0234
-end proc yok3
+}
 
-proc max1
+proc max1 {
     conditional_block 0x01 max2
     branch_gameflag
     record_wildcard 0xAF 0x11B0 0x0512 1
@@ -3356,9 +3356,9 @@ proc max1
     shared_state 0xC0 0x1270 0xF5 0xC1 0x0000
     shared_state 0xC0 0x12A8 0xF5 0xC1 0x0001
     record_clear 0x054C
-end proc max1
+}
 
-proc max2
+proc max2 {
     conditional_block 0x01 max2bis
     branch_gameflag
     actor 0x054C 0x0028 0
@@ -3375,9 +3375,9 @@ proc max2
     record_triple 0x0030 0x119C 0x0512 0
     shared_state 0xC0 0x1306 0xF5 0xC1 0x0001
     clear_alternate_concept
-end proc max2
+}
 
-proc max2bis
+proc max2bis {
     conditional_block 0x01 max2ter
     branch_gameflag
     actor 0x054C 0x0028 0
@@ -3397,9 +3397,9 @@ proc max2bis
     shared_state 0xC0 0x12B2 0xF5 0xC1 0x0001
     shared_state 0xC0 0x1306 0xF5 0xC1 0x0002
     record_clear 0x054C
-end proc max2bis
+}
 
-proc max2ter
+proc max2ter {
     conditional_block 0x01 pio
     branch_gameflag
     actor 0x054C 0x0028 0
@@ -3438,18 +3438,18 @@ proc max2ter
     say 0x0512 voice=0x09 flags=0x00 display=0x80 loop=none control=none : "Me much work. Bye bye, friend. See soon..."
     say 0x0512 voice=0x02 flags=0x08 display=0x80 loop=none control=none : "Bye bye..."
     record_clear 0x054C
-end proc max2ter
+}
 
-proc pio
+proc pio {
     conditional_block 0x01 glu1
     record_wildcard 0xAF 0x1018 0x0028 0
     record_wildcard 0xAF 0x11B0 0x0512 0
     guard_pop
     record_wildcard 0xAF 0x052A 0x0ECC 0
     record_wildcard 0xAF 0x0212 0x0ECC 0
-end proc pio
+}
 
-proc glu1
+proc glu1 {
     conditional_block 0x01 glu2
     branch_gameflag
     shared_state 0xC0 0x130A 0xF5 0xC1 0x0000
@@ -3488,9 +3488,9 @@ proc glu1
     shared_state 0xC0 0x12AA 0xF5 0xC1 0x0001
     shared_state 0xC0 0x130A 0xF5 0xC1 0x0001
     record_clear 0x0474
-end proc glu1
+}
 
-proc glu2
+proc glu2 {
     conditional_block 0x01 ERA
     branch_gameflag
     shared_state 0xC0 0x130A 0xF5 0xC1 0x0001
@@ -3518,18 +3518,18 @@ proc glu2
     say 0x043A voice=0x03 flags=0x48 display=0x90 loop=none control=none : "Bye bye, sir..." choices "bye_bye"
     poke_byte 0x8998 0x01
     record_clear 0x0474
-end proc glu2
+}
 
-proc ERA
+proc ERA {
     conditional_block 0x00 oto1
     guard_push oto1
     shared_bit_state 0xAE 0x097C 0x0002 0
     guard_pop
     record_wildcard 0xAF 0x0452 0x0ECC 0
     poke_byte 0x8998 0x00
-end proc ERA
+}
 
-proc oto1
+proc oto1 {
     conditional_block 0x01 oto2
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x097A 0
@@ -3578,9 +3578,9 @@ proc oto1
     say 0x05EA voice=0xFF flags=0x08 display=0xE0 loop=none control=none : "stop"
     clear_alternate_concept
     record_clear 0x0624
-end proc oto1
+}
 
-proc oto2
+proc oto2 {
     conditional_block 0x01 oto3
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x097A 0
@@ -3610,9 +3610,9 @@ proc oto2
     say 0x05EA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     shared_state 0xC0 0x130C 0xF5 0xC1 0x0002
     record_clear 0x0624
-end proc oto2
+}
 
-proc oto3
+proc oto3 {
     conditional_block 0x01 oto4
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x097A 0
@@ -3639,9 +3639,9 @@ proc oto3
     shared_state 0xC0 0x130C 0xF5 0xC1 0x0004
     shared_state 0xC0 0x12B0 0xF5 0xC1 0x0001
     record_clear 0x0624
-end proc oto3
+}
 
-proc oto4
+proc oto4 {
     conditional_block 0x01 oto5
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x097A 0
@@ -3672,16 +3672,16 @@ proc oto4
     say 0x05EA voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     poke_byte 0x9248 0x01
     record_clear 0x0624
-end proc oto4
+}
 
-proc oto5
+proc oto5 {
     conditional_block 0x00 oto6
     shared_state 0xC0 0x130E 0xF5 0xC1 0x0001
     guard_pop
     shared_state 0xC0 0x1274 0xF5 0xC1 0x0001
-end proc oto5
+}
 
-proc oto6
+proc oto6 {
     conditional_block 0x01 prep
     branch_gameflag
     record_wildcard 0xAF 0x0F4E 0x097A 0
@@ -3695,18 +3695,18 @@ proc oto6
     say 0x05EA voice=0x01 flags=0x00 display=0x80 loop=none control=none : "Thank you once more for your delightful visit, dear DEAR client..."
     say 0x05EA voice=0xFF flags=0x08 display=0x80 loop=none control=none : "stop"
     record_clear 0x0624
-end proc oto6
+}
 
-proc prep
+proc prep {
     conditional_block 0x01 pub1
     shared_state 0xBF 0x02C0 0xF5 0xC1 0x0001
     guard_pop
     state_array_set 0x07 0x0014
     bit_flag 0x00B0 0x02 0
     poke_byte 0x930C 0x00
-end proc prep
+}
 
-proc pub1
+proc pub1 {
     conditional_block 0x01 pub2
     state_array_test 0x07
     guard_pop
@@ -3715,9 +3715,9 @@ proc pub1
     state_array_set 0x07 0xFFFF
     poke_byte 0x9341 0x01
     poke_byte 0x9324 0x00
-end proc pub1
+}
 
-proc pub2
+proc pub2 {
     conditional_block 0x00 monop1
     branch_presentation
     actor 0x00CC 0x0028 0
@@ -3732,9 +3732,9 @@ proc pub2
     say 0x0092 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     shared_bit_state 0xAE 0x0922 0x0002 0
     record_clear 0x00CC
-end proc pub2
+}
 
-proc monop1
+proc monop1 {
     conditional_block 0x01 monop2
     record_wildcard 0xAF 0x0F4E 0x0920 0
     actor 0x00CC 0x0028 0
@@ -3755,9 +3755,9 @@ proc monop1
     say 0x0092 voice=0xFF flags=0x08 display=0x90 loop=none control=none : "stop"
     clear_alternate_concept
     record_clear 0x00CC
-end proc monop1
+}
 
-proc monop2
+proc monop2 {
     conditional_block 0x00 finscr1
     record_wildcard 0xAF 0x0F4E 0x0920 0
     branch_gameflag
@@ -3810,9 +3810,9 @@ proc monop2
     shared_state 0xC0 0x1310 0xF5 0xC0 0x12CA
     poke_byte 0x9487 0x00
     record_clear 0x00CC
-end proc monop2
+}
 
-proc finscr1
+proc finscr1 {
     conditional_block 0x01 scrapp
     shared_bit_state 0xB0 0x0AF0 0x0002 0
     shared_state 0xC0 0x12FC 0xF5 0xC1 0x0006
@@ -3823,9 +3823,9 @@ proc finscr1
     shared_bit_state 0xAE 0x06C4 0x0002 0
     record_link 0x06FC 0x0028 0
     poke_byte 0x96AB 0x01
-end proc finscr1
+}
 
-proc scrapp
+proc scrapp {
     conditional_block 0x00 block_9881
     branch_presentation
     actor 0x06FC 0x0028 0
@@ -3867,4 +3867,4 @@ proc scrapp
     record_clear 0x06FC
     block_9881:
     halt
-end proc scrapp
+}

@@ -330,6 +330,15 @@ struct OpenSelectorList<'a> {
     case_terminated: bool,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ModernBlock {
+    Procedure(String),
+    WhenCondition(String),
+    WhenBody(String),
+    Selector(String),
+    Case,
+}
+
 pub fn decompile(
     kind: ImageKind,
     image: &[u8],
@@ -1034,6 +1043,7 @@ fn normalize_modern_source(
 
     let lexicon = DictionaryPhraseLexicon::new(dictionary);
     let mut normalized = String::new();
+    let mut blocks = Vec::new();
     writeln!(normalized, "; format: {READABLE_SOURCE_FORMAT}")?;
     for (line_index, original_line) in source.lines().enumerate() {
         let line_number = line_index + 1;
@@ -1058,7 +1068,14 @@ fn normalize_modern_source(
         if code.is_empty() {
             continue;
         }
-        let statement = normalize_modern_statement(code, line_number, &lexicon)?;
+        let Some(statement) = normalize_modern_braced_statement(
+            code,
+            line_number,
+            &lexicon,
+            &mut blocks,
+        )? else {
+            continue;
+        };
         write!(normalized, "{statement}")?;
         if let Some(comment) = modern_comment_after_code(trimmed, line_number)?
             .map(str::trim)
@@ -1068,7 +1085,64 @@ fn normalize_modern_source(
         }
         normalized.push('\n');
     }
+    if let Some(block) = blocks.last() {
+        bail!("unclosed BloodScript block {block:?}");
+    }
     Ok(Some(normalized))
+}
+
+fn normalize_modern_braced_statement(
+    code: &str,
+    line_number: usize,
+    lexicon: &DictionaryPhraseLexicon,
+    blocks: &mut Vec<ModernBlock>,
+) -> Result<Option<String>> {
+    if code == "} then {" {
+        let Some(ModernBlock::WhenCondition(target)) = blocks.pop() else {
+            bail!("line {line_number}: '}} then {{' does not close a when-condition block");
+        };
+        blocks.push(ModernBlock::WhenBody(target));
+        return Ok(Some("THEN".to_string()));
+    }
+    if code == "}" {
+        let Some(block) = blocks.pop() else {
+            bail!("line {line_number}: unmatched closing brace");
+        };
+        return match block {
+            ModernBlock::Procedure(name) => Ok(Some(format!("END_PROCEDURE {name}"))),
+            ModernBlock::WhenBody(target) => Ok(Some(format!("END_WHEN {target}"))),
+            ModernBlock::Selector(name) => Ok(Some(format!("END_SELECTOR_LIST {name}"))),
+            ModernBlock::Case => Ok(None),
+            ModernBlock::WhenCondition(target) => bail!(
+                "line {line_number}: when {target:?} closes without a following then block"
+            ),
+        };
+    }
+    if let Some(opener) = code.strip_suffix('{') {
+        let opener = opener.trim_end();
+        let fields = split_source_fields(opener, line_number)?;
+        let command = fields
+            .first()
+            .map(|name| name.to_ascii_lowercase())
+            .ok_or_else(|| anyhow!("line {line_number}: missing block opener"))?;
+        let block = match command.as_str() {
+            "proc" if fields.len() == 2 => ModernBlock::Procedure(fields[1].to_string()),
+            "when" if fields.len() == 2 => {
+                ModernBlock::WhenCondition(fields[1].to_string())
+            }
+            "selector" if fields.len() == 2 => ModernBlock::Selector(fields[1].to_string()),
+            "case" if fields.len() == 4 && fields[2] == "->" => ModernBlock::Case,
+            _ => bail!("line {line_number}: unsupported BloodScript block opener {opener:?}"),
+        };
+        let statement = normalize_modern_statement(opener, line_number, lexicon)?;
+        blocks.push(block);
+        return Ok(Some(statement));
+    }
+    Ok(Some(normalize_modern_statement(
+        code,
+        line_number,
+        lexicon,
+    )?))
 }
 
 fn modern_code_before_comment(line: &str, line_number: usize) -> Result<&str> {
@@ -1385,15 +1459,15 @@ fn modern_statement(
             canonical_operand_to_modern(args[2])
         )),
         "LABEL" => Ok(format!("{}:", args[0])),
-        "PROCEDURE" => Ok(format!("proc {}", args[0])),
-        "END_PROCEDURE" => Ok(format!("end proc {}", args[0])),
-        "WHEN" => Ok(format!("when {}", args[0])),
-        "THEN" => Ok("then".to_string()),
-        "END_WHEN" => Ok(format!("end when {}", args[0])),
-        "SELECTOR_LIST" => Ok(format!("selector {}", args[0])),
-        "END_SELECTOR_LIST" => Ok(format!("end selector {}", args[0])),
+        "PROCEDURE" => Ok(format!("proc {} {{", args[0])),
+        "END_PROCEDURE" => Ok("}".to_string()),
+        "WHEN" => Ok(format!("when {} {{", args[0])),
+        "THEN" => Ok("} then {".to_string()),
+        "END_WHEN" => Ok("}".to_string()),
+        "SELECTOR_LIST" => Ok(format!("selector {} {{", args[0])),
+        "END_SELECTOR_LIST" => Ok("}".to_string()),
         "CASE" => Ok(format!(
-            "case {} -> {}",
+            "case {} -> {} {{",
             canonical_operand_to_modern(args[0]),
             canonical_operand_to_modern(args[1])
         )),
@@ -1533,12 +1607,14 @@ fn format_modern_source(
             "CASE" => {
                 if selector_case_open {
                     indent = indent.saturating_sub(1);
+                    writeln!(output, "{}}}", "    ".repeat(indent))?;
                     selector_case_open = false;
                 }
             }
             "END_SELECTOR_LIST" => {
                 if selector_case_open {
                     indent = indent.saturating_sub(1);
+                    writeln!(output, "{}}}", "    ".repeat(indent))?;
                     selector_case_open = false;
                 }
                 indent = indent.saturating_sub(1);
@@ -3487,17 +3563,17 @@ mod tests {
             decompile_structured_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &[])
                 .unwrap();
         assert_eq!(decompiled.structured_guards, 1);
-        for statement in ["when block_000B", "then", "end when block_000B"] {
+        for statement in ["when block_000B {", "} then {"] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
-        assert!(decompiled.source.contains("when block_000B\n"));
+        assert!(decompiled.source.contains("when block_000B {\n"));
         assert!(decompiled.source.contains("    concept_guard"));
         assert!(!decompiled.source.contains("// GUARD_POP"));
         assert_eq!(compile(&decompiled.source).unwrap(), image);
 
         let malformed = decompiled
             .source
-            .replace("end when block_000B", "end when wrong");
+            .replace("when block_000B {", "when wrong {");
         assert!(compile(&malformed).is_err());
     }
 
@@ -3765,14 +3841,14 @@ mod tests {
             decompile_with_symbols(ImageKind::Cod, &image, &HashMap::new(), &symbols).unwrap();
         assert_eq!(decompiled.procedures, 1);
         assert_eq!(decompiled.symbolic_labels, 2);
-        assert!(decompiled.source.contains("proc entry"));
+        assert!(decompiled.source.contains("proc entry {"));
         assert!(
             decompiled
                 .source
                 .contains("conditional_block 0x01 block_0004")
         );
         assert!(decompiled.source.contains("    block_0004:"));
-        assert!(decompiled.source.contains("end proc entry"));
+        assert!(decompiled.source.trim_end().ends_with('}'));
         assert!(!decompiled.source.lines().any(|line| {
             let line = line.trim_start();
             line.get(..9).is_some_and(|prefix| {
@@ -3903,12 +3979,11 @@ mod tests {
         assert_eq!(decompiled.dictionary_offsets, 2);
         assert_eq!(decompiled.dictionary_uses, 4);
         for statement in [
-            "selector actor_choices",
-            "case \"talk\" -> selector_000C",
-            "case \"leave\" -> 0x0000",
+            "selector actor_choices {",
+            "case \"talk\" -> selector_000C {",
+            "case \"leave\" -> 0x0000 {",
             "menu \"leave\"",
             "menu \"talk\"",
-            "end selector actor_choices",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
@@ -3921,8 +3996,8 @@ mod tests {
         let malformed = decompiled
             .source
             .replace(
-                "case \"talk\" -> selector_000C",
-                "case \"talk\" -> 0x0000",
+                "case \"talk\" -> selector_000C {",
+                "case \"talk\" -> 0x0000 {",
             );
         assert!(compile_with_dictionary(&malformed, &dictionary).is_err());
     }

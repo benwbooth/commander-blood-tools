@@ -5,10 +5,11 @@ object Honk = 0x082A
 
 yield
 
-selector Honk_choices
+selector Honk_choices {
     yield_b
-    case "parler" -> 0x0000
+    case "parler" -> 0x0000 {
         menu "adieu"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Yes! Commander?" choices "bye_bye"
         halt
-end selector Honk_choices
+    }
+}

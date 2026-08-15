@@ -19,9 +19,9 @@ field Bronko_s13 = Bronko + 0x003A // VAR kind 0x0002, selector(s) 13
 
 yield
 
-selector Super_Tromp_choices
+selector Super_Tromp_choices {
     yield_b
-    case "talk" -> 0x0000
+    case "talk" -> 0x0000 {
         menu "bye_bye" "painting" "culture" "yolk"
         say Super_Tromp voice=0x00 flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK was a Slimer... An important thinker..." choices "yolk"
         say Super_Tromp voice=0x01 flags=0x40 display=0x80 loop=none control=none : "He died a long time ago and he's buried here on Vista..." choices "yolk"
@@ -35,11 +35,12 @@ selector Super_Tromp_choices
         say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK said:\"Silence feeds on sound and fury\"." choices "culture"
         say Super_Tromp voice=0xFF flags=0x40 display=0x80 loop=none control=none : "The GREAT YOLK said: \"It takes thirteen murffalos to reproduce|, but one day it will take fourteen\"" choices "culture"
         yield
-end selector Super_Tromp_choices
+    }
+}
 
-selector Maziok_choices
+selector Maziok_choices {
     yield_b
-    case "talk" -> selector_0282
+    case "talk" -> selector_0282 {
         menu "bye_bye" "medicine" "curse"
         say Maziok voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me know good medicine and good doctor... You be very sick|..." choices "medicine"
         say Maziok voice=0x03 flags=0x48 display=0x80 loop=none control=none : "You have nightmares and you not be lucky..." choices "medicine"
@@ -54,7 +55,8 @@ selector Maziok_choices
         shared_state 0xC0 0x1512 0xF5 0xC1 0x0001
         yield_b
         selector_0282:
-    case "planet" -> 0x0000
+    }
+    case "planet" -> 0x0000 {
         menu "bye_bye" "vista" "tromp" "ondoyant" "tourism"
         say Maziok voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The planet Vista is where I'm from... It suits me|..." choices "vista"
         say Maziok voice=0x02 flags=0x48 display=0x80 loop=none control=none : "There's a saying which goes: \"Hasta la Vista\"" choices "vista"
@@ -68,22 +70,24 @@ selector Maziok_choices
         say Maziok voice=0x01 flags=0x48 display=0x80 loop=none control=none : "ondoyants live only in dreams..." choices "ondoyant"
         presentation_register 0x0C64
         yield
-end selector Maziok_choices
+    }
+}
 
-selector Fifi_choices
+selector Fifi_choices {
     yield_b
-    case "hello" -> 0x0000
+    case "hello" -> 0x0000 {
         menu "bye_bye" "planet" "information" "races"
         say Fifi voice=0x04 flags=0x40 display=0x80 loop=none control=none : "Uhh... Me not remember planet|..." choices "planet"
         say Fifi voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Information... Me not understand information... Uhh!" choices "information"
         say Fifi voice=0x05 flags=0x40 display=0x80 loop=none control=none : "You be sure you know talk, friend?" choices "races"
         say Fifi voice=0x02 flags=0x01 display=0x80 loop=none control=none : "Uhh... Me sick|..."
         yield
-end selector Fifi_choices
+    }
+}
 
-selector Bratakas_choices
+selector Bratakas_choices {
     yield_b
-    case "talk" -> 0x0000
+    case "talk" -> 0x0000 {
         menu "bye_bye" "Vistar" "planet" "race" "croolis"
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want to talk, friend..." choices "talk"
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Vistar is the name of my planet|. I am alone here|..." choices "Vistar"
@@ -105,11 +109,12 @@ selector Bratakas_choices
         say Bratakas voice=0x01 flags=0x40 display=0x80 loop=none control=none : "I'm sure you're insulting me...I don't like insults I don't understand|..." choices "croolis"
         say Bratakas voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Don't insult me, stranger|... I don't like it..." choices "croolis"
         yield
-end selector Bratakas_choices
+    }
+}
 
-selector Beauregard_choices
+selector Beauregard_choices {
     yield_b
-    case "talk" -> 0x0000
+    case "talk" -> 0x0000 {
         menu "bye_bye" "listen" "insist" "treat"
         say Beauregard voice=0x0C flags=0x41 display=0x80 loop=none control=none : "Aaaah... Eeeerrr..." choices "listen"
         say Beauregard voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Aaaa..." choices "bye_bye"
@@ -127,20 +132,22 @@ selector Beauregard_choices
         say Beauregard voice=0x13 flags=0x41 display=0x80 loop=none control=none : "I must have a new body..." choices "treat"
         say Beauregard voice=0x14 flags=0x01 display=0x80 loop=none control=none : "Aaaarrr"
         yield
-end selector Beauregard_choices
+    }
+}
 
-selector Honk_choices
+selector Honk_choices {
     yield_b
-    case "talk" -> 0x0000
+    case "talk" -> 0x0000 {
         menu "bye_bye" "help" "message"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "I hear and obey, Commander|..." choices "talk"
         say Honk voice=0xFF flags=0x61 display=0x80 loop=none control=none : "Hup! Commander|..." choices "bye_bye"
         yield
-end selector Honk_choices
+    }
+}
 
-selector Morning_Oil_choices
+selector Morning_Oil_choices {
     yield_b
-    case "talk" -> selector_07FD
+    case "talk" -> selector_07FD {
         menu "hello" "say_nothing" "laugh" "bye_bye"
         say Morning_Oil voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Hi Commander" choices "hello"
         say Morning_Oil voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Such silence..." choices "say_nothing"
@@ -148,11 +155,13 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Bye bye Commander" choices "bye_bye"
         yield_b
         selector_07FD:
-    case "history" -> selector_0811
+    }
+    case "history" -> selector_0811 {
         menu "bye_bye" "war" "croolis" "treasure" "battles" "mastachok"
         yield_b
         selector_0811:
-    case "war" -> selector_0951
+    }
+    case "war" -> selector_0951 {
         menu "bye_bye" "match"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "That was a real bad war|... It all started the day of the boxing match between EVISCERATOR and EMASCULATOR..." choices "war"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You should've seen it, Commander|... What a fight..." choices "war"
@@ -163,7 +172,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "The match was televised throughout the universe|... Ahh, I can picture it now|..." choices "match"
         yield_b
         selector_0951:
-    case "croolis" -> selector_0AD8
+    }
+    case "croolis" -> selector_0AD8 {
         menu "bye_bye" "history" "terror" "eviscerator" "emasculator"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Croolis are exceptional warriors" choices "croolis"
         say Morning_Oil voice=0x04 flags=0x40 display=0x80 loop=none control=none : "My master, EVISCERATOR specialised in BIONIUM prospection..." choices "croolis"
@@ -180,7 +190,8 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "That's one Croolis I hate|..." choices "emasculator"
         yield_b
         selector_0AD8:
-    case "treasure" -> selector_0C43
+    }
+    case "treasure" -> selector_0C43 {
         menu "bye_bye" "history" "hiding_place"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Ah|! The treasure. You should've seen it, Commander|... Incredible..." choices "treasure"
         say Morning_Oil voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Stones from Galabar, horns from Rla, authentic Rhinox bone vases..." choices "treasure"
@@ -194,21 +205,24 @@ selector Morning_Oil_choices
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "The defeated Croolis ended up on Trashlando. That's a BAD place, Commander|..." choices "battle"
         yield_b
         selector_0C43:
-    case "mastachok" -> 0x0000
+    }
+    case "mastachok" -> 0x0000 {
         menu "bye_bye" "history" "information"
         say Morning_Oil voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Mastachok is a dead planet|... Nothing lives any more on its surface..." choices "mastachok"
         say Morning_Oil voice=0x06 flags=0x40 display=0x80 loop=none control=none : "The factory was replaced by the jail... With permanent SCRUT guards..." choices "mastachok"
         say Morning_Oil voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Mastachok is absolutely polluted... Nothing more than a cinder block..." choices "mastachok"
         yield
-end selector Morning_Oil_choices
+    }
+}
 
-selector Bronko_choices
+selector Bronko_choices {
     yield_b
-    case "talk" -> selector_0CD6
+    case "talk" -> selector_0CD6 {
         menu "bye_bye" "robot" "cred" "murffalos" "weapons"
         yield_b
         selector_0CD6:
-    case "robot" -> selector_0E73
+    }
+    case "robot" -> selector_0E73 {
         menu "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
         say Bronko voice=0x05 flags=0x48 display=0x80 loop=none control=none : "See you soon|, friend|..." choices "bye_bye"
         record_clear Bronko_s13
@@ -226,7 +240,8 @@ selector Bronko_choices
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Bronko big technology, friend|..." choices "technology"
         yield_b
         selector_0E73:
-    case "cred" -> selector_0F5F
+    }
+    case "cred" -> selector_0F5F {
         menu "talk" "bye_bye" "cred" "buy"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Me work to earn much CRED, friend|..." choices "cred"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Creds be hard to earn..." choices "cred"
@@ -237,7 +252,8 @@ selector Bronko_choices
         say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To buy, me must earn creds..." choices "buy"
         yield_b
         selector_0F5F:
-    case "murffalos" -> selector_1017
+    }
+    case "murffalos" -> selector_1017 {
         menu "talk" "bye_bye" "hunt"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Thirteen murffalos to reproduce... One in middle. twelve around. That be murffalo reproduction|..." choices "murffalos"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me not like murffalo... Not good, too tender... Me like lawnmower leg..." choices "murffalos"
@@ -246,7 +262,8 @@ selector Bronko_choices
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Hunting be nice sport..." choices "hunt"
         yield_b
         selector_1017:
-    case "weapons" -> selector_10A7
+    }
+    case "weapons" -> selector_10A7 {
         menu "talk" "bye_bye" "planets" "war"
         say Bronko voice=0x04 flags=0x40 display=0x80 loop=none control=none : "To buy good weapons, must pay much creds, Commander" choices "weapons"
         say Bronko voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Me have weapons at end of arms..." choices "weapons"
@@ -254,15 +271,17 @@ selector Bronko_choices
         say Bronko voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Croolis war do much damage... Bad war, friend|..." choices "war"
         yield_b
         selector_10A7:
-    case "retirement" -> 0x0000
+    }
+    case "retirement" -> 0x0000 {
         menu "talk" "bye_bye" "Magnus"
         say Bronko voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Ah retirement! Them send me to planet Magnus, with other old old robots... CRY CRY|..." choices "retirement"
         yield
-end selector Bronko_choices
+    }
+}
 
-selector Bob_Morlock_choices
+selector Bob_Morlock_choices {
     yield_b
-    case "talk" -> selector_157B
+    case "talk" -> selector_157B {
         menu "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "kanary" "mission" "corpo" "good_"
         say Bob_Morlock voice=0x02 flags=0x42 display=0x80 loop=none control=none : "What do you want to know|, Commander?" choices "talk"
         say Bob_Morlock voice=0x03 flags=0x48 display=0x80 loop=none control=none : "Goodbye, Commander|..." choices "bye_bye"
@@ -309,7 +328,8 @@ selector Bob_Morlock_choices
         say Bob_Morlock voice=0x01 flags=0x43 display=0x80 loop=none control=none : "Heh heh|..." choices "good_"
         yield_b
         selector_157B:
-    case "kanary" -> 0x0000
+    }
+    case "kanary" -> 0x0000 {
         menu "talk" "bye_bye" "cottage" "clones" "employees" "reports"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The Cottage Research department is my secret project" choices "cottage"
         say Bob_Morlock voice=0x01 flags=0x40 display=0x80 loop=none control=none : "The vegetable kingdom is a marvel of nature" choices "cottage"
@@ -336,11 +356,12 @@ selector Bob_Morlock_choices
         say Bob_Morlock voice=0x06 flags=0x49 display=0x80 loop=none control=none : "Our only competitor is CRYO" choices "They"
         shared_state 0xB4 Bob_Morlock_s03 0xF6 0xC1 0x0002
         yield
-end selector Bob_Morlock_choices
+    }
+}
 
-selector Hom_choices
+selector Hom_choices {
     yield_b
-    case "hello" -> selector_1932
+    case "hello" -> selector_1932 {
         menu "bye_bye" "talk" "not_talk"
         say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "My name Hom. Me big tube brain" choices "not_talk"
         say Hom voice=0x01 flags=0x42 display=0x80 loop=none control=none : "Ooooh! Stranger what you want?" choices "talk"
@@ -355,7 +376,8 @@ selector Hom_choices
         record_clear Hom_s13
         yield_b
         selector_1932:
-    case "talk" -> selector_19DE
+    }
+    case "talk" -> selector_19DE {
         menu "bye_bye" "race" "planet" "science" "politics" "art" "consumption"
         say Hom voice=0x02 flags=0x00 display=0x80 loop=none control=none : "What you want know, friend..."
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Race big subject, friend..." choices "race"
@@ -367,13 +389,15 @@ selector Hom_choices
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Consumerism big fun" choices "consumption"
         yield_b
         selector_19DE:
-    case "race" -> selector_1A1C
+    }
+    case "race" -> selector_1A1C {
         menu "talk" "bye_bye" "izwal" "croolis" "slimer" "tubular_brain" "sinox" "buggol" "migrax" "ondoyant"
         say Hom voice=0x01 flags=0x02 display=0x80 loop=none control=none : "Race big metaphysical thing. Natural magic"
         say Hom voice=0x00 flags=0x02 display=0x80 loop=none control=none : "Race heavy mystery..."
         yield_b
         selector_1A1C:
-    case "izwal" -> selector_1C5D
+    }
+    case "izwal" -> selector_1C5D {
         menu "bye_bye" "race" "talk" "planet" "intelligence" "food" "science"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Izwal small brain. very nice." choices "intelligence"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Intelligence Izwal lively. Very noisy primitive brain" choices "intelligence"
@@ -400,7 +424,8 @@ selector Hom_choices
         say Hom voice=0x0A flags=0x02 display=0x80 loop=none control=none : "They soft fur..."
         yield_b
         selector_1C5D:
-    case "croolis" -> selector_1DC3
+    }
+    case "croolis" -> selector_1DC3 {
         menu "bye_bye" "race" "war" "science" "info" "joke" "planet"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Me not like war. Not like ships..." choices "war"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Us Tubular Brain despise Croolis" choices "war"
@@ -418,7 +443,8 @@ selector Hom_choices
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Croolis hate peace, spit on life. Hate nature" choices "planet" "mastachok"
         yield_b
         selector_1DC3:
-    case "slimer" -> selector_1FA9
+    }
+    case "slimer" -> selector_1FA9 {
         menu "bye_bye" "race" "planet" "science" "politics" "yolk" "info"
         say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Slimer strange creatures. Me personally know great Yolk" choices "yolk"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Yolk big thinker, great master. Me respect" choices "yolk"
@@ -440,7 +466,8 @@ selector Hom_choices
         say Hom voice=0x10 flags=0x40 display=0x80 loop=none control=none : "Slimers evolve from space jellyfish" choices "race"
         yield_b
         selector_1FA9:
-    case "tubular_brain" -> selector_2029
+    }
+    case "tubular_brain" -> selector_2029 {
         menu "bye_bye" "brain" "info"
         say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Tubular Brain think good." choices "brain"
         say Hom voice=0x00 flags=0x40 display=0x80 loop=none control=none : "Tube brain complex. You not understand." choices "brain"
@@ -449,7 +476,8 @@ selector Hom_choices
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Tubular Brain be superior race" choices "info"
         yield_b
         selector_2029:
-    case "sinox" -> selector_20B3
+    }
+    case "sinox" -> selector_20B3 {
         menu "bye_bye" "race" "science" "technology" "info"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox hard workers. Big big technology" choices "technology"
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Sinox build computers, machines, Sinox like money" choices "info"
@@ -458,7 +486,8 @@ selector Hom_choices
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox powerful people" choices "race" "sinox"
         yield_b
         selector_20B3:
-    case "migrax" -> selector_2139
+    }
+    case "migrax" -> selector_2139 {
         menu "bye_bye" "race" "talk" "info" "murffalos"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Migrax not much in brain" choices "info"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Migrax like lot money. Sell dad. Sell mom. Bad" choices "info"
@@ -467,20 +496,23 @@ selector Hom_choices
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "You like talk?" choices "talk"
         yield_b
         selector_2139:
-    case "buggol" -> selector_2173
+    }
+    case "buggol" -> selector_2173 {
         menu "bye_bye" "race" "politics" "info" "joke"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Democracy Buggol wise" choices "politics"
         say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Me not ever see Buggol..." choices "race"
         yield_b
         selector_2173:
-    case "ondoyant" -> selector_21D1
+    }
+    case "ondoyant" -> selector_21D1 {
         menu "bye_bye" "talk" "info" "reproduction"
         say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Ahhhhh! ondoyant, you not say such word..." choices "info"
         say Hom voice=0x03 flags=0x40 display=0x80 loop=none control=none : "Love, all time, big magic, big hot..." choices "reproduction"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Hom eternal. Hom not reproduce, cry cry..." choices "reproduction"
         yield_b
         selector_21D1:
-    case "murffalos" -> selector_225D
+    }
+    case "murffalos" -> selector_225D {
         menu "bye_bye" "planet" "reproduction" "consumption" "info"
         say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Murffalos be creatures with horn." choices "info"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Murffalos tender meat. Tasty" choices "consumption"
@@ -489,7 +521,8 @@ selector Hom_choices
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Murffalos small small brain. Meat nice" choices "consumption"
         yield_b
         selector_225D:
-    case "planet" -> selector_2493
+    }
+    case "planet" -> selector_2493 {
         menu "bye_bye" "talk" "erazor" "mastachok" "qx20" "tumul" "rondo" "cyberock" "troma" "ekatomb" "attrox" "Oddland" "corpo"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Nice Sinox planet" choices "venusia"
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "Me not ever be to Venusia" choices "venusia"
@@ -518,7 +551,8 @@ selector Hom_choices
         say Hom voice=0x00 flags=0x03 display=0x80 loop=none control=none : "Heat, fusion, sun. Bang!"
         yield_b
         selector_2493:
-    case "television" -> selector_251F
+    }
+    case "television" -> selector_251F {
         menu "bye_bye" "info" "consumption" "politics"
         say Hom voice=0x0E flags=0x42 display=0x80 loop=none control=none : "Me Hom. Me big power.Television inside head..." choices "television"
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Television not good for reproduction..." choices "television"
@@ -527,7 +561,8 @@ selector Hom_choices
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Watch television, always buy more and more" choices "consumption"
         yield_b
         selector_251F:
-    case "art" -> selector_259B
+    }
+    case "art" -> selector_259B {
         menu "bye_bye" "talk" "info" "painting"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Me like painting" choices "info"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Me like art food. And murffalos liver boiled in mercury" choices "info"
@@ -535,7 +570,8 @@ selector Hom_choices
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Portrait Great Yolk. Great painting. Famous" choices "painting"
         yield_b
         selector_259B:
-    case "peace" -> selector_260B
+    }
+    case "peace" -> selector_260B {
         menu "bye_bye" "politics" "friendship" "izwal"
         say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Peace good idea. Me like" choices "Friendship"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Friendship among peoples, races. Me like, friend..." choices "friendship"
@@ -543,14 +579,16 @@ selector Hom_choices
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Peace make mind connections. Progress" choices "peace"
         yield_b
         selector_260B:
-    case "war" -> selector_265D
+    }
+    case "war" -> selector_265D {
         menu "bye_bye" "politics" "croolis"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Croolis like fight, like kill" choices "croolis"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "War stupid. Destroy, hate, die, die" choices "war"
         say Hom voice=0x0E flags=0x40 display=0x80 loop=none control=none : "Why hate? Lot hate. Why?" choices "war"
         yield_b
         selector_265D:
-    case "politics" -> selector_26EB
+    }
+    case "politics" -> selector_26EB {
         menu "bye_bye" "race" "democracy" "television" "joke" "peace" "war"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Democracy important. Cyborg planet big democracy" choices "democracy"
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Politics bad vibe. Me prefer ondoyants" choices "race"
@@ -559,14 +597,16 @@ selector Hom_choices
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Politics big business, money, power, bad vibe..." choices "politics"
         yield_b
         selector_26EB:
-    case "reproduction" -> selector_2743
+    }
+    case "reproduction" -> selector_2743 {
         menu "bye_bye" "race" "hom" "ondoyant" "info" "joke"
         say Hom voice=0x0D flags=0x40 display=0x80 loop=none control=none : "Not know reproduction. Hom not reproduce. Hom eternal" choices "hom"
         say Hom voice=0x09 flags=0x40 display=0x80 loop=none control=none : "ondoyants like reproduction" choices "ondoyant"
         say Hom voice=0x0A flags=0x40 display=0x80 loop=none control=none : "Reproduction Hom forbidden. Big copyright..." choices "joke"
         yield_b
         selector_2743:
-    case "science" -> selector_2859
+    }
+    case "science" -> selector_2859 {
         menu "bye_bye" "talk" "race" "planet" "universe" "info" "origin" "mind"
         say Hom voice=0x01 flags=0x40 display=0x80 loop=none control=none : "Hom detect, sense, understand universe." choices "universe"
         say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "Universe filled with small creatures..." choices "universe"
@@ -581,7 +621,8 @@ selector Hom_choices
         say Hom voice=0x07 flags=0x40 display=0x80 loop=none control=none : "Me like crunch numbers." choices "science"
         yield_b
         selector_2859:
-    case "consuption" -> selector_28CB
+    }
+    case "consuption" -> selector_28CB {
         menu "bye_bye" "talk" "sinox" "food"
         say Hom voice=0x05 flags=0x40 display=0x80 loop=none control=none : "Sinox build hi tech products" choices "sinox"
         say Hom voice=0x06 flags=0x40 display=0x80 loop=none control=none : "Food big problem. Murffalos big solution" choices "food"
@@ -589,7 +630,8 @@ selector Hom_choices
         say Hom voice=0x02 flags=0x40 display=0x80 loop=none control=none : "You want talk consumption, friend" choices "consuption"
         yield_b
         selector_28CB:
-    case "joke" -> 0x0000
+    }
+    case "joke" -> 0x0000 {
         menu "bye_bye" "talk" "race" "planet" "info" "laugh"
         say Hom voice=0x0C flags=0x40 display=0x80 loop=none control=none : "Hom not like joke... laugh, laugh, cry, laugh, laugh, laugh" choices "laugh"
         say Hom voice=0x0B flags=0x40 display=0x80 loop=none control=none : "Izwal build telescope, laugh, laugh" choices "izwal" "joke"
@@ -597,4 +639,5 @@ selector Hom_choices
         say Hom voice=0x0B flags=0x00 display=0x80 loop=none control=none : "You want me sing?"
         say Hom voice=0x02 flags=0x03 display=0x80 loop=none control=none : "You talk all time, friend..."
         halt
-end selector Hom_choices
+    }
+}
