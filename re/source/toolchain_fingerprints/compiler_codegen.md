@@ -6207,10 +6207,18 @@ Open Watcom 1.9 large (`-3 -os -s -ml -we`) emits one warning-free
 38-instruction/103-byte function versus 32/88 original, with 71.88 percent
 mnemonic-multiset overlap and no inline assembly. Large model is intentional:
 the script segment is a floating DS while near runtime data stays under SS.
-Full-source integration requires the shipped SS=GS and clear-DF invariants. A
-direct binary replacement additionally needs the original final SI/DI residue
-and inherited DX on the coding-error path; ordinary C supplies the ignored
-detail pointer in DS:DX instead.
+Turbo C 2.01 large (`-ml -O -Z`) emits 65 instructions with 78.12 percent
+mnemonic-multiset and 56.25 percent ordered overlap and assembles warning-free
+to an 825-byte OMF object.
+
+The sole caller ignores AX and final SI. Its first call is followed by
+`vm_op_a3_collect`, which reloads and preserves its own `DS:SI`; its second call
+is terminal. Coding-error mode zero does not read the detail pointer, so ordinary
+C's advanced-cursor argument cannot change the overlay. Full-source integration
+requires the shipped SS=GS and clear-DF invariants, and the routine is accepted
+on that proven domain. A direct binary replacement still needs the original
+final SI/DI residue, reverse-direction traversal, inherited DX on the coding-
+error path, and path-specific flags.
 
 ## BLOODPRG VM control-flow candidate
 
