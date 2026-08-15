@@ -38568,6 +38568,17 @@ def nav_chart_list_build_vectors() -> list[dict[str, object]]:
 
 
 def ship_3d_position_field_resolve_vectors() -> list[dict[str, object]]:
+    vm_register_clear = bytes.fromhex(
+        "66 33 c0 66 8b e8 66 8b d8 66 8b c8 66 8b d0 66 8b f0 66 8b f8"
+    )
+    action_register_clear = bytes.fromhex(
+        "66 33 c0 66 8b d0 57 56 66 8b f0 66 8b f8"
+    )
+    if EXE[0x55C0:0x55D5] != vm_register_clear:
+        raise AssertionError("0x61a6: VM wrapper no longer zero-extends ESI/EDI")
+    if EXE[0x5B46:0x5B54] != action_register_clear:
+        raise AssertionError("0x61a6: record action no longer zero-extends ESI/EDI")
+
     game_segment = 0x2C00
     record_segment = 0x4400
     table = {

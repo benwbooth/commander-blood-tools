@@ -1366,12 +1366,21 @@ offset are GS-owned. The kind-`0x0100` path's address-size override also exposes
 a real precondition: ESI must be zero-extended because the comparison reads
 `[EAX+ESI]`, not `[AX+SI]`.
 
-The resolver is now one natural C function over a near record pointer. Open
-Watcom `-3 -ox -mm` emits 46 instructions/98 bytes versus 45/106 original, with
-mnemonic multiset overlap 0.8667. It binds SI/DX and returns the near pointer in
-AX, but saves extra CX/DX/DI temporaries and addresses the arche global through
-DS instead of GS. Turbo C 2.01 medium emits 76 instructions. This is a close
-Watcom structural lowering, not an exact ABI image.
+The resolver is one natural C function over a near record pointer. Its corrected
+fallback reads the explicit `GAME_DATA` arche alias while DS remains on the
+record segment, and the compiler-corpus sample now includes this maintained
+source instead of duplicating an older probe. Open Watcom `-3 -ox -mm` emits 50
+instructions/106 bytes versus 45/106 original, with 86.67 percent mnemonic-
+multiset and 66.67 percent ordered overlap. Turbo C 2.01 medium emits 78
+instructions with 84.44 percent multiset and 62.22 percent ordered overlap and
+assembles warning-free to a valid 681-byte OMF object.
+
+All shipped call chains establish zero upper ESI: the VM wrapper clears ESI/EDI
+before `0x005A74` and opcode dispatch, while `0x005B38` clears both in its own
+prologue. The natural 16-bit pointer expression is therefore accepted for
+source-port integration. Direct replacement still needs the original 32-bit
+kind-`0x0100` address under arbitrary ESI and upper-EAX clearing. Watcom retains
+the other state and terminal `ADD` flags.
 
 Ship 3D distance `0x0060DD` has six direct vectors covering kind-`0x0040`,
 delegated direct and parent/arche resolution, kind-`0x0100` on either operand,
@@ -3841,7 +3850,7 @@ LCS and then mnemonic similarity:
 | `vm_record_lookup_by_threshold` | medium, `-ox`, register | 12/12 | 0.0833 | 0.8333 | 0.1667 |
 | `active_object_list_build` | medium, `-ox`, register | 32/28 | 0.2188 | 0.6562 | 0.2500 |
 | `ship_3d_position_distance` | medium, `-ox`, register | 88/117 | 0.0682 | 0.5341 | 0.1023 |
-| `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/46 | 0.1111 | 0.6667 | 0.2444 |
+| `ship_3d_position_field_resolve` | medium, `-ox`, register | 45/50 | 0.1111 | 0.6667 | 0.2444 |
 | `ship_3d_object_table_bit_test` | medium, `-ox`, register | 31/33 | 0.2581 | 0.7419 | 0.3548 |
 | `ship_3d_nav_source_list_build` | medium, `-ox`, register | 34/51 | 0.1765 | 0.7647 | 0.2059 |
 | `vm_token_special` | medium, `-ox`, register | 9/9 | 0.3333 | 1.0000 | 1.0000 |
@@ -6300,15 +6309,20 @@ low-byte continuation, absolute and wrapped record offsets, wrapped directory
 termination, pointer-offset handling, exact helper calls, segment ownership,
 immutability, registers, flags, stack, and near return.
 
-Open Watcom 1.9 large (`-3 -os -s -ml -we`) plus its native `__saveregs`
-attribute emits one warning-free natural 78-instruction/201-byte function versus
-53/137 original, with 96.23 percent mnemonic-multiset overlap and no inline
-assembly. The generated body correctly loads the floating record DS, keeps the
-directory far, directly calls the recovered resolver, and dereferences all
-returned coordinate offsets under the record segment. Full-source integration
-needs GAME_DATA bound to GS. A direct binary replacement also needs a narrow
-full-EAX preservation adapter; Watcom treats EAX as volatile, while the sole
-real caller does not consume it after this call.
+The natural continuation now casts the entry kind to its actual low byte, which
+removes a generated word load and AH clear. Open Watcom 1.9 large (`-3 -os -s
+-ml -we`) plus `__saveregs` emits one warning-free 76-instruction/197-byte
+function versus 53/137 original, with 94.34 percent mnemonic-multiset and 88.68
+percent ordered overlap. Turbo C 2.01 large emits 103 instructions with 94.34
+percent multiset and 73.58 percent ordered overlap and assembles warning-free to
+a valid 1,074-byte OMF object. The processor and linked resolver are each
+compiler-checked from maintained source without inline assembly or a register-
+state facade.
+
+The pair is accepted for source-port integration with `GAME_DATA` linked to the
+game segment. Direct binary replacement of the processor still needs full-EAX
+preservation, which its sole real caller discards; Watcom retains every other
+register and segment plus the terminal low-byte `CMP` flags.
 
 ## BLOODPRG location-panel entity draw candidate
 

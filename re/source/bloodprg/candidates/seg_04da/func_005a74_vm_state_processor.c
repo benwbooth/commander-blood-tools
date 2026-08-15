@@ -69,5 +69,5 @@ void CB_SAVE_REGS CB_NEAR vm_state_processor(void)
             record->state = state;
         }
         ++entry;
-    } while ((entry->entry_kind & 0x00ffu) == 1u);
+    } while ((cb_u8)entry->entry_kind == 1u);
 }

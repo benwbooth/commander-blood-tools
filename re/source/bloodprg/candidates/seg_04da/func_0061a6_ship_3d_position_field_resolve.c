@@ -43,7 +43,7 @@ ship_3d_position_field_resolve(
         link_offset = *(volatile cb_u16 CB_NEAR *)
             (record_bytes + field_offset);
         if (link_offset == 0xffffu) {
-            link_offset = vm_arche_record_offset;
+            link_offset = vm_arche_record_offset_gs;
         }
 
         record = (volatile bloodprg_vm_object_header CB_NEAR *)link_offset;
