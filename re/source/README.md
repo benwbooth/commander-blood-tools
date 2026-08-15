@@ -30,9 +30,12 @@ For each routine, the expected workflow is:
 The assembly dumps under `re/assembly` remain the evidence. A missing `.c` file
 means the routine has not yet cleared the natural-C evidence gate.
 
-Natural C candidates may live under `bloodprg/candidates` before that compiler
-gate is satisfied. They are useful for review and codegen experiments, but they
-are not accepted replacement source until promoted out of the candidate tree.
+Natural C routines remain under the stable `bloodprg/candidates` and
+`xdb/candidates` paths while their evidence matures. The manifest `status`
+field is authoritative: `codegen_mismatch` remains under review, while
+`codegen_accepted` has cleared the source-port gate. Keeping paths stable lets
+the binary oracles, compiler corpus, and eventual translation-unit assembly
+refer to the same one-to-one routine source without duplicating declarations.
 
 Start with:
 

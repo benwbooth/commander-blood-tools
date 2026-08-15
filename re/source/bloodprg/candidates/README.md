@@ -1,8 +1,11 @@
 # BLOODPRG Natural C Candidates
 
-This directory contains human-written natural C candidates for recovered
-`BLOODPRG.EXE` routines. These files are not an emulation layer and are not
-accepted replacement source yet.
+This directory contains human-written natural C for recovered `BLOODPRG.EXE`
+routines. These files are not an emulation layer. Acceptance is tracked per
+manifest row: `codegen_mismatch` remains under review, while
+`codegen_accepted` has cleared the source-port gate. Files keep their stable
+candidate paths after acceptance so compiler and binary-oracle evidence does
+not need to be duplicated or redirected.
 
 Candidate rules:
 
@@ -15,8 +18,9 @@ Candidate rules:
   They express the target platform rather than simulate it.
 - Keep register/carry-return routines pending until their ABI can be expressed
   naturally or isolated behind a small assembly boundary.
-- Promote a candidate only after a candidate DOS compiler emits a close assembly
-  shape for the routine.
+- Mark a candidate `codegen_accepted` only after a candidate DOS compiler emits
+  a close assembly shape and every remaining difference has been reviewed as
+  harmless to the source-port contract.
 
 Run the current candidate sanity check with:
 

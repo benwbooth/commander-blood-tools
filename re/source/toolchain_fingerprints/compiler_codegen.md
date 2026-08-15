@@ -69,6 +69,29 @@ behavior. An assembly-link replacement can still add the original boundary
 adapter where a binary caller observes a flag that natural C deliberately
 normalizes.
 
+### Shape-exact acceptance batch
+
+The stronger `codegen_shape_exact` results also clear the source-port gate.
+These 16 routines have complete direct-binary oracles and either reproduce the
+body byte-for-byte or differ only where the linker supplies recovered symbols:
+
+| routines | compiler result | accepted boundary |
+| --- | --- | --- |
+| `0x00509A`, `0x00509B`, `0x00509C` sprite no-op callbacks | Open Watcom emits the exact one-byte `RET` for each typed callback | dispatch-table binding only |
+| `0x006293 vm_token_special` | Open Watcom emits all 9 instructions and all 16 bytes exactly | AX/SI pragma-aux declaration expresses the recovered register ABI |
+| `0x008713 nav_choice_handler_0` | Turbo C emits the exact 25-byte LEDATA shape | five linker fixups bind the recovered DS globals |
+| `0x009F53 presentation_update_1fb2` | Turbo C emits the exact 45-byte LEDATA shape | seven linker fixups plus the minimal six-instruction register-preservation envelope |
+| `0x00A2DD presentation_queue_finish` | Turbo C emits the exact 21-byte LEDATA shape | four linker fixups bind two globals and the near callee |
+| `0x00A73E`, `0x00A744` list-bound initializers | Turbo C emits exact 25-byte and 19-byte LEDATA shapes | address fixups are exact; reproducing the overlapping shared tail is a translation-unit layout concern |
+| AMER `0x000347`, CROOLIS `0x00035C`, SCRUT `0x00035C` mouse-position helpers | Open Watcom emits the original 5 instructions and 14 bytes | two data relocations bind `mouse_x` and `mouse_y` in each overlay |
+| AMER `0x001DD6`, CROOLIS `0x001D27`, SCRUT `0x001DE7` method no-ops | Open Watcom emits the exact one-byte `RET` | method-table binding only |
+| MANU3 `0x00017C anim_select_entry` | Open Watcom emits the exact `CALL` / `RETF` two-instruction shape | one relocation binds the near selector callee |
+
+No register-state model or compatibility shim is present. The one inline
+save/restore envelope at `0x009F53` is retained because it is the smallest
+source-level representation of an observed nonstandard call boundary and is
+required for the exact compiler result.
+
 In the initial matrix, no Watcom configuration produced an exact mnemonic
 sequence or exact sequence of encoded instruction bytes for any probe. The
 strongest aggregate Watcom configuration was unoptimized huge model with its
