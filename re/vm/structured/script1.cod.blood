@@ -25,15 +25,15 @@ PROCEDURE proc_menbr_0000
     ACTOR field_menu_0872_s13_08AC object_blood_0028 0
     RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 0
     GUARD_POP
-    TEXT object_menu_0872 FF 00 80 - - "\"IMPROVED"@000C "MENU\""@0016
-    TEXT object_menu_0872 FF 00 80 - - "Today"@001C "CHEF"@0022 "BRONKO"@0027 "has"@002E "laid"@0032 "on"@0037 "for"@003A "you"@003E ":"@0042
-    TEXT object_menu_0872 FF 00 80 - - "Tasty"@0044 "MURFFALO"@004A "soup"@0053 "Bronko-style"@0058 "."@0065
-    TEXT object_menu_0872 FF 00 80 - - "MURFFALO" "kidneys"@0067 "Bronko-style" "."
-    TEXT object_menu_0872 FF 00 80 - - "MURFFALO" "hamburger"@006F "with"@0079 "Bar-B-Q"@007E "recycled-oil"@0086 "dip"@0093 "."
-    TEXT object_menu_0872 FF 00 80 - - "Smooth"@0097 "MURFFALO-chip"@009E "ice"@00AC "cream"@00B0 "."
-    TEXT object_menu_0872 FF 00 80 - - "Recycled"@00B6 "water"@00BF
-    TEXT object_menu_0872 FF 00 80 - - "Chef"@00C5 "Bronko"@00CA "says"@00D1 "..."@00D6 "Burping's"@00DA "bad"@00E4 "manners"@00E8 "!"@00F0 "..."
-    TEXT object_menu_0872 FF 08 80 - - "stop"@00F2
+    TEXT object_menu_0872 FF 00 80 - - "\"IMPROVED" "MENU\""
+    TEXT object_menu_0872 FF 00 80 - - "Today" "CHEF" "BRONKO" "has" "laid" "on" "for" "you" ":"
+    TEXT object_menu_0872 FF 00 80 - - "Tasty" "MURFFALO" "soup" "Bronko-style" "."
+    TEXT object_menu_0872 FF 00 80 - - "MURFFALO" "kidneys" "Bronko-style" "."
+    TEXT object_menu_0872 FF 00 80 - - "MURFFALO" "hamburger" "with" "Bar-B-Q" "recycled-oil" "dip" "."
+    TEXT object_menu_0872 FF 00 80 - - "Smooth" "MURFFALO-chip" "ice" "cream" "."
+    TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
+    TEXT object_menu_0872 FF 00 80 - - "Chef" "Bronko" "says" "..." "Burping's" "bad" "manners" "!" "..."
+    TEXT object_menu_0872 FF 08 80 - - "stop"
     RECORD_CLEAR field_menu_0872_s13_08AC
 END_PROCEDURE proc_menbr_0000
 
@@ -43,15 +43,15 @@ PROCEDURE proc_men1_00B3
     ACTOR field_menu_0872_s13_08AC object_blood_0028 0
     RECORD_WILDCARD AF field_Bronko_031A_s11_0332 FFFF 1
     GUARD_POP
-    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""@00F7
-    TEXT object_menu_0872 FF 00 80 - - "Today's"@00FE "fare"@0106 ":"
-    TEXT object_menu_0872 FF 00 80 - - "PLASMA"@010B "soup" "HONK-style"@0112 "."
-    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER"@011D "belly"@0126 "in"@012C "slobber"@012F "sauce"@0137 "."
-    TEXT object_menu_0872 FF 00 80 - - "Jellied"@013D "URTIKAN"@0145 "with" "MURFFALO" "bone"@014D "marrow"@0152 "."
-    TEXT object_menu_0872 FF 00 80 - - "GLOK"@0159 "eye"@015E "pie"@0162 "."
+    TEXT object_menu_0872 FF 00 80 - - "\"MENU\""
+    TEXT object_menu_0872 FF 00 80 - - "Today's" "fare" ":"
+    TEXT object_menu_0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "belly" "in" "slobber" "sauce" "."
+    TEXT object_menu_0872 FF 00 80 - - "Jellied" "URTIKAN" "with" "MURFFALO" "bone" "marrow" "."
+    TEXT object_menu_0872 FF 00 80 - - "GLOK" "eye" "pie" "."
     TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0872 FF 00 80 - - "The"@0166 "chef"@016A "says" "..." "Don't"@016F "eat"@0175 "with" "your"@0179 "mouth"@017E "full"@0184 "!" "..."
-    TEXT object_menu_0872 FF 08 90 - - "Stop"@0189
+    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Don't" "eat" "with" "your" "mouth" "full" "!" "..."
+    TEXT object_menu_0872 FF 08 90 - - "Stop"
     POKE_BYTE 00B4 00
     RECORD_CLEAR field_menu_0872_s13_08AC
 END_PROCEDURE proc_men1_00B3
@@ -65,11 +65,11 @@ PROCEDURE proc_men2_0163
     TEXT object_menu_0872 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0872 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "snout"@018E "stew"@0194 "."
-    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "seeds"@0199 "in" "MURFFALO" "venom"@019F "."
-    TEXT object_menu_0872 FF 00 80 - - "GLOK" "juice"@01A5 "dessert"@01AB "."
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "snout" "stew" "."
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "seeds" "in" "MURFFALO" "venom" "."
+    TEXT object_menu_0872 FF 00 80 - - "GLOK" "juice" "dessert" "."
     TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk"@0001 "with" "your" "mouth" "open"@01B3 "!" "..."
+    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk" "with" "your" "mouth" "open" "!" "..."
     TEXT object_menu_0872 FF 08 90 - - "stop"
     POKE_BYTE 0164 00
     RECORD_CLEAR field_menu_0872_s13_08AC
@@ -84,11 +84,11 @@ PROCEDURE proc_men3_020D
     TEXT object_menu_0872 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0872 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0872 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "feet"@01B8 "in" "emulsive"@01BD "sauce" "."
-    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "leaves"@01C6 "in" "MURFFALO" "sweat"@01CD "."
-    TEXT object_menu_0872 FF 00 80 - - "GLOK" "flake"@01D3 "dessert" "."
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "feet" "in" "emulsive" "sauce" "."
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "leaves" "in" "MURFFALO" "sweat" "."
+    TEXT object_menu_0872 FF 00 80 - - "GLOK" "flake" "dessert" "."
     TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Somebody"@01D9 "didn't"@01E2 "finish"@01E9 "his"@01F0 "wrigglers"@01F4 "yesterday"@01FE "..."
+    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Somebody" "didn't" "finish" "his" "wrigglers" "yesterday" "..."
     TEXT object_menu_0872 FF 08 90 - - "stop"
     POKE_BYTE 020E 00
     RECORD_CLEAR field_menu_0872_s13_08AC
@@ -103,11 +103,11 @@ PROCEDURE proc_men4_02B9
     TEXT object_menu_0872 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0872 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0872 FF 00 80 - - "HONK-style" "PLASMA" "soup" "."
-    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "brain"@0208 ","@020E "stewed"@0210 "in" "its"@0217 "own"@021B "juice" "."
-    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "trunk"@021F "," "stuffed"@0225 "with" "MURFFALO" "liver"@022D "."
-    TEXT object_menu_0872 FF 00 80 - - "GLOK" "dee-lite"@0233 "."
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "brain" "," "stewed" "in" "its" "own" "juice" "."
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "trunk" "," "stuffed" "with" "MURFFALO" "liver" "."
+    TEXT object_menu_0872 FF 00 80 - - "GLOK" "dee-lite" "."
     TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Plenty"@023C "more"@0243 "in" "the"@0248 "kitchen"@024C "!" "..."
+    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "Plenty" "more" "in" "the" "kitchen" "!" "..."
     TEXT object_menu_0872 FF 08 90 - - "stop"
     POKE_BYTE 02BA 00
     RECORD_CLEAR field_menu_0872_s13_08AC
@@ -121,12 +121,12 @@ PROCEDURE proc_men5_036D
     GUARD_POP
     TEXT object_menu_0872 FF 00 80 - - "\"IMPROVED" "MENU\""
     TEXT object_menu_0872 FF 00 80 - - "Today's" "fare" ":"
-    TEXT object_menu_0872 FF 00 80 - - "Soup"@0254 "of"@0259 "PLASMA" "HONK-style" "."
-    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "hearts"@025C "in" "green"@0263 "blood"@0269 "coagulate"@026F "."
-    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "roots"@0279 "," "deep"@027F "fried"@0284 "in" "recycled"@028A "oil"@0293 "."
-    TEXT object_menu_0872 FF 00 80 - - "Candied"@0297 "GLOK" "tongue"@029F "."
+    TEXT object_menu_0872 FF 00 80 - - "Soup" "of" "PLASMA" "HONK-style" "."
+    TEXT object_menu_0872 FF 00 80 - - "WRIGGLER" "hearts" "in" "green" "blood" "coagulate" "."
+    TEXT object_menu_0872 FF 00 80 - - "URTIKAN" "roots" "," "deep" "fried" "in" "recycled" "oil" "."
+    TEXT object_menu_0872 FF 00 80 - - "Candied" "GLOK" "tongue" "."
     TEXT object_menu_0872 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "You"@02A6 "eat" "what"@02AA "you" "are"@02AF "!" "..."
+    TEXT object_menu_0872 FF 00 80 - - "The" "chef" "says" "..." "You" "eat" "what" "you" "are" "!" "..."
     TEXT object_menu_0872 FF 08 A0 - - "stop"
     POKE_BYTE 036E 00
     POKE_BYTE 042A 01
@@ -164,13 +164,13 @@ PROCEDURE proc_ho1_0463
     BRANCH_PRESENTATION
     ACTOR field_Izwalito_055A_s13_0594 object_blood_0028 0
     GUARD_POP
-    TEXT object_Izwalito_055A FF 08 80 - - "You" "found"@02B3 "the" "right"@02B9 "button"@02BF "." "So"@02C6 "far"@02C9 "so"@02CD "good"@02D0 "..."
+    TEXT object_Izwalito_055A FF 08 80 - - "You" "found" "the" "right" "button" "." "So" "far" "so" "good" "..."
     RECORD_WILDCARD BC field_Izwalito_055A_s0F_05A0 02D5 0
-    TEXT object_Izwalito_055A FF 10 80 block_04CE - "Click"@02DA "quick,"@02E0 "Cap'n"@02E7 "Bob"@02ED "is"@02F1 "waiting"@02F4 "..." FFFF "explanations"@02FC "game"@0309
+    TEXT object_Izwalito_055A FF 10 80 block_04CE - "Click" "quick," "Cap'n" "Bob" "is" "waiting" "..." FFFF "explanations" "game"
     WHEN block_04C6
         CONCEPT_GUARD "game" 0
     THEN
-        TEXT object_Izwalito_055A FF 08 A0 - - "GAME"@030E
+        TEXT object_Izwalito_055A FF 08 A0 - - "GAME"
         RUN_PROFILE 02
         CLEAR_ALTERNATE_CONCEPT
         RECORD_CLEAR field_Izwalito_055A_s13_0594
@@ -182,16 +182,16 @@ PROCEDURE proc_ho1_0463
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_04CE
     LABEL block_04CE
-    TEXT object_Izwalito_055A FF 00 80 - - "You" "can"@0313 "modify"@0317 "the" "text"@031E "speed"@0323 "by"@0329 "clicking"@032C "on" "\"OPTION\""@0335
-    TEXT object_Izwalito_055A FF 00 80 - - "You" "can" "wake"@033E "Cap'n" "Bob" "by" "clicking" "on" "\"CRYOBOX\""@0343
-    TEXT object_Izwalito_055A FF 00 80 - - "Or"@034D "load"@0350 "a"@0355 "\"Saved"@0357 "Game\""@035E "by" "clicking" "on" "\"OPTION\""
-    TEXT object_Izwalito_055A FF 00 80 - - "The" "OPTION"@0364 "\"LAST\""@036B "is" "the" "\"AUTOMATIC"@0372 "PERMANENT"@037D "SAVE\"."@0387 "If"@038E "you" "forget"@0391 "to"@0398 "save,"@039B "click"@03A2 "on" "\"LAST\"..."@03A8
-    TEXT object_Izwalito_055A FF 00 80 - - "We"@03B2 "would"@03B5 "like"@03BB "to" "draw"@03C0 "your" "ATTENTION"@03C5 "to" "certain"@03CF "RISKS"@03D7 "..."
-    TEXT object_Izwalito_055A FF 00 80 - - "If" "you" "experience"@03DD "UNUSUAL"@03E8 "SENSATIONS"@03F0 "," "DIZZINESS"@03FB "or"@0405 "FACIAL"@0408 "DISTORTION"@040F "..."
-    TEXT object_Izwalito_055A FF 00 80 - - "Stay"@041A "CALM"@041F "..."
-    TEXT object_Izwalito_055A FF 00 80 - - "It"@0424 "may"@0427 "only"@042B "be"@0430 "a" "CRISIS,"@0433 "a" "SPELL"@043B "," "a" "CURSE"@0441 "or" "," "at"@0447 "worst"@044A "," "a" "SCRAMBLED"@0450 "BRAIN"@045A "..."
-    TEXT object_Izwalito_055A FF 00 80 - - "In"@0460 "which"@0463 "case"@0469 "," "write"@046E "to" ":" "SUPER"@0474 "ZEN"@047A "," "end"@047E "of" "corridor"@0482 "," "CRAZYSTONE"@048B "planet"@0496 "," "BABY1"@049D "UNIVERSE"@04A3 "..."
-    TEXT object_Izwalito_055A FF 00 80 - - "Click" "quick"@04AC "on" "\"HONK\""@04B2 "." "He"@04B9 "has" "important"@04BC "information"@04C6 "for" "YOU"@04D2 "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "You" "can" "modify" "the" "text" "speed" "by" "clicking" "on" "\"OPTION\""
+    TEXT object_Izwalito_055A FF 00 80 - - "You" "can" "wake" "Cap'n" "Bob" "by" "clicking" "on" "\"CRYOBOX\""
+    TEXT object_Izwalito_055A FF 00 80 - - "Or" "load" "a" "\"Saved" "Game\"" "by" "clicking" "on" "\"OPTION\""
+    TEXT object_Izwalito_055A FF 00 80 - - "The" "OPTION" "\"LAST\"" "is" "the" "\"AUTOMATIC" "PERMANENT" "SAVE\"." "If" "you" "forget" "to" "save," "click" "on" "\"LAST\"..."
+    TEXT object_Izwalito_055A FF 00 80 - - "We" "would" "like" "to" "draw" "your" "ATTENTION" "to" "certain" "RISKS" "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "If" "you" "experience" "UNUSUAL" "SENSATIONS" "," "DIZZINESS" "or" "FACIAL" "DISTORTION" "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "Stay" "CALM" "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "It" "may" "only" "be" "a" "CRISIS," "a" "SPELL" "," "a" "CURSE" "or" "," "at" "worst" "," "a" "SCRAMBLED" "BRAIN" "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "In" "which" "case" "," "write" "to" ":" "SUPER" "ZEN" "," "end" "of" "corridor" "," "CRAZYSTONE" "planet" "," "BABY1" "UNIVERSE" "..."
+    TEXT object_Izwalito_055A FF 00 80 - - "Click" "quick" "on" "\"HONK\"" "." "He" "has" "important" "information" "for" "YOU" "..."
     TEXT object_Izwalito_055A FF 08 80 - - "..."
     RECORD_CLEAR field_Izwalito_055A_s13_0594
 END_PROCEDURE proc_ho1_0463
@@ -201,17 +201,17 @@ PROCEDURE proc_hon_061D
     BRANCH_PRESENTATION
     ACTOR field_Honk_082A_s13_0864 object_blood_0028 0
     GUARD_POP
-    TEXT object_Honk_082A FF 20 80 - - "Welcome"@04D6 "aboard"@04DE "the" "ARK"@04E5 "," "Commander"@04E9 "." "I'm"@04F3 "HONK"@04F7 "," "your" "trusted"@04FC "computer"@0504 "..."
-    TEXT object_Honk_082A FF 20 80 - - "I'm" "here"@050D "to" "help"@0512 "you" "a" "lot"@0517 "..."
-    TEXT object_Honk_082A FF 20 80 - - "If" "the" "phone"@051B "rings"@0521 "," "just"@0527 "hit"@052C "the" "\"RED"@0530 "BUTTON\""@0535 "in" "front"@053D "of" "you" "..."
-    TEXT object_Honk_082A FF 20 80 - - "Cap'n" "Bob,"@0543 "our"@0548 "revered"@054C "leader"@0554 "," "is" "cryonized"@055B "in" "the" "CRYOBOX"@0565 "..."
-    TEXT object_Honk_082A FF 20 80 - - "Of"@056D "course"@0570 "you" "can" "wake" "Cap'n" "Bob" "and"@0577 "question"@057B "him"@0584 "..." "But"@0588 "like" "not"@058C "too"@0590 "often"@0594 "," "okay"@059A "?"@059F "..."
-    TEXT object_Honk_082A FF 20 80 - - "Cap'n" "Bob" "knows"@05A2 "everything"@05A8 "..." "That's"@05B3 "why"@05BA "he's"@05BE "the" "boss"@05C3 "..."
-    TEXT object_Honk_082A FF 20 80 - - "Our"@05C8 "ship"@05CC "is" "currently"@05D1 "surrounded"@05DB "by" "things"@05E6 "called"@05ED "stars"@05F4 "..."
-    TEXT object_Honk_082A FF 20 80 - - "Remember"@05FA "," "deep" "space"@0603 "is" "no"@0609 "place"@060C "for" "night"@0612 "clubs"@0618 "!" "..."
-    TEXT object_Honk_082A FF 20 80 - - "If" "you" "have"@061E "questions,"@0623 "I"@062E "have" "all"@0630 "the" "answers"@0634 "..."
+    TEXT object_Honk_082A FF 20 80 - - "Welcome" "aboard" "the" "ARK" "," "Commander" "." "I'm" "HONK" "," "your" "trusted" "computer" "..."
+    TEXT object_Honk_082A FF 20 80 - - "I'm" "here" "to" "help" "you" "a" "lot" "..."
+    TEXT object_Honk_082A FF 20 80 - - "If" "the" "phone" "rings" "," "just" "hit" "the" "\"RED" "BUTTON\"" "in" "front" "of" "you" "..."
+    TEXT object_Honk_082A FF 20 80 - - "Cap'n" "Bob," "our" "revered" "leader" "," "is" "cryonized" "in" "the" "CRYOBOX" "..."
+    TEXT object_Honk_082A FF 20 80 - - "Of" "course" "you" "can" "wake" "Cap'n" "Bob" "and" "question" "him" "..." "But" "like" "not" "too" "often" "," "okay" "?" "..."
+    TEXT object_Honk_082A FF 20 80 - - "Cap'n" "Bob" "knows" "everything" "..." "That's" "why" "he's" "the" "boss" "..."
+    TEXT object_Honk_082A FF 20 80 - - "Our" "ship" "is" "currently" "surrounded" "by" "things" "called" "stars" "..."
+    TEXT object_Honk_082A FF 20 80 - - "Remember" "," "deep" "space" "is" "no" "place" "for" "night" "clubs" "!" "..."
+    TEXT object_Honk_082A FF 20 80 - - "If" "you" "have" "questions," "I" "have" "all" "the" "answers" "..."
     TEXT object_Honk_082A FF 20 80 - - "Click" "quick" "on" "\"CRYOBOX\"" "Cap'n" "Bob" "is" "waiting" "..."
-    TEXT object_Honk_082A FF 28 80 - - "End"@063C "of" "report"@0640 "..."
+    TEXT object_Honk_082A FF 28 80 - - "End" "of" "report" "..."
     RECORD_CLEAR field_Honk_082A_s13_0864
 END_PROCEDURE proc_hon_061D
 
@@ -220,14 +220,14 @@ PROCEDURE proc_BOB1_077D
     BRANCH_FLAG_274F
     ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0
     GUARD_POP
-    TEXT object_Bob_Morlock_004A 03 00 80 - - "Good"@0647 "day"@064C "COMMANDER"@0650 "." "My"@065A "name"@065D "is" "BOB"@0662 "," "BOB" "MORLOCK"@0666 "..."
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "If" "the" "phone" "rings" "," "press"@066E "the" "\"RED" "BUTTON\"" "on" "the" "radio"@0674 "to" "answer"@067A "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "My" "ears"@0681 "are" "fragile,"@0686 "Commander" "..."
-    TEXT object_Bob_Morlock_004A 02 10 80 block_083D - "Do"@068F "you" "want"@0692 "me"@0697 "to" "explain"@069A "your" "mission"@06A2 "to" "you" "," "Commander" "?" FFFF "yes"@06AA "no"
+    TEXT object_Bob_Morlock_004A 03 00 80 - - "Good" "day" "COMMANDER" "." "My" "name" "is" "BOB" "," "BOB" "MORLOCK" "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "If" "the" "phone" "rings" "," "press" "the" "\"RED" "BUTTON\"" "on" "the" "radio" "to" "answer" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "My" "ears" "are" "fragile," "Commander" "..."
+    TEXT object_Bob_Morlock_004A 02 10 80 block_083D - "Do" "you" "want" "me" "to" "explain" "your" "mission" "to" "you" "," "Commander" "?" FFFF "yes" "no"
     WHEN block_0834
         CONCEPT_GUARD "no" 0
     THEN
-        TEXT object_Bob_Morlock_004A 06 08 80 - - "I'm" "going"@06AE "to" "explain" "it"@06B4 "all" "the" "same"@06B7 "..." "It's"@06BC "important" "..."
+        TEXT object_Bob_Morlock_004A 06 08 80 - - "I'm" "going" "to" "explain" "it" "all" "the" "same" "..." "It's" "important" "..."
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_0834
     LABEL block_0834
@@ -237,10 +237,10 @@ PROCEDURE proc_BOB1_077D
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_083D
     LABEL block_083D
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "I'm" "more" "than"@06C1 "800,000"@06C6 "years"@06CE "old"@06D4 "..." "I" "feel"@06D8 "ancient"@06DD "," "Commander" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "Too"@06E5 "ancient" "to" "go"@06E9 "looking"@06EC "for" "adventure"@06F4 "." "That's" "where"@06FE "you" "come"@0704 "in" ":" "I" "DON'T"@0709 "WANT"@070F "TO"@0714 "DIE"@0717 "STUPID"@071B "." "I" "WANT" "TO" "SEE"@0722 "THE"@0726 "BIG"@072A "BANG"@072E "..."
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "This"@0733 "ship" "," "specially"@0738 "built"@0742 "for" "you" "," "is" "called" "the" "ARK" "." "It's" "a" "true"@0748 "marvel"@074D "of" "technology"@0754 "."
-    TEXT object_Bob_Morlock_004A 03 08 A0 - - "Just"@075F "hit" "the" "\"SPACE\""@0764 "bar"@076C "if"@0770 "you've"@0773 "had"@077A "enough"@077E "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "I'm" "more" "than" "800,000" "years" "old" "..." "I" "feel" "ancient" "," "Commander" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Too" "ancient" "to" "go" "looking" "for" "adventure" "." "That's" "where" "you" "come" "in" ":" "I" "DON'T" "WANT" "TO" "DIE" "STUPID" "." "I" "WANT" "TO" "SEE" "THE" "BIG" "BANG" "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "This" "ship" "," "specially" "built" "for" "you" "," "is" "called" "the" "ARK" "." "It's" "a" "true" "marvel" "of" "technology" "."
+    TEXT object_Bob_Morlock_004A 03 08 A0 - - "Just" "hit" "the" "\"SPACE\"" "bar" "if" "you've" "had" "enough" "..."
     LOAD_STRING "aarche10.hnm"
     TEXT object_Bob_Morlock_004A FF 08 80 - -
     LOAD_STRING "aarche20.hnm"
@@ -248,25 +248,25 @@ PROCEDURE proc_BOB1_077D
     LOAD_STRING "aarche30.hnm"
     TEXT object_Bob_Morlock_004A FF 08 80 - -
     LOAD_STRING "aarche40.hnm"
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "I" "want" "to" "understand"@0785 "the" "world"@0790 "and" "WHERE"@0796 "I" "COME"@079C "FROM"@07A2 "..." "WHY"@07A7 "I" "EXIST"@07AB "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "You" "and" "me" "are" "going" "to" "travel"@07B1 "through"@07B8 "SPACE"@07C0 "and" "TIME,"@07C6 "through" "BLACK"@07CC "HOLES"@07D2 "..."
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "And"@07D8 "quite"@07DC "a" "few"@07E2 "BLACK" "HOLES" "later"@07E6 "," "we'll"@07EC "get"@07F2 "to" "the" "BIG" "BANG" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "The" "tough"@07F6 "part"@07FC "will"@0801 "be" "finding"@0806 "those"@080E "BLACK" "HOLES" "," "Commander" "..."
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "That's" "because"@0814 "BLACK" "HOLES" "are" "UNDETECTABLE"@081C "in" "the" "universe"@0829 "." "We'll"@0832 "need"@0838 "to" "make"@083D "contact"@0842 "with" "ALIEN"@084A "BEINGS"@0850 "..."
-    TEXT object_Bob_Morlock_004A 04 00 80 - - "You" "can" "expect"@0857 "to" "see"@085E "bloodchilling"@0862 "WARS"@0870 "and" "astonishing"@0875 "PHENOMENA..."@0881
-    TEXT object_Bob_Morlock_004A 04 00 80 - - "My" "age"@088E "dictates"@0892 "I" "sleep"@089B "through" "most"@08A2 "of" "it" "in" "the" "CRYOBOX" "." "WAKE"@08A7 "ME"@08AC "ONLY"@08AF "IN"@08B4 "AN"@08B7 "EMERGENCY"@08BA "." "My" "time"@08C4 "is" "very"@08C9 "precious"@08CE "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "I" "have" "provided"@08D7 "you" "with" "an"@08E0 "ONBOARD"@08E3 "COMPUTER"@08EB "called" "HONK" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "YOU" "THERE"@08F4 "," "HONK" "?"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:"@08FA "Yes"@0900 "sir,"@0904 "Cap'n" "Bob" "." "Present"@0909 "," "willing"@0911 "and" "able"@0919 "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "Why,"@091E "you" "hunk"@0923 "'o"@0928 "junk"@092B "..." "YOU" "WERE"@0930 "ASLEEP"@0935 "!!!"@093C
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:" "No"@0940 "," "Cap'n" "Bob" "." "I" "was"@0943 "calculating"@0947 "our" "trajectory"@0953 "to" "the" "black"@095E "hole"@0964 "!" "I" "swear"@0969 "it" "on" "my"@096F "old" "mother's"@0972 "head"@097B "!"
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "Your"@0980 "mother"@0985 "!!"@098C "I've"@098F "a" "good" "mind"@0994 "to" "short-circuit"@0999 "every"@09A7 "wire"@09AD "in" "your" "lazy"@09B2 "carcass"@09B7 "!" "Keep"@09BF "an" "eye" "on" "him" "," "Commander" "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "GET"@09C4 "TO" "WORK"@09C8 "," "HONK" "!!!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:" "Sure"@09CD "thing,"@09D2 "Cap'n" "Bob" "..." "I'm" "crunching"@09D9 "numbers"@09E3 "as"@09EB "I" "speak"@09EE "..."
-    TEXT object_Bob_Morlock_004A 09 00 80 - - "I" "can't"@09F4 "see" "a" "thing"@09FA "..." "Feel"@0A00 "so" "weak"@0A05 "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "IF"@0A0A "YOU" "NEED"@0A0D "ME" "," "WAKE" "ME" "UP"@0A12 "..."
-    TEXT object_Bob_Morlock_004A 04 00 80 - - "See"@0A15 "you" "later" "," "Commander" "." "Or" "do"@0A19 "I" "mean"@0A1C "earlier"@0A21 "?" "I'm" "cryonizing"@0A29 "..." "Aaaahhhh"@0A34 "!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "The" "old" "turkey's"@0A3D "out"@0A46 "for" "the" "count"@0A4A "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "I" "want" "to" "understand" "the" "world" "and" "WHERE" "I" "COME" "FROM" "..." "WHY" "I" "EXIST" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "You" "and" "me" "are" "going" "to" "travel" "through" "SPACE" "and" "TIME," "through" "BLACK" "HOLES" "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "And" "quite" "a" "few" "BLACK" "HOLES" "later" "," "we'll" "get" "to" "the" "BIG" "BANG" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "The" "tough" "part" "will" "be" "finding" "those" "BLACK" "HOLES" "," "Commander" "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "That's" "because" "BLACK" "HOLES" "are" "UNDETECTABLE" "in" "the" "universe" "." "We'll" "need" "to" "make" "contact" "with" "ALIEN" "BEINGS" "..."
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "You" "can" "expect" "to" "see" "bloodchilling" "WARS" "and" "astonishing" "PHENOMENA..."
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "My" "age" "dictates" "I" "sleep" "through" "most" "of" "it" "in" "the" "CRYOBOX" "." "WAKE" "ME" "ONLY" "IN" "AN" "EMERGENCY" "." "My" "time" "is" "very" "precious" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "I" "have" "provided" "you" "with" "an" "ONBOARD" "COMPUTER" "called" "HONK" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "YOU" "THERE" "," "HONK" "?"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:" "Yes" "sir," "Cap'n" "Bob" "." "Present" "," "willing" "and" "able" "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "Why," "you" "hunk" "'o" "junk" "..." "YOU" "WERE" "ASLEEP" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:" "No" "," "Cap'n" "Bob" "." "I" "was" "calculating" "our" "trajectory" "to" "the" "black" "hole" "!" "I" "swear" "it" "on" "my" "old" "mother's" "head" "!"
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Your" "mother" "!!" "I've" "a" "good" "mind" "to" "short-circuit" "every" "wire" "in" "your" "lazy" "carcass" "!" "Keep" "an" "eye" "on" "him" "," "Commander" "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "GET" "TO" "WORK" "," "HONK" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "HONK:" "Sure" "thing," "Cap'n" "Bob" "..." "I'm" "crunching" "numbers" "as" "I" "speak" "..."
+    TEXT object_Bob_Morlock_004A 09 00 80 - - "I" "can't" "see" "a" "thing" "..." "Feel" "so" "weak" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "IF" "YOU" "NEED" "ME" "," "WAKE" "ME" "UP" "..."
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "See" "you" "later" "," "Commander" "." "Or" "do" "I" "mean" "earlier" "?" "I'm" "cryonizing" "..." "Aaaahhhh" "!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "The" "old" "turkey's" "out" "for" "the" "count" "..."
     TEXT object_Bob_Morlock_004A FF 08 90 - - "stop"
     RUN_PROFILE 02
     RECORD_CLEAR field_Bob_Morlock_004A_s13_0084

@@ -41,12 +41,23 @@ pub fn compile_bundle(
 
     for script in 1..=SCRIPT_COUNT {
         let script_name = format!("SCRIPT{script}");
+        let dictionary_source_path = source_dir.join(format!("script{script}.dic.blooddata"));
+        let dictionary_source = fs::read_to_string(&dictionary_source_path).with_context(|| {
+            format!(
+                "reading BloodData source {}",
+                dictionary_source_path.display()
+            )
+        })?;
+        let dictionary_bytes = vm_data::compile(vm_data::DataKind::Dic, &dictionary_source)
+            .with_context(|| format!("compiling {}", dictionary_source_path.display()))?;
+        let dictionary = crate::script::parse_dictionary(&dictionary_bytes);
+
         for extension in PROGRAM_EXTENSIONS {
             let lower = extension.to_ascii_lowercase();
             let source_path = source_dir.join(format!("script{script}.{lower}.blood"));
             let source = fs::read_to_string(&source_path)
                 .with_context(|| format!("reading BloodScript source {}", source_path.display()))?;
-            let compiled = bloodscript::compile(&source)
+            let compiled = bloodscript::compile_with_dictionary(&source, &dictionary)
                 .with_context(|| format!("compiling {}", source_path.display()))?;
             let file_name = format!("{script_name}.{extension}");
             let original_path = original_dir.join(&file_name);

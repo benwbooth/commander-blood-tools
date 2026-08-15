@@ -70,12 +70,14 @@ unmatched addresses remain hexadecimal rather than using nearest-object guesses.
 
 COD and BAS sources intern exact DIC references as string operands. The current
 corpus has 13,699 distinct referenced offsets and 53,194 uses in dictionary-typed
-`TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE` operands. A unique
-string's first use carries `@offset`; later uses are bare quoted text. Equal text
-at multiple offsets always keeps `@offset`, preserving exact identity. The
-quoted portion does not duplicate or replace the separately compiled DIC string;
-edit `script*.dic.blooddata` to change text. The compiler accepts these
-references only in dictionary-typed positions.
+`TEXT`, `CONCEPT_GUARD`, `MENU`, `CASE`, and `SELECTOR_NODE` operands. All
+shipped references are bare quoted literals resolved through the companion DIC;
+there are no generated dictionary declarations or address suffixes in the
+corpus. Equal text at multiple physical offsets uses the lowest offset as its
+canonical interned value, with `"text"@offset` retained as a lossless escape for
+noncanonical references. The quoted portion does not duplicate or replace the
+separately compiled DIC string; edit `script*.dic.blooddata` to change text. The
+compiler accepts these references only in dictionary-typed positions.
 
 This syntax is reconstructed by this project. It is not claimed to be the
 original 1994 source spelling.

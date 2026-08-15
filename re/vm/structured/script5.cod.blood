@@ -187,7 +187,7 @@ PROCEDURE proc_Beau_00F6
     BRANCH_FLAG_274F
     ACTOR field_Beauregard_04CA_s13_0504 object_blood_0028 0
     GUARD_POP
-    TEXT object_Beauregard_04CA 01 00 80 - - "Let"@000C "me"@0010 "sleep"@0013 "..."@0019 "Commander..."@001D
+    TEXT object_Beauregard_04CA 01 00 80 - - "Let" "me" "sleep" "..." "Commander..."
     TEXT object_Beauregard_04CA 00 08 80 - - "..."
     RECORD_CLEAR field_Beauregard_04CA_s13_0504
 END_PROCEDURE proc_Beau_00F6
@@ -207,7 +207,7 @@ PROCEDURE proc_recept_014A
     BRANCH_FLAG_274F
     ACTOR field_receiver_016A_s13_01A4 object_blood_0028 0
     GUARD_POP
-    TEXT object_receiver_016A FF 00 80 - - "Shhhhhh"@002A "..." "Shhhhh..."@0032
+    TEXT object_receiver_016A FF 00 80 - - "Shhhhhh" "..." "Shhhhh..."
     TEXT object_receiver_016A FF 08 80 - - "..."
     RECORD_CLEAR field_receiver_016A_s13_01A4
 END_PROCEDURE proc_recept_014A
@@ -242,20 +242,20 @@ PROCEDURE proc_kult_01B8
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0E5A 0
     ACTOR field_Scruter_Mac_06C2_s13_06FC object_blood_0028 0
     GUARD_POP
-    TEXT object_Scruter_Mac_06C2 00 08 80 - - "Turn"@003C "around"@0041 "..." "Move"@0048 "on"@004D "..." "There"@0050 "are"@0056 "too"@005A "many"@005E "pilgrims"@0063 "..." "The"@006C "planet's"@0070 "inaccessible"@0079 "..."
+    TEXT object_Scruter_Mac_06C2 00 08 80 - - "Turn" "around" "..." "Move" "on" "..." "There" "are" "too" "many" "pilgrims" "..." "The" "planet's" "inaccessible" "..."
     LOAD_STRING "1kkult20.hnm"
-    TEXT object_Scruter_Mac_06C2 01 00 80 - - "The" "planet"@0086 "KULT"@008D "is"@0092 "inaccessible" "."@0095 "There" "are" "too" "many" "pilgrims..."@0097
+    TEXT object_Scruter_Mac_06C2 01 00 80 - - "The" "planet" "KULT" "is" "inaccessible" "." "There" "are" "too" "many" "pilgrims..."
     WHEN block_02FC
         SHARED_STATE BF field_Scruter_Mac_06C2_s08_06F8 F1 C1 0003
     THEN
-        TEXT object_Scruter_Mac_06C2 FF 28 80 - - "Commander..." "Commander"@00A3 "..." "It's"@00AD "the"@00B2 "planet" "TUMUL"@00B6 "with"@00BC "a"@00C1 "new"@00C3 "name"@00C7 ".."@00CC
+        TEXT object_Scruter_Mac_06C2 FF 28 80 - - "Commander..." "Commander" "..." "It's" "the" "planet" "TUMUL" "with" "a" "new" "name" ".."
         LOAD_STRING "1kkult20.hnm"
-        TEXT object_Scruter_Mac_06C2 FF 08 80 - - "That's"@00CF "right"@00D6 ","@00DC "Commander..." "When"@00DE "we"@00E3 "saved"@00E6 "BETAKAM"@00EC "IV,"@00F4 "king"@00F8 "of"@00FD "the" "Patagos,"@0100 "we" "altered"@0109 "history..."@0111
+        TEXT object_Scruter_Mac_06C2 FF 08 80 - - "That's" "right" "," "Commander..." "When" "we" "saved" "BETAKAM" "IV," "king" "of" "the" "Patagos," "we" "altered" "history..."
         LOAD_STRING "hboc.hnm"
-        TEXT object_Scruter_Mac_06C2 FF 08 80 - - "Pilgrims"@011C "now"@0125 "flock"@0129 "to"@012F "hear"@0132 "the" "VOICE"@0137 "that"@013D "saved" "BETAKAM" "and"@0142 "his"@0146 "people"@014A "from"@0151 "the" "catastrophe..."@0156
+        TEXT object_Scruter_Mac_06C2 FF 08 80 - - "Pilgrims" "now" "flock" "to" "hear" "the" "VOICE" "that" "saved" "BETAKAM" "and" "his" "people" "from" "the" "catastrophe..."
         LOAD_STRING "hboc.hnm"
-        TEXT object_Scruter_Mac_06C2 FF 20 80 - - "How"@0165 "about"@0169 "that" "..." "What"@016F "a" "story"@0174 "..."
-        TEXT object_Scruter_Mac_06C2 00 08 80 - - "Turn" "around" "..." "Keep"@017A "moving..."@017F "There" "are" "too" "many" "pilgrims..." "The" "planet" "is" "inaccessible..."@0189
+        TEXT object_Scruter_Mac_06C2 FF 20 80 - - "How" "about" "that" "..." "What" "a" "story" "..."
+        TEXT object_Scruter_Mac_06C2 00 08 80 - - "Turn" "around" "..." "Keep" "moving..." "There" "are" "too" "many" "pilgrims..." "The" "planet" "is" "inaccessible..."
         RECORD_CLEAR field_Scruter_Mac_06C2_s13_06FC
     END_WHEN block_02FC
     LABEL block_02FC
@@ -270,27 +270,27 @@ PROCEDURE proc_ondo1_0309
     GUARD_POP
     TEXT object_ondoyant_03AA 11 00 80 - - "..."
     TEXT object_ondoyant_03AA 12 00 80 - - "..."
-    TEXT object_ondoyant_03AA 00 00 80 - - "I"@0199 "am"@019B "yours"@019E "to" "command"@01A4 "," "Commander" "..."
-    TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "My"@01AC "knees"@01AF "are" "weak"@01B5 "..."
-    TEXT object_ondoyant_03AA 01 00 80 - - "You"@01BA "want"@01BE "a" "little"@01C3 "kiss"@01CA "?"@01CF
-    TEXT object_ondoyant_03AA FF 20 80 - - "Holy"@01D1 "hen"@01D6 "gizzards"@01DA "," "Commander" "..." "I'm"@01E3 "starting"@01E7 "to" "overheat"@01F0 "..."
-    TEXT object_ondoyant_03AA 02 00 80 - - "You" "can"@01F9 "talk"@0001 "to" "me" "Commander" "..." "Tell"@01FD "me" "about" "yourself"@0202 "..."
-    TEXT object_ondoyant_03AA FF 20 80 - - "Where"@020B "did"@0211 "she"@0215 "learn"@0219 "to" "swim"@021F "like"@0224 "that" "?" "..." "You" "think"@0229 "she'd"@022F "agree"@0235 "to" "give"@023B "me" "lessons"@0240 "," "Commander" "?"
+    TEXT object_ondoyant_03AA 00 00 80 - - "I" "am" "yours" "to" "command" "," "Commander" "..."
+    TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "My" "knees" "are" "weak" "..."
+    TEXT object_ondoyant_03AA 01 00 80 - - "You" "want" "a" "little" "kiss" "?"
+    TEXT object_ondoyant_03AA FF 20 80 - - "Holy" "hen" "gizzards" "," "Commander" "..." "I'm" "starting" "to" "overheat" "..."
+    TEXT object_ondoyant_03AA 02 00 80 - - "You" "can" "talk" "to" "me" "Commander" "..." "Tell" "me" "about" "yourself" "..."
+    TEXT object_ondoyant_03AA FF 20 80 - - "Where" "did" "she" "learn" "to" "swim" "like" "that" "?" "..." "You" "think" "she'd" "agree" "to" "give" "me" "lessons" "," "Commander" "?"
     WHEN block_051E
         SHARED_STATE BF field_Tina_Burner_079A_s08_07D0 F2 C1 0000
         SHARED_STATE C0 136A F5 C1 0001
     THEN
-        TEXT object_ondoyant_03AA 05 00 80 - - "Oh"@0248 "!"@024B "Commander" "," "Honk"@024D "told"@0252 "me" "you"@0257 "needed"@025B "a" "ring"@0262 "..."
-        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "," "I" "swear"@0267 "I" "didn't"@026D "say"@0274 "a" "thing"@0278 "..."
-        TEXT object_ondoyant_03AA 06 00 80 - - "Ha"@027E "!" "Ha" "!" "Who's"@0281 "a" "little" "fibber"@0287 "?" "..." "You" "ogle"@028E "me" "as"@0293 "soon"@0296 "as" "the" "Commander's"@029B "back"@02A7 "is" "turned"@02AC "..."
-        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "She's"@02B3 "making"@02B9 "this"@02C0 "up"@02C5 "..."
-        TEXT object_ondoyant_03AA FF 08 80 - - "Really"@02C8 "," "Mister"@02CF "Honk" "???"@02D6 "I'm" "a" "little" "disappointed"@02DA "in"@02E7 "you" "..."
+        TEXT object_ondoyant_03AA 05 00 80 - - "Oh" "!" "Commander" "," "Honk" "told" "me" "you" "needed" "a" "ring" "..."
+        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "," "I" "swear" "I" "didn't" "say" "a" "thing" "..."
+        TEXT object_ondoyant_03AA 06 00 80 - - "Ha" "!" "Ha" "!" "Who's" "a" "little" "fibber" "?" "..." "You" "ogle" "me" "as" "soon" "as" "the" "Commander's" "back" "is" "turned" "..."
+        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "She's" "making" "this" "up" "..."
+        TEXT object_ondoyant_03AA FF 08 80 - - "Really" "," "Mister" "Honk" "???" "I'm" "a" "little" "disappointed" "in" "you" "..."
         LOAD_STRING "rgbtr9.hnm"
-        TEXT object_ondoyant_03AA FF 20 80 - - "No"@02EA "no"@02ED "," "Mister" "Bronko"@02F0 "..." "Don't"@02F7 "believe"@02FD "a" "word"@0305 "she" "says"@030A "..."
-        TEXT object_ondoyant_03AA 04 00 80 - - "Ha" "!" "Ha" "!" "Ha" "!" "Ha..."@030F
-        TEXT object_ondoyant_03AA 06 08 80 - - "Commander" "..." "I" "have"@0315 "a" "ring" "..." "I" "want" "you" "to" "have" "it"@031A "..." "It's" "yours" "..."
+        TEXT object_ondoyant_03AA FF 20 80 - - "No" "no" "," "Mister" "Bronko" "..." "Don't" "believe" "a" "word" "she" "says" "..."
+        TEXT object_ondoyant_03AA 04 00 80 - - "Ha" "!" "Ha" "!" "Ha" "!" "Ha..."
+        TEXT object_ondoyant_03AA 06 08 80 - - "Commander" "..." "I" "have" "a" "ring" "..." "I" "want" "you" "to" "have" "it" "..." "It's" "yours" "..."
         RECORD_WILDCARD AF field_ring_12DC_s11_12F0 FFFF 0
-        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "She"@031D "gave"@0321 "us"@0326 "the" "ring" "..."
+        TEXT object_ondoyant_03AA FF 20 80 - - "Commander" "..." "She" "gave" "us" "the" "ring" "..."
     END_WHEN block_051E
     LABEL block_051E
     TEXT object_ondoyant_03AA 14 08 80 - - "..."
@@ -303,24 +303,24 @@ PROCEDURE proc_big1_052B
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0
     ACTOR field_Bug_Deluxe_0092_s13_00CC object_blood_0028 0
     GUARD_POP
-    TEXT object_Bug_Deluxe_0092 00 00 80 - - "You" "here"@0329 "," "Consumer"@032E "Comrade"@0337 "?"
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Commander" "!!!"@033F "It's" "Bug"@0343 "Deluxe"@0347 "," "the" "sales"@034E "assistant"@0354 "from" "VENUSIA"@035E "..." "How" "about" "that" "..."
-    TEXT object_Bug_Deluxe_0092 02 00 80 - - "Are"@0366 "you" "here" "for"@036A "the" "wedding"@036E "?" "..."
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Wedding"@0376 "?" "What" "wedding" "???"
-    TEXT object_Bug_Deluxe_0092 03 00 80 - - "You" "mean"@037E "to" "say" "you" "haven't"@0383 "heard"@038B "?"
-    TEXT object_Bug_Deluxe_0092 04 00 80 - - "MIGRATOR"@0391 "and" "TINA"@039A "BURNER"@039F "are" "getting"@03A6 "married"@03AE "..."
-    TEXT object_Bug_Deluxe_0092 05 00 80 - - "They're"@03B6 "giving"@03BE "a" "big"@03C5 "show"@03C9 "here" "at"@03CE "the" "BIG"@03D1 "BAND"@03D5 "CLUB..."@03DA
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "At"@03E2 "the" "what"@03E5 "???" "Was"@03EA "that" "BIG" "BAND" "or"@03EE "BIG" "BANG"@03F1 "???"
-    TEXT object_Bug_Deluxe_0092 06 00 80 - - "Right"@03F6 "here" "at" "the" "BIG" "BAND" "CLUB"@03FC "!" "WITH"@0401 "A"@0406 "\"D\""@0408 "AT"@040C "THE"@040F "END"@0413 "..."
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "This"@0417 "isn't"@041C "right" "," "Commander" "..." "This" "is" "the" "BIG" "BAND" "," "not"@0422 "the" "BIG" "BANG" "..."
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Cap'n"@0426 "Bob"@042C "isn't" "going"@0430 "to" "like" "this" "..."
-    TEXT object_Bug_Deluxe_0092 FF 08 80 - - "What's"@0436 "going" "on" "here" "???" "What" "the" "blazes"@043D "are" "we" "doing"@0444 "in" "a" "NIGHT"@044A "CLUB" "???"
+    TEXT object_Bug_Deluxe_0092 00 00 80 - - "You" "here" "," "Consumer" "Comrade" "?"
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Commander" "!!!" "It's" "Bug" "Deluxe" "," "the" "sales" "assistant" "from" "VENUSIA" "..." "How" "about" "that" "..."
+    TEXT object_Bug_Deluxe_0092 02 00 80 - - "Are" "you" "here" "for" "the" "wedding" "?" "..."
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Wedding" "?" "What" "wedding" "???"
+    TEXT object_Bug_Deluxe_0092 03 00 80 - - "You" "mean" "to" "say" "you" "haven't" "heard" "?"
+    TEXT object_Bug_Deluxe_0092 04 00 80 - - "MIGRATOR" "and" "TINA" "BURNER" "are" "getting" "married" "..."
+    TEXT object_Bug_Deluxe_0092 05 00 80 - - "They're" "giving" "a" "big" "show" "here" "at" "the" "BIG" "BAND" "CLUB..."
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "At" "the" "what" "???" "Was" "that" "BIG" "BAND" "or" "BIG" "BANG" "???"
+    TEXT object_Bug_Deluxe_0092 06 00 80 - - "Right" "here" "at" "the" "BIG" "BAND" "CLUB" "!" "WITH" "A" "\"D\"" "AT" "THE" "END" "..."
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "This" "isn't" "right" "," "Commander" "..." "This" "is" "the" "BIG" "BAND" "," "not" "the" "BIG" "BANG" "..."
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "Cap'n" "Bob" "isn't" "going" "to" "like" "this" "..."
+    TEXT object_Bug_Deluxe_0092 FF 08 80 - - "What's" "going" "on" "here" "???" "What" "the" "blazes" "are" "we" "doing" "in" "a" "NIGHT" "CLUB" "???"
     LOAD_STRING "boba2.hnm"
-    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "There's"@0450 "been"@0458 "a" "mix"@045D "up" "," "Cap'n" "Bob" "sir"@0461 "..."
-    TEXT object_Bug_Deluxe_0092 FF 08 90 - - "ALL"@0465 "OF"@0469 "YOU"@046C "," "INTO"@0470 "THE" "CRYOBOX"@0475 "RIGHT"@047D "AWAY"@0483 "..."
+    TEXT object_Bug_Deluxe_0092 FF 20 80 - - "There's" "been" "a" "mix" "up" "," "Cap'n" "Bob" "sir" "..."
+    TEXT object_Bug_Deluxe_0092 FF 08 90 - - "ALL" "OF" "YOU" "," "INTO" "THE" "CRYOBOX" "RIGHT" "AWAY" "..."
     LOAD_STRING "bobb.hnm"
     SHARED_STATE C0 136C F5 C1 0001
-    TEXT object_Bug_Deluxe_0092 FF 08 B0 - - "NOW"@0488 "..."
+    TEXT object_Bug_Deluxe_0092 FF 08 B0 - - "NOW" "..."
     LOAD_STRING "bobb.hnm"
     RECORD_WILDCARD AF field_Bug_Deluxe_0092_s11_00AA 0F2C 0
     RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0FB8 0
@@ -333,44 +333,44 @@ PROCEDURE proc_boba0_0719
     ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0
     SHARED_STATE C0 136C F5 C1 0001
     GUARD_POP
-    TEXT object_Bob_Morlock_004A 01 00 80 - - "What's" "the" "story" "???" "What's" "this" "BIG" "BANG" "business"@048C "???..."@0495
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "Did"@049C "we" "get"@04A0 "to" "the" "BIG" "BANG" "," "yes"@04A4 "or" "no" "???" "I'm" "listening"@04A8 "," "Commander" "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Uh"@04B2 "," "there's"@04B5 "been" "a" "mix" "up" "," "sir" "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "think" "OLGA"@04BD "the" "onboard"@04C2 "interpreter"@04CA "mixed"@04D6 "up" "BIG" "BANG" "and" "BIG" "BAND" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "WHAT"@04DC "DO"@04E1 "YOU" "MEAN"@04E4 "SHE"@04E9 "MIXED"@04ED "UP"@04F3 "BIG" "BANG" "AND"@04F6 "BIG" "BAND" "..." "TELL"@04FA "ME"@0500 "THIS"@0503 "IS"@0508 "JUST"@050B "A" "BAD"@0510 "DREAM"@0514 "!!!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Afraid"@051A "not" "," "sir" "..." "She" "mixed" "up" "BANG" "and" "BAND..."@0521
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "It's" "the" "only"@0529 "explanation"@052E "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "BIO-TRANSLATOR"@053A "OLGA" "REPORTING"@0549 ":"@0553
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "MISTER"@0555 "HONK"@055C "IS" "A" "DIRTY"@0561 "LIAR"@0567 "!!!" "I" "didn't" "mix" "anything"@056C "up" "..."
-    TEXT object_Bob_Morlock_004A 06 00 80 - - "OLGA" "..." "CHILL"@0575 "OUT"@057B "..." "We"@057F "can" "clear"@0582 "the" "question"@0588 "up" "real"@0591 "easy"@0596 "..." "We'll"@059B "just"@05A2 "run"@05A7 "a" "test"@05AB "..."
-    TEXT object_Bob_Morlock_004A 03 00 80 - - "OLGA" "," "say" "\"BIG"@05B0 "BANG\""@05B5 "out"@05BB "loud"@05BF "three"@05C4 "times"@05CA "..."
+    TEXT object_Bob_Morlock_004A 01 00 80 - - "What's" "the" "story" "???" "What's" "this" "BIG" "BANG" "business" "???..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Did" "we" "get" "to" "the" "BIG" "BANG" "," "yes" "or" "no" "???" "I'm" "listening" "," "Commander" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Uh" "," "there's" "been" "a" "mix" "up" "," "sir" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "think" "OLGA" "the" "onboard" "interpreter" "mixed" "up" "BIG" "BANG" "and" "BIG" "BAND" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "WHAT" "DO" "YOU" "MEAN" "SHE" "MIXED" "UP" "BIG" "BANG" "AND" "BIG" "BAND" "..." "TELL" "ME" "THIS" "IS" "JUST" "A" "BAD" "DREAM" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Afraid" "not" "," "sir" "..." "She" "mixed" "up" "BANG" "and" "BAND..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "It's" "the" "only" "explanation" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "BIO-TRANSLATOR" "OLGA" "REPORTING" ":"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "MISTER" "HONK" "IS" "A" "DIRTY" "LIAR" "!!!" "I" "didn't" "mix" "anything" "up" "..."
+    TEXT object_Bob_Morlock_004A 06 00 80 - - "OLGA" "..." "CHILL" "OUT" "..." "We" "can" "clear" "the" "question" "up" "real" "easy" "..." "We'll" "just" "run" "a" "test" "..."
+    TEXT object_Bob_Morlock_004A 03 00 80 - - "OLGA" "," "say" "\"BIG" "BANG\"" "out" "loud" "three" "times" "..."
     TEXT object_Bob_Morlock_004A FF 20 80 - - "OLGA" "REPORTING" ":"
     TEXT object_Bob_Morlock_004A FF 20 80 - - "BIG" "BANG" "..." "BIG" "BANG" "..." "BIG" "BANG" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "Okay"@05D0 "..." "Now"@05D5 "say" "\"BIG" "BAND\""@05D9 "with" "a" "\"D\"" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Okay" "..." "Now" "say" "\"BIG" "BAND\"" "with" "a" "\"D\"" "..."
     TEXT object_Bob_Morlock_004A FF 20 80 - - "OLGA" "REPORTING" ":"
     TEXT object_Bob_Morlock_004A FF 20 80 - - "BIG" "BANG" "..." "BIG" "BANG" "..." "BIG" "BANG" "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Satisfied"@05DF "?"
-    TEXT object_Bob_Morlock_004A 03 00 80 - - "Olga"@05E9 "..." "I" "said"@05EE "BIG" "BAND" "," "not" "BIG" "BANG" "..." "You" "mixed" "them"@05F3 "up" "..." "GOSH"@05F8 "DARN"@05FD "IT"@0602 "!!!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "What" "did" "I" "tell"@0605 "you" "?" "Don't" "say" "I" "didn't" "..." "She" "fouled"@060A "up" "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "She" "can't"@0611 "tell" "\"D\"" "from" "\"G\""@0617 "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "Honk" "!" "Misbegotten"@061B "junkheap"@0627 "..." "It's" "all"@0630 "your"@0634 "fault"@0639 "!!!" "Check"@063F "her"@0645 "multiplexers"@0649 "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Right" "away"@0656 "," "Cap'n" "Bob" "sir" "..." "I'm" "on" "it" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "Ah"@065B "!!!" "Commander" "..." "Remind"@065E "me" "to" "tell" "you" "how"@0665 "much"@0669 "I" "hate"@066E "machines"@0673 "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Got"@067C "it" "!" "Cap'n" "Bob..."@0680 "I" "found"@0687 "the" "glitch"@068D "..." "It's" "a" "MOSQUITO"@0694 "stuck"@069D "to" "the" "letter"@06A3 "\"D\"" "in" "the" "multiplexer"@06AA "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "hate" "mosquitos"@06B6 "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "MESSAGE"@06C0 "FROM"@06C8 "OLGA" ":"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "IF"@06CD "THIS" "PLACE"@06D0 "WAS"@06D6 "CLEANED"@06DA "UP" "MORE"@06E2 "OFTEN"@06E7 "THIS" "KIND"@06ED "OF" "THING"@06F2 "WOULDN'T"@06F8 "HAPPEN"@0701 "..."
-    TEXT object_Bob_Morlock_004A 07 00 80 - - "She's" "right" "..." "This" "Ark"@0708 "is" "a" "pigsty"@070C "!!!" "This" "mess"@0713 "makes"@0718 "me" "sick"@071E "!!!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Dont'"@0723 "look"@0729 "at" "me" "!" "Mister" "BEAUREGARD's"@072E "on" "cleaning"@073B "duty"@0744 "this" "week"@0749 "!!!"
-    TEXT object_Bob_Morlock_004A FF 08 80 - - "What" "!!!" "Don't" "drag"@074E "me" "into"@0753 "this" "!" "That"@0758 "does"@075D "it" "!" "I've"@0762 "had"@0767 "it" "with" "this" "stupid"@076B "ship"@0772 "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Satisfied" "?"
+    TEXT object_Bob_Morlock_004A 03 00 80 - - "Olga" "..." "I" "said" "BIG" "BAND" "," "not" "BIG" "BANG" "..." "You" "mixed" "them" "up" "..." "GOSH" "DARN" "IT" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "What" "did" "I" "tell" "you" "?" "Don't" "say" "I" "didn't" "..." "She" "fouled" "up" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "She" "can't" "tell" "\"D\"" "from" "\"G\"" "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "Honk" "!" "Misbegotten" "junkheap" "..." "It's" "all" "your" "fault" "!!!" "Check" "her" "multiplexers" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Right" "away" "," "Cap'n" "Bob" "sir" "..." "I'm" "on" "it" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "Ah" "!!!" "Commander" "..." "Remind" "me" "to" "tell" "you" "how" "much" "I" "hate" "machines" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Got" "it" "!" "Cap'n" "Bob..." "I" "found" "the" "glitch" "..." "It's" "a" "MOSQUITO" "stuck" "to" "the" "letter" "\"D\"" "in" "the" "multiplexer" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "hate" "mosquitos" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "MESSAGE" "FROM" "OLGA" ":"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "IF" "THIS" "PLACE" "WAS" "CLEANED" "UP" "MORE" "OFTEN" "THIS" "KIND" "OF" "THING" "WOULDN'T" "HAPPEN" "..."
+    TEXT object_Bob_Morlock_004A 07 00 80 - - "She's" "right" "..." "This" "Ark" "is" "a" "pigsty" "!!!" "This" "mess" "makes" "me" "sick" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Dont'" "look" "at" "me" "!" "Mister" "BEAUREGARD's" "on" "cleaning" "duty" "this" "week" "!!!"
+    TEXT object_Bob_Morlock_004A FF 08 80 - - "What" "!!!" "Don't" "drag" "me" "into" "this" "!" "That" "does" "it" "!" "I've" "had" "it" "with" "this" "stupid" "ship" "..."
     LOAD_STRING "hboc.hnm"
-    TEXT object_Bob_Morlock_004A FF 08 80 - - "I" "want" "to" "go"@0777 "home"@077A "..."
+    TEXT object_Bob_Morlock_004A FF 08 80 - - "I" "want" "to" "go" "home" "..."
     LOAD_STRING "hboc.hnm"
-    TEXT object_Bob_Morlock_004A 03 00 80 - - "That's" "enough"@077F "," "Mister" "Beauregard"@0786 "..." "Return"@0791 "to" "your" "cryobox"@0798 "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "told" "you" "so"@07A0 "..." "I" "told" "you" "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "Commander,"@07A3 "drop"@07AE "Mister" "BEAUREGARD"@07B3 "off"@07BE "on" "the" "planet" "Tumul"@07C2 "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "AND" "GET"@07C8 "BACK"@07CC "TO"@07D1 "WORK"@07D4 "!!!"
-    TEXT object_Bob_Morlock_004A FF 28 A0 - - "Yes"@07D9 "sir" "," "Cap'n" "Bob" "sir" "..."
+    TEXT object_Bob_Morlock_004A 03 00 80 - - "That's" "enough" "," "Mister" "Beauregard" "..." "Return" "to" "your" "cryobox" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "I" "told" "you" "so" "..." "I" "told" "you" "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "Commander," "drop" "Mister" "BEAUREGARD" "off" "on" "the" "planet" "Tumul" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "AND" "GET" "BACK" "TO" "WORK" "!!!"
+    TEXT object_Bob_Morlock_004A FF 28 A0 - - "Yes" "sir" "," "Cap'n" "Bob" "sir" "..."
     SHARED_STATE C0 136A F5 C1 0001
     POKE_BYTE 071A 00
     RECORD_CLEAR field_Bob_Morlock_004A_s13_0084
@@ -384,23 +384,23 @@ PROCEDURE proc_boba1_0B87
     WHEN block_0CA7
         SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 1
     THEN
-        TEXT object_Bob_Morlock_004A 02 00 80 - - "Aaaah"@07DD "..."
-        TEXT object_Bob_Morlock_004A 03 00 80 - - "When" "will"@07E3 "we" "get" "to" "the" "Big"@07E8 "Bang"@07EC "?" "It's" "URGENT"@07F1 "," "Commander" "..."
-        TEXT object_Bob_Morlock_004A 04 00 80 - - "WE"@07F8 "MUST"@07FB "FIND"@0800 "the" "Big" "Bang" "..." "THAT'S"@0805 "YOUR"@080C "MISSION"@0811 "," "REMEMBER"@0819 "?"
-        TEXT object_Bob_Morlock_004A FF 20 80 - - "Yes" "sir" "." "All"@0822 "efforts"@0826 "are" "directed"@082E "toward"@0837 "achieving"@083E "the" "mission"@0848 "objective"@0850 "..."
-        TEXT object_Bob_Morlock_004A FF 00 80 - - "SILENCE"@085A "HONK" "!!!"
-        TEXT object_Bob_Morlock_004A 05 00 80 - - "I'm" "mad"@0862 "as" "mad" "can" "be"@0866 "," "Commander" "!!!" "You're"@0869 "flitting"@0870 "around" "like" "some"@0879 "gosh"@087E "darn"@0883 "butterfly"@0888 "..."
-        TEXT object_Bob_Morlock_004A 04 00 80 - - "You're" "using"@0892 "my"@0898 "time"@089B "and" "money"@08A0 "to" "go" "after"@08A6 "ondoyants"@08AC "!!!"
-        TEXT object_Bob_Morlock_004A 05 00 80 - - "That's" "what" "I" "call"@08B6 "IN-TO-LE-RA-BLE"@08BB "!!!"
-        TEXT object_Bob_Morlock_004A 06 00 80 - - "I" "hope"@08CB "I've" "made"@08D0 "my" "feelings"@08D5 "clear" "..."
-        TEXT object_Bob_Morlock_004A 06 08 80 - - "Now" "leave"@08DE "me" "..."
+        TEXT object_Bob_Morlock_004A 02 00 80 - - "Aaaah" "..."
+        TEXT object_Bob_Morlock_004A 03 00 80 - - "When" "will" "we" "get" "to" "the" "Big" "Bang" "?" "It's" "URGENT" "," "Commander" "..."
+        TEXT object_Bob_Morlock_004A 04 00 80 - - "WE" "MUST" "FIND" "the" "Big" "Bang" "..." "THAT'S" "YOUR" "MISSION" "," "REMEMBER" "?"
+        TEXT object_Bob_Morlock_004A FF 20 80 - - "Yes" "sir" "." "All" "efforts" "are" "directed" "toward" "achieving" "the" "mission" "objective" "..."
+        TEXT object_Bob_Morlock_004A FF 00 80 - - "SILENCE" "HONK" "!!!"
+        TEXT object_Bob_Morlock_004A 05 00 80 - - "I'm" "mad" "as" "mad" "can" "be" "," "Commander" "!!!" "You're" "flitting" "around" "like" "some" "gosh" "darn" "butterfly" "..."
+        TEXT object_Bob_Morlock_004A 04 00 80 - - "You're" "using" "my" "time" "and" "money" "to" "go" "after" "ondoyants" "!!!"
+        TEXT object_Bob_Morlock_004A 05 00 80 - - "That's" "what" "I" "call" "IN-TO-LE-RA-BLE" "!!!"
+        TEXT object_Bob_Morlock_004A 06 00 80 - - "I" "hope" "I've" "made" "my" "feelings" "clear" "..."
+        TEXT object_Bob_Morlock_004A 06 08 80 - - "Now" "leave" "me" "..."
         RECORD_CLEAR field_Bob_Morlock_004A_s13_0084
     END_WHEN block_0CA7
     LABEL block_0CA7
     WHEN proc_big2_0CCF
         SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0
     THEN
-        TEXT object_Bob_Morlock_004A 02 00 80 - - "Lets"@08E4 "go" "to" "the" "Bigbang..."@08E9
+        TEXT object_Bob_Morlock_004A 02 00 80 - - "Lets" "go" "to" "the" "Bigbang..."
         TEXT object_Bob_Morlock_004A FF 08 80 - - "..."
         RECORD_CLEAR field_Bob_Morlock_004A_s13_0084
     END_WHEN proc_big2_0CCF
@@ -412,19 +412,19 @@ PROCEDURE proc_big2_0CCF
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0
     ACTOR field_Tina_Burner_079A_s13_07D4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Tina_Burner_079A 00 00 80 - - "Ohhh"@08F4 "..." "It's" "you" "," "Commander" "..."
-    TEXT object_Tina_Burner_079A FF 20 80 - - "Oh" "no" "..." "Her"@08F9 "again"@08FD "..."
-    TEXT object_Tina_Burner_079A 04 00 80 - - "AH"@0903 "!" "How" "delightful"@0906 "to" "see"@0911 "you" "again" "," "sweeties"@0915 "..." "I" "so" "much" "wanted"@091E "to" "invite"@0925 "you" "along"@092C "..."
-    TEXT object_Tina_Burner_079A 06 00 80 - - "But"@0932 "I" "didn't" "know"@0936 "where"@093B "to" "send"@0941 "the" "invitations"@0946 "..."
-    TEXT object_Tina_Burner_079A 06 00 80 - - "I'm" "getting" "married" "," "you" "see" "..." "Hee"@0952 "!" "Hee" "!" "Hee" "!" "To"@0956 "darling"@0959 "MIGRATOR" "..." "Hee" "!" "Hee" "!" "Hee" "!"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "Holy" "homeostatics"@0961 "..." "Poor"@096E "guy"@0973 "..."
-    TEXT object_Tina_Burner_079A 07 00 80 - - "We're"@0977 "giving" "a" "concert"@097D "here" "at" "the" "BIG" "BAND" "CLUB" "..." "It's" "such"@0985 "a" "fashionable"@098A "place"@0996 "," "you" "know" "..." "Why"@099C "," "the" "whole"@09A0 "galaxy'll"@09A6 "be" "here" "!"
-    TEXT object_Tina_Burner_079A 08 00 80 - - "Our"@09B0 "concert's"@09B4 "going" "to" "be" "broadcast"@09BE "by"@09C8 "all" "the" "TV"@09CB "stations"@09CE "in" "the" "universe"@09D7 "!!"@09E0
-    TEXT object_Tina_Burner_079A 09 00 80 - - "I'm" "so" "famous"@09E3 "," "Commander" "..." "Hee" "!" "Hee" "!" "Hee" "!"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "I" "can't" "help"@09EA "wishing"@09EF "we'd"@09F7 "gone"@09FC "somewhere"@0A01 "else"@0A0B "..." "This" "place" "has"@0A10 "an"@0A14 "end"@0A17 "of" "the" "world"@0A1B "feel"@0A21 "..."
-    TEXT object_Tina_Burner_079A 02 00 80 - - "Darling"@0A26 "Migra's"@0A2E "at" "the" "bar"@0A36 "," "drinking"@0A3A "a" "frozen"@0A43 "Migrita"@0A4A "..."
-    TEXT object_Tina_Burner_079A 02 00 80 - - "MIGRA"@0A52 "OH"@0A58 "MIGRA" "SWEETIE"@0A5B "..." "GUESS"@0A63 "WHO'S"@0A69 "COME"@0A6F "..."
-    TEXT object_Tina_Burner_079A 01 08 B0 - - "Go"@0A74 "join"@0A77 "him"@0A7C "for" "a" "stiff"@0A80 "one"@0A86 "," "Commander" "..."
+    TEXT object_Tina_Burner_079A 00 00 80 - - "Ohhh" "..." "It's" "you" "," "Commander" "..."
+    TEXT object_Tina_Burner_079A FF 20 80 - - "Oh" "no" "..." "Her" "again" "..."
+    TEXT object_Tina_Burner_079A 04 00 80 - - "AH" "!" "How" "delightful" "to" "see" "you" "again" "," "sweeties" "..." "I" "so" "much" "wanted" "to" "invite" "you" "along" "..."
+    TEXT object_Tina_Burner_079A 06 00 80 - - "But" "I" "didn't" "know" "where" "to" "send" "the" "invitations" "..."
+    TEXT object_Tina_Burner_079A 06 00 80 - - "I'm" "getting" "married" "," "you" "see" "..." "Hee" "!" "Hee" "!" "Hee" "!" "To" "darling" "MIGRATOR" "..." "Hee" "!" "Hee" "!" "Hee" "!"
+    TEXT object_Tina_Burner_079A FF 20 80 - - "Holy" "homeostatics" "..." "Poor" "guy" "..."
+    TEXT object_Tina_Burner_079A 07 00 80 - - "We're" "giving" "a" "concert" "here" "at" "the" "BIG" "BAND" "CLUB" "..." "It's" "such" "a" "fashionable" "place" "," "you" "know" "..." "Why" "," "the" "whole" "galaxy'll" "be" "here" "!"
+    TEXT object_Tina_Burner_079A 08 00 80 - - "Our" "concert's" "going" "to" "be" "broadcast" "by" "all" "the" "TV" "stations" "in" "the" "universe" "!!"
+    TEXT object_Tina_Burner_079A 09 00 80 - - "I'm" "so" "famous" "," "Commander" "..." "Hee" "!" "Hee" "!" "Hee" "!"
+    TEXT object_Tina_Burner_079A FF 20 80 - - "I" "can't" "help" "wishing" "we'd" "gone" "somewhere" "else" "..." "This" "place" "has" "an" "end" "of" "the" "world" "feel" "..."
+    TEXT object_Tina_Burner_079A 02 00 80 - - "Darling" "Migra's" "at" "the" "bar" "," "drinking" "a" "frozen" "Migrita" "..."
+    TEXT object_Tina_Burner_079A 02 00 80 - - "MIGRA" "OH" "MIGRA" "SWEETIE" "..." "GUESS" "WHO'S" "COME" "..."
+    TEXT object_Tina_Burner_079A 01 08 B0 - - "Go" "join" "him" "for" "a" "stiff" "one" "," "Commander" "..."
     POKE_BYTE 0CD0 00
     RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0FDC 0
     RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0F2C 0
@@ -437,16 +437,16 @@ PROCEDURE proc_bar1_0EBA
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0
     ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0
     GUARD_POP
-    TEXT object_Migrator_043A 01 00 80 - - "You" "here" "," "Commander" "!" "My" "good"@0A8A "friend"@0A8F "..." "Did" "Burny"@0A96 "tell" "you" "the" "news"@0A9C "?"
-    TEXT object_Migrator_043A 02 00 80 - - "We're" "getting" "married" "..." "Ah" "!!!" "She's" "so" "sexy"@0AA2 "," "and" "smart"@0AA7 "..."
-    TEXT object_Migrator_043A FF 20 80 - - "Commander" "..." "Howzabout"@0AAD "a" "strategic"@0AB7 "withdrawal"@0AC1 "here" "?" "..." "Commander" "?"
-    TEXT object_Migrator_043A 05 00 80 - - "And"@0ACC "it's"@0AD0 "all" "thanks"@0AD5 "to" "you" "..." "I'd"@0ADC "like" "you" "to" "be" "my" "best"@0AE0 "man"@0AE5 "!"
-    TEXT object_Migrator_043A FF 20 80 - - "Oh" "NO"@0AE9 "..."
-    TEXT object_Migrator_043A 06 00 80 - - "You'll"@0AEC "give" "her" "the" "wedding" "band"@0AF3 "..."
-    TEXT object_Migrator_043A FF 20 80 - - "THE" "WEDDING"@0AF8 "BAND" "..." "How" "about" "a" "ring" "for" "her" "nose"@0B00 "..."
-    TEXT object_Migrator_043A 05 00 80 - - "Hurry"@0B05 "up" "," "Commander" "..." "We" "can't" "have" "the" "ceremony"@0B0B "without"@0B14 "a" "ring" "..."
-    TEXT object_Migrator_043A FF 20 80 - - "Holy" "handouts"@0B1C "..." "Where" "do"@0B25 "we" "find"@0B28 "a" "wedding" "band" "at" "this" "time" "of" "day"@0B2D "or" "night"@0B31 "?"
-    TEXT object_Migrator_043A 02 08 C0 - - "See"@0B37 "you" "soon" "," "Commander" "..."
+    TEXT object_Migrator_043A 01 00 80 - - "You" "here" "," "Commander" "!" "My" "good" "friend" "..." "Did" "Burny" "tell" "you" "the" "news" "?"
+    TEXT object_Migrator_043A 02 00 80 - - "We're" "getting" "married" "..." "Ah" "!!!" "She's" "so" "sexy" "," "and" "smart" "..."
+    TEXT object_Migrator_043A FF 20 80 - - "Commander" "..." "Howzabout" "a" "strategic" "withdrawal" "here" "?" "..." "Commander" "?"
+    TEXT object_Migrator_043A 05 00 80 - - "And" "it's" "all" "thanks" "to" "you" "..." "I'd" "like" "you" "to" "be" "my" "best" "man" "!"
+    TEXT object_Migrator_043A FF 20 80 - - "Oh" "NO" "..."
+    TEXT object_Migrator_043A 06 00 80 - - "You'll" "give" "her" "the" "wedding" "band" "..."
+    TEXT object_Migrator_043A FF 20 80 - - "THE" "WEDDING" "BAND" "..." "How" "about" "a" "ring" "for" "her" "nose" "..."
+    TEXT object_Migrator_043A 05 00 80 - - "Hurry" "up" "," "Commander" "..." "We" "can't" "have" "the" "ceremony" "without" "a" "ring" "..."
+    TEXT object_Migrator_043A FF 20 80 - - "Holy" "handouts" "..." "Where" "do" "we" "find" "a" "wedding" "band" "at" "this" "time" "of" "day" "or" "night" "?"
+    TEXT object_Migrator_043A 02 08 C0 - - "See" "you" "soon" "," "Commander" "..."
     POKE_BYTE 0EBB 00
     RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0F2C 0
     RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0FF4 0
@@ -460,24 +460,24 @@ PROCEDURE proc_big3_1018
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0
     ACTOR field_Yoko_0242_s13_027C object_blood_0028 0
     GUARD_POP
-    TEXT object_Yoko_0242 01 00 80 - - "Commander" "!" "Yoko"@0B3B "happy"@0B40 "to" "see" "you" "again" "..."
-    TEXT object_Yoko_0242 FF 20 80 - - "Commander" "..." "It's" "young"@0B46 "Yoko" "..."
-    TEXT object_Yoko_0242 02 00 80 - - "Migrator"@0B4C "and" "Tina"@0B55 "wait"@0B5A "for" "wedding" "ring" "..."
+    TEXT object_Yoko_0242 01 00 80 - - "Commander" "!" "Yoko" "happy" "to" "see" "you" "again" "..."
+    TEXT object_Yoko_0242 FF 20 80 - - "Commander" "..." "It's" "young" "Yoko" "..."
+    TEXT object_Yoko_0242 02 00 80 - - "Migrator" "and" "Tina" "wait" "for" "wedding" "ring" "..."
     GUARD_PUSH block_10E3 ; unstructured_guard=alternate_exit
     RECORD_WILDCARD AF field_ring_12DC_s11_12F0 0028 0
     GUARD_POP
     TEXT object_Yoko_0242 05 00 80 - - "You" "have" "ring" "?"
-    TEXT object_Yoko_0242 FF 20 80 - - "No" "problem"@0B5F "," "Mister" "Yoko" "..." "We" "have" "the" "wedding" "band" "right" "here" "..."
-    TEXT object_Yoko_0242 06 00 80 - - "YES"@0B67 "!!!" "Me"@0B6B "happy" "..."
-    TEXT object_Yoko_0242 07 08 A0 - - "You" "go" "bar" "," "Tina" "be" "impatient"@0B6E "..."
+    TEXT object_Yoko_0242 FF 20 80 - - "No" "problem" "," "Mister" "Yoko" "..." "We" "have" "the" "wedding" "band" "right" "here" "..."
+    TEXT object_Yoko_0242 06 00 80 - - "YES" "!!!" "Me" "happy" "..."
+    TEXT object_Yoko_0242 07 08 A0 - - "You" "go" "bar" "," "Tina" "be" "impatient" "..."
     POKE_BYTE 1019 00
     RECORD_WILDCARD AF field_Fifi_00DA_s11_00F2 0FDC 0
     RECORD_STATE C1 field_orxx_133C_s13_1346 0FDC 0
     LABEL block_10E3
-    TEXT object_Yoko_0242 FF 20 80 - - "You" "agreed"@0B78 "to" "get" "a" "ring" "," "Commander" "." "You'll" "have" "to" "deliver"@0B7F "..."
-    TEXT object_Yoko_0242 FF 20 80 - - "Whatever"@0B87 "it" "takes"@0B90 "..."
-    TEXT object_Yoko_0242 04 00 80 - - "You" "hurry"@0B96 "," "Commander" "." "Everybody"@0B9C "wait" "..."
-    TEXT object_Yoko_0242 FF 28 80 - - "Let's"@0BA6 "get" "to" "it" "," "Commander" "." "I" "want" "to" "know" "how" "this" "thing" "turns"@0BAC "out" "..."
+    TEXT object_Yoko_0242 FF 20 80 - - "You" "agreed" "to" "get" "a" "ring" "," "Commander" "." "You'll" "have" "to" "deliver" "..."
+    TEXT object_Yoko_0242 FF 20 80 - - "Whatever" "it" "takes" "..."
+    TEXT object_Yoko_0242 04 00 80 - - "You" "hurry" "," "Commander" "." "Everybody" "wait" "..."
+    TEXT object_Yoko_0242 FF 28 80 - - "Let's" "get" "to" "it" "," "Commander" "." "I" "want" "to" "know" "how" "this" "thing" "turns" "out" "..."
     RECORD_CLEAR field_Yoko_0242_s13_027C
 END_PROCEDURE proc_big3_1018
 
@@ -487,12 +487,12 @@ PROCEDURE proc_bar2_115C
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0FB8 0
     ACTOR field_Fifi_00DA_s13_0114 object_blood_0028 0
     GUARD_POP
-    TEXT object_Fifi_00DA 01 00 80 - - "Ga..."@0BB2
-    TEXT object_Fifi_00DA 02 00 80 - - "Ga"@0BB8 "..." "Fifi"@0BBB "eat"@0BC0 "..."
+    TEXT object_Fifi_00DA 01 00 80 - - "Ga..."
+    TEXT object_Fifi_00DA 02 00 80 - - "Ga" "..." "Fifi" "eat" "..."
     TEXT object_Fifi_00DA FF 20 80 - - "Fifi" "!" "What" "are" "you" "doing" "here" "?"
-    TEXT object_Fifi_00DA 03 00 80 - - "Fifi" "come"@0BC4 "for" "party"@0BC9 "..." "Fifi" "like" "eat" "also"@0BCF "..."
-    TEXT object_Fifi_00DA 04 00 80 - - "Beautiful"@0BD4 "Tina" "look" "for" "you" "," "Commander" "." "She" "be" "at" "other"@0BDE "bar" "..."
-    TEXT object_Fifi_00DA 05 08 A0 - - "You" "hurry" "," "Commander" "..." "Hee" "!" "Hee!"@0BE4 "Hee!"
+    TEXT object_Fifi_00DA 03 00 80 - - "Fifi" "come" "for" "party" "..." "Fifi" "like" "eat" "also" "..."
+    TEXT object_Fifi_00DA 04 00 80 - - "Beautiful" "Tina" "look" "for" "you" "," "Commander" "." "She" "be" "at" "other" "bar" "..."
+    TEXT object_Fifi_00DA 05 08 A0 - - "You" "hurry" "," "Commander" "..." "Hee" "!" "Hee!" "Hee!"
     RECORD_WILDCARD AF field_Fifi_00DA_s11_00F2 0F2C 0
     RECORD_WILDCARD AF field_Migrator_043A_s11_0452 0FDC 0
     RECORD_STATE C1 field_orxx_133C_s13_1346 0FF4 0
@@ -505,21 +505,21 @@ PROCEDURE proc_bar3_1209
     RECORD_WILDCARD AF field_orxx_133C_s11_1340 0FF4 0
     ACTOR field_Tina_Burner_079A_s13_07D4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Tina_Burner_079A 01 00 80 - - "Ah" "!!" "There" "you" "are" "at" "last"@0BE9 "," "Commander" "..." "Everyone's"@0BEE "waiting"@0BF9 "for" "you" "..."
-    TEXT object_Tina_Burner_079A FF 20 80 - - "Holy" "handstands"@0C01 "!!!"
-    TEXT object_Tina_Burner_079A 02 00 80 - - "MIGRA's"@0C0C "so" "worried"@0C14 "..." "You" "do" "have" "the" "wedding" "band" "," "Commander" "?"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "Yeah"@0C1C "..." "We" "have" "your" "ring" "," "Miss"@0C21 "Burner"@0C26 "..."
-    TEXT object_Tina_Burner_079A 04 00 80 - - "WHAT" "!!" "That" "cybernetic"@0C2D "sex"@0C38 "fiend"@0C3C "is" "here" "?" "No" "!!" "I" "don't"@0C42 "want" "him" "at" "my" "wedding" "..."
-    TEXT object_Tina_Burner_079A 05 00 80 - - "He's"@0C48 "definitely"@0C4D "not" "invited"@0C58 "!!!" "I" "can't" "get" "married" "with" "him" "ogling"@0C60 "me" "!!!"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "WHAT" "???" "The" "old"@0C67 "bag"@0C6B "insulted"@0C6F "me" "..." "Are" "you" "gonna"@0C78 "let"@0C7E "her" "get" "away" "with" "that" "," "Commander" "?"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "Get"@0C82 "lost"@0C86 "," "you" "old" "sow"@0C8B "!" "..." "..."
-    TEXT object_Tina_Burner_079A 08 00 80 - - "SOW"@0C8F "!!" "BOO"@0C93 "HOO"@0C97 "HOO" "..." "MIGRA" "..." "MIGRATOR" "..." "Come"@0C9B "!" "I" "need"@0CA0 "you" "..." "BOO" "HOO" "HOO" "..."
-    TEXT object_Tina_Burner_079A FF 20 80 - - "She's" "so" "gross"@0CA5 "," "Commander" "..."
-    TEXT object_Tina_Burner_079A FF 08 80 - - "What's" "all" "this" "racket"@0CAB "?" "Can't"@0CB2 "a" "guy" "get" "any"@0CB8 "sleep" "around" "here" "?"
+    TEXT object_Tina_Burner_079A 01 00 80 - - "Ah" "!!" "There" "you" "are" "at" "last" "," "Commander" "..." "Everyone's" "waiting" "for" "you" "..."
+    TEXT object_Tina_Burner_079A FF 20 80 - - "Holy" "handstands" "!!!"
+    TEXT object_Tina_Burner_079A 02 00 80 - - "MIGRA's" "so" "worried" "..." "You" "do" "have" "the" "wedding" "band" "," "Commander" "?"
+    TEXT object_Tina_Burner_079A FF 20 80 - - "Yeah" "..." "We" "have" "your" "ring" "," "Miss" "Burner" "..."
+    TEXT object_Tina_Burner_079A 04 00 80 - - "WHAT" "!!" "That" "cybernetic" "sex" "fiend" "is" "here" "?" "No" "!!" "I" "don't" "want" "him" "at" "my" "wedding" "..."
+    TEXT object_Tina_Burner_079A 05 00 80 - - "He's" "definitely" "not" "invited" "!!!" "I" "can't" "get" "married" "with" "him" "ogling" "me" "!!!"
+    TEXT object_Tina_Burner_079A FF 20 80 - - "WHAT" "???" "The" "old" "bag" "insulted" "me" "..." "Are" "you" "gonna" "let" "her" "get" "away" "with" "that" "," "Commander" "?"
+    TEXT object_Tina_Burner_079A FF 20 80 - - "Get" "lost" "," "you" "old" "sow" "!" "..." "..."
+    TEXT object_Tina_Burner_079A 08 00 80 - - "SOW" "!!" "BOO" "HOO" "HOO" "..." "MIGRA" "..." "MIGRATOR" "..." "Come" "!" "I" "need" "you" "..." "BOO" "HOO" "HOO" "..."
+    TEXT object_Tina_Burner_079A FF 20 80 - - "She's" "so" "gross" "," "Commander" "..."
+    TEXT object_Tina_Burner_079A FF 08 80 - - "What's" "all" "this" "racket" "?" "Can't" "a" "guy" "get" "any" "sleep" "around" "here" "?"
     LOAD_STRING "bobb.hnm"
-    TEXT object_Tina_Burner_079A FF 20 80 - - "She" "started"@0CBC "it" "," "Cap'n" "Bob" "sir" "..." "Ask"@0CC4 "the" "Commander" "..."
+    TEXT object_Tina_Burner_079A FF 20 80 - - "She" "started" "it" "," "Cap'n" "Bob" "sir" "..." "Ask" "the" "Commander" "..."
     TEXT object_Tina_Burner_079A 07 00 80 - - "BOO" "HOO" "HOO"
-    TEXT object_Tina_Burner_079A FF 08 80 - - "Just"@0CC8 "keep"@0CCD "the" "noise"@0CD2 "down"@0CD8 "," "okay"@0CDD "?"
+    TEXT object_Tina_Burner_079A FF 08 80 - - "Just" "keep" "the" "noise" "down" "," "okay" "?"
     LOAD_STRING "bobb.hnm"
     TEXT object_Tina_Burner_079A FF 00 80 - - "YES" "sir" "..." "Right" "down" "..."
     TEXT object_Tina_Burner_079A FF 20 80 - - "Okay" "..." "Let's" "go" "see" "MIGRATOR" "," "Commander" "..."
@@ -534,19 +534,19 @@ PROCEDURE proc_bar4_143D
     RECORD_WILDCARD AF field_orxx_133C_s11_1340 0FDC 0
     ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0
     GUARD_POP
-    TEXT object_Migrator_043A 06 00 80 - - "What's" "going" "on" "?" "My" "Tina's"@0CE2 "in" "tears"@0CE9 "..."
-    TEXT object_Migrator_043A FF 20 80 - - "It's" "not" "my" "fault..."@0CEF "She" "didn't" "want" "to" "invite" "me" "to" "her" "wedding" "concert..."@0CF8
-    TEXT object_Migrator_043A 07 00 80 - - "Okay.."@0D03 "Okay..."@0D0A "I'll"@0D12 "see" "what" "I" "can" "do..."@0D17
-    TEXT object_Migrator_043A 02 10 80 block_14EB - "Do"@0D1D "you" "have" "the" "ring,"@0D20 "Commander" "?" "The" "wedding" "band" "?" FFFF "teleport"@0D26
+    TEXT object_Migrator_043A 06 00 80 - - "What's" "going" "on" "?" "My" "Tina's" "in" "tears" "..."
+    TEXT object_Migrator_043A FF 20 80 - - "It's" "not" "my" "fault..." "She" "didn't" "want" "to" "invite" "me" "to" "her" "wedding" "concert..."
+    TEXT object_Migrator_043A 07 00 80 - - "Okay.." "Okay..." "I'll" "see" "what" "I" "can" "do..."
+    TEXT object_Migrator_043A 02 10 80 block_14EB - "Do" "you" "have" "the" "ring," "Commander" "?" "The" "wedding" "band" "?" FFFF "teleport"
     WHEN block_14EB
         CONCEPT_GUARD "teleport" 0
     THEN
-        TEXT object_Migrator_043A FF 08 90 - - "TELEPORT"@0D2F "RING"@0D38 "TO" "MIGRATOR"
+        TEXT object_Migrator_043A FF 08 90 - - "TELEPORT" "RING" "TO" "MIGRATOR"
         RECORD_TRIPLE field_blood_0028_s13_0030 12DC 043A 0
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_14EB
     LABEL block_14EB
-    TEXT object_Migrator_043A 08 08 90 - - "Thank"@0D3D "you,"@0D43 "COMMANDER..."@0D48 "Get" "comfortable..."@0D55 "The" "show's"@0D64 "about" "to" "start.."@0D6B
+    TEXT object_Migrator_043A 08 08 90 - - "Thank" "you," "COMMANDER..." "Get" "comfortable..." "The" "show's" "about" "to" "start.."
     RECORD_STATE C1 field_orxx_133C_s13_1346 100C 0
     RECORD_WILDCARD AF field_Migrator_043A_s11_0452 100C 0
 END_PROCEDURE proc_bar4_143D
@@ -558,15 +558,15 @@ PROCEDURE proc_finalmen_1511
     RECORD_WILDCARD AF field_orxx_133C_s11_1340 100C 0
     ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0
     GUARD_POP
-    TEXT object_Migrator_043A FF 28 80 - - "SILENCE" "IT'S"@0D73 "STARTING...."@0D78
+    TEXT object_Migrator_043A FF 28 80 - - "SILENCE" "IT'S" "STARTING...."
     LOAD_STRING "lpm6sc1.hnm"
-    TEXT object_Migrator_043A FF 08 80 - - "Ah" "at" "last" "..." "It"@0D85 "looks"@0D88 "like" "it's" "showtime..."@0D8E
+    TEXT object_Migrator_043A FF 08 80 - - "Ah" "at" "last" "..." "It" "looks" "like" "it's" "showtime..."
     LOAD_STRING "bobb.hnm"
-    TEXT object_Migrator_043A FF 08 80 - - "Move" "over"@0D9A "..." "I" "wanna"@0D9F "see" "too..."@0DA5
+    TEXT object_Migrator_043A FF 08 80 - - "Move" "over" "..." "I" "wanna" "see" "too..."
     LOAD_STRING "hboc.hnm"
-    TEXT object_Migrator_043A FF 20 80 - - "Take"@0DAC "it" "easy..."@0DB1 "We're" "not" "gonna" "fight"@0DB9 "over" "this..."@0DBF
-    TEXT object_Migrator_043A FF 20 80 - - "You" "think" "this" "is" "the" "end" "of" "the" "game,"@0DC7 "Cap'n" "Bob???"@0DCD
-    TEXT object_Migrator_043A FF 08 80 - - "Gosh"@0DD4 "darn" "it" "NO,"@0DD9 "Mister" "Honk..."@0DDD "The" "Commander" "still"@0DE5 "hasn't"@0DEB "found" "the" "BIG" "BANG..."@0DF2
+    TEXT object_Migrator_043A FF 20 80 - - "Take" "it" "easy..." "We're" "not" "gonna" "fight" "over" "this..."
+    TEXT object_Migrator_043A FF 20 80 - - "You" "think" "this" "is" "the" "end" "of" "the" "game," "Cap'n" "Bob???"
+    TEXT object_Migrator_043A FF 08 80 - - "Gosh" "darn" "it" "NO," "Mister" "Honk..." "The" "Commander" "still" "hasn't" "found" "the" "BIG" "BANG..."
     LOAD_STRING "bobb.hnm"
     TEXT object_Migrator_043A FF 08 80 - -
     LOAD_STRING "lpl7sc1.hnm"
@@ -613,12 +613,12 @@ PROCEDURE proc_corpo1_1777
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0D5E 0
     ACTOR field_Izwalito_05A2_s13_05DC object_blood_0028 0
     GUARD_POP
-    TEXT object_Izwalito_05A2 02 00 80 - - "Izwalito"@0DFA "happy" "see" "you" "again" "," "friend" "..."
-    TEXT object_Izwalito_05A2 00 00 80 - - "Me" "get" "ready"@0E03 "to" "leave" "," "friend"
-    TEXT object_Izwalito_05A2 03 00 80 - - "Me" "go" "big" "party" "with" "friends"@0E09 "..."
-    TEXT object_Izwalito_05A2 02 00 80 - - "Sorry"@0E11 "..." "me" "not" "have" "much" "time" "..."
-    TEXT object_Izwalito_05A2 05 00 80 - - "Me" "in" "hurry" "," "Bossanova"@0E17 "impatient" "..."
-    TEXT object_Izwalito_05A2 05 08 90 - - "Bye"@0E21 "bye"@0E25 "," "friend" "Commander" "..."
+    TEXT object_Izwalito_05A2 02 00 80 - - "Izwalito" "happy" "see" "you" "again" "," "friend" "..."
+    TEXT object_Izwalito_05A2 00 00 80 - - "Me" "get" "ready" "to" "leave" "," "friend"
+    TEXT object_Izwalito_05A2 03 00 80 - - "Me" "go" "big" "party" "with" "friends" "..."
+    TEXT object_Izwalito_05A2 02 00 80 - - "Sorry" "..." "me" "not" "have" "much" "time" "..."
+    TEXT object_Izwalito_05A2 05 00 80 - - "Me" "in" "hurry" "," "Bossanova" "impatient" "..."
+    TEXT object_Izwalito_05A2 05 08 90 - - "Bye" "bye" "," "friend" "Commander" "..."
     RECORD_WILDCARD AF field_Izwalito_05A2_s11_05BA 0F2C 0
     RECORD_CLEAR field_Izwalito_05A2_s13_05DC
 END_PROCEDURE proc_corpo1_1777
@@ -643,13 +643,13 @@ PROCEDURE proc_krapp1_1839
     BRANCH_PRESENTATION
     ACTOR field_Kran_Dobu_0512_s13_054C object_blood_0028 0
     GUARD_POP
-    TEXT object_Kran_Dobu_0512 FF 00 80 - - "This" "is" "Kran"@0E29 "Dobu"@0E2E "," "Space"@0E33 "Knight"@0E39 "of" "the" "Stars"@0E40 "..."
-    TEXT object_Kran_Dobu_0512 FF 00 80 - - "Radio"@0E46 "message"@0E4C "to" "Ark" "..." "Ha" "!" "Ha" "!" "You" "okay" "?" "..."
-    TEXT object_Kran_Dobu_0512 FF 00 80 - - "Ha" "!" "Ha" "!" "I" "hear" "you're"@0E54 "looking"@0E5B "for" "the" "the" "Big" "Bang" "too" "..."
-    TEXT object_Kran_Dobu_0512 FF 20 80 - - "I've" "pinpointed"@0E63 "his" "ship" "," "Commander" "..."
-    TEXT object_Kran_Dobu_0512 FF 00 80 - - "That's" "where" "I'm" "headed"@0E6E "," "except"@0E75 "I" "don't" "have" "the" "address"@0E7C "..." "Ha" "!" "Ha" "!" "..."
-    TEXT object_Kran_Dobu_0512 FF 00 80 - - "We'll" "meet"@0E84 "up" "there"@0E89 "..." "Ha" "!" "Ha" "!" "Ha" "!" "..."
-    TEXT object_Kran_Dobu_0512 FF 20 80 - - "He's" "talking"@0E8F "about" "the" "Big" "Bang" "..."
+    TEXT object_Kran_Dobu_0512 FF 00 80 - - "This" "is" "Kran" "Dobu" "," "Space" "Knight" "of" "the" "Stars" "..."
+    TEXT object_Kran_Dobu_0512 FF 00 80 - - "Radio" "message" "to" "Ark" "..." "Ha" "!" "Ha" "!" "You" "okay" "?" "..."
+    TEXT object_Kran_Dobu_0512 FF 00 80 - - "Ha" "!" "Ha" "!" "I" "hear" "you're" "looking" "for" "the" "the" "Big" "Bang" "too" "..."
+    TEXT object_Kran_Dobu_0512 FF 20 80 - - "I've" "pinpointed" "his" "ship" "," "Commander" "..."
+    TEXT object_Kran_Dobu_0512 FF 00 80 - - "That's" "where" "I'm" "headed" "," "except" "I" "don't" "have" "the" "address" "..." "Ha" "!" "Ha" "!" "..."
+    TEXT object_Kran_Dobu_0512 FF 00 80 - - "We'll" "meet" "up" "there" "..." "Ha" "!" "Ha" "!" "Ha" "!" "..."
+    TEXT object_Kran_Dobu_0512 FF 20 80 - - "He's" "talking" "about" "the" "Big" "Bang" "..."
     TEXT object_Kran_Dobu_0512 FF 00 80 - - "See" "you" "..." "Ha" "!" "Ha" "!" "Ha" "!"
     TEXT object_Kran_Dobu_0512 FF 08 90 - - "Bye" "bye"
     POKE_BYTE 183A 00
@@ -661,32 +661,32 @@ PROCEDURE proc_masta1_194D
     BRANCH_GAMEFLAG
     ACTOR field_Scruter_Mac_06C2_s13_06FC object_blood_0028 0
     GUARD_POP
-    TEXT object_Scruter_Mac_06C2 12 00 80 - - "YOU" "IN"@0E97 "FORBIDDEN"@0E9A "ZONE"@0EA4 "..." "ME" "GIVE"@0EA9 "WARNING"@0EAE "," "STRANGER"@0EB6
+    TEXT object_Scruter_Mac_06C2 12 00 80 - - "YOU" "IN" "FORBIDDEN" "ZONE" "..." "ME" "GIVE" "WARNING" "," "STRANGER"
     TEXT object_Scruter_Mac_06C2 11 00 80 - - "Me" "not" "know" "you" "."
-    TEXT object_Scruter_Mac_06C2 FF 20 80 - - "It" "must"@0EBF "be" "Scruter"@0EC4 "Mac's"@0ECC "twin"@0ED2 "brother"@0ED7 "," "Commander" "..." "Took"@0EDF "over" "his" "job"@0EE4 "..."
-    TEXT object_Scruter_Mac_06C2 10 00 80 - - "You" "say" "code"@0EE8
-    TEXT object_Scruter_Mac_06C2 01 10 80 block_1A77 - "Hurry" "," "stranger!"@0EED FFFF "croolas"@0EF7 "galabar"@0F00 "code" "pterra"@0F08 "exxos"@0F0F
+    TEXT object_Scruter_Mac_06C2 FF 20 80 - - "It" "must" "be" "Scruter" "Mac's" "twin" "brother" "," "Commander" "..." "Took" "over" "his" "job" "..."
+    TEXT object_Scruter_Mac_06C2 10 00 80 - - "You" "say" "code"
+    TEXT object_Scruter_Mac_06C2 01 10 80 block_1A77 - "Hurry" "," "stranger!" FFFF "croolas" "galabar" "code" "pterra" "exxos"
     WHEN block_1A1C
         CONCEPT_GUARD "code" 0
     THEN
         TEXT object_Scruter_Mac_06C2 0C 00 80 - - "You" "say" "code" "..."
-        TEXT object_Scruter_Mac_06C2 0E 00 80 - - "You" "not" "stupid" "..." "But" "me" "smarter"@0F15 "than"@0F1D "you" "..."
-        TEXT object_Scruter_Mac_06C2 07 08 80 - - "You" "want" "see" "prisoner"@0F22 "..."
+        TEXT object_Scruter_Mac_06C2 0E 00 80 - - "You" "not" "stupid" "..." "But" "me" "smarter" "than" "you" "..."
+        TEXT object_Scruter_Mac_06C2 07 08 80 - - "You" "want" "see" "prisoner" "..."
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_1A1C
     LABEL block_1A1C
     WHEN block_1A77
         CONCEPT_GUARD "code" 1
     THEN
-        TEXT object_Scruter_Mac_06C2 09 00 80 - - "You" "not" "say" "code" "..." "Me" "not" "like" "..." "Not"@0F2B "like" "..."
-        TEXT object_Scruter_Mac_06C2 07 00 80 - - "You" "meet" "my" "laser-pulper"@0F2F "..."
-        TEXT object_Scruter_Mac_06C2 08 08 A0 - - "BYE"@0F3C "BYE" "FRIEND"@0F40 "..."
+        TEXT object_Scruter_Mac_06C2 09 00 80 - - "You" "not" "say" "code" "..." "Me" "not" "like" "..." "Not" "like" "..."
+        TEXT object_Scruter_Mac_06C2 07 00 80 - - "You" "meet" "my" "laser-pulper" "..."
+        TEXT object_Scruter_Mac_06C2 08 08 A0 - - "BYE" "BYE" "FRIEND" "..."
         LOAD_STRING "explo3.hnm"
         CLEAR_ALTERNATE_CONCEPT
         RECORD_CLEAR field_Scruter_Mac_06C2_s13_06FC
     END_WHEN block_1A77
     LABEL block_1A77
-    TEXT object_Scruter_Mac_06C2 05 08 80 - - "You" "know" "code" "," "me" "open"@0F47 "door"@0F4C "..."
+    TEXT object_Scruter_Mac_06C2 05 08 80 - - "You" "know" "code" "," "me" "open" "door" "..."
     RECORD_STATE C1 field_orxx_133C_s13_1346 0A64 0
 END_PROCEDURE proc_masta1_194D
 
@@ -697,14 +697,14 @@ PROCEDURE proc_masta5_1A94
     ACTOR field_Eviscerator_01B2_s13_01EC object_blood_0028 0
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0A2E 0
     GUARD_POP
-    TEXT object_Eviscerator_01B2 05 00 80 - - "Me" "know" "you" "..." "You" "give" "me" "mummy"@0F51 "..." "and" "CURSE"@0F57 "..."
-    TEXT object_Eviscerator_01B2 04 00 80 - - "ME" "HATE"@0F5D "YOU" "..."
-    TEXT object_Eviscerator_01B2 07 08 80 - - "WHAT" "YOU" "WANT"@0F62 "STRANGER" "?"
+    TEXT object_Eviscerator_01B2 05 00 80 - - "Me" "know" "you" "..." "You" "give" "me" "mummy" "..." "and" "CURSE" "..."
+    TEXT object_Eviscerator_01B2 04 00 80 - - "ME" "HATE" "YOU" "..."
+    TEXT object_Eviscerator_01B2 07 08 80 - - "WHAT" "YOU" "WANT" "STRANGER" "?"
     RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 0001 0
     WHEN block_1B1F
         SHARED_STATE C0 1372 F5 C1 0001
     THEN
-        TEXT object_Eviscerator_01B2 06 08 90 - - "You" "like" "secrets"@0F67 "..." "Me" "tell" "secrets"
+        TEXT object_Eviscerator_01B2 06 08 90 - - "You" "like" "secrets" "..." "Me" "tell" "secrets"
         RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 0F67 0
         SHARED_STATE C0 1372 F5 C1 0000
     END_WHEN block_1B1F
@@ -712,12 +712,12 @@ PROCEDURE proc_masta5_1A94
     WHEN block_1C11
         SHARED_STATE C0 1374 F5 C1 0001
     THEN
-        TEXT object_Eviscerator_01B2 0A 00 80 - - "SPLATCH"@0F6F "be" "highly"@0F77 "concentrated"@0F7E "explosive"@0F8B "." "SPLATCH" "blow"@0F95 "up" "jail"@0F9A "..." "LAUGH"@0F9F "..." "FOUL"@0FA5 "SWEAR"@0FAA
-        TEXT object_Eviscerator_01B2 08 00 80 - - "You" "bring"@0FB0 "me" "SPLATCH" "," "friend" "..." "And" "me" "give" "you" "..."
-        TEXT object_Eviscerator_01B2 FF 20 80 - - "He's" "gonna" "offer"@0FB6 "us" "the" "treasure"@0FBC "again" "," "Commander" "..." "Ol'"@0FC5 "Turkey-face"@0FC9 "Bob'll"@0FD5 "love"@0FDC "this" "..."
-        TEXT object_Eviscerator_01B2 05 00 80 - - "You" "go" "see" "friends" "at" "\"Galaxian"@0FE1 "Bar\""@0FEB "on" "planet" "MASTAGLUK"@0FF0 "..." "Them"@0FFA "help" "you" "..."
-        TEXT object_Eviscerator_01B2 FF 20 80 - - "No..."@1000 "No" "..." "That's" "enough,"@1006 "Commander" "..." "This" "is" "not" "a" "never"@100E "ending"@1014 "story" "..."
-        TEXT object_Eviscerator_01B2 09 08 A0 - - "You" "understand"@101B "?" "Bye" "bye" "..." "ME" "WAIT"@1026 "YOU" "..."
+        TEXT object_Eviscerator_01B2 0A 00 80 - - "SPLATCH" "be" "highly" "concentrated" "explosive" "." "SPLATCH" "blow" "up" "jail" "..." "LAUGH" "..." "FOUL" "SWEAR"
+        TEXT object_Eviscerator_01B2 08 00 80 - - "You" "bring" "me" "SPLATCH" "," "friend" "..." "And" "me" "give" "you" "..."
+        TEXT object_Eviscerator_01B2 FF 20 80 - - "He's" "gonna" "offer" "us" "the" "treasure" "again" "," "Commander" "..." "Ol'" "Turkey-face" "Bob'll" "love" "this" "..."
+        TEXT object_Eviscerator_01B2 05 00 80 - - "You" "go" "see" "friends" "at" "\"Galaxian" "Bar\"" "on" "planet" "MASTAGLUK" "..." "Them" "help" "you" "..."
+        TEXT object_Eviscerator_01B2 FF 20 80 - - "No..." "No" "..." "That's" "enough," "Commander" "..." "This" "is" "not" "a" "never" "ending" "story" "..."
+        TEXT object_Eviscerator_01B2 09 08 A0 - - "You" "understand" "?" "Bye" "bye" "..." "ME" "WAIT" "YOU" "..."
         SHARED_STATE C0 1374 F5 C1 0000
         SHARED_STATE C0 1370 F5 C1 0001
         RECORD_CLEAR field_Eviscerator_01B2_s13_01EC
@@ -726,17 +726,17 @@ PROCEDURE proc_masta5_1A94
     WHEN block_1C40
         SHARED_STATE C0 1368 F5 C1 0000
     THEN
-        TEXT object_Eviscerator_01B2 FF 20 80 - - "Commander" "," "if"@102B "I'd" "had" "some" "BIONIUM"@102E "," "I" "could"@1036 "have" "helped"@103C "you" "...."@1043
+        TEXT object_Eviscerator_01B2 FF 20 80 - - "Commander" "," "if" "I'd" "had" "some" "BIONIUM" "," "I" "could" "have" "helped" "you" "...."
     END_WHEN block_1C40
     LABEL block_1C40
     WHEN block_1C6A
         SHARED_STATE C0 1368 F2 C1 0003
     THEN
-        TEXT object_Eviscerator_01B2 FF 28 80 - - "Commander" "," "there's" "no" "percentage"@1048 "staying"@1053 "here" "..."
+        TEXT object_Eviscerator_01B2 FF 28 80 - - "Commander" "," "there's" "no" "percentage" "staying" "here" "..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_1C6A
     LABEL block_1C6A
-    TEXT object_Eviscerator_01B2 06 48 80 - - "Bye" "bye" "." "You" "come" "back" "see" "me" "." "Me" "like" "visits"@105B "..." FFFF "bye_bye"@1062
+    TEXT object_Eviscerator_01B2 06 48 80 - - "Bye" "bye" "." "You" "come" "back" "see" "me" "." "Me" "like" "visits" "..." FFFF "bye_bye"
     RECORD_CLEAR field_Eviscerator_01B2_s13_01EC
 END_PROCEDURE proc_masta5_1A94
 
@@ -747,14 +747,14 @@ PROCEDURE proc_masta6_1C93
     RECORD_WILDCARD AF field_orxx_133C_s11_1340 0A64 0
     ACTOR field_Eviscerator_01B2_s13_01EC object_blood_0028 0
     GUARD_POP
-    TEXT object_Eviscerator_01B2 08 00 80 - - "You" "have" "splatch"@106A "???"
-    TEXT object_Eviscerator_01B2 01 00 80 - - "Me" "big" "CROOLIS"@1072 "EVISCERATOR"@107A "." "Me" "want" "escape"@1086 "..." "CRY"@108D "..." "CRY" "..." "GNASH"@1091 "..."
+    TEXT object_Eviscerator_01B2 08 00 80 - - "You" "have" "splatch" "???"
+    TEXT object_Eviscerator_01B2 01 00 80 - - "Me" "big" "CROOLIS" "EVISCERATOR" "." "Me" "want" "escape" "..." "CRY" "..." "CRY" "..." "GNASH" "..."
     TEXT object_Eviscerator_01B2 01 08 80 - - "CRY" "..." "GNASH" "..."
     RECORD_WILDCARD BC field_Eviscerator_01B2_s0F_01F8 066E 0
     WHEN block_1D35
         RECORD_WILDCARD AF field_splatch_127C_s11_1290 0028 0
     THEN
-        TEXT object_Eviscerator_01B2 FF 20 80 - - "Give"@1097 "him" "the" "splatch" "," "Commander" "..." "We" "need" "the" "treasure" "..."
+        TEXT object_Eviscerator_01B2 FF 20 80 - - "Give" "him" "the" "splatch" "," "Commander" "..." "We" "need" "the" "treasure" "..."
         TEXT object_Eviscerator_01B2 FF 08 80 - - "TELEPORT" "SPLATCH" "TO" "EVISCERATOR"
         RECORD_TRIPLE field_blood_0028_s13_0030 127C 01B2 0
     END_WHEN block_1D35
@@ -763,9 +763,9 @@ PROCEDURE proc_masta6_1C93
         RECORD_WILDCARD AF field_splatch_127C_s11_1290 01B2 0
     THEN
         TEXT object_Eviscerator_01B2 06 00 80 - - "You" "want" "know" "where" "be" "treasure" "..."
-        TEXT object_Eviscerator_01B2 08 00 80 - - "Treasure"@109C "be" "on" "planet" "TUMUL..."@10A5
-        TEXT object_Eviscerator_01B2 05 00 80 - - "Coordinates"@10AE "AX329"@10BA "Tumulus"@10C0 "constellation"@10C8 "..."
-        TEXT object_Eviscerator_01B2 FF 28 90 - - "That" "sounded"@10D6 "like" "a" "treasure" "location"@10DE "to" "me" "," "Commander" "..." "Way"@10E7 "to" "go" "," "champ"@10EB "!!!"
+        TEXT object_Eviscerator_01B2 08 00 80 - - "Treasure" "be" "on" "planet" "TUMUL..."
+        TEXT object_Eviscerator_01B2 05 00 80 - - "Coordinates" "AX329" "Tumulus" "constellation" "..."
+        TEXT object_Eviscerator_01B2 FF 28 90 - - "That" "sounded" "like" "a" "treasure" "location" "to" "me" "," "Commander" "..." "Way" "to" "go" "," "champ" "!!!"
         SHARED_STATE C0 1370 F5 C1 0002
         RECORD_CLEAR field_Eviscerator_01B2_s13_01EC
     END_WHEN block_1DAC
@@ -774,9 +774,9 @@ PROCEDURE proc_masta6_1C93
         RECORD_WILDCARD AF field_splatch_127C_s11_1290 0028 1
         RECORD_WILDCARD AF field_splatch_127C_s11_1290 01B2 1
     THEN
-        TEXT object_Eviscerator_01B2 0A 00 80 - - "INSULT"@10F1 "..." "UGLY"@10F8 "SWEAR" "..." "GNASH" "..." "GNASH" "..." "UGLY" "LAUGH" "..."
+        TEXT object_Eviscerator_01B2 0A 00 80 - - "INSULT" "..." "UGLY" "SWEAR" "..." "GNASH" "..." "GNASH" "..." "UGLY" "LAUGH" "..."
         TEXT object_Eviscerator_01B2 0C 00 80 - - "ME" "HATE" "YOU" "..." "INSULT" "...."
-        TEXT object_Eviscerator_01B2 0B 08 80 - - "ME" "NOT"@10FD "SAY"@1101 "BYE" "BYE" "..."
+        TEXT object_Eviscerator_01B2 0B 08 80 - - "ME" "NOT" "SAY" "BYE" "BYE" "..."
         RECORD_CLEAR field_Eviscerator_01B2_s13_01EC
     END_WHEN proc_amig2_1E07
 END_PROCEDURE proc_masta6_1C93
@@ -789,12 +789,12 @@ PROCEDURE proc_amig2_1E07
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0BDE 0
     SHARED_STATE C0 1376 F5 C1 0000
     GUARD_POP
-    TEXT object_Amigo_05EA 03 00 80 - - "HALT"@1105 "HIC"@110A "STRANGER" "!!!"
-    TEXT object_Amigo_05EA 05 00 80 - - "The" "Bar's"@110E "hic"@1114 "!" "shut"@1118 "..." "Hic"@111D "!"
-    TEXT object_Amigo_05EA 06 00 80 - - "They've"@1121 "all" "gone" "..." "Hic" "..." "Just" "me" "left"@1129 "..."
-    TEXT object_Amigo_05EA FF 20 80 - - "Commander..." "I" "feel" "sorry"@112E "for" "this" "buzzard"@1134 "..."
-    TEXT object_Amigo_05EA 06 00 80 - - "Me" "thirsty"@113C "..." "Hic" "..."
-    TEXT object_Amigo_05EA 06 00 80 - - "Me" "need" "hic" "drinky"@1144 "hic" "!!!"
+    TEXT object_Amigo_05EA 03 00 80 - - "HALT" "HIC" "STRANGER" "!!!"
+    TEXT object_Amigo_05EA 05 00 80 - - "The" "Bar's" "hic" "!" "shut" "..." "Hic" "!"
+    TEXT object_Amigo_05EA 06 00 80 - - "They've" "all" "gone" "..." "Hic" "..." "Just" "me" "left" "..."
+    TEXT object_Amigo_05EA FF 20 80 - - "Commander..." "I" "feel" "sorry" "for" "this" "buzzard" "..."
+    TEXT object_Amigo_05EA 06 00 80 - - "Me" "thirsty" "..." "Hic" "..."
+    TEXT object_Amigo_05EA 06 00 80 - - "Me" "need" "hic" "drinky" "hic" "!!!"
     TEXT object_Amigo_05EA 00 08 80 - - "Bye" "hic" "bye" "..."
     RECORD_CLEAR field_Amigo_05EA_s13_0624
 END_PROCEDURE proc_amig2_1E07
@@ -804,16 +804,16 @@ PROCEDURE proc_yok1_1EB8
     BRANCH_FLAG_274F
     ACTOR field_Yoko_0242_s13_027C object_blood_0028 0
     GUARD_POP
-    TEXT object_Yoko_0242 01 00 80 - - "Commander" "..." "MAXXON"@114B "and" "me" "would"@1152 "like" "to" "get" "back" "to" "our"@1158 "home" "on" "the" "planet" "RONDO"@115C "..."
-    TEXT object_Yoko_0242 03 00 80 - - "Can"@1162 "you" "drop" "us" "off" "there" "?" "..."
+    TEXT object_Yoko_0242 01 00 80 - - "Commander" "..." "MAXXON" "and" "me" "would" "like" "to" "get" "back" "to" "our" "home" "on" "the" "planet" "RONDO" "..."
+    TEXT object_Yoko_0242 03 00 80 - - "Can" "you" "drop" "us" "off" "there" "?" "..."
     WHEN block_1F75
         RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 0
     THEN
-        TEXT object_Yoko_0242 FF 30 80 block_1F75 - "Why" "don't" "we" "teleport" "them" "," "Commander" "..." FFFF "teleport" "refuse"@1166
+        TEXT object_Yoko_0242 FF 30 80 block_1F75 - "Why" "don't" "we" "teleport" "them" "," "Commander" "..." FFFF "teleport" "refuse"
         WHEN block_1F56
             CONCEPT_GUARD "teleport" 0
         THEN
-            TEXT object_Yoko_0242 FF 08 A0 - - "TELEPORT" "YOKO"@116D "AND" "MAXXON" "ON"@1172 "RONDO"
+            TEXT object_Yoko_0242 FF 08 A0 - - "TELEPORT" "YOKO" "AND" "MAXXON" "ON" "RONDO"
             RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0B72 0
             RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 0BA8 0
             CLEAR_ALTERNATE_CONCEPT
@@ -832,7 +832,7 @@ PROCEDURE proc_yok1_1EB8
         RECORD_WILDCARD AF field_arche_1024_s11_103A 0B72 1
         SHARED_STATE C0 1368 F2 C1 0003
     THEN
-        TEXT object_Yoko_0242 FF 28 80 - - "We'll" "need" "to" "get" "closer"@1175 "to" "RONDO" "to" "teleport" "them" "..."
+        TEXT object_Yoko_0242 FF 28 80 - - "We'll" "need" "to" "get" "closer" "to" "RONDO" "to" "teleport" "them" "..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_1FAB
     LABEL block_1FAB
@@ -863,7 +863,7 @@ PROCEDURE proc_max1_1FC0
         WHEN block_2079
             CONCEPT_GUARD "refuse" 0
         THEN
-            TEXT object_Maxxon_055A FF 28 90 - - "You're" "the" "commander"@117C "," "Commander..."
+            TEXT object_Maxxon_055A FF 28 90 - - "You're" "the" "commander" "," "Commander..."
             CLEAR_ALTERNATE_CONCEPT
             RECORD_CLEAR field_Maxxon_055A_s13_0594
         END_WHEN block_2079
@@ -888,10 +888,10 @@ PROCEDURE proc_ronda_20C4
     ACTOR field_Yoko_0242_s13_027C object_blood_0028 0
     GUARD_POP
     TEXT object_Yoko_0242 00 00 80 - - "Me" "happy" "be" "back" "on" "my" "planet" "," "Commander" "..."
-    TEXT object_Yoko_0242 02 00 80 - - "Hello"@1186 "Mister" "Honk..."
-    TEXT object_Yoko_0242 FF 20 80 - - "Yo"@118C "Mister" "Yoko..."@118F "How's"@1197 "my" "main"@119D "man" "?"
-    TEXT object_Yoko_0242 04 00 80 - - "Good"@11A2 "," "Mister" "Honk" "..."
-    TEXT object_Yoko_0242 FF 20 80 - - "Ha" "!" "Ha" "!" "ha"@11A7 "!" "You" "gotta"@11AA "love" "that" "Yoko" "..."
+    TEXT object_Yoko_0242 02 00 80 - - "Hello" "Mister" "Honk..."
+    TEXT object_Yoko_0242 FF 20 80 - - "Yo" "Mister" "Yoko..." "How's" "my" "main" "man" "?"
+    TEXT object_Yoko_0242 04 00 80 - - "Good" "," "Mister" "Honk" "..."
+    TEXT object_Yoko_0242 FF 20 80 - - "Ha" "!" "Ha" "!" "ha" "!" "You" "gotta" "love" "that" "Yoko" "..."
     TEXT object_Yoko_0242 05 48 A0 - - "See" "you" "soon" "," "Commander" "..." FFFF "bye_bye"
     RECORD_WILDCARD AF field_Yoko_0242_s11_025A 0BA8 0
     RECORD_WILDCARD AF field_Maxxon_055A_s11_0572 0B72 0
@@ -905,11 +905,11 @@ PROCEDURE proc_max3_216D
     ACTOR field_Maxxon_055A_s13_0594 object_blood_0028 0
     GUARD_POP
     TEXT object_Maxxon_055A 09 00 80 - - "Hello" "," "friend" "..."
-    TEXT object_Maxxon_055A 02 00 80 - - "Yoko" "went"@11B0 "to" "a" "party" "..."
-    TEXT object_Maxxon_055A 06 00 80 - - "He's" "young" "..." "he"@11B5 "needs"@11B8 "his" "fun"@11BE "..." "Heh"@11C2 "heh"@11C6 "..."
+    TEXT object_Maxxon_055A 02 00 80 - - "Yoko" "went" "to" "a" "party" "..."
+    TEXT object_Maxxon_055A 06 00 80 - - "He's" "young" "..." "he" "needs" "his" "fun" "..." "Heh" "heh" "..."
     TEXT object_Maxxon_055A 07 00 80 - - "What" "can" "I" "do" "for" "you" "," "Commander" "?"
-    TEXT object_Maxxon_055A 04 00 80 - - "All" "these"@11CA "adventures"@11D0 "have" "tired"@11DB "me" "out" "..."
-    TEXT object_Maxxon_055A 07 00 80 - - "I'm" "going" "to" "have" "a" "vacation"@11E1 "here" "..."
+    TEXT object_Maxxon_055A 04 00 80 - - "All" "these" "adventures" "have" "tired" "me" "out" "..."
+    TEXT object_Maxxon_055A 07 00 80 - - "I'm" "going" "to" "have" "a" "vacation" "here" "..."
     TEXT object_Maxxon_055A FF 08 80 - - "See" "you" "soon" "," "Commander" "..."
     RECORD_CLEAR field_Maxxon_055A_s13_0594
 END_PROCEDURE proc_max3_216D
@@ -920,16 +920,16 @@ PROCEDURE proc_glu2_2220
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0F0E 0
     ACTOR field_Daddy_Gluxx_0482_s13_04BC object_blood_0028 0
     GUARD_POP
-    TEXT object_Daddy_Gluxx_0482 01 00 80 - - "Ho"@11EA "!" "The" "visitor"@11ED "from" "far"@11F5 "away" "in" "space"@11F9 "and" "time" "..."
-    TEXT object_Daddy_Gluxx_0482 02 00 80 - - "You've"@1200 "come" "back" "," "stranger"@1207 "..."
-    TEXT object_Daddy_Gluxx_0482 03 00 80 - - "My" "children"@1210 "," "Gelatine"@1219 "," "Rubber"@1222 "," "Gooseberry"@1229 "and" "Latex"@1234 "thank"@123A "you..."@1240
-    TEXT object_Daddy_Gluxx_0482 04 00 80 - - "Thanks"@1247 "to" "you" "and" "Inspector"@124E "Jerry"@1258 "Khan,"@125E "they"@1264 "were"@1269 "saved" "from" "the" "claws"@126E "of" "that" "awful"@1274 "doctor"@127A "..."
+    TEXT object_Daddy_Gluxx_0482 01 00 80 - - "Ho" "!" "The" "visitor" "from" "far" "away" "in" "space" "and" "time" "..."
+    TEXT object_Daddy_Gluxx_0482 02 00 80 - - "You've" "come" "back" "," "stranger" "..."
+    TEXT object_Daddy_Gluxx_0482 03 00 80 - - "My" "children" "," "Gelatine" "," "Rubber" "," "Gooseberry" "and" "Latex" "thank" "you..."
+    TEXT object_Daddy_Gluxx_0482 04 00 80 - - "Thanks" "to" "you" "and" "Inspector" "Jerry" "Khan," "they" "were" "saved" "from" "the" "claws" "of" "that" "awful" "doctor" "..."
     TEXT object_Daddy_Gluxx_0482 05 00 80 - - "Thank" "you" "again" "..."
-    TEXT object_Daddy_Gluxx_0482 FF 20 80 - - "Don't" "you" "just" "love" "it" "when"@1281 "they're"@1286 "grateful"@128E "," "Commander" "..."
-    TEXT object_Daddy_Gluxx_0482 00 00 80 - - "We're" "going" "to" "take"@1297 "a" "few"@129C "days"@12A0 "break"@12A5 "..." "My" "kids"@12AB "want" "to" "see" "the" "BIG" "BANG" "..."
-    TEXT object_Daddy_Gluxx_0482 04 00 80 - - "After"@12B0 "what" "they've"@12B6 "been" "through"@12BE ","
+    TEXT object_Daddy_Gluxx_0482 FF 20 80 - - "Don't" "you" "just" "love" "it" "when" "they're" "grateful" "," "Commander" "..."
+    TEXT object_Daddy_Gluxx_0482 00 00 80 - - "We're" "going" "to" "take" "a" "few" "days" "break" "..." "My" "kids" "want" "to" "see" "the" "BIG" "BANG" "..."
+    TEXT object_Daddy_Gluxx_0482 04 00 80 - - "After" "what" "they've" "been" "through" ","
     TEXT object_Daddy_Gluxx_0482 01 00 80 - - "I" "can't" "refuse" "them" "anything" "..." "Ha" "!" "Ha" "!" "Ha" "..."
-    TEXT object_Daddy_Gluxx_0482 FF 08 90 - - "Bye" "bye" "," "Commander" "..." "You'll" "always"@12C6 "be" "welcome"@12CD "here" "..."
+    TEXT object_Daddy_Gluxx_0482 FF 08 90 - - "Bye" "bye" "," "Commander" "..." "You'll" "always" "be" "welcome" "here" "..."
     RECORD_WILDCARD AF field_Daddy_Gluxx_0482_s11_049A 0F2C 0
     RECORD_CLEAR field_Daddy_Gluxx_0482_s13_04BC
 END_PROCEDURE proc_glu2_2220
@@ -939,9 +939,9 @@ PROCEDURE proc_monop1_2364
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0968 0
     ACTOR field_Bug_Deluxe_0092_s13_00CC object_blood_0028 0
     GUARD_POP
-    TEXT object_Bug_Deluxe_0092 01 00 80 - - "Hi"@12D5 "there" "," "Consumer" "Comrade" "." "The" "VENUSIA" "SUPRAMARKET"@12D8 "is" "shut" "today"@12E4 "..."
-    TEXT object_Bug_Deluxe_0092 02 00 80 - - "It's" "a" "vacation" "for" "everybody"@12EA "..."
-    TEXT object_Bug_Deluxe_0092 03 00 80 - - "Come" "back" "another"@12F4 "time" "..." "Oh" "and" "," "Consumer" "Comrade" "..." "Remember"@12FC "to" "bring" "your" "creds"@1305
+    TEXT object_Bug_Deluxe_0092 01 00 80 - - "Hi" "there" "," "Consumer" "Comrade" "." "The" "VENUSIA" "SUPRAMARKET" "is" "shut" "today" "..."
+    TEXT object_Bug_Deluxe_0092 02 00 80 - - "It's" "a" "vacation" "for" "everybody" "..."
+    TEXT object_Bug_Deluxe_0092 03 00 80 - - "Come" "back" "another" "time" "..." "Oh" "and" "," "Consumer" "Comrade" "..." "Remember" "to" "bring" "your" "creds"
     TEXT object_Bug_Deluxe_0092 00 08 90 - - "Bye" "bye" "," "Consumer" "Comrade" "..."
     RECORD_WILDCARD AF field_Bug_Deluxe_0092_s11_00AA 0FB8 0
     RECORD_CLEAR field_Bug_Deluxe_0092_s13_00CC
@@ -953,33 +953,33 @@ PROCEDURE proc_bronk1_23ED
     SHARED_STATE C0 1378 F5 C1 0000
     ACTOR field_Bronko_0362_s13_039C object_blood_0028 0
     GUARD_POP
-    TEXT object_Bronko_0362 02 00 80 - - "Everything's"@130B "okay" "," "Commander" "..."
-    TEXT object_Bronko_0362 03 00 80 - - "Don't" "hesitate"@1318 "if" "you" "need" "me" "..."
+    TEXT object_Bronko_0362 02 00 80 - - "Everything's" "okay" "," "Commander" "..."
+    TEXT object_Bronko_0362 03 00 80 - - "Don't" "hesitate" "if" "you" "need" "me" "..."
     WHEN block_268E
         SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0
     THEN
-        TEXT object_Bronko_0362 05 00 80 - - "Teleport"@1321 "me" "to" "the" "BIG" "BANG" "," "Commander" "..." "I" "want" "to" "party" "!" "Gee"@132A "," "I" "love" "weddings"@132E "..."
-        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "!" "You're" "not" "going" "to" "leave" "me" "here" "alone"@1337 "," "are" "you" "," "Mister" "Bronko" "?" "I'm" "a" "sucker"@133D "for" "weddings" "too" "..."
-        TEXT object_Bronko_0362 FF 20 80 - - "I'll" "feel" "so" "loneley"@1344 "if" "you" "go" "..."
-        TEXT object_Bronko_0362 06 00 80 - - "Well"@134C "," "I" "sure"@1351 "don't" "want" "to" "to" "make"@1356 "you" "unhappy"@135B "," "Mister" "Honk" "..." "That'll"@1363 "make" "me" "unhappy" "..."
-        TEXT object_Bronko_0362 07 00 80 - - "You're" "such" "an" "understanding"@136B "being"@1379 "..."
-        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "!" "And" "you" "," "Mister" "Bronko,"@137F "you" "have" "so" "much" "to" "offer" "..." "Your"@1387 "cooking"@138C "is" "out" "of" "this" "world" "..."
-        TEXT object_Bronko_0362 FF 20 80 - - "IF" "YOU" "GO"@1394 "..." "I'M"@1397 "COMING"@139B "WITH" "YOU" "..."
-        TEXT object_Bronko_0362 FF 08 80 - - "What's" "going" "on" "now" "?" "HONK" "!" "Your" "sentimentality"@13A2 "makes" "me" "sick" "!!!"
+        TEXT object_Bronko_0362 05 00 80 - - "Teleport" "me" "to" "the" "BIG" "BANG" "," "Commander" "..." "I" "want" "to" "party" "!" "Gee" "," "I" "love" "weddings" "..."
+        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "!" "You're" "not" "going" "to" "leave" "me" "here" "alone" "," "are" "you" "," "Mister" "Bronko" "?" "I'm" "a" "sucker" "for" "weddings" "too" "..."
+        TEXT object_Bronko_0362 FF 20 80 - - "I'll" "feel" "so" "loneley" "if" "you" "go" "..."
+        TEXT object_Bronko_0362 06 00 80 - - "Well" "," "I" "sure" "don't" "want" "to" "to" "make" "you" "unhappy" "," "Mister" "Honk" "..." "That'll" "make" "me" "unhappy" "..."
+        TEXT object_Bronko_0362 07 00 80 - - "You're" "such" "an" "understanding" "being" "..."
+        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "!" "And" "you" "," "Mister" "Bronko," "you" "have" "so" "much" "to" "offer" "..." "Your" "cooking" "is" "out" "of" "this" "world" "..."
+        TEXT object_Bronko_0362 FF 20 80 - - "IF" "YOU" "GO" "..." "I'M" "COMING" "WITH" "YOU" "..."
+        TEXT object_Bronko_0362 FF 08 80 - - "What's" "going" "on" "now" "?" "HONK" "!" "Your" "sentimentality" "makes" "me" "sick" "!!!"
         LOAD_STRING "bobb.hnm"
-        TEXT object_Bronko_0362 FF 20 80 - - "Boo"@13B1 "!" "Hoo"@13B5 "!" "Sniff"@13B9 "..." "I'm" "unhappy" "..." "Mister" "Bronko" "wants"@13BF "to" "party" "at" "the" "BIG" "BANG" "..."
-        TEXT object_Bronko_0362 FF 08 80 - - "Honk" "!" "Can" "it" "..." "I" "think" "I'm" "going" "to" "switch"@13C5 "you" "off" "!!!"
+        TEXT object_Bronko_0362 FF 20 80 - - "Boo" "!" "Hoo" "!" "Sniff" "..." "I'm" "unhappy" "..." "Mister" "Bronko" "wants" "to" "party" "at" "the" "BIG" "BANG" "..."
+        TEXT object_Bronko_0362 FF 08 80 - - "Honk" "!" "Can" "it" "..." "I" "think" "I'm" "going" "to" "switch" "you" "off" "!!!"
         LOAD_STRING "bobb.hnm"
-        TEXT object_Bronko_0362 FF 20 80 - - "NO" "!" "No" "!" "Please"@13CC "don't" "do" "that" "," "Cap'n" "Bob" "..."
-        TEXT object_Bronko_0362 04 00 80 - - "Okay" "okay" "..." "I'll" "stay"@13D3 "here" "..." "I" "don't" "really"@13D8 "like" "to" "party" "anyhow"@13DF "..."
-        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "," "Mister" "Bronko" "..." "Such"@13E6 "a" "lesson"@13EB "in" "bigheartedness"@13F2 "..." "CRY" "..." "WEEP"@1401 "..."
-        TEXT object_Bronko_0362 FF 08 80 - - "Commander" "..." "Your" "computer's"@1406 "losing"@1411 "it" "..." "Something"@1418 "needs" "to" "be" "done"@1422 "!!!"
+        TEXT object_Bronko_0362 FF 20 80 - - "NO" "!" "No" "!" "Please" "don't" "do" "that" "," "Cap'n" "Bob" "..."
+        TEXT object_Bronko_0362 04 00 80 - - "Okay" "okay" "..." "I'll" "stay" "here" "..." "I" "don't" "really" "like" "to" "party" "anyhow" "..."
+        TEXT object_Bronko_0362 FF 20 80 - - "Oh" "," "Mister" "Bronko" "..." "Such" "a" "lesson" "in" "bigheartedness" "..." "CRY" "..." "WEEP" "..."
+        TEXT object_Bronko_0362 FF 08 80 - - "Commander" "..." "Your" "computer's" "losing" "it" "..." "Something" "needs" "to" "be" "done" "!!!"
         LOAD_STRING "bobb.hnm"
-        TEXT object_Bronko_0362 06 08 80 - - "Well" "," "if" "you'll"@1427 "excuse"@142E "me" "..." "I've" "got"@1435 "a" "murffalo"@1439 "in" "the" "oven"@1442 "..."
+        TEXT object_Bronko_0362 06 08 80 - - "Well" "," "if" "you'll" "excuse" "me" "..." "I've" "got" "a" "murffalo" "in" "the" "oven" "..."
         RECORD_CLEAR field_Bronko_0362_s13_039C
     END_WHEN block_268E
     LABEL block_268E
-    TEXT object_Bronko_0362 05 20 80 - - "Oh" "Mister" "Bronko" "..." "You're" "looking" "well,"@1447 "I" "must" "say" "!!!."@144D
+    TEXT object_Bronko_0362 05 20 80 - - "Oh" "Mister" "Bronko" "..." "You're" "looking" "well," "I" "must" "say" "!!!."
     TEXT object_Bronko_0362 05 00 80 - - "See" "you" "soon" "," "Commander" "..."
     TEXT object_Bronko_0362 FF 08 80 - - "..."
     RECORD_CLEAR field_Bronko_0362_s13_039C
@@ -991,12 +991,12 @@ PROCEDURE proc_emasc0_26CD
     ACTOR field_Emasculator_0872_s13_08AC object_blood_0028 0
     SHARED_STATE C0 137A F5 C1 0000
     GUARD_POP
-    TEXT object_Emasculator_0872 01 00 80 - - "What" "you" "want" "," "stranger" "?" "You" "want" "murffalo" "meat"@1452 "?"
-    TEXT object_Emasculator_0872 02 00 80 - - "Me" "not" "can" "sell"@1457 "murffalo" "..." "Me" "shut" "store"@145C "..."
+    TEXT object_Emasculator_0872 01 00 80 - - "What" "you" "want" "," "stranger" "?" "You" "want" "murffalo" "meat" "?"
+    TEXT object_Emasculator_0872 02 00 80 - - "Me" "not" "can" "sell" "murffalo" "..." "Me" "shut" "store" "..."
     TEXT object_Emasculator_0872 04 00 80 - - "Me" "go" "party" "..."
-    TEXT object_Emasculator_0872 04 00 80 - - "Me" "pack"@1462 "bags"@1467 "..." "You" "not" "waste"@146C "my" "time" "..."
+    TEXT object_Emasculator_0872 04 00 80 - - "Me" "pack" "bags" "..." "You" "not" "waste" "my" "time" "..."
     TEXT object_Emasculator_0872 05 00 80 - - "BYE" "BYE" "..."
-    TEXT object_Emasculator_0872 FF 08 90 - - "stop"@1472
+    TEXT object_Emasculator_0872 FF 08 90 - - "stop"
     RECORD_WILDCARD AF field_Emasculator_0872_s11_088A 0F2C 0
     RECORD_CLEAR field_Emasculator_0872_s13_08AC
 END_PROCEDURE proc_emasc0_26CD
@@ -1007,11 +1007,11 @@ PROCEDURE proc_hom0_2765
     RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0
     ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0
     GUARD_POP
-    TEXT object_Hom_01FA 01 00 80 - - "Ha" "!" "ha" "!" "Big" "Bang" "..." "Black"@1477 "holes"@147D "..." "You're" "out" "of" "your" "mind"@1483 "..."
-    TEXT object_Hom_01FA 05 00 80 - - "Commander" "..." "Yoko" "and" "Maxxon"@1488 "would" "like" "to" "get" "back" "home" "on" "the" "planet" "RONDO" "..."
+    TEXT object_Hom_01FA 01 00 80 - - "Ha" "!" "ha" "!" "Big" "Bang" "..." "Black" "holes" "..." "You're" "out" "of" "your" "mind" "..."
+    TEXT object_Hom_01FA 05 00 80 - - "Commander" "..." "Yoko" "and" "Maxxon" "would" "like" "to" "get" "back" "home" "on" "the" "planet" "RONDO" "..."
     TEXT object_Hom_01FA 06 08 80 - - "They're" "impatient" "..."
     RECORD_WILDCARD BC field_Hom_01FA_s0F_0240 0001 0
-    TEXT object_Hom_01FA 07 48 80 - - "Bye" "bye..."@148F "Me" "sleep" "in" "star"@1496 "dust..."@149B FFFF "bye_bye"
+    TEXT object_Hom_01FA 07 48 80 - - "Bye" "bye..." "Me" "sleep" "in" "star" "dust..." FFFF "bye_bye"
     RECORD_CLEAR field_Hom_01FA_s13_0234
 END_PROCEDURE proc_hom0_2765
 
@@ -1022,13 +1022,13 @@ PROCEDURE proc_hom1_27F5
     ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0
     GUARD_POP
     TEXT object_Hom_01FA 01 00 80 - - "Ha" "!" "ha" "!" "Big" "Bang" "..." "Black" "holes" "..." "You're" "out" "of" "your" "mind" "..."
-    TEXT object_Hom_01FA FF 20 80 - - "Don't" "laugh"@14A3 "," "Mister" "Hom"@14A9 "..." "It's" "not" "a" "joke"@14AD "..."
-    TEXT object_Hom_01FA 05 00 80 - - "Wrong"@14B2 "," "my" "friend" "." "It's" "a" "big" "joke" "..." "I'm" "leaving"@14B8 "," "Commander" "..."
-    TEXT object_Hom_01FA 06 00 80 - - "I'm" "going" "to" "vanish"@14C0 "into" "the" "cybernight"@14C7 "..." "And" "pick"@14D2 "me" "up" "some" "star" "dust"@14D7 "..."
-    TEXT object_Hom_01FA 07 00 80 - - "I'm" "going" "to" "melt"@14DC "into" "the" "azure"@14E1 "cyberworld"@14E7 "..."
-    TEXT object_Hom_01FA 06 00 80 - - "I'll" "travel"@14F2 "faster"@14F9 "than" "the" "fastest"@1500 "ship" "..."
-    TEXT object_Hom_01FA 05 00 80 - - "And" "blur"@1508 "into" "a" "cybertrip"@150D "..."
-    TEXT object_Hom_01FA FF 20 80 - - "Wasn't"@1517 "that" "beautiful"@151E "," "Commander" "..." "We" "just" "experienced"@1528 "poetic"@1534 "creation"@153B "..."
+    TEXT object_Hom_01FA FF 20 80 - - "Don't" "laugh" "," "Mister" "Hom" "..." "It's" "not" "a" "joke" "..."
+    TEXT object_Hom_01FA 05 00 80 - - "Wrong" "," "my" "friend" "." "It's" "a" "big" "joke" "..." "I'm" "leaving" "," "Commander" "..."
+    TEXT object_Hom_01FA 06 00 80 - - "I'm" "going" "to" "vanish" "into" "the" "cybernight" "..." "And" "pick" "me" "up" "some" "star" "dust" "..."
+    TEXT object_Hom_01FA 07 00 80 - - "I'm" "going" "to" "melt" "into" "the" "azure" "cyberworld" "..."
+    TEXT object_Hom_01FA 06 00 80 - - "I'll" "travel" "faster" "than" "the" "fastest" "ship" "..."
+    TEXT object_Hom_01FA 05 00 80 - - "And" "blur" "into" "a" "cybertrip" "..."
+    TEXT object_Hom_01FA FF 20 80 - - "Wasn't" "that" "beautiful" "," "Commander" "..." "We" "just" "experienced" "poetic" "creation" "..."
     TEXT object_Hom_01FA 04 08 90 - - "Bye" "bye" "," "my" "friends" "..." "BYE" "BYE" "..."
     RECORD_WILDCARD AF field_Hom_01FA_s11_0212 0B36 0
     RECORD_CLEAR field_Hom_01FA_s13_0234
@@ -1040,29 +1040,29 @@ PROCEDURE proc_hom1_2922
     RECORD_WILDCARD AF field_urout_10E4_s11_10F8 0028 1
     ACTOR field_Hom_01FA_s13_0234 object_blood_0028 0
     GUARD_POP
-    TEXT object_Hom_01FA 02 00 80 - - "Welcome"@1544 "stranger" "..." "You" "be" "big" "traveller"@154C "..."
-    TEXT object_Hom_01FA 02 00 80 - - "Me" "HOM."@1556 "Me" "big" "Tubular"@155B "Brain"@1563 "." "Me" "welcome" "you" "," "Commander" "..."
-    TEXT object_Hom_01FA 02 00 80 - - "Me" "catch"@1569 "your" "print"@156F "," "friend" "..." "Me" "read"@1575 "truth"@157A "in" "your" "prints"@1580 "..."
-    TEXT object_Hom_01FA 03 10 80 block_29F0 - "You" "click"@1587 "very"@158D "very" "hard"@1592 "," "friend" "." "Me" "catch" "print" "on" "mouse"@1597 "..." FFFF "click"
+    TEXT object_Hom_01FA 02 00 80 - - "Welcome" "stranger" "..." "You" "be" "big" "traveller" "..."
+    TEXT object_Hom_01FA 02 00 80 - - "Me" "HOM." "Me" "big" "Tubular" "Brain" "." "Me" "welcome" "you" "," "Commander" "..."
+    TEXT object_Hom_01FA 02 00 80 - - "Me" "catch" "your" "print" "," "friend" "..." "Me" "read" "truth" "in" "your" "prints" "..."
+    TEXT object_Hom_01FA 03 10 80 block_29F0 - "You" "click" "very" "very" "hard" "," "friend" "." "Me" "catch" "print" "on" "mouse" "..." FFFF "click"
     WHEN block_29F0
         CONCEPT_GUARD "click" 0
     THEN
-        TEXT object_Hom_01FA 03 08 90 - - "Ahh"@159D "!" "Me" "catch" "print" "..." "Ohh"@15A2 "!" "Nice"@15A6 "print" "..."
+        TEXT object_Hom_01FA 03 08 90 - - "Ahh" "!" "Me" "catch" "print" "..." "Ohh" "!" "Nice" "print" "..."
         LOAD_STRING "scandoig.hnm"
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_29F0
     LABEL block_29F0
-    TEXT object_Hom_01FA 04 00 80 - - "Ohh" "...Me"@15AB "see" "you" "look" "for" "Big" "Bang" "..."
-    TEXT object_Hom_01FA 09 00 80 - - "You" "be" "with" "GUILD"@15B1 "OF" "MEMBERS"@15B7 "..." "Me" "help" "you" "..."
-    TEXT object_Hom_01FA 0A 00 80 - - "GUILD" "OF" "MEMBERS" "be" "big" "cybernetic" "Organization"@15BF "..."
-    TEXT object_Hom_01FA 03 00 80 - - "Me" "hear" "of" "Big" "Bang" "but"@15CC "me" "forget"@15D0 "..."
-    TEXT object_Hom_01FA 05 00 80 - - "Me" "find" "out" "and" "me" "tell" "you" "where" "be" "Big" "Bang" "." "But" "you" "take" "exam"@15D7 "..."
-    TEXT object_Hom_01FA 04 00 80 - - "You" "go" "planet" "CYBEROCK"@15DC "..."
-    TEXT object_Hom_01FA 04 00 80 - - "You" "study"@15E5 "cyberknowledge"@15EB "," "friend" "..."
-    TEXT object_Hom_01FA 05 08 80 - - "Cyberock"@15FA "be" "in" "Cyberius"@1603 "system"@160C "," "coordinates"@1613 "X234"@161F "Y546"@1624 "..."
+    TEXT object_Hom_01FA 04 00 80 - - "Ohh" "...Me" "see" "you" "look" "for" "Big" "Bang" "..."
+    TEXT object_Hom_01FA 09 00 80 - - "You" "be" "with" "GUILD" "OF" "MEMBERS" "..." "Me" "help" "you" "..."
+    TEXT object_Hom_01FA 0A 00 80 - - "GUILD" "OF" "MEMBERS" "be" "big" "cybernetic" "Organization" "..."
+    TEXT object_Hom_01FA 03 00 80 - - "Me" "hear" "of" "Big" "Bang" "but" "me" "forget" "..."
+    TEXT object_Hom_01FA 05 00 80 - - "Me" "find" "out" "and" "me" "tell" "you" "where" "be" "Big" "Bang" "." "But" "you" "take" "exam" "..."
+    TEXT object_Hom_01FA 04 00 80 - - "You" "go" "planet" "CYBEROCK" "..."
+    TEXT object_Hom_01FA 04 00 80 - - "You" "study" "cyberknowledge" "," "friend" "..."
+    TEXT object_Hom_01FA 05 08 80 - - "Cyberock" "be" "in" "Cyberius" "system" "," "coordinates" "X234" "Y546" "..."
     SHARED_BIT_STATE AE field_Cyberock_0D40_s00_0D42 0002 0
-    TEXT object_Hom_01FA FF 20 80 - - "We" "already"@1629 "know" "that" "," "Commander" "..." "Old"@1631 "Tube-head's"@1635 "going" "gaga"@1641 "..."
-    TEXT object_Hom_01FA 06 00 80 - - "Me" "wait" "here" "with" "U.R.O.U.T"@1646 "..."
+    TEXT object_Hom_01FA FF 20 80 - - "We" "already" "know" "that" "," "Commander" "..." "Old" "Tube-head's" "going" "gaga" "..."
+    TEXT object_Hom_01FA 06 00 80 - - "Me" "wait" "here" "with" "U.R.O.U.T" "..."
     TEXT object_Hom_01FA FF 08 A0 - - "Bye" "bye" "friend" "..."
     POKE_BYTE 27F6 00
     SHARED_STATE C0 137C F5 C1 0001
@@ -1078,7 +1078,7 @@ PROCEDURE proc_hom2_2B1D
     TEXT object_Hom_01FA 02 00 80 - - "Welcome" "stranger" "..." "You" "be" "big" "traveller" "..."
     TEXT object_Hom_01FA 02 00 80 - - "Me" "HOM." "Me" "big" "Tubular" "Brain" "." "Me" "welcome" "you" "," "Commander" "..."
     TEXT object_Hom_01FA 02 00 80 - - "Me" "catch" "your" "print" "," "friend" "..." "Me" "read" "truth" "in" "your" "prints" "..."
-    TEXT object_Hom_01FA FF 20 80 - - "Commander" "," "he's"@1650 "getting" "up" "my" "nose" "with" "his" "print" "..."
+    TEXT object_Hom_01FA FF 20 80 - - "Commander" "," "he's" "getting" "up" "my" "nose" "with" "his" "print" "..."
     TEXT object_Hom_01FA 03 10 80 block_2C0A - "You" "click" "very" "very" "hard" "," "friend" "." "Me" "catch" "print" "on" "mouse" "..." FFFF "click"
     WHEN block_2C0A
         CONCEPT_GUARD "click" 0
@@ -1100,9 +1100,9 @@ PROCEDURE proc_hom2_2B1D
     WHEN proc_jour_2D05
         RECORD_WILDCARD AF field_urout_10E4_s11_10F8 0028 0
     THEN
-        TEXT object_Hom_01FA FF 00 80 - - "Bravo"@1655 "Commander" "." "You" "be" "talented"@165B "..."
+        TEXT object_Hom_01FA FF 00 80 - - "Bravo" "Commander" "." "You" "be" "talented" "..."
         TEXT object_Hom_01FA FF 00 80 - - "Me" "have" "good" "news" "for" "you" "..." "Me" "know" "where" "be" "Big" "Bang" "..."
-        TEXT object_Hom_01FA FF 08 80 - - "Big" "Bang" "be" "at" "coordinates" "X543"@1664 "Y769..."@1669
+        TEXT object_Hom_01FA FF 08 80 - - "Big" "Bang" "be" "at" "coordinates" "X543" "Y769..."
         SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 0
         TEXT object_Hom_01FA FF 00 80 - - "Bye" "bye" "," "friend" "..." "ME" "see" "you" "at" "Big" "Bang" "...." "Ha" "Ha" "Ha" "..."
         TEXT object_Hom_01FA FF 20 80 - - "Well" "," "how" "about" "that" "!"
@@ -1120,7 +1120,7 @@ PROCEDURE proc_jour_2D05
     RECORD_WILDCARD AF field_urout_10E4_s11_10F8 028A 1
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0D40 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 00 80 - - "Bye" "bye" "," "student"@1671 "Commander" "Blood"@1679 "." "You" "are" "a" "member"@167F "of" "the" "\"GUILD"@1686 "OF" "MEMBERS\""@168D "..."
+    TEXT object_Cyberquizz_028A 01 00 80 - - "Bye" "bye" "," "student" "Commander" "Blood" "." "You" "are" "a" "member" "of" "the" "\"GUILD" "OF" "MEMBERS\"" "..."
     TEXT object_Cyberquizz_028A 02 08 80 - - "..."
     RECORD_CLEAR field_Cyberquizz_028A_s13_02C4
 END_PROCEDURE proc_jour_2D05
@@ -1177,13 +1177,13 @@ PROCEDURE proc_bonj2_2E06
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     RECORD_WILDCARD AF field_arche_1024_s11_103A 0D40 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 00 80 - - "Student"@1696 "Commander" "Blood" "..." "This" "is" "a" "big" "day" "in" "your" "life"@169E "..."
-    TEXT object_Cyberquizz_028A FF 20 80 - - "Holy" "harpoons"@16A3 "!" "That" "is" "hideous"@16AC "," "Commander..."
-    TEXT object_Cyberquizz_028A 02 00 80 - - "I'm" "going" "to" "be" "your" "U.R.O.U.T."@16B4 "examiner"@16BF
-    TEXT object_Cyberquizz_028A 03 00 80 - - "Universal"@16C8 "Revolutionary"@16D2 "Omniscient"@16E0 "Ubiquity"@16EB "Test"@16F4
-    TEXT object_Cyberquizz_028A 03 00 80 - - "Stupid"@16F9 "animal"@1700 "!" "At" "your" "age"@1707 "," "I" "already" "had" "my" "U.R.O.U.T.F.O.R.T.H.E.C.O.U.N.T."@170B
-    TEXT object_Cyberquizz_028A FF 20 80 - - "Don't" "let" "him" "scare"@172C "you," "Commander."@1732 "He's" "just" "jealous..."@173D
-    TEXT object_Cyberquizz_028A 04 08 80 - - "Here"@1748 "are" "the" "questions."@174D "Are" "you" "ready?"@1758
+    TEXT object_Cyberquizz_028A 01 00 80 - - "Student" "Commander" "Blood" "..." "This" "is" "a" "big" "day" "in" "your" "life" "..."
+    TEXT object_Cyberquizz_028A FF 20 80 - - "Holy" "harpoons" "!" "That" "is" "hideous" "," "Commander..."
+    TEXT object_Cyberquizz_028A 02 00 80 - - "I'm" "going" "to" "be" "your" "U.R.O.U.T." "examiner"
+    TEXT object_Cyberquizz_028A 03 00 80 - - "Universal" "Revolutionary" "Omniscient" "Ubiquity" "Test"
+    TEXT object_Cyberquizz_028A 03 00 80 - - "Stupid" "animal" "!" "At" "your" "age" "," "I" "already" "had" "my" "U.R.O.U.T.F.O.R.T.H.E.C.O.U.N.T."
+    TEXT object_Cyberquizz_028A FF 20 80 - - "Don't" "let" "him" "scare" "you," "Commander." "He's" "just" "jealous..."
+    TEXT object_Cyberquizz_028A 04 08 80 - - "Here" "are" "the" "questions." "Are" "you" "ready?"
 END_PROCEDURE proc_bonj2_2E06
 
 PROCEDURE proc_Bof_ok_2ECF
@@ -1192,21 +1192,21 @@ PROCEDURE proc_Bof_ok_2ECF
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     SHARED_STATE C0 1382 F5 C1 0005
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 00 80 - - "Believe"@175F "it" "or" "not" "..." "You" "have" "passed"@1767 "your" "U.R.O.U.T."
-    TEXT object_Cyberquizz_028A FF 28 80 - - "YESSS!!!!"@176E "I" "KNEW"@1778 "YOU" "COULD"@177D "DO" "IT" "COMMANDER..."
+    TEXT object_Cyberquizz_028A 01 00 80 - - "Believe" "it" "or" "not" "..." "You" "have" "passed" "your" "U.R.O.U.T."
+    TEXT object_Cyberquizz_028A FF 28 80 - - "YESSS!!!!" "I" "KNEW" "YOU" "COULD" "DO" "IT" "COMMANDER..."
     LOAD_STRING "cadeaux.hnm"
-    TEXT object_Cyberquizz_028A 01 00 80 - - "I" "present"@1783 "you" "with" "your" "magnificent"@178B "diploma..."@1797
-    TEXT object_Cyberquizz_028A FF 10 80 block_2F6E - "TELEPORT" "UROUT"@17A2 "to" "Ark" FFFF "teleport"
+    TEXT object_Cyberquizz_028A 01 00 80 - - "I" "present" "you" "with" "your" "magnificent" "diploma..."
+    TEXT object_Cyberquizz_028A FF 10 80 block_2F6E - "TELEPORT" "UROUT" "to" "Ark" FFFF "teleport"
     WHEN block_2F6E
         CONCEPT_GUARD "teleport" 0
     THEN
-        TEXT object_Cyberquizz_028A FF 08 90 - - "TELEPORTING"@17A8 "DIPLOMA"@17B4 "TO" "ARK"@17BC
+        TEXT object_Cyberquizz_028A FF 08 90 - - "TELEPORTING" "DIPLOMA" "TO" "ARK"
         RECORD_TRIPLE field_Cyberquizz_028A_s13_02C4 10E4 0028 0
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_2F6E
     LABEL block_2F6E
-    TEXT object_Cyberquizz_028A 03 00 80 - - "Never"@17C0 "forget" "your" "happy" "student" "days."@17C6 "Be"@17CC "true"@17CF "to" "your" "school!"@17D4
-    TEXT object_Cyberquizz_028A 02 00 80 - - "See" "you" "soon,"@17DC "Commander..."
+    TEXT object_Cyberquizz_028A 03 00 80 - - "Never" "forget" "your" "happy" "student" "days." "Be" "true" "to" "your" "school!"
+    TEXT object_Cyberquizz_028A 02 00 80 - - "See" "you" "soon," "Commander..."
     TEXT object_Cyberquizz_028A FF 08 B0 - - "stop"
     SHARED_STATE C0 1382 F5 C1 0000
     SHARED_STATE C0 1380 F5 C1 0000
@@ -1221,10 +1221,10 @@ PROCEDURE proc_perdu_2FBD
     SHARED_STATE C0 1380 F5 C1 0020
     SHARED_STATE C0 1382 F1 C1 000A
     GUARD_POP
-    TEXT object_Cyberquizz_028A 0A 00 80 - - "You" "failed!"@17E2
-    TEXT object_Cyberquizz_028A FF 20 80 - - "I" "knew"@17EA "this" "would" "happen..."@17EF "I" "feel" "pity"@17F9 "for" "you" "," "Commander..."
-    TEXT object_Cyberquizz_028A 09 00 80 - - "May"@17FE "your" "liver"@1802 "turn"@1808 "into" "oxidized"@180D "mercury"@1816 "sauce!!"@181E "How" "could" "you" "do" "this??..."@1826
-    TEXT object_Cyberquizz_028A FF 20 80 - - "I" "didn't" "deserve"@1830 "this" "humiliation...."@1838
+    TEXT object_Cyberquizz_028A 0A 00 80 - - "You" "failed!"
+    TEXT object_Cyberquizz_028A FF 20 80 - - "I" "knew" "this" "would" "happen..." "I" "feel" "pity" "for" "you" "," "Commander..."
+    TEXT object_Cyberquizz_028A 09 00 80 - - "May" "your" "liver" "turn" "into" "oxidized" "mercury" "sauce!!" "How" "could" "you" "do" "this??..."
+    TEXT object_Cyberquizz_028A FF 20 80 - - "I" "didn't" "deserve" "this" "humiliation...."
     TEXT object_Cyberquizz_028A FF 08 B0 - - "stop"
     POKE_BYTE 2D5A 01
     SHARED_STATE C0 1380 F5 C1 0000
@@ -1237,11 +1237,11 @@ PROCEDURE proc_Q1_3055
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 09 10 80 block_30EE - "Who"@1848 "said" "\"It"@184C "takes" "thirteen"@1850 "murffalos"@1859 "to" "reproduce"@1863 "but" "soon" "it'll"@186D "take" "fourteen?"@1873 FFFF "Jeph_DUlikan"@187D "Yolk"@188A "Kran_Dobu"@188F "Tina_Burner"@1899
+    TEXT object_Cyberquizz_028A 09 10 80 block_30EE - "Who" "said" "\"It" "takes" "thirteen" "murffalos" "to" "reproduce" "but" "soon" "it'll" "take" "fourteen?" FFFF "Jeph_DUlikan" "Yolk" "Kran_Dobu" "Tina_Burner"
     WHEN block_30C2
         CONCEPT_GUARD "Yolk" 0
     THEN
-        TEXT object_Cyberquizz_028A 02 08 A0 - - "The" "Great"@18A5 "Yolk,"@18AB "of" "course."@18B1 "You've" "been" "boning"@18B9 "up" "," "Commander..."
+        TEXT object_Cyberquizz_028A 02 08 A0 - - "The" "Great" "Yolk," "of" "course." "You've" "been" "boning" "up" "," "Commander..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1250,12 +1250,12 @@ PROCEDURE proc_Q1_3055
     WHEN block_30EE
         CONCEPT_GUARD "Yolk" 1
     THEN
-        TEXT object_Cyberquizz_028A 05 08 90 - - "History's"@18C0 "not" "your" "speciality."@18CA "Maybe"@18D6 "you're" "not" "ready" "for" "this"
+        TEXT object_Cyberquizz_028A 05 08 90 - - "History's" "not" "your" "speciality." "Maybe" "you're" "not" "ready" "for" "this"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_30EE
     LABEL block_30EE
-    TEXT object_Cyberquizz_028A 03 08 80 - - "Next"@18DC "question:"@18E1
+    TEXT object_Cyberquizz_028A 03 08 80 - - "Next" "question:"
     POKE_BYTE 3056 00
 END_PROCEDURE proc_Q1_3055
 
@@ -1264,11 +1264,11 @@ PROCEDURE proc_Q2_30FE
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 06 10 80 block_3195 - "Which"@18EB "great"@18F1 "Slimer"@18F7 "is" "buried"@18FE "on" "the" "planet" "Vista?"@1905 FFFF "gluxx"@190C "gelati"@1912 "gumy"@1919 "yolk"@191E
+    TEXT object_Cyberquizz_028A 06 10 80 block_3195 - "Which" "great" "Slimer" "is" "buried" "on" "the" "planet" "Vista?" FFFF "gluxx" "gelati" "gumy" "yolk"
     WHEN block_3163
         CONCEPT_GUARD "yolk" 0
     THEN
-        TEXT object_Cyberquizz_028A 07 08 A0 - - "Yes" "indeed"@1923 "," "the" "incomparably"@192A "Great" "Yolk..."@1937 "Hare"@193F "Yolk" "Hare" "Hare..."@1944
+        TEXT object_Cyberquizz_028A 07 08 A0 - - "Yes" "indeed" "," "the" "incomparably" "Great" "Yolk..." "Hare" "Yolk" "Hare" "Hare..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1277,7 +1277,7 @@ PROCEDURE proc_Q2_30FE
     WHEN block_3195
         CONCEPT_GUARD "yolk" 1
     THEN
-        TEXT object_Cyberquizz_028A 08 08 90 - - "On"@194C "Vista"@194F "," "I" "said" "." "Get" "those"@1955 "ondoyants" "out" "of" "your" "brain..."@195B
+        TEXT object_Cyberquizz_028A 08 08 90 - - "On" "Vista" "," "I" "said" "." "Get" "those" "ondoyants" "out" "of" "your" "brain..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3195
@@ -1291,8 +1291,8 @@ PROCEDURE proc_Q3_31A5
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 05 00 80 - - "Concentrate"@1964 "now..."@1970
-    TEXT object_Cyberquizz_028A 01 10 80 block_3218 - "Name"@1977 "a" "stuttering"@197C "Croolis?"@1987 FFFF "Cybernator"@1990 "Rotator"@199B "Emasculator"@19A3 "Outrageor"@19AF "Lord_Krater"@19B9
+    TEXT object_Cyberquizz_028A 05 00 80 - - "Concentrate" "now..."
+    TEXT object_Cyberquizz_028A 01 10 80 block_3218 - "Name" "a" "stuttering" "Croolis?" FFFF "Cybernator" "Rotator" "Emasculator" "Outrageor" "Lord_Krater"
     WHEN block_31FE
         CONCEPT_GUARD "Rotator" 0
     THEN
@@ -1319,11 +1319,11 @@ PROCEDURE proc_Q4_3228
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 00 10 80 block_32B1 - "What" "was"@19C5 "king" "Betakam"@19C9 "IV's"@19D1 "planet" "of" "origin?"@19D6 FFFF "Sat"@19DE "Vistar"@19E2 "Ron"@19E9 "Golgos"@19ED "Pterra"@19F4 "Attrox"@19FB
+    TEXT object_Cyberquizz_028A 00 10 80 block_32B1 - "What" "was" "king" "Betakam" "IV's" "planet" "of" "origin?" FFFF "Sat" "Vistar" "Ron" "Golgos" "Pterra" "Attrox"
     WHEN block_327D
         CONCEPT_GUARD "Attrox" 0
     THEN
-        TEXT object_Cyberquizz_028A 09 08 A0 - - "Excellent"@1A02 "answer..."@1A0C
+        TEXT object_Cyberquizz_028A 09 08 A0 - - "Excellent" "answer..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1332,7 +1332,7 @@ PROCEDURE proc_Q4_3228
     WHEN block_32B1
         CONCEPT_GUARD "Attrox" 1
     THEN
-        TEXT object_Cyberquizz_028A 08 08 90 - - "For"@1A16 "goodness"@1A1A "sakes"@1A23 "!" "It" "starts"@1A29 "with" "an" "A" "and" "ends"@1A30 "with" "an" "X..."@1A35
+        TEXT object_Cyberquizz_028A 08 08 90 - - "For" "goodness" "sakes" "!" "It" "starts" "with" "an" "A" "and" "ends" "with" "an" "X..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_32B1
@@ -1346,11 +1346,11 @@ PROCEDURE proc_Q5_32C1
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 07 10 80 block_3340 - "Which" "Trump"@1A3A "has" "a" "friend" "called"@1A40 "Trompette?"@1A47 FFFF "eviscerator"@1A52 "Fifi" "beauregard"@1A5E "tromp_la_mort"@1A69 "otto_von_smile"@1A77
+    TEXT object_Cyberquizz_028A 07 10 80 block_3340 - "Which" "Trump" "has" "a" "friend" "called" "Trompette?" FFFF "eviscerator" "Fifi" "beauregard" "tromp_la_mort" "otto_von_smile"
     WHEN block_331A
         CONCEPT_GUARD "Fifi" 0
     THEN
-        TEXT object_Cyberquizz_028A 05 08 A0 - - "Fifi,"@1A86 "that's"@1A8C "the" "right" "answer"@1A93 "..."
+        TEXT object_Cyberquizz_028A 05 08 A0 - - "Fifi," "that's" "the" "right" "answer" "..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1359,7 +1359,7 @@ PROCEDURE proc_Q5_32C1
     WHEN block_3340
         CONCEPT_GUARD "Fifi" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "For" "goodness" "sakes!"@1A9A "Get" "a" "grip"@1AA2 "guy..."@1AA7
+        TEXT object_Cyberquizz_028A 06 08 90 - - "For" "goodness" "sakes!" "Get" "a" "grip" "guy..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3340
@@ -1373,11 +1373,11 @@ PROCEDURE proc_Q6_3350
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 04 10 80 block_33C7 - "The" "Great" "Yolk" "is" "a...?"@1AAE FFFF "slimer"@1AB4 "izwal"@1ABB "croolis"@1AC1 "migrax"@1AC9 "robot"@1AD0
+    TEXT object_Cyberquizz_028A 04 10 80 block_33C7 - "The" "Great" "Yolk" "is" "a...?" FFFF "slimer" "izwal" "croolis" "migrax" "robot"
     WHEN block_339F
         CONCEPT_GUARD "slimer" 0
     THEN
-        TEXT object_Cyberquizz_028A 03 08 A0 - - "Yes,"@1AD6 "a" "Slimer..."@1ADB
+        TEXT object_Cyberquizz_028A 03 08 A0 - - "Yes," "a" "Slimer..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1386,7 +1386,7 @@ PROCEDURE proc_Q6_3350
     WHEN block_33C7
         CONCEPT_GUARD "slimer" 1
     THEN
-        TEXT object_Cyberquizz_028A 02 08 90 - - "The" "Great" "Yolk?"@1AE5 "That" "was" "a" "mediocre"@1AEB "effort"@1AF4
+        TEXT object_Cyberquizz_028A 02 08 90 - - "The" "Great" "Yolk?" "That" "was" "a" "mediocre" "effort"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_33C7
@@ -1400,11 +1400,11 @@ PROCEDURE proc_Q7_33D7
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 10 80 block_3454 - "Who" "said:"@1AFB "\"Commander,"@1B01 "Honk" "keeps"@1B0D "scanning"@1B13 "me" "with" "his" "equipment\"?"@1B1C FFFF "eviscerator" "emasculator"@1B28 "lord_raptor"@1B34 "tina_burner"@1B40
+    TEXT object_Cyberquizz_028A 01 10 80 block_3454 - "Who" "said:" "\"Commander," "Honk" "keeps" "scanning" "me" "with" "his" "equipment\"?" FFFF "eviscerator" "emasculator" "lord_raptor" "tina_burner"
     WHEN block_3432
         CONCEPT_GUARD "tina_burner" 0
     THEN
-        TEXT object_Cyberquizz_028A 02 08 A0 - - "Quite"@1B4C "right."@1B52 "In"@1B59 "the" "cryobox..."@1B5C
+        TEXT object_Cyberquizz_028A 02 08 A0 - - "Quite" "right." "In" "the" "cryobox..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1413,7 +1413,7 @@ PROCEDURE proc_Q7_33D7
     WHEN block_3454
         CONCEPT_GUARD "tina_burner" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "Don't" "you" "have" "a" "radio?"@1B67
+        TEXT object_Cyberquizz_028A 03 08 90 - - "Don't" "you" "have" "a" "radio?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3454
@@ -1427,11 +1427,11 @@ PROCEDURE proc_Q8_3464
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 04 10 80 block_34D3 - "Jeph"@1B6E "d'Ulikan"@1B73 "defeated?"@1B7C FFFF "pagos_tagos"@1B86 "black_larsen"@1B92 "hom"@1B9F "lord_krater"@1BA3
+    TEXT object_Cyberquizz_028A 04 10 80 block_34D3 - "Jeph" "d'Ulikan" "defeated?" FFFF "pagos_tagos" "black_larsen" "hom" "lord_krater"
     WHEN block_34B1
         CONCEPT_GUARD "black_larsen" 0
     THEN
-        TEXT object_Cyberquizz_028A 05 08 A0 - - "The" "Black" "Larsen"@1BAF "Hordes,"@1BB6 "yes..."@1BBE
+        TEXT object_Cyberquizz_028A 05 08 A0 - - "The" "Black" "Larsen" "Hordes," "yes..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1440,7 +1440,7 @@ PROCEDURE proc_Q8_3464
     WHEN block_34D3
         CONCEPT_GUARD "black_larsen" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "No" "," "no" "and" "NO..."@1BC5
+        TEXT object_Cyberquizz_028A 06 08 90 - - "No" "," "no" "and" "NO..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_34D3
@@ -1454,11 +1454,11 @@ PROCEDURE proc_Q9_34E3
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 07 10 80 block_3556 - "Who" "said:" "\"One"@1BCB "plus"@1BD0 "one" "equals"@1BD5 "three\"?"@1BDC FFFF "lord_krater" "metro_paul"@1BE4 "yolk"
+    TEXT object_Cyberquizz_028A 07 10 80 block_3556 - "Who" "said:" "\"One" "plus" "one" "equals" "three\"?" FFFF "lord_krater" "metro_paul" "yolk"
     WHEN block_3532
         CONCEPT_GUARD "yolk" 0
     THEN
-        TEXT object_Cyberquizz_028A 08 08 A0 - - "The" "incredible"@1BEF "Yolk..."
+        TEXT object_Cyberquizz_028A 08 08 A0 - - "The" "incredible" "Yolk..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1467,7 +1467,7 @@ PROCEDURE proc_Q9_34E3
     WHEN block_3556
         CONCEPT_GUARD "yolk" 1
     THEN
-        TEXT object_Cyberquizz_028A 09 08 90 - - "You're" "not" "up" "on" "your" "classics..."@1BFA
+        TEXT object_Cyberquizz_028A 09 08 90 - - "You're" "not" "up" "on" "your" "classics..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3556
@@ -1481,11 +1481,11 @@ PROCEDURE proc_Q10_3566
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 08 10 80 block_35EB - "How" "many" "murffalos" "does" "it" "take" "to" "reproduce?"@1C06 FFFF "two"@1C11 "four"@1C15 "six"@1C1A "eight"@1C1E "thirteen"
+    TEXT object_Cyberquizz_028A 08 10 80 block_35EB - "How" "many" "murffalos" "does" "it" "take" "to" "reproduce?" FFFF "two" "four" "six" "eight" "thirteen"
     WHEN block_35C7
         CONCEPT_GUARD "thirteen" 0
     THEN
-        TEXT object_Cyberquizz_028A 07 08 A0 - - "One"@1C24 "in" "the" "middle"@1C28 "and" "twelve"@1C2F "all" "around."@1C36 "Good..."@1C3E
+        TEXT object_Cyberquizz_028A 07 08 A0 - - "One" "in" "the" "middle" "and" "twelve" "all" "around." "Good..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1494,7 +1494,7 @@ PROCEDURE proc_Q10_3566
     WHEN block_35EB
         CONCEPT_GUARD "thirteen" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "Murffalos?"@1C46 "That" "was" "the" "easy" "question..."@1C51
+        TEXT object_Cyberquizz_028A 06 08 90 - - "Murffalos?" "That" "was" "the" "easy" "question..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_35EB
@@ -1508,11 +1508,11 @@ PROCEDURE proc_Q11_35FB
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 05 10 80 block_365F - "Name" "a" "paralleloped"@1C5D "planet" FFFF "qx20"@1C6A "tumul"@1C6F "vista"@1C75 "ebony"@1C7B "mastachok"@1C81
+    TEXT object_Cyberquizz_028A 05 10 80 block_365F - "Name" "a" "paralleloped" "planet" FFFF "qx20" "tumul" "vista" "ebony" "mastachok"
     WHEN block_3643
         CONCEPT_GUARD "vista" 0
     THEN
-        TEXT object_Cyberquizz_028A 04 08 90 - - "Paralleloped?"@1C8B "Try"@1C99 "contact"@1C9D "lenses..."@1CA5
+        TEXT object_Cyberquizz_028A 04 08 90 - - "Paralleloped?" "Try" "contact" "lenses..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3643
@@ -1520,7 +1520,7 @@ PROCEDURE proc_Q11_35FB
     WHEN block_365F
         CONCEPT_GUARD "vista" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "You're" "hopeless...."@1CAF
+        TEXT object_Cyberquizz_028A 03 08 90 - - "You're" "hopeless...."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_365F
@@ -1534,11 +1534,11 @@ PROCEDURE proc_Q12_366F
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 02 10 80 block_36E6 - "Buggol"@1CBC "democracy"@1CC3 "was" "invented"@1CCD "by?"@1CD6 FFFF "strum"@1CDA "Bob_Morlock"@1CE0 "cyborg_1er"@1CEC "exxos"
+    TEXT object_Cyberquizz_028A 02 10 80 block_36E6 - "Buggol" "democracy" "was" "invented" "by?" FFFF "strum" "Bob_Morlock" "cyborg_1er" "exxos"
     WHEN block_36C8
         CONCEPT_GUARD "cyborg_1er" 0
     THEN
-        TEXT object_Cyberquizz_028A 01 08 A0 - - "A" "bit"@1CF7 "of" "a" "history"@1CFB "buff"@1D03 "," "eh"@1D08 "?..."@1D0B
+        TEXT object_Cyberquizz_028A 01 08 A0 - - "A" "bit" "of" "a" "history" "buff" "," "eh" "?..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1547,7 +1547,7 @@ PROCEDURE proc_Q12_366F
     WHEN block_36E6
         CONCEPT_GUARD "cyborg_1er" 1
     THEN
-        TEXT object_Cyberquizz_028A 00 08 90 - - "No!"@1D10 "No!" "Commander..."
+        TEXT object_Cyberquizz_028A 00 08 90 - - "No!" "No!" "Commander..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_36E6
@@ -1561,11 +1561,11 @@ PROCEDURE proc_Q13_36F6
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 10 80 block_3767 - "What" "do" "Tubular" "Brains"@1D14 "eat?"@1D1B FFFF "klakos"@1D20 "plastok"@1D27 "radium"@1D2F "hay"@1D36 "murffalos"
+    TEXT object_Cyberquizz_028A 01 10 80 block_3767 - "What" "do" "Tubular" "Brains" "eat?" FFFF "klakos" "plastok" "radium" "hay" "murffalos"
     WHEN block_3743
         CONCEPT_GUARD "plastok" 0
     THEN
-        TEXT object_Cyberquizz_028A 02 08 A0 - - "Protein-enriched"@1D3A "Plastok."@1D4B
+        TEXT object_Cyberquizz_028A 02 08 A0 - - "Protein-enriched" "Plastok."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1574,7 +1574,7 @@ PROCEDURE proc_Q13_36F6
     WHEN block_3767
         CONCEPT_GUARD "plastok" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "You" "got" "something"@1D54 "against"@1D5E "Tubulars"@1D66 "?"
+        TEXT object_Cyberquizz_028A 03 08 90 - - "You" "got" "something" "against" "Tubulars" "?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3767
@@ -1588,11 +1588,11 @@ PROCEDURE proc_Q14_3777
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 04 10 80 block_37F4 - "Name" "a" "planet" "with" "rings"@1D6F FFFF "erazor"@1D75 "rondo"@1D7C "bonus"@1D82 "pterra"
+    TEXT object_Cyberquizz_028A 04 10 80 block_37F4 - "Name" "a" "planet" "with" "rings" FFFF "erazor" "rondo" "bonus" "pterra"
     WHEN block_37CE
         CONCEPT_GUARD "bonus" 0
     THEN
-        TEXT object_Cyberquizz_028A 05 08 A0 - - "Bonus"@1D88 "has" "the" "finest"@1D8E "rings" "in" "the" "universe."@1D95
+        TEXT object_Cyberquizz_028A 05 08 A0 - - "Bonus" "has" "the" "finest" "rings" "in" "the" "universe."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1601,7 +1601,7 @@ PROCEDURE proc_Q14_3777
     WHEN block_37F4
         CONCEPT_GUARD "bonus" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "Rings..."@1D9F "You" "know" "," "those" "round"@1DA8 "things..."@1DAE
+        TEXT object_Cyberquizz_028A 06 08 90 - - "Rings..." "You" "know" "," "those" "round" "things..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_37F4
@@ -1615,11 +1615,11 @@ PROCEDURE proc_Q15_3804
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 07 10 80 block_3889 - "How" "do" "Scorps"@1DB8 "reproduce?" FFFF "vivisection"@1DBF "parthenogenesis"@1DCB "mimicry"@1DDB "chance"@1DE3
+    TEXT object_Cyberquizz_028A 07 10 80 block_3889 - "How" "do" "Scorps" "reproduce?" FFFF "vivisection" "parthenogenesis" "mimicry" "chance"
     WHEN block_385F
         CONCEPT_GUARD "parthenogenesis" 0
     THEN
-        TEXT object_Cyberquizz_028A 08 08 A0 - - "Yes..."@1DEA "Just" "cut"@1DF1 "'em"@1DF5 "up" "and" "you've"@1DF9 "got" "a" "family"@1E00 "tree."@1E07
+        TEXT object_Cyberquizz_028A 08 08 A0 - - "Yes..." "Just" "cut" "'em" "up" "and" "you've" "got" "a" "family" "tree."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1628,7 +1628,7 @@ PROCEDURE proc_Q15_3804
     WHEN block_3889
         CONCEPT_GUARD "parthenogenesis" 1
     THEN
-        TEXT object_Cyberquizz_028A 09 08 90 - - "You" "should"@1E0D "open" "a" "dictionary"@1E14 "from" "time" "to" "time"
+        TEXT object_Cyberquizz_028A 09 08 90 - - "You" "should" "open" "a" "dictionary" "from" "time" "to" "time"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3889
@@ -1642,11 +1642,11 @@ PROCEDURE proc_Q16_3899
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 0A 10 80 block_3910 - "Name" "a" "highly" "concentrated" "explosive" FFFF "Big_bang"@1E1F "splach"@1E28 "plastok" "fuzz"@1E2F
+    TEXT object_Cyberquizz_028A 0A 10 80 block_3910 - "Name" "a" "highly" "concentrated" "explosive" FFFF "Big_bang" "splach" "plastok" "fuzz"
     WHEN block_38EC
         CONCEPT_GUARD "splach" 0
     THEN
-        TEXT object_Cyberquizz_028A 01 08 A0 - - "Yes..." "Made"@1E34 "from" "oxidized" "Larsen" "liver..."@1E39
+        TEXT object_Cyberquizz_028A 01 08 A0 - - "Yes..." "Made" "from" "oxidized" "Larsen" "liver..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1655,7 +1655,7 @@ PROCEDURE proc_Q16_3899
     WHEN block_3910
         CONCEPT_GUARD "splach" 1
     THEN
-        TEXT object_Cyberquizz_028A 02 08 90 - - "Well,"@1E42 "that" "answer" "wasn't"@1E48 "too" "explosive!"@1E4F
+        TEXT object_Cyberquizz_028A 02 08 90 - - "Well," "that" "answer" "wasn't" "too" "explosive!"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3910
@@ -1669,11 +1669,11 @@ PROCEDURE proc_Q17_3920
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 03 10 80 block_39A9 - "Who" "is" "the" "queen"@1E5A "of" "the" "PAGO"@1E60 "TAGO,"@1E65 "wife"@1E6B "of" "king" "Betakam" "IV?"@1E70 FFFF "umatika"@1E74 "tina_burner" "scorpia"@1E7C "pistilla"@1E84 "etamina"@1E8D
+    TEXT object_Cyberquizz_028A 03 10 80 block_39A9 - "Who" "is" "the" "queen" "of" "the" "PAGO" "TAGO," "wife" "of" "king" "Betakam" "IV?" FFFF "umatika" "tina_burner" "scorpia" "pistilla" "etamina"
     WHEN block_398B
         CONCEPT_GUARD "umatika" 0
     THEN
-        TEXT object_Cyberquizz_028A 04 08 A0 - - "Umatika"@1E95 "," "wife" "of" "king" "Betakam" "fourth,"@1E9D "eighteenth"@1EA5 "dynasty..."@1EB0
+        TEXT object_Cyberquizz_028A 04 08 A0 - - "Umatika" "," "wife" "of" "king" "Betakam" "fourth," "eighteenth" "dynasty..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1682,7 +1682,7 @@ PROCEDURE proc_Q17_3920
     WHEN block_39A9
         CONCEPT_GUARD "umatika" 1
     THEN
-        TEXT object_Cyberquizz_028A 05 08 90 - - "Not" "even"@1EBB "close..."@1EC0
+        TEXT object_Cyberquizz_028A 05 08 90 - - "Not" "even" "close..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_39A9
@@ -1696,11 +1696,11 @@ PROCEDURE proc_Q18_39B9
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 10 80 block_3A2E - "Who" "said" "Trump" "tails"@1EC9 "are" "dung?"@1ECF FFFF "lord_segelaxx"@1ED5 "inquisitor"@1EE3 "slim_gelati"@1EEE "tromp_deustache"@1EFA
+    TEXT object_Cyberquizz_028A 01 10 80 block_3A2E - "Who" "said" "Trump" "tails" "are" "dung?" FFFF "lord_segelaxx" "inquisitor" "slim_gelati" "tromp_deustache"
     WHEN block_3A08
         CONCEPT_GUARD "lord_segelaxx" 0
     THEN
-        TEXT object_Cyberquizz_028A 02 08 A0 - - "Avoid"@1F0A "smoking"@1F10 "them!"@1F18
+        TEXT object_Cyberquizz_028A 02 08 A0 - - "Avoid" "smoking" "them!"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1709,7 +1709,7 @@ PROCEDURE proc_Q18_39B9
     WHEN block_3A2E
         CONCEPT_GUARD "lord_segelaxx" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "Well," "maybe"@1F1E "it" "was" "a" "tough"@1F24 "question..."
+        TEXT object_Cyberquizz_028A 03 08 90 - - "Well," "maybe" "it" "was" "a" "tough" "question..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3A2E
@@ -1723,11 +1723,11 @@ PROCEDURE proc_Q19_3A3E
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 04 10 80 block_3ABF - "On" "what" "planet" "is" "sex" "sold"@1F2A "illicitly?"@1F2F FFFF "los_demonios"@1F3A "venusia"@1F47 "attroxcity"@1F4F "trashtown"@1F5A
+    TEXT object_Cyberquizz_028A 04 10 80 block_3ABF - "On" "what" "planet" "is" "sex" "sold" "illicitly?" FFFF "los_demonios" "venusia" "attroxcity" "trashtown"
     WHEN block_3A97
         CONCEPT_GUARD "attroxcity" 0
     THEN
-        TEXT object_Cyberquizz_028A 05 08 A0 - - "Attroxcity,"@1F64 "the" "Slimer" "city"@1F70 "..." "Quite" "right!"@1F75
+        TEXT object_Cyberquizz_028A 05 08 A0 - - "Attroxcity," "the" "Slimer" "city" "..." "Quite" "right!"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1736,7 +1736,7 @@ PROCEDURE proc_Q19_3A3E
     WHEN block_3ABF
         CONCEPT_GUARD "attroxcity" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "No" "," "that" "was" "a" "very" "wrong"@1F7C "answer..."
+        TEXT object_Cyberquizz_028A 06 08 90 - - "No" "," "that" "was" "a" "very" "wrong" "answer..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3ABF
@@ -1750,11 +1750,11 @@ PROCEDURE proc_Q20_3ACF
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 07 10 80 block_3B58 - "Who" "painted"@1F82 "the" "famous" "portrait"@1F8A "of" "Yolk?" FFFF "van_ish"@1F93 "van_gelis"@1F9B "van_et"@1FA5 "van_deta"@1FAC "van_tage"@1FB5 "van_gogue"@1FBE
+    TEXT object_Cyberquizz_028A 07 10 80 block_3B58 - "Who" "painted" "the" "famous" "portrait" "of" "Yolk?" FFFF "van_ish" "van_gelis" "van_et" "van_deta" "van_tage" "van_gogue"
     WHEN block_3B34
         CONCEPT_GUARD "van_gogue" 0
     THEN
-        TEXT object_Cyberquizz_028A 08 08 A0 - - "Van"@1FC8 "Gogue"@1FCC "painted" "it" "with" "the" "Great" "One's"@1FD2 "own"@1FD8 "yellow"@1FDC "blood..."@1FE3
+        TEXT object_Cyberquizz_028A 08 08 A0 - - "Van" "Gogue" "painted" "it" "with" "the" "Great" "One's" "own" "yellow" "blood..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1763,7 +1763,7 @@ PROCEDURE proc_Q20_3ACF
     WHEN block_3B58
         CONCEPT_GUARD "van_gogue" 1
     THEN
-        TEXT object_Cyberquizz_028A 09 08 90 - - "That" "was" "supposed"@1FEC "to" "be" "easy..."
+        TEXT object_Cyberquizz_028A 09 08 90 - - "That" "was" "supposed" "to" "be" "easy..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3B58
@@ -1777,11 +1777,11 @@ PROCEDURE proc_Q21_3B68
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 0A 10 80 block_3BDB - "Who" "wrote"@1FF5 "the" "famous" "Croolicum?"@1FFB FFFF "lord_raptor" "lord_ship"@2006 "von_spacecraft"@2010 "nobody"@201F
+    TEXT object_Cyberquizz_028A 0A 10 80 block_3BDB - "Who" "wrote" "the" "famous" "Croolicum?" FFFF "lord_raptor" "lord_ship" "von_spacecraft" "nobody"
     WHEN block_3BBD
         CONCEPT_GUARD "nobody" 0
     THEN
-        TEXT object_Cyberquizz_028A 00 08 A0 - - "There's" "no" "catching"@2026 "you" "out" "," "eh?"@202F
+        TEXT object_Cyberquizz_028A 00 08 A0 - - "There's" "no" "catching" "you" "out" "," "eh?"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1804,11 +1804,11 @@ PROCEDURE proc_Q22_3BEB
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 02 10 80 block_3C5C - "Who" "was" "the" "first"@2033 "Trump" "tail"@2039 "smoker"@203E "in" "the" "universe?"@2045 FFFF "al_hure"@204F "sebasto_paul"@2057 "lord_sirtaki"@2064 "jeph_dulikan"@2071
+    TEXT object_Cyberquizz_028A 02 10 80 block_3C5C - "Who" "was" "the" "first" "Trump" "tail" "smoker" "in" "the" "universe?" FFFF "al_hure" "sebasto_paul" "lord_sirtaki" "jeph_dulikan"
     WHEN block_3C42
         CONCEPT_GUARD "al_hure" 0
     THEN
-        TEXT object_Cyberquizz_028A 02 08 A0 - - "Good" "ol'"@207E "Al..."@2082
+        TEXT object_Cyberquizz_028A 02 08 A0 - - "Good" "ol'" "Al..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1817,7 +1817,7 @@ PROCEDURE proc_Q22_3BEB
     WHEN block_3C5C
         CONCEPT_GUARD "al_hure" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "Sorry..."@2088
+        TEXT object_Cyberquizz_028A 03 08 90 - - "Sorry..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3C5C
@@ -1831,11 +1831,11 @@ PROCEDURE proc_Q23_3C6C
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 04 10 80 block_3CE5 - "Who" "said" ":\"Silence"@2091 "feeds"@209B "on" "thunder"@20A2 "and" "fury\"?"@20AA FFFF "yolk" "joy_stica"@20B1 "hom" "super_zen"@20BB
+    TEXT object_Cyberquizz_028A 04 10 80 block_3CE5 - "Who" "said" ":\"Silence" "feeds" "on" "thunder" "and" "fury\"?" FFFF "yolk" "joy_stica" "hom" "super_zen"
     WHEN block_3CC5
         CONCEPT_GUARD "yolk" 0
     THEN
-        TEXT object_Cyberquizz_028A 04 08 A0 - - "Peace"@20C5 "to" "his" "yellow" "soul..."@20CB "Bravo."@20D3
+        TEXT object_Cyberquizz_028A 04 08 A0 - - "Peace" "to" "his" "yellow" "soul..." "Bravo."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1844,7 +1844,7 @@ PROCEDURE proc_Q23_3C6C
     WHEN block_3CE5
         CONCEPT_GUARD "yolk" 1
     THEN
-        TEXT object_Cyberquizz_028A 05 08 90 - - "Read"@20DA "your" "classics"@20DF "..."
+        TEXT object_Cyberquizz_028A 05 08 90 - - "Read" "your" "classics" "..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3CE5
@@ -1858,20 +1858,20 @@ PROCEDURE proc_Q24_3CF5
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 06 10 80 block_3D60 - "Name" "one" "hit"@20E8 "by" "the" "Migrators"@20EC FFFF "crush_me_baby"@20F6 "space_maker"@2104 "hello_dolly"@2110 "love_me_do"@211C
+    TEXT object_Cyberquizz_028A 06 10 80 block_3D60 - "Name" "one" "hit" "by" "the" "Migrators" FFFF "crush_me_baby" "space_maker" "hello_dolly" "love_me_do"
     WHEN block_3D44
         CONCEPT_GUARD "crush_me_baby" 0
     THEN
-        TEXT object_Cyberquizz_028A 07 08 A0 - - "Cruuuush"@2127 "meee"@2130 "baaaabbbyyyy!"@2135
+        TEXT object_Cyberquizz_028A 07 08 A0 - - "Cruuuush" "meee" "baaaabbbyyyy!"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3D44
     LABEL block_3D44
     WHEN block_3D60
-        CONCEPT_GUARD "crush_me_baby.."@2143 1
+        CONCEPT_GUARD "crush_me_baby.." 1
     THEN
-        TEXT object_Cyberquizz_028A 08 08 90 - - "Ouch"@2153 "..."
+        TEXT object_Cyberquizz_028A 08 08 90 - - "Ouch" "..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3D60
@@ -1885,11 +1885,11 @@ PROCEDURE proc_Q25_3D70
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 08 10 80 block_3DE5 - "Who" "is" "the" "oldest"@2158 "living"@215F "being" "in" "the" "universe?" FFFF "otto_von_smile" "Bob_Morlock" "super_tromp"@2166 "techno_paul"@2172
+    TEXT object_Cyberquizz_028A 08 10 80 block_3DE5 - "Who" "is" "the" "oldest" "living" "being" "in" "the" "universe?" FFFF "otto_von_smile" "Bob_Morlock" "super_tromp" "techno_paul"
     WHEN block_3DC5
         CONCEPT_GUARD "Bob_Morlock" 0
     THEN
-        TEXT object_Cyberquizz_028A 08 08 A0 - - "Good" "ol'" "Bob!"@217E
+        TEXT object_Cyberquizz_028A 08 08 A0 - - "Good" "ol'" "Bob!"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1898,7 +1898,7 @@ PROCEDURE proc_Q25_3D70
     WHEN block_3DE5
         CONCEPT_GUARD "Bob_Morlock" 1
     THEN
-        TEXT object_Cyberquizz_028A 06 08 90 - - "I" "said" "the" "OLDEST..."@2183
+        TEXT object_Cyberquizz_028A 06 08 90 - - "I" "said" "the" "OLDEST..."
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3DE5
@@ -1912,11 +1912,11 @@ PROCEDURE proc_Q26_3DF5
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 08 10 80 block_3E74 - "Which" "famous" "dancer"@218D "starred"@2194 "in" "\"Squeeze"@219C "me" "in" "your" "tentacles"@21A5 "darling\"?"@21AF FFFF "torka"@21B9 "tina_burner" "cybertha"@21BF "joy_stika"@21C8
+    TEXT object_Cyberquizz_028A 08 10 80 block_3E74 - "Which" "famous" "dancer" "starred" "in" "\"Squeeze" "me" "in" "your" "tentacles" "darling\"?" FFFF "torka" "tina_burner" "cybertha" "joy_stika"
     WHEN block_3E50
         CONCEPT_GUARD "tina_burner" 0
     THEN
-        TEXT object_Cyberquizz_028A 06 08 A0 - - "What" "a" "performance"@21D2 "!"
+        TEXT object_Cyberquizz_028A 06 08 A0 - - "What" "a" "performance" "!"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1925,7 +1925,7 @@ PROCEDURE proc_Q26_3DF5
     WHEN block_3E74
         CONCEPT_GUARD "tina_burner" 1
     THEN
-        TEXT object_Cyberquizz_028A 09 08 90 - - "How" "can" "you" "not" "know" "that?"@21DE
+        TEXT object_Cyberquizz_028A 09 08 90 - - "How" "can" "you" "not" "know" "that?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3E74
@@ -1939,7 +1939,7 @@ PROCEDURE proc_Q27_3E84
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 06 10 80 block_3EFD - "What" "is" "the" "preferred"@21E4 "drink"@21EE "of" "the" "Migrax?"@21F4 FFFF "processed_liver"@21FC "frozen_migrita"@220C "fermented_egg"@221B "heavy_water"@2229
+    TEXT object_Cyberquizz_028A 06 10 80 block_3EFD - "What" "is" "the" "preferred" "drink" "of" "the" "Migrax?" FFFF "processed_liver" "frozen_migrita" "fermented_egg" "heavy_water"
     WHEN block_3ED7
         CONCEPT_GUARD "processed_liver" 0
     THEN
@@ -1966,11 +1966,11 @@ PROCEDURE proc_Q28_3F0D
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 06 10 80 block_3F8E - "Who" "said:\"ondoyant"@2235 "pretty,"@2244 "Croolis"@224C "drool."@2254 "ondoyant"@225B "ugly,"@2264 "Croolis" "cruel\""@226A FFFF "nobody" "maxxon"@2271 "yolk"
+    TEXT object_Cyberquizz_028A 06 10 80 block_3F8E - "Who" "said:\"ondoyant" "pretty," "Croolis" "drool." "ondoyant" "ugly," "Croolis" "cruel\"" FFFF "nobody" "maxxon" "yolk"
     WHEN block_3F66
         CONCEPT_GUARD "maxxon" 0
     THEN
-        TEXT object_Cyberquizz_028A 00 08 A0 - - "What" "a" "poet"@2278 "," "that" "Maxxon."@227D
+        TEXT object_Cyberquizz_028A 00 08 A0 - - "What" "a" "poet" "," "that" "Maxxon."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -1979,7 +1979,7 @@ PROCEDURE proc_Q28_3F0D
     WHEN block_3F8E
         CONCEPT_GUARD "maxxon" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "No" "poetry"@2285 "in" "your" "withered"@228C "soul"@2295 "," "eh?"
+        TEXT object_Cyberquizz_028A 03 08 90 - - "No" "poetry" "in" "your" "withered" "soul" "," "eh?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_3F8E
@@ -1993,11 +1993,11 @@ PROCEDURE proc_Q29_3F9E
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 00 10 80 block_401D - "The" "Great" "Yolk's"@229A "tomb"@22A2 "is" "on" "which"@22A7 "planet?"@22AD FFFF "rondo" "ekatomb"@22B5 "vista" "magnus"@22BD
+    TEXT object_Cyberquizz_028A 00 10 80 block_401D - "The" "Great" "Yolk's" "tomb" "is" "on" "which" "planet?" FFFF "rondo" "ekatomb" "vista" "magnus"
     WHEN block_3FF7
         CONCEPT_GUARD "vista" 0
     THEN
-        TEXT object_Cyberquizz_028A 06 08 A0 - - "In" "the" "SCRUT"@22C4 "palace"@22CA "on" "Vista"
+        TEXT object_Cyberquizz_028A 06 08 A0 - - "In" "the" "SCRUT" "palace" "on" "Vista"
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -2006,7 +2006,7 @@ PROCEDURE proc_Q29_3F9E
     WHEN block_401D
         CONCEPT_GUARD "vista" 1
     THEN
-        TEXT object_Cyberquizz_028A 09 08 90 - - "You" "never" "heard" "of" "the" "SCRUT" "palace?"@22D1
+        TEXT object_Cyberquizz_028A 09 08 90 - - "You" "never" "heard" "of" "the" "SCRUT" "palace?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_401D
@@ -2020,11 +2020,11 @@ PROCEDURE proc_Q30_402D
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 07 10 80 block_40A4 - "On" "which" "planet" "may"@22D9 "the" "voice"@22DD "be" "heard?"@22E3 FFFF "pterra" "cyberock"@22EA "kult"@22F3 "tumul"
+    TEXT object_Cyberquizz_028A 07 10 80 block_40A4 - "On" "which" "planet" "may" "the" "voice" "be" "heard?" FFFF "pterra" "cyberock" "kult" "tumul"
     WHEN block_4080
         CONCEPT_GUARD "kult" 0
     THEN
-        TEXT object_Cyberquizz_028A 03 08 A0 - - "Indeed"@22F8 "," "Commander..."
+        TEXT object_Cyberquizz_028A 03 08 A0 - - "Indeed" "," "Commander..."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -2033,12 +2033,12 @@ PROCEDURE proc_Q30_402D
     WHEN block_40A4
         CONCEPT_GUARD "kult" 1
     THEN
-        TEXT object_Cyberquizz_028A 00 08 90 - - "You're" "not" "deaf"@2300 "by" "any" "chance?"@2305
+        TEXT object_Cyberquizz_028A 00 08 90 - - "You're" "not" "deaf" "by" "any" "chance?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_40A4
     LABEL block_40A4
-    TEXT object_Cyberquizz_028A 03 08 80 - - "next"@230D "question:"
+    TEXT object_Cyberquizz_028A 03 08 80 - - "next" "question:"
     POKE_BYTE 402E 00
 END_PROCEDURE proc_Q30_402D
 
@@ -2047,11 +2047,11 @@ PROCEDURE proc_Q31_40B4
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 01 10 80 block_412F - "What" "is" "the" "planet" "Tumul's"@2312 "sun?"@231A FFFF "ex897"@231F "gladis"@2325 "corpo"@232C "negratom"@2332
+    TEXT object_Cyberquizz_028A 01 10 80 block_412F - "What" "is" "the" "planet" "Tumul's" "sun?" FFFF "ex897" "gladis" "corpo" "negratom"
     WHEN block_4109
         CONCEPT_GUARD "gladis" 0
     THEN
-        TEXT object_Cyberquizz_028A 03 08 A0 - - "Gladis"@233B "," "the" "smart" "star" "."
+        TEXT object_Cyberquizz_028A 03 08 A0 - - "Gladis" "," "the" "smart" "star" "."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -2060,7 +2060,7 @@ PROCEDURE proc_Q31_40B4
     WHEN block_412F
         CONCEPT_GUARD "gladis" 1
     THEN
-        TEXT object_Cyberquizz_028A 01 08 90 - - "You" "mean" "you" "never" "went" "to" "Tumul?"@2342
+        TEXT object_Cyberquizz_028A 01 08 90 - - "You" "mean" "you" "never" "went" "to" "Tumul?"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_412F
@@ -2074,11 +2074,11 @@ PROCEDURE proc_Q32_413F
     BRANCH_GAMEFLAG
     ACTOR field_Cyberquizz_028A_s13_02C4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Cyberquizz_028A 0A 10 80 block_41B6 - "How" "many" "moons"@2349 "has" "Moskito?"@234F FFFF "five"@2358 "twelve" "zero"@235D "thirty_two"@2362
+    TEXT object_Cyberquizz_028A 0A 10 80 block_41B6 - "How" "many" "moons" "has" "Moskito?" FFFF "five" "twelve" "zero" "thirty_two"
     WHEN block_4190
         CONCEPT_GUARD "zero" 0
     THEN
-        TEXT object_Cyberquizz_028A 01 08 A0 - - "Absolutely"@236D "right." "Moskito"@2378 "is" "moonless."@2380
+        TEXT object_Cyberquizz_028A 01 08 A0 - - "Absolutely" "right." "Moskito" "is" "moonless."
         SHARED_STATE C0 1382 F6 C1 0001
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
@@ -2087,12 +2087,12 @@ PROCEDURE proc_Q32_413F
     WHEN block_41B6
         CONCEPT_GUARD "zero" 1
     THEN
-        TEXT object_Cyberquizz_028A 03 08 90 - - "Maybe" "you" "have" "mosquitoes"@238A "for" "a" "brain"@2395
+        TEXT object_Cyberquizz_028A 03 08 90 - - "Maybe" "you" "have" "mosquitoes" "for" "a" "brain"
         SHARED_STATE C0 1380 F6 C1 0001
         CLEAR_ALTERNATE_CONCEPT
     END_WHEN block_41B6
     LABEL block_41B6
-    TEXT object_Cyberquizz_028A 03 08 80 - - "And" "that" "wraps"@239B "it" "up" "question-wise..."@23A2
+    TEXT object_Cyberquizz_028A 03 08 80 - - "And" "that" "wraps" "it" "up" "question-wise..."
     POKE_BYTE 4140 00
 END_PROCEDURE proc_Q32_413F
 
@@ -2101,51 +2101,51 @@ PROCEDURE proc_scrujo_41CE
     BRANCH_FLAG_274F
     ACTOR field_Scruter_Jo_0752_s13_078C object_blood_0028 0
     GUARD_POP
-    TEXT object_Scruter_Jo_0752 13 00 80 - - "Commander" "," "you" "go" "search"@23B3 "BIONIUM" "in" "SCRUTER"@23BA "JO's"@23C2 "cyberspace"@23C7 "..."
+    TEXT object_Scruter_Jo_0752 13 00 80 - - "Commander" "," "you" "go" "search" "BIONIUM" "in" "SCRUTER" "JO's" "cyberspace" "..."
     WHEN block_43A6
         SHARED_STATE C0 1366 F5 C1 0000
     THEN
-        TEXT object_Scruter_Jo_0752 FF 00 80 - - "Me" "explain"@23D2 "how" "you" "pick" "up" "BIONIUM" ".."
-        TEXT object_Scruter_Jo_0752 FF 00 80 - - "You" "find" "BIOXX"@23DA "." "Bioxx"@23E0 "be" "small"@23E6 "energy"@23EC "creatures"@23F3 "..."
-        TEXT object_Scruter_Jo_0752 01 00 80 - - "You" "touch"@23FD "BIOXX" "with" "hand"@2403 "once"@2408 "."
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "Sounds"@240D "like" "a" "piece"@2414 "of" "cake"@241A "to" "me" "," "Commander" "!!"
-        TEXT object_Scruter_Jo_0752 02 00 80 - - "If"@241F "you" "touch" "BIOXX" "twice"@2422 "," "you" "CAPTURE"@2428 "BIOXX" "on" "tip"@2430 "of" "your" "finger"@2434 "..."
+        TEXT object_Scruter_Jo_0752 FF 00 80 - - "Me" "explain" "how" "you" "pick" "up" "BIONIUM" ".."
+        TEXT object_Scruter_Jo_0752 FF 00 80 - - "You" "find" "BIOXX" "." "Bioxx" "be" "small" "energy" "creatures" "..."
+        TEXT object_Scruter_Jo_0752 01 00 80 - - "You" "touch" "BIOXX" "with" "hand" "once" "."
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "Sounds" "like" "a" "piece" "of" "cake" "to" "me" "," "Commander" "!!"
+        TEXT object_Scruter_Jo_0752 02 00 80 - - "If" "you" "touch" "BIOXX" "twice" "," "you" "CAPTURE" "BIOXX" "on" "tip" "of" "your" "finger" "..."
         TEXT object_Scruter_Jo_0752 FF 20 80 - - "You" "catch" "it" "on" "the" "tip" "of" "your" "finger" "!!!" "How" "about" "that" "..."
-        TEXT object_Scruter_Jo_0752 03 00 80 - - "Then"@243B "you" "can" "carry"@2440 "BIOXX" "to" "Cybernetic"@2446 "MANTAS"@2451
-        TEXT object_Scruter_Jo_0752 05 00 80 - - "You" "put"@2458 "BIOXX" "in" "belly"@245C "of" "Manta"@2462 "..."
-        TEXT object_Scruter_Jo_0752 04 00 80 - - "BIOXX" "stick"@2468 "to" "MANTAS" "..."
+        TEXT object_Scruter_Jo_0752 03 00 80 - - "Then" "you" "can" "carry" "BIOXX" "to" "Cybernetic" "MANTAS"
+        TEXT object_Scruter_Jo_0752 05 00 80 - - "You" "put" "BIOXX" "in" "belly" "of" "Manta" "..."
+        TEXT object_Scruter_Jo_0752 04 00 80 - - "BIOXX" "stick" "to" "MANTAS" "..."
         TEXT object_Scruter_Jo_0752 FF 20 80 - - "That's" "something" "I" "wanna" "see" "..."
-        TEXT object_Scruter_Jo_0752 06 00 80 - - "Mantas"@246E "change"@2475 "BIOXX" "into" "BIONIUM..."@247C
-        TEXT object_Scruter_Jo_0752 05 00 80 - - "More"@2487 "BIOXX" "you" "give" "to" "Mantas" "," "more"@248C "BIONIUM" "you" "get" "..."
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "Lead"@2491 "me" "to" "those" "BIOXXes"@2496 "!!!" "BIONIUM" "..." "Yummy"@249E "..."
-        TEXT object_Scruter_Jo_0752 04 00 80 - - "To" "come" "back" "from" "CYBERSPACE"@24A4 "," "you" "touch" "BLUE"@24AF "BOX"@24B4 "...."
+        TEXT object_Scruter_Jo_0752 06 00 80 - - "Mantas" "change" "BIOXX" "into" "BIONIUM..."
+        TEXT object_Scruter_Jo_0752 05 00 80 - - "More" "BIOXX" "you" "give" "to" "Mantas" "," "more" "BIONIUM" "you" "get" "..."
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "Lead" "me" "to" "those" "BIOXXes" "!!!" "BIONIUM" "..." "Yummy" "..."
+        TEXT object_Scruter_Jo_0752 04 00 80 - - "To" "come" "back" "from" "CYBERSPACE" "," "you" "touch" "BLUE" "BOX" "...."
         TEXT object_Scruter_Jo_0752 06 00 80 - - "You" "understand" "?"
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "We" "get" "the" "picture"@24B8 "," "Mister" "SCRUTER" "JO"@24C0 "..." "Right" "," "Commander" "?"
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "We" "get" "the" "picture" "," "Mister" "SCRUTER" "JO" "..." "Right" "," "Commander" "?"
     END_WHEN block_43A6
     LABEL block_43A6
     TEXT object_Scruter_Jo_0752 14 00 80 - - "YOU" "go" "," "Commander" "..."
-    TEXT object_Scruter_Jo_0752 15 00 80 - - "Ahh" "..." "Me" "feel" "better"@24C3 "..."
+    TEXT object_Scruter_Jo_0752 15 00 80 - - "Ahh" "..." "Me" "feel" "better" "..."
     WHEN block_4456
         SHARED_STATE C0 1368 F2 C1 0000
     THEN
-        TEXT object_Scruter_Jo_0752 02 00 80 - - "Good" "work"@24CA "..." "You" "did" "be" "successful"@24CF "..."
+        TEXT object_Scruter_Jo_0752 02 00 80 - - "Good" "work" "..." "You" "did" "be" "successful" "..."
         TEXT object_Scruter_Jo_0752 03 00 80 - - "You" "did" "get" "BIONIUM" "..."
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "YES" "!!!" "Commander" "," "did" "I" "ever"@24DA "tell" "you" "what" "a" "cool"@24DF "dude"@24E4 "you" "are" "?"
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "The" "BIONIUM" "will" "make" "me" "smarter" "and" "I'll" "be" "able"@24E9 "to" "help" "you" "better" "..."
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "YES" "!!!" "Commander" "," "did" "I" "ever" "tell" "you" "what" "a" "cool" "dude" "you" "are" "?"
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "The" "BIONIUM" "will" "make" "me" "smarter" "and" "I'll" "be" "able" "to" "help" "you" "better" "..."
         SHARED_STATE C0 1366 F5 C1 0001
     END_WHEN block_4456
     LABEL block_4456
     WHEN block_44F1
         SHARED_STATE C0 1368 F5 C1 0000
     THEN
-        TEXT object_Scruter_Jo_0752 04 00 80 - - "Not" "good" "," "friend" "..." "You" "fail"@24EE "..."
-        TEXT object_Scruter_Jo_0752 FF 20 80 - - "You" "didn't" "understand" "the" "idea"@24F3 "," "huh"@24F8 "," "Commander" "..."
+        TEXT object_Scruter_Jo_0752 04 00 80 - - "Not" "good" "," "friend" "..." "You" "fail" "..."
+        TEXT object_Scruter_Jo_0752 FF 20 80 - - "You" "didn't" "understand" "the" "idea" "," "huh" "," "Commander" "..."
         TEXT object_Scruter_Jo_0752 FF 20 80 - - "I" "have" "to" "have" "BIONIUM" "," "Commander" "." "It" "makes" "me" "smarter" "..."
-        TEXT object_Scruter_Jo_0752 04 00 80 - - "Ha" "!" "Ha" "!" "You" "need" "much" "bionium"@24FC "BIONIUM" "..." "Ha" "!" "Ha" "!" "..."
+        TEXT object_Scruter_Jo_0752 04 00 80 - - "Ha" "!" "Ha" "!" "You" "need" "much" "bionium" "BIONIUM" "..." "Ha" "!" "Ha" "!" "..."
         TEXT object_Scruter_Jo_0752 FF 20 80 - - "That's" "enough" "out" "of" "you" "!!!"
     END_WHEN block_44F1
     LABEL block_44F1
-    TEXT object_Scruter_Jo_0752 07 08 80 - - "Bye" "bye" "," "Commander" "." "Me" "go" "back" "to" "CYBERSPACE..."@2504
+    TEXT object_Scruter_Jo_0752 07 08 80 - - "Bye" "bye" "," "Commander" "." "Me" "go" "back" "to" "CYBERSPACE..."
     RECORD_CLEAR field_Scruter_Jo_0752_s13_078C
 END_PROCEDURE proc_scrujo_41CE
 
@@ -2155,32 +2155,32 @@ PROCEDURE proc_bigb1_4510
     RECORD_WILDCARD AF field_Tina_Burner_079A_s11_07B2 0F2C 0
     ACTOR field_Migrator_043A_s13_0474 object_blood_0028 0
     GUARD_POP
-    TEXT object_Migrator_043A 05 00 80 - - "Me" "greet"@2512 "you" "," "friend" "..."
+    TEXT object_Migrator_043A 05 00 80 - - "Me" "greet" "you" "," "friend" "..."
     TEXT object_Migrator_043A 02 00 80 - - "You" "have" "ring" "???..."
-    TEXT object_Migrator_043A 03 00 80 - - "Me" "soon" "marry"@2518 "TINA..."@251E "YOU" "COME" "WEDDING" "." "ME" "INVITE"@2526 "YOU" "." "WE" "MAKE"@252D "BIG" "CONCERT"@2532 "..."
+    TEXT object_Migrator_043A 03 00 80 - - "Me" "soon" "marry" "TINA..." "YOU" "COME" "WEDDING" "." "ME" "INVITE" "YOU" "." "WE" "MAKE" "BIG" "CONCERT" "..."
     WHEN block_4650
         RECORD_WILDCARD AF field_ring_12DC_s11_12F0 0028 0
     THEN
         TEXT object_Migrator_043A FF 20 80 - - "Teleport" "him" "the" "ring" "," "Commander" "." "That'll" "make" "his" "day" "...."
-        TEXT object_Migrator_043A FF 10 80 block_45D2 - "RING" "TELEPORTED"@253A "TO" "MIGRATOR" FFFF "TELEPORT"
+        TEXT object_Migrator_043A FF 10 80 block_45D2 - "RING" "TELEPORTED" "TO" "MIGRATOR" FFFF "TELEPORT"
         WHEN block_45D2
             CONCEPT_GUARD "TELEPORT" 0
         THEN
-            TEXT object_Migrator_043A FF 08 90 - - "RING" "TELEPORTED" "TO" "MOSKITO"@2545 "AIRPORT"@254D "ZONE" "."
+            TEXT object_Migrator_043A FF 08 90 - - "RING" "TELEPORTED" "TO" "MOSKITO" "AIRPORT" "ZONE" "."
             RECORD_TRIPLE field_blood_0028_s13_0030 12DC 043A 0
             CLEAR_ALTERNATE_CONCEPT
         END_WHEN block_45D2
         LABEL block_45D2
-        TEXT object_Migrator_043A 02 00 80 - - "WOWWWW"@2555 "!" "Ring"@255C "be" "nice"@2561 "nice" "..." "Me" "like" "..." "Me" "thank" "you" "," "friend" "...."
+        TEXT object_Migrator_043A 02 00 80 - - "WOWWWW" "!" "Ring" "be" "nice" "nice" "..." "Me" "like" "..." "Me" "thank" "you" "," "friend" "...."
         TEXT object_Migrator_043A 03 00 80 - - "Thank" "you" "..." "Thank" "you" "..." "YOU" "COME" "WEDDING" "..." "WE" "MAKE" "BIG" "CONCERT" "..."
-        TEXT object_Migrator_043A 02 00 80 - - "BYE" "BYE" "FRIEND" "...." "TINA" "SEND"@2566 "YOU" "BIG" "KISS"@256B "..."
+        TEXT object_Migrator_043A 02 00 80 - - "BYE" "BYE" "FRIEND" "...." "TINA" "SEND" "YOU" "BIG" "KISS" "..."
         TEXT object_Migrator_043A FF 08 90 - - "..."
         SHARED_STATE C0 1384 F5 C1 0001
         RECORD_CLEAR field_Migrator_043A_s13_0474
     END_WHEN block_4650
     LABEL block_4650
     TEXT object_Migrator_043A 02 00 80 - - "You" "not" "have" "ring" "..." "Me" "worried" "friend" "..."
-    TEXT object_Migrator_043A 03 00 80 - - "You" "quick"@2570 "go" "get" "ring" "..."
+    TEXT object_Migrator_043A 03 00 80 - - "You" "quick" "go" "get" "ring" "..."
     TEXT object_Migrator_043A 02 00 80 - - "Me" "wait" "you" "." "Bye" "bye" "friend" "..."
     TEXT object_Migrator_043A FF 08 80 - - "..."
     RECORD_CLEAR field_Migrator_043A_s13_0474
@@ -2200,15 +2200,15 @@ PROCEDURE proc_veuv1_46BB
     CONDITIONAL_BLOCK 00 proc_menbr_480C
     BRANCH_PRESENTATION
     GUARD_POP
-    TEXT object_Scruter_K_070A FF 00 80 - - "Come" "in" "come" "in" "...THIS"@2576 "BE"@257E "HANNA"@2581 "SCRUTA"@2587 "." "My" "husband"@258E "SCRUTER" "JO" "be" "fighter"@2596 "pilot"@259E "..."
-    TEXT object_Scruter_K_070A FF 00 80 - - "You" "blow" "up" "his" "fighter" "in" "combat"@25A4 "..." "ME" "WIDOW"@25AB "NOW" "..." "CRY" "..." "CRY" "..."
-    TEXT object_Scruter_K_070A FF 00 80 - - "ME" "NOT" "CAN"@25B1 "PAY"@25B5 "RENT"@25B9 "..." "YOUR" "FAULT"@25BE "..." "INSURANCE"@25C4 "NOT" "GIVE" "ANYTHING"@25CE "..."
-    TEXT object_Scruter_K_070A FF 00 80 - - "ME" "WIDOW" "..." "CRY" "..." "CRY" "..." "DESPAIRING"@25D7 "WAIL"@25E2 "...." "YOU" "KILL"@25E7 "SCRUTER" "JO" "..."
-    TEXT object_Scruter_K_070A FF 20 80 - - "Commander" "?" "They're" "giving" "out" "your" "phone"@25EC "number"@25F2 "to" "widows"@25F9 "now" "..."
-    TEXT object_Scruter_K_070A FF 20 80 - - "It's" "not" "right" "." "They're" "trying"@2600 "to" "psych"@2607 "you" "out" "," "Commander" "..." "Don't" "answer" "..."
-    TEXT object_Scruter_K_070A FF 00 80 - - "YOU" "MUST" "PAY" "..." "CRY" "..." "CRY" "..." "YOU" "DID"@260D "KILL" "MY"@2611 "SCRUTER" "JO" "..." "CRY" "..." "CRY" "...."
-    TEXT object_Scruter_K_070A FF 00 80 - - "KRUIKKK..."@2614
-    TEXT object_Scruter_K_070A FF 20 80 - - "She" "hung"@261F "up" "..." "I" "don't" "like" "it" "," "Commander" "..."
+    TEXT object_Scruter_K_070A FF 00 80 - - "Come" "in" "come" "in" "...THIS" "BE" "HANNA" "SCRUTA" "." "My" "husband" "SCRUTER" "JO" "be" "fighter" "pilot" "..."
+    TEXT object_Scruter_K_070A FF 00 80 - - "You" "blow" "up" "his" "fighter" "in" "combat" "..." "ME" "WIDOW" "NOW" "..." "CRY" "..." "CRY" "..."
+    TEXT object_Scruter_K_070A FF 00 80 - - "ME" "NOT" "CAN" "PAY" "RENT" "..." "YOUR" "FAULT" "..." "INSURANCE" "NOT" "GIVE" "ANYTHING" "..."
+    TEXT object_Scruter_K_070A FF 00 80 - - "ME" "WIDOW" "..." "CRY" "..." "CRY" "..." "DESPAIRING" "WAIL" "...." "YOU" "KILL" "SCRUTER" "JO" "..."
+    TEXT object_Scruter_K_070A FF 20 80 - - "Commander" "?" "They're" "giving" "out" "your" "phone" "number" "to" "widows" "now" "..."
+    TEXT object_Scruter_K_070A FF 20 80 - - "It's" "not" "right" "." "They're" "trying" "to" "psych" "you" "out" "," "Commander" "..." "Don't" "answer" "..."
+    TEXT object_Scruter_K_070A FF 00 80 - - "YOU" "MUST" "PAY" "..." "CRY" "..." "CRY" "..." "YOU" "DID" "KILL" "MY" "SCRUTER" "JO" "..." "CRY" "..." "CRY" "...."
+    TEXT object_Scruter_K_070A FF 00 80 - - "KRUIKKK..."
+    TEXT object_Scruter_K_070A FF 20 80 - - "She" "hung" "up" "..." "I" "don't" "like" "it" "," "Commander" "..."
     TEXT object_Scruter_K_070A FF 08 90 - - "stop"
     POKE_BYTE 46BC 00
     RECORD_CLEAR field_Scruter_K_070A_s13_0744
@@ -2220,14 +2220,14 @@ PROCEDURE proc_menbr_480C
     ACTOR field_menu_0902_s13_093C object_blood_0028 0
     RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 0
     GUARD_POP
-    TEXT object_menu_0902 FF 00 80 - - "\"IMPROVED"@2624 "MENU\""@262E
-    TEXT object_menu_0902 FF 00 80 - - "Today"@2634 "CHEF"@263A "BRONKO"@263F "has" "laid"@2646 "out" "for" "you" ":"
-    TEXT object_menu_0902 FF 00 80 - - "Tasty"@264B "MUFFALO"@2651 "soup"@2659 "Bronko-style"@265E "."
-    TEXT object_menu_0902 FF 00 80 - - "MURFFALO"@266B "kidneys"@2674 "Bronko-style" "."
-    TEXT object_menu_0902 FF 00 80 - - "MURFFALO" "hamburger"@267C "with" "Bar-B-Q"@2686 "recycled-oil"@268E "dip"@269B "."
-    TEXT object_menu_0902 FF 00 80 - - "Smooth"@269F "MURFFALO-chip"@26A6 "ice"@26B4 "cream"@26B8 "."
-    TEXT object_menu_0902 FF 00 80 - - "Recycled"@26BE "water"@26C7
-    TEXT object_menu_0902 FF 00 80 - - "Chef"@26CD "Bronko" "says" "..." "Burping's"@26D2 "bad"@26DC "manners"@26E0 "!" "..."
+    TEXT object_menu_0902 FF 00 80 - - "\"IMPROVED" "MENU\""
+    TEXT object_menu_0902 FF 00 80 - - "Today" "CHEF" "BRONKO" "has" "laid" "out" "for" "you" ":"
+    TEXT object_menu_0902 FF 00 80 - - "Tasty" "MUFFALO" "soup" "Bronko-style" "."
+    TEXT object_menu_0902 FF 00 80 - - "MURFFALO" "kidneys" "Bronko-style" "."
+    TEXT object_menu_0902 FF 00 80 - - "MURFFALO" "hamburger" "with" "Bar-B-Q" "recycled-oil" "dip" "."
+    TEXT object_menu_0902 FF 00 80 - - "Smooth" "MURFFALO-chip" "ice" "cream" "."
+    TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
+    TEXT object_menu_0902 FF 00 80 - - "Chef" "Bronko" "says" "..." "Burping's" "bad" "manners" "!" "..."
     TEXT object_menu_0902 FF 08 80 - - "stop"
     RECORD_CLEAR field_menu_0902_s13_093C
 END_PROCEDURE proc_menbr_480C
@@ -2238,15 +2238,15 @@ PROCEDURE proc_men1_48BF
     ACTOR field_menu_0902_s13_093C object_blood_0028 0
     RECORD_WILDCARD AF field_Bronko_0362_s11_037A FFFF 1
     GUARD_POP
-    TEXT object_menu_0902 FF 00 80 - - "\"MENU\""@26E8
-    TEXT object_menu_0902 FF 00 80 - - "Today's"@26EF "fare"@26F7 ":"
-    TEXT object_menu_0902 FF 00 80 - - "PLASMA"@26FC "soup" "HONK-style"@2703 "."
-    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER"@270E "belly" "in" "slobber"@2717 "sauce"@271F "."
-    TEXT object_menu_0902 FF 00 80 - - "Jellied"@2725 "URTIKAN"@272D "with" "MURFFALO" "bone"@2735 "marrow"@273A "."
-    TEXT object_menu_0902 FF 00 80 - - "GLOK"@2741 "eye"@2746 "pie"@274A "."
+    TEXT object_menu_0902 FF 00 80 - - "\"MENU\""
+    TEXT object_menu_0902 FF 00 80 - - "Today's" "fare" ":"
+    TEXT object_menu_0902 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
+    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "belly" "in" "slobber" "sauce" "."
+    TEXT object_menu_0902 FF 00 80 - - "Jellied" "URTIKAN" "with" "MURFFALO" "bone" "marrow" "."
+    TEXT object_menu_0902 FF 00 80 - - "GLOK" "eye" "pie" "."
     TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0902 FF 00 80 - - "The" "chef"@274E "says" "..." "Don't" "eat" "with" "your" "mouth"@2753 "full"@2759 "!" "..."
-    TEXT object_menu_0902 FF 08 90 - - "Stop"@275E
+    TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Don't" "eat" "with" "your" "mouth" "full" "!" "..."
+    TEXT object_menu_0902 FF 08 90 - - "Stop"
     POKE_BYTE 48C0 00
     RECORD_CLEAR field_menu_0902_s13_093C
 END_PROCEDURE proc_men1_48BF
@@ -2260,9 +2260,9 @@ PROCEDURE proc_men2_496F
     TEXT object_menu_0902 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0902 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0902 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "snout"@2763 "stew"@2769 "."
-    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "seeds"@276E "in" "MURFFALO" "venom"@2774 "."
-    TEXT object_menu_0902 FF 00 80 - - "GLOK" "juice"@277A "dessert"@2780 "."
+    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "snout" "stew" "."
+    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "seeds" "in" "MURFFALO" "venom" "."
+    TEXT object_menu_0902 FF 00 80 - - "GLOK" "juice" "dessert" "."
     TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
     TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Don't" "talk" "with" "your" "mouth" "open" "!" "..."
     TEXT object_menu_0902 FF 08 90 - - "stop"
@@ -2279,11 +2279,11 @@ PROCEDURE proc_men3_4A19
     TEXT object_menu_0902 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0902 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0902 FF 00 80 - - "PLASMA" "soup" "HONK-style" "."
-    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "feet"@2788 "in" "emulsive"@278D "sauce" "."
-    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "leaves"@2796 "in" "MURFFALO" "sweat"@279D "."
-    TEXT object_menu_0902 FF 00 80 - - "GLOK" "flake"@27A3 "dessert" "."
+    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "feet" "in" "emulsive" "sauce" "."
+    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "leaves" "in" "MURFFALO" "sweat" "."
+    TEXT object_menu_0902 FF 00 80 - - "GLOK" "flake" "dessert" "."
     TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Somebody"@27A9 "didn't" "finish"@27B2 "his" "wrigglers"@27B9 "yesterday"@27C3 "..."
+    TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Somebody" "didn't" "finish" "his" "wrigglers" "yesterday" "..."
     TEXT object_menu_0902 FF 08 90 - - "stop"
     POKE_BYTE 4A1A 00
     RECORD_CLEAR field_menu_0902_s13_093C
@@ -2298,11 +2298,11 @@ PROCEDURE proc_men4_4AC5
     TEXT object_menu_0902 FF 00 80 - - "\"MENU\""
     TEXT object_menu_0902 FF 00 80 - - "Today's" "fare" ":"
     TEXT object_menu_0902 FF 00 80 - - "HONK-style" "PLASMA" "soup" "."
-    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "brain" "," "stewed"@27CD "in" "its"@27D4 "own" "juice" "."
-    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "trunk"@27D8 "," "stuffed"@27DE "with" "MURFFALO" "liver" "."
-    TEXT object_menu_0902 FF 00 80 - - "GLOK" "dee-lite"@27E6 "."
+    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "brain" "," "stewed" "in" "its" "own" "juice" "."
+    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "trunk" "," "stuffed" "with" "MURFFALO" "liver" "."
+    TEXT object_menu_0902 FF 00 80 - - "GLOK" "dee-lite" "."
     TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
-    TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Plenty"@27EF "more" "in" "the" "kitchen"@27F6 "!" "..."
+    TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "Plenty" "more" "in" "the" "kitchen" "!" "..."
     TEXT object_menu_0902 FF 08 90 - - "stop"
     POKE_BYTE 4AC6 00
     RECORD_CLEAR field_menu_0902_s13_093C
@@ -2316,10 +2316,10 @@ PROCEDURE proc_men5_4B79
     GUARD_POP
     TEXT object_menu_0902 FF 00 80 - - "\"IMPROVED" "MENU\""
     TEXT object_menu_0902 FF 00 80 - - "Today's" "fare" ":"
-    TEXT object_menu_0902 FF 00 80 - - "Soup"@27FE "of" "PLASMA" "HONK-style" "."
-    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "hearts"@2803 "in" "green"@280A "blood"@2810 "coagulate"@2816 "."
-    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "roots"@2820 "," "deep"@2826 "fried"@282B "in" "recycled"@2831 "oil"@283A "."
-    TEXT object_menu_0902 FF 00 80 - - "Candied"@283E "GLOK" "tongue"@2846 "."
+    TEXT object_menu_0902 FF 00 80 - - "Soup" "of" "PLASMA" "HONK-style" "."
+    TEXT object_menu_0902 FF 00 80 - - "WRIGGLER" "hearts" "in" "green" "blood" "coagulate" "."
+    TEXT object_menu_0902 FF 00 80 - - "URTIKAN" "roots" "," "deep" "fried" "in" "recycled" "oil" "."
+    TEXT object_menu_0902 FF 00 80 - - "Candied" "GLOK" "tongue" "."
     TEXT object_menu_0902 FF 00 80 - - "Recycled" "water"
     TEXT object_menu_0902 FF 00 80 - - "The" "chef" "says" "..." "You" "eat" "what" "you" "are" "!" "..."
     TEXT object_menu_0902 FF 08 A0 - - "stop"
@@ -2345,20 +2345,20 @@ PROCEDURE proc_revel_4C52
     ACTOR field_Bob_Morlock_004A_s13_0084 object_blood_0028 0
     SHARED_STATE C0 1386 F5 C1 0000
     GUARD_POP
-    TEXT object_Bob_Morlock_004A 07 00 80 - - "Would"@284D "you" "care"@2853 "to" "know" "an" "unbearable"@2858 "truth" "," "Commander" "?"
-    TEXT object_Bob_Morlock_004A 06 00 80 - - "HONK" "!" "Switch"@2863 "yourself" "off" "for" "ten"@286A "seconds"@286E "!!!"
+    TEXT object_Bob_Morlock_004A 07 00 80 - - "Would" "you" "care" "to" "know" "an" "unbearable" "truth" "," "Commander" "?"
+    TEXT object_Bob_Morlock_004A 06 00 80 - - "HONK" "!" "Switch" "yourself" "off" "for" "ten" "seconds" "!!!"
     TEXT object_Bob_Morlock_004A FF 20 80 - - "But" "," "Cap'n" "Bob" "!" "I" "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "SWITCH"@2876 "OFF"@287D "I" "SAID"@2881 "!!!"
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "Yes" "sir" "....."@2886
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "KRUIIIIK"@288C "!!!" "AAAaaaaaaaaaaaaahhhhh"@2895 "!!!"
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "COMMANDER"@28AB "," "YOU" "ARE"@28B5 "ME" "...."
-    TEXT object_Bob_Morlock_004A 06 00 80 - - "WE" "ARE" "THE" "SAME"@28B9 "BEING"@28BE "AT" "TWO"@28C4 "DIFFERENT"@28C8 "AGES"@28D2 "..."
-    TEXT object_Bob_Morlock_004A 04 00 80 - - "YOU" "ARE" "MORE" "THAN"@28D7 "MY" "SON"@28DC "..."
-    TEXT object_Bob_Morlock_004A 05 00 80 - - "We" "are" "the" "same"@28E0 "person"@28E5 "..." "I" "am" "the" "first" "being" "to" "create"@28EC "itself"@28F3 "..."
-    TEXT object_Bob_Morlock_004A 04 00 80 - - "And" "," "thanks" "to" "space-time"@28FA "contorsion,"@2905 "to" "watch"@2911 "itself" "relive"@2917 ":" "YOU" "ARE" "BOB"@291E "," "COMMANDER" "..."
-    TEXT object_Bob_Morlock_004A 02 00 80 - - "I" "am" "what" "you'll" "be" "in" "a" "few" "hundred"@2922 "thousand"@292A "years"@2933 "..."
-    TEXT object_Bob_Morlock_004A 06 00 80 - - "OK"@2939 "Honk" "," "you" "can" "switch" "yourself" "back" "on" "..."
-    TEXT object_Bob_Morlock_004A FF 20 80 - - "KROIIIIkkk"@293C "!!!" "-&KRUIIIIkkk"@2947 "!!!" "-&I"@2954 "AM"@2958 "supposed" "to" "be" "aware"@295B "of" "everything"@2961 "that" "goes"@296C "on" "round" "here" "," "being" "the" "onboard" "computer"@2971 "..." "Don't" "tell" "me" "you" "switched"@297A "off" "Olga" "???"
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "SWITCH" "OFF" "I" "SAID" "!!!"
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "Yes" "sir" "....."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "KRUIIIIK" "!!!" "AAAaaaaaaaaaaaaahhhhh" "!!!"
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "COMMANDER" "," "YOU" "ARE" "ME" "...."
+    TEXT object_Bob_Morlock_004A 06 00 80 - - "WE" "ARE" "THE" "SAME" "BEING" "AT" "TWO" "DIFFERENT" "AGES" "..."
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "YOU" "ARE" "MORE" "THAN" "MY" "SON" "..."
+    TEXT object_Bob_Morlock_004A 05 00 80 - - "We" "are" "the" "same" "person" "..." "I" "am" "the" "first" "being" "to" "create" "itself" "..."
+    TEXT object_Bob_Morlock_004A 04 00 80 - - "And" "," "thanks" "to" "space-time" "contorsion," "to" "watch" "itself" "relive" ":" "YOU" "ARE" "BOB" "," "COMMANDER" "..."
+    TEXT object_Bob_Morlock_004A 02 00 80 - - "I" "am" "what" "you'll" "be" "in" "a" "few" "hundred" "thousand" "years" "..."
+    TEXT object_Bob_Morlock_004A 06 00 80 - - "OK" "Honk" "," "you" "can" "switch" "yourself" "back" "on" "..."
+    TEXT object_Bob_Morlock_004A FF 20 80 - - "KROIIIIkkk" "!!!" "-&KRUIIIIkkk" "!!!" "-&I" "AM" "supposed" "to" "be" "aware" "of" "everything" "that" "goes" "on" "round" "here" "," "being" "the" "onboard" "computer" "..." "Don't" "tell" "me" "you" "switched" "off" "Olga" "???"
     TEXT object_Bob_Morlock_004A 05 08 90 - - "Can" "it" "and" "do" "some" "work" "!!"
     POKE_BYTE 4C53 00
     RECORD_CLEAR field_Bob_Morlock_004A_s13_0084
@@ -2369,28 +2369,28 @@ PROCEDURE proc_honk1_4E17
     BRANCH_PRESENTATION
     ACTOR field_Honk_08BA_s13_08F4 object_blood_0028 0
     GUARD_POP
-    TEXT object_Honk_08BA FF 20 80 - - "I" "exist"@2983 "only" "to" "obey"@2989 "," "Commander"
+    TEXT object_Honk_08BA FF 20 80 - - "I" "exist" "only" "to" "obey" "," "Commander"
     WHEN block_4EAD
         SHARED_STATE C0 1368 F5 C1 0000
     THEN
-        TEXT object_Honk_08BA FF 20 80 - - "Commander" "," "we" "don't" "have" "any" "BIONIUM" "..." "COMMANDER" "," "please"@298E "..."
+        TEXT object_Honk_08BA FF 20 80 - - "Commander" "," "we" "don't" "have" "any" "BIONIUM" "..." "COMMANDER" "," "please" "..."
         TEXT object_Honk_08BA FF 20 80 - - "I" "need" "that" "energy" "..."
-        TEXT object_Honk_08BA FF 20 80 - - "You" "must" "enter"@2995 "Scruter" "Jo's"@299B "CYBERSPACE" "..."
-        TEXT object_Honk_08BA FF 20 80 - - "Wake"@29A0 "up" "Scruter" "Jo"@29A5 "," "Commander" "." "He's" "sleeping"@29A8 "in" "the" "Cryobox"@29B1 "..."
+        TEXT object_Honk_08BA FF 20 80 - - "You" "must" "enter" "Scruter" "Jo's" "CYBERSPACE" "..."
+        TEXT object_Honk_08BA FF 20 80 - - "Wake" "up" "Scruter" "Jo" "," "Commander" "." "He's" "sleeping" "in" "the" "Cryobox" "..."
     END_WHEN block_4EAD
     LABEL block_4EAD
     WHEN block_4F0E
         SHARED_STATE C0 1368 F5 C1 0001
     THEN
-        TEXT object_Honk_08BA FF 20 80 - - "We've"@29B9 "got" "one" "dose"@29BF "of" "BIONIUM" "left" "," "Commander"
+        TEXT object_Honk_08BA FF 20 80 - - "We've" "got" "one" "dose" "of" "BIONIUM" "left" "," "Commander"
         TEXT object_Honk_08BA FF 20 80 - - "You" "must" "enter" "Scruter" "Jo's" "CYBERSPACE" "..."
-        TEXT object_Honk_08BA FF 20 80 - - "I" "don't" "feel" "too" "sure" "of" "myself"@29C4 "," "Commander..." "I" "really" "need" "that" "energy" "..."
+        TEXT object_Honk_08BA FF 20 80 - - "I" "don't" "feel" "too" "sure" "of" "myself" "," "Commander..." "I" "really" "need" "that" "energy" "..."
     END_WHEN block_4F0E
     LABEL block_4F0E
     WHEN block_4F49
         SHARED_STATE C0 1368 F5 C1 0002
     THEN
-        TEXT object_Honk_08BA FF 20 80 - - "We've" "got" "two" "doses"@29CB "of" "BIONIUM" "left" "," "Commander"
+        TEXT object_Honk_08BA FF 20 80 - - "We've" "got" "two" "doses" "of" "BIONIUM" "left" "," "Commander"
         TEXT object_Honk_08BA FF 20 80 - - "You" "must" "enter" "Scruter" "Jo's" "CYBERSPACE" "..."
     END_WHEN block_4F49
     LABEL block_4F49
@@ -2421,7 +2421,7 @@ PROCEDURE proc_honk1_4E17
     WHEN block_5002
         SHARED_STATE C0 1368 F5 C1 0007
     THEN
-        TEXT object_Honk_08BA FF 20 80 - - "We've" "got" "seven"@29D1 "doses" "of" "BIONIUM" "left" "," "Commander"
+        TEXT object_Honk_08BA FF 20 80 - - "We've" "got" "seven" "doses" "of" "BIONIUM" "left" "," "Commander"
     END_WHEN block_5002
     LABEL block_5002
     WHEN block_503B
@@ -2436,7 +2436,7 @@ PROCEDURE proc_honk1_4E17
         SHARED_STATE BF field_Hom_01FA_s08_0230 F1 C1 0002
         SHARED_BIT_STATE AE field_Bigbang_0FB8_s00_0FBA 0002 1
     THEN
-        TEXT object_Honk_08BA FF 28 80 - - "Commander" "," "I'm" "sure" "that" "HOM"@29D7 "is" "a" "vital"@29DB "link"@29E1 "in" "the" "chain"@29E6 "that" "leads"@29EC "to" "the" "Big" "Bang..."@29F2
+        TEXT object_Honk_08BA FF 28 80 - - "Commander" "," "I'm" "sure" "that" "HOM" "is" "a" "vital" "link" "in" "the" "chain" "that" "leads" "to" "the" "Big" "Bang..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_5088
     LABEL block_5088
@@ -2445,7 +2445,7 @@ PROCEDURE proc_honk1_4E17
         SHARED_STATE C0 136A F5 C1 0000
         SHARED_STATE BF field_Migrator_043A_s08_0470 F2 C1 0000
     THEN
-        TEXT object_Honk_08BA FF 28 80 - - "Commander" "," "Mister" "Bob" "want" "to" "see" "you" "in" "the" "Cryobox..."@29FA
+        TEXT object_Honk_08BA FF 28 80 - - "Commander" "," "Mister" "Bob" "want" "to" "see" "you" "in" "the" "Cryobox..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_50C6
     LABEL block_50C6
@@ -2454,7 +2454,7 @@ PROCEDURE proc_honk1_4E17
         RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0
         SHARED_STATE BF field_Yoko_0242_s08_0278 F5 C1 0000
     THEN
-        TEXT object_Honk_08BA FF 28 80 - - "Commander," "don't" "forget" "Yoko" "and" "Maxxon" "asleep"@2A05 "CRYOBOX..."@2A0C
+        TEXT object_Honk_08BA FF 28 80 - - "Commander," "don't" "forget" "Yoko" "and" "Maxxon" "asleep" "CRYOBOX..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_50FC
     LABEL block_50FC
@@ -2463,7 +2463,7 @@ PROCEDURE proc_honk1_4E17
         RECORD_WILDCARD AF field_Yoko_0242_s11_025A FFFF 0
         SHARED_STATE BF field_Yoko_0242_s08_0278 F2 C1 0000
     THEN
-        TEXT object_Honk_08BA FF 28 80 - - "Approach"@2A17 "the" "planet" "RONDO" "and" "talk" "to" "Yoko" "or" "Maxxon" "in" "the" "CRYOBOX" "in" "order"@2A20 "to" "teleport" "them..."@2A26
+        TEXT object_Honk_08BA FF 28 80 - - "Approach" "the" "planet" "RONDO" "and" "talk" "to" "Yoko" "or" "Maxxon" "in" "the" "CRYOBOX" "in" "order" "to" "teleport" "them..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_5146
     LABEL block_5146
@@ -2471,7 +2471,7 @@ PROCEDURE proc_honk1_4E17
         SHARED_STATE C0 1368 F2 C1 0002
         SHARED_STATE BF field_Bug_Deluxe_0092_s08_00C8 F5 C1 0000
     THEN
-        TEXT object_Honk_08BA FF 28 80 - - "Better"@2A2E "go" "see" "Bug" "Deluxe" "on" "Venusia..."@2A35
+        TEXT object_Honk_08BA FF 28 80 - - "Better" "go" "see" "Bug" "Deluxe" "on" "Venusia..."
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_5175
     LABEL block_5175
@@ -2485,7 +2485,7 @@ PROCEDURE proc_honk1_4E17
         SHARED_STATE C0 1368 F7 C1 0003
     END_WHEN block_51B6
     LABEL block_51B6
-    TEXT object_Honk_08BA FF 28 80 - - "More" "information"@2A40 "?"
+    TEXT object_Honk_08BA FF 28 80 - - "More" "information" "?"
     RECORD_WILDCARD BC field_Honk_08BA_s0F_0900 0001 0
     TEXT object_Honk_08BA FF 68 80 - - "Bye" "bye" "," "Commander" "..." FFFF "bye_bye"
     RECORD_CLEAR field_Honk_08BA_s13_08F4

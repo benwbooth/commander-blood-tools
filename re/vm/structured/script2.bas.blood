@@ -27,144 +27,144 @@ YIELD
 
 SELECTOR_LIST list_Eviscerator_0001
     YIELD_B
-    CASE "talk"@0001 0000
-        MENU "yes"@187E "no"@007F
-        TEXT object_Eviscerator_016A 01 40 80 - - "Yes"@0184 FFFF "yes"
-        TEXT object_Eviscerator_016A 01 40 80 - - "No"@2939 FFFF "no"
+    CASE "talk" 0000
+        MENU "yes" "no"
+        TEXT object_Eviscerator_016A 01 40 80 - - "Yes" FFFF "yes"
+        TEXT object_Eviscerator_016A 01 40 80 - - "No" FFFF "no"
         YIELD
 END_SELECTOR_LIST list_Eviscerator_0001
 
 SELECTOR_LIST list_Honk_002A
     YIELD_B
     CASE "talk" selector_00B3
-        MENU "bye_bye"@0B4E "optimization"@3D25 "consultation"@3D32 "explanations"@0B56 "calm_down"@3D3F "play"@28B6 "win"@3D49 "lose"@3D4D "help"@05CF
-        TEXT object_Honk_0872 FF 61 80 - - "How"@01D0 "to"@00CF "play" "?"@01DF FFFF "play"
-        TEXT object_Honk_0872 FF 61 80 - - "You"@014D "got"@01C3 "it"@011A "..."@0062 FFFF "talk"
-        TEXT object_Honk_0872 FF 63 80 - - "Winning"@3D52 "entails"@3D5A "adopting"@3D62 "a"@02BC "no-lose"@3D6B "strategy"@3D73 ","@0098 "Commander"@008E "."@020F "Bear"@3D7C "that"@00B3 "in"@03EE "mind"@1F4D "..." FFFF "win"
-        TEXT object_Honk_0872 FF 61 80 - - "What"@0B41 "would"@15FE "you"@01CC "like"@0437 "to" "optimize"@3D81 "," "Commander" "?" FFFF "optimization"
+        MENU "bye_bye" "optimization" "consultation" "explanations" "calm_down" "play" "win" "lose" "help"
+        TEXT object_Honk_0872 FF 61 80 - - "How" "to" "play" "?" FFFF "play"
+        TEXT object_Honk_0872 FF 61 80 - - "You" "got" "it" "..." FFFF "talk"
+        TEXT object_Honk_0872 FF 63 80 - - "Winning" "entails" "adopting" "a" "no-lose" "strategy" "," "Commander" "." "Bear" "that" "in" "mind" "..." FFFF "win"
+        TEXT object_Honk_0872 FF 61 80 - - "What" "would" "you" "like" "to" "optimize" "," "Commander" "?" FFFF "optimization"
         YIELD_B
         LABEL selector_00B3
     CASE "play" selector_02AD
-        MENU "talk" "click"@3D8A "dialog"@3D90 "fair_play"@3D97
-        TEXT object_Honk_0872 FF 60 80 - - "That's"@0A2A "the"@0129 "best"@09EB "way"@037D "to" "play" "," "Commander" "." "Just"@1273 "keep"@2324 "clickin'"@3DA2 "!"@0082 FFFF "click"
-        TEXT object_Honk_0872 FF 60 80 - - "Something"@3DAB "tells"@2629 "me"@0447 "you're"@0572 "a" "pretty"@3DB5 "hot"@14C9 "clicker"@3DBC "," "eh"@2EA2 "?!!"@3DC4 FFFF "click"
-        TEXT object_Honk_0872 FF 60 80 - - "Did"@3DC8 "you" "know"@12B1 "every"@29DA "time"@09BB "you" "click" "," "I"@009A "feel"@00A2 "a" "little"@0CEC "tingle"@3DCC "!" "Isn't"@3DD3 "that" "fun"@0ED5 "?" FFFF "click"
-        TEXT object_Honk_0872 FF 60 80 - - "When"@3DD9 "you" "click" "," "I" "don't"@009C "just"@0BCE "sit"@3A32 "around"@1D48 "looking"@3DDE "handsome"@32B8 "..." "I" "do"@0B46 "something"@0316 "about"@00AD "it" "!" FFFF "click"
+        MENU "talk" "click" "dialog" "fair_play"
+        TEXT object_Honk_0872 FF 60 80 - - "That's" "the" "best" "way" "to" "play" "," "Commander" "." "Just" "keep" "clickin'" "!" FFFF "click"
+        TEXT object_Honk_0872 FF 60 80 - - "Something" "tells" "me" "you're" "a" "pretty" "hot" "clicker" "," "eh" "?!!" FFFF "click"
+        TEXT object_Honk_0872 FF 60 80 - - "Did" "you" "know" "every" "time" "you" "click" "," "I" "feel" "a" "little" "tingle" "!" "Isn't" "that" "fun" "?" FFFF "click"
+        TEXT object_Honk_0872 FF 60 80 - - "When" "you" "click" "," "I" "don't" "just" "sit" "around" "looking" "handsome" "..." "I" "do" "something" "about" "it" "!" FFFF "click"
         TEXT object_Honk_0872 FF 61 80 - - "click" "..." FFFF "click"
-        TEXT object_Honk_0872 FF 60 80 - - "To"@050C "dialog" "," "just" "click" "on"@034F "the" "word"@0E32 "list"@3DE6 "..." "leave"@242F "the" "rest"@3DEB "to" "OLGA"@3DF0 "," "your"@0463 "onboard"@1C24 "translator"@3DF5 "..." FFFF "dialog"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n"@089F "Bob"@08F7 "put"@10B8 "the" "instant"@3E00 "translator" "together"@3048 "." "He's"@0242 "a" "guy"@0CF3 "and"@00EF "a" "half"@3E08 "!" FFFF "dialog"
-        TEXT object_Honk_0872 FF 60 80 - - "Olga"@15F9 "," "your" "onboard" "translator" "," "knows"@09F9 "every" "language"@2E31 "in" "the" "universe"@3E0D "!" "She's"@3E16 "paid"@09C0 "in" "megawatts"@160A "," "like" "me" "," "only"@095C "she"@3E1C "gets"@3E20 "more"@04F9 "." FFFF "dialog"
-        TEXT object_Honk_0872 FF 61 80 - - "Let's"@02A2 "dialog" "..." FFFF "dialog"
-        TEXT object_Honk_0872 FF 60 80 - - "Fair"@3E25 "play" "is"@0584 "inscribed"@3E2A "in" "the" "Traveller's"@3E34 "Charter"@3E40 ":"@015F "Whatever"@3E48 "happens"@2DA3 "," "play" "fair"@3E51 "!" FFFF "fair_play"
-        TEXT object_Honk_0872 FF 60 80 - - "Win"@3E56 "," "win" "," "win" "." "Why"@0622 "do" "the" "computers"@03A7 "always"@2979 "have"@090E "to" "lose" "?" FFFF "faiplay"@3E5A
-        TEXT object_Honk_0872 FF 60 80 - - "OK"@17B2 "," "Commander" "..." "You" "seem"@261B "like" "a" "fair" "play" "guy" "." "I'll"@05C4 "tell"@0206 "Cap'n" "Bob" "..." FFFF "fair_play"
+        TEXT object_Honk_0872 FF 60 80 - - "To" "dialog" "," "just" "click" "on" "the" "word" "list" "..." "leave" "the" "rest" "to" "OLGA" "," "your" "onboard" "translator" "..." FFFF "dialog"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "put" "the" "instant" "translator" "together" "." "He's" "a" "guy" "and" "a" "half" "!" FFFF "dialog"
+        TEXT object_Honk_0872 FF 60 80 - - "Olga" "," "your" "onboard" "translator" "," "knows" "every" "language" "in" "the" "universe" "!" "She's" "paid" "in" "megawatts" "," "like" "me" "," "only" "she" "gets" "more" "." FFFF "dialog"
+        TEXT object_Honk_0872 FF 61 80 - - "Let's" "dialog" "..." FFFF "dialog"
+        TEXT object_Honk_0872 FF 60 80 - - "Fair" "play" "is" "inscribed" "in" "the" "Traveller's" "Charter" ":" "Whatever" "happens" "," "play" "fair" "!" FFFF "fair_play"
+        TEXT object_Honk_0872 FF 60 80 - - "Win" "," "win" "," "win" "." "Why" "do" "the" "computers" "always" "have" "to" "lose" "?" FFFF "faiplay"
+        TEXT object_Honk_0872 FF 60 80 - - "OK" "," "Commander" "..." "You" "seem" "like" "a" "fair" "play" "guy" "." "I'll" "tell" "Cap'n" "Bob" "..." FFFF "fair_play"
         YIELD_B
         LABEL selector_02AD
     CASE "win" selector_0429
-        MENU "talk" "willpower"@3E62 "strength"@3E6C "bravery"@3E75 "pride"@3E7D
-        TEXT object_Honk_0872 FF 60 80 - - "Willpower"@3E83 "makes"@060C "a" "winner"@3E8D "," "Commander" "." "Cap'n" "Bob" "knows" "you've"@262F "got" "it" "..." FFFF "willpower"
-        TEXT object_Honk_0872 FF 60 80 - - "Okay"@2DB8 "," "so"@036B "you" "click" "on" "Willpower" "." "Now"@1F32 "that's"@24F7 "not"@0984 "going"@1481 "to" "get"@0381 "us"@0BF3 "very"@0194 "far"@0E13 "," "Commander" "..." FFFF "willpower"
-        TEXT object_Honk_0872 FF 60 80 - - "Be"@1360 "kind"@3E94 "to" "your" "mouse"@3E99 "!" "You" "don't" "want"@0B49 "to" "crush"@3E9F "her"@0FE4 "little" "buttons"@3EA5 "," "now"@0238 "do" "you" "?" FFFF "strength"
-        TEXT object_Honk_0872 FF 60 80 - - "Ah,"@12F3 "Bravery"@3EAD "!" "I" "admire"@38E6 "your" "fearlessness"@3EB5 "," "Commander" "." "You" "take"@02B7 "such"@2A97 "risks"@3EC2 "with"@042B "your" "index"@3EC8 "finger"@0468 "!" FFFF "bravery"
-        TEXT object_Honk_0872 FF 61 80 - - "Onboard"@3ECE "computer"@0E77 "HONK"@127C "reporting"@21DD ":" "It"@0609 "looks"@3ED6 "like" "you" "just" "clicked"@3EDC "on" "Bravery" "." FFFF "bravery"
-        TEXT object_Honk_0872 FF 60 80 - - "How" "about" "sitting"@3EE4 "up"@062B "a" "little" "straighter"@3EEC "?" FFFF "pride"
-        TEXT object_Honk_0872 FF 60 80 - - "I'm"@0980 "impressed"@3EF7 "," "Commander."@1AB0 "You" "know" "how"@0400 "to" "make"@1487 "computers" "respect"@3F01 "you" "!" FFFF "pride"
-        TEXT object_Honk_0872 FF 60 80 - - "I" "detect"@3F09 "a" "speck"@3F10 "of"@01FE "contempt"@3F16 "in" "the" "B"@3AD6 "cortex"@3F1F "of" "your" "brain's"@2CD7 "right"@153C "hemisphere"@3F26 "." "I'll" "just" "give"@0151 "you" "a" "little" "shot"@1330 "of" "adrenal"@3F31 "..." FFFF "pride"
+        MENU "talk" "willpower" "strength" "bravery" "pride"
+        TEXT object_Honk_0872 FF 60 80 - - "Willpower" "makes" "a" "winner" "," "Commander" "." "Cap'n" "Bob" "knows" "you've" "got" "it" "..." FFFF "willpower"
+        TEXT object_Honk_0872 FF 60 80 - - "Okay" "," "so" "you" "click" "on" "Willpower" "." "Now" "that's" "not" "going" "to" "get" "us" "very" "far" "," "Commander" "..." FFFF "willpower"
+        TEXT object_Honk_0872 FF 60 80 - - "Be" "kind" "to" "your" "mouse" "!" "You" "don't" "want" "to" "crush" "her" "little" "buttons" "," "now" "do" "you" "?" FFFF "strength"
+        TEXT object_Honk_0872 FF 60 80 - - "Ah," "Bravery" "!" "I" "admire" "your" "fearlessness" "," "Commander" "." "You" "take" "such" "risks" "with" "your" "index" "finger" "!" FFFF "bravery"
+        TEXT object_Honk_0872 FF 61 80 - - "Onboard" "computer" "HONK" "reporting" ":" "It" "looks" "like" "you" "just" "clicked" "on" "Bravery" "." FFFF "bravery"
+        TEXT object_Honk_0872 FF 60 80 - - "How" "about" "sitting" "up" "a" "little" "straighter" "?" FFFF "pride"
+        TEXT object_Honk_0872 FF 60 80 - - "I'm" "impressed" "," "Commander." "You" "know" "how" "to" "make" "computers" "respect" "you" "!" FFFF "pride"
+        TEXT object_Honk_0872 FF 60 80 - - "I" "detect" "a" "speck" "of" "contempt" "in" "the" "B" "cortex" "of" "your" "brain's" "right" "hemisphere" "." "I'll" "just" "give" "you" "a" "little" "shot" "of" "adrenal" "..." FFFF "pride"
         YIELD_B
         LABEL selector_0429
     CASE "lose" selector_0613
-        MENU "talk" "fear"@3F39 "weakness"@3F3E "complain"@3F47 "anger"@3F50 "break"@3F56 "cry"@2ACC
-        TEXT object_Honk_0872 FF 60 80 - - "There's"@1D31 "several"@3F5C "ways"@3F64 "to" "lose" "," "Commander" "." "Which"@3F69 "do" "you" "choose"@139F "?" FFFF "lose"
-        TEXT object_Honk_0872 FF 62 80 - - "Commander,"@05E4 "I'm" "here"@1980 "with" "you."@3F6F "It's"@013F "me" "..." "HONK" "," "your" "onboard" "bioconsciousness"@3F74 "." FFFF "fear"
-        TEXT object_Honk_0872 FF 60 80 - - "I'm" "going" "to" "sing"@3F85 "you" "a" "little" "song"@3F8A "," "Commander" "." "Relax"@3F8F "." FFFF "fear"
-        TEXT object_Honk_0872 FF 60 80 - - "Night"@3F95 "is" "fa-aa-aa-lling"@3F9B "..." "The"@0395 "moon"@3FAA "is" "re-e-ed"@3FAF "..." FFFF "fear"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "wolf"@3FB7 "is" "ho-ow-owling"@3FBC "under"@3FC9 "your" "be-e-e-ed"@3FCF "." "Easy"@3FD9 "," "Commander" "." "Honk"@17B5 "is" "with" "you" "..." FFFF "fear"
-        TEXT object_Honk_0872 FF 60 80 - - "Big"@33A9 "strong"@3FDE "Commanders"@3FE5 "are"@0211 "never"@3FF0 "scared"@3FF6 "!" FFFF "fear"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "need"@00CA "a" "drink"@3FFD "..." "Come"@29AB "on" "," "Commander" "..." "Please"@091D "don't" "blubber"@4003 "..." "It's" "so" "embarrassing"@400B "!" FFFF "weakness"
-        TEXT object_Honk_0872 FF 60 80 - - "Just" "reset"@4018 "your" "computer" "and" "start"@35B1 "over"@2764 "." "there's"@401E "a" "whole"@19DC "new"@10BC "life"@0A3A "waiting"@3969 "!" "And"@0307 "I'll" "always" "be"@00D2 "here" "..." FFFF "weakness"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "know" "what"@089A "?" "I'll" "help" "you" "!..."@4026 "There's" "a" "surprise"@402B "for"@0292 "you" "on" "the" "map"@4034 "." "Take"@0BDF "a" "look"@02C3 "..." FFFF "weakness"
-        TEXT object_Honk_0872 FF 60 80 - - "That"@0378 "won't"@0CBF "do" "any"@3561 "good"@02BE "," "Commander..."@0132 FFFF "complain"
-        TEXT object_Honk_0872 FF 60 80 - - "I'm" "going" "to" "wake"@2DD7 "up" "Cap'n" "Bob..."@35D9 FFFF "anger"
-        TEXT object_Honk_0872 FF 61 80 - - "Ouch"@3310 "..." FFFF "break"
-        TEXT object_Honk_0872 FF 60 80 - - "Everything'll"@4038 "be" "just" "fine"@0FB2 "afterwards"@4046 "," "Commander..." FFFF "cry"
+        MENU "talk" "fear" "weakness" "complain" "anger" "break" "cry"
+        TEXT object_Honk_0872 FF 60 80 - - "There's" "several" "ways" "to" "lose" "," "Commander" "." "Which" "do" "you" "choose" "?" FFFF "lose"
+        TEXT object_Honk_0872 FF 62 80 - - "Commander," "I'm" "here" "with" "you." "It's" "me" "..." "HONK" "," "your" "onboard" "bioconsciousness" "." FFFF "fear"
+        TEXT object_Honk_0872 FF 60 80 - - "I'm" "going" "to" "sing" "you" "a" "little" "song" "," "Commander" "." "Relax" "." FFFF "fear"
+        TEXT object_Honk_0872 FF 60 80 - - "Night" "is" "fa-aa-aa-lling" "..." "The" "moon" "is" "re-e-ed" "..." FFFF "fear"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "wolf" "is" "ho-ow-owling" "under" "your" "be-e-e-ed" "." "Easy" "," "Commander" "." "Honk" "is" "with" "you" "..." FFFF "fear"
+        TEXT object_Honk_0872 FF 60 80 - - "Big" "strong" "Commanders" "are" "never" "scared" "!" FFFF "fear"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "need" "a" "drink" "..." "Come" "on" "," "Commander" "..." "Please" "don't" "blubber" "..." "It's" "so" "embarrassing" "!" FFFF "weakness"
+        TEXT object_Honk_0872 FF 60 80 - - "Just" "reset" "your" "computer" "and" "start" "over" "." "there's" "a" "whole" "new" "life" "waiting" "!" "And" "I'll" "always" "be" "here" "..." FFFF "weakness"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "know" "what" "?" "I'll" "help" "you" "!..." "There's" "a" "surprise" "for" "you" "on" "the" "map" "." "Take" "a" "look" "..." FFFF "weakness"
+        TEXT object_Honk_0872 FF 60 80 - - "That" "won't" "do" "any" "good" "," "Commander..." FFFF "complain"
+        TEXT object_Honk_0872 FF 60 80 - - "I'm" "going" "to" "wake" "up" "Cap'n" "Bob..." FFFF "anger"
+        TEXT object_Honk_0872 FF 61 80 - - "Ouch" "..." FFFF "break"
+        TEXT object_Honk_0872 FF 60 80 - - "Everything'll" "be" "just" "fine" "afterwards" "," "Commander..." FFFF "cry"
         YIELD_B
         LABEL selector_0613
     CASE "help" selector_092D
-        MENU "talk" "switch_off"@4051 "break" "endless_lives"@405C "contest"@406A "tips"@2037 "presents"@4072 "messages"@407B
-        TEXT object_Honk_0872 FF 61 80 - - "Need"@4084 "some"@0385 "expert"@4089 "guidance"@4090 "," "Commander" "?" FFFF "help"
-        TEXT object_Honk_0872 FF 60 80 - - "To" "disconnect"@2DDC "," "you" "can"@036E "always" "pull"@4099 "the" "plug"@409E "out"@0100 "of" "the" "power"@1687 "point"@1EB2 "..." FFFF "switch_off"
-        TEXT object_Honk_0872 FF 60 80 - - "I'm" "sorry"@184F "," "but"@0BB0 "since"@3757 "that" "business"@2B66 "in" "2001"@40A3 "," "disconnecting"@40A8 "me" "is" "no" "longer"@0EE9 "possible"@37AC "..." FFFF "switch_off"
-        TEXT object_Honk_0872 FF 60 80 - - "Why" "not" "?" "Well,"@40B6 "I" "can" "reinitialize"@40BC "your" "computer" "and" "wipe"@40C9 "your" "hard"@40CE "disk"@40D3 "!" "..." "Ha"@283E "!" "Ha" "!" "Ha" "!" FFFF "break"
-        TEXT object_Honk_0872 FF 61 80 - - "Chill"@40D8 "out" "," "Commander" "..." FFFF "break"
-        TEXT object_Honk_0872 FF 60 80 - - "How" "does"@156B "it" "feel" "to" "be" "eternal"@3698 "," "Commander" "?" FFFF "endless_lives"
-        TEXT object_Honk_0872 FF 60 80 - - "Okay" "!" "You" "won"@3B6F "." "Endless"@40DE "lives"@40E6 "from"@0519 "today"@40EC "..." "Do"@36E8 "you" "feel" "happier"@40F2 "now" "?" FFFF "endless_lives"
-        TEXT object_Honk_0872 FF 60 80 - - "Is"@347E "this"@0EF0 "so" "important"@40FA "to" "you" "?" FFFF "break"
-        TEXT object_Honk_0872 FF 60 80 - - "Okay" "..." "..." "..." "KRUIKK"@1EE6 "!" FFFF "break"
-        TEXT object_Honk_0872 FF 60 80 - - "Here"@37A7 "are" "the" "questions"@03C7 "," "contestant"@4104 "." "You'll"@03D1 "note"@410F "there"@1882 "are" "prizes"@4114 "to" "be" "won" "!" "Click"@1E0E "on" "\"CONTEST\""@411B FFFF "contest"
-        TEXT object_Honk_0872 FF 60 80 - - "First"@4125 "question"@3118 ":" "Who"@412B "is" "Cap'n" "Bob" "?" "..." "..." "Click" "on" "\"CONTEST\"" FFFF "contest"
-        TEXT object_Honk_0872 FF 60 80 - - "Too"@2E50 "late"@412F "..." "next"@27D4 "question" ":" "What" "prize"@4134 "can" "be" "won" "in" "this" "contest" "?" "Click" "on" "\"CONTEST\"" FFFF "contest"
-        TEXT object_Honk_0872 FF 60 80 - - "YES!"@413A "HOW"@413F "'BOUT"@4143 "THAT"@1960 "!!!"@0475 "But"@16CD "I'm" "afraid"@4149 "the" "first"@0CD7 "one"@0961 "was"@0CE1 "wrong."@4150 "Don't"@010F "ever"@375D "click" "on" "\"CONTEST\"" "again"@0088 "." FFFF "contest"
-        TEXT object_Honk_0872 FF 60 80 - - "Sorry"@13D7 "," "but" "tips" "are" "only" "available"@4157 "only" "the" "neural"@0EA0 "channel"@3051 "..." FFFF "tips"
-        TEXT object_Honk_0872 FF 60 80 - - "To" "win" "an"@0D37 "amazing"@4161 "prize" "," "Click" "on" "\"CONTEST\"" FFFF "presents"
-        TEXT object_Honk_0872 FF 60 80 - - "If"@044D "you're" "getting"@12A3 "uninvited"@4169 "PIRATE"@2125 "messages" "over" "the" "neural" "channel" "," "contact"@2A53 "the" "CYBERSQUAD,"@4173 "extension"@417F "453765"@4189 FFFF "messages"
-        TEXT object_Honk_0872 FF 60 80 - - "Cybernetic"@4190 "messages" "over" "the" "neural" "channel" "are" "strictly"@0EE0 "against"@419B "the" "law"@41A3 "..." FFFF "messages"
-        TEXT object_Honk_0872 FF 60 80 - - "All"@30AC "users"@41A7 "of" "the" "neural" "channel" "will"@0CD2 "be" "prosecuted"@41AD "." FFFF "messages"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "authors"@41B8 "of" "this" "game"@41C0 "decline"@41C5 "all"@17EC "responsibility"@41CD "for" "neural" "channel" "communications"@41DC "occasioned"@41EB "by"@12C6 "play" "of" "said"@08D5 "game" "..." FFFF "messages"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "just" "clicked" "on" "the" "word" "\"message\""@41F6 "." "Way"@4200 "to" "go"@03E3 "!!!" FFFF "message"@0E0B
+        MENU "talk" "switch_off" "break" "endless_lives" "contest" "tips" "presents" "messages"
+        TEXT object_Honk_0872 FF 61 80 - - "Need" "some" "expert" "guidance" "," "Commander" "?" FFFF "help"
+        TEXT object_Honk_0872 FF 60 80 - - "To" "disconnect" "," "you" "can" "always" "pull" "the" "plug" "out" "of" "the" "power" "point" "..." FFFF "switch_off"
+        TEXT object_Honk_0872 FF 60 80 - - "I'm" "sorry" "," "but" "since" "that" "business" "in" "2001" "," "disconnecting" "me" "is" "no" "longer" "possible" "..." FFFF "switch_off"
+        TEXT object_Honk_0872 FF 60 80 - - "Why" "not" "?" "Well," "I" "can" "reinitialize" "your" "computer" "and" "wipe" "your" "hard" "disk" "!" "..." "Ha" "!" "Ha" "!" "Ha" "!" FFFF "break"
+        TEXT object_Honk_0872 FF 61 80 - - "Chill" "out" "," "Commander" "..." FFFF "break"
+        TEXT object_Honk_0872 FF 60 80 - - "How" "does" "it" "feel" "to" "be" "eternal" "," "Commander" "?" FFFF "endless_lives"
+        TEXT object_Honk_0872 FF 60 80 - - "Okay" "!" "You" "won" "." "Endless" "lives" "from" "today" "..." "Do" "you" "feel" "happier" "now" "?" FFFF "endless_lives"
+        TEXT object_Honk_0872 FF 60 80 - - "Is" "this" "so" "important" "to" "you" "?" FFFF "break"
+        TEXT object_Honk_0872 FF 60 80 - - "Okay" "..." "..." "..." "KRUIKK" "!" FFFF "break"
+        TEXT object_Honk_0872 FF 60 80 - - "Here" "are" "the" "questions" "," "contestant" "." "You'll" "note" "there" "are" "prizes" "to" "be" "won" "!" "Click" "on" "\"CONTEST\"" FFFF "contest"
+        TEXT object_Honk_0872 FF 60 80 - - "First" "question" ":" "Who" "is" "Cap'n" "Bob" "?" "..." "..." "Click" "on" "\"CONTEST\"" FFFF "contest"
+        TEXT object_Honk_0872 FF 60 80 - - "Too" "late" "..." "next" "question" ":" "What" "prize" "can" "be" "won" "in" "this" "contest" "?" "Click" "on" "\"CONTEST\"" FFFF "contest"
+        TEXT object_Honk_0872 FF 60 80 - - "YES!" "HOW" "'BOUT" "THAT" "!!!" "But" "I'm" "afraid" "the" "first" "one" "was" "wrong." "Don't" "ever" "click" "on" "\"CONTEST\"" "again" "." FFFF "contest"
+        TEXT object_Honk_0872 FF 60 80 - - "Sorry" "," "but" "tips" "are" "only" "available" "only" "the" "neural" "channel" "..." FFFF "tips"
+        TEXT object_Honk_0872 FF 60 80 - - "To" "win" "an" "amazing" "prize" "," "Click" "on" "\"CONTEST\"" FFFF "presents"
+        TEXT object_Honk_0872 FF 60 80 - - "If" "you're" "getting" "uninvited" "PIRATE" "messages" "over" "the" "neural" "channel" "," "contact" "the" "CYBERSQUAD," "extension" "453765" FFFF "messages"
+        TEXT object_Honk_0872 FF 60 80 - - "Cybernetic" "messages" "over" "the" "neural" "channel" "are" "strictly" "against" "the" "law" "..." FFFF "messages"
+        TEXT object_Honk_0872 FF 60 80 - - "All" "users" "of" "the" "neural" "channel" "will" "be" "prosecuted" "." FFFF "messages"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "authors" "of" "this" "game" "decline" "all" "responsibility" "for" "neural" "channel" "communications" "occasioned" "by" "play" "of" "said" "game" "..." FFFF "messages"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "just" "clicked" "on" "the" "word" "\"message\"" "." "Way" "to" "go" "!!!" FFFF "message"
         YIELD_B
         LABEL selector_092D
     CASE "optimization" selector_0BF5
-        MENU "talk" "speed"@4204 "telephone"@420A "keyboard"@4214 "mouse" "joystick"@421D "screen"@4226 "CDROM"@422D "music"@0FAC "sounds"@4233
-        TEXT object_Honk_0872 FF 60 80 - - "You" "want" "to" "speed" "up" "your" "computer" "?" "No" "prob..."@423A "," "I'll" "just" "double"@4242 "the" "frequency"@4249 "." "Uh"@023C "," "you" "may"@0DEB "want" "to" "move"@4253 "back"@0514 "a" "couple"@16A2 "of" "yards"@4258 "..." FFFF "speed"
-        TEXT object_Honk_0872 FF 60 80 - - "Uh" "oh"@023F "..." "Your"@1542 "computer" "can't"@425E "take" "it" "..." "It's" "about" "to" "implode"@4264 "..." "DANGER..."@426C "THROW"@4276 "YOUR"@027A "PC"@427C "OUT"@1BC5 "THE"@13C8 "WINDOW"@427F "..." "DO"@185E "IT"@1BC9 "NOW"@1A74 "!!!" FFFF "speed"
-        TEXT object_Honk_0872 FF 60 80 - - "Phew"@4286 "!" "You're"@02E9 "a" "lucky"@1E35 "person"@0ED9 "..." "I" "managed"@2F49 "to" "save"@428B "the" "day"@12D1 ".."@2626 "You" "might"@4290 "care"@1594 "to" "mention"@0CC5 "that" "to" "Cap'n" "Bob" "," "when"@0201 "you" "see"@04D5 "him"@020B "..." FFFF "speed"
-        TEXT object_Honk_0872 FF 60 80 - - "To" "modify"@4296 "the" "ring"@1046 "tone"@429D "of" "your" "onboard" "phone"@42A2 "," "stab"@42A8 "your" "loudspeakers"@42AD "with" "a" "pair"@42BA "of" "scissors"@42BF "." "For"@3866 "further"@42C8 "modification"@42D0 "," "repeated"@42DD "stabbing"@42E6 "may" "be" "necessary"@42EF "..." FFFF "telephone"
-        TEXT object_Honk_0872 FF 60 80 - - "To" "optimize" "your" "keyboard" "," "gouge"@42F9 "out" "excess"@4300 "keys"@4307 "with" "any" "commercial"@430C "screwdriver"@4317 "..." FFFF "keyboard"
-        TEXT object_Honk_0872 FF 60 80 - - "For" "a" "more" "playful"@4323 "mouse" "," "just" "replace"@432B "the" "little" "mouse" "ball"@4333 "with" "a" "6-sided"@4338 "die"@26CF "." "Thanks"@2732 "Honk!!!"@4340 FFFF "mouse"
-        TEXT object_Honk_0872 FF 60 80 - - "This"@057F "is" "a" "family"@11DD "game" "," "Commander" "!!!" "Put"@4348 "that" "nasty"@434C "little" "joystick" "back" "where"@0C68 "it" "came"@0D05 "from" "!" FFFF "joystick"
-        TEXT object_Honk_0872 FF 60 80 - - "For" "sharper"@4352 "color"@435A "and" "contrast"@4360 "," "spit"@4369 "on" "your" "glasses"@2683 "and" "wipe" "them"@1D3D "on" "somebody"@436E "else"@126E "." "If" "everything"@2F2C "looks" "green"@0857 "," "that's" "because"@4377 "you" "are" "under" "attack"@437F "from" "alien"@4386 "vampire"@438C "cabbages"@4394 "..." FFFF "screen"
-        TEXT object_Honk_0872 FF 60 80 - - "So"@10D0 "your" "CDROM" "is" "way" "too"@0990 "slow"@439D "..." "What" "can" "I" "say"@1278 "?" "..." "Next"@1DE0 "time" "," "buy"@2498 "a" "circular"@43A2 "saw"@43AB "or"@144A "maybe"@2620 "an" "electric"@2D7F "toothbrush"@43AF "...."@0527 FFFF "CDROM"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "hate"@2F21 "the" "music" "!" "That" "one's"@1F6A "easy"@0479 "to" "fix"@43BA "." "Just" "hit"@43BE "\"CONTROL"@43C2 "ALT"@43CB "DEL\","@43CF "and" "flip"@43D5 "over" "the" "CD"@43DA "." "That's" "better"@0553 "," "isn't"@3CD3 "it" "?" FFFF "music"
-        TEXT object_Honk_0872 FF 60 80 - - "Seems"@43DD "like" "I'm" "sensing"@43E3 "a" "fault"@43EB "in" "your" "sound"@43F1 "card"@43F7 "!!!" "Try"@22F4 "hitting"@43FC "it" "awfully"@4404 "hard" "..." "It" "works"@440C "for" "me" "..." FFFF "sounds"
+        MENU "talk" "speed" "telephone" "keyboard" "mouse" "joystick" "screen" "CDROM" "music" "sounds"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "want" "to" "speed" "up" "your" "computer" "?" "No" "prob..." "," "I'll" "just" "double" "the" "frequency" "." "Uh" "," "you" "may" "want" "to" "move" "back" "a" "couple" "of" "yards" "..." FFFF "speed"
+        TEXT object_Honk_0872 FF 60 80 - - "Uh" "oh" "..." "Your" "computer" "can't" "take" "it" "..." "It's" "about" "to" "implode" "..." "DANGER..." "THROW" "YOUR" "PC" "OUT" "THE" "WINDOW" "..." "DO" "IT" "NOW" "!!!" FFFF "speed"
+        TEXT object_Honk_0872 FF 60 80 - - "Phew" "!" "You're" "a" "lucky" "person" "..." "I" "managed" "to" "save" "the" "day" ".." "You" "might" "care" "to" "mention" "that" "to" "Cap'n" "Bob" "," "when" "you" "see" "him" "..." FFFF "speed"
+        TEXT object_Honk_0872 FF 60 80 - - "To" "modify" "the" "ring" "tone" "of" "your" "onboard" "phone" "," "stab" "your" "loudspeakers" "with" "a" "pair" "of" "scissors" "." "For" "further" "modification" "," "repeated" "stabbing" "may" "be" "necessary" "..." FFFF "telephone"
+        TEXT object_Honk_0872 FF 60 80 - - "To" "optimize" "your" "keyboard" "," "gouge" "out" "excess" "keys" "with" "any" "commercial" "screwdriver" "..." FFFF "keyboard"
+        TEXT object_Honk_0872 FF 60 80 - - "For" "a" "more" "playful" "mouse" "," "just" "replace" "the" "little" "mouse" "ball" "with" "a" "6-sided" "die" "." "Thanks" "Honk!!!" FFFF "mouse"
+        TEXT object_Honk_0872 FF 60 80 - - "This" "is" "a" "family" "game" "," "Commander" "!!!" "Put" "that" "nasty" "little" "joystick" "back" "where" "it" "came" "from" "!" FFFF "joystick"
+        TEXT object_Honk_0872 FF 60 80 - - "For" "sharper" "color" "and" "contrast" "," "spit" "on" "your" "glasses" "and" "wipe" "them" "on" "somebody" "else" "." "If" "everything" "looks" "green" "," "that's" "because" "you" "are" "under" "attack" "from" "alien" "vampire" "cabbages" "..." FFFF "screen"
+        TEXT object_Honk_0872 FF 60 80 - - "So" "your" "CDROM" "is" "way" "too" "slow" "..." "What" "can" "I" "say" "?" "..." "Next" "time" "," "buy" "a" "circular" "saw" "or" "maybe" "an" "electric" "toothbrush" "...." FFFF "CDROM"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "hate" "the" "music" "!" "That" "one's" "easy" "to" "fix" "." "Just" "hit" "\"CONTROL" "ALT" "DEL\"," "and" "flip" "over" "the" "CD" "." "That's" "better" "," "isn't" "it" "?" FFFF "music"
+        TEXT object_Honk_0872 FF 60 80 - - "Seems" "like" "I'm" "sensing" "a" "fault" "in" "your" "sound" "card" "!!!" "Try" "hitting" "it" "awfully" "hard" "..." "It" "works" "for" "me" "..." FFFF "sounds"
         YIELD_B
         LABEL selector_0BF5
     CASE "consultation" selector_0C23
-        MENU "talk" "therapy"@4412
-        TEXT object_Honk_0872 FF 61 80 - - "What" "kind" "of" "consultation" "did"@01D4 "you" "have" "in" "mind" "," "Commander?"@0543 FFFF "consultation"
+        MENU "talk" "therapy"
+        TEXT object_Honk_0872 FF 61 80 - - "What" "kind" "of" "consultation" "did" "you" "have" "in" "mind" "," "Commander?" FFFF "consultation"
         YIELD_B
         LABEL selector_0C23
     CASE "therapy" selector_0F87
-        MENU "talk" "ego"@267A "super_ego"@441A "under_ego"@4424 "end_of_month"@442E "libido"@443B "who"@0DD7 "where" "when" "what" "how" "why"@2DB0
-        TEXT object_Honk_0872 FF 60 80 - - "A"@1010 "free"@2769 "psychotherapy"@4442 "session"@4450 "..." "That's" "a" "once"@3A49 "in" "a" "lifetime"@4458 "offer"@4461 "," "Commander" "." FFFF "therapy"
-        TEXT object_Honk_0872 FF 61 80 - - "Relax" "..." "Loosen"@4467 "up" "those"@1DFD "muscles"@446E "..." "Choose"@0B76 "the" "first" "thing"@4476 "that" "enters"@447C "your" "head"@4483 ":" FFFF "therapy"
-        TEXT object_Honk_0872 FF 60 80 - - "Think"@4488 "about" "me,"@448E "Commander," "and" "you'll"@1099 "feel" "better" "..." "let"@4492 "your" "thoughts"@4496 "stray"@449F "to" "Olga" "the" "translator" "..." FFFF "end_of_month"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "end"@2F56 "of" "one" "month"@44A5 "is" "so" "often"@32EB "close"@44AB "to" "the" "start" "of" "another"@0E61 "," "Commander" "..." FFFF "end_of_month"
-        TEXT object_Honk_0872 FF 60 80 - - "Good"@055A "..." "Relax" "..." "Click" "on" "anything..."@44B1 "NOW" "!" FFFF "end_of_month"
-        TEXT object_Honk_0872 FF 60 80 - - "Ha" "!" "Ha" "!" "That" "was" "your" "double" "talking"@2C21 "..." "You're" "not" "the" "only" "one" "," "Commander" "." "Go"@44BD "see" "Super"@44C0 "ZEN"@44C6 "." "He"@08BD "can" "help" "you" "with" "that" "..." FFFF "super_ego"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "think"@011D "you're" "quite"@2E83 "a" "person" "," "but" "deep"@0873 "down"@2C17 "," "there's" "a" "little" "child"@44CA "," "right" "?" "..." FFFF "super_ego"
-        TEXT object_Honk_0872 FF 60 80 - - "There's" "a" "rebel"@44D0 "in" "you" "," "Commander" "..." FFFF "super_ego"
-        TEXT object_Honk_0872 FF 60 80 - - "Careful"@44D6 "..." "You'll" "never" "get" "the" "stains"@44DE "ou"@44E5 "..." "You" "just" "ask"@25CC "Cap'n" "Bob" "..." FFFF "under_ego"
-        TEXT object_Honk_0872 FF 60 80 - - "You've"@26E9 "attained"@44E8 "a" "state"@44F1 "close" "to" "PRANA"@44F7 "." "Congratulations"@44FD "..." FFFF "ego"
-        TEXT object_Honk_0872 FF 60 80 - - "Yes" "," "you" "!!"@044A "I'm" "impressed" "," "Commander" "..." FFFF "ego"
-        TEXT object_Honk_0872 FF 60 80 - - "I'm" "sensing" "strange"@450D "pulsions"@4515 "in" "the" "B" "cortex" "of" "your" "right" "hemisphere" "..." FFFF "libido"
-        TEXT object_Honk_0872 FF 60 80 - - "Commander," "chastity"@451E "is" "a" "stepping"@4527 "stone"@4530 "to" "wisdom"@4536 "." "So" "stay"@04B7 "calm"@2D75 "..." "Let"@12E9 "Cap'n" "Bob" "be" "an" "example"@453D "..." FFFF "libido"
-        TEXT object_Honk_0872 FF 60 80 - - "Space"@4545 "travel"@454B "can" "be" "long"@3693 "and" "lonely"@4552 "." "Why" "not" "watch"@1786 "some" "TV"@2711 "?" FFFF "libido"
-        TEXT object_Honk_0872 FF 61 80 - - "Ahh"@2ED0 "!" "The" "ondoyants"@4559 "..." FFFF "libido"
-        TEXT object_Honk_0872 FF 60 80 - - "Now" "that's" "a" "serious"@4563 "matter"@456B "..." "Maybe"@280A "the" "answer"@4572 "is" "to" "be" "found"@0123 "at"@02C8 "the" "end" "of" "this" "adventure"@2A72 "..." FFFF "who"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "cyberloneliness"@4579 "of" "cheap"@4589 "memory"@10F9 "makes" "you" "dizzy"@458F "," "Commander" "..." FFFF "who"
-        TEXT object_Honk_0872 FF 61 80 - - "Over"@4595 "there" "..." FFFF "where"
-        TEXT object_Honk_0872 FF 61 80 - - "Tomorrow"@459A "," "no" "doubt..."@45A3 FFFF "when"
-        TEXT object_Honk_0872 FF 61 80 - - "That's" "a" "tough"@45AC "one" "," "Commander" "..." FFFF "what"
-        TEXT object_Honk_0872 FF 61 80 - - "Ahh" "!" "How" "?" "The" "answer" "is" "within"@45B2 "you" "," "Commander" "." FFFF "how"
-        TEXT object_Honk_0872 FF 61 80 - - "It's" "obvious"@1C66 ":" "BECAUSE"@45B9 "!!!" "And" "don't" "ask" "\"Because"@45C1 "what" "?\""@45CA FFFF "why"
+        MENU "talk" "ego" "super_ego" "under_ego" "end_of_month" "libido" "who" "where" "when" "what" "how" "why"
+        TEXT object_Honk_0872 FF 60 80 - - "A" "free" "psychotherapy" "session" "..." "That's" "a" "once" "in" "a" "lifetime" "offer" "," "Commander" "." FFFF "therapy"
+        TEXT object_Honk_0872 FF 61 80 - - "Relax" "..." "Loosen" "up" "those" "muscles" "..." "Choose" "the" "first" "thing" "that" "enters" "your" "head" ":" FFFF "therapy"
+        TEXT object_Honk_0872 FF 60 80 - - "Think" "about" "me," "Commander," "and" "you'll" "feel" "better" "..." "let" "your" "thoughts" "stray" "to" "Olga" "the" "translator" "..." FFFF "end_of_month"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "end" "of" "one" "month" "is" "so" "often" "close" "to" "the" "start" "of" "another" "," "Commander" "..." FFFF "end_of_month"
+        TEXT object_Honk_0872 FF 60 80 - - "Good" "..." "Relax" "..." "Click" "on" "anything..." "NOW" "!" FFFF "end_of_month"
+        TEXT object_Honk_0872 FF 60 80 - - "Ha" "!" "Ha" "!" "That" "was" "your" "double" "talking" "..." "You're" "not" "the" "only" "one" "," "Commander" "." "Go" "see" "Super" "ZEN" "." "He" "can" "help" "you" "with" "that" "..." FFFF "super_ego"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "think" "you're" "quite" "a" "person" "," "but" "deep" "down" "," "there's" "a" "little" "child" "," "right" "?" "..." FFFF "super_ego"
+        TEXT object_Honk_0872 FF 60 80 - - "There's" "a" "rebel" "in" "you" "," "Commander" "..." FFFF "super_ego"
+        TEXT object_Honk_0872 FF 60 80 - - "Careful" "..." "You'll" "never" "get" "the" "stains" "ou" "..." "You" "just" "ask" "Cap'n" "Bob" "..." FFFF "under_ego"
+        TEXT object_Honk_0872 FF 60 80 - - "You've" "attained" "a" "state" "close" "to" "PRANA" "." "Congratulations" "..." FFFF "ego"
+        TEXT object_Honk_0872 FF 60 80 - - "Yes" "," "you" "!!" "I'm" "impressed" "," "Commander" "..." FFFF "ego"
+        TEXT object_Honk_0872 FF 60 80 - - "I'm" "sensing" "strange" "pulsions" "in" "the" "B" "cortex" "of" "your" "right" "hemisphere" "..." FFFF "libido"
+        TEXT object_Honk_0872 FF 60 80 - - "Commander," "chastity" "is" "a" "stepping" "stone" "to" "wisdom" "." "So" "stay" "calm" "..." "Let" "Cap'n" "Bob" "be" "an" "example" "..." FFFF "libido"
+        TEXT object_Honk_0872 FF 60 80 - - "Space" "travel" "can" "be" "long" "and" "lonely" "." "Why" "not" "watch" "some" "TV" "?" FFFF "libido"
+        TEXT object_Honk_0872 FF 61 80 - - "Ahh" "!" "The" "ondoyants" "..." FFFF "libido"
+        TEXT object_Honk_0872 FF 60 80 - - "Now" "that's" "a" "serious" "matter" "..." "Maybe" "the" "answer" "is" "to" "be" "found" "at" "the" "end" "of" "this" "adventure" "..." FFFF "who"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "cyberloneliness" "of" "cheap" "memory" "makes" "you" "dizzy" "," "Commander" "..." FFFF "who"
+        TEXT object_Honk_0872 FF 61 80 - - "Over" "there" "..." FFFF "where"
+        TEXT object_Honk_0872 FF 61 80 - - "Tomorrow" "," "no" "doubt..." FFFF "when"
+        TEXT object_Honk_0872 FF 61 80 - - "That's" "a" "tough" "one" "," "Commander" "..." FFFF "what"
+        TEXT object_Honk_0872 FF 61 80 - - "Ahh" "!" "How" "?" "The" "answer" "is" "within" "you" "," "Commander" "." FFFF "how"
+        TEXT object_Honk_0872 FF 61 80 - - "It's" "obvious" ":" "BECAUSE" "!!!" "And" "don't" "ask" "\"Because" "what" "?\"" FFFF "why"
         YIELD_B
         LABEL selector_0F87
     CASE "calm_down" selector_10EC
-        MENU "talk" "one" "two"@09B1 "three"@09CB "four"@09D1 "five"@09D6 "six"@09DB "seven"@09DF "eight"@09E5 "nine"@45CD
-        TEXT object_Honk_0872 FF 60 80 - - "How" "about" "a" "simple"@45D2 "exercise"@45D9 "in" "mind" "power" "?" "Choose" "a" "number"@0144 "." "There's" "only" "one" "right" "one" "..." FFFF "calm_down"
-        TEXT object_Honk_0872 FF 60 80 - - "We're"@3637 "going" "to" "count"@3574 "murffalos"@28AC "together" "." "You" "start" "," "Commander" "..." FFFF "calm_down"
-        TEXT object_Honk_0872 FF 60 80 - - "Pranayama"@45E2 "through"@05AA "numerology"@45EC "!" "You" "lucky" "person" "!" "Choose" "a" "number" "between"@45F7 "ten"@16C1 "and" "twenty"@4600 "..." FFFF "calm_down"
-        TEXT object_Honk_0872 FF 61 80 - - "Observe"@4607 "your" "screen" "carefully"@2241 "," "Commander" "..." "How" "many"@460F "numbers"@4614 "do" "you" "see" "?" FFFF "calm_down"
+        MENU "talk" "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"
+        TEXT object_Honk_0872 FF 60 80 - - "How" "about" "a" "simple" "exercise" "in" "mind" "power" "?" "Choose" "a" "number" "." "There's" "only" "one" "right" "one" "..." FFFF "calm_down"
+        TEXT object_Honk_0872 FF 60 80 - - "We're" "going" "to" "count" "murffalos" "together" "." "You" "start" "," "Commander" "..." FFFF "calm_down"
+        TEXT object_Honk_0872 FF 60 80 - - "Pranayama" "through" "numerology" "!" "You" "lucky" "person" "!" "Choose" "a" "number" "between" "ten" "and" "twenty" "..." FFFF "calm_down"
+        TEXT object_Honk_0872 FF 61 80 - - "Observe" "your" "screen" "carefully" "," "Commander" "..." "How" "many" "numbers" "do" "you" "see" "?" FFFF "calm_down"
         TEXT object_Honk_0872 FF 69 80 - - "one" FFFF "one"
         SHARED_STATE C0 1276 F6 C1 0001
         TEXT object_Honk_0872 FF 61 80 - - "two" FFFF "two"
@@ -174,90 +174,90 @@ SELECTOR_LIST list_Honk_002A
         TEXT object_Honk_0872 FF 61 80 - - "six" FFFF "six"
         TEXT object_Honk_0872 FF 61 80 - - "seven" FFFF "seven"
         TEXT object_Honk_0872 FF 61 80 - - "eight" FFFF "eight"
-        TEXT object_Honk_0872 FF 61 80 - - "nine" "..." "GOOD"@20EE "WORK"@461C "," "COMMANDER"@0913 "..." "I" "sense"@4621 "you're" "quite" "relaxed"@4627 "now" "...." FFFF "nine"
+        TEXT object_Honk_0872 FF 61 80 - - "nine" "..." "GOOD" "WORK" "," "COMMANDER" "..." "I" "sense" "you're" "quite" "relaxed" "now" "...." FFFF "nine"
         YIELD_B
         LABEL selector_10EC
     CASE "explanations" 0000
-        MENU "bye_bye" "talk" "blood"@085D "Bob_Morlock"@462F "Honk" "Ark"@0B19 "Ma"@463B "Orxx"@1E14 "Olga" "Big_Bang"@463E "Black_holes"@4647
-        TEXT object_Honk_0872 FF 61 80 - - "Explanations"@4653 "about" "anything"@1265 "in" "particular"@4660 "," "Commander" "?" FFFF "explanations"
-        TEXT object_Honk_0872 FF 61 80 - - "Why" "," "you're" "Commander" "Blood,"@466B "Commander." "You're" "the" "hero"@3488 "of" "this" "story"@0A31 "..." FFFF "blood"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "our"@226C "master"@3138 "." "He" "built"@4672 "us" "all" "..." FFFF "Bob_Morlock"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "very" "very" "old"@10A0 "," "Commander" "." "Over" "800,000"@4678 "years"@0C42 "old" "..." FFFF "Bob_Morlock"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "programmed"@4680 "me" "to" "detect" "black"@0C2A "holes"@34F0 "which"@468B "are" "our" "gateway"@4691 "to" "the" "BIG"@4699 "BANG"@469D "..." FFFF "Bob_Morlock"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "very" "very" "intelligent"@00E3 "." "He" "has"@066D "a" "biobrain"@46A2 "," "just" "like" "you" "." "I'm" "a" "cybernetic"@0490 "..." FFFF "Bob_Morlock"
-        TEXT object_Honk_0872 FF 61 80 - - "I" "HEAR"@46AB "AND"@1634 "OBEY"@46B0 "," "COMMANDER" "..." FFFF "Honk"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "ARK"@249C "is" "our" "vessel"@1456 "," "built" "by" "cybernetic" "units"@46B5 "belonging"@46BB "to" "KANARY"@46C5 "CORP."@46CC FFFF "Ark"
-        TEXT object_Honk_0872 FF 60 80 - - "It's" "quite" "a" "ship"@2AB1 "!" "We"@028F "have" "16"@46D2 "CRYOBOXES"@46D5 "where" "we"@090B "can" "stock"@46DF "aliens"@46E5 "or" "merchandise"@46EC "..." FFFF "Ark"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "Ark" "is" "equipped"@46F8 "with" "the" "fasted"@4701 "warp"@4708 "drives"@470D "in" "the" "entire"@0E45 "universe" "..." FFFF "Ark"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "Ark" "is" "equipped" "with" "an" "ORXX"@4714 "layer"@4719 "called"@0F5B "MA"@471F "..." "The" "Orxx" "are" "amazing" "missiles"@4722 "..." FFFF "Ark"
-        TEXT object_Honk_0872 FF 60 80 - - "All" "onboard" "comforts"@472B "have" "been"@1305 "provided"@4734 "." "We" "have" "the" "telephone" "," "a" "restaurant"@473D "and" "widescreen"@4748 "TV" "..." FFFF "Ark"
-        TEXT object_Honk_0872 FF 60 80 - - "MA" "is" "one" "of" "nature's"@4753 "curiosities"@475C "," "a" "kind" "of" "space"@2060 "whale"@4768 "," "genetically"@476E "altered"@477A "by" "Cap'n" "Bob" "..." FFFF "Ma"
-        TEXT object_Honk_0872 FF 60 80 - - "MA" "lays"@4782 "her" "eggs"@4787 "in" "the" "PRAM"@478C "ZONE."@4791 "The" "eggs" "hatch"@4797 "into"@04E7 "ORXX" "..." FFFF "Ma"
-        TEXT object_Honk_0872 FF 60 80 - - "MA" "is" "a" "sensitive"@479D "being"@1754 "," "Commander" "." "She"@0DB7 "is" "very" "sensitive" "to" "music" "..." FFFF "MA"
-        TEXT object_Honk_0872 FF 60 80 - - "MA" "eats"@47A7 "only" "synthetic"@47AC "strawberries"@47B6 "..." FFFF "Ma"
-        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "loves"@0AC6 "synthetic" "strawberries" "." "He" "perfected"@47C3 "them" "with" "help" "from" "the" "KANARY" "geneticists."@47CD FFFF "Ma"
-        TEXT object_Honk_0872 FF 60 80 - - "Orxx" "are" "LIVING"@47DA "guided"@47E1 "missiles" "." "Thanks" "to" "them" "," "you're" "always" "perfectly"@052C "safe"@47E8 "..." FFFF "Orxx"
-        TEXT object_Honk_0872 FF 60 80 - - "You" "guide"@47ED "an" "Orxx" "through" "space,"@47F3 "seeing"@47FA "through" "its"@0817 "eyes."@4801 "It" "lands"@4807 "on" "planets"@3956 "for" "you" "..." FFFF "Orxx"
-        TEXT object_Honk_0872 FF 60 80 - - "If" "there's" "any" "danger"@480D "," "the" "Orxx" "is" "destroyed"@118C "..." "Not"@05D4 "you" "!" "You're" "safe" "in" "orbit"@4814 "..." FFFF "Orxx"
-        TEXT object_Honk_0872 FF 60 80 - - "Think" "of" "Orxx" "as"@047E "your" "representatives"@481A "." "We" "dialog" "through" "them" "with" "the" "aliens" "." "Alien"@482A "languages"@4830 "are" "translated"@483A "by" "Olga,"@4845 "the" "onboard" "translator" "..." FFFF "Orxx"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "Orxx" "are" "one" "of" "Cap'n" "Bob's"@08A5 "finest"@484B "creations"@4852 "..." FFFF "Orxx"
+        MENU "bye_bye" "talk" "blood" "Bob_Morlock" "Honk" "Ark" "Ma" "Orxx" "Olga" "Big_Bang" "Black_holes"
+        TEXT object_Honk_0872 FF 61 80 - - "Explanations" "about" "anything" "in" "particular" "," "Commander" "?" FFFF "explanations"
+        TEXT object_Honk_0872 FF 61 80 - - "Why" "," "you're" "Commander" "Blood," "Commander." "You're" "the" "hero" "of" "this" "story" "..." FFFF "blood"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "our" "master" "." "He" "built" "us" "all" "..." FFFF "Bob_Morlock"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "very" "very" "old" "," "Commander" "." "Over" "800,000" "years" "old" "..." FFFF "Bob_Morlock"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "programmed" "me" "to" "detect" "black" "holes" "which" "are" "our" "gateway" "to" "the" "BIG" "BANG" "..." FFFF "Bob_Morlock"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "is" "very" "very" "intelligent" "." "He" "has" "a" "biobrain" "," "just" "like" "you" "." "I'm" "a" "cybernetic" "..." FFFF "Bob_Morlock"
+        TEXT object_Honk_0872 FF 61 80 - - "I" "HEAR" "AND" "OBEY" "," "COMMANDER" "..." FFFF "Honk"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "ARK" "is" "our" "vessel" "," "built" "by" "cybernetic" "units" "belonging" "to" "KANARY" "CORP." FFFF "Ark"
+        TEXT object_Honk_0872 FF 60 80 - - "It's" "quite" "a" "ship" "!" "We" "have" "16" "CRYOBOXES" "where" "we" "can" "stock" "aliens" "or" "merchandise" "..." FFFF "Ark"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "Ark" "is" "equipped" "with" "the" "fasted" "warp" "drives" "in" "the" "entire" "universe" "..." FFFF "Ark"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "Ark" "is" "equipped" "with" "an" "ORXX" "layer" "called" "MA" "..." "The" "Orxx" "are" "amazing" "missiles" "..." FFFF "Ark"
+        TEXT object_Honk_0872 FF 60 80 - - "All" "onboard" "comforts" "have" "been" "provided" "." "We" "have" "the" "telephone" "," "a" "restaurant" "and" "widescreen" "TV" "..." FFFF "Ark"
+        TEXT object_Honk_0872 FF 60 80 - - "MA" "is" "one" "of" "nature's" "curiosities" "," "a" "kind" "of" "space" "whale" "," "genetically" "altered" "by" "Cap'n" "Bob" "..." FFFF "Ma"
+        TEXT object_Honk_0872 FF 60 80 - - "MA" "lays" "her" "eggs" "in" "the" "PRAM" "ZONE." "The" "eggs" "hatch" "into" "ORXX" "..." FFFF "Ma"
+        TEXT object_Honk_0872 FF 60 80 - - "MA" "is" "a" "sensitive" "being" "," "Commander" "." "She" "is" "very" "sensitive" "to" "music" "..." FFFF "MA"
+        TEXT object_Honk_0872 FF 60 80 - - "MA" "eats" "only" "synthetic" "strawberries" "..." FFFF "Ma"
+        TEXT object_Honk_0872 FF 60 80 - - "Cap'n" "Bob" "loves" "synthetic" "strawberries" "." "He" "perfected" "them" "with" "help" "from" "the" "KANARY" "geneticists." FFFF "Ma"
+        TEXT object_Honk_0872 FF 60 80 - - "Orxx" "are" "LIVING" "guided" "missiles" "." "Thanks" "to" "them" "," "you're" "always" "perfectly" "safe" "..." FFFF "Orxx"
+        TEXT object_Honk_0872 FF 60 80 - - "You" "guide" "an" "Orxx" "through" "space," "seeing" "through" "its" "eyes." "It" "lands" "on" "planets" "for" "you" "..." FFFF "Orxx"
+        TEXT object_Honk_0872 FF 60 80 - - "If" "there's" "any" "danger" "," "the" "Orxx" "is" "destroyed" "..." "Not" "you" "!" "You're" "safe" "in" "orbit" "..." FFFF "Orxx"
+        TEXT object_Honk_0872 FF 60 80 - - "Think" "of" "Orxx" "as" "your" "representatives" "." "We" "dialog" "through" "them" "with" "the" "aliens" "." "Alien" "languages" "are" "translated" "by" "Olga," "the" "onboard" "translator" "..." FFFF "Orxx"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "Orxx" "are" "one" "of" "Cap'n" "Bob's" "finest" "creations" "..." FFFF "Orxx"
         TEXT object_Honk_0872 FF 60 80 - - "Olga" "is" "our" "cybernetic" "translator" "." "She" "knows" "all" "the" "languages" "in" "the" "universe" "..." FFFF "Olga"
-        TEXT object_Honk_0872 FF 60 80 - - "Olga" "is" "very" "highly"@485C "paid" "in" "MEGAWATTS"@1645 "." "More"@04EC "than"@1260 "me" "," "Commander" "..." FFFF "Olga"
-        TEXT object_Honk_0872 FF 60 80 - - "Olga" "translates"@4863 "almost"@486E "word" "for" "word" "." "She" "doesn't"@22EC "care" "for" "nasty" "language" "..." FFFF "Olga"
-        TEXT object_Honk_0872 FF 60 80 - - "Never"@4875 "say" "anything" "bad"@070B "about" "Olga" "," "Commander" "." "She's" "very" "touchy"@487B "..." FFFF "Olga"
-        TEXT object_Honk_0872 FF 40 80 - - "MISTER"@4882 "HONK" "CAN"@4889 "JUST"@488D "SHUT"@4892 "HIS"@2FB7 "LYING"@4897 "MOUTH"@489D "....."@48A3 "SIGNED"@1CF5 "Olga" "...." FFFF "Olga"
-        TEXT object_Honk_0872 FF 60 80 - - "See"@0BCA "what" "I" "mean"@250F "," "Commander" "..." "I" "told"@0BEE "you" "..." FFFF "Olga"
-        TEXT object_Honk_0872 FF 60 80 - - "The" "BIG" "BANG" "is" "one" "of" "Cap'n" "Bob's" "inventions"@48A9 "," "Commander" "." "He" "thinks"@48B4 "the" "BIG" "BANG" "will" "help" "him" "understand"@03D8 "the" "universe" "..." "Old"@48BB "age"@48BF "doesn't" "suit"@48C3 "him" "..." FFFF "Big_Bang"
-        TEXT object_Honk_0872 FF 60 80 - - "My"@0595 "calculations"@48C8 "tell" "me" "the" "BIG" "BANG" "is" "fake"@48D5 "," "Commander" "." "I" "think" "it's"@1855 "a" "deformed"@48DA "prism"@48E3 "designed"@48E9 "to" "fool"@48F2 "us" "..." FFFF "Big_Bang"
-        TEXT object_Honk_0872 FF 60 80 - - "Commander," "just" "between" "you" "and" "me" "," "I" "think" "ol'"@08CC "Buzzard"@1F78 "Man"@1F80 "Bob" "has" "another" "idea"@2A9C "in" "mind" "..." FFFF "Big_Bang"
-        TEXT object_Honk_0872 FF 60 80 - - "Black"@48F7 "holes" "are" "amazing" "devices"@48FD "which" "space" "out" "time" "and" "temporize"@4905 "space" "..." FFFF "Black_holes"
-        TEXT object_Honk_0872 FF 60 80 - - "If" "we" "travel" "through" "a" "black" "hole"@0C30 "," "we" "are" "sure"@0994 "to" "discover"@490F "NEW"@1FA2 "and" "WEIRD"@4918 "UNIVERSES"@491E "," "Commander" "..." FFFF "Black_holes"
-        TEXT object_Honk_0872 FF 60 80 - - "What" "lies"@2E2C "beyond"@4928 "black" "holes" "is" "an" "unfathomed"@492F "mystery"@493A "," "Commander" "..." FFFF "Black_holes"
-        TEXT object_Honk_0872 FF 60 80 - - "Commander" "," "I" "feel" "dizzy" "all" "of" "a" "sudden"@4942 "..." FFFF "Black_holes"
-        TEXT object_Honk_0872 FF 20 80 - - "Yes,"@4949 "Commander" "?"
+        TEXT object_Honk_0872 FF 60 80 - - "Olga" "is" "very" "highly" "paid" "in" "MEGAWATTS" "." "More" "than" "me" "," "Commander" "..." FFFF "Olga"
+        TEXT object_Honk_0872 FF 60 80 - - "Olga" "translates" "almost" "word" "for" "word" "." "She" "doesn't" "care" "for" "nasty" "language" "..." FFFF "Olga"
+        TEXT object_Honk_0872 FF 60 80 - - "Never" "say" "anything" "bad" "about" "Olga" "," "Commander" "." "She's" "very" "touchy" "..." FFFF "Olga"
+        TEXT object_Honk_0872 FF 40 80 - - "MISTER" "HONK" "CAN" "JUST" "SHUT" "HIS" "LYING" "MOUTH" "....." "SIGNED" "Olga" "...." FFFF "Olga"
+        TEXT object_Honk_0872 FF 60 80 - - "See" "what" "I" "mean" "," "Commander" "..." "I" "told" "you" "..." FFFF "Olga"
+        TEXT object_Honk_0872 FF 60 80 - - "The" "BIG" "BANG" "is" "one" "of" "Cap'n" "Bob's" "inventions" "," "Commander" "." "He" "thinks" "the" "BIG" "BANG" "will" "help" "him" "understand" "the" "universe" "..." "Old" "age" "doesn't" "suit" "him" "..." FFFF "Big_Bang"
+        TEXT object_Honk_0872 FF 60 80 - - "My" "calculations" "tell" "me" "the" "BIG" "BANG" "is" "fake" "," "Commander" "." "I" "think" "it's" "a" "deformed" "prism" "designed" "to" "fool" "us" "..." FFFF "Big_Bang"
+        TEXT object_Honk_0872 FF 60 80 - - "Commander," "just" "between" "you" "and" "me" "," "I" "think" "ol'" "Buzzard" "Man" "Bob" "has" "another" "idea" "in" "mind" "..." FFFF "Big_Bang"
+        TEXT object_Honk_0872 FF 60 80 - - "Black" "holes" "are" "amazing" "devices" "which" "space" "out" "time" "and" "temporize" "space" "..." FFFF "Black_holes"
+        TEXT object_Honk_0872 FF 60 80 - - "If" "we" "travel" "through" "a" "black" "hole" "," "we" "are" "sure" "to" "discover" "NEW" "and" "WEIRD" "UNIVERSES" "," "Commander" "..." FFFF "Black_holes"
+        TEXT object_Honk_0872 FF 60 80 - - "What" "lies" "beyond" "black" "holes" "is" "an" "unfathomed" "mystery" "," "Commander" "..." FFFF "Black_holes"
+        TEXT object_Honk_0872 FF 60 80 - - "Commander" "," "I" "feel" "dizzy" "all" "of" "a" "sudden" "..." FFFF "Black_holes"
+        TEXT object_Honk_0872 FF 20 80 - - "Yes," "Commander" "?"
         YIELD
 END_SELECTOR_LIST list_Honk_002A
 
 SELECTOR_LIST list_Izwalito_16E0
     YIELD_B
-    CASE "talk1"@494E selector_1717
-        MENU "hello"@0006 "talk"
-        TEXT object_Izwalito_055A 02 41 80 - - "Hello"@26B5 "friend"@05D8 "..." FFFF "hello"
+    CASE "talk1" selector_1717
+        MENU "hello" "talk"
+        TEXT object_Izwalito_055A 02 41 80 - - "Hello" "friend" "..." FFFF "hello"
         TEXT object_Izwalito_055A 03 40 80 - - "You" "want" "talk" "," "friend" "?" FFFF "talk"
         YIELD_B
         LABEL selector_1717
     CASE "talk" selector_1743
-        MENU "bye_bye" "Izwal"@1843 "food"@1566 "planet"@0A8F "reproduction"@4954
+        MENU "bye_bye" "Izwal" "food" "planet" "reproduction"
         TEXT object_Izwalito_055A 04 43 80 - - "What" "you" "want" "know" "," "friend" "?" FFFF "talk"
         YIELD_B
         LABEL selector_1743
     CASE "Izwal" selector_1942
-        MENU "talk" "bye_bye" "society"@4961 "ideal"@4969 "happiness"@496F
-        TEXT object_Izwalito_055A 02 40 80 - - "Izwal" "be" "great"@05C9 "pacifist"@4979 "people"@0DE4 "..." FFFF "Izwal"
-        TEXT object_Izwalito_055A 03 40 80 - - "We" "live"@2846 "in" "tribe"@4982 "." "We" "poor"@0B08 "and" "starving"@277B "..." FFFF "society"
-        TEXT object_Izwalito_055A 02 40 80 - - "We" "work"@01AE "much"@0616 "." "We" "big"@1D39 "migrators"@4988 "..." FFFF "society"
-        TEXT object_Izwalito_055A 02 40 80 - - "Me"@0229 "," "Izwalito"@09F0 "," "be" "nephew"@4992 "of" "son"@4999 "of" "chief"@499D "of" "tribe" "..." FFFF "society"
+        MENU "talk" "bye_bye" "society" "ideal" "happiness"
+        TEXT object_Izwalito_055A 02 40 80 - - "Izwal" "be" "great" "pacifist" "people" "..." FFFF "Izwal"
+        TEXT object_Izwalito_055A 03 40 80 - - "We" "live" "in" "tribe" "." "We" "poor" "and" "starving" "..." FFFF "society"
+        TEXT object_Izwalito_055A 02 40 80 - - "We" "work" "much" "." "We" "big" "migrators" "..." FFFF "society"
+        TEXT object_Izwalito_055A 02 40 80 - - "Me" "," "Izwalito" "," "be" "nephew" "of" "son" "of" "chief" "of" "tribe" "..." FFFF "society"
         TEXT object_Izwalito_055A 03 41 80 - - "You" "talk" "much" "..." FFFF "society"
-        TEXT object_Izwalito_055A 02 40 80 - - "Me" "dream"@36A0 "of" "perfect"@49A3 "world"@49AB "with" "much" "to" "eat"@0783 "..." FFFF "ideal"
-        TEXT object_Izwalito_055A 03 40 80 - - "Ideal"@49B1 "," "ideal" "..." "You" "like" "dream" "," "friend" "..." FFFF "ideal"
-        TEXT object_Izwalito_055A 05 40 80 - - "Ideal" "always" "be" "far" "from" "reality"@49B7 ":" "poor" "want" "be" "rich"@27A2 "..." "Rich"@49BF "want" "be" "poor" "..." FFFF "ideal"
-        TEXT object_Izwalito_055A FF 60 80 - - "Hmmm"@49C4 "..." "Too" "serious" "for" "me" "," "Commander" "." "You" "continue"@3181 "," "me" "snooze"@49C9 "..." FFFF "ideal"
-        TEXT object_Izwalito_055A 04 48 80 - - "Izwals"@265A "of" "planet" "Rondo"@123C "be" "very" "rich" "..." "Them"@3414 "have" "much" "CREDs"@26A9 FFFF "ideal"
+        TEXT object_Izwalito_055A 02 40 80 - - "Me" "dream" "of" "perfect" "world" "with" "much" "to" "eat" "..." FFFF "ideal"
+        TEXT object_Izwalito_055A 03 40 80 - - "Ideal" "," "ideal" "..." "You" "like" "dream" "," "friend" "..." FFFF "ideal"
+        TEXT object_Izwalito_055A 05 40 80 - - "Ideal" "always" "be" "far" "from" "reality" ":" "poor" "want" "be" "rich" "..." "Rich" "want" "be" "poor" "..." FFFF "ideal"
+        TEXT object_Izwalito_055A FF 60 80 - - "Hmmm" "..." "Too" "serious" "for" "me" "," "Commander" "." "You" "continue" "," "me" "snooze" "..." FFFF "ideal"
+        TEXT object_Izwalito_055A 04 48 80 - - "Izwals" "of" "planet" "Rondo" "be" "very" "rich" "..." "Them" "have" "much" "CREDs" FFFF "ideal"
         SHARED_STATE C0 12E2 F5 C1 0001
-        TEXT object_Izwalito_055A 02 40 80 - - "Family"@49D0 "," "children"@35F7 "," "work" "," "food" "," "reproduction" "," "reproduction" "..." FFFF "happiness"
-        TEXT object_Izwalito_055A 02 40 80 - - "Us"@49D7 "Izwals" "of" "Corpo"@0CB9 "not" "know" "happiness" "..." FFFF "happiness"
-        TEXT object_Izwalito_055A 03 40 80 - - "Izwals" "of" "planet" "RONDO"@11AD "," "them" "know" "happiness" "..." FFFF "happiness"
-        TEXT object_Izwalito_055A 04 40 80 - - "Me" "dream" "of" "blue"@49DA "planet" "with" "murffalos" "," "grass"@49DF "..." "Me" "dream" "," "friend" "..." FFFF "happiness"
+        TEXT object_Izwalito_055A 02 40 80 - - "Family" "," "children" "," "work" "," "food" "," "reproduction" "," "reproduction" "..." FFFF "happiness"
+        TEXT object_Izwalito_055A 02 40 80 - - "Us" "Izwals" "of" "Corpo" "not" "know" "happiness" "..." FFFF "happiness"
+        TEXT object_Izwalito_055A 03 40 80 - - "Izwals" "of" "planet" "RONDO" "," "them" "know" "happiness" "..." FFFF "happiness"
+        TEXT object_Izwalito_055A 04 40 80 - - "Me" "dream" "of" "blue" "planet" "with" "murffalos" "," "grass" "..." "Me" "dream" "," "friend" "..." FFFF "happiness"
         TEXT object_Izwalito_055A 03 41 80 - - "You" "talk" "much" "..." FFFF "happiness"
         YIELD_B
         LABEL selector_1942
     CASE "know" selector_19E9
-        MENU "talk" "bye_bye" "Rondo" "truth"@16B4
+        MENU "talk" "bye_bye" "Rondo" "truth"
         TEXT object_Izwalito_055A 03 40 80 - - "What" "you" "want" "know" "," "friend" "?" FFFF "know"
-        TEXT object_Izwalito_055A 05 40 80 - - "Rondo" "you" "want" "know" "planet" "Rondo,"@27A7 "friend" "..." FFFF "Rondo"
-        TEXT object_Izwalito_055A 06 48 80 - - "Planet"@23CB "Rondo" "be" "in" "Rondalus"@27AE "constellation"@287F "," "coordinates"@0A10 "AX4532..."@49E5 FFFF "Rondo"
+        TEXT object_Izwalito_055A 05 40 80 - - "Rondo" "you" "want" "know" "planet" "Rondo," "friend" "..." FFFF "Rondo"
+        TEXT object_Izwalito_055A 06 48 80 - - "Planet" "Rondo" "be" "in" "Rondalus" "constellation" "," "coordinates" "AX4532..." FFFF "Rondo"
         SHARED_BIT_STATE B0 field_Rondo_0B2A_s00_0B2C 0002 0
-        TEXT object_Izwalito_055A 02 40 80 - - "Me" "not" "lie"@49EF "..." FFFF "truth"
+        TEXT object_Izwalito_055A 02 40 80 - - "Me" "not" "lie" "..." FFFF "truth"
         TEXT object_Izwalito_055A 03 40 80 - - "Ideal" "be" "ideal" "..." FFFF "truth"
         TEXT object_Izwalito_055A 02 41 80 - - "Me" "say" "truth" "," "Commander" FFFF "truth"
         YIELD_B
@@ -265,118 +265,118 @@ SELECTOR_LIST list_Izwalito_16E0
     CASE "food" selector_1ADD
         MENU "talk" "bye_bye" "murffalos" "grass"
         TEXT object_Izwalito_055A 02 40 80 - - "Us" "like" "eat" "murffalos" "," "but" "our" "planet" "not" "have" "murffalos" "." "Us" "did" "eat" "all" "..." FFFF "food"
-        TEXT object_Izwalito_055A 02 40 80 - - "Izwal" "people" "hungry"@0CE5 "." "You" "help" "us" "," "friend" "..." FFFF "food"
-        TEXT object_Izwalito_055A 03 40 80 - - "Murffalos"@49F3 "good" "meat"@0D20 "." "Tender"@49FD "..." FFFF "murffalos"
-        TEXT object_Izwalito_055A 02 40 80 - - "Me" "dream" "eat" "roast"@4A04 "murffalo"@0D17 "..." FFFF "murffalos"
+        TEXT object_Izwalito_055A 02 40 80 - - "Izwal" "people" "hungry" "." "You" "help" "us" "," "friend" "..." FFFF "food"
+        TEXT object_Izwalito_055A 03 40 80 - - "Murffalos" "good" "meat" "." "Tender" "..." FFFF "murffalos"
+        TEXT object_Izwalito_055A 02 40 80 - - "Me" "dream" "eat" "roast" "murffalo" "..." FFFF "murffalos"
         TEXT object_Izwalito_055A 02 40 80 - - "You" "not" "talk" "." "Me" "hungry" "..." FFFF "murffalos"
-        TEXT object_Izwalito_055A 02 41 80 - - "Hunger"@4A0A "..." "Hunger" "..." FFFF "murffalos"
-        TEXT object_Izwalito_055A 06 40 80 - - "Me" "not" "like" "eat" "grass."@4A11 "Grass"@4A18 "make" "dizzy" "." "Bad"@4A1E "..." FFFF "grass"
-        TEXT object_Izwalito_055A 02 41 80 - - "Grass" "not" "grow"@4A22 "here" "..." FFFF "grass"
+        TEXT object_Izwalito_055A 02 41 80 - - "Hunger" "..." "Hunger" "..." FFFF "murffalos"
+        TEXT object_Izwalito_055A 06 40 80 - - "Me" "not" "like" "eat" "grass." "Grass" "make" "dizzy" "." "Bad" "..." FFFF "grass"
+        TEXT object_Izwalito_055A 02 41 80 - - "Grass" "not" "grow" "here" "..." FFFF "grass"
         YIELD_B
         LABEL selector_1ADD
     CASE "reproduction" selector_1BAB
-        MENU "talk" "bye_bye" "love"@04D0 "female"@241E "murffalos"
+        MENU "talk" "bye_bye" "love" "female" "murffalos"
         TEXT object_Izwalito_055A 02 41 80 - - "Me" "like" "reproduction" "..." FFFF "reproduction"
-        TEXT object_Izwalito_055A 06 40 80 - - "Me" "have" "girl"@4A27 "friend" "." "Hee"@4A2C "hee"@4A30 "hee...."@4A34 FFFF "love"
-        TEXT object_Izwalito_055A 02 41 80 - - "You" "not" "talk" "." "Me" "go" "red"@4A3C "..." FFFF "love"
+        TEXT object_Izwalito_055A 06 40 80 - - "Me" "have" "girl" "friend" "." "Hee" "hee" "hee...." FFFF "love"
+        TEXT object_Izwalito_055A 02 41 80 - - "You" "not" "talk" "." "Me" "go" "red" "..." FFFF "love"
         TEXT object_Izwalito_055A 02 41 80 - - "You" "talk" "too" "much" "of" "female" "," "friend" "..." FFFF "female"
         TEXT object_Izwalito_055A 06 40 80 - - "Me" "hungry" "," "friend" "..." FFFF "murffalos"
-        TEXT object_Izwalito_055A 02 40 80 - - "Thirteen"@4A40 "murffalos" "to" "reproduce"@4A49 "..." "One"@2980 "in" "middle"@3D1E "," "twelve"@4A53 "around" "..." "Hee" "hee..."@4A5A FFFF "murffalos"
+        TEXT object_Izwalito_055A 02 40 80 - - "Thirteen" "murffalos" "to" "reproduce" "..." "One" "in" "middle" "," "twelve" "around" "..." "Hee" "hee..." FFFF "murffalos"
         TEXT object_Izwalito_055A 06 41 80 - - "Hunger" "..." "Hunger" "..." FFFF "murffalos"
         YIELD_B
         LABEL selector_1BAB
     CASE "planet" 0000
-        MENU "talk" "bye_bye" "ecology"@4A61 "stars"@21CE
-        TEXT object_Izwalito_055A 02 43 80 - - "Corpo" "nice"@242A "Izwal" "planet" "..." FFFF "planet"
+        MENU "talk" "bye_bye" "ecology" "stars"
+        TEXT object_Izwalito_055A 02 43 80 - - "Corpo" "nice" "Izwal" "planet" "..." FFFF "planet"
         TEXT object_Izwalito_055A 02 40 80 - - "Corpo" "poor" "planet" "but" "nice" "ecology" "..." FFFF "ecology"
-        TEXT object_Izwalito_055A 03 40 80 - - "Here" "nothing"@4A69 "grow" "..." "Not" "water"@06EA "," "not" "tree"@4A71 "," "not" "murffalos" "..." FFFF "ecology"
-        TEXT object_Izwalito_055A 02 40 80 - - "Ecology"@4A76 "Heal"@4A7E "Planet" "\"HP\","@4A83 "friend" "..." "You" "know" "\"HP\""@4A89 "?" FFFF "ecology"
-        TEXT object_Izwalito_055A 02 40 80 - - "Stars"@4A8E "..." "Me" "like" "see" "sky"@21CA "..." FFFF "stars"
-        TEXT object_Izwalito_055A 03 40 80 - - "Big" "starry"@4A94 "sky" "." "Me" "know" "Magnalus"@23D2 "constellation" "..." FFFF "stars"
-        TEXT object_Izwalito_055A 02 48 80 - - "Magnalus" "constellation" "where" "be" "planet" "Magnus,"@4A9B "coordinates" "Magnus"@1052 "1234.543256"@4AA3 "degrees..."@4AAF "You" "like" "stars" "..." FFFF "stars"
+        TEXT object_Izwalito_055A 03 40 80 - - "Here" "nothing" "grow" "..." "Not" "water" "," "not" "tree" "," "not" "murffalos" "..." FFFF "ecology"
+        TEXT object_Izwalito_055A 02 40 80 - - "Ecology" "Heal" "Planet" "\"HP\"," "friend" "..." "You" "know" "\"HP\"" "?" FFFF "ecology"
+        TEXT object_Izwalito_055A 02 40 80 - - "Stars" "..." "Me" "like" "see" "sky" "..." FFFF "stars"
+        TEXT object_Izwalito_055A 03 40 80 - - "Big" "starry" "sky" "." "Me" "know" "Magnalus" "constellation" "..." FFFF "stars"
+        TEXT object_Izwalito_055A 02 48 80 - - "Magnalus" "constellation" "where" "be" "planet" "Magnus," "coordinates" "Magnus" "1234.543256" "degrees..." "You" "like" "stars" "..." FFFF "stars"
         SHARED_BIT_STATE B0 field_Magnus_0C02_s00_0C04 0002 0
-        TEXT object_Izwalito_055A 02 41 80 - - "Stars" "big" "science"@4ABA "..." FFFF "stars"
+        TEXT object_Izwalito_055A 02 41 80 - - "Stars" "big" "science" "..." FFFF "stars"
         YIELD
 END_SELECTOR_LIST list_Izwalito_16E0
 
 SELECTOR_LIST list_Morning_Oil_1CAA
     YIELD_B
-    CASE "broken_down"@2BFE selector_1D75
-        MENU "bye_bye" "on" "off"@10EF "hello" "yes" "no" "great" "in" "out" "more" "less"@125B
-        TEXT object_Morning_Oil_028A 01 41 80 - - "ON"@1BE5 FFFF "off"
-        TEXT object_Morning_Oil_028A 02 41 80 - - "Off"@4AC2 FFFF "on"
-        TEXT object_Morning_Oil_028A 06 41 80 - - "NO"@27F5 FFFF "yes"
-        TEXT object_Morning_Oil_028A 02 41 80 - - "YES"@0567 FFFF "no"
-        TEXT object_Morning_Oil_028A 04 41 80 - - "SMALL"@4AC6 FFFF "great"
+    CASE "broken_down" selector_1D75
+        MENU "bye_bye" "on" "off" "hello" "yes" "no" "great" "in" "out" "more" "less"
+        TEXT object_Morning_Oil_028A 01 41 80 - - "ON" FFFF "off"
+        TEXT object_Morning_Oil_028A 02 41 80 - - "Off" FFFF "on"
+        TEXT object_Morning_Oil_028A 06 41 80 - - "NO" FFFF "yes"
+        TEXT object_Morning_Oil_028A 02 41 80 - - "YES" FFFF "no"
+        TEXT object_Morning_Oil_028A 04 41 80 - - "SMALL" FFFF "great"
         TEXT object_Morning_Oil_028A 03 41 80 - - "OUT" FFFF "in"
-        TEXT object_Morning_Oil_028A 02 41 80 - - "IN"@13C5 FFFF "out"
-        TEXT object_Morning_Oil_028A 05 41 80 - - "LESS"@4ACC FFFF "more"
-        TEXT object_Morning_Oil_028A 03 41 80 - - "MORE"@1640 FFFF "less"
+        TEXT object_Morning_Oil_028A 02 41 80 - - "IN" FFFF "out"
+        TEXT object_Morning_Oil_028A 05 41 80 - - "LESS" FFFF "more"
+        TEXT object_Morning_Oil_028A 03 41 80 - - "MORE" FFFF "less"
         TEXT object_Morning_Oil_028A 04 41 80 - - "Hello" FFFF "bye_bye"
-        TEXT object_Morning_Oil_028A 05 41 80 - - "Bye"@0259 "bye..."@290C FFFF "hello"
-        TEXT object_Morning_Oil_028A 04 43 80 - - "bzzz..."@4AD1 "klk........."@4AD9 FFFF "broken_down"
+        TEXT object_Morning_Oil_028A 05 41 80 - - "Bye" "bye..." FFFF "hello"
+        TEXT object_Morning_Oil_028A 04 43 80 - - "bzzz..." "klk........." FFFF "broken_down"
         YIELD_B
         LABEL selector_1D75
-    CASE "letar"@3010 selector_1DC3
-        MENU "dream" "sleep"@12ED "nightmare"@4AE6 "snore"@3016
-        TEXT object_Morning_Oil_028A 05 41 80 - - "AAAAHHH...."@4AF0 FFFF "dream"
-        TEXT object_Morning_Oil_028A 04 41 80 - - "bZZZZZZZZZZ..."@4AFC FFFF "sleep"
-        TEXT object_Morning_Oil_028A 02 41 80 - - "aaark!"@4B0B "oooh!"@4B12 "NOOO..."@4B18 FFFF "nightmare"
-        TEXT object_Morning_Oil_028A 01 41 80 - - "gruhhh"@4B20 "pshhhh"@4B27 FFFF "snore"
+    CASE "letar" selector_1DC3
+        MENU "dream" "sleep" "nightmare" "snore"
+        TEXT object_Morning_Oil_028A 05 41 80 - - "AAAAHHH...." FFFF "dream"
+        TEXT object_Morning_Oil_028A 04 41 80 - - "bZZZZZZZZZZ..." FFFF "sleep"
+        TEXT object_Morning_Oil_028A 02 41 80 - - "aaark!" "oooh!" "NOOO..." FFFF "nightmare"
+        TEXT object_Morning_Oil_028A 01 41 80 - - "gruhhh" "pshhhh" FFFF "snore"
         YIELD_B
         LABEL selector_1DC3
-    CASE "history"@30B0 selector_1DD7
-        MENU "bye_bye" "war"@110F "Croolis"@0F3E "treasure"@1113 "battles"@4B2E "mastachok"@312E
+    CASE "history" selector_1DD7
+        MENU "bye_bye" "war" "Croolis" "treasure" "battles" "mastachok"
         YIELD_B
         LABEL selector_1DD7
     CASE "war" selector_1F19
-        MENU "bye_bye" "history" "fight"@4B36
-        TEXT object_Morning_Oil_028A 05 40 80 - - "That" "was" "a" "nasty" "war" "..." "It" "all" "started"@10C0 "the" "day" "of" "the" "big" "fight" "between" "the" "Croolis" "EVISCERATOR"@1155 "and" "EMASCULATOR..."@4B3C FFFF "war"
-        TEXT object_Morning_Oil_028A 02 40 80 - - "Ah"@4B4B "," "you" "should"@096F "have" "seen"@0AAA "it" "," "Commander" "..." "What" "a" "fight" "..." FFFF "war"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "They"@368E "had"@0D67 "BIONIUM"@03E6 "bombs"@4B4E "," "powerful"@4B54 "enough"@4B5D "to" "blow"@0115 "up" "whole" "planets" "..." FFFF "war"
-        TEXT object_Morning_Oil_028A 05 40 80 - - "It" "was" "mayhem"@4B64 "..." "BBAAOMMM"@4B6B "!!!" "BAM"@4B74 "!" "TA"@4B78 "TA" "TA" "TA" "TA" "..." "Ha!"@0612 "Ha!" "Ha!" FFFF "war"
-        TEXT object_Morning_Oil_028A 04 40 80 - - "The" "fight" "turned"@4B7B "nasty" "." "They" "showed"@4B82 "it" "on" "TV" "accross"@4B89 "the" "universe" "..." FFFF "fight"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "The" "war" "was" "between" "the" "two" "Croolis" "chiefs"@4B91 "," "Eviscerator"@4B98 "and" "Emasculator..."@4BA4 "it" "was" "terrible..."@4BB3 FFFF "fight"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "The" "fight" "was" "televised"@4BBF "across"@104B "the" "universe" "..." "Ahh" "," "I" "remember"@08EE "it" "like" "it" "was" "yesterday"@0800 "..." FFFF "fight"
+        MENU "bye_bye" "history" "fight"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "That" "was" "a" "nasty" "war" "..." "It" "all" "started" "the" "day" "of" "the" "big" "fight" "between" "the" "Croolis" "EVISCERATOR" "and" "EMASCULATOR..." FFFF "war"
+        TEXT object_Morning_Oil_028A 02 40 80 - - "Ah" "," "you" "should" "have" "seen" "it" "," "Commander" "..." "What" "a" "fight" "..." FFFF "war"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "They" "had" "BIONIUM" "bombs" "," "powerful" "enough" "to" "blow" "up" "whole" "planets" "..." FFFF "war"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "It" "was" "mayhem" "..." "BBAAOMMM" "!!!" "BAM" "!" "TA" "TA" "TA" "TA" "TA" "..." "Ha!" "Ha!" "Ha!" FFFF "war"
+        TEXT object_Morning_Oil_028A 04 40 80 - - "The" "fight" "turned" "nasty" "." "They" "showed" "it" "on" "TV" "accross" "the" "universe" "..." FFFF "fight"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "The" "war" "was" "between" "the" "two" "Croolis" "chiefs" "," "Eviscerator" "and" "Emasculator..." "it" "was" "terrible..." FFFF "fight"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "The" "fight" "was" "televised" "across" "the" "universe" "..." "Ahh" "," "I" "remember" "it" "like" "it" "was" "yesterday" "..." FFFF "fight"
         YIELD_B
         LABEL selector_1F19
     CASE "Croolis" selector_20A6
-        MENU "bye_bye" "history" "terror"@4BC9 "eviscerator"@4BD0 "emasculator"@4BDC
-        TEXT object_Morning_Oil_028A 05 40 80 - - "Croolis" "are" "impresive"@4BE8 "warriors"@4BF2 FFFF "Croolis"
-        TEXT object_Morning_Oil_028A 04 40 80 - - "My" "master" "EVISCERATOR" "was" "a" "fine" "BIONIUM" "hunter"@4BFB "..." FFFF "Croolis"
-        TEXT object_Morning_Oil_028A 05 40 80 - - "He" "found" "BIONIUM" "in" "the" "contractions"@4C02 "of" "galactic"@24BC "cyberspace"@4C0F "..." FFFF "Croolis"
-        TEXT object_Morning_Oil_028A 06 40 80 - - "Those"@1697 "Croolis" "are" "crazy"@4C1A "!!!" FFFF "Croolis"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "They" "spread"@4C20 "terror" "over" "thousands"@17A8 "of" "planets" "for" "hundred"@4C27 "of" "years" "..." FFFF "terror"
-        TEXT object_Morning_Oil_028A 05 40 80 - - "Terror"@4C2F "was" "their"@1D1E "ultimate"@4C36 "weapon"@3481 "..." FFFF "terror"
-        TEXT object_Morning_Oil_028A 02 40 80 - - "We" "robots"@032C "were"@1094 "programmed" "to" "know" "no" "fear" "..." FFFF "terror"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "Eviscerator" "had" "a" "sorry" "end" "." "When" "SCRUT"@00B8 "ended"@4C3F "the" "war" "," "they"@29E0 "threw"@4C45 "him" "in" "jail"@4C4B FFFF "eviscerator"
-        TEXT object_Morning_Oil_028A 04 40 80 - - "Eviscerator" "is" "dangerous"@4C50 "," "Commander" "." "A" "pitiless"@4C5A "killer"@4C63 "..." FFFF "eviscerator"
-        TEXT object_Morning_Oil_028A FF 68 80 - - "Commander" "..." "Don't" "you" "think" "these"@1354 "memories"@303F "of" "his"@07F2 "old" "master" "could"@28C0 "arouse"@4C6A "violent"@2D60 "impulses"@4C71 "here" "?" "..." FFFF "eviscerator"
+        MENU "bye_bye" "history" "terror" "eviscerator" "emasculator"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "Croolis" "are" "impresive" "warriors" FFFF "Croolis"
+        TEXT object_Morning_Oil_028A 04 40 80 - - "My" "master" "EVISCERATOR" "was" "a" "fine" "BIONIUM" "hunter" "..." FFFF "Croolis"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "He" "found" "BIONIUM" "in" "the" "contractions" "of" "galactic" "cyberspace" "..." FFFF "Croolis"
+        TEXT object_Morning_Oil_028A 06 40 80 - - "Those" "Croolis" "are" "crazy" "!!!" FFFF "Croolis"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "They" "spread" "terror" "over" "thousands" "of" "planets" "for" "hundred" "of" "years" "..." FFFF "terror"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "Terror" "was" "their" "ultimate" "weapon" "..." FFFF "terror"
+        TEXT object_Morning_Oil_028A 02 40 80 - - "We" "robots" "were" "programmed" "to" "know" "no" "fear" "..." FFFF "terror"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "Eviscerator" "had" "a" "sorry" "end" "." "When" "SCRUT" "ended" "the" "war" "," "they" "threw" "him" "in" "jail" FFFF "eviscerator"
+        TEXT object_Morning_Oil_028A 04 40 80 - - "Eviscerator" "is" "dangerous" "," "Commander" "." "A" "pitiless" "killer" "..." FFFF "eviscerator"
+        TEXT object_Morning_Oil_028A FF 68 80 - - "Commander" "..." "Don't" "you" "think" "these" "memories" "of" "his" "old" "master" "could" "arouse" "violent" "impulses" "here" "?" "..." FFFF "eviscerator"
         SHARED_STATE C0 12F6 F5 C1 0001
-        TEXT object_Morning_Oil_028A 05 40 80 - - "Emasculator"@4C7A "is" "a" "dummy"@32C8 "..." "Evil"@4C86 "and" "stupid"@324B "..." FFFF "emasculator"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "Emasculator" "is" "a" "dummy" "..." "Evil" "and" "stupid" "..." FFFF "emasculator"
         TEXT object_Morning_Oil_028A 02 40 80 - - "I" "hate" "that" "Croolis" "..." FFFF "emasculator"
         YIELD_B
         LABEL selector_20A6
     CASE "treasure" selector_220B
-        MENU "bye_bye" "history" "hiding_place"@4C8B
-        TEXT object_Morning_Oil_028A 02 40 80 - - "Ah" "!" "The" "treasure" "." "If" "you" "could" "have" "seen" "it" "," "Commander" "..." "Beyond"@4C98 "imagination"@4C9F "..." FFFF "treasure"
-        TEXT object_Morning_Oil_028A 03 40 80 - - "Stones"@4CAB "from" "Galabar,"@4CB2 "horns"@4CBB "from" "Rla"@4CC1 "," "authentic"@4CC5 "Rhinox"@4CCF "thigh-bone"@4CD6 "vases"@4CE1 "..." FFFF "treasure"
-        TEXT object_Morning_Oil_028A 06 40 80 - - "Ha!" "Ha!" "Hard"@4CE7 "to" "know" "where" "he"@08DA "hid"@4CEC "it" "," "Commander" "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_028A 05 40 80 - - "I'm" "willing"@4CF0 "to" "tell" "you" "," "Commander" "," "but" "you" "have" "to" "keep" "the" "secret"@08E7 "..." FFFF "hiding_place"
-        TEXT object_Morning_Oil_028A 06 48 80 - - "I" "don't" "want" "HONK" "to" "hear"@3502 "..." FFFF "hiding_place"
+        MENU "bye_bye" "history" "hiding_place"
+        TEXT object_Morning_Oil_028A 02 40 80 - - "Ah" "!" "The" "treasure" "." "If" "you" "could" "have" "seen" "it" "," "Commander" "..." "Beyond" "imagination" "..." FFFF "treasure"
+        TEXT object_Morning_Oil_028A 03 40 80 - - "Stones" "from" "Galabar," "horns" "from" "Rla" "," "authentic" "Rhinox" "thigh-bone" "vases" "..." FFFF "treasure"
+        TEXT object_Morning_Oil_028A 06 40 80 - - "Ha!" "Ha!" "Hard" "to" "know" "where" "he" "hid" "it" "," "Commander" "..." FFFF "hiding_place"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "I'm" "willing" "to" "tell" "you" "," "Commander" "," "but" "you" "have" "to" "keep" "the" "secret" "..." FFFF "hiding_place"
+        TEXT object_Morning_Oil_028A 06 48 80 - - "I" "don't" "want" "HONK" "to" "hear" "..." FFFF "hiding_place"
         SHARED_STATE C0 12F8 F5 C1 0001
-        TEXT object_Morning_Oil_028A 04 40 80 - - "Millions"@4CF8 "of" "victims"@4D01 "died"@4D09 "during"@4D0E "the" "battles" "." "Planets"@4D15 "were" "ravaged"@4D1D "..." FFFF "battle"@4D25
-        TEXT object_Morning_Oil_028A 05 40 80 - - "The" "Izwals" "lost"@0FF2 "many" "of" "their" "kind" "." "They" "weren't"@4D2C "ready"@2575 "for" "war" "..." FFFF "battle"
-        TEXT object_Morning_Oil_028A 06 40 80 - - "The" "SCRUT" "armies"@4D34 "won" "the" "final,"@4D3B "galaxy-trembling"@4D42 "battle" ".." FFFF "battle"
-        TEXT object_Morning_Oil_028A 05 40 80 - - "The" "defeated"@4D53 "Croolis" "fled"@4D5C "to" "the" "planet" "Trashlando"@4D61 "," "a" "TERRIBLE"@4D6C "place"@04A2 "," "Commander" "..." FFFF "battle"
+        TEXT object_Morning_Oil_028A 04 40 80 - - "Millions" "of" "victims" "died" "during" "the" "battles" "." "Planets" "were" "ravaged" "..." FFFF "battle"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "The" "Izwals" "lost" "many" "of" "their" "kind" "." "They" "weren't" "ready" "for" "war" "..." FFFF "battle"
+        TEXT object_Morning_Oil_028A 06 40 80 - - "The" "SCRUT" "armies" "won" "the" "final," "galaxy-trembling" "battle" ".." FFFF "battle"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "The" "defeated" "Croolis" "fled" "to" "the" "planet" "Trashlando" "," "a" "TERRIBLE" "place" "," "Commander" "..." FFFF "battle"
         YIELD_B
         LABEL selector_220B
     CASE "mastachok" 0000
-        MENU "bye_bye" "history" "information"@0A52
-        TEXT object_Morning_Oil_028A 05 40 80 - - "Mastachok"@0ABC "is" "now" "a" "dead"@4D75 "planet" "..." "Nothing"@4D7A "lives" "upon"@4D82 "its" "surface"@4D87 "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_028A 06 40 80 - - "The" "factory"@4D8F "was" "replaced"@0F46 "by" "a" "prison"@4D97 "..." "With"@34EB "SCRUT" "guards"@4D9E "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_028A 02 40 80 - - "Mastachok" "is" "completely"@2ADE "polluted"@4DA5 "," "poisoned"@4DAE "..." "Its"@4DB7 "surface" "is" "nothing" "more" "than" "ash"@4DBB "..." FFFF "mastachok"
-        TEXT object_Morning_Oil_028A 05 48 80 - - "We" "spared"@4DBF "the" "planet" "RONDO" "in" "the" "Rondalus" "X185"@4DC6 "Y896"@4DCB "system"@0364 "..." FFFF "information"
+        MENU "bye_bye" "history" "information"
+        TEXT object_Morning_Oil_028A 05 40 80 - - "Mastachok" "is" "now" "a" "dead" "planet" "..." "Nothing" "lives" "upon" "its" "surface" "..." FFFF "mastachok"
+        TEXT object_Morning_Oil_028A 06 40 80 - - "The" "factory" "was" "replaced" "by" "a" "prison" "..." "With" "SCRUT" "guards" "..." FFFF "mastachok"
+        TEXT object_Morning_Oil_028A 02 40 80 - - "Mastachok" "is" "completely" "polluted" "," "poisoned" "..." "Its" "surface" "is" "nothing" "more" "than" "ash" "..." FFFF "mastachok"
+        TEXT object_Morning_Oil_028A 05 48 80 - - "We" "spared" "the" "planet" "RONDO" "in" "the" "Rondalus" "X185" "Y896" "system" "..." FFFF "information"
         SHARED_BIT_STATE B0 field_Rondo_0B2A_s00_0B2C 0002 0
         TEXT object_Morning_Oil_028A 02 01 80 - - "..."
         YIELD
@@ -384,27 +384,27 @@ END_SELECTOR_LIST list_Morning_Oil_1CAA
 
 SELECTOR_LIST list_Bug_Deluxe_22C0
     YIELD_B
-    CASE "department"@3BC6 selector_2304
-        MENU "bye_bye" "beauty"@3619 "food" "sport"@4DD0 "handywork"@4DD6 "pharmaceutical"@4DE0 "leisure"@4DEF "hifi"@4DF7
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "You'll" "love" "our" "bargains"@4DFC "!" FFFF "department"
-        TEXT object_Bug_Deluxe_0092 FF 48 80 - - "Bye" "bye"@025D "..." FFFF "bye_bye"
+    CASE "department" selector_2304
+        MENU "bye_bye" "beauty" "food" "sport" "handywork" "pharmaceutical" "leisure" "hifi"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "You'll" "love" "our" "bargains" "!" FFFF "department"
+        TEXT object_Bug_Deluxe_0092 FF 48 80 - - "Bye" "bye" "..." FFFF "bye_bye"
         RECORD_CLEAR field_Bug_Deluxe_0092_s13_00CC
         YIELD_B
         LABEL selector_2304
     CASE "beauty" selector_2320
-        MENU "department" "perfume"@0ACC "necktie"@4E05 "jewel"@4E0D
-        TEXT object_Bug_Deluxe_0092 FF 01 80 - - "BEAUTY"@4E13 ":"
+        MENU "department" "perfume" "necktie" "jewel"
+        TEXT object_Bug_Deluxe_0092 FF 01 80 - - "BEAUTY" ":"
         YIELD_B
         LABEL selector_2320
     CASE "perfume" selector_2342
-        MENU "beauty" "eden"@4E1A "dune"@4E1F "kroolence"@4E24 "motoroil"@4E2E "turbulence"@4E37
-        TEXT object_Bug_Deluxe_0092 FF 01 80 - - "PERFUME"@3362 "DEPARTMENT"@4E42 ":"
+        MENU "beauty" "eden" "dune" "kroolence" "motoroil" "turbulence"
+        TEXT object_Bug_Deluxe_0092 FF 01 80 - - "PERFUME" "DEPARTMENT" ":"
         YIELD_B
         LABEL selector_2342
     CASE "eden" selector_23A5
         MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Eden,"@4E4D "a" "heady"@4E53 "perfume" "for" "fleshy"@4E59 "young"@4E60 "females"@4E66 "." "\"Do"@4E6E "not" "swallow\""@4E72 ":" "1"@32DB "CRED"@0BDA FFFF "eden"
-        TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay"@2B49 "1" "CRED" "." FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Eden," "a" "heady" "perfume" "for" "fleshy" "young" "females" "." "\"Do" "not" "swallow\"" ":" "1" "CRED" FFFF "eden"
+        TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 101C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
         SHARED_STATE C0 1310 F5 C1 0001
@@ -412,7 +412,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_23A5
     CASE "dune" selector_2404
         MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Dune"@4E7B "," "the" "scent"@4E80 "of" "hot" "passion"@4E86 "." "\"Promotes"@4E8E "reproduction\""@4E98 ":" "1" "CRED" FFFF "dune"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Dune" "," "the" "scent" "of" "hot" "passion" "." "\"Promotes" "reproduction\"" ":" "1" "CRED" FFFF "dune"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 101C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -421,7 +421,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2404
     CASE "kroolence" selector_246B
         MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Kroolence,"@4EA6 "for" "males"@4EB1 "with" "armpits"@4EB7 "." "\"Watch"@4EBF "the" "babes"@4EC6 "home"@4ECC "in" "on" "your" "armpits\""@4ED1 ":" "1" "CRED" FFFF "kroolence"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Kroolence," "for" "males" "with" "armpits" "." "\"Watch" "the" "babes" "home" "in" "on" "your" "armpits\"" ":" "1" "CRED" FFFF "kroolence"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 101C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -430,7 +430,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_246B
     CASE "motoroil" selector_24CE
         MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Motoroil"@4EDA "," "perfume" "for" "droid"@2C0A "." "\"Be"@4EE3 "an" "exhaust"@4EE7 "nozzle"@4EEF "Romeo"@33C4 "\""@4EF6 ":" "1" "CRED" FFFF "motoroil"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Motoroil" "," "perfume" "for" "droid" "." "\"Be" "an" "exhaust" "nozzle" "Romeo" "\"" ":" "1" "CRED" FFFF "motoroil"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 101C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -439,7 +439,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_24CE
     CASE "turbulence" selector_252B
         MENU "department" "buy" "perfume"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Turbulence"@4EF8 "." "Gravitational"@4F03 "vertigo"@4F11 "guaranteed"@4F19 "." "\"A"@4F24 "real"@2913 "head-spinner\""@4F27 ":" "1" "CRED" FFFF "turbulence"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Turbulence" "." "Gravitational" "vertigo" "guaranteed" "." "\"A" "real" "head-spinner\"" ":" "1" "CRED" FFFF "turbulence"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 101C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -447,13 +447,13 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_252B
     CASE "necktie" selector_254D
-        MENU "beauty" "hide"@2F51 "hair"@2567 "synthetic"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "NECKTIE"@4F35 "DEPARTMENT" ":" FFFF "necktie"
+        MENU "beauty" "hide" "hair" "synthetic"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "NECKTIE" "DEPARTMENT" ":" FFFF "necktie"
         YIELD_B
         LABEL selector_254D
     CASE "hide" selector_25B0
         MENU "department" "buy" "necktie"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo"@4F3D "hide" "tie"@29D1 "." "Embroidered"@4F46 "with" "tentacles"@4F52 "." "So" "right" "for" "you" ":" "1" "CRED" FFFF "hide"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "hide" "tie" "." "Embroidered" "with" "tentacles" "." "So" "right" "for" "you" ":" "1" "CRED" FFFF "hide"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 107C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -462,7 +462,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_25B0
     CASE "hair" selector_2601
         MENU "department" "buy" "necktie"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Tromp"@4F5C "hair" "tie" ":" "1" "CRED" FFFF "hair"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Tromp" "hair" "tie" ":" "1" "CRED" FFFF "hair"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 107C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -471,25 +471,25 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2601
     CASE "synthetic" selector_2660
         MENU "department" "buy" "necktie"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fully"@4F62 "synthetic" "tie" "," "with" "integrated"@4F68 "altimeter"@4F73 "," "geiger"@4F7D "counter"@4F84 ":" "4"@0B87 "CREDS"@3AA6 FFFF "synthetic"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fully" "synthetic" "tie" "," "with" "integrated" "altimeter" "," "geiger" "counter" ":" "4" "CREDS" FFFF "synthetic"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "4" "CREDS" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 107C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
         SHARED_STATE C0 1310 F5 C1 0001
         YIELD_B
         LABEL selector_2660
-    CASE "make_up"@4F8C selector_2680
-        MENU "department" "rouge"@4F94 "cream"@06DB
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "COSMETICS"@4F9A "DEPARTMENT" ":" FFFF "make_up"
+    CASE "make_up" selector_2680
+        MENU "department" "rouge" "cream"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "COSMETICS" "DEPARTMENT" ":" FFFF "make_up"
         YIELD_B
         LABEL selector_2680
     CASE "rouge" selector_2694
-        MENU "department" "beauty" "crimson"@4FA4 "green" "black" "blue"
+        MENU "department" "beauty" "crimson" "green" "black" "blue"
         YIELD_B
         LABEL selector_2694
     CASE "crimson" selector_26E5
         MENU "buy" "rouge"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Crimson"@4FAC "rouge" "for" "non-metal"@4FB4 "lips:"@4FBE "1" "CRED" FFFF "crimson"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Crimson" "rouge" "for" "non-metal" "lips:" "1" "CRED" FFFF "crimson"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1094 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -498,7 +498,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_26E5
     CASE "green" selector_2740
         MENU "buy" "rouge"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fluorescent"@4FC4 "green" "rouge" "." "For" "tentacles" "and" "suction"@4FD0 "caps"@4FD8 ":" "1" "CRED" FFFF "green"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fluorescent" "green" "rouge" "." "For" "tentacles" "and" "suction" "caps" ":" "1" "CRED" FFFF "green"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1094 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -507,7 +507,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2740
     CASE "black" selector_279D
         MENU "buy" "rouge"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Black" "rouge" "," "for" "the" "ultimate" "in" "discretion"@4FDD "..." "not" ":" "1" "CRED" FFFF "black"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Black" "rouge" "," "for" "the" "ultimate" "in" "discretion" "..." "not" ":" "1" "CRED" FFFF "black"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1094 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -516,7 +516,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_279D
     CASE "blue" selector_2802
         MENU "buy" "rouge"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Space" "blue" "rouge" "." "In"@4FE8 "space" "," "somebody" "can" "hear" "you" "scream"@4FEB "at" "last"@137B ":" "1" "CRED" FFFF "blue"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Space" "blue" "rouge" "." "In" "space" "," "somebody" "can" "hear" "you" "scream" "at" "last" ":" "1" "CRED" FFFF "blue"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1094 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -524,13 +524,13 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2802
     CASE "cream" selector_2824
-        MENU "department" "painkiller"@4FF2 "musclor"@4FFD "meteor"@5005
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "VARIOUS"@500C "OINTMENTS"@5014 ":" FFFF "cream"
+        MENU "department" "painkiller" "musclor" "meteor"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "VARIOUS" "OINTMENTS" ":" FFFF "cream"
         YIELD_B
         LABEL selector_2824
     CASE "painkiller" selector_2881
         MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Painkiller"@501E "cream" "." "Apply"@5029 "to" "all" "amputation"@502F "wounds"@503A "during" "combat"@2EF7 ":" "1" "CRED" FFFF "painkiller"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Painkiller" "cream" "." "Apply" "to" "all" "amputation" "wounds" "during" "combat" ":" "1" "CRED" FFFF "painkiller"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10C4 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -539,7 +539,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2881
     CASE "musclor" selector_28E0
         MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MUSCLOR"@5041 "salve"@5049 "." "For" "gleaming"@504F "pectorals"@5058 "." "It's" "half" "the" "battle" ":" "1" "CRED" FFFF "musclor"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MUSCLOR" "salve" "." "For" "gleaming" "pectorals" "." "It's" "half" "the" "battle" ":" "1" "CRED" FFFF "musclor"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10C4 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -548,7 +548,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_28E0
     CASE "meteor" selector_2939
         MENU "buy" "cream"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "METEOR"@5062 "jelly"@3422 "." "Say"@29B8 "goodbye"@39FA "to" "meteor" "bumps"@5069 ":" "1" "CRED" FFFF "meteor"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "METEOR" "jelly" "." "Say" "goodbye" "to" "meteor" "bumps" ":" "1" "CRED" FFFF "meteor"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10C4 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -556,13 +556,13 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2939
     CASE "jewel" selector_2959
-        MENU "department" "necklace"@506F "bracelet"@5078
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "JEWELRY"@5081 "DEPARTMENT" ":" FFFF "jewel"
+        MENU "department" "necklace" "bracelet"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "JEWELRY" "DEPARTMENT" ":" FFFF "jewel"
         YIELD_B
         LABEL selector_2959
     CASE "necklace" selector_29C6
         MENU "buy" "jewel"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Pearl"@5089 "necklace" "." "suitable"@508F "for" "necks"@5098 "situated"@509E "between" "head" "and" "body"@3784 "." "Other"@50A7 "cases"@50AD "," "see" "sales"@50B3 "personnel"@50B9 ":" "1" "CRED" FFFF "necklace"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Pearl" "necklace" "." "suitable" "for" "necks" "situated" "between" "head" "and" "body" "." "Other" "cases" "," "see" "sales" "personnel" ":" "1" "CRED" FFFF "necklace"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10AC 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -571,7 +571,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_29C6
     CASE "bracelet" selector_2A27
         MENU "buy" "jewel"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Bracelet"@50C3 "in" "elastosteel"@50CC "." "Fits"@50D8 "all" "body" "parts"@50DD "." "Amuse"@50E3 "your" "guests"@50E9 ":" "1" "CRED" FFFF "bracelet"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Bracelet" "in" "elastosteel" "." "Fits" "all" "body" "parts" "." "Amuse" "your" "guests" ":" "1" "CRED" FFFF "bracelet"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10AC 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -580,17 +580,17 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2A27
     CASE "food" selector_2A45
         MENU "department" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "FOOD"@50F0 "DEPARTMENT" ":" FFFF "food"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "FOOD" "DEPARTMENT" ":" FFFF "food"
         YIELD_B
         LABEL selector_2A45
     CASE "murffalo" selector_2A6D
-        MENU "department" "joint"@50F5 "steak"@50FB "horn"@5101 "fur"@5106 "sausages"@510A "intestines"@5113
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MURFFALO"@067C "DEPARTMENT" ":" FFFF "murffalo"
+        MENU "department" "joint" "steak" "horn" "fur" "sausages" "intestines"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MURFFALO" "DEPARTMENT" ":" FFFF "murffalo"
         YIELD_B
         LABEL selector_2A6D
     CASE "joint" selector_2AC4
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Joint"@511E "of" "murffalo" "." "tender"@5124 "and" "spicy"@512B ":" "1" "CRED" FFFF "joint"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Joint" "of" "murffalo" "." "tender" "and" "spicy" ":" "1" "CRED" FFFF "joint"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -599,7 +599,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2AC4
     CASE "steak" selector_2B1B
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "steak."@5131 "Tenderized"@5138 "by" "the" "Bronkos"@5143 "of" "Moskito:"@514B "1" "CRED" FFFF "steak"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "steak." "Tenderized" "by" "the" "Bronkos" "of" "Moskito:" "1" "CRED" FFFF "steak"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -608,7 +608,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2B1B
     CASE "horn" selector_2B76
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Powdered"@5154 "murffalo" "horn" "." "For" "males" "with" "a" "mission"@2586 ":" "1" "CRED" FFFF "horn"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Powdered" "murffalo" "horn" "." "For" "males" "with" "a" "mission" ":" "1" "CRED" FFFF "horn"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -617,7 +617,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2B76
     CASE "fur" selector_2BD5
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "fur" "." "Deodorized"@515D "." "Your" "neighbors"@5168 "will" "die" "of" "envy"@5172 ":" "1" "CRED" FFFF "fur"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "fur" "." "Deodorized" "." "Your" "neighbors" "will" "die" "of" "envy" ":" "1" "CRED" FFFF "fur"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -626,7 +626,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2BD5
     CASE "sausages" selector_2C2E
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "sausages" "." "Great"@2E61 "for" "those" "barbecue"@5177 "moments"@5180 ":" "1" "CRED" FFFF "sausages"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "sausages" "." "Great" "for" "those" "barbecue" "moments" ":" "1" "CRED" FFFF "sausages"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -635,7 +635,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2C2E
     CASE "intestines" selector_2C8B
         MENU "buy" "murffalo"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "intestines" "." "Read"@5188 "the" "future"@518D "and" "forecast"@5194 "the" "weather"@519D ":" "1" "CRED" FFFF "intestines"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "intestines" "." "Read" "the" "future" "and" "forecast" "the" "weather" ":" "1" "CRED" FFFF "intestines"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1064 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -643,13 +643,13 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2C8B
     CASE "sport" selector_2CAD
-        MENU "department" "ball" "boxing_gloves"@51A5 "shells"@51B3
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "SPORT"@51BA "DEPARTMENT" ":" FFFF "sport"
+        MENU "department" "ball" "boxing_gloves" "shells"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "SPORT" "DEPARTMENT" ":" FFFF "sport"
         YIELD_B
         LABEL selector_2CAD
     CASE "ball" selector_2D0E
         MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Ball"@51C0 "." "Comes"@51C5 "in" "steel"@51CB "," "lead"@51D1 "," "magnetic"@51D6 "or" "gravitational"@51DF "iron"@51ED ":" "1" "CRED" FFFF "ball"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Ball" "." "Comes" "in" "steel" "," "lead" "," "magnetic" "or" "gravitational" "iron" ":" "1" "CRED" FFFF "ball"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10DC 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -658,7 +658,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2D0E
     CASE "boxing_gloves" selector_2D73
         MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "hide" "boxing"@51F2 "gloves"@51F9 "." "Deodorized" "." "Your" "opponents"@5200 "aren't"@520A "going" "to" "thank"@2E71 "you" ":" "1" "CRED" FFFF "boxing_gloves"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Murffalo" "hide" "boxing" "gloves" "." "Deodorized" "." "Your" "opponents" "aren't" "going" "to" "thank" "you" ":" "1" "CRED" FFFF "boxing_gloves"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 10F4 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -667,7 +667,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2D73
     CASE "shells" selector_2DE8
         MENU "buy" "sport"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Shells"@5211 "." "The" "perfect" "way" "to" "protect"@5218 "the" "family" "jewels"@5220 "." "Pairs"@5227 "," "three" "of" "a" "kind" "," "full"@078D "house"@522D "or" "poker"@5233 ":" "1" "CRED" FFFF "shells"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Shells" "." "The" "perfect" "way" "to" "protect" "the" "family" "jewels" "." "Pairs" "," "three" "of" "a" "kind" "," "full" "house" "or" "poker" ":" "1" "CRED" FFFF "shells"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 110C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -675,18 +675,18 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2DE8
     CASE "handywork" selector_2E06
-        MENU "department" "tools"@5239 "robotics"@523F
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HANDYWORK"@5248 "DEPARTMENT" FFFF "handywork"
+        MENU "department" "tools" "robotics"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HANDYWORK" "DEPARTMENT" FFFF "handywork"
         YIELD_B
         LABEL selector_2E06
     CASE "tools" selector_2E26
-        MENU "department" "screwdriver" "saws"@5252 "drills"@5257
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "TOOL"@525E "DEPARTMENT" FFFF "tools"
+        MENU "department" "screwdriver" "saws" "drills"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "TOOL" "DEPARTMENT" FFFF "tools"
         YIELD_B
         LABEL selector_2E26
     CASE "screwdriver" selector_2E85
         MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Screwdriver"@5263 "." "Remote"@526F "control"@5276 "for" "doing"@316D "outdoor"@527E "jobs"@5286 "from" "your" "armchair"@528B ":" "1" "CRED" FFFF "screwdriver"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Screwdriver" "." "Remote" "control" "for" "doing" "outdoor" "jobs" "from" "your" "armchair" ":" "1" "CRED" FFFF "screwdriver"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1124 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -695,7 +695,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2E85
     CASE "saws" selector_2EE0
         MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Unbreakable"@5294 "ray"@52A0 "saw" "." "Saws"@52A4 "through" "anything" "except"@52A9 "itself"@1762 ":" "1" "CRED" FFFF "saws"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Unbreakable" "ray" "saw" "." "Saws" "through" "anything" "except" "itself" ":" "1" "CRED" FFFF "saws"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1124 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -704,7 +704,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_2EE0
     CASE "drills" selector_2F33
         MENU "buy" "handywork"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Suction"@52B0 "drill"@52B8 "." "Guaranteed"@52BE "drool-free"@52C9 ":" "1" "CRED" FFFF "drills"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Suction" "drill" "." "Guaranteed" "drool-free" ":" "1" "CRED" FFFF "drills"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 1124 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -712,13 +712,13 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2F33
     CASE "robotics" selector_2F4F
-        MENU "department" "batteries"@108A
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "ROBOTICS"@52D4 "DEPARTMENT" FFFF "robotics"
+        MENU "department" "batteries"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "ROBOTICS" "DEPARTMENT" FFFF "robotics"
         YIELD_B
         LABEL selector_2F4F
     CASE "batteries" selector_2FB2
         MENU "department" "handywork" "buy"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Batteries"@52DD "." "The" "perfect" "way" "to" "get" "your" "droid" "back" "to" "work" ":" "1" "CRED" FFFF "batteries"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Batteries" "." "The" "perfect" "way" "to" "get" "your" "droid" "back" "to" "work" ":" "1" "CRED" FFFF "batteries"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 11CC 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -726,14 +726,14 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_2FB2
     CASE "pharmaceutical" selector_2FD2
-        MENU "department" "aspirox"@52E7 "snormor"@52EF "fang_brush"@52F7
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "PHARMACEUTICAL"@5302 "DEPARTMENT" FFFF "pharmaceutical"
+        MENU "department" "aspirox" "snormor" "fang_brush"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "PHARMACEUTICAL" "DEPARTMENT" FFFF "pharmaceutical"
         YIELD_B
         LABEL selector_2FD2
     CASE "aspirox" selector_3043
         MENU "buy" "pharmaceutical"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Aspirox"@5311 "." "Relief"@5319 "from" "head" "pain"@5320 "." "Suitable"@5325 "for" "stainless"@532E "steel" "and" "nonstick"@5338 "heads"@5341 ".." "See" "sales" "personnel" "for" "lead" "heads" ":" "1" "CRED" FFFF "aspirox"
-        TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED."@5347 FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Aspirox" "." "Relief" "from" "head" "pain" "." "Suitable" "for" "stainless" "steel" "and" "nonstick" "heads" ".." "See" "sales" "personnel" "for" "lead" "heads" ":" "1" "CRED" FFFF "aspirox"
+        TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 113C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
         SHARED_STATE C0 1310 F5 C1 0001
@@ -741,7 +741,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_3043
     CASE "snormor" selector_30A8
         MENU "buy" "pharmaceutical"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Snormor"@534D "," "the" "sleep" "solution"@5355 "." "At"@3B41 "bedtime"@535E "precisely"@5366 "," "administer"@5370 "violently"@537B "to" "head" ":" "1" "CRED" FFFF "snormor"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Snormor" "," "the" "sleep" "solution" "." "At" "bedtime" "precisely" "," "administer" "violently" "to" "head" ":" "1" "CRED" FFFF "snormor"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 113C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -750,7 +750,7 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         LABEL selector_30A8
     CASE "fang_brush" selector_311B
         MENU "buy" "pharmaceutical"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fang"@5385 "brush"@538A "." "It" "doesn't" "matter" "how" "many" "rows"@5390 "of" "teeth"@254A "you" "have" "," "this" "brush" "keeps"@5395 "'em"@539B "healthy"@539F "and" "pointy"@2550 ":" "1" "CRED" FFFF "fang_brush"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Fang" "brush" "." "It" "doesn't" "matter" "how" "many" "rows" "of" "teeth" "you" "have" "," "this" "brush" "keeps" "'em" "healthy" "and" "pointy" ":" "1" "CRED" FFFF "fang_brush"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 113C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -758,64 +758,64 @@ SELECTOR_LIST list_Bug_Deluxe_22C0
         YIELD_B
         LABEL selector_311B
     CASE "leisure" selector_3137
-        MENU "department" "video_games"@53A7
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "LEISURE"@53B3 "DEPARTMENT" FFFF "leisure"
+        MENU "department" "video_games"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "LEISURE" "DEPARTMENT" FFFF "leisure"
         YIELD_B
         LABEL selector_3137
     CASE "video_games" selector_315D
-        MENU "department" "Dead_Killer"@53BB "Fatal_Butcher"@53C7 "Harakira"@53D5 "Commander_Blood"@53DE "Streetofkarnage"@53EE "Eat_my_liver"@53FE
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "VIDEO"@540B "GAMES"@5411 FFFF "video_games"
+        MENU "department" "Dead_Killer" "Fatal_Butcher" "Harakira" "Commander_Blood" "Streetofkarnage" "Eat_my_liver"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "VIDEO" "GAMES" FFFF "video_games"
         YIELD_B
         LABEL selector_315D
     CASE "Dead_Killer" selector_31B1
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MORTAL"@5417 "KILLER"@541E "." "Blood'n'bolts"@5425 "." "Hash"@5433 "'em" "," "slash"@5438 "'em" "," "bash"@543E "'em" "and" "mash"@5443 "'em" ":" "20"@5448 "CREDS" FFFF "Dead_Killer"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "MORTAL" "KILLER" "." "Blood'n'bolts" "." "Hash" "'em" "," "slash" "'em" "," "bash" "'em" "and" "mash" "'em" ":" "20" "CREDS" FFFF "Dead_Killer"
         TEXT object_Bug_Deluxe_0092 FF 41 80 - - "You" "can't" "pay" "20" "CREDS" FFFF "buy"
         YIELD_B
         LABEL selector_31B1
     CASE "Fatal_Butcher" selector_31F7
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "FATAL"@544B "BUTCHER"@5451 "." "Turn"@5459 "those" "losers"@545E "into" "chemical"@5465 "sludge"@546E ":" "40"@5475 "CRED" FFFF "Fatal_Butcher"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "FATAL" "BUTCHER" "." "Turn" "those" "losers" "into" "chemical" "sludge" ":" "40" "CRED" FFFF "Fatal_Butcher"
         TEXT object_Bug_Deluxe_0092 FF 41 80 - - "You" "can't" "pay" "40" "CREDS" FFFF "buy"
         YIELD_B
         LABEL selector_31F7
     CASE "Harakira" selector_324B
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HARAKIRA"@5478 "." "Wield"@5481 "a" "postapocalyptic"@5487 "suction" "drill" "." "Kill"@5497 "'em" "an'"@549C "drill" "'em" ":" "200"@54A0 "CREDS" FFFF "Harakira"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "CREDS" "." "You" "have" "to" "be" "kidding"@54A4 "." FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HARAKIRA" "." "Wield" "a" "postapocalyptic" "suction" "drill" "." "Kill" "'em" "an'" "drill" "'em" ":" "200" "CREDS" FFFF "Harakira"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "CREDS" "." "You" "have" "to" "be" "kidding" "." FFFF "buy"
         YIELD_B
         LABEL selector_324B
     CASE "Commander_Blood" selector_327D
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Uh!...."@54AC "You" "already"@0504 "have" "it" "..." "You" "sure" "you" "want" "another" "one" "?" FFFF "Commander_Blood"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Uh!...." "You" "already" "have" "it" "..." "You" "sure" "you" "want" "another" "one" "?" FFFF "Commander_Blood"
         YIELD_B
         LABEL selector_327D
     CASE "Streetofkarnage" selector_32D5
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "STREET"@54B4 "OF"@18FD "KARNAGE"@54BB "." "Intestines"@54C3 "litter"@54CE "the" "city"@54D5 "sidewalks"@54DA "at" "last" ":" "250"@54E4 "CREDS" FFFF "Streetofkarnage"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "PRICE"@54E8 ":" "250" "CREDS" "." "You" "can" "read"@54EE "," "can't" "you" "?" FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "STREET" "OF" "KARNAGE" "." "Intestines" "litter" "the" "city" "sidewalks" "at" "last" ":" "250" "CREDS" FFFF "Streetofkarnage"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "PRICE" ":" "250" "CREDS" "." "You" "can" "read" "," "can't" "you" "?" FFFF "buy"
         YIELD_B
         LABEL selector_32D5
     CASE "Eat_my_liver" selector_3339
         MENU "buy" "video_games"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "EAT"@54F3 "MY"@1748 "LIVER"@54F7 "." "Game"@54FD "of" "the" "year"@5502 "!" "Package"@5507 "includes"@550F "ruptured"@5518 "liver"@082D "," "punctured"@5521 "lung"@552B "," "brain"@080A "stuff"@0BFC ":" "400"@5530 "CREDS" FFFF "Eat_my_liver"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "The" "price"@38A2 "is" "400" "CREDS" "," "so" "calm" "down" "." FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "EAT" "MY" "LIVER" "." "Game" "of" "the" "year" "!" "Package" "includes" "ruptured" "liver" "," "punctured" "lung" "," "brain" "stuff" ":" "400" "CREDS" FFFF "Eat_my_liver"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "The" "price" "is" "400" "CREDS" "," "so" "calm" "down" "." FFFF "buy"
         YIELD_B
         LABEL selector_3339
     CASE "hifi" selector_3357
-        MENU "department" "multimedia"@5534 "audio_CD"@553F
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HIFI"@5548 "DEPARTMENT" FFFF "hifi"
+        MENU "department" "multimedia" "audio_CD"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "HIFI" "DEPARTMENT" FFFF "hifi"
         YIELD_B
         LABEL selector_3357
     CASE "multimedia" selector_3399
         MENU "buy" "hifi"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Are"@1296 "you" "crazy" "!!!" FFFF "multimedia"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Keep"@2C1C "your" "money"@1831 "for" "a" "nice" "weekend"@554D "in" "the" "country"@5555 "..." FFFF "buy"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Are" "you" "crazy" "!!!" FFFF "multimedia"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "Keep" "your" "money" "for" "a" "nice" "weekend" "in" "the" "country" "..." FFFF "buy"
         YIELD_B
         LABEL selector_3399
     CASE "audio_CD" 0000
         MENU "buy" "hifi"
-        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "The" "latest"@555D "from" "the" "MIGRATORS:"@5564 "\"CRUSH"@556F "MY" "SKULL\":"@5576 "1" "CRED" FFFF "audio_CD"
+        TEXT object_Bug_Deluxe_0092 FF 41 80 - - "The" "latest" "from" "the" "MIGRATORS:" "\"CRUSH" "MY" "SKULL\":" "1" "CRED" FFFF "audio_CD"
         TEXT object_Bug_Deluxe_0092 FF 49 A0 - - "You" "pay" "1" "CRED" "." FFFF "buy"
         RECORD_TRIPLE field_Bug_Deluxe_0092_s13_00CC 116C 0028 0
         RECORD_TRIPLE field_blood_0028_s13_0030 1004 0092 0
@@ -826,47 +826,47 @@ END_SELECTOR_LIST list_Bug_Deluxe_22C0
 SELECTOR_LIST list_Yoko_33F0
     YIELD_B
     CASE "hello" selector_3485
-        MENU "bye_bye" "talk" "say_nothing"@557E
+        MENU "bye_bye" "talk" "say_nothing"
         TEXT object_Yoko_01FA 00 40 80 - - "What" "me" "do" "for" "you" "?" FFFF "say_nothing"
-        TEXT object_Yoko_01FA 05 40 80 - - "Me" "small"@0415 "." "Friends"@558A "call"@0D95 "me" "small" "Yoko"@0A3F "..." FFFF "say_nothing"
-        TEXT object_Yoko_01FA 0C 00 80 - - "You" "come"@050F "from" "sky,"@5592 "by" "heaven"@5597 "." "You" "be" "extrarondestrial"@559E "."
-        TEXT object_Yoko_01FA 00 00 80 - - "Stranger"@55AF "from" "sky" "," "me" "greet"@22C1 "you" "..."
-        TEXT object_Yoko_01FA 0C 00 80 - - "Me" "listen"@55B8 "you" ",stranger"@55BF "from" "sky" "." "Welcome"@2810 "..."
+        TEXT object_Yoko_01FA 05 40 80 - - "Me" "small" "." "Friends" "call" "me" "small" "Yoko" "..." FFFF "say_nothing"
+        TEXT object_Yoko_01FA 0C 00 80 - - "You" "come" "from" "sky," "by" "heaven" "." "You" "be" "extrarondestrial" "."
+        TEXT object_Yoko_01FA 00 00 80 - - "Stranger" "from" "sky" "," "me" "greet" "you" "..."
+        TEXT object_Yoko_01FA 0C 00 80 - - "Me" "listen" "you" ",stranger" "from" "sky" "." "Welcome" "..."
         YIELD_B
         LABEL selector_3485
     CASE "talk" selector_34AF
-        MENU "bye_bye" "race"@55C9 "art"@55CE "politics"@55D2 "reproduction" "science"
+        MENU "bye_bye" "race" "art" "politics" "reproduction" "science"
         TEXT object_Yoko_01FA 05 40 80 - - "What" "you" "want" "know" "?" FFFF "talk"
         YIELD_B
         LABEL selector_34AF
     CASE "race" selector_3539
-        MENU "bye_bye" "talk" "Izwal" "Slimers"@0A4A "Croolis" "Tromp" "Migrax"@55DB "ondoyant"@55E2 "Tubular_brain"@55EB
-        TEXT object_Yoko_01FA 0B 40 80 - - "Peoples"@55F9 "of" "universe" "interest"@5601 "you" "," "friend" "..." FFFF "race"
-        TEXT object_Yoko_01FA 01 40 80 - - "You" "like" "talk" "of" "races"@560A "in" "universe" "..." FFFF "race"
-        TEXT object_Yoko_01FA 0E 40 80 - - "You" "like" "my"@0A37 "nice" "trunk"@081F "?" FFFF "race"
-        TEXT object_Yoko_01FA 02 40 80 - - "Out"@5610 "there" "," "far" "in" "universe" "," "much" "races" "..." FFFF "race"
+        MENU "bye_bye" "talk" "Izwal" "Slimers" "Croolis" "Tromp" "Migrax" "ondoyant" "Tubular_brain"
+        TEXT object_Yoko_01FA 0B 40 80 - - "Peoples" "of" "universe" "interest" "you" "," "friend" "..." FFFF "race"
+        TEXT object_Yoko_01FA 01 40 80 - - "You" "like" "talk" "of" "races" "in" "universe" "..." FFFF "race"
+        TEXT object_Yoko_01FA 0E 40 80 - - "You" "like" "my" "nice" "trunk" "?" FFFF "race"
+        TEXT object_Yoko_01FA 02 40 80 - - "Out" "there" "," "far" "in" "universe" "," "much" "races" "..." FFFF "race"
         YIELD_B
         LABEL selector_3539
     CASE "Izwal" selector_3779
-        MENU "bye_bye" "talk" "race" "peace"@5614 "Yoko" "Maxxon"@11B3 "planet" "listen" "like"
+        MENU "bye_bye" "talk" "race" "peace" "Yoko" "Maxxon" "planet" "listen" "like"
         TEXT object_Yoko_01FA 0A 40 80 - - "Izwals" "be" "great" "pacifist" "people" "..." FFFF "peace"
-        TEXT object_Yoko_01FA 10 40 80 - - "Me" "very" "frightened"@561A "of" "war" "..." FFFF "peace"
+        TEXT object_Yoko_01FA 10 40 80 - - "Me" "very" "frightened" "of" "war" "..." FFFF "peace"
         TEXT object_Yoko_01FA 00 40 80 - - "Me" "small" "Izwal" "..." FFFF "Yoko"
-        TEXT object_Yoko_01FA 01 40 80 - - "You" "know" "my" "name"@2270 "." FFFF "Yoko"
+        TEXT object_Yoko_01FA 01 40 80 - - "You" "know" "my" "name" "." FFFF "Yoko"
         TEXT object_Yoko_01FA 08 40 80 - - "Yoko" "nice" "name" "." "Me" "like" "my" "name" "..." FFFF "Yoko"
-        TEXT object_Yoko_01FA 0A 40 80 - - "My" "father"@346C "be" "Maxxon" "." "He" "be" "great" "astrophysicist"@5625 "..." FFFF "Maxxon"
-        TEXT object_Yoko_01FA 0C 40 80 - - "My" "father" "know" "much" "things"@2905 "." "He" "be" "smart"@00D5 "..." FFFF "Maxxon"
+        TEXT object_Yoko_01FA 0A 40 80 - - "My" "father" "be" "Maxxon" "." "He" "be" "great" "astrophysicist" "..." FFFF "Maxxon"
+        TEXT object_Yoko_01FA 0C 40 80 - - "My" "father" "know" "much" "things" "." "He" "be" "smart" "..." FFFF "Maxxon"
         TEXT object_Yoko_01FA 0C 40 80 - - "He" "be" "big" "and" "strong" "..." FFFF "Maxxon"
         TEXT object_Yoko_01FA 02 40 80 - - "Izwals" "live" "planet" "RONDO" "..." FFFF "planet"
-        TEXT object_Yoko_01FA 00 40 80 - - "Me" "like" "house" "on" "planet" "Rondo..."@5634 FFFF "planet"
-        TEXT object_Yoko_01FA 08 40 80 - - "You" "welcome"@3731 "on" "planet" "Rondo" "." FFFF "planet"
+        TEXT object_Yoko_01FA 00 40 80 - - "Me" "like" "house" "on" "planet" "Rondo..." FFFF "planet"
+        TEXT object_Yoko_01FA 08 40 80 - - "You" "welcome" "on" "planet" "Rondo" "." FFFF "planet"
         TEXT object_Yoko_01FA 0C 40 80 - - "Planet" "Rondo" "nice" "nice" "nice" "..." FFFF "planet"
         TEXT object_Yoko_01FA 06 40 80 - - "Izwals" "know" "listen" "..." FFFF "listen"
         TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "talk" "to" "you" "." "Me" "listen" "," "friend" "..." FFFF "listen"
-        TEXT object_Yoko_01FA 00 40 80 - - "Me" "have" "big" "ears"@2449 "to" "listen" "good" "..." FFFF "listen"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "beautiful"@563D "things" "." "Izwals" "be" "poets"@5647 "..." FFFF "like"
+        TEXT object_Yoko_01FA 00 40 80 - - "Me" "have" "big" "ears" "to" "listen" "good" "..." FFFF "listen"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "beautiful" "things" "." "Izwals" "be" "poets" "..." FFFF "like"
         TEXT object_Yoko_01FA 05 40 80 - - "Izwals" "like" "eat" "good" "things" "..." FFFF "like"
-        TEXT object_Yoko_01FA 0E 40 80 - - "Me" "be" "shy"@564D "with" "females" "..." FFFF "like"
+        TEXT object_Yoko_01FA 0E 40 80 - - "Me" "be" "shy" "with" "females" "..." FFFF "like"
         TEXT object_Yoko_01FA 00 40 80 - - "Izwals" "be" "great" "pacifist" "people" "..." FFFF "Izwal"
         TEXT object_Yoko_01FA 00 40 80 - - "Yoko" "and" "Maxxon" "be" "Izwals" "..." FFFF "Izwal"
         TEXT object_Yoko_01FA 0E 40 80 - - "Izwals" "know" "listen" "..." FFFF "Izwal"
@@ -874,22 +874,22 @@ SELECTOR_LIST list_Yoko_33F0
         YIELD_B
         LABEL selector_3779
     CASE "Croolis" selector_3882
-        MENU "bye_bye" "talk" "race" "war" "news"@5651 "brain" "fear"
-        TEXT object_Yoko_01FA 09 48 80 - - "War"@2E67 "be" "big" "problem"@34D4 "." "Life"@5656 "be" "good" "if"@2A61 "no" "war" "..." FFFF "war"
+        MENU "bye_bye" "talk" "race" "war" "news" "brain" "fear"
+        TEXT object_Yoko_01FA 09 48 80 - - "War" "be" "big" "problem" "." "Life" "be" "good" "if" "no" "war" "..." FFFF "war"
         SHARED_STATE C0 1302 F5 C1 0001
-        TEXT object_Yoko_01FA 10 40 80 - - "Croolis" "like" "big" "muscles" "," "weapons"@19A6 "and" "nice" "females" "..." FFFF "news"
+        TEXT object_Yoko_01FA 10 40 80 - - "Croolis" "like" "big" "muscles" "," "weapons" "and" "nice" "females" "..." FFFF "news"
         TEXT object_Yoko_01FA 0A 40 80 - - "Croolis" "have" "small" "brain" "and" "big" "muscles" "..." FFFF "brain"
-        TEXT object_Yoko_01FA 09 40 80 - - "Croolis" "always" "be" "danger" "for" "balance"@565B "of" "universe" "..." FFFF "brain"
-        TEXT object_Yoko_01FA 10 40 80 - - "Yes" "friend" "," "me" "afraid" "." "Croolis" "cruel,"@5663 "them" "think" "war" "only" "..." FFFF "fear"
-        TEXT object_Yoko_01FA 07 40 80 - - "Croolis" "brain" "big" "like" "head" "of" "pin"@566A "." "laugh"@566E "laugh" "..." "cry" "..." "laugh" "laugh" "..." FFFF "Croolis"
+        TEXT object_Yoko_01FA 09 40 80 - - "Croolis" "always" "be" "danger" "for" "balance" "of" "universe" "..." FFFF "brain"
+        TEXT object_Yoko_01FA 10 40 80 - - "Yes" "friend" "," "me" "afraid" "." "Croolis" "cruel," "them" "think" "war" "only" "..." FFFF "fear"
+        TEXT object_Yoko_01FA 07 40 80 - - "Croolis" "brain" "big" "like" "head" "of" "pin" "." "laugh" "laugh" "..." "cry" "..." "laugh" "laugh" "..." FFFF "Croolis"
         TEXT object_Yoko_01FA 05 40 80 - - "Croolis" "be" "bad" "," "stupid" "and" "violent" "..." FFFF "Croolis"
         YIELD_B
         LABEL selector_3882
     CASE "Tromp" selector_38E0
         MENU "bye_bye" "talk" "race" "know" "trunk"
-        TEXT object_Yoko_01FA 04 40 80 - - "Me" "not" "know" "Tromps"@5674 "..." FFFF "know"
-        TEXT object_Yoko_01FA 0E 40 80 - - "Trumpet"@567B "nice" "instrument"@5683 "..." FFFF "trunk"
-        TEXT object_Yoko_01FA 06 40 80 - - "Me" "not" "smoke"@568E "Trump"@5694 "tails"@569A "." "So" "bad" "for" "health"@56A0 "..." FFFF "Tromp"
+        TEXT object_Yoko_01FA 04 40 80 - - "Me" "not" "know" "Tromps" "..." FFFF "know"
+        TEXT object_Yoko_01FA 0E 40 80 - - "Trumpet" "nice" "instrument" "..." FFFF "trunk"
+        TEXT object_Yoko_01FA 06 40 80 - - "Me" "not" "smoke" "Trump" "tails" "." "So" "bad" "for" "health" "..." FFFF "Tromp"
         YIELD_B
         LABEL selector_38E0
     CASE "Migrax" selector_3954
@@ -897,101 +897,101 @@ SELECTOR_LIST list_Yoko_33F0
         TEXT object_Yoko_01FA 09 40 80 - - "Migrax" "big" "stupid" "." FFFF "brain"
         TEXT object_Yoko_01FA 0B 40 80 - - "Migrax" "like" "too" "much" "money" "." FFFF "money"
         TEXT object_Yoko_01FA 0B 40 80 - - "Them" "like" "business" "." "Nothing" "free" "..." FFFF "money"
-        TEXT object_Yoko_01FA 0C 40 80 - - "Migrators"@56A7 "be" "cool"@56B1 "." "Me" "like" "music" "." FFFF "Migrax"
+        TEXT object_Yoko_01FA 0C 40 80 - - "Migrators" "be" "cool" "." "Me" "like" "music" "." FFFF "Migrax"
         YIELD_B
         LABEL selector_3954
     CASE "ondoyant" selector_3A14
-        MENU "bye_bye" "talk" "race" "emotion"@56B6 "news" "feeling"@0988
-        TEXT object_Yoko_01FA 06 40 80 - - "ondoyants" "be" "very" "strange" "." "Them" "intimidate"@56BE "me" "..." FFFF "news"
-        TEXT object_Yoko_01FA 07 40 80 - - "Father"@11E4 "say" "ondoyants" "not" "exist"@56C9 "," "ondoyants" "be" "legend"@56CF "..." FFFF "news"
-        TEXT object_Yoko_01FA 0E 40 80 - - "Me" "have" "knees"@56D6 "all" "weak"@12E4 "..." FFFF "emotion"
+        MENU "bye_bye" "talk" "race" "emotion" "news" "feeling"
+        TEXT object_Yoko_01FA 06 40 80 - - "ondoyants" "be" "very" "strange" "." "Them" "intimidate" "me" "..." FFFF "news"
+        TEXT object_Yoko_01FA 07 40 80 - - "Father" "say" "ondoyants" "not" "exist" "," "ondoyants" "be" "legend" "..." FFFF "news"
+        TEXT object_Yoko_01FA 0E 40 80 - - "Me" "have" "knees" "all" "weak" "..." FFFF "emotion"
         TEXT object_Yoko_01FA 0E 40 80 - - "ondoyants" "big" "emotion" "..." FFFF "feeling"
-        TEXT object_Yoko_01FA 07 40 80 - - "Ah," "females" "be" "big" "problem" "." "me" "all" "alone"@2A64 "..." "cry" "cry" "..." FFFF "ondoyant"
+        TEXT object_Yoko_01FA 07 40 80 - - "Ah," "females" "be" "big" "problem" "." "me" "all" "alone" "..." "cry" "cry" "..." FFFF "ondoyant"
         TEXT object_Yoko_01FA 0B 40 80 - - "Me" "want" "ondoyant" "with" "me" "," "friend" "..." FFFF "ondoyant"
         YIELD_B
         LABEL selector_3A14
     CASE "Tubular_brain" selector_3A60
         MENU "bye_bye" "talk" "news"
-        TEXT object_Yoko_01FA 03 41 80 - - "Me" "not" "know" "those" "beings"@56DC "..." FFFF "news"
-        TEXT object_Yoko_01FA 0C 40 80 - - "Tubular"@56E3 "strange" "name" "..." FFFF "Tubular_brain"
+        TEXT object_Yoko_01FA 03 41 80 - - "Me" "not" "know" "those" "beings" "..." FFFF "news"
+        TEXT object_Yoko_01FA 0C 40 80 - - "Tubular" "strange" "name" "..." FFFF "Tubular_brain"
         TEXT object_Yoko_01FA 09 41 80 - - "Not" "know" "..." FFFF "Tubular_brain"
         YIELD_B
         LABEL selector_3A60
     CASE "Slimers" selector_3B5B
         MENU "bye_bye" "talk" "information"
-        TEXT object_Yoko_01FA 00 41 80 - - "Me" "know" "Slimers..."@56EB FFFF "Slimers"
-        TEXT object_Yoko_01FA 09 40 80 - - "Slimers" "be" "strange" "people" "." "Big" "Yolk"@56F6 "be" "big" "Slimer"@394F "." "He" "be" "buried"@56FB "on" "planet" "Vista"@5702 "..." FFFF "information"
+        TEXT object_Yoko_01FA 00 41 80 - - "Me" "know" "Slimers..." FFFF "Slimers"
+        TEXT object_Yoko_01FA 09 40 80 - - "Slimers" "be" "strange" "people" "." "Big" "Yolk" "be" "big" "Slimer" "." "He" "be" "buried" "on" "planet" "Vista" "..." FFFF "information"
         TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "Slimers" "." "Them" "be" "nice" "..." FFFF "information"
-        TEXT object_Yoko_01FA 0B 42 80 - - "Portrait"@5708 "of" "great" "YOLK"@5711 "be" "famous"@5716 "painting"@571D "." "Painted"@5726 "with" "yellow"@572E "blood" "of" "great" "YOLK" "..." FFFF "information"
-        TEXT object_Yoko_01FA 09 42 80 - - "Me" "dream" "visit"@09C5 "mausoleum"@5735 "of" "great" "YOLK" "on" "planet" "VISTA,"@573F "but" "Vista" "be" "other"@0A00 "end" "of" "universe" "..." FFFF "information"
+        TEXT object_Yoko_01FA 0B 42 80 - - "Portrait" "of" "great" "YOLK" "be" "famous" "painting" "." "Painted" "with" "yellow" "blood" "of" "great" "YOLK" "..." FFFF "information"
+        TEXT object_Yoko_01FA 09 42 80 - - "Me" "dream" "visit" "mausoleum" "of" "great" "YOLK" "on" "planet" "VISTA," "but" "Vista" "be" "other" "end" "of" "universe" "..." FFFF "information"
         TEXT object_Yoko_01FA 02 42 80 - - "You" "talk" "much" "," "friend" "..." FFFF "information"
-        TEXT object_Yoko_01FA 05 48 80 - - "Me" "be" "thirsty"@140F "..." FFFF "information"
+        TEXT object_Yoko_01FA 05 48 80 - - "Me" "be" "thirsty" "..." FFFF "information"
         SHARED_STATE C0 12E2 F5 C1 0001
         YIELD_B
         LABEL selector_3B5B
     CASE "art" selector_3C33
-        MENU "bye_bye" "talk" "music" "painting" "reproduction" "book"@5746
-        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "music" "." "You" "know" "group"@574B "called" "Migrators" "?" FFFF "music"
-        TEXT object_Yoko_01FA 0C 40 80 - - "MIGRATORS"@5751 "make" "big" "sound" "." "Not" "hear" "think" "!" FFFF "music"
-        TEXT object_Yoko_01FA 05 40 80 - - "Me" "already" "read" "books"@575B "on" "art" "..." FFFF "book"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "hear" "of" "Jeph"@5761 "d'Ulikan"@5766 "," "great" "artist"@576F "..." FFFF "painting"
-        TEXT object_Yoko_01FA 05 40 80 - - "Portrait" "of" "Great" "Yolk" "be" "big" "painting..."@5776 FFFF "painting"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "not" "like" "reproductions"@5782 "." "Me" "prefer"@5790 "originals"@5797 "..." FFFF "reproduction"
+        MENU "bye_bye" "talk" "music" "painting" "reproduction" "book"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "music" "." "You" "know" "group" "called" "Migrators" "?" FFFF "music"
+        TEXT object_Yoko_01FA 0C 40 80 - - "MIGRATORS" "make" "big" "sound" "." "Not" "hear" "think" "!" FFFF "music"
+        TEXT object_Yoko_01FA 05 40 80 - - "Me" "already" "read" "books" "on" "art" "..." FFFF "book"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "hear" "of" "Jeph" "d'Ulikan" "," "great" "artist" "..." FFFF "painting"
+        TEXT object_Yoko_01FA 05 40 80 - - "Portrait" "of" "Great" "Yolk" "be" "big" "painting..." FFFF "painting"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "not" "like" "reproductions" "." "Me" "prefer" "originals" "..." FFFF "reproduction"
         TEXT object_Yoko_01FA 0A 40 80 - - "Me" "like" "color" "blue" "..." FFFF "art"
         YIELD_B
         LABEL selector_3C33
     CASE "politics" selector_3CFF
         MENU "bye_bye" "talk" "peace" "war" "weapon"
-        TEXT object_Yoko_01FA 0A 41 80 - - "Us" "Izwals" "like" "Peace"@57A2 "..." FFFF "peace"
+        TEXT object_Yoko_01FA 0A 41 80 - - "Us" "Izwals" "like" "Peace" "..." FFFF "peace"
         TEXT object_Yoko_01FA 00 40 80 - - "Me" "hate" "war" "," "friend" "..." FFFF "war"
-        TEXT object_Yoko_01FA 05 40 80 - - "War" "be" "like" "death"@19B4 "." "It" "frighten"@57A8 "..." FFFF "war"
+        TEXT object_Yoko_01FA 05 40 80 - - "War" "be" "like" "death" "." "It" "frighten" "..." FFFF "war"
         TEXT object_Yoko_01FA 05 40 80 - - "Croolis" "be" "expert" "in" "war" "..." FFFF "war"
-        TEXT object_Yoko_01FA 04 41 80 - - "Deadly"@57B1 "weapons" "not" "allowed"@57B8 "here" "..." FFFF "weapon"
+        TEXT object_Yoko_01FA 04 41 80 - - "Deadly" "weapons" "not" "allowed" "here" "..." FFFF "weapon"
         TEXT object_Yoko_01FA 05 40 80 - - "Ah" "," "politics" "..." "Me" "not" "understand" "..." FFFF "politics"
-        TEXT object_Yoko_01FA 03 40 80 - - "Politics"@57C0 "always" "leads"@57C9 "to" "war" "." "People"@57CF "not" "want" "same"@174F "thing" "..." FFFF "politics"
+        TEXT object_Yoko_01FA 03 40 80 - - "Politics" "always" "leads" "to" "war" "." "People" "not" "want" "same" "thing" "..." FFFF "politics"
         YIELD_B
         LABEL selector_3CFF
     CASE "peace" selector_3D85
         MENU "bye_bye" "talk" "family"
         TEXT object_Yoko_01FA 05 40 80 - - "Izwals" "like" "peace" "of" "family" "..." FFFF "family"
-        TEXT object_Yoko_01FA 04 40 80 - - "War" "kill"@57D6 "my" "family" "," "friend" "..." FFFF "family"
+        TEXT object_Yoko_01FA 04 40 80 - - "War" "kill" "my" "family" "," "friend" "..." FFFF "family"
         TEXT object_Yoko_01FA 05 40 80 - - "You" "friend" "." "me" "know" "you" "like" "peace" "..." FFFF "peace"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "want" "base"@57DB "life" "on" "respect" "of" "others"@57E0 "." "That" "be" "only" "law" "..." FFFF "peace"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Me" "want" "base" "life" "on" "respect" "of" "others" "." "That" "be" "only" "law" "..." FFFF "peace"
         YIELD_B
         LABEL selector_3D85
     CASE "war" selector_3E17
-        MENU "bye_bye" "talk" "peace" "slave"@57E7 "power"
-        TEXT object_Yoko_01FA 0C 40 80 - - "Me" "not" "want" "be" "slaves"@57ED "." "POWER"@1D08 "make" "slaves" "..." FFFF "slave"
+        MENU "bye_bye" "talk" "peace" "slave" "power"
+        TEXT object_Yoko_01FA 0C 40 80 - - "Me" "not" "want" "be" "slaves" "." "POWER" "make" "slaves" "..." FFFF "slave"
         TEXT object_Yoko_01FA 02 40 80 - - "POWER" "make" "people" "crazy" "..." FFFF "power"
         TEXT object_Yoko_01FA 03 41 80 - - "Me" "not" "like" "POWER" "..." FFFF "power"
-        TEXT object_Yoko_01FA 07 40 80 - - "War" "kill" "my" "family" "..." "CRY"@25D6 "..." "CRY" "..." FFFF "war"
+        TEXT object_Yoko_01FA 07 40 80 - - "War" "kill" "my" "family" "..." "CRY" "..." "CRY" "..." FFFF "war"
         TEXT object_Yoko_01FA 09 40 80 - - "War" "be" "very" "stupid" "..." FFFF "war"
         YIELD_B
         LABEL selector_3E17
     CASE "reproduction" selector_3F59
         MENU "bye_bye" "talk" "laugh" "idea" "female"
         TEXT object_Yoko_01FA 08 40 80 - - "Hee" "hee" "hee" "hee" "..." FFFF "reproduction"
-        TEXT object_Yoko_01FA 0D 40 80 - - "Reproduction"@57F4 "be" "big" "universal"@5801 "law" "..." FFFF "reproduction"
-        TEXT object_Yoko_01FA 05 40 80 - - "Me" "hope"@08C7 "meet"@0EB9 "female" "Izwal" "one" "day" "..." FFFF "idea"
+        TEXT object_Yoko_01FA 0D 40 80 - - "Reproduction" "be" "big" "universal" "law" "..." FFFF "reproduction"
+        TEXT object_Yoko_01FA 05 40 80 - - "Me" "hope" "meet" "female" "Izwal" "one" "day" "..." FFFF "idea"
         TEXT object_Yoko_01FA 04 40 80 - - "Me" "too" "small" "think" "reproduction" "..." FFFF "idea"
-        TEXT object_Yoko_01FA 08 40 80 - - "Murffalos" "have" "funny"@580B "way" "to" "reproduce" "," "hee" "hee" "hee" "!" FFFF "laugh"
+        TEXT object_Yoko_01FA 08 40 80 - - "Murffalos" "have" "funny" "way" "to" "reproduce" "," "hee" "hee" "hee" "!" FFFF "laugh"
         TEXT object_Yoko_01FA 07 40 80 - - "Hee" "!" "Hee" "!" "Hee" "!" "Hee" "!" "Hee" "!" FFFF "laugh"
         TEXT object_Yoko_01FA 08 40 80 - - "Ha" "!" "Ha" "!" "Ha" "!" "Ha" "!" "Ha" "!" FFFF "laugh"
-        TEXT object_Yoko_01FA 05 40 80 - - "Ho"@5811 "!" "Ho" "!" "Ho" "!" "Ho" "!" FFFF "laugh"
-        TEXT object_Yoko_01FA 08 40 80 - - "Females"@5814 "like" "reproduction" "," "hee" "hee" "hee" "!!!" FFFF "female"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Reproduction" "be" "wonderful"@581C "thing" "..." FFFF "female"
+        TEXT object_Yoko_01FA 05 40 80 - - "Ho" "!" "Ho" "!" "Ho" "!" "Ho" "!" FFFF "laugh"
+        TEXT object_Yoko_01FA 08 40 80 - - "Females" "like" "reproduction" "," "hee" "hee" "hee" "!!!" FFFF "female"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Reproduction" "be" "wonderful" "thing" "..." FFFF "female"
         TEXT object_Yoko_01FA 0D 40 80 - - "You" "like" "reproduction" "." "You" "talk" "much" "about" "..." FFFF "female"
         YIELD_B
         LABEL selector_3F59
     CASE "science" 0000
         MENU "bye_bye" "talk" "weapon"
         TEXT object_Yoko_01FA 05 40 80 - - "Me" "not" "like" "weapons" "," "friend" "..." FFFF "weapon"
-        TEXT object_Yoko_01FA 04 40 80 - - "Science"@5826 "must"@0E96 "be" "for" "peace" "," "not" "war" "..." FFFF "weapon"
-        TEXT object_Yoko_01FA 06 40 80 - - "Me" "like" "observe"@582E "stars" "with" "my" "father" "Maxxon" "..." FFFF "weapon"
+        TEXT object_Yoko_01FA 04 40 80 - - "Science" "must" "be" "for" "peace" "," "not" "war" "..." FFFF "weapon"
+        TEXT object_Yoko_01FA 06 40 80 - - "Me" "like" "observe" "stars" "with" "my" "father" "Maxxon" "..." FFFF "weapon"
         TEXT object_Yoko_01FA 07 41 80 - - "Me" "not" "want" "talk" "of" "weapons" "," "friend" "..." FFFF "weapons"
-        TEXT object_Yoko_01FA 09 40 80 - - "Radioactivity"@5836 "bad" "evil"@5844 "." "Kill" "slow" "and" "sure" "..." "EXTERMINIUM"@5849 "be" "radioactive"@5855 "..." FFFF "science"
-        TEXT object_Yoko_01FA 0C 40 80 - - "Croolis" "know" "military"@5861 "science" "..." FFFF "science"
-        TEXT object_Yoko_01FA 0A 40 80 - - "Sinox"@586A "like" "science" "and" "technology..."@5870 FFFF "science"
+        TEXT object_Yoko_01FA 09 40 80 - - "Radioactivity" "bad" "evil" "." "Kill" "slow" "and" "sure" "..." "EXTERMINIUM" "be" "radioactive" "..." FFFF "science"
+        TEXT object_Yoko_01FA 0C 40 80 - - "Croolis" "know" "military" "science" "..." FFFF "science"
+        TEXT object_Yoko_01FA 0A 40 80 - - "Sinox" "like" "science" "and" "technology..." FFFF "science"
         TEXT object_Yoko_01FA 03 01 80 - - "..."
         YIELD
 END_SELECTOR_LIST list_Yoko_33F0
@@ -999,57 +999,57 @@ END_SELECTOR_LIST list_Yoko_33F0
 SELECTOR_LIST list_Bronko_4037
     YIELD_B
     CASE "talk" selector_404A
-        MENU "bye_bye" "robot"@00BE "cred"@274E "murffalos" "weapons"
+        MENU "bye_bye" "robot" "cred" "murffalos" "weapons"
         YIELD_B
         LABEL selector_404A
     CASE "robot" selector_41F6
-        MENU "talk" "bye_bye" "robot" "intelligence"@587E "energy"@0399 "technology"@3591 "retirement"@588B
-        TEXT object_Bronko_031A 02 40 80 - - "Me" "robot" "Bronko"@06F5 "AX34"@5896 "BUTCHER" "model"@2EC1 "..." FFFF "robot"
-        TEXT object_Bronko_031A 03 40 80 - - "Robots"@589B "be" "strong" "," "friend" "." "Robot"@58A2 "Bronko" "know" "chop"@2655 "meat" "with" "sharp"@58A8 "tools" "..." FFFF "robot"
-        TEXT object_Bronko_031A 01 40 80 - - "Me" "good" "robot" "," "advanced"@58AE "..." FFFF "robot"
+        MENU "talk" "bye_bye" "robot" "intelligence" "energy" "technology" "retirement"
+        TEXT object_Bronko_031A 02 40 80 - - "Me" "robot" "Bronko" "AX34" "BUTCHER" "model" "..." FFFF "robot"
+        TEXT object_Bronko_031A 03 40 80 - - "Robots" "be" "strong" "," "friend" "." "Robot" "Bronko" "know" "chop" "meat" "with" "sharp" "tools" "..." FFFF "robot"
+        TEXT object_Bronko_031A 01 40 80 - - "Me" "good" "robot" "," "advanced" "..." FFFF "robot"
         TEXT object_Bronko_031A 01 40 80 - - "Me" "big" "cybernetic" "intelligence" "," "much" "cheap" "memory" "..." FFFF "intelligence"
         TEXT object_Bronko_031A 02 40 80 - - "Me" "know" "think" "." "Me" "much" "smart" "..." FFFF "intelligence"
         TEXT object_Bronko_031A 03 40 80 - - "Me" "have" "big" "CDROM" "in" "head" "..." "Ha!" "Ha!" "Ha!" "Ha!" FFFF "intelligence"
         TEXT object_Bronko_031A 02 41 80 - - "Bronko" "intelligent" "..." FFFF "intelligence"
         TEXT object_Bronko_031A 04 40 80 - - "Me" "have" "big" "energy" ":" "Bronko" "have" "new" "batteries" "," "friend" "...." FFFF "energy"
-        TEXT object_Bronko_031A 05 40 80 - - "Me" "eat" "metal"@58B7 "biscuits"@58BD "with" "sump"@58C6 "oil"@0887 "and" "mercury"@58CB "every" "morning"@58D3 "," "friend" "..." "High"@58DB "energy" "..." FFFF "energy"
-        TEXT object_Bronko_031A 01 40 80 - - "You" "look" "for" "batteries,"@58E0 "friend" "..." "Me" "buy" "batteries" "at" "VENUSIA"@10A4 "SUPRAMARKET"@2594 FFFF "energy"
-        TEXT object_Bronko_031A 04 40 80 - - "VENUSIA" "SUPRAMARKET" "sell"@58EB "cheap" "batteries" "." "You" "not" "see" "commercials"@58F0 "on" "TV" "," "friend" "?" FFFF "energy"
+        TEXT object_Bronko_031A 05 40 80 - - "Me" "eat" "metal" "biscuits" "with" "sump" "oil" "and" "mercury" "every" "morning" "," "friend" "..." "High" "energy" "..." FFFF "energy"
+        TEXT object_Bronko_031A 01 40 80 - - "You" "look" "for" "batteries," "friend" "..." "Me" "buy" "batteries" "at" "VENUSIA" "SUPRAMARKET" FFFF "energy"
+        TEXT object_Bronko_031A 04 40 80 - - "VENUSIA" "SUPRAMARKET" "sell" "cheap" "batteries" "." "You" "not" "see" "commercials" "on" "TV" "," "friend" "?" FFFF "energy"
         TEXT object_Bronko_031A 01 40 80 - - "Bronko" "big" "technology" "," "friend" "..." FFFF "technology"
-        TEXT object_Bronko_031A 05 40 80 - - "See" "you" "soon"@22FE "..." FFFF "bye_bye"
+        TEXT object_Bronko_031A 05 40 80 - - "See" "you" "soon" "..." FFFF "bye_bye"
         YIELD_B
         LABEL selector_41F6
     CASE "cred" selector_42E2
         MENU "talk" "bye_bye" "cred" "buy"
-        TEXT object_Bronko_031A 01 40 80 - - "Me" "work" "much" "to" "earn"@58FC "CRED" "," "friend" "..." FFFF "cred"
-        TEXT object_Bronko_031A 02 40 80 - - "Creds"@5901 "be" "hard" "to" "earn" "..." FFFF "cred"
+        TEXT object_Bronko_031A 01 40 80 - - "Me" "work" "much" "to" "earn" "CRED" "," "friend" "..." FFFF "cred"
+        TEXT object_Bronko_031A 02 40 80 - - "Creds" "be" "hard" "to" "earn" "..." FFFF "cred"
         TEXT object_Bronko_031A 03 40 80 - - "You" "like" "Creds" "," "friend" "?" FFFF "cred"
-        TEXT object_Bronko_031A 04 40 80 - - "Me" "want" "buy" "big" "ship" "." "Go" "far" "for" "vacation"@5907 "..." FFFF "buy"
-        TEXT object_Bronko_031A 03 40 80 - - "Me" "want" "buy" "home" "on" "planet" "Troma"@3976 "," "and" "grow" "nuts"@5910 "," "bolts"@5915 "and" "maybe" "screws"@591B "..." FFFF "buy"
-        TEXT object_Bronko_031A 02 40 80 - - "Me" "want" "breed"@5922 "cybernetic" "lawn-mowers"@5928 "..." "Me" "dream" "," "friend" "..." FFFF "buy"
+        TEXT object_Bronko_031A 04 40 80 - - "Me" "want" "buy" "big" "ship" "." "Go" "far" "for" "vacation" "..." FFFF "buy"
+        TEXT object_Bronko_031A 03 40 80 - - "Me" "want" "buy" "home" "on" "planet" "Troma" "," "and" "grow" "nuts" "," "bolts" "and" "maybe" "screws" "..." FFFF "buy"
+        TEXT object_Bronko_031A 02 40 80 - - "Me" "want" "breed" "cybernetic" "lawn-mowers" "..." "Me" "dream" "," "friend" "..." FFFF "buy"
         TEXT object_Bronko_031A 04 40 80 - - "To" "buy" "," "me" "must" "work" "much" "..." FFFF "buy"
         YIELD_B
         LABEL selector_42E2
     CASE "murffalos" selector_439C
-        MENU "talk" "bye_bye" "hunt"@5934
+        MENU "talk" "bye_bye" "hunt"
         TEXT object_Bronko_031A 01 40 80 - - "Thirteen" "murffalos" "to" "reproduce" "..." "One" "in" "middle" "," "rest" "around" "." "That" "be" "reproduction" "for" "Murffalos" "..." FFFF "murffalos"
-        TEXT object_Bronko_031A 02 40 80 - - "Me" "not" "like" "murffalos" "..." "Not" "good" "," "too" "soft"@5939 "..." "Me" "like" "blade"@593E "of" "lawn-mower"@5944 "..." FFFF "murffalos"
-        TEXT object_Bronko_031A 03 40 80 - - "Me" "know" "chop" "murffalos..."@594F FFFF "murffalos"
-        TEXT object_Bronko_031A 04 40 80 - - "Me" "like" "hunt" "satellite"@595C "game" "with" "laserpulper"@5966 "..." "Zap"@5972 "zap"@024D "in" "satellites"@5976 "..." FFFF "hunt"
-        TEXT object_Bronko_031A 03 40 80 - - "Hunting"@5981 "big" "sport" "..." FFFF "hunt"
+        TEXT object_Bronko_031A 02 40 80 - - "Me" "not" "like" "murffalos" "..." "Not" "good" "," "too" "soft" "..." "Me" "like" "blade" "of" "lawn-mower" "..." FFFF "murffalos"
+        TEXT object_Bronko_031A 03 40 80 - - "Me" "know" "chop" "murffalos..." FFFF "murffalos"
+        TEXT object_Bronko_031A 04 40 80 - - "Me" "like" "hunt" "satellite" "game" "with" "laserpulper" "..." "Zap" "zap" "in" "satellites" "..." FFFF "hunt"
+        TEXT object_Bronko_031A 03 40 80 - - "Hunting" "big" "sport" "..." FFFF "hunt"
         YIELD_B
         LABEL selector_439C
     CASE "weapons" selector_442C
         MENU "talk" "bye_bye" "planets" "war"
-        TEXT object_Bronko_031A 04 40 80 - - "To" "find"@0404 "nice" "weapons" "," "pay" "much" "creds"@29E5 "," "Commander" "..." FFFF "weapons"
-        TEXT object_Bronko_031A 02 40 80 - - "Me" "have" "weapons" "on" "end" "of" "arms"@5989 "..." FFFF "weapons"
-        TEXT object_Bronko_031A 02 40 80 - - "You" "big" "traveller"@2818 "." "You" "know" "planets" "," "friend" "..." FFFF "planets"
+        TEXT object_Bronko_031A 04 40 80 - - "To" "find" "nice" "weapons" "," "pay" "much" "creds" "," "Commander" "..." FFFF "weapons"
+        TEXT object_Bronko_031A 02 40 80 - - "Me" "have" "weapons" "on" "end" "of" "arms" "..." FFFF "weapons"
+        TEXT object_Bronko_031A 02 40 80 - - "You" "big" "traveller" "." "You" "know" "planets" "," "friend" "..." FFFF "planets"
         TEXT object_Bronko_031A 03 40 80 - - "Croolis" "war" "do" "much" "bad" "..." "Bad" "war" "," "friend" "..." FFFF "war"
         YIELD_B
         LABEL selector_442C
     CASE "retirement" 0000
         MENU "talk" "bye_bye"
-        TEXT object_Bronko_031A 01 48 80 - - "Ah" "," "retirement" "..." "Them" "send"@2984 "me" "planet" "Magnus" "," "with" "other" "worn-out"@2989 "robots" "..." "CRY" "CRY" "..." FFFF "retirement"
+        TEXT object_Bronko_031A 01 48 80 - - "Ah" "," "retirement" "..." "Them" "send" "me" "planet" "Magnus" "," "with" "other" "worn-out" "robots" "..." "CRY" "CRY" "..." FFFF "retirement"
         SHARED_STATE C0 12EC F5 C1 0001
         YIELD
 END_SELECTOR_LIST list_Bronko_4037
@@ -1057,126 +1057,126 @@ END_SELECTOR_LIST list_Bronko_4037
 SELECTOR_LIST list_Bob_Morlock_446F
     YIELD_B
     CASE "talk" selector_4919
-        MENU "bye_bye" "black_hole"@598E "Big_Bang" "Bob_Morlock" "Kanary"@5999 "mission" "Corpo" "Good_ol_Bob"@59A0
+        MENU "bye_bye" "black_hole" "Big_Bang" "Bob_Morlock" "Kanary" "mission" "Corpo" "Good_ol_Bob"
         TEXT object_Bob_Morlock_004A 02 42 80 - - "What" "do" "you" "need" "to" "know" "," "Commander?" FFFF "talk"
-        TEXT object_Bob_Morlock_004A 03 48 80 - - "Goodbye"@59AC "," "Commander" "..." FFFF "bye_bye"
+        TEXT object_Bob_Morlock_004A 03 48 80 - - "Goodbye" "," "Commander" "..." FFFF "bye_bye"
         SHARED_STATE C0 1270 F5 C1 0001
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "Years"@59B4 "of" "research"@59BA "finally"@59C3 "led"@59CB "me" "to" "isolate"@59CF "time" "," "Commander" FFFF "black_hole"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "Certain"@59D7 "black" "holes" "can" "be" "used"@0E9B "to" "travel" "back" "in" "time" "." FFFF "black_hole"
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "Honk" "is" "programmed" "to" "seek"@34E6 "black" "holes" FFFF "black_hole"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "Years" "of" "research" "finally" "led" "me" "to" "isolate" "time" "," "Commander" FFFF "black_hole"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "Certain" "black" "holes" "can" "be" "used" "to" "travel" "back" "in" "time" "." FFFF "black_hole"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "Honk" "is" "programmed" "to" "seek" "black" "holes" FFFF "black_hole"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 01 48 80 - - "To" "reach"@59DF "the" "BIG" "BANG,"@59E5 "you'll" "have" "to" "travel" "through" "a" "number" "of" "black" "holes" "..." FFFF "black_hole"
+        TEXT object_Bob_Morlock_004A 01 48 80 - - "To" "reach" "the" "BIG" "BANG," "you'll" "have" "to" "travel" "through" "a" "number" "of" "black" "holes" "..." FFFF "black_hole"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "Black" "holes" "are" "marvellous"@59EB "machines"@59F6 "of" "nature"@5A00 "," "Commander" "..." FFFF "black_hole"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "Black" "holes" "are" "marvellous" "machines" "of" "nature" "," "Commander" "..." FFFF "black_hole"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 03 40 80 - - "I" "have" "pursued"@5A07 "truth" "all" "my" "life" "," "Commander" "..." FFFF "Big_Bang"
+        TEXT object_Bob_Morlock_004A 03 40 80 - - "I" "have" "pursued" "truth" "all" "my" "life" "," "Commander" "..." FFFF "Big_Bang"
         TEXT object_Bob_Morlock_004A 02 40 80 - - "I" "know" "the" "truth" "is" "beyond" "the" "BIG" "BANG" "," "Commander" "!" FFFF "Big_Bang"
         TEXT object_Bob_Morlock_004A 01 40 80 - - "My" "memory" "is" "not" "what" "it" "was" "..." FFFF "Big_Bang"
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "Thanks" "to" "the" "KANARY" "scientists"@5A0F "," "I" "am"@0286 "the" "oldest"@5A1A "being" "in" "the" "UNIVERSE"@5A21 "." FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "In" "my" "time" "," "I've"@01BE "been" "a" "crooner"@5A2A "," "a" "magician"@5A32 "," "many" "things" "." "I" "founded"@5A3B "the" "biggest"@5A43 "business" "in" "the" "universe" ":" "KANARY" "!" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "I've" "known"@5A4B "many" "women"@5A51 "." "Thousands"@2A1F "of" "generations"@5A57 "have" "admired"@38F6 "me" "." "I" "am" "immortal"@5A63 "!" FFFF "Bob_Morlock"
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "Commander," "you" "are" "going" "to" "relive"@5A6C "my" "past"@0C48 "." "I" "envy" "you" "..." FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "Thanks" "to" "the" "KANARY" "scientists" "," "I" "am" "the" "oldest" "being" "in" "the" "UNIVERSE" "." FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "In" "my" "time" "," "I've" "been" "a" "crooner" "," "a" "magician" "," "many" "things" "." "I" "founded" "the" "biggest" "business" "in" "the" "universe" ":" "KANARY" "!" FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "I've" "known" "many" "women" "." "Thousands" "of" "generations" "have" "admired" "me" "." "I" "am" "immortal" "!" FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "Commander," "you" "are" "going" "to" "relive" "my" "past" "." "I" "envy" "you" "..." FFFF "Bob_Morlock"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 01 48 80 - - "Ah" "," "Otto"@0B24 "Von"@0B29 "Smile"@0B2D "," "Eviscerator" "," "Jeph" "d'Ulikan" "," "old" "Yolk" "," "Tina"@1034 "Burner"@5A73 "," "and" "the" "others" "..." FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 01 48 80 - - "Ah" "," "Otto" "Von" "Smile" "," "Eviscerator" "," "Jeph" "d'Ulikan" "," "old" "Yolk" "," "Tina" "Burner" "," "and" "the" "others" "..." FFFF "Bob_Morlock"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 01 49 80 - - "Ahh!"@054E "Those" "were" "the" "days"@286A "," "Commander..." FFFF "Bob_Morlock"
+        TEXT object_Bob_Morlock_004A 01 49 80 - - "Ahh!" "Those" "were" "the" "days" "," "Commander..." FFFF "Bob_Morlock"
         PRESENTATION_REGISTER 5A7A
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "You" "want" "a" "few"@03C3 "revelations"@5A85 "," "Commander" "?" FFFF "revelation"@5A7A
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "You" "want" "a" "few" "revelations" "," "Commander" "?" FFFF "revelation"
         SHARED_STATE C0 12BA F5 C1 0001
         TEXT object_Bob_Morlock_004A 02 40 80 - - "Your" "mission" "is" "to" "find" "and" "travel" "through" "the" "right" "black" "holes" "," "so" "we" "can" "travel" "back" "in" "time" "to" "the" "BIG" "BANG" "." FFFF "mission"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "will" "meet" "amazing" "and" "sometimes"@5A91 "dangerous" "beings" "." "It" "will" "take" "courage"@5A9B "," "Commander" "!" FFFF "mission"
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "You" "will" "pass"@5AA3 "through" "hideous"@5AA8 "wars"@5AB0 "and" "barriers"@5AB5 "that" "cannot"@3A42 "be" "crossed"@5ABE "..." FFFF "mission"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "will" "need" "to" "win" "strange" "creatures"@041B "to" "your" "cause"@5AC6 "..." FFFF "mission"
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "You" "will" "be" "alone" "," "Commander" "." "Unless"@3719 "you" "decide"@5ACC "to" "wake" "me" "..." FFFF "mission"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "will" "meet" "amazing" "and" "sometimes" "dangerous" "beings" "." "It" "will" "take" "courage" "," "Commander" "!" FFFF "mission"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "You" "will" "pass" "through" "hideous" "wars" "and" "barriers" "that" "cannot" "be" "crossed" "..." FFFF "mission"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "will" "need" "to" "win" "strange" "creatures" "to" "your" "cause" "..." FFFF "mission"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "You" "will" "be" "alone" "," "Commander" "." "Unless" "you" "decide" "to" "wake" "me" "..." FFFF "mission"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "planet" "Corpo" "is" "where" "I" "originally"@5AD3 "came" "from" "." "Where"@244E "we" "came" "from" "..." FFFF "Corpo"
-        TEXT object_Bob_Morlock_004A 03 48 80 - - "Corpo" "is" "an" "extraordinary"@0587 "planet" "," "with" "unlimited"@5ADE "resources"@5AE8 "." FFFF "Corpo"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "planet" "Corpo" "is" "where" "I" "originally" "came" "from" "." "Where" "we" "came" "from" "..." FFFF "Corpo"
+        TEXT object_Bob_Morlock_004A 03 48 80 - - "Corpo" "is" "an" "extraordinary" "planet" "," "with" "unlimited" "resources" "." FFFF "Corpo"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0002
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "The" "truth" "lies" "at" "the" "birth"@5AF2 "of" "our" "universe" "," "just" "before"@1D58 "the" "BIG" "BANG" "..." FFFF "truth"
-        TEXT object_Bob_Morlock_004A 01 48 80 - - "Ah!"@2E7F "Truth"@5AF8 "!" FFFF "truth"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "The" "truth" "lies" "at" "the" "birth" "of" "our" "universe" "," "just" "before" "the" "BIG" "BANG" "..." FFFF "truth"
+        TEXT object_Bob_Morlock_004A 01 48 80 - - "Ah!" "Truth" "!" FFFF "truth"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A FF 48 80 - - "I" "am" "getting" "pictures"@5AFE "from" "the" "Ark" "," "Commander" "." "Everything"@3CDF "is" "in" "order"@3CD9 "..." FFFF "Good_ol_Bob"
+        TEXT object_Bob_Morlock_004A FF 48 80 - - "I" "am" "getting" "pictures" "from" "the" "Ark" "," "Commander" "." "Everything" "is" "in" "order" "..." FFFF "Good_ol_Bob"
         LOAD_STRING "aarche10.hnm"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "flatter"@5B07 "me" "," "Commander" "..." FFFF "Good_ol_Bob"
-        TEXT object_Bob_Morlock_004A 02 4A 80 - - "You" "embarrass"@5B0F "me" "," "Commander" "..." FFFF "Good_ol_Bob"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "You" "flatter" "me" "," "Commander" "..." FFFF "Good_ol_Bob"
+        TEXT object_Bob_Morlock_004A 02 4A 80 - - "You" "embarrass" "me" "," "Commander" "..." FFFF "Good_ol_Bob"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 01 42 80 - - "Heh"@2318 "heh"@5B19 "..." FFFF "Good_ol_Bob"
+        TEXT object_Bob_Morlock_004A 01 42 80 - - "Heh" "heh" "..." FFFF "Good_ol_Bob"
         YIELD_B
         LABEL selector_4919
     CASE "Kanary" 0000
-        MENU "talk" "bye_bye" "cottage"@5B1D "clones"@5B25 "employees"@5B2C "balance_sheets"@5B36
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "Cottage"@5B45 "Research"@5B4D "Department"@5B56 "is" "my" "secret" "project"@5B61 "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "domain"@5B69 "of" "vegetation"@5B70 "is" "a" "marvel"@5B7B "of" "nature" "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "Cottage" "Research" "Department" "perfects"@5B82 "genetic"@5B8B "miracles"@37B5 "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_004A 03 40 80 - - "The" "Kanary" "mows"@5B93 "lawns"@5B98 "themselves"@5B9E "every" "Weekend"@5BA9 "..." FFFF "cottage"
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "Kanary's"@5BB1 "artificial"@5BBA "orchids"@5BC5 "produce"@5BCD "centuries-old"@5BD5 "whisky"@5BE3 "..." FFFF "cottage"
+        MENU "talk" "bye_bye" "cottage" "clones" "employees" "balance_sheets"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "Cottage" "Research" "Department" "is" "my" "secret" "project" "..." FFFF "cottage"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "domain" "of" "vegetation" "is" "a" "marvel" "of" "nature" "..." FFFF "cottage"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "The" "Cottage" "Research" "Department" "perfects" "genetic" "miracles" "..." FFFF "cottage"
+        TEXT object_Bob_Morlock_004A 03 40 80 - - "The" "Kanary" "mows" "lawns" "themselves" "every" "Weekend" "..." FFFF "cottage"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "Kanary's" "artificial" "orchids" "produce" "centuries-old" "whisky" "..." FFFF "cottage"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0005
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "Kanary" "has" "developed"@5BEA "technology" "entirely"@5BF4 "devoted"@5BFD "to" "synthetic" "cloning"@5C05 "..." FFFF "clones"
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "Kanary's" "four" "million"@5C0D "employees" "were" "all" "built" "by" "and" "for" "Kanary" "..." FFFF "clones"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "I" "am" "the" "very" "last" "natural"@5C15 "bio"@5C1D "being" "and" "I" "control" "EVERYTHING"@5C21 "..." FFFF "clones"
-        TEXT object_Bob_Morlock_004A 01 40 80 - - "My" "employees" "wake" "me" "up" "for" "ten" "minutes"@5C2C "once" "a" "year" "," "so" "I" "can" "blow" "out" "the" "candles"@5C34 "on" "my" "birthday"@5C3C "cake"@0442 "and" "sign"@5C45 "the" "balance" "sheets"@5C4A FFFF "clones"
-        TEXT object_Bob_Morlock_004A 01 48 80 - - "I" "asked"@0D0A "the" "Kanary" "scientists" "to" "create"@5C51 "the" "perfect" "adventurer"@2B6F "to" "take" "me" "to" "the" "BIG" "BANG" "..." FFFF "clones"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "Kanary" "has" "developed" "technology" "entirely" "devoted" "to" "synthetic" "cloning" "..." FFFF "clones"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "Kanary's" "four" "million" "employees" "were" "all" "built" "by" "and" "for" "Kanary" "..." FFFF "clones"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "I" "am" "the" "very" "last" "natural" "bio" "being" "and" "I" "control" "EVERYTHING" "..." FFFF "clones"
+        TEXT object_Bob_Morlock_004A 01 40 80 - - "My" "employees" "wake" "me" "up" "for" "ten" "minutes" "once" "a" "year" "," "so" "I" "can" "blow" "out" "the" "candles" "on" "my" "birthday" "cake" "and" "sign" "the" "balance" "sheets" FFFF "clones"
+        TEXT object_Bob_Morlock_004A 01 48 80 - - "I" "asked" "the" "Kanary" "scientists" "to" "create" "the" "perfect" "adventurer" "to" "take" "me" "to" "the" "BIG" "BANG" "..." FFFF "clones"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0003
-        TEXT object_Bob_Morlock_004A 03 40 80 - - "All" "Kanary" "employees" "were" "built" "by" "the" "CLONE"@5C58 "CONSORTIUM"@5C5E "department" "." "SO"@5C69 "WERE"@5C6C "YOU"@0050 "," "Commander" "." FFFF "employees"
+        TEXT object_Bob_Morlock_004A 03 40 80 - - "All" "Kanary" "employees" "were" "built" "by" "the" "CLONE" "CONSORTIUM" "department" "." "SO" "WERE" "YOU" "," "Commander" "." FFFF "employees"
         TEXT object_Bob_Morlock_004A 04 40 80 - - "You" "all" "work" "for" "me" ":" "You" "Honk" "," "you" "Commander" "," "you" "Olga" "..." "All" "of" "you" "..." FFFF "employees"
-        TEXT object_Bob_Morlock_004A 05 48 80 - - "Kanary" "builds"@5C71 "the" "cheapest"@5C78 "and" "most"@5C81 "efficient"@5C86 "employees" "in" "the" "universe" "..." FFFF "employees"
+        TEXT object_Bob_Morlock_004A 05 48 80 - - "Kanary" "builds" "the" "cheapest" "and" "most" "efficient" "employees" "in" "the" "universe" "..." FFFF "employees"
         SHARED_STATE C0 12B6 F5 C1 0001
-        TEXT object_Bob_Morlock_004A 01 42 80 - - "Kanary" "is" "the" "biggest" "business" "empire"@5C90 "in" "the" "known" "universe" FFFF "Kanary"
-        TEXT object_Bob_Morlock_004A 02 48 80 - - "Kanary" "invents"@5C97 "," "builds" "," "consumes"@5C9F "and" "controls"@5CA8 "the" "entire" "universe" "." FFFF "Kanary"
+        TEXT object_Bob_Morlock_004A 01 42 80 - - "Kanary" "is" "the" "biggest" "business" "empire" "in" "the" "known" "universe" FFFF "Kanary"
+        TEXT object_Bob_Morlock_004A 02 48 80 - - "Kanary" "invents" "," "builds" "," "consumes" "and" "controls" "the" "entire" "universe" "." FFFF "Kanary"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0001
-        TEXT object_Bob_Morlock_004A 03 40 80 - - "Kanary" "is" "so" "well"@5CB1 "managed" "that" "all" "its" "products"@5CB6 "have" "a" "negative"@5CBF "building"@5CC8 "cost"@5CD1 "..." FFFF "balance_sheets"
-        TEXT object_Bob_Morlock_004A 02 40 80 - - "A" "complete"@5CD6 "cottage" "costs"@36AD "100990"@5CDF "Negabucks"@5CE6 "to" "make" "..." FFFF "balance_sheets"
-        TEXT object_Bob_Morlock_004A 05 40 80 - - "Our"@3748 "profits"@5CF0 "are" "so" "enormous"@5CF8 "that" "nobody"@5D01 "can" "pronounce"@5D08 "the" "sum"@3894 "." FFFF "balance_sheets"
-        TEXT object_Bob_Morlock_004A 06 48 80 - - "Our" "only" "competitor"@5D12 "is" "CRYO"@5D1D "." "They" "control" "the" "Second"@0104 "World"@5D22 "." FFFF "balance_sheets"
+        TEXT object_Bob_Morlock_004A 03 40 80 - - "Kanary" "is" "so" "well" "managed" "that" "all" "its" "products" "have" "a" "negative" "building" "cost" "..." FFFF "balance_sheets"
+        TEXT object_Bob_Morlock_004A 02 40 80 - - "A" "complete" "cottage" "costs" "100990" "Negabucks" "to" "make" "..." FFFF "balance_sheets"
+        TEXT object_Bob_Morlock_004A 05 40 80 - - "Our" "profits" "are" "so" "enormous" "that" "nobody" "can" "pronounce" "the" "sum" "." FFFF "balance_sheets"
+        TEXT object_Bob_Morlock_004A 06 48 80 - - "Our" "only" "competitor" "is" "CRYO" "." "They" "control" "the" "Second" "World" "." FFFF "balance_sheets"
         SHARED_STATE B4 field_Bob_Morlock_004A_s03_007C F6 C1 0002
         TEXT object_Bob_Morlock_004A 07 04 85 - 000A "I" "like" "you" "," "Commander" "."
-        TEXT object_Bob_Morlock_004A 08 04 85 - 000F "You" "are" "curious"@231C "and" "smart" "." "That's" "how" "I" "like" "people" "to" "be" "."
-        TEXT object_Bob_Morlock_004A 09 04 85 - 0014 "You" "talk" "too" "much" "," "Commander." "You're" "wasting"@5D28 "my" "time" "..."
-        TEXT object_Bob_Morlock_004A 0F 04 85 - 0019 "I'll" "tell" "you" "something" "about" "yourself"@2D4F "," "Commander" "." "You" "ask" "too" "many" "questions" "..."
+        TEXT object_Bob_Morlock_004A 08 04 85 - 000F "You" "are" "curious" "and" "smart" "." "That's" "how" "I" "like" "people" "to" "be" "."
+        TEXT object_Bob_Morlock_004A 09 04 85 - 0014 "You" "talk" "too" "much" "," "Commander." "You're" "wasting" "my" "time" "..."
+        TEXT object_Bob_Morlock_004A 0F 04 85 - 0019 "I'll" "tell" "you" "something" "about" "yourself" "," "Commander" "." "You" "ask" "too" "many" "questions" "..."
         YIELD
 END_SELECTOR_LIST list_Bob_Morlock_446F
 
 SELECTOR_LIST list_Daddy_Gluxx_4C9A
     YIELD_B
     CASE "talk" selector_4CDF
-        MENU "bye_bye" "Slim_Gelati"@5D30 "family" "Slimers" "Great_Yolk"@5D3C
+        MENU "bye_bye" "Slim_Gelati" "family" "Slimers" "Great_Yolk"
         TEXT object_Daddy_Gluxx_043A 02 40 80 - - "Bye" "bye" "," "friend" "..." FFFF "bye_bye"
-        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "Do" "you" "speak"@2557 "our" "language" "," "stranger"@220A "?" FFFF "talk"
+        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "Do" "you" "speak" "our" "language" "," "stranger" "?" FFFF "talk"
         YIELD_B
         LABEL selector_4CDF
     CASE "Slim_Gelati" selector_4D92
-        MENU "bye_bye" "talk" "treatment"@5D47
-        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "Old" "Slim's"@5D51 "not" "the" "guy" "he" "used" "to" "be" "." "He" "sold"@36BB "his" "jelly" "house" "." "He's" "throwing"@5D58 "away"@0E17 "his" "savings"@5D61 "..." FFFF "Slim_Gelati"
-        TEXT object_Daddy_Gluxx_043A 04 00 80 - - "He's" "obsessed"@5D69 "with" "regaining"@5D72 "his" "long" "lost" "youth"@3674 "..."
-        TEXT object_Daddy_Gluxx_043A 02 40 80 - - "He" "goes"@5D7C "for" "treatment" "to" "a" "secret" "place" "." "He" "made"@0D32 "me" "promise"@2408 "never" "to" "reveal"@1130 "its" "whereabouts"@5D81 "..." FFFF "treatment"
-        TEXT object_Daddy_Gluxx_043A 03 48 80 - - "I" "promised"@39F1 "him" "I'd"@04CC "never" "tell" "..." FFFF "treatment"
+        MENU "bye_bye" "talk" "treatment"
+        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "Old" "Slim's" "not" "the" "guy" "he" "used" "to" "be" "." "He" "sold" "his" "jelly" "house" "." "He's" "throwing" "away" "his" "savings" "..." FFFF "Slim_Gelati"
+        TEXT object_Daddy_Gluxx_043A 04 00 80 - - "He's" "obsessed" "with" "regaining" "his" "long" "lost" "youth" "..."
+        TEXT object_Daddy_Gluxx_043A 02 40 80 - - "He" "goes" "for" "treatment" "to" "a" "secret" "place" "." "He" "made" "me" "promise" "never" "to" "reveal" "its" "whereabouts" "..." FFFF "treatment"
+        TEXT object_Daddy_Gluxx_043A 03 48 80 - - "I" "promised" "him" "I'd" "never" "tell" "..." FFFF "treatment"
         SHARED_STATE C0 12E2 F5 C1 0001
         YIELD_B
         LABEL selector_4D92
     CASE "family" selector_4E7A
-        MENU "bye_bye" "talk" "children" "village"@0EC8
-        TEXT object_Daddy_Gluxx_043A 00 40 82 - - "Ah!" "Family" "!" "Look"@3492 "at" "these" "fine" "children" "." "Little"@3473 "Gooseberry"@5D8D "and" "her" "sister"@5D98 "Gelatine..."@5D9F "Latex"@5DAB "!" "Behave"@2D48 "yourself" "!!!" FFFF "family"
-        TEXT object_Daddy_Gluxx_043A 03 00 80 - - "We" "SLIMERS"@3937 "take" "great" "joy"@5DB1 "in" "our" "families"@5DB5 "..."
-        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "Latex" "is" "the" "oldest" "." "Gooseberry" "and" "Gelatine"@5DBE "are" "twins"@5DC7 "." "Rubber"@5DCD "is" "the" "baby"@2AD0 "..." FFFF "children"
-        TEXT object_Daddy_Gluxx_043A 05 40 80 - - "Our" "jelly" "village" "is" "wondrous"@5DD4 "," "friend" "." "Our" "houses"@5DDD "are" "living"@5DE4 "beings" "..." FFFF "village"
-        TEXT object_Daddy_Gluxx_043A 06 40 80 - - "This" "village" "is" "called" "JEWELTOWN"@5DEB "." "It" "is" "quite" "unique"@5DF5 "in" "the" "universe" "..." "We" "get" "a" "lot"@1888 "of" "tourists"@5DFC "..." FFFF "village"
+        MENU "bye_bye" "talk" "children" "village"
+        TEXT object_Daddy_Gluxx_043A 00 40 82 - - "Ah!" "Family" "!" "Look" "at" "these" "fine" "children" "." "Little" "Gooseberry" "and" "her" "sister" "Gelatine..." "Latex" "!" "Behave" "yourself" "!!!" FFFF "family"
+        TEXT object_Daddy_Gluxx_043A 03 00 80 - - "We" "SLIMERS" "take" "great" "joy" "in" "our" "families" "..."
+        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "Latex" "is" "the" "oldest" "." "Gooseberry" "and" "Gelatine" "are" "twins" "." "Rubber" "is" "the" "baby" "..." FFFF "children"
+        TEXT object_Daddy_Gluxx_043A 05 40 80 - - "Our" "jelly" "village" "is" "wondrous" "," "friend" "." "Our" "houses" "are" "living" "beings" "..." FFFF "village"
+        TEXT object_Daddy_Gluxx_043A 06 40 80 - - "This" "village" "is" "called" "JEWELTOWN" "." "It" "is" "quite" "unique" "in" "the" "universe" "..." "We" "get" "a" "lot" "of" "tourists" "..." FFFF "village"
         YIELD_B
         LABEL selector_4E7A
     CASE "Slimers" selector_4F56
-        MENU "bye_bye" "talk" "origin"@5E05
+        MENU "bye_bye" "talk" "origin"
         TEXT object_Daddy_Gluxx_043A 02 40 80 - - "Slimers" "are" "a" "very" "old" "race" "..." FFFF "Slimers"
-        TEXT object_Daddy_Gluxx_043A 01 40 80 - - "Our" "origins"@5E0C "are" "lost" "in" "the" "mist"@5E14 "of" "time" "..." FFFF "origin"
-        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "There"@23E5 "used" "to" "be" "billions"@5E19 "of" "us" "," "but" "the" "Croolis" "war" "almost" "exterminated"@5E22 "us" "..." FFFF "origin"
-        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "We" "are" "opposed"@5E2F "to" "the" "technology" "of" "evil" "." "Here" "there" "are" "no" "factories"@5E37 "." "We" "made" "a" "pact"@5E41 "with" "the" "vegetation" "and" "with" "the" "space" "jellyfish"@5E46 "..." FFFF "origin"
-        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "There" "is" "no" "pollution"@5E50 "here" "." "Everything" "is" "clean"@1435 "and" "pure"@5E5A "..." FFFF "origin"
+        TEXT object_Daddy_Gluxx_043A 01 40 80 - - "Our" "origins" "are" "lost" "in" "the" "mist" "of" "time" "..." FFFF "origin"
+        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "There" "used" "to" "be" "billions" "of" "us" "," "but" "the" "Croolis" "war" "almost" "exterminated" "us" "..." FFFF "origin"
+        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "We" "are" "opposed" "to" "the" "technology" "of" "evil" "." "Here" "there" "are" "no" "factories" "." "We" "made" "a" "pact" "with" "the" "vegetation" "and" "with" "the" "space" "jellyfish" "..." FFFF "origin"
+        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "There" "is" "no" "pollution" "here" "." "Everything" "is" "clean" "and" "pure" "..." FFFF "origin"
         YIELD_B
         LABEL selector_4F56
     CASE "Great_Yolk" 0000
         MENU "bye_bye" "talk" "history"
-        TEXT object_Daddy_Gluxx_043A 01 40 80 - - "The" "Great" "YOLK" "..." "An"@5E5F "eminent"@5E62 "SLIMER"@5E6A "philosopher"@5E71 "..." "His"@2546 "thoughts" "are" "taught"@5E7D "to" "all" "the" "children" "of" "the" "universe" "..." FFFF "Great_Yolk"
-        TEXT object_Daddy_Gluxx_043A 02 40 80 - - "The" "Great" "YOLK" "said" ":" "\"Cyberspace"@5E84 "feeds"@5E90 "off" "our" "dreams"@5E96 "...\""@5E9D FFFF "Great_Yolk"
-        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "He" "also"@5EA2 "said" ":" "\"The"@5EA7 "harmony"@5EAC "of" "silence"@5EB4 "springs"@5EBC "from" "thunder"@5EC4 "...\"" FFFF "Great_Yolk"
-        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "Our" "history" "is" "written"@5ECC "within" "us" "for" "eternity"@3837 "." "We" "have" "no" "need" "to" "tell" "it" "or" "write"@5ED4 "it" "down" "..." FFFF "history"
+        TEXT object_Daddy_Gluxx_043A 01 40 80 - - "The" "Great" "YOLK" "..." "An" "eminent" "SLIMER" "philosopher" "..." "His" "thoughts" "are" "taught" "to" "all" "the" "children" "of" "the" "universe" "..." FFFF "Great_Yolk"
+        TEXT object_Daddy_Gluxx_043A 02 40 80 - - "The" "Great" "YOLK" "said" ":" "\"Cyberspace" "feeds" "off" "our" "dreams" "...\"" FFFF "Great_Yolk"
+        TEXT object_Daddy_Gluxx_043A 03 40 80 - - "He" "also" "said" ":" "\"The" "harmony" "of" "silence" "springs" "from" "thunder" "...\"" FFFF "Great_Yolk"
+        TEXT object_Daddy_Gluxx_043A 04 40 80 - - "Our" "history" "is" "written" "within" "us" "for" "eternity" "." "We" "have" "no" "need" "to" "tell" "it" "or" "write" "it" "down" "..." FFFF "history"
         TEXT object_Daddy_Gluxx_043A 01 01 80 - - "..."
         YIELD
 END_SELECTOR_LIST list_Daddy_Gluxx_4C9A
@@ -1184,90 +1184,90 @@ END_SELECTOR_LIST list_Daddy_Gluxx_4C9A
 SELECTOR_LIST list_Scruter_Mac_5020
     YIELD_B
     CASE "talk" selector_5053
-        MENU "bye_bye" "Scruter_Mac"@5EDA "SCRUT" "prison" "Mastachok" "presents"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "Bye" "bye" "stranger" "..." "Me" "must" "stand"@33F8 "guard"@3190 "..." FFFF "bye_bye"
+        MENU "bye_bye" "Scruter_Mac" "SCRUT" "prison" "Mastachok" "presents"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "Bye" "bye" "stranger" "..." "Me" "must" "stand" "guard" "..." FFFF "bye_bye"
         YIELD_B
         LABEL selector_5053
     CASE "Scruter_Mac" selector_50F3
         MENU "talk" "bye_bye" "robot"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Ah" "," "robot" "be" "hard" "job"@2B37 "..." "Me" "think" "always" "of" "vacation" "on" "islands"@5EE6 "of" "Sea"@5EEE "of" "Tranquility"@5EF2 "..." "SIGH"@5EFE "..." FFFF "robot"
-        TEXT object_Scruter_Mac_067A 04 40 80 - - "If" "you" "want" "be" "SCRUT" "agent"@1D9E "," "you" "can" "." "Them" "put" "your" "brain" "inside"@2C5A "SCRUT" "robot" "..." FFFF "robot"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "After"@5F03 "war" "," "them" "put" "Croolis" "brain" "in" "SCRUT" "robot" "." "Me" "did" "be" "Croolis" "..." FFFF "robot"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Ah" "," "robot" "be" "hard" "job" "..." "Me" "think" "always" "of" "vacation" "on" "islands" "of" "Sea" "of" "Tranquility" "..." "SIGH" "..." FFFF "robot"
+        TEXT object_Scruter_Mac_067A 04 40 80 - - "If" "you" "want" "be" "SCRUT" "agent" "," "you" "can" "." "Them" "put" "your" "brain" "inside" "SCRUT" "robot" "..." FFFF "robot"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "After" "war" "," "them" "put" "Croolis" "brain" "in" "SCRUT" "robot" "." "Me" "did" "be" "Croolis" "..." FFFF "robot"
         YIELD_B
         LABEL selector_50F3
     CASE "SCRUT" selector_524D
-        MENU "talk" "bye_bye" "order" "chief" "war" "happy"@00A7
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "SCRUT" "big" "army"@5F09 "..." "SCRUT" "control" "universe" "..." FFFF "SCRUT"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "SUPER"@5F0E "TRUMP"@5F14 "be" "big" "chief" "of" "SCRUT" "..." FFFF "SCRUT"
+        MENU "talk" "bye_bye" "order" "chief" "war" "happy"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "SCRUT" "big" "army" "..." "SCRUT" "control" "universe" "..." FFFF "SCRUT"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "SUPER" "TRUMP" "be" "big" "chief" "of" "SCRUT" "..." FFFF "SCRUT"
         TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "have" "order" "to" "guard" "jail" "on" "Mastachok" "..." FFFF "order"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Order"@5F1A "be" "order" "," "friend" "..." FFFF "order"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Order" "be" "not" "disorder"@5F20 "..." FFFF "order"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Order" "be" "order" "," "friend" "..." FFFF "order"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Order" "be" "not" "disorder" "..." FFFF "order"
         TEXT object_Scruter_Mac_067A 04 40 80 - - "You" "like" "order" "..." FFFF "order"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "Me" "not" "chief" "..." "Me" "not" "want" "be" "chief" "..." "Program"@5F29 "chief" "too" "complicated"@5F31 "..." FFFF "chief"
-        TEXT object_Scruter_Mac_067A 07 40 80 - - "Chief"@292B "give" "order" "and" "me" "obey"@5F3D "," "big" "difference"@5F42 "..." FFFF "chief"
-        TEXT object_Scruter_Mac_067A 04 40 80 - - "Chief" "have" "expensive"@25C2 "memory" "..." FFFF "chief"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "be" "programmed" "for" "war" "," "combat" "," "battle" "..." "Me" "have" "biometal"@5F4D "muscles" "..." FFFF "war"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "SCRUT" "robot" "enforce"@5F56 "order" "in" "universe" "..." "Nice"@01A9 "..." "Me" "like" "..." FFFF "war"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "Me" "not" "chief" "..." "Me" "not" "want" "be" "chief" "..." "Program" "chief" "too" "complicated" "..." FFFF "chief"
+        TEXT object_Scruter_Mac_067A 07 40 80 - - "Chief" "give" "order" "and" "me" "obey" "," "big" "difference" "..." FFFF "chief"
+        TEXT object_Scruter_Mac_067A 04 40 80 - - "Chief" "have" "expensive" "memory" "..." FFFF "chief"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "be" "programmed" "for" "war" "," "combat" "," "battle" "..." "Me" "have" "biometal" "muscles" "..." FFFF "war"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "SCRUT" "robot" "enforce" "order" "in" "universe" "..." "Nice" "..." "Me" "like" "..." FFFF "war"
         YIELD_B
         LABEL selector_524D
     CASE "prison" selector_53E7
         MENU "talk" "bye_bye" "eviscerator" "Croolis"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Prison"@5F5E "of" "Mastachok" "solid"@5F65 "..." "Big" "fortress"@5F6B "..." "Tough"@5F74 "..." FFFF "prison"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Prisoner"@33CA "not" "can" "escape"@5F7A "from" "here" "..." "Us" "control" "all" "..." FFFF "prison"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "not" "like" "prison" "." "Me" "want" "go" "vacation" "," "go" "dance"@31DA "in" "Tekno"@5F81 "night"@5F87 "club"@5F8D "." "Trance"@5F92 "music" "..." FFFF "prison"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "Eviscerator" "be" "big" "prisoner"@2F78 "..." "He" "be" "big" "dangerous" "Croolis" "prisoner" "..." FFFF "eviscerator"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Eviscerator" "make" "big" "war" "crimes"@5F99 "." "He" "not" "know" "pity"@5FA0 "..." FFFF "eviscerator"
-        TEXT object_Scruter_Mac_067A 07 40 80 - - "Me" "have" "order" "exterminate"@022C "Eviscerator" "if" "he" "escape" "..." "Me" "have" "laserpulper" "..." FFFF "eviscerator"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Croolis" "be" "warlike"@5FA5 "race" "." "Croolis" "be" "big" "warriors" "," "but" "them" "have" "small" "brain" "...Pity"@5FAD "..." FFFF "Croolis"
-        TEXT object_Scruter_Mac_067A 08 40 80 - - "Croolis" "scientist"@5FB5 "did" "try"@010B "expand"@5FBF "brain" "with" "drug"@5FC6 "," "but" "not" "work" "..." "Pity"@5FCB "..." FFFF "Croolis"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "have" "idea" "to" "expand" "Croolis" "brain" "..." "Two"@5FD0 "brains"@5FD4 "in" "one" "head" "..." "That" "be" "smart" "idea" "..." FFFF "Croolis"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Prison" "of" "Mastachok" "solid" "..." "Big" "fortress" "..." "Tough" "..." FFFF "prison"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Prisoner" "not" "can" "escape" "from" "here" "..." "Us" "control" "all" "..." FFFF "prison"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "not" "like" "prison" "." "Me" "want" "go" "vacation" "," "go" "dance" "in" "Tekno" "night" "club" "." "Trance" "music" "..." FFFF "prison"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "Eviscerator" "be" "big" "prisoner" "..." "He" "be" "big" "dangerous" "Croolis" "prisoner" "..." FFFF "eviscerator"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Eviscerator" "make" "big" "war" "crimes" "." "He" "not" "know" "pity" "..." FFFF "eviscerator"
+        TEXT object_Scruter_Mac_067A 07 40 80 - - "Me" "have" "order" "exterminate" "Eviscerator" "if" "he" "escape" "..." "Me" "have" "laserpulper" "..." FFFF "eviscerator"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Croolis" "be" "warlike" "race" "." "Croolis" "be" "big" "warriors" "," "but" "them" "have" "small" "brain" "...Pity" "..." FFFF "Croolis"
+        TEXT object_Scruter_Mac_067A 08 40 80 - - "Croolis" "scientist" "did" "try" "expand" "brain" "with" "drug" "," "but" "not" "work" "..." "Pity" "..." FFFF "Croolis"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "have" "idea" "to" "expand" "Croolis" "brain" "..." "Two" "brains" "in" "one" "head" "..." "That" "be" "smart" "idea" "..." FFFF "Croolis"
         TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "have" "Croolis" "brain" "but" "not" "be" "chief" "..." FFFF "Croolis"
         YIELD_B
         LABEL selector_53E7
     CASE "Mastachok" selector_5547
         MENU "talk" "bye_bye" "planet" "life"
         TEXT object_Scruter_Mac_067A 05 40 80 - - "Mastachok" "be" "planet" "ravaged" "by" "war" "..." "Here" "did" "be" "big" "battle" "..." FFFF "Mastachok"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "not" "like" "spend"@268B "vacation" "here" "..." "Not" "sun"@5FDB "..." "Not" "sea"@5FDF "..." "Not" "Night" "Club"@5FE3 "..." FFFF "Mastachok"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "dream" "," "friend" "." "Me" "put" "perfume" "on" "and" "go" "dance" "tekno"@33E4 "with" "Croolas"@5FE8 "females" "..." FFFF "Mastachok"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "like" "planet" "Galabar"@3152 "." "Much"@291E "tekno" "Night" "Clubs"@5FF0 "on" "Galabar" "." "Much" "young" "and" "pretty" "Croolas" "on" "vacation" "..." FFFF "planet"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Ahhh"@2E54 "!" "Dance"@5FF6 "tekno" "all" "night" "..." "Night" "last" "six" "months"@5FFC "on" "Galabar" "..." "Nice" "..." FFFF "planet"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Tekno" "big" "music" "..." "Wake"@0931 "senses"@6003 "..." "Me" "wear"@267E "perfume" "to" "attract"@600A "females" "..." FFFF "planet"
-        TEXT object_Scruter_Mac_067A 02 40 80 - - "Life" "be" "lousy"@105D "..." "Me" "alone" "..." "CRY" "..." "CRY" "..." FFFF "life"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "not" "like" "spend" "vacation" "here" "..." "Not" "sun" "..." "Not" "sea" "..." "Not" "Night" "Club" "..." FFFF "Mastachok"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "dream" "," "friend" "." "Me" "put" "perfume" "on" "and" "go" "dance" "tekno" "with" "Croolas" "females" "..." FFFF "Mastachok"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "like" "planet" "Galabar" "." "Much" "tekno" "Night" "Clubs" "on" "Galabar" "." "Much" "young" "and" "pretty" "Croolas" "on" "vacation" "..." FFFF "planet"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Ahhh" "!" "Dance" "tekno" "all" "night" "..." "Night" "last" "six" "months" "on" "Galabar" "..." "Nice" "..." FFFF "planet"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Tekno" "big" "music" "..." "Wake" "senses" "..." "Me" "wear" "perfume" "to" "attract" "females" "..." FFFF "planet"
+        TEXT object_Scruter_Mac_067A 02 40 80 - - "Life" "be" "lousy" "..." "Me" "alone" "..." "CRY" "..." "CRY" "..." FFFF "life"
         TEXT object_Scruter_Mac_067A 03 40 80 - - "Here" "not" "be" "tekno" "Night" "Club" "..." "Life" "be" "very" "lousy" "..." FFFF "life"
         YIELD_B
         LABEL selector_5547
     CASE "presents" selector_5651
-        MENU "talk" "bye_bye" "friendship"@6012 "like"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "like" "presents" "..." "Presents"@601D "..." "Presents" "..." "Me" "like" "..." FFFF "presents"
-        TEXT object_Scruter_Mac_067A 04 40 80 - - "Me" "like" "perfume" "for" "go" "dance" "tekno" "." "Me" "pour"@6026 "whole" "bottle"@602B "on" "head."@6032 "Attract"@6038 "females" "..." FFFF "presents"
-        TEXT object_Scruter_Mac_067A 08 40 80 - - "Perfume"@33AD "nice" "present"@39A5 "," "friend" "." "Me" "like" "." "But" "me" "sad"@24A9 "not" "have" "female" "..." FFFF "presents"
+        MENU "talk" "bye_bye" "friendship" "like"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "like" "presents" "..." "Presents" "..." "Presents" "..." "Me" "like" "..." FFFF "presents"
+        TEXT object_Scruter_Mac_067A 04 40 80 - - "Me" "like" "perfume" "for" "go" "dance" "tekno" "." "Me" "pour" "whole" "bottle" "on" "head." "Attract" "females" "..." FFFF "presents"
+        TEXT object_Scruter_Mac_067A 08 40 80 - - "Perfume" "nice" "present" "," "friend" "." "Me" "like" "." "But" "me" "sad" "not" "have" "female" "..." FFFF "presents"
         TEXT object_Scruter_Mac_067A 02 40 80 - - "Me" "like" "friendship" "..." "But" "me" "be" "alone" ".." "You" "be" "kind" "to" "come" "see" "me" "..." FFFF "friendship"
-        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "know" "you" "like" "SCRUT" "robot" "MAC"@0AB8 "..." "You" "like" "talk" "with" "me" "..." FFFF "friendship"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "Friendship"@6040 "not" "exist" "in" "SCRUT" "army" "..." "Brothers"@604B "in" "arms" "..." "Not" "friends"@31E5 "..." FFFF "friendship"
+        TEXT object_Scruter_Mac_067A 03 40 80 - - "Me" "know" "you" "like" "SCRUT" "robot" "MAC" "..." "You" "like" "talk" "with" "me" "..." FFFF "friendship"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "Friendship" "not" "exist" "in" "SCRUT" "army" "..." "Brothers" "in" "arms" "..." "Not" "friends" "..." FFFF "friendship"
         YIELD_B
         LABEL selector_5651
     CASE "like" selector_5713
-        MENU "bye_bye" "talk" "food" "beauty" "perfumes"@6054
+        MENU "bye_bye" "talk" "food" "beauty" "perfumes"
         TEXT object_Scruter_Mac_067A 09 40 80 - - "Me" "always" "like" "same" "thing" "," "go" "dance" "in" "Night" "Club" "on" "planet" "Galabar" "where" "night" "last" "six" "months" "..." FFFF "like"
-        TEXT object_Scruter_Mac_067A 04 40 80 - - "Me" "not" "eat" "," "friend" "." "Me" "run"@2C29 "on" "BIONIUM" "..." FFFF "food"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "like" "be" "handsome" "." "Me" "like" "smell"@264F "nice" "for" "dance" "tekno" "in" "Night" "Club" "on" "Galabar" "..." FFFF "beauty"
-        TEXT object_Scruter_Mac_067A 00 41 80 - - "ME"@000C "LIKE"@605D "PERFUME" ":" "\"MOTOROIL\""@6062 "Be" "exhaust" "nozzle" "Romeo" "..." "ME" "LIKE" "," "friend" "..." FFFF "perfumes"
+        TEXT object_Scruter_Mac_067A 04 40 80 - - "Me" "not" "eat" "," "friend" "." "Me" "run" "on" "BIONIUM" "..." FFFF "food"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "Me" "like" "be" "handsome" "." "Me" "like" "smell" "nice" "for" "dance" "tekno" "in" "Night" "Club" "on" "Galabar" "..." FFFF "beauty"
+        TEXT object_Scruter_Mac_067A 00 41 80 - - "ME" "LIKE" "PERFUME" ":" "\"MOTOROIL\"" "Be" "exhaust" "nozzle" "Romeo" "..." "ME" "LIKE" "," "friend" "..." FFFF "perfumes"
         YIELD_B
         LABEL selector_5713
     CASE "happy" selector_57E5
-        MENU "bye_bye" "talk" "beach"@606D "party"@6073 "ballroom"@6079
+        MENU "bye_bye" "talk" "beach" "party" "ballroom"
         TEXT object_Scruter_Mac_067A 04 40 80 - - "Me" "not" "happy" "..." "Mastachok" "not" "have" "Night" "Club" "..." FFFF "happy"
-        TEXT object_Scruter_Mac_067A 06 40 80 - - "Me" "like" "mercury" "beach" "on" "GALABAR"@6082 "..." FFFF "beach"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "AAAhhh"@608A "!!!" "Yes" "!!!" "Dance" "tekno" "all" "night" "," "wear" "nice" "perfume" "," "in" "Night" "Club" "..." "Ahh" "beautiful" "Croolas" "..." FFFF "party"
-        TEXT object_Scruter_Mac_067A 04 40 80 - - "Tekno" "make" "nose"@6091 "bleed"@6096 "," "ears" "also" "..." "Nice" "..." "Nice" "..." FFFF "party"
-        TEXT object_Scruter_Mac_067A 07 40 80 - - "Me" "prefer" "tekno" "Night" "Club" "..." "Ballroom"@609C "not" "be" "tekno" "..." FFFF "ballroom"
+        TEXT object_Scruter_Mac_067A 06 40 80 - - "Me" "like" "mercury" "beach" "on" "GALABAR" "..." FFFF "beach"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "AAAhhh" "!!!" "Yes" "!!!" "Dance" "tekno" "all" "night" "," "wear" "nice" "perfume" "," "in" "Night" "Club" "..." "Ahh" "beautiful" "Croolas" "..." FFFF "party"
+        TEXT object_Scruter_Mac_067A 04 40 80 - - "Tekno" "make" "nose" "bleed" "," "ears" "also" "..." "Nice" "..." "Nice" "..." FFFF "party"
+        TEXT object_Scruter_Mac_067A 07 40 80 - - "Me" "prefer" "tekno" "Night" "Club" "..." "Ballroom" "not" "be" "tekno" "..." FFFF "ballroom"
         TEXT object_Scruter_Mac_067A 03 01 80 - - "..."
         YIELD_B
         LABEL selector_57E5
-    CASE "boude"@330A 0000
-        MENU "grmmph"@60A5 "bye_bye"
-        TEXT object_Scruter_Mac_067A 07 40 80 - - "..." "Sulk"@60AC "..." FFFF "grmmph"
-        TEXT object_Scruter_Mac_067A 05 40 80 - - "..." "SILENT"@60B1 "COMPLAINT"@60B8 "....." FFFF "grmmph"
+    CASE "boude" 0000
+        MENU "grmmph" "bye_bye"
+        TEXT object_Scruter_Mac_067A 07 40 80 - - "..." "Sulk" "..." FFFF "grmmph"
+        TEXT object_Scruter_Mac_067A 05 40 80 - - "..." "SILENT" "COMPLAINT" "....." FFFF "grmmph"
         TEXT object_Scruter_Mac_067A 08 41 80 - - "..." FFFF "grmmph"
         END
 END_SELECTOR_LIST list_Scruter_Mac_5020

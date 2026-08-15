@@ -79,7 +79,8 @@ Compile one edited BloodScript IR image with:
 
 ```sh
 cargo run --bin cbvm -- compile-bloodscript \
-  re/vm/bloodscript/script1.cod.blood /tmp/SCRIPT1.COD
+  re/vm/structured/script1.cod.blood /tmp/SCRIPT1.COD \
+  /path/to/SCRIPT1.DIC
 ```
 
 Generated `bloodscript-v2` source has no per-line address column. A layout pass
@@ -180,12 +181,13 @@ base-plus-delta expression back to the original `u16` address.
 
 The structured COD and BAS sources intern 13,699 distinct referenced DIC offsets
 as readable string operands, with 53,194 uses in `TEXT`, `CONCEPT_GUARD`,
-`MENU`, `CASE`, and low-level selector-node statements. The first use of text
-that maps to one referenced offset is written as `"text"@offset`; later uses are
-just `"text"`. Equal text at multiple offsets always keeps the suffix. These
-references are accepted only in dictionary-typed operand positions and lower to
-the exact original `u16`; the DIC companion source remains the owner of the
-string bytes.
+`MENU`, `CASE`, and low-level selector-node statements. They are bare quoted
+literals resolved through the companion DIC image; the shipped corpus needs no
+generated dictionary declarations or address suffixes. If equal text exists at
+multiple offsets, the lowest offset is canonical and a noncanonical reference
+uses the lossless `"text"@offset` escape. Dictionary literals are accepted only
+in dictionary-typed operand positions and lower to the exact original `u16`;
+the DIC companion source remains the owner of the string bytes.
 
 The current BloodScript corpus recompiles all 183,523 program bytes exactly. It
 contains 13,524 typed statements covering every byte with no shipped generic

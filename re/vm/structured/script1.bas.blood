@@ -9,8 +9,8 @@ YIELD
 
 SELECTOR_LIST list_Honk_0001
     YIELD_B
-    CASE "parler"@0A50 0000
-        MENU "adieu"@0A57
-        TEXT object_Honk_082A FF 61 80 - - "Yes"@0900 "!"@00F0 "Commander"@04E9 "?"@059F FFFF "bye_bye"@0A5D
+    CASE "parler" 0000
+        MENU "adieu"
+        TEXT object_Honk_082A FF 61 80 - - "Yes" "!" "Commander" "?" FFFF "bye_bye"
         END
 END_SELECTOR_LIST list_Honk_0001

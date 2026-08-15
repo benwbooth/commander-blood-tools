@@ -6,7 +6,7 @@
 //! syntax is reconstructed for this project; it is not claimed to be the lost
 //! historical source syntax.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 
 use anyhow::{Result, anyhow, bail};
@@ -114,29 +114,21 @@ struct DictionaryAlias {
 
 struct DictionaryOperandFormatter<'a> {
     aliases: &'a BTreeMap<u16, DictionaryAlias>,
-    unique_values: BTreeMap<&'a str, u16>,
-    emitted: BTreeSet<u16>,
+    canonical_offsets: BTreeMap<String, u16>,
 }
 
 impl<'a> DictionaryOperandFormatter<'a> {
-    fn new(aliases: &'a BTreeMap<u16, DictionaryAlias>) -> Self {
-        let mut unique_values = BTreeMap::new();
-        let mut ambiguous_values = BTreeSet::new();
-        for (offset, alias) in aliases {
-            match unique_values.insert(alias.value.as_str(), *offset) {
-                Some(previous) if previous != *offset => {
-                    ambiguous_values.insert(alias.value.as_str());
-                }
-                _ => {}
-            }
-        }
-        for value in ambiguous_values {
-            unique_values.remove(value);
+    fn new(aliases: &'a BTreeMap<u16, DictionaryAlias>, dictionary: &HashMap<u16, String>) -> Self {
+        let mut canonical_offsets = BTreeMap::new();
+        for (offset, value) in dictionary {
+            canonical_offsets
+                .entry(value.clone())
+                .and_modify(|canonical: &mut u16| *canonical = (*canonical).min(*offset))
+                .or_insert(*offset);
         }
         Self {
             aliases,
-            unique_values,
-            emitted: BTreeSet::new(),
+            canonical_offsets,
         }
     }
 
@@ -145,9 +137,7 @@ impl<'a> DictionaryOperandFormatter<'a> {
             return format!("{value:04X}");
         };
         let quoted = serde_json::to_string(&alias.value).expect("serializing a String cannot fail");
-        if self.unique_values.get(alias.value.as_str()) == Some(&value)
-            && !self.emitted.insert(value)
-        {
+        if self.canonical_offsets.get(&alias.value) == Some(&value) {
             quoted
         } else {
             format!("{quoted}@{value:04X}")
@@ -318,6 +308,10 @@ fn decompile_mode_with_bas_graph(
 }
 
 pub fn compile(source: &str) -> Result<Vec<u8>> {
+    compile_with_dictionary(source, &HashMap::new())
+}
+
+pub fn compile_with_dictionary(source: &str, dictionary: &HashMap<u16, String>) -> Result<Vec<u8>> {
     let (mut lines, format) = parse_source_lines(source)?;
     let mut objects = HashMap::new();
     let mut dictionary_words = HashMap::new();
@@ -362,7 +356,7 @@ pub fn compile(source: &str) -> Result<Vec<u8>> {
             _ => {}
         }
     }
-    let interned_dictionary_words = collect_interned_dictionary_words(&lines)?;
+    let interned_dictionary_words = collect_interned_dictionary_words(&lines, dictionary)?;
     let mut fields = HashMap::new();
     for line in &lines {
         if line.name != "FIELD" {
@@ -980,7 +974,7 @@ fn decompile_cod(
         tokens.iter().flat_map(dictionary_operand_values),
         dictionary,
     );
-    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases);
+    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
     let mut cursor = 0usize;
@@ -1104,7 +1098,7 @@ fn decompile_bas(
     add_field_owner_objects(&mut object_aliases, &field_aliases);
     let dictionary_values = bas_dictionary_operand_values(image, dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
-    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases);
+    let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
     let annotations = bas_annotations(image, dictionary)?;
@@ -2455,14 +2449,27 @@ fn parse_object_address(
 
 fn collect_interned_dictionary_words(
     lines: &[ParsedSourceLine<'_>],
+    dictionary: &HashMap<u16, String>,
 ) -> Result<HashMap<String, Option<u16>>> {
     let mut words = HashMap::new();
+    for (offset, text) in dictionary {
+        words
+            .entry(text.clone())
+            .and_modify(|canonical: &mut Option<u16>| {
+                *canonical = Some(canonical.unwrap_or(*offset).min(*offset));
+            })
+            .or_insert(Some(*offset));
+    }
+    let companion_words: HashSet<String> = words.keys().cloned().collect();
     for line in lines {
         for value in &line.args {
             let Some((text, offset)) = parse_inline_dictionary_address(value, line.line_number)?
             else {
                 continue;
             };
+            if companion_words.contains(&text) {
+                continue;
+            }
             if let Some(existing) = words.get_mut(&text) {
                 if matches!(*existing, Some(previous) if previous != offset) {
                     *existing = None;
@@ -2517,7 +2524,7 @@ fn parse_dictionary_address(
                 "line {line}: interned dictionary text {text:?} has multiple offsets; use an explicit @offset"
             ),
             None => bail!(
-                "line {line}: interned dictionary text {text:?} has no explicit @offset in this source"
+                "line {line}: interned dictionary text {text:?} has no companion dictionary entry or explicit @offset in this source"
             ),
         };
     }
@@ -2974,13 +2981,16 @@ mod tests {
         assert_eq!(decompiled.dictionary_offsets, 1);
         assert_eq!(decompiled.dictionary_uses, 2);
         for statement in [
-            "CONCEPT_GUARD \"TALK\"@1234 0",
+            "CONCEPT_GUARD \"TALK\" 0",
             "TEXT 2000 FF 00 80 - - \"TALK\"",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert!(!decompiled.source.contains("DIC_WORD"));
-        assert_eq!(compile(&decompiled.source).unwrap(), image);
+        assert_eq!(
+            compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+            image
+        );
 
         let duplicate = concat!(
             "; format: bloodscript-ir-v1\n",
@@ -3013,9 +3023,15 @@ mod tests {
             &[],
         )
         .unwrap();
-        assert_eq!(ambiguous.source.matches("\"SAME\"@1234").count(), 2);
+        assert_eq!(
+            ambiguous.source.matches("CONCEPT_GUARD \"SAME\" 0").count(),
+            2
+        );
         assert_eq!(ambiguous.source.matches("\"SAME\"@5678").count(), 1);
-        assert_eq!(compile(&ambiguous.source).unwrap(), ambiguous_image);
+        assert_eq!(
+            compile_with_dictionary(&ambiguous.source, &ambiguous_dictionary).unwrap(),
+            ambiguous_image
+        );
 
         let ambiguous_bare = concat!(
             "; format: bloodscript-v2\n",
@@ -3029,6 +3045,10 @@ mod tests {
                 .unwrap_err()
                 .to_string()
                 .contains("multiple offsets")
+        );
+        assert_eq!(
+            compile_with_dictionary(ambiguous_bare, &ambiguous_dictionary).unwrap(),
+            ambiguous_image
         );
     }
 
@@ -3145,14 +3165,17 @@ mod tests {
         for statement in [
             "YIELD",
             "YIELD_B",
-            "SELECTOR_NODE \"topic\"@1234 selector_000C",
+            "SELECTOR_NODE \"topic\" selector_000C",
             "LABEL selector_000C",
             "MENU \"topic\"",
             "PRESENTATION_REGISTER 9ABC",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
-        assert_eq!(compile(&decompiled.source).unwrap(), expected);
+        assert_eq!(
+            compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+            expected
+        );
     }
 
     #[test]
@@ -3180,22 +3203,24 @@ mod tests {
         assert_eq!(decompiled.dictionary_uses, 4);
         for statement in [
             "SELECTOR_LIST list_actor_0001",
-            "CASE \"talk\"@1234 selector_000C",
+            "CASE \"talk\" selector_000C",
             "CASE \"leave\" 0000",
-            "MENU \"leave\"@2000",
+            "MENU \"leave\"",
             "MENU \"talk\"",
             "END_SELECTOR_LIST list_actor_0001",
         ] {
             assert!(decompiled.source.contains(statement), "missing {statement}");
         }
         assert!(!decompiled.source.contains("DIC_WORD"));
-        assert_eq!(compile(&decompiled.source).unwrap(), image);
-
-        let malformed = decompiled.source.replace(
-            "CASE \"talk\"@1234 selector_000C",
-            "CASE \"talk\"@1234 0000",
+        assert_eq!(
+            compile_with_dictionary(&decompiled.source, &dictionary).unwrap(),
+            image
         );
-        assert!(compile(&malformed).is_err());
+
+        let malformed = decompiled
+            .source
+            .replace("CASE \"talk\" selector_000C", "CASE \"talk\" 0000");
+        assert!(compile_with_dictionary(&malformed, &dictionary).is_err());
     }
 
     #[test]
@@ -3220,7 +3245,10 @@ mod tests {
                 decompile_structured_bas_with_symbols(&image, &var, &dictionary, &symbols).unwrap();
             assert_eq!(source.structured_selector_lists, list_count);
             assert_eq!(source.structured_cases, case_count);
-            assert_eq!(compile(&source.source).unwrap(), image);
+            assert_eq!(
+                compile_with_dictionary(&source.source, &dictionary).unwrap(),
+                image
+            );
         }
     }
 
@@ -3255,8 +3283,14 @@ mod tests {
                 (bas_source.field_aliases, bas_source.field_alias_uses),
                 (bas_fields, bas_uses)
             );
-            assert_eq!(compile(&cod_source.source).unwrap(), cod);
-            assert_eq!(compile(&bas_source.source).unwrap(), bas);
+            assert_eq!(
+                compile_with_dictionary(&cod_source.source, &dictionary).unwrap(),
+                cod
+            );
+            assert_eq!(
+                compile_with_dictionary(&bas_source.source, &dictionary).unwrap(),
+                bas
+            );
         }
     }
 
@@ -3270,7 +3304,7 @@ mod tests {
                 let image =
                     std::fs::read(root.join(format!("SCRIPT{script}.{extension}"))).unwrap();
                 let source = decompile(kind, &image, &dictionary).unwrap();
-                let rebuilt = compile(&source.source).unwrap();
+                let rebuilt = compile_with_dictionary(&source.source, &dictionary).unwrap();
                 assert_eq!(
                     source.generic_op_bytes, 0,
                     "SCRIPT{script}.{extension} must have no generic opcodes"

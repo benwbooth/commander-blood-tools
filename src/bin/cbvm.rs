@@ -10,7 +10,7 @@ use commander_blood_tools::vm_source::{self, ImageKind};
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm decompile-data-bundle <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output>\n  cbvm compile-data <deb|dic|var> <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-bloodscript <game-dir> <output-dir>\n  cbvm decompile-structured <game-dir> <output-dir>\n  cbvm decompile-data-bundle <game-dir> <output-dir>\n  cbvm compile-bloodscript <source> <output> [dictionary]\n  cbvm compile-data <deb|dic|var> <source> <output>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -99,7 +99,7 @@ fn write_bloodscript(
     } else {
         bloodscript::decompile_with_symbols(kind, &image, &dictionary, &symbols)?
     };
-    let rebuilt = bloodscript::compile(&source.source)?;
+    let rebuilt = bloodscript::compile_with_dictionary(&source.source, &dictionary)?;
     if rebuilt != image {
         bail!(
             "internal BloodScript round-trip failure for {}",
@@ -243,12 +243,18 @@ fn main() -> Result<()> {
         Some("compile-bloodscript") => {
             let source = PathBuf::from(args.next().unwrap_or_else(|| usage()));
             let output = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let dictionary = args
+                .next()
+                .map(PathBuf::from)
+                .map(|path| read_dictionary(&path))
+                .transpose()?
+                .unwrap_or_default();
             if args.next().is_some() {
                 usage();
             }
             let text = std::fs::read_to_string(&source)
                 .with_context(|| format!("reading {}", source.display()))?;
-            let image = bloodscript::compile(&text)?;
+            let image = bloodscript::compile_with_dictionary(&text, &dictionary)?;
             std::fs::write(&output, &image)
                 .with_context(|| format!("writing {}", output.display()))?;
             println!("wrote {}: {} byte(s)", output.display(), image.len());
