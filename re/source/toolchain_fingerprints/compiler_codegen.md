@@ -1992,14 +1992,22 @@ DESCRIPT far-call framing; ignored base-offset decoys; script/record boundaries;
 segmented ownership; registers, flags, and return. They also isolate the
 binary's `0x67` address-size-overridden field store: it sign-extends the helper
 offset into EAX, inherits upper EDI, and does not wrap the effective offset at
-64 KiB. Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the natural
-one-to-one candidate warning-free to 76 instructions/210 bytes versus 63/186
-original, with 85.71 percent mnemonic-multiset overlap and no inline assembly.
-The C emits a normal 16-bit far-pointer sum, which is logically equivalent for
-the shipped game domain with zero upper EDI and no segment-offset overflow.
-Exact direct replacement of arbitrary inherited machine state would require a
-narrow assembly adapter for that one store, as well as fixed GS/SS placement
-and the original carry-return slot ABI and register/flag envelope.
+64 KiB. The top-level VM wrapper zeroes EDI before dispatch, and every
+full-width EDI write in BLOODPRG assigns zero. More decisively, the complete
+shipped BloodScript corpus contains only two C2 instructions. Their related
+objects are `0x028A` and `0x031A`, both kind 2; selector 0x11 is `+0x18`, making
+the only possible shipped field writes `0x02A2` and `0x0332`.
+
+Open Watcom 1.9 medium (`-3 -os -s -mm -we`) compiles the explicit-GS natural
+candidate warning-free to 86 instructions/248 bytes versus 63/186 original,
+with 85.71 percent mnemonic-multiset overlap and no inline assembly. Turbo C
+2.01 emits 136 instructions. Watcom's extra based-segment loads, frame and
+register allocation, and ordinary 16-bit far-pointer sum are accepted compiler
+choices for the source port because the shipped inputs remain inside the proven
+zero-upper-EDI, in-segment domain. Exact direct replacement of arbitrary
+inherited machine state would still require a narrow assembly adapter for that
+one store, as well as fixed GS/SS placement and the original carry-return slot
+ABI and register/flag envelope.
 
 VM opcode-C3 handler `0x006EEE` loads the segment from GS:0x6724 but ignores
 the far pointer's offset. It consumes a destination offset, resolves that
@@ -3474,6 +3482,7 @@ LCS and then mnemonic similarity:
 | `vm_cd_record_triple` | medium, `-ox`, register | 82/96 | 0.0488 | 0.6220 | 0.0976 |
 | `vm_b7_record_bit` | medium, `-os -s`, register | 43/64 | 0.1163 | 0.5814 | 0.1628 |
 | `vm_b8_record_pair` | medium, `-os -s`, register | 26/43 | 0.0385 | 0.7308 | 0.0769 |
+| `vm_op_c2_record_full` | medium, `-os -s`, register | 63/86 | 0.0635 | 0.7619 | 0.1587 |
 | `vm_op_c3_state_record` | medium, `-os -s`, register | 43/61 | 0.0698 | 0.7442 | 0.1628 |
 | `vm_c5_record_match` | medium, `-os -s`, register | 40/50 | 0.1000 | 0.6500 | 0.1500 |
 | `vm_c6_record_match` | medium, `-os -s`, register | 31/42 | 0.1290 | 0.6774 | 0.1935 |
